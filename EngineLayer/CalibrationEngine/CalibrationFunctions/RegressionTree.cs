@@ -1,20 +1,19 @@
 ﻿using MathNet.Numerics.Statistics;
+using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace EngineLayer.Calibration
 {
-    internal class RegressionTree : CalibrationFunction
+    internal class RegressionTree : ILearner<double>
     {
         #region Private Fields
 
         private readonly int level;
         private readonly bool[] useFeature;
         private readonly int doNotSplitIfUnderThis;
-        private RegressionTree leftTree;
-        private RegressionTree rightTree;
 
         private double output = double.NaN;
 
@@ -37,46 +36,39 @@ namespace EngineLayer.Calibration
 
         #region Public Methods
 
-        public override double Predict(double[] t)
-        {
-            if (double.IsNaN(output))
-            {
-                if (t[bestI] < bestValue)
-                    return leftTree.Predict(t);
-                else
-                    return rightTree.Predict(t);
-            }
-            else
-                return output;
-        }
-
-        public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+        public IPredictorModel<double> Learn(F64Matrix observations, double[] targets)
         {
             //Console.WriteLine("        In Train");
 
-            var trainingPoints = trainingList.ToList();
+            //Console.WriteLine("  All points in actual trainingList");
+            //Console.WriteLine(string.Join(Environment.NewLine, trainingPoints.OrderBy(b => b.Inputs[0]).Select(b => "      " + b.Inputs[0] + " " + b.Label)));
 
             //Console.WriteLine(string.Join(Environment.NewLine, trainingPoints.Select(b => "          " + b.Inputs[0] + " , " + b.Label)));
 
-            var averageOutputs = trainingPoints.Select(b => b.Label).Average();
+            var averageOutputs = targets.Average();
 
             //Console.WriteLine("          Average outputs: " + averageOutputs);
 
-            if (trainingPoints.Count < doNotSplitIfUnderThis)
+            if (targets.Length < doNotSplitIfUnderThis)
             {
                 output = averageOutputs;
-                Console.WriteLine("          count too low! output = " + output + " level= " + level);
-                return;
+                //Console.WriteLine("          count too low! output = " + output + " level= " + level);
+                return new RegressionTreePredictorModel(output);
             }
-            var bestSumSquaredErrors = trainingPoints.Select(b => Math.Pow(averageOutputs - b.Label, 2)).Sum();
 
-            var prunedTrainingPoints = trainingPoints;
+            double bestSumSquaredErrors = 0;
+            var prunedTrainingPoints = new List<IHasInputsAndOutputs>();
+            for (int i = 0; i < targets.Length; i++)
+            {
+                bestSumSquaredErrors += Math.Pow(averageOutputs - targets[i], 2);
+                prunedTrainingPoints.Add(new LabeledDataPoint(observations.Row(i), targets[i]));
+            }
 
             // For every variable, try to find the best split
             for (int i = 0; i < useFeature.Length; i++)
                 if (useFeature[i])
                 {
-                    prunedTrainingPoints.Sort(Comparer<LabeledDataPoint>.Create((x, y) => x.Inputs[i].CompareTo(y.Inputs[i])));
+                    prunedTrainingPoints.Sort(Comparer<IHasInputsAndOutputs>.Create((x, y) => x.Inputs[i].CompareTo(y.Inputs[i])));
                     int num_splits = Math.Min(15, prunedTrainingPoints.Count - 1);
                     for (double j = 0; j < num_splits; j++)
                     {
@@ -99,7 +91,7 @@ namespace EngineLayer.Calibration
                             bestSumSquaredErrors = sumSquaredErrors;
                             bestValue = quantile;
                             bestI = i;
-                            Console.WriteLine("bestValue: " + bestValue + " level = " + level);
+                            //Console.WriteLine("bestValue: " + bestValue + " level = " + level);
                         }
                     }
                 }
@@ -110,44 +102,114 @@ namespace EngineLayer.Calibration
 
             if (reachedBottom)
             {
-                output = trainingPoints.Select(b => b.Label).Average();
-                Console.WriteLine("setting output to equal " + output + " level = " + level);
+                output = targets.Average();
+                //Console.WriteLine("          count too low! output = " + output + " level= " + level);
+                return new RegressionTreePredictorModel(output);
             }
             else
             {
-                trainingPoints.Sort(Comparer<LabeledDataPoint>.Create((x, y) => x.Inputs[bestI].CompareTo(y.Inputs[bestI])));
-                leftTree = new RegressionTree(doNotSplitIfUnderThis, level + 1, useFeature);
-                leftTree.Train(trainingPoints.TakeWhile(b => b.Inputs[bestI] < bestValue).ToList());
-                rightTree = new RegressionTree(doNotSplitIfUnderThis, level + 1, useFeature);
-                rightTree.Train(trainingPoints.SkipWhile(b => b.Inputs[bestI] < bestValue).ToList());
-            }
+                prunedTrainingPoints.Sort(Comparer<IHasInputsAndOutputs>.Create((x, y) => x.Inputs[bestI].CompareTo(y.Inputs[bestI])));
 
-            //Console.WriteLine("        Done With Train");
+                IPredictorModel<double> leftTreePM;
+
+                IPredictorModel<double> rightTreePM;
+
+                {
+                    var leftTree = new RegressionTree(doNotSplitIfUnderThis, level + 1, useFeature);
+                    var forLeft = prunedTrainingPoints.TakeWhile(b => b.Inputs[bestI] < bestValue).ToList();
+                    var theLeftArray = forLeft.SelectMany(b => b.Inputs).ToArray();
+                    leftTreePM = leftTree.Learn(new F64Matrix(theLeftArray, forLeft.Count, theLeftArray.Length / forLeft.Count), forLeft.Select(b => b.Label).ToArray());
+                }
+                {
+                    var rightTree = new RegressionTree(doNotSplitIfUnderThis, level + 1, useFeature);
+                    var forRight = prunedTrainingPoints.SkipWhile(b => b.Inputs[bestI] < bestValue).ToList();
+                    var theRightArray = forRight.SelectMany(b => b.Inputs).ToArray();
+                    rightTreePM = rightTree.Learn(new F64Matrix(theRightArray, forRight.Count, theRightArray.Length / forRight.Count), forRight.Select(b => b.Label).ToArray());
+                }
+                return new RegressionTreePredictorModel(bestValue, bestI, leftTreePM as RegressionTreePredictorModel, rightTreePM as RegressionTreePredictorModel);
+            }
         }
 
         #endregion Public Methods
 
-        #region Internal Methods
+        //Console.WriteLine("        Done With Train");
+    }
 
-        internal string FullTree()
+    internal class LabeledDataPoint : IHasInputsAndOutputs
+    {
+        #region Public Constructors
+
+        public LabeledDataPoint(double[] v1, double v2)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("level: " + level);
-            sb.AppendLine("bestValue: " + bestValue);
-            sb.Append("output: " + output);
-            if (leftTree != null)
-            {
-                sb.AppendLine();
-                sb.Append(leftTree.FullTree());
-            }
-            if (rightTree != null)
-            {
-                sb.AppendLine();
-                sb.Append(rightTree.FullTree());
-            }
-            return sb.ToString();
+            this.Inputs = v1;
+            this.Label = v2;
         }
 
-        #endregion Internal Methods
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public double[] Inputs { get; private set; }
+
+        public double Label { get; private set; }
+
+        #endregion Public Properties
+    }
+
+    internal class RegressionTreePredictorModel : IPredictorModel<double>
+    {
+        #region Private Fields
+
+        private double output = double.NaN;
+        private double bestValue;
+        private int bestI;
+        private RegressionTreePredictorModel leftTree;
+        private RegressionTreePredictorModel rightTree;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public RegressionTreePredictorModel(double bestValue, int bestI, RegressionTreePredictorModel leftTree, RegressionTreePredictorModel rightTree)
+        {
+            this.bestValue = bestValue;
+            this.bestI = bestI;
+            this.leftTree = leftTree;
+            this.rightTree = rightTree;
+        }
+
+        public RegressionTreePredictorModel(double output)
+        {
+            this.output = output;
+        }
+
+        #endregion Public Constructors
+
+        #region Public Methods
+
+        public double[] GetRawVariableImportance()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Dictionary<string, double> GetVariableImportance(Dictionary<string, int> featureNameToIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double Predict(double[] observation)
+        {
+            if (double.IsNaN(output))
+            {
+                if (observation[bestI] < bestValue)
+                    return leftTree.Predict(observation);
+                else
+                    return rightTree.Predict(observation);
+            }
+            else
+                return output;
+        }
+
+        #endregion Public Methods
     }
 }

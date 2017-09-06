@@ -42,8 +42,8 @@
     <Reference Include="Chemistry, Version=1.0.225.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.225\lib\Chemistry.dll</HintPath>
     </Reference>
-    <Reference Include="FlashLFQ, Version=1.0.90.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\FlashLFQ.1.0.90\lib\net451\FlashLFQ.dll</HintPath>
+    <Reference Include="FlashLFQ, Version=1.0.101.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\FlashLFQ.0.1.92\lib\net451\FlashLFQ.dll</HintPath>
     </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.225.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.225\lib\ManagedThermoHelperLayer.dll</HintPath>
@@ -69,6 +69,21 @@
     <Reference Include="Proteomics, Version=1.0.225.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.225\lib\Proteomics.dll</HintPath>
     </Reference>
+    <Reference Include="SharpLearning.Common.Interfaces, Version=0.25.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Common.Interfaces.0.25.0.4\lib\net45\SharpLearning.Common.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpLearning.Containers, Version=0.25.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Containers.0.25.0.4\lib\net45\SharpLearning.Containers.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpLearning.CrossValidation, Version=0.25.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.CrossValidation.0.25.0.4\lib\net45\SharpLearning.CrossValidation.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpLearning.InputOutput, Version=0.25.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.InputOutput.0.25.0.4\lib\net45\SharpLearning.InputOutput.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpLearning.Metrics, Version=0.25.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Metrics.0.25.0.4\lib\net45\SharpLearning.Metrics.dll</HintPath>
+    </Reference>
     <Reference Include="Spectra, Version=1.0.225.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.225\lib\Spectra.dll</HintPath>
     </Reference>
@@ -92,7 +107,6 @@
     <Compile Include="Analysis\FdrAnalysisResults.cs" />
     <Compile Include="Analysis\Bin.cs" />
     <Compile Include="Analysis\BinTreeStructure.cs" />
-    <Compile Include="CalibrationEngine\CalibrationFunctions\CalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\ConstantCalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\IdentityCalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />

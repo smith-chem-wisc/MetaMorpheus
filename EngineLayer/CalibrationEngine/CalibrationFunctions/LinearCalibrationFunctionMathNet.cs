@@ -1,18 +1,16 @@
 ﻿using MathNet.Numerics;
+using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace EngineLayer.Calibration
 {
-    internal class LinearCalibrationFunctionMathNet : CalibrationFunction
+    internal class LinearCalibrationFunctionMathNet : ILearner<double>
     {
         #region Private Fields
 
-        private readonly int numFeatures;
         private readonly TransformFunction transformFunction;
-        private Func<double[], double> f;
 
         #endregion Private Fields
 
@@ -21,37 +19,26 @@ namespace EngineLayer.Calibration
         public LinearCalibrationFunctionMathNet(TransformFunction transformFunction)
         {
             this.transformFunction = transformFunction;
-            numFeatures = transformFunction.numOutputs;
+        }
+
+        public LinearCalibrationFunctionMathNet()
+        {
         }
 
         #endregion Public Constructors
 
         #region Public Methods
 
-        public override string ToString()
+        public IPredictorModel<double> Learn(F64Matrix observations, double[] targets)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("Linear");
-            sb.Append(" numFeatures: " + numFeatures);
-            sb.Append(" transform num outputs: " + transformFunction.numOutputs);
-            return sb.ToString();
-        }
-
-        public override double Predict(double[] t)
-        {
-            return f(transformFunction.Transform(t));
-        }
-
-        public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
-        {
-            double[][] ok = new double[trainingList.Count()][];
+            var numFeatures = transformFunction.numOutputs;
+            double[][] ok = new double[targets.Length][];
             int k = 0;
-            foreach (LabeledDataPoint p in trainingList)
+            for (int i = 0; i < targets.Length; i++)
             {
-                ok[k] = transformFunction.Transform(p.Inputs);
+                ok[k] = transformFunction.Transform(observations.Row(i));
                 k++;
             }
-            var ok2 = trainingList.Select(b => b.Label).ToArray();
 
             var ye = new Func<double[], double>[numFeatures + 1];
             ye[0] = a => 1;
@@ -60,7 +47,48 @@ namespace EngineLayer.Calibration
                 int j = i;
                 ye[j + 1] = a => a[j];
             }
-            f = Fit.LinearMultiDimFunc(ok, ok2, ye);
+            var f = Fit.LinearMultiDimFunc(ok, targets, ye);
+
+            return new LinearCalibrationFunctionPredictorModel(transformFunction, f);
+        }
+
+        #endregion Public Methods
+    }
+
+    internal class LinearCalibrationFunctionPredictorModel : IPredictorModel<double>
+    {
+        #region Private Fields
+
+        private readonly TransformFunction transformFunction;
+        private readonly Func<double[], double> f;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public LinearCalibrationFunctionPredictorModel(TransformFunction transformFunction, Func<double[], double> f)
+        {
+            this.transformFunction = transformFunction;
+            this.f = f;
+        }
+
+        #endregion Public Constructors
+
+        #region Public Methods
+
+        public double[] GetRawVariableImportance()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Dictionary<string, double> GetVariableImportance(Dictionary<string, int> featureNameToIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double Predict(double[] observation)
+        {
+            return f(transformFunction.Transform(observation));
         }
 
         #endregion Public Methods

@@ -1,28 +1,27 @@
-﻿using System;
+﻿using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EngineLayer.Calibration
 {
-    public class RandomForestCalibrationFunction : CalibrationFunction
+    public class RandomForestCalibrationFunction : ILearner<double>
     {
         #region Private Fields
 
         private readonly RegressionTree[] RegressionTrees;
         private readonly bool[] useFeature;
-        private readonly Random rand;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public RandomForestCalibrationFunction(int numTrees, int doNotSplitIfUnderThis, bool[] useFeature, Random rand)
+        public RandomForestCalibrationFunction(int numTrees, int doNotSplitIfUnderThis, bool[] useFeature)
         {
             RegressionTrees = new RegressionTree[numTrees];
             this.useFeature = useFeature;
-            this.rand = rand;
             for (int i = 0; i < numTrees; i++)
                 RegressionTrees[i] = new RegressionTree(doNotSplitIfUnderThis, 0, useFeature);
         }
@@ -31,14 +30,13 @@ namespace EngineLayer.Calibration
 
         #region Public Methods
 
-        public override string ToString()
+        public IPredictorModel<double> Learn(F64Matrix observations, double[] targets)
         {
-            return "RandomForestCalibrationFunction" + string.Join(",", useFeature);
-        }
-
-        public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
-        {
-            List<LabeledDataPoint> trainingListHere = trainingList.ToList();
+            Random rand = new Random(0);
+            List<LabeledDataPoint> trainingListHere = new List<LabeledDataPoint>();
+            for (int i = 0; i < targets.Length; i++)
+                trainingListHere.Add(new LabeledDataPoint(observations.Row(i), targets[i]));
+            IPredictorModel<double>[] RegressionTreesPMs = new IPredictorModel<double>[RegressionTrees.Length];
             Parallel.For(0, RegressionTrees.Length, i =>
             {
                 List<LabeledDataPoint> subsampledTrainingPoints = new List<LabeledDataPoint>();
@@ -47,33 +45,54 @@ namespace EngineLayer.Calibration
                     int index = rand.Next(trainingListHere.Count);
                     subsampledTrainingPoints.Add(trainingListHere[index]);
                 }
-                RegressionTrees[i].Train(subsampledTrainingPoints);
-            });
-        }
 
-        public override double Predict(double[] t)
-        {
-            return RegressionTrees.Select(b => b.Predict(t)).Average();
+                double[] trainList2Concat = subsampledTrainingPoints.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix trainList2Matrix = new F64Matrix(trainList2Concat, subsampledTrainingPoints.Count, trainList2Concat.Length / subsampledTrainingPoints.Count);
+                double[] trainList2Targets = subsampledTrainingPoints.Select(b => b.Label).ToArray();
+
+                RegressionTreesPMs[i] = RegressionTrees[i].Learn(trainList2Matrix, trainList2Targets);
+            });
+
+            return new RandomForestCalibrationPredictorModel(RegressionTreesPMs);
         }
 
         #endregion Public Methods
+    }
 
-        #region Internal Methods
+    internal class RandomForestCalibrationPredictorModel : IPredictorModel<double>
+    {
+        #region Private Fields
 
-        internal string FullTree()
+        private readonly IPredictorModel<double>[] RegressionTrees;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public RandomForestCalibrationPredictorModel(IPredictorModel<double>[] RegressionTrees)
         {
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < RegressionTrees.Length; i++)
-            {
-                Console.WriteLine("Tree " + i );
-                Console.Write(RegressionTrees[i].FullTree());
-
-            }
-
-            return sb.ToString();
+            this.RegressionTrees = RegressionTrees;
         }
 
-        #endregion Internal Methods
+        #endregion Public Constructors
+
+        #region Public Methods
+
+        public double[] GetRawVariableImportance()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Dictionary<string, double> GetVariableImportance(Dictionary<string, int> featureNameToIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double Predict(double[] observation)
+        {
+            return RegressionTrees.Select(b => b.Predict(observation)).Average();
+        }
+
+        #endregion Public Methods
     }
 }

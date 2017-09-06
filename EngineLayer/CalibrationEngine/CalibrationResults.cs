@@ -1,5 +1,6 @@
 ﻿using MassSpectrometry;
 using MathNet.Numerics.Statistics;
+using SharpLearning.Common.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,8 +24,8 @@ namespace EngineLayer.Calibration
         private readonly List<int> numMs2MassChargeCombinationsConsideredList;
         private readonly List<int> numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
         private readonly List<int> countList;
-        private readonly List<CalibrationFunction> ms1calibrationFunctions;
-        private readonly List<CalibrationFunction> ms2calibrationFunctions;
+        private readonly List<IPredictorModel<double>> ms1calibrationFunctions;
+        private readonly List<IPredictorModel<double>> ms2calibrationFunctions;
 
         #endregion Private Fields
 
@@ -33,8 +34,8 @@ namespace EngineLayer.Calibration
         public CalibrationResults(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CalibrationEngine s) : base(s)
         {
             this.MyMSDataFile = myMSDataFile;
-            ms1calibrationFunctions = new List<CalibrationFunction>();
-            ms2calibrationFunctions = new List<CalibrationFunction>();
+            ms1calibrationFunctions = new List<IPredictorModel<double>>();
+            ms2calibrationFunctions = new List<IPredictorModel<double>>();
             ms1meanSds = new List<Tuple<double, double>>();
             ms2meanSds = new List<Tuple<double, double>>();
             numMs1MassChargeCombinationsConsideredList = new List<int>();
@@ -93,7 +94,7 @@ namespace EngineLayer.Calibration
             ms2meanSds.Add(res.Ms2List.Select(b => b.Label).MeanStandardDeviation());
         }
 
-        internal void Add(CalibrationFunction ms1calib, CalibrationFunction ms2calib)
+        internal void Add(IPredictorModel<double> ms1calib, IPredictorModel<double> ms2calib)
         {
             ms1calibrationFunctions.Add(ms1calib);
             ms2calibrationFunctions.Add(ms2calib);

@@ -1,60 +1,122 @@
 ﻿using EngineLayer.Calibration;
 using MassSpectrometry;
 using NUnit.Framework;
+using SharpLearning.AdaBoost.Learners;
+using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
+using SharpLearning.DecisionTrees.Learners;
+using SharpLearning.GradientBoost.Learners;
+using SharpLearning.Metrics.Regression;
+using SharpLearning.RandomForest.Learners;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Test
 {
     [TestFixture]
     public static class RfCalibrationFunctionTest
     {
+        //[Test]
+        //public static void TestRfCalibrationFunction()
+        //{
+        //    RandomForestCalibrationFunction randomForestCalibrationFunction = new RandomForestCalibrationFunction(1, 0, new[] { true });
+
+        //    List<TestInputsOutputs> trainingList = GenerateTrainingData();
+        //    randomForestCalibrationFunction.Learn(trainingList);
+        //    Assert.AreEqual(1, randomForestCalibrationFunction.Predict(new[] { 5.0 }));
+        //    Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 15.0 }));
+        //}
+
+        //[Test]
+        //public static void Test2dRfCalibrationFunction()
+        //{
+        //    RandomForestCalibrationFunction randomForestCalibrationFunction = new RandomForestCalibrationFunction(1, 0, new[] { true, true });
+
+        //    List<TestInputsOutputs2> trainingList = GenerateTrainingData2();
+        //    randomForestCalibrationFunction.Train(trainingList);
+        //    Assert.AreEqual(1, randomForestCalibrationFunction.Predict(new[] { 1.5, 1.5 }));
+        //    Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 1.5, 4.5 }));
+        //    Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 4.5, 1.5 }));
+        //    Assert.AreEqual(3, randomForestCalibrationFunction.Predict(new[] { 4.5, 4.5 }));
+        //}
+
+        //[Test]
+        //public static void Test2dRfCalibrationFunction2()
+        //{
+        //    RandomForestCalibrationFunction randomForestCalibrationFunction = new RandomForestCalibrationFunction(1, 0, new[] { true, true });
+
+        //    List<TestInputsOutputs2> trainingList = GenerateTrainingData3();
+        //    randomForestCalibrationFunction.Train(trainingList);
+        //    Assert.AreEqual(1, randomForestCalibrationFunction.Predict(new[] { 1.5, 1.5 }));
+        //    Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 1.5, 4.5 }));
+        //    Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 4.5, 1.5 }));
+        //    Assert.AreEqual(1, randomForestCalibrationFunction.Predict(new[] { 4.5, 4.5 }));
+        //}
+
+        //[Test]
+        //public static void TestQuadraticFunctionCalibration()
+        //{
+        //    Random rand = new Random(1);
+        //    RandomForestCalibrationFunction randomForestCalibrationFunction = new RandomForestCalibrationFunction(100, 2, new[] { true });
+
+        //    List<TestInputsOutputs> trainingList = GenerateQuadraticTrainingData().ToList();
+
+        //    randomForestCalibrationFunction.Train(trainingList);
+
+        //    foreach (var hah in trainingList)
+        //        Console.WriteLine(hah.Inputs[0] + " , " + hah.Label + " , " + randomForestCalibrationFunction.Predict(hah.Inputs));
+        //}
+
         #region Public Methods
 
         [Test]
-        public static void TestRfCalibrationFunction()
+        public static void TestQuadraticFunctionCalibrationNICE()
         {
-            Random rand = new Random(1);
-            RandomForestCalibrationFunction randomForestCalibrationFunction = new RandomForestCalibrationFunction(1, 0, new[] { true }, rand);
+            List<TestInputsOutputs> trainingList = GenerateQuadraticTrainingData().ToList();
+            F64Matrix observations = new F64Matrix(trainingList.Select(b => b.Inputs[0]).ToArray(), trainingList.Count, 1);
+            var targets = trainingList.Select(b => b.Label).ToArray();
 
-            List<TestInputsOutputs> trainingList = GenerateTrainingData();
-            randomForestCalibrationFunction.Train(trainingList);
-            Assert.AreEqual(1, randomForestCalibrationFunction.Predict(new[] { 5.0 }));
-            Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 15.0 }));
-        }
-
-        [Test]
-        public static void Test2dRfCalibrationFunction()
-        {
-            Random rand = new Random(1);
-            RandomForestCalibrationFunction randomForestCalibrationFunction = new RandomForestCalibrationFunction(1, 0, new[] { true, true }, rand);
-
-            List<TestInputsOutputs2> trainingList = GenerateTrainingData2();
-            randomForestCalibrationFunction.Train(trainingList);
-            Assert.AreEqual(1, randomForestCalibrationFunction.Predict(new[] { 1.5, 1.5 }));
-            Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 1.5, 4.5 }));
-            Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 4.5, 1.5 }));
-            Assert.AreEqual(3, randomForestCalibrationFunction.Predict(new[] { 4.5, 4.5 }));
-        }
-
-        [Test]
-        public static void Test2dRfCalibrationFunction2()
-        {
-            Random rand = new Random(1);
-            RandomForestCalibrationFunction randomForestCalibrationFunction = new RandomForestCalibrationFunction(1, 0, new[] { true, true }, rand);
-
-            List<TestInputsOutputs2> trainingList = GenerateTrainingData3();
-            randomForestCalibrationFunction.Train(trainingList);
-            Assert.AreEqual(1, randomForestCalibrationFunction.Predict(new[] { 1.5, 1.5 }));
-            Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 1.5, 4.5 }));
-            Assert.AreEqual(2, randomForestCalibrationFunction.Predict(new[] { 4.5, 1.5 }));
-            Assert.AreEqual(1, randomForestCalibrationFunction.Predict(new[] { 4.5, 4.5 }));
+            var learners = new List<ILearner<double>>
+            {
+                new RegressionAdaBoostLearner(),
+                new RegressionDecisionTreeLearner(),
+                new RegressionAbsoluteLossGradientBoostLearner(),
+                new RegressionGradientBoostLearner(),
+                new RegressionHuberLossGradientBoostLearner(),
+                new RegressionQuantileLossGradientBoostLearner(),
+                new RegressionSquareLossGradientBoostLearner(),
+                new RegressionExtremelyRandomizedTreesLearner(),
+                new RegressionRandomForestLearner(),
+                //new RegressionEnsembleLearner(),
+                //new RegressionForwardSearchModelSelectingEnsembleLearner(),
+                //new RegressionModelSelectingEnsembleLearner(),
+                //new RegressionRandomModelSelectingEnsembleLearner(),
+                //new RegressionStackingEnsembleLearner(),
+                //new RegressionNeuralNetLearner(),
+            };
+            foreach (var learner in learners)
+            {
+                var model = learner.Learn(observations, targets);
+                var predictions = new double[targets.Length];
+                for (int i = 0; i < targets.Length; i++)
+                    predictions[i] = model.Predict(observations.Row(i));
+                var metric = new MeanSquaredErrorRegressionMetric();
+                var trainError = metric.Error(targets, predictions);
+                Console.WriteLine("mse for " + learner.GetType() + ": " + trainError);
+            }
         }
 
         #endregion Public Methods
 
         #region Private Methods
+
+        private static IEnumerable<TestInputsOutputs> GenerateQuadraticTrainingData()
+        {
+            for (int i = -100; i <= 100; i++)
+                yield return new TestInputsOutputs(i, i * i);
+        }
 
         private static List<TestInputsOutputs2> GenerateTrainingData3()
         {

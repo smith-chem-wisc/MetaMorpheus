@@ -940,7 +940,6 @@ namespace TaskLayer
                     {
                         foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
                         {
-
                             if (psmToProteinGroupNames.TryGetValue(psm, out List<string> proteinGroupNames))
                                 proteinGroupNames.Add(proteinGroup.ProteinGroupName);
                             else
@@ -1000,7 +999,6 @@ namespace TaskLayer
 
                     foreach (var flashLfqProteinGroup in flashLfqProteinGroups)
                     {
-
                         if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out ProteinGroup metamorpheusProteinGroup))
                             metamorpheusProteinGroup.IntensitiesByFile = flashLfqProteinGroup.intensitiesByFile;
                     }
@@ -1077,7 +1075,7 @@ namespace TaskLayer
 
             if (SearchParameters.DoParsimony)
             {
-                if(currentRawFileList.Count > 1)
+                if (currentRawFileList.Count > 1)
                     WriteProteinGroupsToTsv(proteinGroups, OutputFolder, "aggregateProteinGroups_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
 
                 // individual protein group files (local protein fdr, global parsimony, global psm fdr)

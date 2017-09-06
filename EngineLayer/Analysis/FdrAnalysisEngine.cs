@@ -26,9 +26,9 @@ namespace EngineLayer.Analysis
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
-            Status("Running analysis engine!", nestedIds);
+            Status("Running analysis engine!");
 
-            Status("Running FDR analysis...", nestedIds);
+            Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(newPsms, searchModes);
             return myAnalysisResults;
         }

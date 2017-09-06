@@ -28,20 +28,20 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(double closeMassDifference ) : base(2)
+        public TestDataFile(double closeMassDifference) : base(2)
         {
-                var mz1 = new double[] { 50, 60, 70, 80, 90, 402.18629720155.ToMz(2) };
-                var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
-                var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
+            var mz1 = new double[] { 50, 60, 70, 80, 90, 402.18629720155.ToMz(2) };
+            var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
 
-                var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1) };
-                var mz2 = new double[] { 50, 60, 70, 147.0764, 258.132 - closeMassDifference - Constants.protonMass, 258.132 - Constants.protonMass, 275.1350 };
-                var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
-                var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
-                ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2,
-                    new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 402.18629720155.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, DissociationType.HCD, 1, 402.18629720155.ToMz(2), 1));
+            var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1) };
+            var mz2 = new double[] { 50, 60, 70, 147.0764, 258.132 - closeMassDifference - Constants.protonMass, 258.132 - Constants.protonMass, 275.1350 };
+            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 402.18629720155.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, DissociationType.HCD, 1, 402.18629720155.ToMz(2), 1));
 
-                Scans = ScansHere.ToArray();
+            Scans = ScansHere.ToArray();
         }
 
         public TestDataFile(string slightlyLargerDataFile) : base(2)

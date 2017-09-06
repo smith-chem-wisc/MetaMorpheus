@@ -3,6 +3,9 @@ using MassSpectrometry;
 using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using Proteomics;
+using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
+using SharpLearning.Metrics.Regression;
 using Spectra;
 using System;
 using System.Collections.Generic;
@@ -69,13 +72,13 @@ namespace EngineLayer.Calibration
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("Calibrating ", nestedIds);
+            Status("Calibrating ");
             var trainingPointCounts = new List<int>();
             var result = new CalibrationResults(myMsDataFile, this);
             DataPointAquisitionResults dataPointAcquisitionResult = null;
             for (int linearCalibrationRound = 1; ; linearCalibrationRound++)
             {
-                Status("linearCalibrationRound " + linearCalibrationRound, nestedIds);
+                Status("linearCalibrationRound " + linearCalibrationRound);
                 dataPointAcquisitionResult = GetDataPoints();
                 ms1ListAction(dataPointAcquisitionResult.Ms1List, "beforesc" + linearCalibrationRound.ToString());
                 ms2ListAction(dataPointAcquisitionResult.Ms2List, "beforesc" + linearCalibrationRound.ToString());
@@ -87,7 +90,7 @@ namespace EngineLayer.Calibration
                     return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to change the Fragment tolerance." + result.ToString());
                 if (dataPointAcquisitionResult.Ms1List.Count == 0)
                     return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to change the Parent tolerance." + result.ToString());
-                Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateLinear(dataPointAcquisitionResult);
+                Tuple<IPredictorModel<double>, IPredictorModel<double>> combinedCalibration = CalibrateLinear(dataPointAcquisitionResult);
                 result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
             }
             if (doForestCalibration)
@@ -95,9 +98,9 @@ namespace EngineLayer.Calibration
                 trainingPointCounts = new List<int>();
                 for (int forestCalibrationRound = 1; ; forestCalibrationRound++)
                 {
-                    Status("forestCalibrationRound " + forestCalibrationRound, nestedIds);
+                    Status("forestCalibrationRound " + forestCalibrationRound);
                     Console.WriteLine("forestCalibrationRound " + forestCalibrationRound);
-                    Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateRF(dataPointAcquisitionResult);
+                    Tuple<IPredictorModel<double>, IPredictorModel<double>> combinedCalibration = CalibrateRF(dataPointAcquisitionResult);
                     result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
                     dataPointAcquisitionResult = GetDataPoints();
                     ms1ListAction(dataPointAcquisitionResult.Ms1List, "afterfc" + forestCalibrationRound.ToString());
@@ -120,8 +123,10 @@ namespace EngineLayer.Calibration
 
         #region Private Methods
 
-        private Tuple<CalibrationFunction, CalibrationFunction> CalibrateRF(DataPointAquisitionResults res)
+        private Tuple<IPredictorModel<double>, IPredictorModel<double>> CalibrateRF(DataPointAquisitionResults res)
         {
+            var metric = new MeanSquaredErrorRegressionMetric();
+
             Console.WriteLine("  In CalibrateRF");
             var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
             var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
@@ -132,63 +137,107 @@ namespace EngineLayer.Calibration
             var trainList1 = shuffledMs1TrainingPoints.Take((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).ToList();
             var testList1 = shuffledMs1TrainingPoints.Skip((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).ToList();
             var trainList2 = shuffledMs2TrainingPoints.Take((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).ToList();
-            Console.WriteLine("  train ms2 Points");
+            Warn("  train ms2 Points");
             Console.WriteLine(string.Join(Environment.NewLine, trainList2.OrderBy(b => b.mz).Select(b => "      " + b.mz + " " + b.Label)));
 
             var testList2 = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).ToList();
             Console.WriteLine("  testList2 ms2 Points");
             Console.WriteLine(string.Join(Environment.NewLine, testList2.OrderBy(b => b.mz).Select(b => "      " + b.mz + " " + b.Label)));
 
-            CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
-            CalibrationFunction bestMS2predictor = new IdentityCalibrationFunction();
-            double bestMS1MSE = bestMS1predictor.GetMSE(testList1);
-            double bestMS2MSE = bestMS2predictor.GetMSE(testList2);
+            IPredictorModel<double> bestMS1predictor;
+            double bestMS1MSE;
+            IPredictorModel<double> bestMS2predictor;
+            double bestMS2MSE;
+
+            {
+                var b = new IdentityCalibrationFunction();
+                bestMS1predictor = b.Learn(null, null);
+                bestMS1MSE = testList1.Select(bc => Math.Pow(bc.Label, 2)).Average();
+            }
+
+            {
+                var b = new IdentityCalibrationFunction();
+                bestMS2predictor = b.Learn(null, null);
+                bestMS2MSE = testList2.Select(bc => Math.Pow(bc.Label, 2)).Average();
+            }
 
             Console.WriteLine("  bestMS2MSE identity: " + bestMS2MSE);
 
-            List<bool[]> boolStuffms1 = new List<bool[]>
+            try
+            {
+                double[] trainList1Concat = trainList1.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix trainList1Matrix = new F64Matrix(trainList1Concat, trainList1.Count, trainList1Concat.Length / trainList1.Count);
+                double[] trainList1Targets = trainList1.Select(b => b.Label).ToArray();
+
+                double[] testList1Concat = testList1.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix testList1Matrix = new F64Matrix(testList1Concat, testList1.Count, testList1Concat.Length / testList1.Count);
+                double[] testList1Targets = testList1.Select(b => b.Label).ToArray();
+
+                List<bool[]> boolStuffms1 = new List<bool[]>
             {
                 new bool[] {true, true, false, false, false},
                 new bool[] {true, true, true, true, true},
             };
-            if (trainList1.Count > 0)
-                foreach (var boolStuff in boolStuffms1)
-                {
-                    var ms1regressorRF = new RandomForestCalibrationFunction(numTrees, doNotSplitIfUnderThis, boolStuff, rnd);
-                    ms1regressorRF.Train(trainList1);
-                    var MS1mse = ms1regressorRF.GetMSE(testList1);
-                    if (MS1mse < bestMS1MSE)
+                if (trainList1.Count > 0)
+                    foreach (var boolStuff in boolStuffms1)
                     {
-                        bestMS1MSE = MS1mse;
-                        bestMS1predictor = ms1regressorRF;
+                        var ms1predictor = new RandomForestCalibrationFunction(numTrees, doNotSplitIfUnderThis, boolStuff);
+                        var model = ms1predictor.Learn(trainList1Matrix, trainList1Targets);
+                        var predictions = new double[testList1Targets.Length];
+                        for (int i = 0; i < testList1Targets.Length; i++)
+                            predictions[i] = model.Predict(testList1Matrix.Row(i));
+                        var MS1mse = metric.Error(testList1Targets, predictions);
+                        if (MS1mse < bestMS1MSE)
+                        {
+                            bestMS1MSE = MS1mse;
+                            bestMS1predictor = model;
+                        }
                     }
-                }
-
-            List<bool[]> boolStuffms2 = new List<bool[]>
+            }
+            catch
             {
-                new bool[] {true, false, false, false, false,false},
-                //new bool[] {true, true, false, false, false,false},
-                //new bool[] {true, true, true, true, true,false},
-                //new bool[] {true, true, true, true, true,true},
+            }
+
+            try
+            {
+                double[] trainList2Concat = trainList2.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix trainList2Matrix = new F64Matrix(trainList2Concat, trainList2.Count, trainList2Concat.Length / trainList2.Count);
+                double[] trainList2Targets = trainList2.Select(b => b.Label).ToArray();
+
+                double[] testList2Concat = testList2.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix testList2Matrix = new F64Matrix(testList2Concat, testList2.Count, testList2Concat.Length / testList2.Count);
+                double[] testList2Targets = testList2.Select(b => b.Label).ToArray();
+
+                List<bool[]> boolStuffms2 = new List<bool[]>
+            {
+                new bool[] {true, false, false, false, false, false},
+                new bool[] {true, true,  false, false, false, false},
+                new bool[] {true, true,  true,  true,  true,  false},
+                new bool[] {true, true,  true,  true,  true,  true },
             };
-            if (trainList2.Count > 0)
-                foreach (var boolStuff in boolStuffms2)
-                {
-                    var ms2regressorRF = new RandomForestCalibrationFunction(numTrees, doNotSplitIfUnderThis, boolStuff, rnd);
-                    ms2regressorRF.Train(trainList2);
-                    var MS2mse = ms2regressorRF.GetMSE(testList2);
-                    Console.WriteLine(ms2regressorRF.FullTree());
-                    Console.WriteLine("  " + string.Join(" ", boolStuff) + " rf MS2mse: " + MS2mse);
-                    if (MS2mse < bestMS2MSE)
+                if (trainList2.Count > 0)
+                    foreach (var boolStuff in boolStuffms2)
                     {
-                        bestMS2MSE = MS2mse;
-                        bestMS2predictor = ms2regressorRF;
+                        var ms2predictor = new RandomForestCalibrationFunction(numTrees, doNotSplitIfUnderThis, boolStuff);
+                        var model = ms2predictor.Learn(trainList2Matrix, trainList2Targets);
+                        var predictions = new double[testList2Targets.Length];
+                        for (int i = 0; i < testList2Targets.Length; i++)
+                            predictions[i] = model.Predict(testList2Matrix.Row(i));
+                        var MS2mse = metric.Error(testList2Targets, predictions);
+                        if (MS2mse < bestMS2MSE)
+                        {
+                            bestMS2MSE = MS2mse;
+                            bestMS2predictor = model;
+                        }
                     }
-                }
+            }
+            catch
+            {
+            }
 
-            Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
+            Tuple<IPredictorModel<double>, IPredictorModel<double>> bestCf = new Tuple<IPredictorModel<double>, IPredictorModel<double>>(bestMS1predictor, bestMS2predictor);
 
-            Status("Calibrating Spectra", nestedIds);
+            Status("Calibrating Spectra");
 
             CalibrateSpectra(bestCf);
 
@@ -199,7 +248,7 @@ namespace EngineLayer.Calibration
 
         private DataPointAquisitionResults GetDataPoints()
         {
-            Status("Extracting data points:", nestedIds);
+            Status("Extracting data points:");
             Console.WriteLine("  In GetDataPoints");
             // The final training point list
             DataPointAquisitionResults res = new DataPointAquisitionResults()
@@ -262,15 +311,17 @@ namespace EngineLayer.Calibration
                 res.numMs1MassChargeCombinationsConsidered += numMs1MassChargeCombinationsConsidered;
                 res.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
             }
-            Status("Number of training points: " + res.Count, nestedIds);
+            Status("Number of training points: " + res.Count);
 
             Console.WriteLine("  Done with GetDataPoints");
 
             return res;
         }
 
-        private Tuple<CalibrationFunction, CalibrationFunction> CalibrateLinear(DataPointAquisitionResults res)
+        private Tuple<IPredictorModel<double>, IPredictorModel<double>> CalibrateLinear(DataPointAquisitionResults res)
         {
+            var metric = new MeanSquaredErrorRegressionMetric();
+
             var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
             var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
 
@@ -279,31 +330,23 @@ namespace EngineLayer.Calibration
             var trainList2 = shuffledMs2TrainingPoints.Take((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).ToList();
             var testList2 = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).ToList();
 
-            CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
-            CalibrationFunction bestMS2predictor = new IdentityCalibrationFunction();
-            double bestMS1MSE = bestMS1predictor.GetMSE(testList1);
-            double bestMS2MSE = bestMS2predictor.GetMSE(testList2);
+            IPredictorModel<double> bestMS1predictor;
+            double bestMS1MSE;
+            IPredictorModel<double> bestMS2predictor;
+            double bestMS2MSE;
 
             {
-                var ms1regressor = new ConstantCalibrationFunction();
-                var ms2regressor = new ConstantCalibrationFunction();
-                ms1regressor.Train(trainList1);
-                ms2regressor.Train(trainList2);
-                double MS1mse = ms1regressor.GetMSE(testList1);
-                double MS2mse = ms2regressor.GetMSE(testList2);
-                if (MS1mse < bestMS1MSE)
-                {
-                    bestMS1MSE = MS1mse;
-                    bestMS1predictor = ms1regressor;
-                }
-                if (MS2mse < bestMS2MSE)
-                {
-                    bestMS2MSE = MS2mse;
-                    bestMS2predictor = ms2regressor;
-                }
+                var b = new IdentityCalibrationFunction();
+                bestMS1predictor = b.Learn(null, null);
+                bestMS1MSE = testList1.Select(bc => Math.Pow(bc.Label, 2)).Average();
             }
 
-            // NOT b[2]. It is intensity!!!
+            {
+                var b = new IdentityCalibrationFunction();
+                bestMS2predictor = b.Learn(null, null);
+                bestMS2MSE = testList2.Select(bc => Math.Pow(bc.Label, 2)).Average();
+            }
+
             var transforms = new List<TransformFunction>
             {
                 new TransformFunction(b => new double[] { b[0] }, 1),
@@ -325,49 +368,112 @@ namespace EngineLayer.Calibration
 
                 new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[3]), Math.Log(b[4]) }, 4),
             };
-            foreach (var transform in transforms)
+
+            try
             {
-                try
+                double[] trainList1Concat = trainList1.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix trainList1Matrix = new F64Matrix(trainList1Concat, trainList1.Count, trainList1Concat.Length / trainList1.Count);
+                double[] trainList1Targets = trainList1.Select(b => b.Label).ToArray();
+
+                double[] testList1Concat = testList1.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix testList1Matrix = new F64Matrix(testList1Concat, testList1.Count, testList1Concat.Length / testList1.Count);
+                double[] testList1Targets = testList1.Select(b => b.Label).ToArray();
                 {
-                    var ms1regressorLinear = new LinearCalibrationFunctionMathNet(transform);
-                    ms1regressorLinear.Train(trainList1);
-                    var MS1mse = ms1regressorLinear.GetMSE(testList1);
+                    var ms1predictor = new ConstantCalibrationFunction();
+                    var model = ms1predictor.Learn(trainList1Matrix, trainList1Targets);
+                    var predictions = new double[testList1Targets.Length];
+                    for (int i = 0; i < testList1Targets.Length; i++)
+                        predictions[i] = model.Predict(testList1Matrix.Row(i));
+                    var MS1mse = metric.Error(testList1Targets, predictions);
                     if (MS1mse < bestMS1MSE)
                     {
                         bestMS1MSE = MS1mse;
-                        bestMS1predictor = ms1regressorLinear;
+                        bestMS1predictor = model;
                     }
                 }
-                catch
+                foreach (var transform in transforms)
                 {
+                    try
+                    {
+                        var ms1predictor = new LinearCalibrationFunctionMathNet(transform);
+                        var model = ms1predictor.Learn(trainList1Matrix, trainList1Targets);
+                        var predictions = new double[testList1Targets.Length];
+                        for (int i = 0; i < testList1Targets.Length; i++)
+                            predictions[i] = model.Predict(testList1Matrix.Row(i));
+                        var MS1mse = metric.Error(testList1Targets, predictions);
+                        if (MS1mse < bestMS1MSE)
+                        {
+                            bestMS1MSE = MS1mse;
+                            bestMS1predictor = model;
+                        }
+                    }
+                    catch
+                    {
+                    }
                 }
+            }
+            catch
+            {
+            }
+            try
+            {
+                double[] trainList2Concat = trainList2.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix trainList2Matrix = new F64Matrix(trainList2Concat, trainList2.Count, trainList2Concat.Length / trainList2.Count);
+                double[] trainList2Targets = trainList2.Select(b => b.Label).ToArray();
 
-                try
+                double[] testList2Concat = testList2.SelectMany(b => b.Inputs).ToArray();
+                F64Matrix testList2Matrix = new F64Matrix(testList2Concat, testList2.Count, testList2Concat.Length / testList2.Count);
+                double[] testList2Targets = testList2.Select(b => b.Label).ToArray();
+
                 {
-                    var ms2regressorLinear = new LinearCalibrationFunctionMathNet(transform);
-                    ms2regressorLinear.Train(trainList2);
-                    var MS2mse = ms2regressorLinear.GetMSE(testList2);
+                    var ms2predictor = new ConstantCalibrationFunction();
+                    var model = ms2predictor.Learn(trainList2Matrix, trainList2Targets);
+                    var predictions = new double[testList2Targets.Length];
+                    for (int i = 0; i < testList2Targets.Length; i++)
+                        predictions[i] = model.Predict(testList2Matrix.Row(i));
+                    var MS2mse = metric.Error(testList2Targets, predictions);
                     if (MS2mse < bestMS2MSE)
                     {
                         bestMS2MSE = MS2mse;
-                        bestMS2predictor = ms2regressorLinear;
+                        bestMS2predictor = model;
                     }
                 }
-                catch
+
+                foreach (var transform in transforms)
                 {
+                    try
+                    {
+                        var ms2predictor = new LinearCalibrationFunctionMathNet(transform);
+                        var model = ms2predictor.Learn(trainList2Matrix, trainList2Targets);
+                        var predictions = new double[testList2Targets.Length];
+                        for (int i = 0; i < testList2Targets.Length; i++)
+                            predictions[i] = model.Predict(testList2Matrix.Row(i));
+                        var MS2mse = metric.Error(testList2Targets, predictions);
+                        if (MS2mse < bestMS2MSE)
+                        {
+                            bestMS2MSE = MS2mse;
+                            bestMS2predictor = model;
+                        }
+                    }
+                    catch
+                    {
+                    }
                 }
             }
+            catch
+            {
+            }
 
-            Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
+            Tuple<IPredictorModel<double>, IPredictorModel<double>> bestCf = new Tuple<IPredictorModel<double>, IPredictorModel<double>>(bestMS1predictor, bestMS2predictor);
 
-            Status("Calibrating Spectra", nestedIds);
+            Status("Calibrating Spectra");
 
             CalibrateSpectra(bestCf);
 
             return bestCf;
         }
 
-        private void CalibrateSpectra(Tuple<CalibrationFunction, CalibrationFunction> bestCf)
+        private void CalibrateSpectra(Tuple<IPredictorModel<double>, IPredictorModel<double>> bestCf)
         {
             foreach (var a in myMsDataFile)
             {

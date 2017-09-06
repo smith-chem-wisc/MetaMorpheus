@@ -60,19 +60,19 @@ namespace EngineLayer.ClassicSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In classic search engine!", nestedIds);
+            Status("In classic search engine!");
 
             int totalProteins = proteinList.Count;
 
             var observedPeptides = new HashSet<CompactPeptide>();
 
-            Status("Getting ms2 scans...", nestedIds);
+            Status("Getting ms2 scans...");
 
             var lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
-            Status("Starting classic search loop...", nestedIds);
+            Status("Starting classic search loop...");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
                 var psms = new Psm[arrayOfSortedMS2Scans.Length];

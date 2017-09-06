@@ -3,7 +3,6 @@ using MassSpectrometry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
@@ -55,7 +54,7 @@ namespace EngineLayer.ModernSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine..." + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds);
+            Status("In modern search engine..." + currentPartition + "/" + CommonParameters.TotalPartitions);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
@@ -199,7 +198,7 @@ namespace EngineLayer.ModernSearch
                     {
                         double massShiftForComplementaryConversion = thePrecursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
                         for (int i = numCompIons - 1; i >= 0; i--)
-                            complementaryIons[numCompIons-i-1] = (massShiftForComplementaryConversion - spectrum.MassSpectrum.XArray[i], spectrum.MassSpectrum.YArray[i]);
+                            complementaryIons[numCompIons - i - 1] = (massShiftForComplementaryConversion - spectrum.MassSpectrum.XArray[i], spectrum.MassSpectrum.YArray[i]);
 
                         //propogation of error from precursor mass and complementary product mass
                         //IMPLEMENT AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(CommonParameters.ProductMassTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
@@ -258,7 +257,6 @@ namespace EngineLayer.ModernSearch
                     break;
                 ipos++;
             }
-
         }
 
         #endregion Protected Methods

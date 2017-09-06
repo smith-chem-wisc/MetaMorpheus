@@ -1,36 +1,55 @@
 ﻿using MathNet.Numerics.Statistics;
+using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace EngineLayer.Calibration
 {
-    public class ConstantCalibrationFunction : CalibrationFunction
+    public class ConstantCalibrationFunction : ILearner<double>
     {
-        #region Public Fields
+        #region Public Methods
 
-        public double a;
+        public IPredictorModel<double> Learn(F64Matrix observations, double[] targets)
+        {
+            double a = targets.Median();
+            return new ConstantCalibrationFunctionPredictorModel(a);
+        }
 
-        #endregion Public Fields
+        #endregion Public Methods
+    }
+
+    internal class ConstantCalibrationFunctionPredictorModel : IPredictorModel<double>
+    {
+        #region Private Fields
+
+        private double a;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public ConstantCalibrationFunctionPredictorModel(double a)
+        {
+            this.a = a;
+        }
+
+        #endregion Public Constructors
 
         #region Public Methods
 
-        public override string ToString()
+        public double[] GetRawVariableImportance()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("Constant");
-            sb.Append(" a = " + a);
-            return sb.ToString();
+            throw new System.NotImplementedException();
         }
 
-        public override double Predict(double[] t)
+        public Dictionary<string, double> GetVariableImportance(Dictionary<string, int> featureNameToIndex)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public double Predict(double[] observation)
         {
             return a;
-        }
-
-        public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
-        {
-            a = trainingList.Select(b => b.Label).Median();
         }
 
         #endregion Public Methods
