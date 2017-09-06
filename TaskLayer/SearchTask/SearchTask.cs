@@ -249,7 +249,10 @@ namespace TaskLayer
             Dictionary<PeptideWithSetModifications, int> peptide_evidence_ids = new Dictionary<PeptideWithSetModifications, int>();
             Dictionary<string, Tuple<int, HashSet<string>>> peptide_ids = new Dictionary<string, Tuple<int, HashSet<string>>>(); //key is peptide sequence, value is <peptide id for that peptide, peptide evidences>, list of spectra id's
             Dictionary<Tuple<string, int>, Tuple<int, int>> psm_per_scan = new Dictionary<Tuple<string, int>, Tuple<int, int>>(); //key is <filename, scan numer> value is <scan result id, scan item id #'s (could be more than one ID per scan)>
-            foreach (Psm psm in items)
+
+            var unambiguousPsms = items.Where(psm => psm.FullSequence != null);
+
+            foreach (Psm psm in unambiguousPsms)
             {
                 foreach (PeptideWithSetModifications peptide in psm.CompactPeptides.SelectMany(c => c.Value.Item2).Distinct())
                 {
@@ -322,7 +325,7 @@ namespace TaskLayer
                     {
                         id = "SIR_" + scan_result_scan_item.Item1,
                         spectraData_ref = "SD_" + spectral_ids[psm.FullFilePath].ToString(),
-                        spectrumID = psm.ScanNumber.ToString(),
+                        spectrumID = "scan=" + psm.ScanNumber.ToString(),
                         SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500]
                     };
                     psm_per_scan.Add(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), scan_result_scan_item);
@@ -339,12 +342,13 @@ namespace TaskLayer
                 }
                 _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2] = new mzIdentML110.Generated.SpectrumIdentificationItemType()
                 {
+                    rank = 1,
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeak.Mz, 5),
                     passThreshold = psm.FdrInfo.QValue <= threshold,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
-                    // peptide_ref = "P_" + peptide_ids[psm.CompactPeptides.First().Value.Item2.First().Sequence].Item1,
+                    peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.CompactPeptides.SelectMany(c => c.Value.Item2).Distinct().Count()],
                     cvParam = new mzIdentML110.Generated.CVParamType[2]
                     {
@@ -359,6 +363,8 @@ namespace TaskLayer
                         {
                             accession = "MS:1002354",
                             name = "PSM-level q-value",
+                            //accession = "MS:1002054",
+                            //name = "MS-GF:QValue",
                             cvRef = "PSI-MS",
                             value = psm.FdrInfo.QValue.ToString()
                         }
@@ -599,23 +605,29 @@ namespace TaskLayer
                         int peptide_id = 0;
                         foreach (PeptideWithSetModifications peptide in proteinGroup.AllPeptides)
                         {
-                            if (peptide.Protein == protein)
+                            if (peptide_evidence_ids.ContainsKey(peptide))
                             {
-                                _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id] = new mzIdentML110.Generated.PeptideHypothesisType()
+                                if (peptide.Protein == protein)
                                 {
-                                    peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
-                                    SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.Sequence].Item2.Count],
-                                };
-                                int i = 0;
-                                foreach (string sii in peptide_ids[peptide.Sequence].Item2)
-                                {
-                                    _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id].SpectrumIdentificationItemRef[i] = new mzIdentML110.Generated.SpectrumIdentificationItemRefType()
+
+                                    _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id] = new mzIdentML110.Generated.PeptideHypothesisType()
                                     {
-                                        spectrumIdentificationItem_ref = sii
+
+                                        peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
+                                        SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.Sequence].Item2.Count],
                                     };
-                                    i++;
+
+                                    int i = 0;
+                                    foreach (string sii in peptide_ids[peptide.Sequence].Item2)
+                                    {
+                                        _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id].SpectrumIdentificationItemRef[i] = new mzIdentML110.Generated.SpectrumIdentificationItemRefType()
+                                        {
+                                            spectrumIdentificationItem_ref = sii
+                                        };
+                                        i++;
+                                    }
+                                    peptide_id++;
                                 }
-                                peptide_id++;
                             }
                         }
                         pag_protein_index++;

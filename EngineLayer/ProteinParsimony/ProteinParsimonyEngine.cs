@@ -44,6 +44,8 @@ namespace EngineLayer
 
         private List<ProteinGroup> ApplyProteinParsimony()
         {
+            if (!compactPeptideToProteinPeptideMatching.Values.Any())
+                return new List<ProteinGroup>();
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
             if (!treatModPeptidesAsDifferentPeptides)
             {
