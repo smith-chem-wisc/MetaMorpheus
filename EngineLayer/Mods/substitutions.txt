@@ -1,3 +1,4 @@
+Amino Acid Substitutions
 ID   W->G
 MT   substitution
 PP   Anywhere.
@@ -1065,12 +1066,6 @@ MT   substitution
 PP   Anywhere.
 TG   K
 CF   C-1H-4O
-//
-ID   I->Xle
-MT   substitution
-PP   Anywhere.
-TG   I
-CF
 //
 ID   Q->K
 MT   substitution

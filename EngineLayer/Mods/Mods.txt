@@ -1,4 +1,4 @@
-Stefan Custom List
+Custom List
 ID   Deamidation
 TG   N or Q
 PP   Anywhere.
