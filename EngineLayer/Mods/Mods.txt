@@ -333,7 +333,7 @@ PP   Anywhere.
 MT   Mod
 CF   C4 H4 O3
 //
-ID   N-term Succinylation
+ID   Succinylation
 TG   X
 PP   N-terminal.
 MT   ProteinTermMod
