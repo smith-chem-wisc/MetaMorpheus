@@ -329,7 +329,7 @@ CF   C4 H4 O3
 //
 ID   Succinylation
 TG   X 
-PP   N-Terminal.
+PP   N-terminal.
 MT   ProteinTermMod
 CF   C4 H4 O3
 //
