@@ -322,7 +322,7 @@ MT   Mod
 CF   H24 C15
 //
 ID   Succinylation
-TG   K 
+TG   K
 PP   Anywhere.
 MT   Mod
 CF   C4 H4 O3
