@@ -157,7 +157,7 @@ namespace Test
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
             SearchParameters.MassDiffAcceptor = searchModes;
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -218,7 +218,7 @@ namespace Test
             var searchModes = new OpenSearchMode();
             SearchParameters.MassDiffAcceptor = searchModes;
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -292,7 +292,7 @@ namespace Test
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
             SearchParameters.MassDiffAcceptor = searchModes;
             CommonParameters.DigestionParams.MinPeptideLength = null;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -372,7 +372,7 @@ namespace Test
             SearchParameters.MassDiffAcceptor = searchModes;
             CommonParameters.DigestionParams.MinPeptideLength = null;
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, true, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -515,7 +515,7 @@ namespace Test
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, digestParams, 1, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, true, digestParams, 1, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -591,7 +591,7 @@ namespace Test
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, true, digestParams, 1, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, true, true, digestParams, 1, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;

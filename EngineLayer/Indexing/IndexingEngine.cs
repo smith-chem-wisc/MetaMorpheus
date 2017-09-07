@@ -19,6 +19,7 @@ namespace EngineLayer.Indexing
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ProductType> lp;
         private readonly int currentPartition;
+        private readonly bool searchTargets;
         private readonly bool searchDecoys;
         private readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         private readonly int totalPartitions;
@@ -27,13 +28,14 @@ namespace EngineLayer.Indexing
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchDecoys, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchTargets, bool searchDecoys, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.lp = lp;
             this.currentPartition = currentPartition + 1;
+            this.searchTargets = searchTargets;
             this.searchDecoys = searchDecoys;
             this.CollectionOfDigestionParams = CollectionOfDigestionParams;
             this.totalPartitions = totalPartitions;
@@ -47,6 +49,7 @@ namespace EngineLayer.Indexing
         {
             var sb = new StringBuilder();
             sb.AppendLine("Partitions: " + currentPartition + "/" + totalPartitions);
+            sb.AppendLine("Search Targets: " + searchTargets);
             sb.AppendLine("Search Decoys: " + searchDecoys);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);

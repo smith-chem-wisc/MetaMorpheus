@@ -27,6 +27,7 @@ namespace EngineLayer
         #region Public Properties
 
         public bool SearchDecoy { get; set; }
+        public bool SearchTarget = true;
         public bool DoLocalizationAnalysis { get; set; }
 
         public CrosslinkerType CrosslinkerType { get; set; }

@@ -784,7 +784,7 @@ namespace TaskLayer
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchTarget, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
                         Dictionary<float, List<int>> fragmentIndexDict;
                         lock (indexLock)
                         {
