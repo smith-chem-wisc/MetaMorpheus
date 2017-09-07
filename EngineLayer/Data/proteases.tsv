@@ -14,5 +14,5 @@ trypsin	K,R		C	full	MS:1001313	Trypsin/P	(?<=[KR])
 tryptophan oxidation	W		C	full				
 non-specific	A,C,D,E,F,G,H,I,K,L,M,N,P,Q,R,S,T,U,V,W,Y		none	full	MS:1001956	unspecific cleavage		
 top-down			none	none	MS:1001955	no cleavage		
-singleN			none	fullMaxN	MS:1001957	single cleavage		
-singleC			none	fullMaxC	MS:1001958	single cleavage	
+singleN			none	SingleN	MS:1001957	single cleavage		
+singleC			none	SingleC	MS:1001958	single cleavage	
