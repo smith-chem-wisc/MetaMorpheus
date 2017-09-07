@@ -334,7 +334,7 @@ MT   Mod
 CF   C4 H4 O3
 //
 ID   Succinylation
-TG   X 
+TG   X
 PP   N-terminal.
 MT   ProteinTermMod
 CF   C4 H4 O3
