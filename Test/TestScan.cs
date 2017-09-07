@@ -97,6 +97,8 @@ namespace Test
             }
         }
 
+        public string NativeId => throw new NotImplementedException();
+
         IMzSpectrum<IMzPeak> IMsDataScan<IMzSpectrum<IMzPeak>>.MassSpectrum
         {
             get

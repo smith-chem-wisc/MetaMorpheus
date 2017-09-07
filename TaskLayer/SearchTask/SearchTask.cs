@@ -609,10 +609,8 @@ namespace TaskLayer
                             {
                                 if (peptide.Protein == protein)
                                 {
-
                                     _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id] = new mzIdentML110.Generated.PeptideHypothesisType()
                                     {
-
                                         peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
                                         SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.Sequence].Item2.Count],
                                     };

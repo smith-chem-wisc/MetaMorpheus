@@ -550,7 +550,7 @@ namespace EngineLayer.Calibration
                             continue;
                         }
 
-                        int closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
+                        var closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
                         var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex];
 
                         var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
@@ -670,8 +670,10 @@ namespace EngineLayer.Calibration
                                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks++;
                                 continue;
                             }
-                            int closestPeakIndex = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theMZ);
+
+                            var closestPeakIndex = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theMZ);
                             var closestPeakMZ = ms2DataScan.MassSpectrum.XArray[closestPeakIndex];
+
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
