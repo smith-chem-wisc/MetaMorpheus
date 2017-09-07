@@ -42,7 +42,7 @@ MT   Mod
 CF   O1
 //
 ID   Carbamidomethyl
-TG   K or H or D or E or S or T or Y
+TG   K or H or D or E or S or T or Y or C
 PP   Anywhere.
 MT   Mod
 CF   H3 C2 N1 O1
@@ -88,6 +88,12 @@ ID   Acetald+26
 TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
+CF   H2 C2
+//
+ID   Acetald+26
+TG   H or K
+PP   Anywhere.
+MT   Mod
 CF   H2 C2
 //
 ID   Acetylation+Methionine
