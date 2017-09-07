@@ -235,13 +235,13 @@ PP   Anywhere.
 MT   Mod
 CF   H2 C
 //
-ID   Methyl
+ID   N-Term Methyl
 TG   X
 PP   N-terminal.
 MT   ProteinTermMod
 CF   H2 C
 //
-ID   Methyl
+ID   C-Term Methyl
 TG   X
 PP   C-terminal.
 MT   ProteinTermMod
