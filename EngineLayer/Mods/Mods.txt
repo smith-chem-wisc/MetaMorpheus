@@ -1,4 +1,4 @@
-Stefan Custom List
+Custom List
 ID   Deamidation
 TG   N or Q
 PP   Anywhere.
@@ -88,6 +88,12 @@ ID   Acetald+26
 TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
+CF   H2 C2
+//
+ID   Acetald+26
+TG   H or K
+PP   Anywhere.
+MT   Mod
 CF   H2 C2
 //
 ID   Acetylation+Methionine

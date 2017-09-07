@@ -321,15 +321,14 @@ namespace Test
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>()).First();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
-            variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
-            variableModifications.Add(new ModificationWithMassAndCf("pepNmod", null, motif, TerminusLocalization.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
-            variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, TerminusLocalization.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
-            variableModifications.Add(new ModificationWithMassAndCf("PepCmod", null, motif, TerminusLocalization.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
-            variableModifications.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, TerminusLocalization.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
+            variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
+            variableModifications.Add(new ModificationWithMassAndCf("pepNmod", null, motif, TerminusLocalization.NPep, ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
+            variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, TerminusLocalization.Any, ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
+            variableModifications.Add(new ModificationWithMassAndCf("PepCmod", null, motif, TerminusLocalization.PepC, ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
+            variableModifications.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, TerminusLocalization.ProtC, ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
             var ok = ye.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
-            Assert.AreEqual(8, ok.Count);
+            Assert.AreEqual(3 * 2 * 3, ok.Count);
 
-            Assert.AreEqual("[:ProtNmod]M[:resMod][:PepCmod]", ok.Last().Sequence);
             Assert.AreEqual("[H]M[H][H]", ok.Last().SequenceWithChemicalFormulas);
             Assert.AreEqual(5 * GetElement("H").PrincipalIsotope.AtomicMass + Residue.ResidueMonoisotopicMass['M'] + GetElement("O").PrincipalIsotope.AtomicMass, ok.Last().MonoisotopicMass, 1e-9);
         }
