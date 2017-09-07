@@ -152,7 +152,7 @@ namespace Test
             // builds psm list to match to peptides
             List<Psm> psms = new List<Psm>();
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, new MzPeak(2, 2), 0, "File");
 
             foreach (var kvp in dictionary)
@@ -393,7 +393,7 @@ namespace Test
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
             Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, new MzPeak(2, 2), 0, "File");
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
