@@ -1,2341 +1,2166 @@
-Substitutions
 ID   W->G
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -129.05784923004
+CF   C-9H-7N-1
 //
 ID   W->A
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -115.04219916558
+CF   C-8H-5N-1
 //
 ID   Y->G
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -106.04186481295
+CF   C-7H-6O-1
 //
 ID   R->G
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -99.07964730336
+CF   C-4H-9N-3
 //
 ID   W->S
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -99.04728454601
-//
-ID   U->G
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -93.93217186446
+CF   C-8H-5N-1O
 //
 ID   Y->A
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -92.02621474849
+CF   C-6H-4O-1
 //
 ID   F->G
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -90.04695019338
+CF   C-7H-6
 //
 ID   W->P
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -89.02654910112
+CF   C-6H-3N-1
 //
 ID   W->V
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -87.01089903666
+CF   C-6H-1N-1
 //
 ID   R->A
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -85.0639972389
+CF   C-3H-7N-3
 //
 ID   W->T
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -85.03163448155
+CF   C-7H-3N-1O
 //
 ID   W->C
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -83.07012799118
+CF   C-8H-5N-1S
 //
 ID   H->G
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -80.03744813778
-//
-ID   U->A
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -79.9165218
+CF   C-4H-4N-2
 //
 ID   F->A
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -76.03130012892
+CF   C-6H-4
 //
 ID   Y->S
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -76.03130012892
+CF   C-6H-4
 //
 ID   M->G
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -74.01902136778
+CF   C-3H-6S-1
 //
-ID   W->L or I
+ID   W->Xle
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -72.9952489722
+CF   C-5HN-1
 //
 ID   W->N
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -72.03638550935
+CF   C-7H-4O
 //
 ID   E->G
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -72.02112936806
+CF   C-3H-4O-2
 //
 ID   K->G
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -71.0734992945
+CF   C-4H-9N-1
 //
 ID   W->D
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -71.05236992644
+CF   C-7H-5N-1O2
 //
 ID   Q->G
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   -71.03711378515
+CF   C-3H-5N-1O-1
 //
 ID   R->S
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -69.06908261933
+CF   C-3H-7N-3O
 //
 ID   H->A
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -66.02179807332
+CF   C-3H-2N-2
 //
 ID   Y->P
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -66.01056468403
+CF   C-4H-2O-1
 //
 ID   Y->V
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -63.99491461957
-//
-ID   U->S
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -63.92160718043
+CF   C-4O-1
 //
 ID   Y->T
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -62.01565006446
+CF   C-5H-2
 //
 ID   Y->C
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -60.05414357409
+CF   C-6H-4O-1S
 //
 ID   F->S
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -60.03638550935
+CF   C-6H-4O
 //
 ID   M->A
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -60.00337130332
+CF   C-2H-4S-1
 //
 ID   R->P
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -59.04834717444
+CF   C-1H-5N-3
 //
 ID   W->Q
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -58.02073544489
+CF   C-6H-2O
 //
 ID   D->G
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -58.0054793036
+CF   C-2H-2O-2
 //
 ID   E->A
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -58.0054793036
+CF   C-2H-2O-2
 //
 ID   W->K
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -57.98434993554
+CF   C-5H2
 //
 ID   K->A
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -57.05784923004
+CF   C-3H-7N-1
 //
 ID   W->E
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -57.03671986198
+CF   C-6H-3N-1O2
 //
 ID   R->V
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -57.03269710998
+CF   C-1H-3N-3
 //
 ID   N->G
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   -57.02146372069
+CF   C-2H-3N-1O-1
 //
 ID   Q->A
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   -57.02146372069
+CF   C-2H-3N-1O-1
 //
 ID   I->G
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   -56.06260025784
+CF   C-4H-8
 //
 ID   L->G
+MT   substitution
 PP   Anywhere.
 TG   L
-MT   substitution
-MM   -56.06260025784
+CF   C-4H-8
 //
 ID   R->T
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -55.05343255487
+CF   C-2H-5N-3O
 //
 ID   W->M
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -55.03882786226
-//
-ID   U->P
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -53.90087173554
+CF   C-6H-1N-1S
 //
 ID   R->C
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -53.0919260645
-//
-ID   U->V
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -51.88522167108
+CF   C-3H-7N-3S
 //
 ID   H->S
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -50.02688345375
+CF   C-3H-2N-2O
 //
 ID   F->P
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -50.01565006446
+CF   C-4H-2
 //
-ID   Y->L or I
+ID   Y->Xle
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -49.97926455511
-//
-ID   U->T
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -49.90595711597
+CF   C-3H2O-1
 //
 ID   W->H
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -49.02040109226
+CF   C-5H-3N
 //
 ID   Y->N
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -49.02040109226
+CF   C-5H-3N
 //
 ID   Y->D
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -48.03638550935
+CF   C-5H-4O
 //
 ID   F->V
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -48
-//
-ID   U->C
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -47.9444506256
+CF   C-4
 //
 ID   F->T
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -46.02073544489
+CF   C-5H-2O
 //
 ID   C->G
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   -45.98772123886
+CF   C-1H-2S-1
 //
 ID   F->C
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -44.05922895452
+CF   C-6H-4S
 //
 ID   T->G
+MT   substitution
 PP   Anywhere.
 TG   T
-MT   substitution
-MM   -44.02621474849
+CF   C-2H-4O-1
 //
 ID   M->S
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -44.00845668375
+CF   C-2H-4OS-1
 //
 ID   D->A
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -43.98982923914
+CF   C-1O-2
 //
-ID   R->L or I
+ID   R->Xle
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -43.01704704552
+CF   H-1N-3
 //
 ID   N->A
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   -43.00581365623
+CF   C-1H-1N-1O-1
 //
 ID   R->N
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -42.05818358267
-//
-ID   V->G
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   -42.04695019338
+CF   C-2H-6N-2O
 //
 ID   I->A
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   -42.04695019338
+CF   C-3H-6
 //
 ID   L->A
+MT   substitution
 PP   Anywhere.
 TG   L
+CF   C-3H-6
+//
+ID   V->G
 MT   substitution
-MM   -42.04695019338
+PP   Anywhere.
+TG   V
+CF   C-3H-6
 //
 ID   E->S
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -42.01056468403
+CF   C-2H-2O-1
 //
 ID   R->D
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -41.07416799976
+CF   C-2H-7N-3O2
 //
 ID   K->S
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -41.06293461047
+CF   C-3H-7N-1O
 //
 ID   Q->S
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   -41.02654910112
+CF   C-2H-3N-1
 //
 ID   P->G
+MT   substitution
 PP   Anywhere.
 TG   P
-MT   substitution
-MM   -40.03130012892
+CF   C-3H-4
 //
 ID   H->P
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -40.00614800886
+CF   C-1N-2
 //
 ID   W->F
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -39.01089903666
+CF   C-2H-1N-1
 //
 ID   H->V
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -37.9904979444
-//
-ID   U->L or I
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -37.86957160662
-//
-ID   U->N
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -36.91070814377
+CF   C-1H2N-2
 //
 ID   H->T
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -36.01123338929
-//
-ID   U->D
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -35.92669256086
-//
-ID   W->U
-PP   Anywhere.
-TG   W
-MT   substitution
-MM   -35.12567736558
+CF   C-2N-2O
 //
 ID   Y->Q
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -35.0047510278
+CF   C-4H-1N
 //
 ID   Y->K
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -34.96836551845
+CF   C-3H3NO-1
 //
 ID   H->C
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -34.04972689892
+CF   C-3H-2N-2S
 //
 ID   Y->E
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -34.02073544489
+CF   C-4H-2O
 //
 ID   M->P
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -33.98772123886
+CF   H-2S-1
 //
-ID   F->L or I
+ID   F->Xle
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -33.98434993554
+CF   C-3H2
 //
 ID   F->N
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -33.02548647269
+CF   C-5H-3NO
 //
 ID   F->D
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -32.04147088978
+CF   C-5H-4O2
 //
 ID   Y->M
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -32.02284344517
+CF   C-4O-1S
 //
 ID   E->P
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -31.98982923914
+CF   O-2
 //
 ID   C->A
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   -31.9720711744
+CF   S-1
 //
 ID   M->V
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -31.9720711744
+CF   S-1
 //
 ID   K->P
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -31.04219916558
+CF   C-1H-5N-1
 //
 ID   Q->P
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   -31.00581365623
+CF   H-1N-1O-1
 //
 ID   S->G
+MT   substitution
 PP   Anywhere.
 TG   S
-MT   substitution
-MM   -30.01056468403
+CF   C-1H-2O-1
 //
 ID   T->A
+MT   substitution
 PP   Anywhere.
 TG   T
-MT   substitution
-MM   -30.01056468403
+CF   C-1H-2O-1
 //
 ID   M->T
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -29.99280661929
+CF   C-1H-2OS-1
 //
 ID   W->R
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -29.97820192668
+CF   C-5H2N2
 //
 ID   E->V
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -29.97417917468
+CF   H2O-2
 //
 ID   K->V
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -29.02654910112
+CF   C-1H-3N-1
 //
 ID   Q->V
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   -28.99016359177
+CF   HN-1O-1
 //
 ID   R->Q
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -28.04253351821
+CF   C-1H-4N-2O
 //
 ID   M->C
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -28.03130012892
+CF   C-2H-4
 //
 ID   V->A
+MT   substitution
 PP   Anywhere.
 TG   V
-MT   substitution
-MM   -28.03130012892
+CF   C-2H-4
 //
 ID   R->K
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -28.00614800886
+CF   N-2
 //
 ID   D->S
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -27.99491461957
+CF   C-1O-1
 //
 ID   E->T
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -27.99491461957
+CF   C-1O-1
 //
 ID   R->E
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -27.0585179353
+CF   C-1H-5N-3O2
 //
 ID   K->T
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -27.04728454601
+CF   C-2H-5N-1O
 //
 ID   N->S
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   -27.01089903666
+CF   C-1H-1N-1
 //
 ID   Q->T
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   -27.01089903666
+CF   C-1H-1N-1
 //
 ID   I->S
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   -26.05203557381
+CF   C-3H-6O
 //
 ID   L->S
+MT   substitution
 PP   Anywhere.
 TG   L
-MT   substitution
-MM   -26.05203557381
+CF   C-3H-6O
 //
 ID   E->C
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -26.0334081292
+CF   C-2H-2O-2S
 //
 ID   P->A
+MT   substitution
 PP   Anywhere.
 TG   P
-MT   substitution
-MM   -26.01565006446
+CF   C-2H-2
 //
 ID   Y->H
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -26.00441667517
+CF   C-3H-2N2O-1
 //
 ID   K->C
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -25.08577805564
+CF   C-3H-7N-1S
 //
 ID   R->M
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -25.06062593558
+CF   C-1H-3N-3S
 //
 ID   Q->C
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   -25.04939254629
+CF   C-2H-3N-1O-1S
 //
-ID   H->L or I
+ID   H->Xle
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -23.97484787994
+CF   H4N-2
 //
 ID   H->N
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -23.01598441709
+CF   C-2H-1N-1O
 //
 ID   W->Y
+MT   substitution
 PP   Anywhere.
 TG   W
-MT   substitution
-MM   -23.01598441709
-//
-ID   U->Q
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -22.89505807931
-//
-ID   U->K
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -22.85867256996
+CF   C-2H-1N-1O
 //
 ID   H->D
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -22.03196883418
-//
-ID   U->E
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -21.9110424964
-//
-ID   U->M
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -19.91315049668
+CF   C-2H-2N-2O2
 //
 ID   R->H
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -19.04219916558
+CF   H-5N-1
 //
 ID   F->Q
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -19.00983640823
+CF   C-4H-1NO
 //
 ID   F->K
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -18.97345089888
+CF   C-3H3N
 //
 ID   F->E
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -18.02582082532
+CF   C-4H-2O2
 //
 ID   D->P
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -17.97417917468
+CF   CH2O-2
 //
-ID   M->L or I
+ID   M->Xle
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -17.95642110994
+CF   CH2S-1
 //
 ID   M->N
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -16.99755764709
+CF   C-1H-3NOS-1
 //
 ID   N->P
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   -16.99016359177
+CF   CHN-1O-1
 //
 ID   I->P
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   -16.03130012892
+CF   C-1H-4
 //
 ID   L->P
+MT   substitution
 PP   Anywhere.
 TG   L
-MT   substitution
-MM   -16.03130012892
+CF   C-1H-4
 //
 ID   F->M
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -16.0279288256
+CF   C-4S
 //
 ID   M->D
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -16.01354206418
+CF   C-1H-4O2S-1
 //
 ID   S->A
+MT   substitution
 PP   Anywhere.
 TG   S
-MT   substitution
-MM   -15.99491461957
+CF   O-1
 //
 ID   Y->F
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -15.99491461957
+CF   O-1
 //
 ID   C->S
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   -15.97715655483
-//
-ID   E->L or I
-PP   Anywhere.
-TG   E
-MT   substitution
-MM   -15.95852911022
+CF   OS-1
 //
 ID   D->V
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -15.95852911022
+CF   CH4O-2
 //
-ID   K->L or I
+ID   E->Xle
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   CH4O-2
+//
+ID   K->Xle
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -15.01089903666
+CF   H-1N-1
 //
 ID   E->N
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -14.99966564737
-//
-ID   Q->L or I
-PP   Anywhere.
-TG   Q
-MT   substitution
-MM   -14.97451352731
+CF   C-1H-1NO-1
 //
 ID   N->V
+MT   substitution
 PP   Anywhere.
 TG   N
+CF   CH3N-1O-1
+//
+ID   Q->Xle
 MT   substitution
-MM   -14.97451352731
+PP   Anywhere.
+TG   Q
+CF   CH3N-1O-1
 //
 ID   K->N
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -14.05203557381
+CF   C-2H-6O
 //
 ID   A->G
+MT   substitution
 PP   Anywhere.
 TG   A
-MT   substitution
-MM   -14.01565006446
+CF   C-1H-2
 //
 ID   E->D
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -14.01565006446
-//
-ID   Q->N
-PP   Anywhere.
-TG   Q
-MT   substitution
-MM   -14.01565006446
-//
-ID   T->S
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   -14.01565006446
+CF   C-1H-2
 //
 ID   I->V
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   -14.01565006446
+CF   C-1H-2
 //
 ID   L->V
+MT   substitution
 PP   Anywhere.
 TG   L
+CF   C-1H-2
+//
+ID   Q->N
 MT   substitution
-MM   -14.01565006446
+PP   Anywhere.
+TG   Q
+CF   C-1H-2
+//
+ID   T->S
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C-1H-2
 //
 ID   D->T
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -13.97926455511
-//
-ID   U->H
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -13.89472372668
+CF   H2O-1
 //
 ID   K->D
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   -13.0680199909
+CF   C-2H-7N-1O2
 //
 ID   Q->D
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   -13.03163448155
+CF   C-1H-3N-1O
 //
 ID   N->T
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   -12.9952489722
-//
-ID   Y->U
-PP   Anywhere.
-TG   Y
-MT   substitution
-MM   -12.10969294849
-//
-ID   V->S
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   -12.03638550935
+CF   HN-1
 //
 ID   I->T
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   -12.03638550935
+CF   C-2H-4O
 //
 ID   L->T
+MT   substitution
 PP   Anywhere.
 TG   L
+CF   C-2H-4O
+//
+ID   V->S
 MT   substitution
-MM   -12.03638550935
+PP   Anywhere.
+TG   V
+CF   C-2H-4O
 //
 ID   D->C
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -12.01775806474
+CF   C-1O-2S
 //
 ID   N->C
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   -11.03374248183
+CF   C-1H-1N-1O-1S
 //
 ID   I->C
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   -10.07487901898
+CF   C-3H-6S
 //
 ID   L->C
+MT   substitution
 PP   Anywhere.
 TG   L
-MT   substitution
-MM   -10.07487901898
+CF   C-3H-6S
 //
 ID   P->S
+MT   substitution
 PP   Anywhere.
 TG   P
-MT   substitution
-MM   -10.02073544489
+CF   C-2H-2O
 //
 ID   F->H
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   -10.0095020556
+CF   C-3H-2N2
 //
 ID   R->F
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   -9.03269710997998
+CF   C3H-3N-3
 //
 ID   H->Q
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -9.00033435263001
+CF   C-1HN-1O
 //
 ID   H->K
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -8.96394884328001
+CF   H5N-1
 //
 ID   H->E
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -8.01631876971999
+CF   C-1N-2O2
 //
 ID   Y->R
+MT   substitution
 PP   Anywhere.
 TG   Y
-MT   substitution
-MM   -6.96221750959
+CF   C-3H3N3O-1
 //
 ID   H->M
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   -6.01842676999999
+CF   C-1H2N-2S
 //
 ID   C->P
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   -5.95642110994
-//
-ID   R->U
-PP   Anywhere.
-TG   R
-MT   substitution
-MM   -5.14747543890002
+CF   C2H2S-1
 //
 ID   T->P
+MT   substitution
 PP   Anywhere.
 TG   T
-MT   substitution
-MM   -3.99491461957
+CF   CO-1
 //
 ID   C->V
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   -3.94077104547999
-//
-ID   U->F
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   -3.88522167107996
+CF   C2H4S-1
 //
 ID   M->Q
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -2.98190758263002
+CF   H-1NOS-1
 //
 ID   M->K
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -2.94552207328002
+CF   CH3NS-1
 //
 ID   V->P
+MT   substitution
 PP   Anywhere.
 TG   V
-MT   substitution
-MM   -2.01565006446
+CF   H-2
 //
 ID   M->E
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   -1.99789199972
+CF   H-2O2S-1
 //
 ID   T->V
+MT   substitution
 PP   Anywhere.
 TG   T
-MT   substitution
-MM   -1.97926455510999
+CF   CH2O-1
 //
 ID   C->T
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   -1.96150649037
+CF   CH2OS-1
 //
-ID   D->L or I
+ID   D->Xle
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -1.94287904576001
+CF   C2H6O-2
 //
 ID   D->N
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   -0.984015582910018
+CF   HNO-1
 //
 ID   E->Q
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -0.984015582910018
+CF   HNO-1
 //
-ID   N->L or I
+ID   N->Xle
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   -0.95886346284999
+CF   C2H5N-1O-1
 //
 ID   E->K
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   -0.94763007356002
+CF   CH5NO-2
 //
 ID   K->Q
+MT   substitution
 PP   Anywhere.
 TG   K
+CF   C-1H-4O
+//
+ID   I->Xle
 MT   substitution
-MM   -0.0363855093499978
+PP   Anywhere.
+TG   I
+CF
 //
 ID   Q->K
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   0.0363855093499978
+CF   CH4O-1
 //
 ID   K->E
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   0.94763007356002
+CF   C-1H-5N-1O2
 //
 ID   I->N
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   0.95886346284999
+CF   C-2H-5NO
 //
 ID   L->N
+MT   substitution
 PP   Anywhere.
 TG   L
+CF   C-2H-5NO
+//
+ID   N->D
 MT   substitution
-MM   0.95886346284999
+PP   Anywhere.
+TG   N
+CF   H-1N-1O
+//
+ID   Q->E
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   H-1N-1O
 //
 ID   I->D
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   1.94287904576001
+CF   C-2H-6O2
 //
 ID   L->D
+MT   substitution
 PP   Anywhere.
 TG   L
-MT   substitution
-MM   1.94287904576001
+CF   C-2H-6O2
 //
 ID   T->C
+MT   substitution
 PP   Anywhere.
 TG   T
-MT   substitution
-MM   1.96150649037
+CF   C-1H-2O-1S
 //
 ID   V->T
+MT   substitution
 PP   Anywhere.
 TG   V
+CF   C-1H-2O
+//
+ID   E->M
 MT   substitution
-MM   1.97926455510999
+PP   Anywhere.
+TG   E
+CF   H2O-2S
+//
+ID   P->V
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   H2
 //
 ID   K->M
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   2.94552207328002
+CF   C-1H-3N-1S
 //
 ID   Q->M
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   2.98190758263002
-//
-ID   F->U
-PP   Anywhere.
-TG   F
-MT   substitution
-MM   3.88522167107996
+CF   HN-1O-1S
 //
 ID   V->C
+MT   substitution
 PP   Anywhere.
 TG   V
-MT   substitution
-MM   3.94077104547999
+CF   C-2H-4S
 //
 ID   P->T
+MT   substitution
 PP   Anywhere.
 TG   P
-MT   substitution
-MM   3.99491461957
-//
-ID   U->R
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   5.14747543890002
+CF   C-1O
 //
 ID   P->C
+MT   substitution
 PP   Anywhere.
 TG   P
-MT   substitution
-MM   5.95642110994
+CF   C-2H-2S
 //
 ID   M->H
+MT   substitution
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   6.01842676999999
+CF   CH-2N2S-1
 //
 ID   R->Y
+MT   substitution
 PP   Anywhere.
 TG   R
-MT   substitution
-MM   6.96221750959
+CF   C3H-3N-3O
 //
 ID   E->H
+MT   substitution
 PP   Anywhere.
 TG   E
-MT   substitution
-MM   8.01631876971999
+CF   CN2O-2
 //
 ID   K->H
+MT   substitution
 PP   Anywhere.
 TG   K
-MT   substitution
-MM   8.96394884328001
+CF   H-5N
 //
 ID   Q->H
+MT   substitution
 PP   Anywhere.
 TG   Q
-MT   substitution
-MM   9.00033435263001
+CF   CH-1NO-1
 //
 ID   F->R
+MT   substitution
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   9.03269710997998
+CF   C-3H3N3
 //
 ID   H->F
+MT   substitution
 PP   Anywhere.
 TG   H
-MT   substitution
-MM   10.0095020556
+CF   C3H2N-2
 //
 ID   S->P
+MT   substitution
 PP   Anywhere.
 TG   S
-MT   substitution
-MM   10.02073544489
+CF   C2H2O-1
 //
-ID   C->L or I
+ID   C->Xle
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   10.07487901898
+CF   C3H6S-1
 //
 ID   C->N
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   11.03374248183
+CF   CHNOS-1
 //
 ID   C->D
+MT   substitution
 PP   Anywhere.
 TG   C
-MT   substitution
-MM   12.01775806474
-//
-ID   T->L or I
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   12.03638550935
+CF   CO2S-1
 //
 ID   S->V
+MT   substitution
 PP   Anywhere.
 TG   S
-MT   substitution
-MM   12.03638550935
+CF   C2H4O-1
 //
-ID   U->Y
-PP   Anywhere.
-TG   U
+ID   T->Xle
 MT   substitution
-MM   12.10969294849
+PP   Anywhere.
+TG   T
+CF   C2H4O-1
 //
 ID   T->N
+MT   substitution
 PP   Anywhere.
 TG   T
-MT   substitution
-MM   12.9952489722
+CF   H-1N
 //
 ID   D->Q
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   13.03163448155
+CF   CH3NO-1
 //
 ID   D->K
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   13.0680199909
-//
-ID   H->U
-PP   Anywhere.
-TG   H
-MT   substitution
-MM   13.89472372668
+CF   C2H7NO-2
 //
 ID   T->D
+MT   substitution
 PP   Anywhere.
 TG   T
-MT   substitution
-MM   13.97926455511
-//
-ID   V->L or I
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   14.01565006446
+CF   H-2O
 //
 ID   D->E
+MT   substitution
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   14.01565006446
+CF   CH2
 //
 ID   G->A
+MT   substitution
 PP   Anywhere.
 TG   G
-MT   substitution
-MM   14.01565006446
+CF   CH2
 //
 ID   N->Q
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   14.01565006446
+CF   CH2
 //
 ID   S->T
+MT   substitution
 PP   Anywhere.
 TG   S
+CF   CH2
+//
+ID   V->Xle
 MT   substitution
-MM   14.01565006446
+PP   Anywhere.
+TG   V
+CF   CH2
 //
 ID   N->K
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   14.05203557381
-//
-ID   V->N
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   14.97451352731
+CF   C2H6O-1
 //
 ID   I->Q
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   14.97451352731
+CF   C-1H-3NO
 //
 ID   L->Q
+MT   substitution
 PP   Anywhere.
 TG   L
+CF   C-1H-3NO
+//
+ID   V->N
 MT   substitution
-MM   14.97451352731
+PP   Anywhere.
+TG   V
+CF   C-1H-3NO
 //
 ID   N->E
+MT   substitution
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   14.99966564737
+CF   CHN-1O
 //
 ID   I->K
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   15.01089903666
+CF   HN
 //
 ID   L->K
+MT   substitution
 PP   Anywhere.
 TG   L
-MT   substitution
-MM   15.01089903666
-//
-ID   V->D
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   15.95852911022
+CF   HN
 //
 ID   I->E
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   15.95852911022
+CF   C-1H-4O2
 //
 ID   L->E
+MT   substitution
 PP   Anywhere.
 TG   L
+CF   C-1H-4O2
+//
+ID   V->D
 MT   substitution
-MM   15.95852911022
+PP   Anywhere.
+TG   V
+CF   C-1H-4O2
 //
 ID   S->C
+MT   substitution
 PP   Anywhere.
 TG   S
-MT   substitution
-MM   15.97715655483
+CF   O-1S
 //
-ID   D->M
-PP   Anywhere.
-TG   D
+ID   A->S
 MT   substitution
-MM   16.01354206418
-//
-ID   M->F
-PP   Anywhere.
-TG   M
-MT   substitution
-MM   16.0279288256
-//
-ID   P->L or I
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   16.03130012892
-//
-ID   P->N
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   16.99016359177
-//
-ID   N->M
-PP   Anywhere.
-TG   N
-MT   substitution
-MM   16.99755764709
-//
-ID   I->M
-PP   Anywhere.
-TG   I
-MT   substitution
-MM   17.95642110994
-//
-ID   L->M
-PP   Anywhere.
-TG   L
-MT   substitution
-MM   17.95642110994
-//
-ID   P->D
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   17.97417917468
-//
-ID   E->F
-PP   Anywhere.
-TG   E
-MT   substitution
-MM   18.02582082532
-//
-ID   K->F
-PP   Anywhere.
-TG   K
-MT   substitution
-MM   18.97345089888
-//
-ID   Q->F
-PP   Anywhere.
-TG   Q
-MT   substitution
-MM   19.00983640823
-//
-ID   H->R
-PP   Anywhere.
-TG   H
-MT   substitution
-MM   19.04219916558
-//
-ID   M->U
-PP   Anywhere.
-TG   M
-MT   substitution
-MM   19.91315049668
-//
-ID   E->U
-PP   Anywhere.
-TG   E
-MT   substitution
-MM   21.9110424964
-//
-ID   D->H
-PP   Anywhere.
-TG   D
-MT   substitution
-MM   22.03196883418
-//
-ID   K->U
-PP   Anywhere.
-TG   K
-MT   substitution
-MM   22.85867256996
-//
-ID   Q->U
-PP   Anywhere.
-TG   Q
-MT   substitution
-MM   22.89505807931
-//
-ID   N->H
-PP   Anywhere.
-TG   N
-MT   substitution
-MM   23.01598441709
-//
-ID   Y->W
-PP   Anywhere.
-TG   Y
-MT   substitution
-MM   23.01598441709
-//
-ID   I->H
-PP   Anywhere.
-TG   I
-MT   substitution
-MM   23.97484787994
-//
-ID   L->H
-PP   Anywhere.
-TG   L
-MT   substitution
-MM   23.97484787994
-//
-ID   C->Q
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   25.04939254629
-//
-ID   M->R
-PP   Anywhere.
-TG   M
-MT   substitution
-MM   25.06062593558
-//
-ID   C->K
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   25.08577805564
-//
-ID   H->Y
-PP   Anywhere.
-TG   H
-MT   substitution
-MM   26.00441667517
-//
-ID   A->P
 PP   Anywhere.
 TG   A
-MT   substitution
-MM   26.01565006446
+CF   O
 //
-ID   C->E
-PP   Anywhere.
-TG   C
+ID   F->Y
 MT   substitution
-MM   26.0334081292
-//
-ID   S->L or I
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   26.05203557381
-//
-ID   S->N
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   27.01089903666
-//
-ID   T->Q
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   27.01089903666
-//
-ID   T->K
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   27.04728454601
-//
-ID   E->R
-PP   Anywhere.
-TG   E
-MT   substitution
-MM   27.0585179353
-//
-ID   S->D
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   27.99491461957
-//
-ID   T->E
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   27.99491461957
-//
-ID   K->R
-PP   Anywhere.
-TG   K
-MT   substitution
-MM   28.00614800886
-//
-ID   A->V
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   28.03130012892
-//
-ID   C->M
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   28.03130012892
-//
-ID   Q->R
-PP   Anywhere.
-TG   Q
-MT   substitution
-MM   28.04253351821
-//
-ID   V->Q
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   28.99016359177
-//
-ID   V->K
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   29.02654910112
-//
-ID   V->E
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   29.97417917468
-//
-ID   R->W
-PP   Anywhere.
-TG   R
-MT   substitution
-MM   29.97820192668
-//
-ID   T->M
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   29.99280661929
-//
-ID   A->T
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   30.01056468403
-//
-ID   G->S
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   30.01056468403
-//
-ID   P->Q
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   31.00581365623
-//
-ID   P->K
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   31.04219916558
-//
-ID   A->C
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   31.9720711744
-//
-ID   V->M
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   31.9720711744
-//
-ID   M->Y
-PP   Anywhere.
-TG   M
-MT   substitution
-MM   32.02284344517
-//
-ID   D->F
-PP   Anywhere.
-TG   D
-MT   substitution
-MM   32.04147088978
-//
-ID   N->F
-PP   Anywhere.
-TG   N
-MT   substitution
-MM   33.02548647269
-//
-ID   I->F
-PP   Anywhere.
-TG   I
-MT   substitution
-MM   33.98434993554
-//
-ID   L->F
-PP   Anywhere.
-TG   L
-MT   substitution
-MM   33.98434993554
-//
-ID   P->M
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   33.98772123886
-//
-ID   E->Y
-PP   Anywhere.
-TG   E
-MT   substitution
-MM   34.02073544489
-//
-ID   C->H
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   34.04972689892
-//
-ID   K->Y
-PP   Anywhere.
-TG   K
-MT   substitution
-MM   34.96836551845
-//
-ID   Q->Y
-PP   Anywhere.
-TG   Q
-MT   substitution
-MM   35.0047510278
-//
-ID   U->W
-PP   Anywhere.
-TG   U
-MT   substitution
-MM   35.12567736558
-//
-ID   D->U
-PP   Anywhere.
-TG   D
-MT   substitution
-MM   35.92669256086
-//
-ID   T->H
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   36.01123338929
-//
-ID   N->U
-PP   Anywhere.
-TG   N
-MT   substitution
-MM   36.91070814377
-//
-ID   I->U
-PP   Anywhere.
-TG   I
-MT   substitution
-MM   37.86957160662
-//
-ID   L->U
-PP   Anywhere.
-TG   L
-MT   substitution
-MM   37.86957160662
-//
-ID   V->H
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   37.9904979444
-//
-ID   F->W
 PP   Anywhere.
 TG   F
-MT   substitution
-MM   39.01089903666
+CF   O
 //
-ID   P->H
-PP   Anywhere.
-TG   P
+ID   D->M
 MT   substitution
-MM   40.00614800886
-//
-ID   G->P
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   40.03130012892
-//
-ID   S->Q
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   41.02654910112
-//
-ID   S->K
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   41.06293461047
-//
-ID   D->R
 PP   Anywhere.
 TG   D
-MT   substitution
-MM   41.07416799976
+CF   CH4O-2S
 //
-ID   S->E
-PP   Anywhere.
-TG   S
+ID   M->F
 MT   substitution
-MM   42.01056468403
-//
-ID   A->L or I
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   42.04695019338
-//
-ID   G->V
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   42.04695019338
-//
-ID   N->R
-PP   Anywhere.
-TG   N
-MT   substitution
-MM   42.05818358267
-//
-ID   A->N
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   43.00581365623
-//
-ID   I->R
-PP   Anywhere.
-TG   I
-MT   substitution
-MM   43.01704704552
-//
-ID   L->R
-PP   Anywhere.
-TG   L
-MT   substitution
-MM   43.01704704552
-//
-ID   A->D
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   43.98982923914
-//
-ID   S->M
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   44.00845668375
-//
-ID   G->T
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   44.02621474849
-//
-ID   C->F
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   44.05922895452
-//
-ID   G->C
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   45.98772123886
-//
-ID   T->F
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   46.02073544489
-//
-ID   C->U
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   47.9444506256
-//
-ID   V->F
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   48
-//
-ID   D->Y
-PP   Anywhere.
-TG   D
-MT   substitution
-MM   48.03638550935
-//
-ID   H->W
-PP   Anywhere.
-TG   H
-MT   substitution
-MM   49.02040109226
-//
-ID   N->Y
-PP   Anywhere.
-TG   N
-MT   substitution
-MM   49.02040109226
-//
-ID   T->U
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   49.90595711597
-//
-ID   I->Y
-PP   Anywhere.
-TG   I
-MT   substitution
-MM   49.97926455511
-//
-ID   L->Y
-PP   Anywhere.
-TG   L
-MT   substitution
-MM   49.97926455511
-//
-ID   P->F
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   50.01565006446
-//
-ID   S->H
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   50.02688345375
-//
-ID   V->U
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   51.88522167108
-//
-ID   C->R
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   53.0919260645
-//
-ID   P->U
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   53.90087173554
-//
-ID   M->W
 PP   Anywhere.
 TG   M
-MT   substitution
-MM   55.03882786226
+CF   C4S-1
 //
-ID   T->R
-PP   Anywhere.
-TG   T
+ID   P->Xle
 MT   substitution
-MM   55.05343255487
-//
-ID   G->L or I
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   56.06260025784
-//
-ID   V->R
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   57.03269710998
-//
-ID   E->W
-PP   Anywhere.
-TG   E
-MT   substitution
-MM   57.03671986198
-//
-ID   A->K
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   57.05784923004
-//
-ID   K->W
-PP   Anywhere.
-TG   K
-MT   substitution
-MM   57.98434993554
-//
-ID   A->E
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   58.0054793036
-//
-ID   G->D
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   58.0054793036
-//
-ID   Q->W
-PP   Anywhere.
-TG   Q
-MT   substitution
-MM   58.02073544489
-//
-ID   P->R
 PP   Anywhere.
 TG   P
-MT   substitution
-MM   59.04834717444
+CF   CH4
 //
-ID   A->M
-PP   Anywhere.
-TG   A
+ID   P->N
 MT   substitution
-MM   60.00337130332
-//
-ID   S->F
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   60.03638550935
-//
-ID   C->Y
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   60.05414357409
-//
-ID   T->Y
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   62.01565006446
-//
-ID   S->U
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   63.92160718043
-//
-ID   V->Y
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   63.99491461957
-//
-ID   P->Y
 PP   Anywhere.
 TG   P
-MT   substitution
-MM   66.01056468403
+CF   C-1H-1NO
 //
-ID   A->H
-PP   Anywhere.
-TG   A
+ID   N->M
 MT   substitution
-MM   66.02179807332
-//
-ID   S->R
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   69.06908261933
-//
-ID   G->Q
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   71.03711378515
-//
-ID   D->W
-PP   Anywhere.
-TG   D
-MT   substitution
-MM   71.05236992644
-//
-ID   G->K
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   71.0734992945
-//
-ID   G->E
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   72.02112936806
-//
-ID   N->W
 PP   Anywhere.
 TG   N
-MT   substitution
-MM   72.03638550935
+CF   CH3N-1O-1S
 //
-ID   I->W
+ID   I->M
+MT   substitution
 PP   Anywhere.
 TG   I
-MT   substitution
-MM   72.9952489722
+CF   C-1H-2S
 //
-ID   L->W
+ID   L->M
+MT   substitution
 PP   Anywhere.
 TG   L
-MT   substitution
-MM   72.9952489722
+CF   C-1H-2S
 //
-ID   G->M
-PP   Anywhere.
-TG   G
+ID   P->D
 MT   substitution
-MM   74.01902136778
-//
-ID   S->Y
-PP   Anywhere.
-TG   S
-MT   substitution
-MM   76.03130012892
-//
-ID   A->F
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   76.03130012892
-//
-ID   A->U
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   79.9165218
-//
-ID   G->H
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   80.03744813778
-//
-ID   C->W
-PP   Anywhere.
-TG   C
-MT   substitution
-MM   83.07012799118
-//
-ID   T->W
-PP   Anywhere.
-TG   T
-MT   substitution
-MM   85.03163448155
-//
-ID   A->R
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   85.0639972389
-//
-ID   V->W
-PP   Anywhere.
-TG   V
-MT   substitution
-MM   87.01089903666
-//
-ID   P->W
 PP   Anywhere.
 TG   P
-MT   substitution
-MM   89.02654910112
+CF   C-1H-2O2
 //
-ID   G->F
+ID   E->F
+MT   substitution
 PP   Anywhere.
-TG   G
-MT   substitution
-MM   90.04695019338
+TG   E
+CF   C4H2O-2
 //
-ID   A->Y
+ID   K->F
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   C3H-3N-1
+//
+ID   Q->F
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   C4HN-1O-1
+//
+ID   H->R
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   H5N
+//
+ID   D->H
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C2H2N2O-2
+//
+ID   N->H
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C2HNO-1
+//
+ID   Y->W
+MT   substitution
+PP   Anywhere.
+TG   Y
+CF   C2HNO-1
+//
+ID   I->H
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   H-4N2
+//
+ID   L->H
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   H-4N2
+//
+ID   C->Q
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C2H3NOS-1
+//
+ID   M->R
+MT   substitution
+PP   Anywhere.
+TG   M
+CF   CH3N3S-1
+//
+ID   C->K
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C3H7NS-1
+//
+ID   H->Y
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   C3H2N-2O
+//
+ID   A->P
+MT   substitution
 PP   Anywhere.
 TG   A
-MT   substitution
-MM   92.02621474849
+CF   C2H2
 //
-ID   G->U
+ID   C->E
+MT   substitution
 PP   Anywhere.
-TG   G
-MT   substitution
-MM   93.93217186446
+TG   C
+CF   C2H2O2S-1
 //
-ID   S->W
+ID   S->Xle
+MT   substitution
 PP   Anywhere.
 TG   S
-MT   substitution
-MM   99.04728454601
+CF   C3H6O-1
 //
-ID   G->R
+ID   S->N
+MT   substitution
 PP   Anywhere.
-TG   G
-MT   substitution
-MM   99.07964730336
+TG   S
+CF   CHN
 //
-ID   G->Y
+ID   T->Q
+MT   substitution
 PP   Anywhere.
-TG   G
-MT   substitution
-MM   106.04186481295
+TG   T
+CF   CHN
 //
-ID   A->W
+ID   T->K
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C2H5NO-1
+//
+ID   E->R
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   CH5N3O-2
+//
+ID   S->D
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   CO
+//
+ID   T->E
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   CO
+//
+ID   K->R
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   N2
+//
+ID   A->V
+MT   substitution
 PP   Anywhere.
 TG   A
-MT   substitution
-MM   115.04219916558
+CF   C2H4
 //
-ID   G->W
+ID   C->M
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C2H4
+//
+ID   Q->R
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   CH4N2O-1
+//
+ID   V->Q
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   H-1NO
+//
+ID   V->K
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   CH3N
+//
+ID   V->E
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   H-2O2
+//
+ID   R->W
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C5H-2N-2
+//
+ID   T->M
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   CH2O-1S
+//
+ID   A->T
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   CH2O
+//
+ID   G->S
+MT   substitution
 PP   Anywhere.
 TG   G
+CF   CH2O
+//
+ID   P->Q
 MT   substitution
-MM   129.05784923004
+PP   Anywhere.
+TG   P
+CF   HNO
+//
+ID   P->K
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   CH5N
+//
+ID   A->C
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   S
+//
+ID   V->M
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   S
+//
+ID   P->E
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   O2
+//
+ID   M->Y
+MT   substitution
+PP   Anywhere.
+TG   M
+CF   C4OS-1
+//
+ID   D->F
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C5H4O-2
+//
+ID   N->F
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C5H3N-1O-1
+//
+ID   I->F
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C3H-2
+//
+ID   L->F
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C3H-2
+//
+ID   P->M
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   H2S
+//
+ID   E->Y
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   C4H2O-1
+//
+ID   C->H
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C3H2N2S-1
+//
+ID   K->Y
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   C3H-3N-1O
+//
+ID   Q->Y
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   C4HN-1
+//
+ID   T->H
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C2N2O-1
+//
+ID   V->H
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   CH-2N2
+//
+ID   F->W
+MT   substitution
+PP   Anywhere.
+TG   F
+CF   C2HN
+//
+ID   P->H
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   CN2
+//
+ID   G->P
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C3H4
+//
+ID   S->Q
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C2H3N
+//
+ID   S->K
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C3H7NO-1
+//
+ID   D->R
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C2H7N3O-2
+//
+ID   S->E
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C2H2O
+//
+ID   A->Xle
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C3H6
+//
+ID   G->V
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C3H6
+//
+ID   N->R
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C2H6N2O-1
+//
+ID   A->N
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   CHNO
+//
+ID   I->R
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   HN3
+//
+ID   L->R
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   HN3
+//
+ID   A->D
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   CO2
+//
+ID   S->M
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C2H4O-1S
+//
+ID   G->T
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C2H4O
+//
+ID   C->F
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C6H4S-1
+//
+ID   G->C
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   CH2S
+//
+ID   T->F
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C5H2O-1
+//
+ID   V->F
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   C4
+//
+ID   D->Y
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C5H4O-1
+//
+ID   H->W
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   C5H3N-1
+//
+ID   N->Y
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C5H3N-1
+//
+ID   I->Y
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C3H-2O
+//
+ID   L->Y
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C3H-2O
+//
+ID   P->F
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   C4H2
+//
+ID   S->H
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C3H2N2O-1
+//
+ID   C->R
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C3H7N3S-1
+//
+ID   M->W
+MT   substitution
+PP   Anywhere.
+TG   M
+CF   C6HNS-1
+//
+ID   T->R
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C2H5N3O-1
+//
+ID   G->Xle
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C4H8
+//
+ID   A->Q
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C2H3NO
+//
+ID   G->N
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C2H3NO
+//
+ID   V->R
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   CH3N3
+//
+ID   E->W
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   C6H3NO-2
+//
+ID   A->K
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C3H7N
+//
+ID   K->W
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   C5H-2
+//
+ID   A->E
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C2H2O2
+//
+ID   G->D
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C2H2O2
+//
+ID   Q->W
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   C6H2O-1
+//
+ID   P->R
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   CH5N3
+//
+ID   A->M
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C2H4S
+//
+ID   S->F
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C6H4O-1
+//
+ID   C->Y
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C6H4OS-1
+//
+ID   T->Y
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C5H2
+//
+ID   V->Y
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   C4O
+//
+ID   P->Y
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   C4H2O
+//
+ID   A->H
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C3H2N2
+//
+ID   S->R
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C3H7N3O-1
+//
+ID   G->Q
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C3H5NO
+//
+ID   D->W
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C7H5NO-2
+//
+ID   G->K
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C4H9N
+//
+ID   G->E
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C3H4O2
+//
+ID   N->W
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C7H4O-1
+//
+ID   I->W
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C5H-1N
+//
+ID   L->W
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C5H-1N
+//
+ID   G->M
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C3H6S
+//
+ID   A->F
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C6H4
+//
+ID   S->Y
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C6H4
+//
+ID   G->H
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C4H4N2
+//
+ID   C->W
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C8H5NS-1
+//
+ID   T->W
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C7H3NO-1
+//
+ID   A->R
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C3H7N3
+//
+ID   V->W
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   C6HN
+//
+ID   P->W
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   C6H3N
+//
+ID   G->F
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C7H6
+//
+ID   A->Y
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C6H4O
+//
+ID   S->W
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C8H5NO-1
+//
+ID   G->R
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C4H9N3
+//
+ID   G->Y
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C7H6O
+//
+ID   A->W
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C8H5N
+//
+ID   G->W
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C9H7N
 //
