@@ -199,6 +199,12 @@ PP   Peptide N-terminal.
 MT   PeptideTermMod
 CF   C1 O1
 //
+ID   Formylation
+TG   K or S or T
+PP   Anywhere.
+MT   Mod
+CF   C1 O1
+//
 ID   Zinc
 TG   D or E
 PP   Anywhere.
@@ -209,6 +215,12 @@ ID   Carbamyl
 TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
+CF   H1 C1 N1 O1
+//
+ID   Carbamyl
+TG   K or R or C or M
+PP   Anywhere.
+MT   Mod
 CF   H1 C1 N1 O1
 //
 ID   Fe[III]
@@ -229,9 +241,15 @@ PP   Anywhere.
 MT   Mod
 CF   H2 C
 //
-ID   Methyl
+ID   N-Term Methyl
 TG   X
 PP   N-terminal.
+MT   ProteinTermMod
+CF   H2 C
+//
+ID   C-Term Methyl
+TG   X
+PP   C-terminal.
 MT   ProteinTermMod
 CF   H2 C
 //
