@@ -1,2161 +1,2161 @@
 Amino Acid Substitutions
-ID W->G
-MT substitution
-PP Anywhere.
-TG W
-CF C-9H-7N-1
-//
-ID W->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-8H-5N-1
-//
-ID Y->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-7H-6O-1
-//
-ID R->G
-MT substitution
-PP Anywhere.
-TG R
-CF C-4H-9N-3
-//
-ID W->S
-MT substitution
-PP Anywhere.
-TG W
-CF C-8H-5N-1O
-//
-ID Y->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-6H-4O-1
-//
-ID F->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-7H-6
-//
-ID W->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-6H-3N-1
-//
-ID W->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-6H-1N-1
-//
-ID R->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG R
-CF C-3H-7N-3
-//
-ID W->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-7H-3N-1O
-//
-ID W->C
-MT substitution
-PP Anywhere.
-TG W
-CF C-8H-5N-1S
-//
-ID H->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C-4H-4N-2
-//
-ID F->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-6H-4
-//
-ID Y->S
-MT substitution
-PP Anywhere.
-TG Y
-CF C-6H-4
-//
-ID M->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C-3H-6S-1
-//
-ID W->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-5HN-1
-//
-ID W->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-7H-4O
-//
-ID E->G
-MT substitution
-PP Anywhere.
-TG E
-CF C-3H-4O-2
-//
-ID K->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C-4H-9N-1
-//
-ID W->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-7H-5N-1O2
-//
-ID Q->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C-3H-5N-1O-1
-//
-ID R->S
-MT substitution
-PP Anywhere.
-TG R
-CF C-3H-7N-3O
-//
-ID H->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C-3H-2N-2
-//
-ID Y->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-4H-2O-1
-//
-ID Y->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-4O-1
-//
-ID Y->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-5H-2
-//
-ID Y->C
-MT substitution
-PP Anywhere.
-TG Y
-CF C-6H-4O-1S
-//
-ID F->S
-MT substitution
-PP Anywhere.
-TG F
-CF C-6H-4O
-//
-ID M->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C-2H-4S-1
-//
-ID R->P
-MT substitution
-PP Anywhere.
-TG R
-CF C-1H-5N-3
-//
-ID W->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-6H-2O
-//
-ID D->G
-MT substitution
-PP Anywhere.
-TG D
-CF C-2H-2O-2
-//
-ID E->A
-MT substitution
-PP Anywhere.
-TG E
-CF C-2H-2O-2
-//
-ID W->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-5H2
-//
-ID K->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C-3H-7N-1
-//
-ID W->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-6H-3N-1O2
-//
-ID R->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG R
-CF C-1H-3N-3
-//
-ID N->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF C-2H-3N-1O-1
-//
-ID Q->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C-2H-3N-1O-1
-//
-ID I->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C-4H-8
-//
-ID L->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF C-4H-8
-//
-ID R->T
-MT substitution
-PP Anywhere.
-TG R
-CF C-2H-5N-3O
-//
-ID W->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-6H-1N-1S
-//
-ID R->C
-MT substitution
-PP Anywhere.
-TG R
-CF C-3H-7N-3S
-//
-ID H->S
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C-3H-2N-2O
-//
-ID F->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-4H-2
-//
-ID Y->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-3H2O-1
-//
-ID W->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-5H-3N
-//
-ID Y->N
-MT substitution
-PP Anywhere.
-TG Y
-CF C-5H-3N
-//
-ID Y->D
-MT substitution
-PP Anywhere.
-TG Y
-CF C-5H-4O
-//
-ID F->V
-MT substitution
-PP Anywhere.
-TG F
-CF C-4
-//
-ID F->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-5H-2O
-//
-ID C->G
-MT substitution
-PP Anywhere.
-TG C
-CF C-1H-2S-1
-//
-ID F->C
-MT substitution
-PP Anywhere.
-TG F
-CF C-6H-4S
-//
-ID T->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF C-2H-4O-1
-//
-ID M->S
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C-2H-4OS-1
-//
-ID D->A
-MT substitution
-PP Anywhere.
-TG D
-CF C-1O-2
-//
-ID R->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG R
-CF H-1N-3
-//
-ID N->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF C-1H-1N-1O-1
-//
-ID R->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG R
-CF C-2H-6N-2O
-//
-ID I->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C-3H-6
-//
-ID L->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF C-3H-6
-//
-ID V->G
-MT substitution
-PP Anywhere.
-TG V
-CF C-3H-6
-//
-ID E->S
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF C-2H-2O-1
-//
-ID R->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG R
-CF C-2H-7N-3O2
-//
-ID K->S
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C-3H-7N-1O
-//
-ID Q->S
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C-2H-3N-1
-//
-ID P->G
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF C-3H-4
-//
-ID H->P
-MT substitution
-PP Anywhere.
-TG H
-CF C-1N-2
-//
-ID W->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-2H-1N-1
-//
-ID H->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C-1H2N-2
-//
-ID H->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C-2N-2O
-//
-ID Y->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-4H-1N
-//
-ID Y->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-3H3NO-1
-//
-ID H->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C-3H-2N-2S
-//
-ID Y->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-4H-2O
-//
-ID M->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF H-2S-1
-//
-ID F->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-3H2
-//
-ID F->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-5H-3NO
-//
-ID F->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-5H-4O2
-//
-ID Y->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-4O-1S
-//
-ID E->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF O-2
-//
-ID C->A
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF S-1
-//
-ID M->V
-MT substitution
-PP Anywhere.
-TG M
-CF S-1
-//
-ID K->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C-1H-5N-1
-//
-ID Q->P
-MT substitution
-PP Anywhere.
-TG Q
-CF H-1N-1O-1
-//
-ID S->G
-MT substitution
-PP Anywhere.
-TG S
-CF C-1H-2O-1
-//
-ID T->A
-MT substitution
-PP Anywhere.
-TG T
-CF C-1H-2O-1
-//
-ID M->T
-MT substitution
-PP Anywhere.
-TG M
-CF C-1H-2OS-1
-//
-ID W->R
-MT substitution
-PP Anywhere.
-TG W
-CF C-5H2N2
-//
-ID E->V
-MT substitution
-PP Anywhere.
-TG E
-CF H2O-2
-//
-ID K->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C-1H-3N-1
-//
-ID Q->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF HN-1O-1
-//
-ID R->Q
-MT substitution
-PP Anywhere.
-TG R
-CF C-1H-4N-2O
-//
-ID M->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C-2H-4
-//
-ID V->A
-MT substitution
-PP Anywhere.
-TG V
-CF C-2H-4
-//
-ID R->K
-MT substitution
-PP Anywhere.
-TG R
-CF N-2
-//
-ID D->S
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF C-1O-1
-//
-ID E->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF C-1O-1
-//
-ID R->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG R
-CF C-1H-5N-3O2
-//
-ID K->T
-MT substitution
-PP Anywhere.
-TG K
-CF C-2H-5N-1O
-//
-ID N->S
-MT substitution
-PP Anywhere.
-TG N
-CF C-1H-1N-1
-//
-ID Q->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C-1H-1N-1
-//
-ID I->S
-MT substitution
-PP Anywhere.
-TG I
-CF C-3H-6O
-//
-ID L->S
-MT substitution
-PP Anywhere.
-TG L
-CF C-3H-6O
-//
-ID E->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF C-2H-2O-2S
-//
-ID P->A
-MT substitution
-PP Anywhere.
-TG P
-CF C-2H-2
-//
-ID Y->H
-MT substitution
-PP Anywhere.
-TG Y
-CF C-3H-2N2O-1
-//
-ID K->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C-3H-7N-1S
-//
-ID R->M
-MT substitution
-PP Anywhere.
-TG R
-CF C-1H-3N-3S
-//
-ID Q->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C-2H-3N-1O-1S
-//
-ID H->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF H4N-2
-//
-ID H->N
-MT substitution
-PP Anywhere.
-TG H
-CF C-2H-1N-1O
-//
-ID W->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG W
-CF C-2H-1N-1O
-//
-ID H->D
-MT substitution
-PP Anywhere.
-TG H
-CF C-2H-2N-2O2
-//
-ID R->H
-MT substitution
-PP Anywhere.
-TG R
-CF H-5N-1
-//
-ID F->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-4H-1NO
-//
-ID F->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-3H3N
-//
-ID F->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-4H-2O2
-//
-ID D->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF CH2O-2
-//
-ID M->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF CH2S-1
-//
-ID M->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C-1H-3NOS-1
-//
-ID N->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF CHN-1O-1
-//
-ID I->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C-1H-4
-//
-ID L->P
-MT substitution
-PP Anywhere.
-TG L
-CF C-1H-4
-//
-ID F->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-4S
-//
-ID M->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C-1H-4O2S-1
-//
-ID S->A
-MT substitution
-PP Anywhere.
-TG S
-CF O-1
-//
-ID Y->F
-MT substitution
-PP Anywhere.
-TG Y
-CF O-1
-//
-ID C->S
-MT substitution
-PP Anywhere.
-TG C
-CF OS-1
-//
-ID D->V
-MT substitution
-PP Anywhere.
-TG D
-CF CH4O-2
-//
-ID E->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF CH4O-2
-//
-ID K->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF H-1N-1
-//
-ID E->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF C-1H-1NO-1
-//
-ID N->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF CH3N-1O-1
-//
-ID Q->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF CH3N-1O-1
-//
-ID K->N
-MT substitution
-PP Anywhere.
-TG K
-CF C-2H-6O
-//
-ID A->G
-MT substitution
-PP Anywhere.
-TG A
-CF C-1H-2
-//
-ID E->D
-MT substitution
-PP Anywhere.
-TG E
-CF C-1H-2
-//
-ID I->V
-MT substitution
-PP Anywhere.
-TG I
-CF C-1H-2
-//
-ID L->V
-MT substitution
-PP Anywhere.
-TG L
-CF C-1H-2
-//
-ID Q->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C-1H-2
-//
-ID T->S
-MT substitution
-PP Anywhere.
-TG T
-CF C-1H-2
-//
-ID D->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF H2O-1
-//
-ID K->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C-2H-7N-1O2
-//
-ID Q->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C-1H-3N-1O
-//
-ID N->T
-MT substitution
-PP Anywhere.
-TG N
-CF HN-1
-//
-ID I->T
-MT substitution
-PP Anywhere.
-TG I
-CF C-2H-4O
-//
-ID L->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF C-2H-4O
-//
-ID V->S
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF C-2H-4O
-//
-ID D->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF C-1O-2S
-//
-ID N->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF C-1H-1N-1O-1S
-//
-ID I->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C-3H-6S
-//
-ID L->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF C-3H-6S
-//
-ID P->S
-MT substitution
-PP Anywhere.
-TG P
-CF C-2H-2O
-//
-ID F->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-3H-2N2
-//
-ID R->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG R
-CF C3H-3N-3
-//
-ID H->Q
-MT substitution
-PP Anywhere.
-TG H
-CF C-1HN-1O
-//
-ID H->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF H5N-1
-//
-ID H->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C-1N-2O2
-//
-ID Y->R
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C-3H3N3O-1
-//
-ID H->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C-1H2N-2S
-//
-ID C->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF C2H2S-1
-//
-ID T->P
-MT substitution
-PP Anywhere.
-TG T
-CF CO-1
-//
-ID C->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF C2H4S-1
-//
-ID M->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF H-1NOS-1
-//
-ID M->K
-MT substitution
-PP Anywhere.
-TG M
-CF CH3NS-1
-//
-ID V->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF H-2
-//
-ID M->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF H-2O2S-1
-//
-ID T->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF CH2O-1
-//
-ID C->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF CH2OS-1
-//
-ID D->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF C2H6O-2
-//
-ID D->N
-MT substitution
-PP Anywhere.
-TG D
-CF HNO-1
-//
-ID E->Q
-MT substitution
-PP Anywhere.
-TG E
-CF HNO-1
-//
-ID N->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF C2H5N-1O-1
-//
-ID E->K
-MT substitution
-PP Anywhere.
-TG E
-CF CH5NO-2
-//
-ID K->Q
-MT substitution
-PP Anywhere.
-TG K
-CF C-1H-4O
-//
-ID Q->K
-MT substitution
-PP Anywhere.
-TG Q
-CF CH4O-1
-//
-ID K->E
-MT substitution
-PP Anywhere.
-TG K
-CF C-1H-5N-1O2
-//
-ID I->N
-MT substitution
-PP Anywhere.
-TG I
-CF C-2H-5NO
-//
-ID L->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF C-2H-5NO
-//
-ID N->D
-MT substitution
-PP Anywhere.
-TG N
-CF H-1N-1O
-//
-ID Q->E
-MT substitution
-PP Anywhere.
-TG Q
-CF H-1N-1O
-//
-ID I->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C-2H-6O2
-//
-ID L->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF C-2H-6O2
-//
-ID T->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF C-1H-2O-1S
-//
-ID V->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF C-1H-2O
-//
-ID E->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF H2O-2S
-//
-ID P->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF H2
-//
-ID K->M
-MT substitution
-PP Anywhere.
-TG K
-CF C-1H-3N-1S
-//
-ID Q->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF HN-1O-1S
-//
-ID V->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF C-2H-4S
-//
-ID P->T
-MT substitution
-PP Anywhere.
-TG P
-CF C-1O
-//
-ID P->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF C-2H-2S
-//
-ID M->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF CH-2N2S-1
-//
-ID R->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG R
-CF C3H-3N-3O
-//
-ID E->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF CN2O-2
-//
-ID K->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF H-5N
-//
-ID Q->H
-MT substitution
-PP Anywhere.
-TG Q
-CF CH-1NO-1
-//
-ID F->R
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C-3H3N3
-//
-ID H->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C3H2N-2
-//
-ID S->P
-MT substitution
-PP Anywhere.
-TG S
-CF C2H2O-1
-//
-ID C->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF C3H6S-1
-//
-ID C->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF CHNOS-1
-//
-ID C->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF CO2S-1
-//
-ID S->V
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG S
-CF C2H4O-1
-//
-ID T->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF C2H4O-1
-//
-ID T->N
-MT substitution
-PP Anywhere.
-TG T
-CF H-1N
-//
-ID D->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF CH3NO-1
-//
-ID D->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF C2H7NO-2
-//
-ID T->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF H-2O
-//
-ID D->E
-MT substitution
-PP Anywhere.
-TG D
-CF CH2
-//
-ID G->A
-MT substitution
-PP Anywhere.
-TG G
-CF CH2
-//
-ID N->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF CH2
-//
-ID S->T
-MT substitution
-PP Anywhere.
-TG S
-CF CH2
-//
-ID V->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF CH2
-//
-ID N->K
-MT substitution
-PP Anywhere.
-TG N
-CF C2H6O-1
-//
-ID I->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C-1H-3NO
-//
-ID L->Q
-MT substitution
-PP Anywhere.
-TG L
-CF C-1H-3NO
-//
-ID V->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF C-1H-3NO
-//
-ID N->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF CHN-1O
-//
-ID I->K
-MT substitution
-PP Anywhere.
-TG I
-CF HN
-//
-ID L->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF HN
-//
-ID I->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C-1H-4O2
-//
-ID L->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF C-1H-4O2
-//
-ID V->D
-MT substitution
-PP Anywhere.
-TG V
-CF C-1H-4O2
-//
-ID S->C
-MT substitution
-PP Anywhere.
-TG S
-CF O-1S
-//
-ID A->S
-MT substitution
-PP Anywhere.
-TG A
-CF O
-//
-ID F->Y
-MT substitution
-PP Anywhere.
-TG F
-CF O
-//
-ID D->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF CH4O-2S
-//
-ID M->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C4S-1
-//
-ID P->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF CH4
-//
-ID P->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF C-1H-1NO
-//
-ID N->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF CH3N-1O-1S
-//
-ID I->M
-MT substitution
-PP Anywhere.
-TG I
-CF C-1H-2S
-//
-ID L->M
-MT substitution
-PP Anywhere.
-TG L
-CF C-1H-2S
-//
-ID P->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF C-1H-2O2
-//
-ID E->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF C4H2O-2
-//
-ID K->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C3H-3N-1
-//
-ID Q->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C4HN-1O-1
-//
-ID H->R
-MT substitution
-PP Anywhere.
-TG H
-CF H5N
-//
-ID D->H
-MT substitution
-PP Anywhere.
-TG D
-CF C2H2N2O-2
-//
-ID N->H
-MT substitution
-PP Anywhere.
-TG N
-CF C2HNO-1
-//
-ID Y->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Y
-CF C2HNO-1
-//
-ID I->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF H-4N2
-//
-ID L->H
-MT substitution
-PP Anywhere.
-TG L
-CF H-4N2
-//
-ID C->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF C2H3NOS-1
-//
-ID M->R
-MT substitution
-PP Anywhere.
-TG M
-CF CH3N3S-1
-//
-ID C->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF C3H7NS-1
-//
-ID H->Y
-MT substitution
-PP Anywhere.
-TG H
-CF C3H2N-2O
-//
-ID A->P
-MT substitution
-PP Anywhere.
-TG A
-CF C2H2
-//
-ID C->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF C2H2O2S-1
-//
-ID S->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG S
-CF C3H6O-1
-//
-ID S->N
-MT substitution
-PP Anywhere.
-TG S
-CF CHN
-//
-ID T->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF CHN
-//
-ID T->K
-MT substitution
-PP Anywhere.
-TG T
-CF C2H5NO-1
-//
-ID E->R
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF CH5N3O-2
-//
-ID S->D
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG S
-CF CO
-//
-ID T->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF CO
-//
-ID K->R
-MT substitution
-PP Anywhere.
-TG K
-CF N2
-//
-ID A->V
-MT substitution
-PP Anywhere.
-TG A
-CF C2H4
-//
-ID C->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF C2H4
-//
-ID Q->R
-MT substitution
-PP Anywhere.
-TG Q
-CF CH4N2O-1
-//
-ID V->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF H-1NO
-//
-ID V->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF CH3N
-//
-ID V->E
-MT substitution
-PP Anywhere.
-TG V
-CF H-2O2
-//
-ID R->W
-MT substitution
-PP Anywhere.
-TG R
-CF C5H-2N-2
-//
-ID T->M
-MT substitution
-PP Anywhere.
-TG T
-CF CH2O-1S
-//
-ID A->T
-MT substitution
-PP Anywhere.
-TG A
-CF CH2O
-//
-ID G->S
-MT substitution
-PP Anywhere.
-TG G
-CF CH2O
-//
-ID P->Q
-MT substitution
-PP Anywhere.
-TG P
-CF HNO
-//
-ID P->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF CH5N
-//
-ID A->C
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF S
-//
-ID V->M
-MT substitution
-PP Anywhere.
-TG V
-CF S
-//
-ID P->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF O2
-//
-ID M->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C4OS-1
-//
-ID D->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF C5H4O-2
-//
-ID N->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF C5H3N-1O-1
-//
-ID I->F
-MT substitution
-PP Anywhere.
-TG I
-CF C3H-2
-//
-ID L->F
-MT substitution
-PP Anywhere.
-TG L
-CF C3H-2
-//
-ID P->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF H2S
-//
-ID E->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF C4H2O-1
-//
-ID C->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG C
-CF C3H2N2S-1
-//
-ID K->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C3H-3N-1O
-//
-ID Q->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C4HN-1
-//
-ID T->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF C2N2O-1
-//
-ID V->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF CH-2N2
-//
-ID F->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG F
-CF C2HN
-//
-ID P->H
-MT substitution
-PP Anywhere.
-TG P
-CF CN2
-//
-ID G->P
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C3H4
-//
-ID S->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG S
-CF C2H3N
-//
-ID S->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG S
-CF C3H7NO-1
-//
-ID D->R
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF C2H7N3O-2
-//
-ID S->E
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG S
-CF C2H2O
-//
-ID A->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C3H6
-//
-ID G->V
-MT substitution
-PP Anywhere.
-TG G
-CF C3H6
-//
-ID N->R
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF C2H6N2O-1
-//
-ID A->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF CHNO
-//
-ID I->R
-MT substitution
-PP Anywhere.
-TG I
-CF HN3
-//
-ID L->R
-MT substitution
-PP Anywhere.
-TG L
-CF HN3
-//
-ID A->D
-MT substitution
-PP Anywhere.
-TG A
-CF CO2
-//
-ID S->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG S
-CF C2H4O-1S
-//
-ID G->T
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C2H4O
-//
-ID C->F
-MT substitution
-PP Anywhere.
-TG C
-CF C6H4S-1
-//
-ID G->C
-MT substitution
-PP Anywhere.
-TG G
-CF CH2S
-//
-ID T->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF C5H2O-1
-//
-ID V->F
-MT substitution
-PP Anywhere.
-TG V
-CF C4
-//
-ID D->Y
-MT substitution
-PP Anywhere.
-TG D
-CF C5H4O-1
-//
-ID H->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG H
-CF C5H3N-1
-//
-ID N->Y
-MT substitution
-PP Anywhere.
-TG N
-CF C5H3N-1
-//
-ID I->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C3H-2O
-//
-ID L->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG L
-CF C3H-2O
-//
-ID P->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF C4H2
-//
-ID S->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG S
-CF C3H2N2O-1
-//
-ID C->R
-MT substitution
-PP Anywhere.
-TG C
-CF C3H7N3S-1
-//
-ID M->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG M
-CF C6HNS-1
-//
-ID T->R
-MT substitution
-PP Anywhere.
-TG T
-CF C2H5N3O-1
-//
-ID G->Xle
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C4H8
-//
-ID A->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C2H3NO
-//
-ID G->N
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C2H3NO
-//
-ID V->R
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF CH3N3
-//
-ID E->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG E
-CF C6H3NO-2
-//
-ID A->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C3H7N
-//
-ID K->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG K
-CF C5H-2
-//
-ID A->E
-MT substitution
-PP Anywhere.
-TG A
-CF C2H2O2
-//
-ID G->D
-MT substitution
-PP Anywhere.
-TG G
-CF C2H2O2
-//
-ID Q->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG Q
-CF C6H2O-1
-//
-ID P->R
-MT substitution
-PP Anywhere.
-TG P
-CF CH5N3
-//
-ID A->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C2H4S
-//
-ID S->F
-MT substitution
-PP Anywhere.
-TG S
-CF C6H4O-1
-//
-ID C->Y
-MT substitution
-PP Anywhere.
-TG C
-CF C6H4OS-1
-//
-ID T->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF C5H2
-//
-ID V->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF C4O
-//
-ID P->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF C4H2O
-//
-ID A->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C3H2N2
-//
-ID S->R
-MT substitution
-PP Anywhere.
-TG S
-CF C3H7N3O-1
-//
-ID G->Q
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C3H5NO
-//
-ID D->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG D
-CF C7H5NO-2
-//
-ID G->K
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C4H9N
-//
-ID G->E
-MT substitution
-PP Anywhere.
-TG G
-CF C3H4O2
-//
-ID N->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG N
-CF C7H4O-1
-//
-ID I->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG I
-CF C5H-1N
-//
-ID L->W
-MT substitution
-PP Anywhere.
-TG L
-CF C5H-1N
-//
-ID G->M
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C3H6S
-//
-ID A->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C6H4
-//
-ID S->Y
-MT substitution
-PP Anywhere.
-TG S
-CF C6H4
-//
-ID G->H
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C4H4N2
-//
-ID C->W
-MT substitution
-PP Anywhere.
-TG C
-CF C8H5NS-1
-//
-ID T->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG T
-CF C7H3NO-1
-//
-ID A->R
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C3H7N3
-//
-ID V->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG V
-CF C6HN
-//
-ID P->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG P
-CF C6H3N
-//
-ID G->F
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C7H6
-//
-ID A->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C6H4O
-//
-ID S->W
-MT substitution
-PP Anywhere.
-TG S
-CF C8H5NO-1
-//
-ID G->R
-MT substitution
-PP Anywhere.
-TG G
-CF C4H9N3
-//
-ID G->Y
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG G
-CF C7H6O
-//
-ID A->W
-MT uniprotUnobservedSubstitution
-PP Anywhere.
-TG A
-CF C8H5N
-//
-ID G->W
-MT substitution
-PP Anywhere.
-TG G
-CF C9H7N
+ID   W->G
+MT   substitution
+PP   Anywhere.
+TG   W
+CF   C-9H-7N-1
+//
+ID   W->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-8H-5N-1
+//
+ID   Y->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-7H-6O-1
+//
+ID   R->G
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C-4H-9N-3
+//
+ID   W->S
+MT   substitution
+PP   Anywhere.
+TG   W
+CF   C-8H-5N-1O
+//
+ID   Y->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-6H-4O-1
+//
+ID   F->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-7H-6
+//
+ID   W->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-6H-3N-1
+//
+ID   W->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-6H-1N-1
+//
+ID   R->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   R
+CF   C-3H-7N-3
+//
+ID   W->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-7H-3N-1O
+//
+ID   W->C
+MT   substitution
+PP   Anywhere.
+TG   W
+CF   C-8H-5N-1S
+//
+ID   H->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C-4H-4N-2
+//
+ID   F->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-6H-4
+//
+ID   Y->S
+MT   substitution
+PP   Anywhere.
+TG   Y
+CF   C-6H-4
+//
+ID   M->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C-3H-6S-1
+//
+ID   W->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-5HN-1
+//
+ID   W->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-7H-4O
+//
+ID   E->G
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   C-3H-4O-2
+//
+ID   K->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C-4H-9N-1
+//
+ID   W->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-7H-5N-1O2
+//
+ID   Q->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C-3H-5N-1O-1
+//
+ID   R->S
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C-3H-7N-3O
+//
+ID   H->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C-3H-2N-2
+//
+ID   Y->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-4H-2O-1
+//
+ID   Y->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-4O-1
+//
+ID   Y->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-5H-2
+//
+ID   Y->C
+MT   substitution
+PP   Anywhere.
+TG   Y
+CF   C-6H-4O-1S
+//
+ID   F->S
+MT   substitution
+PP   Anywhere.
+TG   F
+CF   C-6H-4O
+//
+ID   M->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C-2H-4S-1
+//
+ID   R->P
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C-1H-5N-3
+//
+ID   W->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-6H-2O
+//
+ID   D->G
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C-2H-2O-2
+//
+ID   E->A
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   C-2H-2O-2
+//
+ID   W->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-5H2
+//
+ID   K->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C-3H-7N-1
+//
+ID   W->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-6H-3N-1O2
+//
+ID   R->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   R
+CF   C-1H-3N-3
+//
+ID   N->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   C-2H-3N-1O-1
+//
+ID   Q->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C-2H-3N-1O-1
+//
+ID   I->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C-4H-8
+//
+ID   L->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   C-4H-8
+//
+ID   R->T
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C-2H-5N-3O
+//
+ID   W->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-6H-1N-1S
+//
+ID   R->C
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C-3H-7N-3S
+//
+ID   H->S
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C-3H-2N-2O
+//
+ID   F->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-4H-2
+//
+ID   Y->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-3H2O-1
+//
+ID   W->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-5H-3N
+//
+ID   Y->N
+MT   substitution
+PP   Anywhere.
+TG   Y
+CF   C-5H-3N
+//
+ID   Y->D
+MT   substitution
+PP   Anywhere.
+TG   Y
+CF   C-5H-4O
+//
+ID   F->V
+MT   substitution
+PP   Anywhere.
+TG   F
+CF   C-4
+//
+ID   F->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-5H-2O
+//
+ID   C->G
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C-1H-2S-1
+//
+ID   F->C
+MT   substitution
+PP   Anywhere.
+TG   F
+CF   C-6H-4S
+//
+ID   T->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   C-2H-4O-1
+//
+ID   M->S
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C-2H-4OS-1
+//
+ID   D->A
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C-1O-2
+//
+ID   R->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   R
+CF   H-1N-3
+//
+ID   N->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   C-1H-1N-1O-1
+//
+ID   R->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   R
+CF   C-2H-6N-2O
+//
+ID   I->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C-3H-6
+//
+ID   L->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   C-3H-6
+//
+ID   V->G
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   C-3H-6
+//
+ID   E->S
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   C-2H-2O-1
+//
+ID   R->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   R
+CF   C-2H-7N-3O2
+//
+ID   K->S
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C-3H-7N-1O
+//
+ID   Q->S
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C-2H-3N-1
+//
+ID   P->G
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   C-3H-4
+//
+ID   H->P
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   C-1N-2
+//
+ID   W->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-2H-1N-1
+//
+ID   H->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C-1H2N-2
+//
+ID   H->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C-2N-2O
+//
+ID   Y->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-4H-1N
+//
+ID   Y->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-3H3NO-1
+//
+ID   H->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C-3H-2N-2S
+//
+ID   Y->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-4H-2O
+//
+ID   M->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   H-2S-1
+//
+ID   F->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-3H2
+//
+ID   F->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-5H-3NO
+//
+ID   F->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-5H-4O2
+//
+ID   Y->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-4O-1S
+//
+ID   E->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   O-2
+//
+ID   C->A
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   S-1
+//
+ID   M->V
+MT   substitution
+PP   Anywhere.
+TG   M
+CF   S-1
+//
+ID   K->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C-1H-5N-1
+//
+ID   Q->P
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   H-1N-1O-1
+//
+ID   S->G
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C-1H-2O-1
+//
+ID   T->A
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C-1H-2O-1
+//
+ID   M->T
+MT   substitution
+PP   Anywhere.
+TG   M
+CF   C-1H-2OS-1
+//
+ID   W->R
+MT   substitution
+PP   Anywhere.
+TG   W
+CF   C-5H2N2
+//
+ID   E->V
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   H2O-2
+//
+ID   K->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C-1H-3N-1
+//
+ID   Q->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   HN-1O-1
+//
+ID   R->Q
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C-1H-4N-2O
+//
+ID   M->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C-2H-4
+//
+ID   V->A
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   C-2H-4
+//
+ID   R->K
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   N-2
+//
+ID   D->S
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   C-1O-1
+//
+ID   E->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   C-1O-1
+//
+ID   R->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   R
+CF   C-1H-5N-3O2
+//
+ID   K->T
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   C-2H-5N-1O
+//
+ID   N->S
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C-1H-1N-1
+//
+ID   Q->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C-1H-1N-1
+//
+ID   I->S
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C-3H-6O
+//
+ID   L->S
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C-3H-6O
+//
+ID   E->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   C-2H-2O-2S
+//
+ID   P->A
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   C-2H-2
+//
+ID   Y->H
+MT   substitution
+PP   Anywhere.
+TG   Y
+CF   C-3H-2N2O-1
+//
+ID   K->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C-3H-7N-1S
+//
+ID   R->M
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C-1H-3N-3S
+//
+ID   Q->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C-2H-3N-1O-1S
+//
+ID   H->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   H4N-2
+//
+ID   H->N
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   C-2H-1N-1O
+//
+ID   W->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   W
+CF   C-2H-1N-1O
+//
+ID   H->D
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   C-2H-2N-2O2
+//
+ID   R->H
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   H-5N-1
+//
+ID   F->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-4H-1NO
+//
+ID   F->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-3H3N
+//
+ID   F->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-4H-2O2
+//
+ID   D->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   CH2O-2
+//
+ID   M->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   CH2S-1
+//
+ID   M->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C-1H-3NOS-1
+//
+ID   N->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   CHN-1O-1
+//
+ID   I->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C-1H-4
+//
+ID   L->P
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-4
+//
+ID   F->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-4S
+//
+ID   M->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C-1H-4O2S-1
+//
+ID   S->A
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   O-1
+//
+ID   Y->F
+MT   substitution
+PP   Anywhere.
+TG   Y
+CF   O-1
+//
+ID   C->S
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   OS-1
+//
+ID   D->V
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   CH4O-2
+//
+ID   E->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   CH4O-2
+//
+ID   K->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   H-1N-1
+//
+ID   E->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   C-1H-1NO-1
+//
+ID   N->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   CH3N-1O-1
+//
+ID   Q->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   CH3N-1O-1
+//
+ID   K->N
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   C-2H-6O
+//
+ID   A->G
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C-1H-2
+//
+ID   E->D
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   C-1H-2
+//
+ID   I->V
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C-1H-2
+//
+ID   L->V
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-2
+//
+ID   Q->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C-1H-2
+//
+ID   T->S
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C-1H-2
+//
+ID   D->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   H2O-1
+//
+ID   K->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C-2H-7N-1O2
+//
+ID   Q->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C-1H-3N-1O
+//
+ID   N->T
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   HN-1
+//
+ID   I->T
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C-2H-4O
+//
+ID   L->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   C-2H-4O
+//
+ID   V->S
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   C-2H-4O
+//
+ID   D->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   C-1O-2S
+//
+ID   N->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   C-1H-1N-1O-1S
+//
+ID   I->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C-3H-6S
+//
+ID   L->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   C-3H-6S
+//
+ID   P->S
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   C-2H-2O
+//
+ID   F->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-3H-2N2
+//
+ID   R->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   R
+CF   C3H-3N-3
+//
+ID   H->Q
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   C-1HN-1O
+//
+ID   H->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   H5N-1
+//
+ID   H->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C-1N-2O2
+//
+ID   Y->R
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C-3H3N3O-1
+//
+ID   H->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C-1H2N-2S
+//
+ID   C->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   C2H2S-1
+//
+ID   T->P
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   CO-1
+//
+ID   C->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   C2H4S-1
+//
+ID   M->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   H-1NOS-1
+//
+ID   M->K
+MT   substitution
+PP   Anywhere.
+TG   M
+CF   CH3NS-1
+//
+ID   V->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   H-2
+//
+ID   M->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   H-2O2S-1
+//
+ID   T->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   CH2O-1
+//
+ID   C->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   CH2OS-1
+//
+ID   D->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   C2H6O-2
+//
+ID   D->N
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   HNO-1
+//
+ID   E->Q
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   HNO-1
+//
+ID   N->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   C2H5N-1O-1
+//
+ID   E->K
+MT   substitution
+PP   Anywhere.
+TG   E
+CF   CH5NO-2
+//
+ID   K->Q
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   C-1H-4O
+//
+ID   Q->K
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   CH4O-1
+//
+ID   K->E
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   C-1H-5N-1O2
+//
+ID   I->N
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C-2H-5NO
+//
+ID   L->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   C-2H-5NO
+//
+ID   N->D
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   H-1N-1O
+//
+ID   Q->E
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   H-1N-1O
+//
+ID   I->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C-2H-6O2
+//
+ID   L->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   C-2H-6O2
+//
+ID   T->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   C-1H-2O-1S
+//
+ID   V->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   C-1H-2O
+//
+ID   E->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   H2O-2S
+//
+ID   P->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   H2
+//
+ID   K->M
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   C-1H-3N-1S
+//
+ID   Q->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   HN-1O-1S
+//
+ID   V->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   C-2H-4S
+//
+ID   P->T
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   C-1O
+//
+ID   P->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   C-2H-2S
+//
+ID   M->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   CH-2N2S-1
+//
+ID   R->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   R
+CF   C3H-3N-3O
+//
+ID   E->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   CN2O-2
+//
+ID   K->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   H-5N
+//
+ID   Q->H
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   CH-1NO-1
+//
+ID   F->R
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C-3H3N3
+//
+ID   H->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C3H2N-2
+//
+ID   S->P
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C2H2O-1
+//
+ID   C->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   C3H6S-1
+//
+ID   C->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   CHNOS-1
+//
+ID   C->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   CO2S-1
+//
+ID   S->V
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   S
+CF   C2H4O-1
+//
+ID   T->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   C2H4O-1
+//
+ID   T->N
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   H-1N
+//
+ID   D->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   CH3NO-1
+//
+ID   D->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   C2H7NO-2
+//
+ID   T->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   H-2O
+//
+ID   D->E
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   CH2
+//
+ID   G->A
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   CH2
+//
+ID   N->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   CH2
+//
+ID   S->T
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   CH2
+//
+ID   V->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   CH2
+//
+ID   N->K
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C2H6O-1
+//
+ID   I->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C-1H-3NO
+//
+ID   L->Q
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-3NO
+//
+ID   V->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   C-1H-3NO
+//
+ID   N->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   CHN-1O
+//
+ID   I->K
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   HN
+//
+ID   L->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   HN
+//
+ID   I->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C-1H-4O2
+//
+ID   L->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   C-1H-4O2
+//
+ID   V->D
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   C-1H-4O2
+//
+ID   S->C
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   O-1S
+//
+ID   A->S
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   O
+//
+ID   F->Y
+MT   substitution
+PP   Anywhere.
+TG   F
+CF   O
+//
+ID   D->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   CH4O-2S
+//
+ID   M->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C4S-1
+//
+ID   P->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   CH4
+//
+ID   P->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   C-1H-1NO
+//
+ID   N->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   CH3N-1O-1S
+//
+ID   I->M
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C-1H-2S
+//
+ID   L->M
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-2S
+//
+ID   P->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   C-1H-2O2
+//
+ID   E->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   C4H2O-2
+//
+ID   K->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C3H-3N-1
+//
+ID   Q->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C4HN-1O-1
+//
+ID   H->R
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   H5N
+//
+ID   D->H
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C2H2N2O-2
+//
+ID   N->H
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C2HNO-1
+//
+ID   Y->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Y
+CF   C2HNO-1
+//
+ID   I->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   H-4N2
+//
+ID   L->H
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   H-4N2
+//
+ID   C->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   C2H3NOS-1
+//
+ID   M->R
+MT   substitution
+PP   Anywhere.
+TG   M
+CF   CH3N3S-1
+//
+ID   C->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   C3H7NS-1
+//
+ID   H->Y
+MT   substitution
+PP   Anywhere.
+TG   H
+CF   C3H2N-2O
+//
+ID   A->P
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C2H2
+//
+ID   C->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   C2H2O2S-1
+//
+ID   S->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   S
+CF   C3H6O-1
+//
+ID   S->N
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   CHN
+//
+ID   T->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   CHN
+//
+ID   T->K
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C2H5NO-1
+//
+ID   E->R
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   CH5N3O-2
+//
+ID   S->D
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   S
+CF   CO
+//
+ID   T->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   CO
+//
+ID   K->R
+MT   substitution
+PP   Anywhere.
+TG   K
+CF   N2
+//
+ID   A->V
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C2H4
+//
+ID   C->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   C2H4
+//
+ID   Q->R
+MT   substitution
+PP   Anywhere.
+TG   Q
+CF   CH4N2O-1
+//
+ID   V->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   H-1NO
+//
+ID   V->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   CH3N
+//
+ID   V->E
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   H-2O2
+//
+ID   R->W
+MT   substitution
+PP   Anywhere.
+TG   R
+CF   C5H-2N-2
+//
+ID   T->M
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   CH2O-1S
+//
+ID   A->T
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   CH2O
+//
+ID   G->S
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   CH2O
+//
+ID   P->Q
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   HNO
+//
+ID   P->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   CH5N
+//
+ID   A->C
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   S
+//
+ID   V->M
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   S
+//
+ID   P->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   O2
+//
+ID   M->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C4OS-1
+//
+ID   D->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   C5H4O-2
+//
+ID   N->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   C5H3N-1O-1
+//
+ID   I->F
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   C3H-2
+//
+ID   L->F
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C3H-2
+//
+ID   P->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   H2S
+//
+ID   E->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   C4H2O-1
+//
+ID   C->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   C
+CF   C3H2N2S-1
+//
+ID   K->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C3H-3N-1O
+//
+ID   Q->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C4HN-1
+//
+ID   T->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   C2N2O-1
+//
+ID   V->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   CH-2N2
+//
+ID   F->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   F
+CF   C2HN
+//
+ID   P->H
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   CN2
+//
+ID   G->P
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C3H4
+//
+ID   S->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   S
+CF   C2H3N
+//
+ID   S->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   S
+CF   C3H7NO-1
+//
+ID   D->R
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   C2H7N3O-2
+//
+ID   S->E
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   S
+CF   C2H2O
+//
+ID   A->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C3H6
+//
+ID   G->V
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C3H6
+//
+ID   N->R
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   C2H6N2O-1
+//
+ID   A->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   CHNO
+//
+ID   I->R
+MT   substitution
+PP   Anywhere.
+TG   I
+CF   HN3
+//
+ID   L->R
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   HN3
+//
+ID   A->D
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   CO2
+//
+ID   S->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   S
+CF   C2H4O-1S
+//
+ID   G->T
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C2H4O
+//
+ID   C->F
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C6H4S-1
+//
+ID   G->C
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   CH2S
+//
+ID   T->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   C5H2O-1
+//
+ID   V->F
+MT   substitution
+PP   Anywhere.
+TG   V
+CF   C4
+//
+ID   D->Y
+MT   substitution
+PP   Anywhere.
+TG   D
+CF   C5H4O-1
+//
+ID   H->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   H
+CF   C5H3N-1
+//
+ID   N->Y
+MT   substitution
+PP   Anywhere.
+TG   N
+CF   C5H3N-1
+//
+ID   I->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C3H-2O
+//
+ID   L->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   L
+CF   C3H-2O
+//
+ID   P->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   C4H2
+//
+ID   S->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   S
+CF   C3H2N2O-1
+//
+ID   C->R
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C3H7N3S-1
+//
+ID   M->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   M
+CF   C6HNS-1
+//
+ID   T->R
+MT   substitution
+PP   Anywhere.
+TG   T
+CF   C2H5N3O-1
+//
+ID   G->Xle
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C4H8
+//
+ID   A->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C2H3NO
+//
+ID   G->N
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C2H3NO
+//
+ID   V->R
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   CH3N3
+//
+ID   E->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   E
+CF   C6H3NO-2
+//
+ID   A->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C3H7N
+//
+ID   K->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   K
+CF   C5H-2
+//
+ID   A->E
+MT   substitution
+PP   Anywhere.
+TG   A
+CF   C2H2O2
+//
+ID   G->D
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C2H2O2
+//
+ID   Q->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   Q
+CF   C6H2O-1
+//
+ID   P->R
+MT   substitution
+PP   Anywhere.
+TG   P
+CF   CH5N3
+//
+ID   A->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C2H4S
+//
+ID   S->F
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C6H4O-1
+//
+ID   C->Y
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C6H4OS-1
+//
+ID   T->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   C5H2
+//
+ID   V->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   C4O
+//
+ID   P->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   C4H2O
+//
+ID   A->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C3H2N2
+//
+ID   S->R
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C3H7N3O-1
+//
+ID   G->Q
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C3H5NO
+//
+ID   D->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   D
+CF   C7H5NO-2
+//
+ID   G->K
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C4H9N
+//
+ID   G->E
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C3H4O2
+//
+ID   N->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   N
+CF   C7H4O-1
+//
+ID   I->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   I
+CF   C5H-1N
+//
+ID   L->W
+MT   substitution
+PP   Anywhere.
+TG   L
+CF   C5H-1N
+//
+ID   G->M
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C3H6S
+//
+ID   A->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C6H4
+//
+ID   S->Y
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C6H4
+//
+ID   G->H
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C4H4N2
+//
+ID   C->W
+MT   substitution
+PP   Anywhere.
+TG   C
+CF   C8H5NS-1
+//
+ID   T->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   T
+CF   C7H3NO-1
+//
+ID   A->R
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C3H7N3
+//
+ID   V->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   V
+CF   C6HN
+//
+ID   P->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   P
+CF   C6H3N
+//
+ID   G->F
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C7H6
+//
+ID   A->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C6H4O
+//
+ID   S->W
+MT   substitution
+PP   Anywhere.
+TG   S
+CF   C8H5NO-1
+//
+ID   G->R
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C4H9N3
+//
+ID   G->Y
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   G
+CF   C7H6O
+//
+ID   A->W
+MT   uniprotUnobservedSubstitution
+PP   Anywhere.
+TG   A
+CF   C8H5N
+//
+ID   G->W
+MT   substitution
+PP   Anywhere.
+TG   G
+CF   C9H7N
 //
