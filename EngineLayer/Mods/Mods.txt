@@ -35,6 +35,18 @@ PP   N-terminal.
 MT   ProteinTermMod
 CF   H5 C3 N1 O1
 //
+ID   Carboxymethylation
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   H2 C2 O2
+//
+ID   Carboxymethylation
+TG   C or K or W
+PP   Anywhere.
+MT   Mod
+CF   H2 C2 O2
+//
 ID   Sodium
 TG   D or E
 PP   Anywhere.
