@@ -9,7 +9,7 @@ namespace Test
     {
         #region Public Constructors
 
-        public FakeMsDataFile(IMzmlScan[] FakeScans) : base(FakeScans)
+        public FakeMsDataFile(IMzmlScan[] FakeScans) : base(FakeScans, new SourceFile(null, null, null, null, null))
         {
             this.Scans = FakeScans;
         }
