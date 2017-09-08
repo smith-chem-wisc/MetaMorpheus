@@ -31,14 +31,14 @@ CF   H5 C3 N1 O1
 //
 ID   Propionamide
 TG   X
-PP   N-terminal.
-MT   ProteinTermMod
+PP   Peptide N-terminal.
+MT   PeptideTermMod
 CF   H5 C3 N1 O1
 //
 ID   Carboxymethylation
 TG   X
-PP   N-terminal.
-MT   ProteinTermMod
+PP   Peptide N-terminal.
+MT   PeptideTermMod
 CF   H2 C2 O2
 //
 ID   Carboxymethylation
@@ -76,12 +76,6 @@ TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
 CF   H3 C2 N1 O1
-//
-ID   Carboxymethyl
-TG   C
-PP   Anywhere.
-MT   Mod
-CF   H2 C2 O2
 //
 ID   Carboxylation
 TG   K or D or E
