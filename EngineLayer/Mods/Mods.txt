@@ -23,6 +23,18 @@ PP   Anywhere.
 MT   Mod
 CF   H-3 N-1
 //
+ID   Propionamide
+TG   C or K
+PP   Anywhere.
+MT   Mod
+CF   H5 C3 N1 O1
+//
+ID   Propionamide
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   H5 C3 N1 O1
+//
 ID   Sodium
 TG   D or E
 PP   Anywhere.
