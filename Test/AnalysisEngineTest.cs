@@ -13,7 +13,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class AnalysisEngineTests
+    public static class AnalysisEngineTests
     {
         #region Public Methods
 
@@ -22,12 +22,15 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                    MaxMissedCleavages = 0,
+                    MaxModificationIsoforms = 1042,
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 0,
-                MaxModificationIsoforms = 1042,
                 ProductMassTolerance = new PpmTolerance(10),
             };
 
@@ -50,24 +53,21 @@ namespace Test
                 i++;
             }
 
-            List<Psm>[] newPsms = new List<Psm>[1];
-
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
-
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
-            HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).Last();
+            HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value1.First(), TerminusType.None);
 
             Assert.AreEqual("QQQ", value1.First().BaseSequence);
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).First();
+            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).ToList()[1];
+            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
@@ -79,19 +79,19 @@ namespace Test
             IMzPeak peakB = new MzPeak(2 + 132.040, 1);
             IMzPeak peakC = new MzPeak(3, 1);
 
-            Ms2ScanWithSpecificMass scanA = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakA, 1, null);
-            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakB, 1, null);
-            Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakC, 1, null);
+            Ms2ScanWithSpecificMass scanA = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null, "scan=1"), peakA, 1, null);
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null, "scan=2"), peakB, 1, null);
+            Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null, "scan=3"), peakC, 1, null);
 
             Psm matchA = new Psm(compactPeptide1, 0, 0, 0, scanA);
             Psm matchB = new Psm(compactPeptide2, 0, 0, 0, scanB);
             Psm matchC = new Psm(compactPeptide3, 0, 0, 0, scanC);
 
-            newPsms[0] = new List<Psm> { matchA, matchB, matchC };
+            var newPsms = new List<Psm> { matchA, matchB, matchC };
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
             Action<List<Psm>, string, List<string>> action2 = (List<Psm> l, string s, List<string> sdf) => {; };
 
             bool DoPrecursorDeconvolution = true;
@@ -107,12 +107,12 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, TerminusType.None, CommonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>());
 
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
-            foreach (var huh in newPsms[0])
+            foreach (var huh in newPsms)
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 

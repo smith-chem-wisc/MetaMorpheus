@@ -34,14 +34,16 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public IEnumerable<PeptideWithSetModifications> GetPeptidesWithSetModifications(List<ModificationWithMass> variableModifications, int maximumVariableModificationIsoforms, int maxModsForPeptide)
+        public IEnumerable<PeptideWithSetModifications> GetPeptidesWithSetModifications(DigestionParams digestionParams, List<ModificationWithMass> variableModifications)
         {
-            var two_based_possible_variable_and_localizeable_modifications = new Dictionary<int, UniqueModificationsCollection>(Length + 4);
+            int maximumVariableModificationIsoforms = digestionParams.MaxModificationIsoforms;
+            int maxModsForPeptide = digestionParams.MaxModsForPeptide;
+            var two_based_possible_variable_and_localizeable_modifications = new Dictionary<int, List<ModificationWithMass>>(Length + 4);
 
-            var pep_n_term_variable_mods = new UniqueModificationsCollection();
+            var pep_n_term_variable_mods = new List<ModificationWithMass>();
             two_based_possible_variable_and_localizeable_modifications.Add(1, pep_n_term_variable_mods);
 
-            var pep_c_term_variable_mods = new UniqueModificationsCollection();
+            var pep_c_term_variable_mods = new List<ModificationWithMass>();
             two_based_possible_variable_and_localizeable_modifications.Add(Length + 2, pep_c_term_variable_mods);
 
             foreach (ModificationWithMass variable_modification in variableModifications)
@@ -56,9 +58,9 @@ namespace EngineLayer
                     if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
                         && variable_modification.terminusLocalization == TerminusLocalization.Any)
                     {
-                        if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out UniqueModificationsCollection residue_variable_mods))
+                        if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out List<ModificationWithMass> residue_variable_mods))
                         {
-                            residue_variable_mods = new UniqueModificationsCollection
+                            residue_variable_mods = new List<ModificationWithMass>
                             {
                                 variable_modification
                             };
@@ -97,9 +99,9 @@ namespace EngineLayer
                                     && (Protein.IsDecoy || (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
                                     && variable_modification.terminusLocalization == TerminusLocalization.Any)))
                                 {
-                                    if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out UniqueModificationsCollection residue_variable_mods))
+                                    if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out List<ModificationWithMass> residue_variable_mods))
                                     {
-                                        residue_variable_mods = new UniqueModificationsCollection
+                                        residue_variable_mods = new List<ModificationWithMass>
                                         {
                                             variable_modification
                                         };
@@ -141,7 +143,7 @@ namespace EngineLayer
 
         #region Protected Methods
 
-        protected IEnumerable<Dictionary<int, ModificationWithMass>> GetVariableModificationPatterns(Dictionary<int, UniqueModificationsCollection> possibleVariableModifications, int maxModsForPeptide)
+        protected IEnumerable<Dictionary<int, ModificationWithMass>> GetVariableModificationPatterns(Dictionary<int, List<ModificationWithMass>> possibleVariableModifications, int maxModsForPeptide)
         {
             if (possibleVariableModifications.Count == 0)
             {
@@ -149,13 +151,13 @@ namespace EngineLayer
             }
             else
             {
-                var possible_variable_modifications = new Dictionary<int, UniqueModificationsCollection>(possibleVariableModifications);
+                var possible_variable_modifications = new Dictionary<int, List<ModificationWithMass>>(possibleVariableModifications);
 
                 int[] base_variable_modification_pattern = new int[this.Length + 4];
                 var totalAvailableMods = possible_variable_modifications.Select(b => b.Value == null ? 0 : b.Value.Count).Sum();
                 for (int variable_modifications = 0; variable_modifications <= Math.Min(totalAvailableMods, maxModsForPeptide); variable_modifications++)
                 {
-                    foreach (int[] variable_modification_pattern in GetVariableModificationPatterns(new List<KeyValuePair<int, UniqueModificationsCollection>>(possible_variable_modifications), possible_variable_modifications.Count - variable_modifications, base_variable_modification_pattern, 0))
+                    foreach (int[] variable_modification_pattern in GetVariableModificationPatterns(new List<KeyValuePair<int, List<ModificationWithMass>>>(possible_variable_modifications), possible_variable_modifications.Count - variable_modifications, base_variable_modification_pattern, 0))
                     {
                         yield return GetNewVariableModificationPattern(variable_modification_pattern, possible_variable_modifications);
                     }
@@ -167,7 +169,7 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private static IEnumerable<int[]> GetVariableModificationPatterns(List<KeyValuePair<int, UniqueModificationsCollection>> possibleVariableModifications, int unmodifiedResiduesDesired, int[] variableModificationPattern, int index)
+        private static IEnumerable<int[]> GetVariableModificationPatterns(List<KeyValuePair<int, List<ModificationWithMass>>> possibleVariableModifications, int unmodifiedResiduesDesired, int[] variableModificationPattern, int index)
         {
             if (index < possibleVariableModifications.Count - 1)
             {
@@ -209,11 +211,11 @@ namespace EngineLayer
             }
         }
 
-        private static Dictionary<int, ModificationWithMass> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, UniqueModificationsCollection>> possibleVariableModifications)
+        private static Dictionary<int, ModificationWithMass> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, List<ModificationWithMass>>> possibleVariableModifications)
         {
             var modification_pattern = new Dictionary<int, ModificationWithMass>();
 
-            foreach (KeyValuePair<int, UniqueModificationsCollection> kvp in possibleVariableModifications)
+            foreach (KeyValuePair<int, List<ModificationWithMass>> kvp in possibleVariableModifications)
             {
                 if (variableModificationArray[kvp.Key] > 0)
                 {
@@ -254,42 +256,5 @@ namespace EngineLayer
         }
 
         #endregion Private Methods
-
-        #region Protected Classes
-
-        protected sealed class UniqueModificationsCollection : List<ModificationWithMass>
-        {
-            #region Private Fields
-
-            private const double tolForModMassAdding = 1e-4;
-
-            #endregion Private Fields
-
-            #region Internal Methods
-
-            internal new void Add(ModificationWithMass mod)
-            {
-                foreach (ModificationWithMass modHere in this)
-                    if (Math.Abs(modHere.monoisotopicMass - mod.monoisotopicMass) < tolForModMassAdding && ApproxSequenceEqual(modHere.neutralLosses, mod.neutralLosses, tolForModMassAdding))
-                        return;
-                base.Add(mod);
-            }
-
-            #endregion Internal Methods
-
-            #region Private Methods
-
-            private static bool ApproxSequenceEqual(List<double> a, List<double> b, double tol)
-            {
-                for (int i = 0; i < a.Count; i++)
-                    if (Math.Abs(a[i] - b[i]) >= tol)
-                        return false;
-                return true;
-            }
-
-            #endregion Private Methods
-        }
-
-        #endregion Protected Classes
     }
 }

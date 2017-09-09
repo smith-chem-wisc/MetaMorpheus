@@ -7,29 +7,28 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
     [TestFixture]
-    public class FdrTest
+    public static class FdrTest
     {
         #region Public Methods
 
         [Test]
         public static void FdrTestMethod()
         {
-            List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5)) };
+            MassDiffAcceptor searchModes = new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5));
             List<string> nestedIds = new List<string>();
-            List<Psm>[] newPsms = new List<Psm>[1];
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
-            var digested = p.Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, new List<ModificationWithMass>()).ToList();
+            DigestionParams digestionParams = new DigestionParams();
+            var digested = p.Digest(digestionParams, new List<ModificationWithMass>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
-            PeptideWithSetModifications pep2 = digested[1].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
-            PeptideWithSetModifications pep3 = digested[2].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
-            PeptideWithSetModifications pep4 = digested[3].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
+            PeptideWithSetModifications pep1 = digested[0].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pep2 = digested[1].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pep3 = digested[2].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pep4 = digested[3].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
 
             TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
 
@@ -49,7 +48,7 @@ namespace Test
             Psm psm3 = new Psm(peptide3, 0, 1, 2, scan3);
 
             CompactPeptide peptide4 = new CompactPeptide(pep4, TerminusType.None);
-            psm3.AddOrReplace(peptide4, 1, 1);
+            psm3.AddOrReplace(peptide4, 1, 1, true);
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
@@ -70,25 +69,25 @@ namespace Test
             psm2.MatchToProteinLinkedPeptides(matching);
             psm3.MatchToProteinLinkedPeptides(matching);
 
-            newPsms[0] = new List<Psm> { psm1, psm2, psm3 };
+            var newPsms = new List<Psm> { psm1, psm2, psm3 };
             FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes, nestedIds);
 
             fdr.Run();
 
-            Assert.AreEqual(2, searchModes[0].NumNotches);
-            Assert.AreEqual(0, newPsms[0][0].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0][0].FdrInfo.cumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[0][1].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0][1].FdrInfo.cumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[0][2].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0][2].FdrInfo.cumulativeTargetNotch);
+            Assert.AreEqual(2, searchModes.NumNotches);
+            Assert.AreEqual(0, newPsms[0].FdrInfo.cumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[0].FdrInfo.cumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[1].FdrInfo.cumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[1].FdrInfo.cumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[2].FdrInfo.cumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[2].FdrInfo.cumulativeTargetNotch);
 
-            Assert.AreEqual(0, newPsms[0][0].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(1, newPsms[0][0].FdrInfo.cumulativeTarget);
-            Assert.AreEqual(0, newPsms[0][1].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(2, newPsms[0][1].FdrInfo.cumulativeTarget);
-            Assert.AreEqual(0, newPsms[0][2].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(3, newPsms[0][2].FdrInfo.cumulativeTarget);
+            Assert.AreEqual(0, newPsms[0].FdrInfo.cumulativeDecoy);
+            Assert.AreEqual(1, newPsms[0].FdrInfo.cumulativeTarget);
+            Assert.AreEqual(0, newPsms[1].FdrInfo.cumulativeDecoy);
+            Assert.AreEqual(2, newPsms[1].FdrInfo.cumulativeTarget);
+            Assert.AreEqual(0, newPsms[2].FdrInfo.cumulativeDecoy);
+            Assert.AreEqual(3, newPsms[2].FdrInfo.cumulativeTarget);
         }
 
         #endregion Public Methods

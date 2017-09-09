@@ -9,7 +9,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class SlicedTest
+    public static class SlicedTest
     {
         #region Public Methods
 
@@ -33,7 +33,7 @@ namespace Test
             var psms = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_PSMs_5ppmAroundZero.psmtsv");
 
             Assert.AreEqual(3, File.ReadLines(psms).Count());
-            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "aggregateProteinGroups_5ppmAroundZero.tsv");
+            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_5ppmAroundZero_ProteinGroups.tsv");
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
         }

@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,14 +14,15 @@ namespace EngineLayer.ModernSearch
 
         protected readonly List<int>[] fragmentIndex;
         protected readonly float[] keys;
-        protected readonly Psm[][] globalPsms;
+        protected readonly Psm[] globalPsms;
         protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
         protected readonly List<CompactPeptide> peptideIndex;
         protected readonly List<ProductType> lp;
         protected readonly int currentPartition;
         protected readonly CommonParameters CommonParameters;
         protected readonly bool addCompIons;
-        protected readonly List<MassDiffAcceptor> massDiffAcceptors;
+        protected readonly MassDiffAcceptor massDiffAcceptors;
+        protected readonly List<DissociationType> dissociationTypes;
 
         #endregion Protected Fields
 
@@ -34,7 +34,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, List<MassDiffAcceptor> massDiffAcceptors, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -46,6 +46,7 @@ namespace EngineLayer.ModernSearch
             this.CommonParameters = CommonParameters;
             this.addCompIons = addCompIons;
             this.massDiffAcceptors = massDiffAcceptors;
+            this.dissociationTypes = DetermineDissociationType(lp);
         }
 
         #endregion Public Constructors
@@ -58,16 +59,15 @@ namespace EngineLayer.ModernSearch
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
-            var searchModesCount = massDiffAcceptors.Count;
             var outputObject = new object();
             int scansSeen = 0;
             int old_progress = 0;
             var peptideIndexCount = peptideIndex.Count;
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
-                List<CompactPeptide>[] bestPeptides = new List<CompactPeptide>[searchModesCount];
-                double[] bestScores = new double[searchModesCount];
-                List<int>[] bestNotches = new List<int>[searchModesCount];
+                List<CompactPeptide> bestPeptides;
+                double bestScores;
+                List<int> bestNotches;
                 double[] fullPeptideScores = new double[peptideIndexCount];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
@@ -77,9 +77,9 @@ namespace EngineLayer.ModernSearch
                     double thePrecursorMass = thisScan.PrecursorMass;
                     CalculatePeptideScores(thisScan.TheScan, fullPeptideScores, thePrecursorMass);
 
-                    Array.Clear(bestPeptides, 0, searchModesCount);
-                    Array.Clear(bestScores, 0, searchModesCount);
-                    Array.Clear(bestNotches, 0, searchModesCount);
+                    bestPeptides = null;
+                    bestScores = 0;
+                    bestNotches = null;
 
                     for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
@@ -87,59 +87,61 @@ namespace EngineLayer.ModernSearch
                         if (consideredScore > CommonParameters.ScoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                         {
                             CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
-                            for (int j = 0; j < searchModesCount; j++)
+
+                            // Check if makes sense to add due to peptidescore!
+                            var searchMode = massDiffAcceptors;
+                            double currentBestScore = bestScores;
+                            if (currentBestScore > 1)
                             {
-                                // Check if makes sense to add due to peptidescore!
-                                var searchMode = massDiffAcceptors[j];
-                                double currentBestScore = bestScores[j];
-                                if (currentBestScore > 1)
+                                // Existed! Need to compare with old match
+                                if ((Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement) && (CommonParameters.ReportAllAmbiguity || bestPeptides.Count == 0))
                                 {
-                                    // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement)
-                                    {
-                                        // Score is same, need to see if accepts and if prefer the new one
-                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                        if (notch >= 0)
-                                        {
-                                            bestPeptides[j].Add(candidatePeptide);
-                                            bestNotches[j].Add(notch);
-                                        }
-                                    }
-                                    else if (currentBestScore < consideredScore)
-                                    {
-                                        // Score is better, only make sure it is acceptable
-                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                        if (notch >= 0)
-                                        {
-                                            bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
-                                            bestScores[j] = consideredScore;
-                                            bestNotches[j] = new List<int> { notch };
-                                        }
-                                    }
-                                }
-                                // Did not exist! Only make sure that it is acceptable
-                                else
-                                {
+                                    // Score is same, need to see if accepts and if prefer the new one
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
-                                        bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
-                                        bestScores[j] = consideredScore;
-                                        bestNotches[j] = new List<int> { notch };
+                                        bestPeptides.Add(candidatePeptide);
+                                        bestNotches.Add(notch);
                                     }
+                                }
+                                else if (currentBestScore < consideredScore)
+                                {
+                                    // Score is better, only make sure it is acceptable
+                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                    if (notch >= 0)
+                                    {
+                                        bestPeptides = new List<CompactPeptide> { candidatePeptide };
+                                        bestScores = consideredScore;
+                                        bestNotches = new List<int> { notch };
+                                    }
+                                }
+                            }
+                            // Did not exist! Only make sure that it is acceptable
+                            else
+                            {
+                                int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                if (notch >= 0)
+                                {
+                                    bestPeptides = new List<CompactPeptide> { candidatePeptide };
+                                    bestScores = consideredScore;
+                                    bestNotches = new List<int> { notch };
                                 }
                             }
                         }
                     }
-                    for (int j = 0; j < searchModesCount; j++)
+                    if (bestPeptides != null)
                     {
-                        if (bestPeptides[j] != null)
+                        int startIndex = 0;
+
+                        if (globalPsms[i] == null)
                         {
-                            globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
-                            for (int k = 1; k < bestPeptides[j].Count; k++)
-                            {
-                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
-                            }
+                            globalPsms[i] = new Psm(bestPeptides[0], bestNotches[0], bestScores, i, thisScan, CommonParameters.ExcelCompatible);
+                            startIndex = 1;
+                        }
+
+                        for (int k = startIndex; k < bestPeptides.Count; k++)
+                        {
+                            globalPsms[i].AddOrReplace(bestPeptides[k], bestScores, bestNotches[k], CommonParameters.ReportAllAmbiguity);
                         }
                     }
                 }
@@ -157,100 +159,108 @@ namespace EngineLayer.ModernSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
-        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
+        protected void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
         {
-            if (!addCompIons)
+            //create previous variables to determine if peaks can be sequestered
+            double previousTheAdd = 1 + spectrum.MassSpectrum.YArray[0] / spectrum.TotalIonCurrent;
+            double previousExperimentalPeakInDaltons = spectrum.MassSpectrum.XArray[0] - Constants.protonMass;
+            double previousMinRange = CommonParameters.ProductMassTolerance.GetMinimumValue(previousExperimentalPeakInDaltons);
+            double previousMaxRange;
+            //search observed peaks
+            for (int i = 1; i < spectrum.MassSpectrum.Size; i++)
             {
-                for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                double experimentalPeakInDaltons = spectrum.MassSpectrum.XArray[i] - Constants.protonMass;
+                if (CommonParameters.ProductMassTolerance.Within(previousExperimentalPeakInDaltons, experimentalPeakInDaltons))
                 {
-                    var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
-                    var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
-                    GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
+                    previousTheAdd += spectrum.MassSpectrum.YArray[i] / spectrum.TotalIonCurrent; //open to debate, currently sum intensities of all peaks within tolerance like it was low res
                 }
+                else
+                {
+                    previousMaxRange = CommonParameters.ProductMassTolerance.GetMaximumValue(previousExperimentalPeakInDaltons);
+                    FindPeakMatches(previousTheAdd, previousMinRange, previousMaxRange, peptideScores);
+                    previousTheAdd = 1 + spectrum.MassSpectrum.YArray[i] / spectrum.TotalIonCurrent;
+                    previousMinRange = CommonParameters.ProductMassTolerance.GetMinimumValue(experimentalPeakInDaltons);
+                }
+                previousExperimentalPeakInDaltons = experimentalPeakInDaltons;
             }
-            else
+            previousMaxRange = CommonParameters.ProductMassTolerance.GetMaximumValue(previousExperimentalPeakInDaltons);
+            FindPeakMatches(previousTheAdd, previousMinRange, previousMaxRange, peptideScores);
+
+            //generate experimental complementary ions if specified
+            if (addCompIons)
             {
-                List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
-                for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
-                {
-                    experimentalPeaks.Add(spectrum.MassSpectrum[i]);
-                }
+                //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
+                int numCompIons = spectrum.MassSpectrum.Size;
+                (double mass, double intensity)[] complementaryIons = new(double mass, double intensity)[numCompIons];
 
-                //If HCD
-                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
+                foreach (DissociationType dissociationType in dissociationTypes)
                 {
-                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                    if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
-                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 2), (spectrum.MassSpectrum[i].Intensity / 100)));
+                        double massShiftForComplementaryConversion = thePrecursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
+                        for (int i = numCompIons - 1; i >= 0; i--)
+                            complementaryIons[numCompIons-i-1] = (massShiftForComplementaryConversion - spectrum.MassSpectrum.XArray[i], spectrum.MassSpectrum.YArray[i]);
+
+                        //propogation of error from precursor mass and complementary product mass
+                        //IMPLEMENT AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(CommonParameters.ProductMassTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
+                        previousTheAdd = 1 + complementaryIons[0].intensity / spectrum.TotalIonCurrent;
+                        //we already subtracted that proton, so don't add it again (unit test should break if you do!)
+                        previousExperimentalPeakInDaltons = complementaryIons[0].mass;
+                        //need to use original tolerance since it's mass based.
+                        double previousOriginalMassInDaltons = massShiftForComplementaryConversion - previousExperimentalPeakInDaltons;
+                        previousMinRange = previousExperimentalPeakInDaltons - previousOriginalMassInDaltons + CommonParameters.ProductMassTolerance.GetMinimumValue(previousOriginalMassInDaltons);
+                        for (int i = 1; i < complementaryIons.Length; i++)
+                        {
+                            //we already subtracted that proton when making comp ions, so don't add it again (unit test should break if you do!)
+                            double experimentalPeakInDaltons = complementaryIons[i].mass;
+                            double originalMassInDaltons = massShiftForComplementaryConversion - experimentalPeakInDaltons;
+                            if (CommonParameters.ProductMassTolerance.Within(previousOriginalMassInDaltons, originalMassInDaltons))
+                            {
+                                previousTheAdd += complementaryIons[i].intensity / spectrum.TotalIonCurrent; //open to debate, currently sum intensities of all peaks within tolerance like it was low res. Classic search takes first intensity.
+                            }
+                            else
+                            {
+                                previousMaxRange = previousExperimentalPeakInDaltons - previousOriginalMassInDaltons + CommonParameters.ProductMassTolerance.GetMaximumValue(previousOriginalMassInDaltons);
+                                FindPeakMatches(previousTheAdd, previousMinRange, previousMaxRange, peptideScores);
+                                previousTheAdd = 1 + complementaryIons[i].intensity / spectrum.TotalIonCurrent;
+                                previousMinRange = experimentalPeakInDaltons - originalMassInDaltons + CommonParameters.ProductMassTolerance.GetMinimumValue(originalMassInDaltons);
+                            }
+                            previousExperimentalPeakInDaltons = experimentalPeakInDaltons;
+                            previousOriginalMassInDaltons = massShiftForComplementaryConversion - previousExperimentalPeakInDaltons;
+                        }
+                        previousMaxRange = previousExperimentalPeakInDaltons - previousOriginalMassInDaltons + CommonParameters.ProductMassTolerance.GetMaximumValue(previousOriginalMassInDaltons);
+                        FindPeakMatches(previousTheAdd, previousMinRange, previousMaxRange, peptideScores);
                     }
-                }
-                //If ETD
-                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
-                {
-                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                    else
                     {
-                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 3), (spectrum.MassSpectrum[i].Intensity / 100)));
+                        throw new NotImplementedException();
                     }
-                }
-
-                IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
-
-                foreach (IMzPeak experimentalPeak in sortedPeaksMZ)
-                {
-                    var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                    var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
-                    GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
                 }
             }
         }
 
-        private void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores)
+        protected void FindPeakMatches(double theAdd, double min, double max, double[] peptideScores)
         {
             float closestPeak;
-            var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
+            int ipos = Array.BinarySearch(keys, (float)min);
             if (ipos < 0)
                 ipos = ~ipos;
 
-            if (ipos > 0)
+            while (ipos < keys.Length)
             {
-                var downIpos = ipos - 1;
-                // Try down
-                while (downIpos >= 0)
+                closestPeak = keys[ipos];
+                if (closestPeak < max)
                 {
-                    closestPeak = keys[downIpos];
-                    if (CommonParameters.ProductMassTolerance.Within(experimentalPeakInDaltons, closestPeak))
-                    {
-                        foreach (var heh in fragmentIndex[downIpos])
-                            peptideScores[heh] += theAdd;
-                    }
-                    else
-                        break;
-                    downIpos--;
+                    foreach (int heh in fragmentIndex[ipos])
+                        peptideScores[heh] += theAdd;
                 }
+                else
+                    break;
+                ipos++;
             }
-            if (ipos < keys.Length)
-            {
-                var upIpos = ipos;
-                // Try here and up
-                while (upIpos < keys.Length)
-                {
-                    closestPeak = keys[upIpos];
-                    if (CommonParameters.ProductMassTolerance.Within(experimentalPeakInDaltons, closestPeak))
-                    {
-                        foreach (var heh in fragmentIndex[upIpos])
-                            peptideScores[heh] += theAdd;
-                    }
-                    else
-                        break;
-                    upIpos++;
-                }
-            }
+
         }
 
-        #endregion Private Methods
+        #endregion Protected Methods
     }
 }

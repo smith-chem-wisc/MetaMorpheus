@@ -1,9 +1,15 @@
-Stefan Custom List
+Custom List
 ID   Deamidation
 TG   N or Q
 PP   Anywhere.
 MT   Mod
 CF   H-1 N-1 O1
+//
+ID   Amidation
+TG   X
+PP   C-terminal.
+MT   ProteinTermMod
+CF   H1 N1 O-1
 //
 ID   Ammonia loss
 TG   Q or C
@@ -16,6 +22,30 @@ TG   N
 PP   Anywhere.
 MT   Mod
 CF   H-3 N-1
+//
+ID   Propionamide
+TG   C or K
+PP   Anywhere.
+MT   Mod
+CF   H5 C3 N1 O1
+//
+ID   Propionamide
+TG   X
+PP   Peptide N-terminal.
+MT   PeptideTermMod
+CF   H5 C3 N1 O1
+//
+ID   Carboxymethylation
+TG   X
+PP   Peptide N-terminal.
+MT   PeptideTermMod
+CF   H2 C2 O2
+//
+ID   Carboxymethylation
+TG   C or K or W
+PP   Anywhere.
+MT   Mod
+CF   H2 C2 O2
 //
 ID   Sodium
 TG   D or E
@@ -36,7 +66,7 @@ MT   Mod
 CF   O1
 //
 ID   Carbamidomethyl
-TG   K
+TG   K or H or D or E or S or T or Y
 PP   Anywhere.
 MT   Mod
 CF   H3 C2 N1 O1
@@ -47,11 +77,11 @@ PP   Peptide N-terminal.
 MT   PeptideTermMod
 CF   H3 C2 N1 O1
 //
-ID   Carboxymethyl
-TG   C
+ID   Carboxylation
+TG   K or D or E
 PP   Anywhere.
 MT   Mod
-CF   H2 C2 O2
+CF   C1 O2
 //
 ID   Phospho
 TG   S or T or Y
@@ -66,14 +96,8 @@ PP   N-terminal.
 MT   ProteinTermMod
 CF   H2 C2 O1
 //
-ID   Acetyllysine
-TG   K
-PP   Anywhere.
-MT   Mod
-CF   H2 C2 O1
-//
-ID   Acetylserine
-TG   S
+ID   Acetyl
+TG   S or K or C or T
 PP   Anywhere.
 MT   Mod
 CF   H2 C2 O1
@@ -82,6 +106,12 @@ ID   Acetald+26
 TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
+CF   H2 C2
+//
+ID   Acetald+26
+TG   H or K
+PP   Anywhere.
+MT   Mod
 CF   H2 C2
 //
 ID   Acetylation+Methionine
@@ -175,10 +205,28 @@ PP   Anywhere.
 MT   Mod
 CF   H-2 S-1
 //
+ID   Didehydro
+TG   Y or S
+PP   Anywhere.
+MT   Mod
+CF   H-2
+//
+ID   Didehydrobutyrine
+TG   T or S
+PP   Anywhere.
+MT   Mod
+CF   H-2 O-1
+//
 ID   Formylation
 TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
+CF   C1 O1
+//
+ID   Formylation
+TG   K or S or T
+PP   Anywhere.
+MT   Mod
 CF   C1 O1
 //
 ID   Zinc
@@ -191,6 +239,12 @@ ID   Carbamyl
 TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
+CF   H1 C1 N1 O1
+//
+ID   Carbamyl
+TG   K or R or C or M
+PP   Anywhere.
+MT   Mod
 CF   H1 C1 N1 O1
 //
 ID   Fe[III]
@@ -206,10 +260,34 @@ MT   Metal
 CF   H-2 Fe1
 //
 ID   Methyl
-TG   E or V or H or R or K or Q or N or S or D
+TG   C or H or K or N or Q or R or I or L or D or E or S or T
 PP   Anywhere.
 MT   Mod
 CF   H2 C
+//
+ID   N-Term Methyl
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   H2 C
+//
+ID   C-Term Methyl
+TG   X
+PP   C-terminal.
+MT   ProteinTermMod
+CF   H2 C
+//
+ID   Ethyl
+TG   K or E
+PP   Anywhere.
+MT   Mod
+CF   H4 C2
+//
+ID   Ethyl
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   H4 C2
 //
 ID   Oxidation and then loss of oxidized M side chain
 TG   M
@@ -218,7 +296,7 @@ MT   Mod
 CF   H-4 C-1 S-1 O1
 //
 ID   DiMethyl
-TG   A or K or R or N
+TG   K or R or N
 PP   Anywhere.
 MT   Mod
 CF   H4 C2
@@ -266,6 +344,18 @@ PP   Anywhere.
 NL   H0 or H24 C15
 MT   Mod
 CF   H24 C15
+//
+ID   Succinylation
+TG   K
+PP   Anywhere.
+MT   Mod
+CF   C4 H4 O3
+//
+ID   Succinylation
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   C4 H4 O3
 //
 ID   Myristoylation of G
 TG   Glycine

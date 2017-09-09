@@ -6,14 +6,14 @@ namespace EngineLayer.Analysis
     {
         #region Private Fields
 
-        private readonly IEnumerable<Psm>[] newPsms;
-        private readonly List<MassDiffAcceptor> searchModes;
+        private readonly IEnumerable<Psm> newPsms;
+        private readonly MassDiffAcceptor searchModes;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<Psm>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public FdrAnalysisEngine(List<Psm> newPsms, MassDiffAcceptor searchModes, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
@@ -28,11 +28,8 @@ namespace EngineLayer.Analysis
             FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
             Status("Running analysis engine!", nestedIds);
 
-            for (int j = 0; j < searchModes.Count; j++)
-            {
-                Status("Running FDR analysis...", nestedIds);
-                DoFalseDiscoveryRateAnalysis(newPsms[j], searchModes[j]);
-            }
+            Status("Running FDR analysis...", nestedIds);
+            DoFalseDiscoveryRateAnalysis(newPsms, searchModes);
             return myAnalysisResults;
         }
 

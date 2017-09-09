@@ -3,9 +3,12 @@ using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
+using IO.MzML;
+using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
@@ -13,7 +16,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    internal class AddCompIonsTest
+    internal static class AddCompIonsTest
     {
         #region Public Methods
 
@@ -26,8 +29,8 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("QXQ", null) };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
-            var searchModes = new List<MassDiffAcceptor> { new OpenSearchMode() };
-            
+            var searchModes = new OpenSearchMode();
+
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
             double DeconvolutionIntensityRatio = 4;
@@ -36,36 +39,37 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-
-            Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                    MaxMissedCleavages = 0
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 0
             };
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
-            Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray2[aede] = new Psm[listOfSortedms2Scans.Length];
+            Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, true, CommonParameters, new List<string>()).Run();
+
+            double scoreT = allPsmsArray2[0].Score;
+            double scoreF = allPsmsArray[0].Score;
 
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray[0].Length, allPsmsArray2[0].Length);
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
-            Assert.IsTrue(allPsmsArray2[0][0].Score > 1);
+            Assert.IsTrue(scoreT > 1);
 
-            Assert.AreEqual(allPsmsArray[0][0].ScanNumber, allPsmsArray2[0][0].ScanNumber);
+            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
-            Assert.IsTrue(allPsmsArray2[0][0].Score < allPsmsArray[0][0].Score * 2 && allPsmsArray2[0][0].Score + 2 > allPsmsArray[0][0].Score * 2);
+            Assert.IsTrue(scoreT == scoreF * 3 && scoreT > scoreF + 2);
         }
 
         [Test]
@@ -92,18 +96,23 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            SearchParameters SearchParameters = new SearchParameters();
-            SearchParameters.MassDiffAcceptors = searchModes;
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                MassDiffAcceptor = searchModes
+            };
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -119,44 +128,70 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];           
-            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, new List<string>()).Run();
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, new List<string>()).Run();
 
-            Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray2[aede] = new Psm[listOfSortedms2Scans.Length];
+            Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
             SearchParameters.AddCompIons = true;
-            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray[0].Length, allPsmsArray2[0].Length);
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
-            Assert.IsTrue(allPsmsArray2[0][0].Score > 1);
+            Assert.IsTrue(allPsmsArray2[0].Score > 1);
 
-            Assert.AreEqual(allPsmsArray[0][0].ScanNumber, allPsmsArray2[0][0].ScanNumber);
+            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
-            Assert.IsTrue(allPsmsArray2[0][0].Score < allPsmsArray[0][0].Score * 2 && allPsmsArray2[0][0].Score + 2 > allPsmsArray[0][0].Score * 2);
+            Assert.IsTrue(allPsmsArray2[0].Score < allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 3);
+        }
+
+        [Test]
+        public static void TestCompIons_MatchIonsScore()
+        {
+            TestDataFile t = new TestDataFile();
+            Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
+            double precursorMass = 300;
+            //The below theoretical does not accurately represent B-Y ions
+            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
+            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            double scoreT = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, true);
+            double scoreF = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, false);
+            Assert.IsTrue(scoreT == scoreF * 2 && scoreT > scoreF + 1);
         }
 
         [Test]
         public static void TestCompIons_MatchIons()
         {
-            TestDataFile t = new TestDataFile();
+            TestDataFile t = new TestDataFile(0.0001);
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
-            double precursorMass = 300;
-            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
-            double[] matchedIonMassesListPositiveIsMatch = new double[sorted_theoretical_product_masses_for_this_peptide.Count()];
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            double scoreT = MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesListPositiveIsMatch, true, precursorMass, lp);
-            double scoreF = MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesListPositiveIsMatch, false, precursorMass, lp);
-            Assert.IsTrue(scoreT < scoreF * 2 && scoreT + 1 > scoreF * 2);
+            double precursorMass = 402.18629720155;
+            //The below theoretical does not accurately represent B-Y ions
+            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { 50, 60, 70, 147.0764 - Constants.protonMass, 200, 215, 230, 245, precursorMass + Constants.protonMass - 147.0764, 258.127, 275.1350, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
+            List<double> matchedIonsT = new List<double>();
+            List<double> matchedDaErrorT = new List<double>();
+            List<double> matchedPpmErrorT = new List<double>();
+            List<double> matchedIonsF = new List<double>();
+            List<double> matchedDaErrorF = new List<double>();
+            List<double> matchedPpmErrorF = new List<double>();
+            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsT, matchedDaErrorT, matchedPpmErrorT, precursorMass, new List<DissociationType> { DissociationType.HCD }, true);
+            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsF, matchedDaErrorF, matchedPpmErrorF, precursorMass, new List<DissociationType> { DissociationType.HCD }, false);
+
+            //Test the number of ions is doubled
+            Assert.IsTrue(matchedIonsT.Count == matchedIonsF.Count * 2);
+            //Test the number of da errors is doubled
+            Assert.IsTrue(matchedDaErrorT.Count == matchedDaErrorF.Count * 2);
+            //test the number of ppm errors is doubled
+            Assert.IsTrue(matchedPpmErrorT.Count == matchedPpmErrorF.Count * 2);
+            foreach (double d in matchedDaErrorF)
+                Assert.IsTrue(d <= 0.01);
+            foreach (double d in matchedDaErrorT)
+                Assert.IsTrue(d <= 0.01);
         }
 
         #endregion Public Methods
+
     }
 }

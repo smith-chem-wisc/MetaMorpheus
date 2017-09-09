@@ -19,6 +19,28 @@ namespace EngineLayer
             SiteRegexp = siteRegexp;
         }
 
+        public Protease(Protease protease, TerminusType terminusType)
+        {
+            Name = protease.Name;
+            SequencesInducingCleavage = protease.SequencesInducingCleavage;
+            SequencesPreventingCleavage = protease.SequencesPreventingCleavage;
+            CleavageTerminus = protease.CleavageTerminus;
+            PsiMsAccessionNumber = protease.PsiMsAccessionNumber;
+            PsiMsName = protease.PsiMsName;
+            SiteRegexp = protease.SiteRegexp;
+            if (protease.CleavageSpecificity == CleavageSpecificity.Full)
+            {
+                if (terminusType == TerminusType.N)
+                    CleavageSpecificity = CleavageSpecificity.FullMaxN;
+                else if (terminusType == TerminusType.C)
+                    CleavageSpecificity = CleavageSpecificity.FullMaxC;
+                else
+                    throw new MetaMorpheusException("Terminus obtained for NonSpecific search has not been implemented.");
+            }
+            else
+                CleavageSpecificity = protease.CleavageSpecificity;
+        }
+
         #endregion Public Constructors
 
         #region Public Properties
@@ -40,6 +62,18 @@ namespace EngineLayer
         public override string ToString()
         {
             return Name;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var a = obj as Protease;
+            return a != null
+                && a.Name.Equals(Name);
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
         }
 
         #endregion Public Methods

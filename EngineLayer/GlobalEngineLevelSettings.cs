@@ -1,11 +1,10 @@
-﻿using Proteomics;
+﻿using MzLibUtil;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
-using MzLibUtil;
 
 namespace EngineLayer
 {
@@ -41,7 +40,7 @@ namespace EngineLayer
             {
             }
 
-            MetaMorpheusVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            MetaMorpheusVersion = typeof(GlobalEngineLevelSettings).Assembly.GetName().Version.ToString();
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
                 MetaMorpheusVersion = "Not a release version";
 

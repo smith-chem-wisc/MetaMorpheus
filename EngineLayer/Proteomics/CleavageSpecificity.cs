@@ -4,8 +4,10 @@
     {
         None,
         Semi,
-        SemiN,
-        SemiC,
-        Full
+        Full,
+        FullMaxN,
+        FullMaxC,
+        SingleN,
+        SingleC
     }
 }

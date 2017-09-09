@@ -8,12 +8,13 @@ using NUnit.Framework;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Test
 {
     [TestFixture]
-    public class RobTest
+    public static class RobTest
     {
         #region Public Methods
 
@@ -47,13 +48,19 @@ namespace Test
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
+
+            DigestionParams digestionParams = new DigestionParams
+            {
+                MinPeptideLength = null,
+                Protease = protease,
+            };
             foreach (var protein in p)
             {
-                temp = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                temp = protein.Digest(digestionParams, new List<ModificationWithMass>());
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>());
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -145,7 +152,7 @@ namespace Test
             // builds psm list to match to peptides
             List<Psm> psms = new List<Psm>();
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, new MzPeak(2, 2), 0, "File");
 
             foreach (var kvp in dictionary)
@@ -176,20 +183,12 @@ namespace Test
                 hm.SetFdrValues(0, 0, 0, 0, 0, 0);
             }
 
-            //Console.WriteLine(psms.Count);
-            //foreach (var ok in psms)
-            //{
-            //    Console.WriteLine(ok);
-            //}
-
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) }, true, false, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new List<string>());
             var ok = (ProteinScoringAndFdrResults)f.Run();
             proteinGroups = ok.sortedAndScoredProteinGroups;
 
             //prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
-            System.Console.WriteLine("----Initial Dictionary----");
-            System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
             foreach (var kvp in initialDictionary)
             {
                 proteinList = new List<Protein>();
@@ -198,16 +197,12 @@ namespace Test
                 {
                     if (!proteinList.Contains(peptide.Protein))
                     {
-                        Console.Write(peptide.Protein.BaseSequence + " ;; ");
                         proteinList.Add(peptide.Protein);
                     }
                 }
-                System.Console.WriteLine();
             }
 
             //prints parsimonious dictionary
-            System.Console.WriteLine("----Parsimonious Dictionary----");
-            System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
             foreach (var kvp in dictionary)
             {
                 proteinList = new List<Protein>();
@@ -220,15 +215,6 @@ namespace Test
                         proteinList.Add(peptide.Protein);
                     }
                 }
-                System.Console.WriteLine();
-            }
-
-            //prints protein groups after scoring /
-            System.Console.WriteLine();
-            System.Console.WriteLine("ProteinGroups:");
-            foreach (var proteinGroup in proteinGroups)
-            {
-                System.Console.WriteLine(proteinGroup);
             }
 
             // check that correct proteins are in parsimony list
@@ -268,13 +254,14 @@ namespace Test
             for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString()));
 
+            DigestionParams digestionParams = new DigestionParams();
             foreach (var protein in p)
             {
-                var digestedProtein = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                var digestedProtein = protein.Digest(digestionParams, new List<ModificationWithMass>());
 
                 foreach (var pepWithPossibleMods in digestedProtein)
                 {
-                    var pepWithSetMods = pepWithPossibleMods.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
+                    var pepWithSetMods = pepWithPossibleMods.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>());
 
                     foreach (var peptide in pepWithSetMods)
                         peptides.Add(peptide);
@@ -307,48 +294,32 @@ namespace Test
         [Test]
         public static void TestQuantification()
         {
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-
-            int charge = 3;
-            double intensity = 1000.0;
-            double rt = 20.0;
-
-            // creates some test proteins, digest, and fragment
-            string sequence = "NVLIFDLGGGTFDVSILTIEDGIFEVK";
-            var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
-            var prot = (new Protein(sequence, "TestProtein"));
-
-            var digestedProtein = prot.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
-            var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);
-
-            var psms = new List<Psm>();
-
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfkj = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfkj, new MzPeak(2, 2), 1, "TestDataFile");
-            var psm = new Psm(peptide.CompactPeptide(TerminusType.None), 0, 0, 0, scan);
-
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
-
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
-            {
-                {peptide.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptide} }
-            };
-
-            psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-
-            psms.Add(psm);
-
+            string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
             FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
-            FlashLfqEngine.PassFilePaths(new string[] { "TestDataFile" });
 
-            //FdrAnalysisEngine ae = new FdrAnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), modsDictionary, new List<string> { "TestMsFile" });
-            //ae.RunQuantification(psms, 10);
+            FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
 
-            //var theIntensity = psms.First().QuantIntensity[0];
-            //Assert.AreEqual(0, theIntensity);
+            if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
+                throw new MetaMorpheusException("Quantification error - could not find periodic table file");
+
+            if (!FlashLfqEngine.ParseArgs(new string[] {
+                        "--ppm 5",
+                        "--sil true",
+                        "--pau false",
+                        "--mbr true" }
+                ))
+                throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
+
+            FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, new List<string> { "P34223" });
+
+            FlashLfqEngine.ConstructBinsFromIdentifications();
+
+            FlashLfqEngine.Quantify(null, mzmlFilePath);
+
+            if (FlashLfqEngine.mbr)
+                FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
+
+            Assert.That(FlashLfqEngine.allFeaturesByFile[0].First().intensity > 0);
         }
 
         [Test]
@@ -369,25 +340,31 @@ namespace Test
                 {variableModifications.Last(), 1 }
             };
 
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
-            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            DigestionParams digestionParams = new DigestionParams
+            {
+                Protease = protease,
+                MinPeptideLength = null,
+                MaxMissedCleavages = 0
+            };
+            PeptideWithPossibleModifications modPep = proteinList.First().Digest(digestionParams, fixedModifications).Last();
+            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), TerminusType.None);
             Assert.AreEqual("QQQ", value.First().Sequence);
 
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(digestionParams, fixedModifications).First();
+            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
             Assert.AreEqual("MNNNSK", value2.First().Sequence);
-            HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).Last() };
+            HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(digestionParams, variableModifications).Last() };
 
             CompactPeptide compactPeptide2mod = new CompactPeptide(value2mod.Last(), TerminusType.None);
             Assert.AreEqual("MNNNS[HaHa:resMod]K", value2mod.Last().Sequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(digestionParams, fixedModifications).ToList()[1];
+            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNSK", value3.First().Sequence);
-            HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).Last() };
+            HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(digestionParams, variableModifications).Last() };
 
             CompactPeptide compactPeptide3mod = new CompactPeptide(value3mod.Last(), TerminusType.None);
             Assert.AreEqual("NNNS[HaHa:resMod]K", value3mod.Last().Sequence);
@@ -395,10 +372,10 @@ namespace Test
             var peptideList = new HashSet<PeptideWithSetModifications>();
             foreach (var protein in proteinList)
             {
-                var temp = protein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                var temp = protein.Digest(digestionParams, new List<ModificationWithMass>());
                 foreach (var dbPeptide in temp)
                 {
-                    var pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+                    var pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
                     foreach (var peptide in pepWithSetMods)
                     {
                         peptideList.Add(peptide);
@@ -416,7 +393,7 @@ namespace Test
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
             Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, new MzPeak(2, 2), 0, "File");
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
@@ -444,14 +421,14 @@ namespace Test
                 match2,
                 match3
             };
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) }, false, false, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new List<string>());
             f.Run();
 
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
         }
 
         [Test]
-        public static void TestFlashLFQ()
+        public static void TestFlashLfq()
         {
             FlashLFQEngine e = new FlashLFQEngine();
             Assert.That(e != null);

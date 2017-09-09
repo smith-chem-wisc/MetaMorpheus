@@ -1,20 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
+﻿using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-
-using MetaMorpheusGUI;
-
-
 
 namespace MetaMorpheusGUI
 {
@@ -23,21 +8,31 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class DialogWindow : Window
     {
+        #region Internal Fields
+
         internal string stringSuffix = "";
+
+        #endregion Internal Fields
+
+        #region Public Constructors
 
         public DialogWindow()
         {
             InitializeComponent();
         }
 
+        #endregion Public Constructors
+
+        #region Private Methods
+
         private void OnKeyDownHandler(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
             {
-                if(!string.IsNullOrWhiteSpace(metaMorpheusTaskSuffixTextbox.Text))
+                if (!string.IsNullOrWhiteSpace(metaMorpheusTaskSuffixTextbox.Text))
                 {
                     stringSuffix = "-" + metaMorpheusTaskSuffixTextbox.Text;
-                }                
+                }
                 this.Close();
             }
         }
@@ -46,5 +41,7 @@ namespace MetaMorpheusGUI
         {
             metaMorpheusTaskSuffixTextbox.Focus();
         }
+
+        #endregion Private Methods
     }
 }

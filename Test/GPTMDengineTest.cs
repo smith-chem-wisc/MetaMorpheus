@@ -13,7 +13,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class GptmdEngineTest
+    public static class GptmdEngineTest
     {
         #region Public Methods
 
@@ -32,15 +32,16 @@ namespace Test
             Assert.AreEqual(0, res.Mods.Count);
 
             //PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null), new MzPeak((588.22520189093 + 21.981943).ToMz(1), 1), 1, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1"), new MzPeak((588.22520189093 + 21.981943).ToMz(1), 1), 1, null);
 
             var parentProtein = new Protein("NNNNN", "accession");
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
+            DigestionParams digestionParams = new DigestionParams();
+            var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>()).First();
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
@@ -73,14 +74,15 @@ namespace Test
             Tolerance precursorMassTolerance = new PpmTolerance(10);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfd = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfd = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, new MzPeak((651.297638557 + 21.981943 + 15.994915).ToMz(1), 1), 1, null);
 
             var parentProtein = new Protein("NNNPPP", "accession");
-            var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
+            DigestionParams digestionParams = new DigestionParams();
+            var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>()).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             Psm match = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
             Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();

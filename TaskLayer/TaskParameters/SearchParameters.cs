@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 
 namespace EngineLayer
 {
     public class SearchParameters
     {
+        #region Public Constructors
+
         public SearchParameters()
         {
             DisposeOfFileWhenDone = true;
@@ -20,8 +21,13 @@ namespace EngineLayer
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
-            MassDiffAcceptors = GlobalEngineLevelSettings.SearchModesKnown.Take(1).ToList();
+            MassDiffAcceptor = GlobalEngineLevelSettings.SearchModesKnown.First();
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }
@@ -32,11 +38,13 @@ namespace EngineLayer
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
         public bool SearchDecoy { get; set; }
-        public List<MassDiffAcceptor> MassDiffAcceptors { get; set; }
+        public MassDiffAcceptor MassDiffAcceptor { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
+
+        #endregion Public Properties
     }
 }

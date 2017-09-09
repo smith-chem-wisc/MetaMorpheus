@@ -1,6 +1,4 @@
 ﻿using EngineLayer.CrosslinkSearch;
-using MassSpectrometry;
-using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Concurrent;
@@ -12,6 +10,11 @@ namespace EngineLayer.CrosslinkAnalysis
 {
     public class CrosslinkAnalysisEngine : MetaMorpheusEngine
     {
+        #region Protected Fields
+
+        protected readonly TerminusType terminusType;
+
+        #endregion Protected Fields
 
         #region Private Fields
 
@@ -26,8 +29,6 @@ namespace EngineLayer.CrosslinkAnalysis
 
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly string OutputFolder;
-        protected readonly TerminusType terminusType;
-
         private readonly CommonParameters CommonParameters;
 
         #endregion Private Fields
@@ -69,9 +70,9 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 if (psmpair != null)
                 {
-                        var cp = psmpair.CompactPeptide;
-                        if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                            compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                    var cp = psmpair.CompactPeptide;
+                    if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
+                        compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
 
                     if (psmpair.BetaPsmCross != null)
                     {
@@ -91,11 +92,11 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, CommonParameters.InitiatorMethionineBehavior, fixedModifications))
+                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications))
                     {
                         //if (peptideWithPossibleModifications.Length <= 1)
                         //    continue;
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide))
+                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications))
                         {
                             if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
 
@@ -106,8 +107,7 @@ namespace EngineLayer.CrosslinkAnalysis
                 {
                     foreach (var ye in local)
                     {
-                        HashSet<PeptideWithSetModifications> v;
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
                                 v.Add(huh);
                     }
@@ -133,12 +133,12 @@ namespace EngineLayer.CrosslinkAnalysis
                 var huh = newPsms[myScanWithMassIndex];
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                if (huh !=null)
+                if (huh != null)
                 {
                     var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
                     if (huh1 != null && huh1.MostProbableProteinInfo == null)
                         huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                }             
+                }
             }
 
             return myAnalysisResults;

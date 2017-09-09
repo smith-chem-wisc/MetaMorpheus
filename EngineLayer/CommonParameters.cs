@@ -1,21 +1,17 @@
 ﻿using MzLibUtil;
-using System.Collections.Generic;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace EngineLayer
 {
     public class CommonParameters
     {
+        #region Public Constructors
+
         public CommonParameters()
         {
-            MaxMissedCleavages = 2;
-            MinPeptideLength = 5;
-            MaxPeptideLength = null;
-            MaxModificationIsoforms = 4096;
-            Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"];
-            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new AbsoluteTolerance(0.01);
+            DigestionParams = new DigestionParams();
+
             BIons = true;
             YIons = true;
             ZdotIons = false;
@@ -26,9 +22,7 @@ namespace EngineLayer
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-
-            Max_mods_for_peptide = 3;
+            ListOfModsLocalize = null;
 
             ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
@@ -40,7 +34,19 @@ namespace EngineLayer
             DeconvolutionIntensityRatio = 4;
             DeconvolutionMaxAssumedChargeState = 10;
             DeconvolutionMassTolerance = new PpmTolerance(5);
+            ReportAllAmbiguity = true;
+            ExcelCompatible = true;
+
+            TopNpeaks = 200;
+            MinRatio = 0.01;
+            ProductMassTolerance = new PpmTolerance(20);
+            TrimMs1Peaks = false;
+            TrimMsMsPeaks = true;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
 
         public int? MaxDegreeOfParallelism { get; set; }
         public bool LocalizeAll { get; set; }
@@ -54,19 +60,7 @@ namespace EngineLayer
         public int DeconvolutionMaxAssumedChargeState { get; set; }
         public Tolerance DeconvolutionMassTolerance { get; set; }
 
-        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
- 
-        public int MaxMissedCleavages { get; set; }
-
-        public int? MinPeptideLength { get; set; }
-
-        public int? MaxPeptideLength { get; set; }
-
-        public int MaxModificationIsoforms { get; set; }
-
         public int TotalPartitions { get; set; }
-
-        public Protease Protease { get; set; }
 
         public bool BIons { get; set; }
 
@@ -82,9 +76,16 @@ namespace EngineLayer
 
         public double ScoreCutoff { get; set; }
 
-        public static List<string> AllModLists { get; private set; }
+        public DigestionParams DigestionParams { get; set; }
 
-        public int Max_mods_for_peptide { get; set; }
+        public bool ReportAllAmbiguity { get; set; }
 
+        public bool ExcelCompatible { get; set; }
+        public int? TopNpeaks { get; set; }
+        public double? MinRatio { get; set; }
+        public bool TrimMs1Peaks { get; set; }
+        public bool TrimMsMsPeaks { get; set; }
+
+        #endregion Public Properties
     }
 }
