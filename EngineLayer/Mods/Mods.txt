@@ -392,8 +392,8 @@ PP   Anywhere.
 NL   H0 or H30 C16 O1
 CF   H30 C16 O1
 //
-ID   Topaquinone
-TG   Y
+ID   Quinone
+TG   Y or W
 MT   Mod
 PP   Anywhere.
 CF   H-2 O2 
