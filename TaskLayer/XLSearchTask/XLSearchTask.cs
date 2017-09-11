@@ -27,6 +27,8 @@ namespace TaskLayer
         public XLSearchTask() : base(MyTask.XLSearch)
         {
             CommonParameters = new CommonParameters();
+            CommonParameters.DoPrecursorDeconvolution = false;
+            CommonParameters.ConserveMemory = false;
             XlSearchParameters = new XlSearchParameters();
         }
 

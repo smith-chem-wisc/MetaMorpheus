@@ -161,7 +161,6 @@ namespace EngineLayer.CrosslinkSearch
                     }
 
                     //Create parameters to store current Crosslinked psm data?
-
                     if (bestPeptideScoreNotch != null)
                     {
                         //Function that find the two crosslinked peptide
@@ -247,6 +246,7 @@ namespace EngineLayer.CrosslinkSearch
             PsmCross bestPsmCross = null;
             for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
             {
+                //Single Peptide
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
                 {
                     var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
@@ -263,6 +263,7 @@ namespace EngineLayer.CrosslinkSearch
                         bestPsmCrossList.Add(psmCrossSingle);
                     }
                 }
+                //Deadend Peptide
                 else if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods + 156.0786) >= 0)
                 {
                     var psmCrossEnd = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
@@ -280,6 +281,7 @@ namespace EngineLayer.CrosslinkSearch
                         bestPsmCrossList.Add(psmCrossEnd);
                     }
                 }
+                //loop peptide
                 else if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods + 138.06808) >= 0)
                 {
                     var psmCrossLoop = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
