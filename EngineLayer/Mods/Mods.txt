@@ -60,7 +60,7 @@ MT   Mod
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F or D or E or V or H
+TG   Y or W or P or F or D or E or V or H or K or N or R or C
 PP   Anywhere.
 MT   Mod
 CF   O1
@@ -392,8 +392,8 @@ PP   Anywhere.
 NL   H0 or H30 C16 O1
 CF   H30 C16 O1
 //
-ID   Topaquinone
-TG   Y
+ID   Quinone
+TG   Y or W
 MT   Mod
 PP   Anywhere.
 CF   H-2 O2 
