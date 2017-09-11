@@ -1133,18 +1133,6 @@ PP   Anywhere.
 TG   K
 CF   C-1H-4O
 //
-ID   I->L
-MT   1 nucleotide substitution
-PP   Anywhere.
-TG   I
-CF
-//
-ID   L->I
-MT   1 nucleotide substitution
-PP   Anywhere.
-TG   L
-CF
-//
 ID   Q->K
 MT   1 nucleotide substitution
 PP   Anywhere.
