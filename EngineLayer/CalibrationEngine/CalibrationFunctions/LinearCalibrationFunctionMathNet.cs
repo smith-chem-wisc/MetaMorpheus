@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer.Calibration
 {
-    internal class LinearCalibrationFunctionMathNet : ILearner<double>
+    public class LinearCalibrationFunctionMathNet : ILearner<double>
     {
         #region Private Fields
 

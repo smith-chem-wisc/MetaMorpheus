@@ -2,7 +2,7 @@
 
 namespace EngineLayer.Calibration
 {
-    internal class DataPointAquisitionResults
+    public class DataPointAquisitionResults
     {
         #region Public Fields
 

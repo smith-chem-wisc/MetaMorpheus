@@ -16,17 +16,16 @@
 
         #region Public Constructors
 
-        public LabeledMs2DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double isolationMz, double label, Psm identification)
+        public LabeledMs2DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double label, Psm identification)
         {
             this.mz = mz;
             this.rt = rt;
             this.intensity = intensity;
             this.totalIonCurrent = totalIonCurrent;
             this.injectionTime = injectionTime ?? double.NaN;
-            this.isolationMz = isolationMz;
             this.Label = label;
             this.identification = identification;
-            Inputs = new double[] { mz, rt, intensity, totalIonCurrent, this.injectionTime, isolationMz };
+            Inputs = new double[] { mz, rt, intensity, totalIonCurrent, this.injectionTime };
         }
 
         #endregion Public Constructors

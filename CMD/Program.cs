@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using Fclp;
 using Nett;
 using Proteomics;
@@ -12,17 +13,211 @@ namespace MetaMorpheusCommandLine
 {
     internal static class Program
     {
-        #region Private Fields
-
-        private static bool inProgress;
-
-        #endregion Private Fields
-
         #region Private Methods
 
         private static void Main(string[] args)
         {
             Console.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion);
+
+            var goodAAsub = new List<string> {
+            "KN",
+"KT",
+"KR",
+"KI",
+"KQ",
+"KE",
+"NK",
+"NT",
+"NL",
+"NI",
+"NH",
+"ND",
+"NY",
+"KM",
+"NS",
+"TK",
+"TR",
+"TI",
+"TP",
+"TA",
+"TS",
+"TN",
+"TL",
+"TM",
+"RK",
+"RT",
+"RL",
+"RS",
+"RI",
+"RG",
+"SN",
+"ST",
+"SR",
+"SK",
+"SI",
+"SG",
+"SC",
+"RM",
+"RW",
+"SL",
+"IK",
+"IT",
+"IR",
+"IM",
+"IL",
+"IV",
+"IN",
+"IF",
+"MK",
+"MT",
+"MI",
+"ML",
+"MV",
+"IS",
+"QK",
+"QH",
+"QP",
+"QR",
+"QL",
+"QE",
+"HN",
+"HQ",
+"HP",
+"HR",
+"HL",
+"HD",
+"HY",
+"PT",
+"PQ",
+"PR",
+"PL",
+"PA",
+"PS",
+"PH",
+"RQ",
+"RP",
+"RH",
+"RC",
+"LI",
+"LQ",
+"LP",
+"LR",
+"LV",
+"LH",
+"LF",
+"LM",
+"EK",
+"EQ",
+"ED",
+"EA",
+"EG",
+"EV",
+"DN",
+"DH",
+"DE",
+"DA",
+"DG",
+"DV",
+"DY",
+"AT",
+"AP",
+"AE",
+"AG",
+"AV",
+"AS",
+"AD",
+"GR",
+"GE",
+"GA",
+"GV",
+"GL",
+"GD",
+"GC",
+"GK",
+"GW",
+"GS",
+"VI",
+"VL",
+"VE",
+"VA",
+"VG",
+"VD",
+"VF",
+"VM",
+"YN",
+"YH",
+"YD",
+"YS",
+"YC",
+"YF",
+"SP",
+"SA",
+"SY",
+"SF",
+"SW",
+"CL",
+"CR",
+"CG",
+"CY",
+"CS",
+"CW",
+"CF",
+"WK",
+"WR",
+"WG",
+"WS",
+"WC",
+"WL",
+"LS",
+"FI",
+"FL",
+"FV",
+"FY",
+"FS",
+"FC",
+"LW"};
+
+            List<ModificationWithMass> subs = new List<ModificationWithMass>();
+            string abc = "ABCDEFGHIJKLMNOPQRSTVWXYZ";
+            foreach (var l1 in abc)
+            {
+                if (Residue.TryGetResidue(l1, out Residue r1))
+                {
+                    foreach (var l2 in abc)
+                    {
+                        if (!l1.Equals(l2) && Residue.TryGetResidue(l2, out Residue r2))
+                        {
+                            ChemicalFormula cf = new ChemicalFormula();
+                            cf.Add(r2);
+                            cf.Remove(r1);
+
+                            ModificationMotif.TryGetMotif(r1.Letter.ToString(), out ModificationMotif motif);
+                            if (goodAAsub.Contains(r1.Letter.ToString() + r2.Letter.ToString()))
+                            {
+                                subs.Add(new ModificationWithMassAndCf(r1.Letter.ToString() + "->" + r2.Letter.ToString(),
+                                    "1 nucleotide substitution",
+                                    motif,
+                                    TerminusLocalization.Any,
+                                    cf));
+                            }
+                            else
+                            {
+                                subs.Add(new ModificationWithMassAndCf(r1.Letter.ToString() + "->" + r2.Letter.ToString(),
+                                    "2+ nucleotide substitution",
+                                    motif,
+                                    TerminusLocalization.Any,
+                                    cf));
+                            }
+                        }
+                    }
+                }
+            }
+
+            foreach (var ok in subs.OrderBy(b => b.monoisotopicMass))
+            {
+                Console.WriteLine(ok);
+                Console.WriteLine("//");
+            }
 
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
@@ -44,14 +239,10 @@ namespace MetaMorpheusCommandLine
 
             if (result.HasErrors == false)
             {
-                MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
-                MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusEngine.WarnHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
-                MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
 
-                MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
-                MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
-                MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+                MetaMorpheusTask.WarnHandler += MyEngine_outLabelStatusHandler;
 
                 foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
                     GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
@@ -120,58 +311,59 @@ namespace MetaMorpheusCommandLine
 
         private static void MyTaskEngine_startingSingleTaskHander(object sender, SingleTaskEventArgs e)
         {
-            if (inProgress)
-                Console.WriteLine();
-            inProgress = false;
-            Console.WriteLine("Starting task:");
-            Console.WriteLine(e.TaskId);
+            //if (inProgress)
+            //    Console.WriteLine();
+            //inProgress = false;
+            //Console.WriteLine("Starting task:");
+            //Console.WriteLine(e.TaskId);
         }
 
         private static void MyTaskEngine_finishedWritingFileHandler(object sender, SingleFileEventArgs e)
         {
-            if (inProgress)
-                Console.WriteLine();
-            inProgress = false;
-            Console.WriteLine("Finished writing file: " + e.writtenFile);
+            //if (inProgress)
+            //    Console.WriteLine();
+            //inProgress = false;
+            //Console.WriteLine("Finished writing file: " + e.writtenFile);
         }
 
         private static void MyTaskEngine_finishedSingleTaskHandler(object sender, SingleTaskEventArgs e)
         {
-            if (inProgress)
-                Console.WriteLine();
-            inProgress = false;
-            Console.WriteLine("Finished task: " + e.TaskId.GetType().Name);
+            //if (inProgress)
+            //    Console.WriteLine();
+            //inProgress = false;
+            //Console.WriteLine("Finished task: " + e.TaskId.GetType().Name);
         }
 
         private static void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
         {
-            if (inProgress)
-                Console.WriteLine();
-            inProgress = false;
-            Console.WriteLine("Starting engine:" + e.myEngine.GetType().Name);
+            //if (inProgress)
+            //    Console.WriteLine();
+            //inProgress = false;
+            //Console.WriteLine("Starting engine:" + e.myEngine.GetType().Name);
         }
 
         private static void MyEngine_outProgressHandler(object sender, ProgressEventArgs e)
         {
-            Console.Write(e.new_progress + " ");
-            inProgress = true;
+            //Console.Write(e.new_progress + " ");
+            //inProgress = true;
         }
 
         private static void MyEngine_outLabelStatusHandler(object sender, StringEventArgs e)
         {
-            if (inProgress)
-                Console.WriteLine();
-            inProgress = false;
-            Console.WriteLine("Status: " + e.s);
+            //if (inProgress)
+            //    Console.WriteLine();
+            //inProgress = false;
+            //Console.WriteLine("Status: " + e.s);
+            Console.WriteLine(e.s);
         }
 
         private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
-            if (inProgress)
-                Console.WriteLine();
-            inProgress = false;
-            Console.WriteLine("Finished engine: ");
-            Console.WriteLine(e);
+            //if (inProgress)
+            //    Console.WriteLine();
+            //inProgress = false;
+            //Console.WriteLine("Finished engine: ");
+            //Console.WriteLine(e);
         }
 
         #endregion Private Methods

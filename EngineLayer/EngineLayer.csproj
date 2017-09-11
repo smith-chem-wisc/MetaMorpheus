@@ -122,6 +122,7 @@
     <Compile Include="CalibrationEngine\CalibrationFunctions\ConstantCalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\IdentityCalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationEngine\CalibrationSetting.cs" />
     <Compile Include="CalibrationEngine\DataPointAquisitionResults.cs" />
     <Compile Include="CalibrationEngine\IHasInputsAndOutputs.cs" />
     <Compile Include="CalibrationEngine\LabeledMs2DataPoint.cs" />
