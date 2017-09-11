@@ -178,8 +178,10 @@ namespace EngineLayer.Calibration
         {
             var metric = new MeanSquaredErrorRegressionMetric();
 
-            var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
-            var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
+            //var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
+            //var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
+            var shuffledMs1TrainingPoints = res.Ms1List;
+            var shuffledMs2TrainingPoints = res.Ms2List;
 
             double[] trainList1Concat = shuffledMs1TrainingPoints.SelectMany(b => b.Inputs).ToArray();
             F64Matrix trainList1Matrix = new F64Matrix(trainList1Concat, shuffledMs1TrainingPoints.Count, trainList1Concat.Length / shuffledMs1TrainingPoints.Count);
@@ -191,7 +193,7 @@ namespace EngineLayer.Calibration
 
             var bestMS1predictor = CalibrationSetting.learner.Learn(trainList1Matrix, trainList1Targets);
             var bestMS2predictor = CalibrationSetting.learner.Learn(trainList2Matrix, trainList2Targets);
-
+            
             Tuple<IPredictorModel<double>, IPredictorModel<double>> bestCf = new Tuple<IPredictorModel<double>, IPredictorModel<double>>(bestMS1predictor, bestMS2predictor);
 
             Status("Calibrating Spectra");

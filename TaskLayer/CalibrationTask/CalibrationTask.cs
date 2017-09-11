@@ -164,21 +164,22 @@ namespace TaskLayer
 
                     List<ILearner<double>> learners = new List<ILearner<double>>()
                     {
+                        new RegressionAbsoluteLossGradientBoostLearner(),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0] }, 1)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1] }, 2)),
+
                         new RegressionGradientBoostLearner(),
                         new RegressionRandomForestLearner(),
                         new IdentityCalibrationFunction(),
                         new ConstantCalibrationFunction(),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0] }, 1)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1] }, 2)),
                         new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[3]), Math.Log(b[4]) }, 4)),
                         new RegressionAdaBoostLearner(),
                         new RegressionDecisionTreeLearner(),
-                        new RegressionAbsoluteLossGradientBoostLearner(),
                         new RegressionHuberLossGradientBoostLearner(),
                         new RegressionQuantileLossGradientBoostLearner(),
                         new RegressionSquareLossGradientBoostLearner(),
                         new RegressionExtremelyRandomizedTreesLearner(),
-                        new RandomForestCalibrationFunction(40, 10, new[] { true, true, true, true, true }),
+                        //new RandomForestCalibrationFunction(40, 10, new[] { true, true, true, true, true }),
                         };
 
                     List<(Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string)> ContinueLoops = new List<(Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string)>
@@ -187,7 +188,13 @@ namespace TaskLayer
                         ((DataPointAquisitionResults a, DataPointAquisitionResults b) => b.Count > a.Count, "countIncrease"),
                     };
 
-                    foreach (var CalibrationSetting in GetAllCalibSettings(learners, ContinueLoops))
+                    List<bool> DoLinearMzSeparately = new List<bool>
+                    {
+                        false,
+                        true,
+                    };
+
+                    foreach (var CalibrationSetting in GetAllCalibSettings(learners, ContinueLoops, DoLinearMzSeparately))
                     {
                         //IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                         IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
@@ -317,15 +324,30 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private IEnumerable<CalibrationSetting> GetAllCalibSettings(List<ILearner<double>> learners, List<(Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string)> continueLoops)
+        private IEnumerable<CalibrationSetting> GetAllCalibSettings(List<ILearner<double>> learners, List<(Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string)> continueLoops,
+            List<bool> DoLinearMzSeparately)
         {
             foreach (var ok in learners)
                 foreach (var ok2 in continueLoops)
-                    yield return new CalibrationSetting
+                    foreach (var ok3 in DoLinearMzSeparately)
                     {
-                        learner = ok,
-                        ContinueLoop = ok2,
-                    };
+                        if (ok3)
+                        {
+                            yield return new CalibrationSetting
+                            {
+                                learner = new SeparateMzLearner(ok),
+                                ContinueLoop = ok2,
+                            };
+                        }
+                        else
+                        {
+                            yield return new CalibrationSetting
+                            {
+                                learner = ok,
+                                ContinueLoop = ok2,
+                            };
+                        }
+                    }
         }
 
         #endregion Private Methods
