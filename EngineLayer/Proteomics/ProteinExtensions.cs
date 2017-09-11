@@ -167,7 +167,6 @@ namespace EngineLayer
                     // Cleave after Length index
                     oneBasedIndicesToCleaveAfter.Add(protein.Length);
                     //Main Body
-                    List<string> tester = new List<string>();
                     for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - maximumMissedCleavages - 1; i++)
                     {
                         // Retain!
