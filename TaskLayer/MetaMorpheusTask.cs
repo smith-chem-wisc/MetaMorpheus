@@ -128,17 +128,14 @@ namespace TaskLayer
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                 {
                     precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
-
                     ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
                 }
                 if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                     ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
 
                 List<Tuple<List<IMzPeak>, int>> isolatedStuff = new List<Tuple<List<IMzPeak>, int>>();
-                if (doPrecursorDeconvolution && ms2scan.IsolationMz.HasValue)
-                {
-                    isolatedStuff = ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio).ToList();
-                }
+                if (doPrecursorDeconvolution && precursorSpectrum != null)
+                    isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
 
                 if (useProvidedPrecursorInfo)
                     if (ms2scan.SelectedIonChargeStateGuess.HasValue)
