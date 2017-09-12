@@ -129,7 +129,8 @@ namespace TaskLayer
                 {
                     var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
                     ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
-                    ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                    if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                        ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                     if (doPrecursorDeconvolution)
                         isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
                 }
