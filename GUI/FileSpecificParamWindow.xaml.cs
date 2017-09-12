@@ -44,14 +44,18 @@ namespace MetaMorpheusGUI
             {
                 var paramFile = Toml.ReadFile(tomlFileName, MetaMorpheusTask.tomlConfig);
                 tomlSettingsList = paramFile.ToDictionary(p => p.Key);
+                FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
+                UpdateAndPopulateFields(settings);
             }
             else
             {
                 tomlSettingsList = new Dictionary<string, KeyValuePair<string, TomlObject>>();
+                FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
+                settings.ConserveMemory = null;
+                settings.DoPrecursorDeconvolution = null;
+                settings.UseProvidedPrecursorInfo = null;
+                UpdateAndPopulateFields(settings);
             }
-            
-            FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
-            UpdateAndPopulateFields(settings);
 
         }
 

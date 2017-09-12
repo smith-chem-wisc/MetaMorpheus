@@ -735,14 +735,14 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void TestWindowTable_click(object sender, RoutedEventArgs e)
+        /*private void TestWindowTable_click(object sender, RoutedEventArgs e)
         {
             var dialog = new TestWindowTable();
             if (dialog.ShowDialog() == true)
             {
                 Console.WriteLine("asdf");
             }
-        }
+        }*/
 
             //run if fileSpecificParams are changed from GUI
             private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
