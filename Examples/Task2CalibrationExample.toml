@@ -1,0 +1,32 @@
+TaskType = "Calibrate"
+
+[CalibrationParameters]
+PrecursorMassTolerance = "±10.0000 PPM"
+NonLinearCalibration = true
+WriteIntermediateFiles = false
+
+[CommonParameters]
+MaxDegreeOfParallelism = -1
+LocalizeAll = true
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl of C"
+ListOfModsVariable = "Common Variable\tOxidation of M"
+ListOfModsLocalize = ""
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionIntensityRatio = 4.0
+DeconvolutionMaxAssumedChargeState = 10
+DeconvolutionMassTolerance = "±5.0000 PPM"
+InitiatorMethionineBehavior = "Variable"
+MaxMissedCleavages = 2
+MinPeptideLength = 5
+MaxModificationIsoforms = 4096
+TotalPartitions = 1
+Protease = "trypsin"
+BIons = true
+YIons = true
+ZdotIons = false
+CIons = false
+ProductMassTolerance = "±0.0100 Absolute"
+ConserveMemory = true
+ScoreCutoff = 5.0
+Max_mods_for_peptide = 3
