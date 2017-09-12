@@ -105,7 +105,6 @@
                             <Button x:Name="AddRaw" Content="Add" Click="AddRaw_Click" />
                             <Button x:Name="ClearRaw" Content="Clear" Click="ClearRaw_Click" />
                             <Button x:Name="ChangeParametersss" Content="Change Parameters" Click="ChangeFileSpecificParams_click" />
-                            <Button x:Name="TestWindow" Content="Test Window" Click="TestWindowTable_click" />
                         </StackPanel>
                     </Grid>
                 </GroupBox>
