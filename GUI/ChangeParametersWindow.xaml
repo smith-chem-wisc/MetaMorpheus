@@ -1,0 +1,25 @@
+﻿<Window x:Class="MetaMorpheusGUI.ChangeParametersWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Title="ChangeParametersWindow" Height="700" Width="500">
+    <DataGrid x:Name="ParameterGrid" ItemsSource="{Binding}" AlternatingRowBackground="LightBlue" AlternationCount="2" >
+        <DataGrid.Columns>
+            <DataGridTextColumn Header="Parameter Name"  Width="12*" Binding="{Binding FirstName}"/>
+            <DataGridTextColumn Header="Value" Width ="12*" />
+            <DataGridHyperlinkColumn Header="Unset" Width ="5*"/>
+            <DataGridCheckBoxColumn Header="Different in Selected Files"  Width ="10*"/>
+        </DataGrid.Columns>
+        
+            <Style  TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="Background" Value="Orange"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="BorderBrush" Value="Red"/>
+            <Setter Property="BorderThickness" Value="0 0 3 0"/>
+        </Style>
+    </DataGrid>
+</Window>

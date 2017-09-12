@@ -398,9 +398,9 @@ namespace MetaMorpheusGUI
         {
 
             if (SelectedRawFiles.Count == 0)
-                ChangeParametersss.IsEnabled = false;
+                ChangeParameters.IsEnabled = false;
             else
-                ChangeParametersss.IsEnabled = true;
+                ChangeParameters.IsEnabled = true;
 
         }
 
@@ -822,6 +822,14 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+        //yeah yeah
+        private void ChangeFileParameters_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new ChangeParametersWindow(SelectedRawFiles);
+            if (dialog.ShowDialog() == true)
+            {
 
+            }
+        }
     }
 }
