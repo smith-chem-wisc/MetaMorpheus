@@ -272,8 +272,9 @@ namespace EngineLayer
                             // Start peptide
                             for (int j = proteolysisProduct.OneBasedBeginPosition.Value; j < oneBasedIndicesToCleaveAfter[i]; j++)
                             {
-                                if ((!minPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition +1 >= minPeptidesLength) &&
-                                    (!maxPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition +1<= maxPeptidesLength))
+
+                                if ((!minPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 <= maxPeptidesLength))
                                 {
                                     yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, j, protein, j - proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.Type + " start", allKnownFixedModifications);
                                 }
@@ -282,10 +283,10 @@ namespace EngineLayer
                                 i++;
                             i--;
                             // End
-                            for (int j = oneBasedIndicesToCleaveAfter[i]+1; j< proteolysisProduct.OneBasedEndPosition.Value; j++)
+                            for (int j = oneBasedIndicesToCleaveAfter[i] + 1; j < proteolysisProduct.OneBasedEndPosition.Value; j++)
                             {
-                                if ((!minPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j +1>= minPeptidesLength) &&
-                                    (!maxPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j +1<= maxPeptidesLength))
+                                if ((!minPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 <= maxPeptidesLength))
                                 {
                                     yield return new PeptideWithPossibleModifications(j, proteolysisProduct.OneBasedEndPosition.Value, protein, proteolysisProduct.OneBasedEndPosition.Value - j, proteolysisProduct.Type + " end", allKnownFixedModifications);
                                 }
