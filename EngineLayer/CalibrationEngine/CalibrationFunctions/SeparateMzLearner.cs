@@ -1,6 +1,7 @@
 ﻿using MathNet.Numerics;
 using SharpLearning.Common.Interfaces;
 using SharpLearning.Containers.Matrices;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -44,7 +45,17 @@ namespace TaskLayer
             {
                 // Train only on the MZ value!!!! Since already considering a specific scan
 
-                var f = Fit.LinearMultiDimFunc(kvp.Value.Select(b => new[] { b.Item1[0] }).ToArray(), kvp.Value.Select(b => b.Item2).ToArray());
+                var inputs = kvp.Value.Select(b => new[] { b.Item1[0] }).ToArray();
+                var outputs = kvp.Value.Select(b => b.Item2).ToArray();
+
+                //Console.WriteLine(string.Join(", ", kvp.Value.Select(b => b.Item1[0])));
+                //Console.WriteLine(string.Join(", ", kvp.Value.Select(b => b.Item2)));
+
+                var ye = new Func<double[], double>[1];
+                ye[0] = a => a[0];
+
+                var f = Fit.LinearMultiDimFunc(inputs, outputs, ye);
+                //Console.WriteLine("f(new double[] { 1 }) = " + f(new double[] { 1 }));
                 foreach (var dp in kvp.Value)
                 {
                     dps.AddRange(dp.Item1.Skip(1).ToArray());

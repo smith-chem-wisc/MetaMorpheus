@@ -74,16 +74,33 @@ namespace EngineLayer.Calibration
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            if (!CalibrationSetting.DoCalibration)
-                return new MyErroredResults(this, null);
             DataPointAquisitionResults dataPointAcquisitionResult = new DataPointAquisitionResults { Ms1List = new List<LabeledMs1DataPoint>(), Ms2List = new List<LabeledMs2DataPoint>() };
 
             DataPointAquisitionResults prevdataPointAcquisitionResult;
+
+            int round = 0;
+            if (CalibrationSetting.DoFirst != null)
+            {
+                do
+                {
+                    round++;
+                    Console.WriteLine("DoFirst round " + round);
+                    prevdataPointAcquisitionResult = dataPointAcquisitionResult;
+                    dataPointAcquisitionResult = GetDataPoints();
+                    Calibrate(dataPointAcquisitionResult, CalibrationSetting.DoFirst);
+                } while (CalibrationSetting.ContinueLoop.Item1(prevdataPointAcquisitionResult, dataPointAcquisitionResult));
+            }
+
+            dataPointAcquisitionResult = new DataPointAquisitionResults { Ms1List = new List<LabeledMs1DataPoint>(), Ms2List = new List<LabeledMs2DataPoint>() };
+
+            round = 0;
             do
             {
+                round++;
+                Console.WriteLine("Round " + round);
                 prevdataPointAcquisitionResult = dataPointAcquisitionResult;
                 dataPointAcquisitionResult = GetDataPoints();
-                Calibrate(dataPointAcquisitionResult);
+                Calibrate(dataPointAcquisitionResult, CalibrationSetting.Learners);
             } while (CalibrationSetting.ContinueLoop.Item1(prevdataPointAcquisitionResult, dataPointAcquisitionResult));
 
             return new MetaMorpheusEngineResults(this);
@@ -134,24 +151,24 @@ namespace EngineLayer.Calibration
                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
                 numFragmentsIdentified = 0;
 
-                if (matchIndex == 0)
-                    Console.WriteLine("matchIndex=0 basesequence=" + coolPeptide.BaseSequence);
+                //if (matchIndex == 0)
+                //    Console.WriteLine("matchIndex=0 basesequence=" + coolPeptide.BaseSequence);
                 res.Ms2List.AddRange(SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2scanNumber) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, coolPeptide, peptideCharge, identification));
                 res.numMs2MassChargeCombinationsConsidered += numMs2MassChargeCombinationsConsidered;
                 res.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
 
-                if (matchIndex == 0)
-                {
-                    Console.WriteLine("numFragmentsIdentified= " + numFragmentsIdentified);
-                    Console.WriteLine("ms2list= " + string.Join(";", res.Ms2List.Select(b => "(" + b.mz + "," + b.Label + ") ")));
-                }
+                //if (matchIndex == 0)
+                //{
+                //    Console.WriteLine("numFragmentsIdentified= " + numFragmentsIdentified);
+                //    Console.WriteLine("ms2list= " + string.Join(";", res.Ms2List.Select(b => "(" + b.mz + "," + b.Label + ") ")));
+                //}
 
                 // If MS2 has low evidence for peptide, skip and go to next one
                 if (numFragmentsIdentified < numFragmentsNeededForEveryIdentification)
                     continue;
 
-                if (matchIndex == 0)
-                    Console.WriteLine("good evidence!");
+                //if (matchIndex == 0)
+                //    Console.WriteLine("good evidence!");
 
                 // Calculate isotopic distribution of the full peptide
 
@@ -174,26 +191,75 @@ namespace EngineLayer.Calibration
             return res;
         }
 
-        private Tuple<IPredictorModel<double>, IPredictorModel<double>> Calibrate(DataPointAquisitionResults res)
+        private Tuple<IPredictorModel<double>, IPredictorModel<double>> Calibrate(DataPointAquisitionResults res, List<ILearner<double>> learners)
         {
             var metric = new MeanSquaredErrorRegressionMetric();
 
-            //var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
-            //var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
-            var shuffledMs1TrainingPoints = res.Ms1List;
-            var shuffledMs2TrainingPoints = res.Ms2List;
+            var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
+            var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
 
-            double[] trainList1Concat = shuffledMs1TrainingPoints.SelectMany(b => b.Inputs).ToArray();
-            F64Matrix trainList1Matrix = new F64Matrix(trainList1Concat, shuffledMs1TrainingPoints.Count, trainList1Concat.Length / shuffledMs1TrainingPoints.Count);
-            double[] trainList1Targets = shuffledMs1TrainingPoints.Select(b => b.Label).ToArray();
+            var numVars = shuffledMs1TrainingPoints[0].Inputs.Length;
 
-            double[] trainList2Concat = shuffledMs2TrainingPoints.SelectMany(b => b.Inputs).ToArray();
-            F64Matrix trainList2Matrix = new F64Matrix(trainList2Concat, shuffledMs2TrainingPoints.Count, trainList2Concat.Length / shuffledMs2TrainingPoints.Count);
-            double[] trainList2Targets = shuffledMs2TrainingPoints.Select(b => b.Label).ToArray();
+            double[] trainList1Concat = shuffledMs1TrainingPoints.Take((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).SelectMany(b => b.Inputs).ToArray();
+            F64Matrix trainList1Matrix = new F64Matrix(trainList1Concat, trainList1Concat.Length / numVars, numVars);
+            double[] trainList1Targets = shuffledMs1TrainingPoints.Take((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
 
-            var bestMS1predictor = CalibrationSetting.learner.Learn(trainList1Matrix, trainList1Targets);
-            var bestMS2predictor = CalibrationSetting.learner.Learn(trainList2Matrix, trainList2Targets);
-            
+            double[] testList1Concat = shuffledMs1TrainingPoints.Skip((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).SelectMany(b => b.Inputs).ToArray();
+            F64Matrix testList1Matrix = new F64Matrix(testList1Concat, testList1Concat.Length / numVars, numVars);
+            double[] testList1Targets = shuffledMs1TrainingPoints.Skip((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
+
+            double[] trainList2Concat = shuffledMs2TrainingPoints.Take((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).SelectMany(b => b.Inputs).ToArray();
+            F64Matrix trainList2Matrix = new F64Matrix(trainList2Concat, trainList2Concat.Length / numVars, numVars);
+            double[] trainList2Targets = shuffledMs2TrainingPoints.Take((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
+
+            double[] testList2Concat = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).SelectMany(b => b.Inputs).ToArray();
+            F64Matrix testList2Matrix = new F64Matrix(testList2Concat, testList2Concat.Length / numVars, numVars);
+            double[] testList2Targets = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
+
+            IPredictorModel<double> bestMS1predictor = new IdentityCalibrationFunction().Learn(null, null);
+            IPredictorModel<double> bestMS2predictor = new IdentityCalibrationFunction().Learn(null, null);
+            double bestMS1MSE = double.MaxValue;
+            double bestMS2MSE = double.MaxValue;
+
+            foreach (var learner in learners)
+            {
+                try
+                {
+                    var ms1regressor = learner.Learn(trainList1Matrix, trainList1Targets);
+                    double MS1mse = 0;
+                    for (int i = 0; i < testList1Matrix.RowCount; i++)
+                        MS1mse += Math.Pow(ms1regressor.Predict(testList1Matrix.Row(i)) - testList1Targets[i], 2);
+                    if (MS1mse < bestMS1MSE)
+                    {
+                        bestMS1MSE = MS1mse;
+                        bestMS1predictor = ms1regressor;
+                        Console.WriteLine("ms1 improv! " + learner.ToString());
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("erorred! " + learner.ToString());
+                }
+
+                try
+                {
+                    var ms2regressor = learner.Learn(trainList2Matrix, trainList2Targets);
+                    double Ms2mse = 0;
+                    for (int i = 0; i < testList2Matrix.RowCount; i++)
+                        Ms2mse += Math.Pow(ms2regressor.Predict(testList2Matrix.Row(i)) - testList2Targets[i], 2);
+                    if (Ms2mse < bestMS2MSE)
+                    {
+                        bestMS2MSE = Ms2mse;
+                        bestMS2predictor = ms2regressor;
+                        Console.WriteLine("ms2 improv! " + learner.ToString());
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("erorred! " + learner.ToString());
+                }
+            }
+
             Tuple<IPredictorModel<double>, IPredictorModel<double>> bestCf = new Tuple<IPredictorModel<double>, IPredictorModel<double>>(bestMS1predictor, bestMS2predictor);
 
             Status("Calibrating Spectra");
@@ -288,7 +354,9 @@ namespace EngineLayer.Calibration
                         {
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, fullMS1spectrum.YArray[closestPeakIndex], double.NaN, double.NaN, closestPeakMZ - theMZ, null));
+                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, closestPeakMZ - theMZ, null));
+
+                            //trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, fullMS1spectrum.YArray[closestPeakIndex], double.NaN, double.NaN, closestPeakMZ - theMZ, null));
                         }
                         else
                             break;
@@ -313,7 +381,7 @@ namespace EngineLayer.Calibration
                         countForThisScan++;
                         yield return new LabeledMs1DataPoint(trainingPointsToAverage.Select(b => b.mz).Average(),
                                                              fullMS1scan.RetentionTime,
-                                                             trainingPointsToAverage.Select(b => b.intensity).Average(),
+                                                             // trainingPointsToAverage.Select(b => b.intensity).Average(),
                                                              fullMS1scan.TotalIonCurrent,
                                                              fullMS1scan.InjectionTime,
                                                              trainingPointsToAverage.Select(b => b.Label).Median(),
@@ -338,8 +406,8 @@ namespace EngineLayer.Calibration
 
             IHasChemicalFormula[] fragmentList = peptide.Fragment(fragmentTypesForCalibration, true).OfType<IHasChemicalFormula>().ToArray();
 
-            if (ms2DataScan.OneBasedScanNumber == 16490)
-                Console.WriteLine("Looking at ms2 scan 16490");
+            //if (ms2DataScan.OneBasedScanNumber == 16490)
+            //    Console.WriteLine("Looking at ms2 scan 16490");
             foreach (var fragment in fragmentList)
             {
                 bool fragmentIdentified = false;
@@ -409,7 +477,9 @@ namespace EngineLayer.Calibration
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
-                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, ms2DataScan.MassSpectrum.YArray[closestPeakIndex], double.NaN, null, closestPeakMZ - theMZ, null));
+                                //trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, ms2DataScan.MassSpectrum.YArray[closestPeakIndex], double.NaN, null, closestPeakMZ - theMZ, null));
+
+                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, double.NaN, null, closestPeakMZ - theMZ, null));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
@@ -431,7 +501,7 @@ namespace EngineLayer.Calibration
                             countForThisMS2a++;
                             yield return new LabeledMs2DataPoint(trainingPointsToAverage.Select(b => b.mz).Average(),
                                      ms2DataScan.RetentionTime,
-                                     trainingPointsToAverage.Select(b => b.intensity).Average(),
+                                     //trainingPointsToAverage.Select(b => b.intensity).Average(),
                                      ms2DataScan.TotalIonCurrent,
                                      ms2DataScan.InjectionTime,
                                      trainingPointsToAverage.Select(b => b.Label).Median(),

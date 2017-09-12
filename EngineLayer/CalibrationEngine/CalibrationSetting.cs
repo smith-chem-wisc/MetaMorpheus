@@ -1,21 +1,18 @@
 ﻿using SharpLearning.Common.Interfaces;
 using System;
+using System.Collections.Generic;
 
 namespace EngineLayer.Calibration
 {
     public class CalibrationSetting
     {
-        #region Public Fields
-
-        public ILearner<double> learner = new IdentityCalibrationFunction();
-
-        #endregion Public Fields
-
         #region Public Properties
 
-        public (Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string) ContinueLoop { get; set; } = ((DataPointAquisitionResults a, DataPointAquisitionResults b) => false, "");
+        public List<ILearner<double>> Learners { get; set; }
 
-        public bool DoCalibration { get; set; } = true;
+        public (Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string) ContinueLoop { get; set; }
+
+        public List<ILearner<double>> DoFirst { get; set; }
 
         #endregion Public Properties
 
@@ -23,7 +20,7 @@ namespace EngineLayer.Calibration
 
         public override string ToString()
         {
-            return " learner= " + learner.ToString() + " continueLoopString= " + ContinueLoop.Item2;
+            return " continueLoopString= " + ContinueLoop.Item2 + " DoFirst " + DoFirst == null ? "null" : string.Join(",", DoFirst) + " Learners " + string.Join(",", Learners);
         }
 
         #endregion Public Methods

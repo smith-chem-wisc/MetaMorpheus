@@ -12,7 +12,6 @@ namespace EngineLayer.Calibration
         #region Private Fields
 
         private readonly int level;
-        private readonly bool[] useFeature;
         private readonly int doNotSplitIfUnderThis;
 
         private double output = double.NaN;
@@ -25,11 +24,10 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public RegressionTree(int doNotSplitIfUnderThis, int level, bool[] useFeature)
+        public RegressionTree(int doNotSplitIfUnderThis, int level)
         {
             this.doNotSplitIfUnderThis = doNotSplitIfUnderThis;
             this.level = level;
-            this.useFeature = useFeature;
         }
 
         #endregion Public Constructors
@@ -65,36 +63,35 @@ namespace EngineLayer.Calibration
             }
 
             // For every variable, try to find the best split
-            for (int i = 0; i < useFeature.Length; i++)
-                if (useFeature[i])
+            for (int i = 0; i < prunedTrainingPoints[0].Inputs.Length; i++)
+            {
+                prunedTrainingPoints.Sort(Comparer<IHasInputsAndOutputs>.Create((x, y) => x.Inputs[i].CompareTo(y.Inputs[i])));
+                int num_splits = Math.Min(15, prunedTrainingPoints.Count - 1);
+                for (double j = 0; j < num_splits; j++)
                 {
-                    prunedTrainingPoints.Sort(Comparer<IHasInputsAndOutputs>.Create((x, y) => x.Inputs[i].CompareTo(y.Inputs[i])));
-                    int num_splits = Math.Min(15, prunedTrainingPoints.Count - 1);
-                    for (double j = 0; j < num_splits; j++)
+                    double quantile = prunedTrainingPoints.Select(b => b.Inputs[i]).Quantile((j + 1) / (num_splits + 1));
+
+                    //Console.WriteLine("quantile: " + quantile + " level = " + level);
+
+                    if (double.IsNaN(quantile))
+                        break;
+                    if (quantile <= prunedTrainingPoints.First().Inputs[i] || quantile >= prunedTrainingPoints.Last().Inputs[i])
+                        continue;
+                    double averageFirst = prunedTrainingPoints.TakeWhile(b => b.Inputs[i] < quantile).Select(b => b.Label).Average();
+                    double averageLast = prunedTrainingPoints.SkipWhile(b => b.Inputs[i] < quantile).Select(b => b.Label).Average();
+
+                    var sumSquaredErrors = prunedTrainingPoints.TakeWhile(b => b.Inputs[i] < quantile).Select(b => Math.Pow(averageFirst - b.Label, 2)).Sum() +
+                                           prunedTrainingPoints.SkipWhile(b => b.Inputs[i] < quantile).Select(b => Math.Pow(averageLast - b.Label, 2)).Sum();
+
+                    if (sumSquaredErrors < bestSumSquaredErrors)
                     {
-                        double quantile = prunedTrainingPoints.Select(b => b.Inputs[i]).Quantile((j + 1) / (num_splits + 1));
-
-                        //Console.WriteLine("quantile: " + quantile + " level = " + level);
-
-                        if (double.IsNaN(quantile))
-                            break;
-                        if (quantile == prunedTrainingPoints.First().Inputs[i] || quantile == prunedTrainingPoints.Last().Inputs[i])
-                            continue;
-                        double averageFirst = prunedTrainingPoints.TakeWhile(b => b.Inputs[i] < quantile).Select(b => b.Label).Average();
-                        double averageLast = prunedTrainingPoints.SkipWhile(b => b.Inputs[i] < quantile).Select(b => b.Label).Average();
-
-                        var sumSquaredErrors = prunedTrainingPoints.TakeWhile(b => b.Inputs[i] < quantile).Select(b => Math.Pow(averageFirst - b.Label, 2)).Sum() +
-                                               prunedTrainingPoints.SkipWhile(b => b.Inputs[i] < quantile).Select(b => Math.Pow(averageLast - b.Label, 2)).Sum();
-
-                        if (sumSquaredErrors < bestSumSquaredErrors)
-                        {
-                            bestSumSquaredErrors = sumSquaredErrors;
-                            bestValue = quantile;
-                            bestI = i;
-                            //Console.WriteLine("bestValue: " + bestValue + " level = " + level);
-                        }
+                        bestSumSquaredErrors = sumSquaredErrors;
+                        bestValue = quantile;
+                        bestI = i;
+                        //Console.WriteLine("bestValue: " + bestValue + " level = " + level);
                     }
                 }
+            }
 
             bool reachedBottom = false;
             if (bestI == -1)
@@ -115,13 +112,13 @@ namespace EngineLayer.Calibration
                 IPredictorModel<double> rightTreePM;
 
                 {
-                    var leftTree = new RegressionTree(doNotSplitIfUnderThis, level + 1, useFeature);
+                    var leftTree = new RegressionTree(doNotSplitIfUnderThis, level + 1);
                     var forLeft = prunedTrainingPoints.TakeWhile(b => b.Inputs[bestI] < bestValue).ToList();
                     var theLeftArray = forLeft.SelectMany(b => b.Inputs).ToArray();
                     leftTreePM = leftTree.Learn(new F64Matrix(theLeftArray, forLeft.Count, theLeftArray.Length / forLeft.Count), forLeft.Select(b => b.Label).ToArray());
                 }
                 {
-                    var rightTree = new RegressionTree(doNotSplitIfUnderThis, level + 1, useFeature);
+                    var rightTree = new RegressionTree(doNotSplitIfUnderThis, level + 1);
                     var forRight = prunedTrainingPoints.SkipWhile(b => b.Inputs[bestI] < bestValue).ToList();
                     var theRightArray = forRight.SelectMany(b => b.Inputs).ToArray();
                     rightTreePM = rightTree.Learn(new F64Matrix(theRightArray, forRight.Count, theRightArray.Length / forRight.Count), forRight.Select(b => b.Label).ToArray());

@@ -12,18 +12,15 @@ namespace EngineLayer.Calibration
         #region Private Fields
 
         private readonly RegressionTree[] RegressionTrees;
-        private readonly bool[] useFeature;
-
         #endregion Private Fields
 
         #region Public Constructors
 
-        public RandomForestCalibrationFunction(int numTrees, int doNotSplitIfUnderThis, bool[] useFeature)
+        public RandomForestCalibrationFunction(int numTrees, int doNotSplitIfUnderThis)
         {
             RegressionTrees = new RegressionTree[numTrees];
-            this.useFeature = useFeature;
             for (int i = 0; i < numTrees; i++)
-                RegressionTrees[i] = new RegressionTree(doNotSplitIfUnderThis, 0, useFeature);
+                RegressionTrees[i] = new RegressionTree(doNotSplitIfUnderThis, 0);
         }
 
         #endregion Public Constructors
