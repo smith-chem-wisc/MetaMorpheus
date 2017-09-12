@@ -1,0 +1,2269 @@
+Amino Acid Substitutions
+ID   W->G
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-9H-7N-1
+//
+ID   W->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-8H-5N-1
+//
+ID   Y->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-7H-6O-1
+//
+ID   R->G
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-4H-9N-3
+//
+ID   W->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-8H-5N-1O
+//
+ID   Y->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-6H-4O-1
+//
+ID   F->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-7H-6
+//
+ID   W->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-6H-3N-1
+//
+ID   W->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-6H-1N-1
+//
+ID   R->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-3H-7N-3
+//
+ID   W->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-7H-3N-1O
+//
+ID   W->C
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-8H-5N-1S
+//
+ID   H->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-4H-4N-2
+//
+ID   F->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-6H-4
+//
+ID   Y->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-6H-4
+//
+ID   M->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C-3H-6S-1
+//
+ID   W->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-5HN-1
+//
+ID   W->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-5HN-1
+//
+ID   W->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-7H-4O
+//
+ID   E->G
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C-3H-4O-2
+//
+ID   K->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-4H-9N-1
+//
+ID   W->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-7H-5N-1O2
+//
+ID   Q->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C-3H-5N-1O-1
+//
+ID   R->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-3H-7N-3O
+//
+ID   H->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-3H-2N-2
+//
+ID   Y->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-4H-2O-1
+//
+ID   Y->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-4O-1
+//
+ID   Y->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-5H-2
+//
+ID   Y->C
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-6H-4O-1S
+//
+ID   F->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-6H-4O
+//
+ID   M->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C-2H-4S-1
+//
+ID   R->P
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-1H-5N-3
+//
+ID   W->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-6H-2O
+//
+ID   D->G
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C-2H-2O-2
+//
+ID   E->A
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C-2H-2O-2
+//
+ID   W->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-5H2
+//
+ID   K->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-3H-7N-1
+//
+ID   W->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-6H-3N-1O2
+//
+ID   R->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-1H-3N-3
+//
+ID   N->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C-2H-3N-1O-1
+//
+ID   Q->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C-2H-3N-1O-1
+//
+ID   I->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-4H-8
+//
+ID   L->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-4H-8
+//
+ID   R->T
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-2H-5N-3O
+//
+ID   W->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-6H-1N-1S
+//
+ID   R->C
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-3H-7N-3S
+//
+ID   H->S
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-3H-2N-2O
+//
+ID   F->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-4H-2
+//
+ID   Y->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-3H2O-1
+//
+ID   Y->L
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-3H2O-1
+//
+ID   W->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-5H-3N
+//
+ID   Y->N
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-5H-3N
+//
+ID   Y->D
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-5H-4O
+//
+ID   F->V
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-4
+//
+ID   F->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-5H-2O
+//
+ID   C->G
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C-1H-2S-1
+//
+ID   F->C
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-6H-4S
+//
+ID   T->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C-2H-4O-1
+//
+ID   M->S
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C-2H-4OS-1
+//
+ID   D->A
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C-1O-2
+//
+ID   R->I
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   H-1N-3
+//
+ID   R->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   H-1N-3
+//
+ID   N->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C-1H-1N-1O-1
+//
+ID   R->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-2H-6N-2O
+//
+ID   I->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-3H-6
+//
+ID   L->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-3H-6
+//
+ID   V->G
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C-3H-6
+//
+ID   E->S
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C-2H-2O-1
+//
+ID   R->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-2H-7N-3O2
+//
+ID   K->S
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-3H-7N-1O
+//
+ID   Q->S
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C-2H-3N-1
+//
+ID   P->G
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C-3H-4
+//
+ID   H->P
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-1N-2
+//
+ID   W->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-2H-1N-1
+//
+ID   H->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-1H2N-2
+//
+ID   H->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-2N-2O
+//
+ID   Y->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-4H-1N
+//
+ID   Y->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-3H3NO-1
+//
+ID   H->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-3H-2N-2S
+//
+ID   Y->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-4H-2O
+//
+ID   M->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   H-2S-1
+//
+ID   F->I
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-3H2
+//
+ID   F->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-3H2
+//
+ID   F->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-5H-3NO
+//
+ID   F->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-5H-4O2
+//
+ID   Y->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-4O-1S
+//
+ID   E->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   O-2
+//
+ID   C->A
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   S-1
+//
+ID   M->V
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   S-1
+//
+ID   K->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-1H-5N-1
+//
+ID   Q->P
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   H-1N-1O-1
+//
+ID   S->G
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C-1H-2O-1
+//
+ID   T->A
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C-1H-2O-1
+//
+ID   M->T
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C-1H-2OS-1
+//
+ID   W->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-5H2N2
+//
+ID   E->V
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   H2O-2
+//
+ID   K->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-1H-3N-1
+//
+ID   Q->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   HN-1O-1
+//
+ID   R->Q
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-1H-4N-2O
+//
+ID   M->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C-2H-4
+//
+ID   V->A
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C-2H-4
+//
+ID   R->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   N-2
+//
+ID   D->S
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C-1O-1
+//
+ID   E->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C-1O-1
+//
+ID   R->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-1H-5N-3O2
+//
+ID   K->T
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-2H-5N-1O
+//
+ID   N->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C-1H-1N-1
+//
+ID   Q->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C-1H-1N-1
+//
+ID   I->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-3H-6O
+//
+ID   L->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-3H-6O
+//
+ID   E->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C-2H-2O-2S
+//
+ID   P->A
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C-2H-2
+//
+ID   Y->H
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-3H-2N2O-1
+//
+ID   K->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-3H-7N-1S
+//
+ID   R->M
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C-1H-3N-3S
+//
+ID   Q->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C-2H-3N-1O-1S
+//
+ID   H->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   H4N-2
+//
+ID   H->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   H4N-2
+//
+ID   H->N
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-2H-1N-1O
+//
+ID   W->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   W
+CF   C-2H-1N-1O
+//
+ID   H->D
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-2H-2N-2O2
+//
+ID   R->H
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   H-5N-1
+//
+ID   F->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-4H-1NO
+//
+ID   F->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-3H3N
+//
+ID   F->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-4H-2O2
+//
+ID   D->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   CH2O-2
+//
+ID   M->I
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   CH2S-1
+//
+ID   M->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   CH2S-1
+//
+ID   M->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C-1H-3NOS-1
+//
+ID   N->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   CHN-1O-1
+//
+ID   I->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-1H-4
+//
+ID   L->P
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-4
+//
+ID   F->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-4S
+//
+ID   M->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C-1H-4O2S-1
+//
+ID   S->A
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   O-1
+//
+ID   Y->F
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   O-1
+//
+ID   C->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   OS-1
+//
+ID   D->V
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   CH4O-2
+//
+ID   E->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   CH4O-2
+//
+ID   E->L
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   CH4O-2
+//
+ID   K->I
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   H-1N-1
+//
+ID   K->L
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   H-1N-1
+//
+ID   E->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C-1H-1NO-1
+//
+ID   N->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   CH3N-1O-1
+//
+ID   Q->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   CH3N-1O-1
+//
+ID   Q->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   CH3N-1O-1
+//
+ID   K->N
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-2H-6O
+//
+ID   A->G
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C-1H-2
+//
+ID   E->D
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C-1H-2
+//
+ID   I->V
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-1H-2
+//
+ID   L->V
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-2
+//
+ID   Q->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C-1H-2
+//
+ID   T->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C-1H-2
+//
+ID   D->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   H2O-1
+//
+ID   K->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-2H-7N-1O2
+//
+ID   Q->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C-1H-3N-1O
+//
+ID   N->T
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   HN-1
+//
+ID   I->T
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-2H-4O
+//
+ID   L->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-2H-4O
+//
+ID   V->S
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C-2H-4O
+//
+ID   D->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C-1O-2S
+//
+ID   N->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C-1H-1N-1O-1S
+//
+ID   I->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-3H-6S
+//
+ID   L->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-3H-6S
+//
+ID   P->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C-2H-2O
+//
+ID   F->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-3H-2N2
+//
+ID   R->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C3H-3N-3
+//
+ID   H->Q
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-1HN-1O
+//
+ID   H->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   H5N-1
+//
+ID   H->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-1N-2O2
+//
+ID   Y->R
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C-3H3N3O-1
+//
+ID   H->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C-1H2N-2S
+//
+ID   C->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C2H2S-1
+//
+ID   T->P
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   CO-1
+//
+ID   C->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C2H4S-1
+//
+ID   M->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   H-1NOS-1
+//
+ID   M->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   CH3NS-1
+//
+ID   V->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   H-2
+//
+ID   M->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   H-2O2S-1
+//
+ID   T->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   CH2O-1
+//
+ID   C->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   CH2OS-1
+//
+ID   D->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C2H6O-2
+//
+ID   D->L
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C2H6O-2
+//
+ID   D->N
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   HNO-1
+//
+ID   E->Q
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   HNO-1
+//
+ID   N->I
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C2H5N-1O-1
+//
+ID   N->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C2H5N-1O-1
+//
+ID   E->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   CH5NO-2
+//
+ID   K->Q
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-1H-4O
+//
+ID   Q->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   CH4O-1
+//
+ID   K->E
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-1H-5N-1O2
+//
+ID   I->N
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-2H-5NO
+//
+ID   L->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-2H-5NO
+//
+ID   N->D
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   H-1N-1O
+//
+ID   Q->E
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   H-1N-1O
+//
+ID   I->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-2H-6O2
+//
+ID   L->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-2H-6O2
+//
+ID   T->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C-1H-2O-1S
+//
+ID   V->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C-1H-2O
+//
+ID   E->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   H2O-2S
+//
+ID   P->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   H2
+//
+ID   K->M
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C-1H-3N-1S
+//
+ID   Q->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   HN-1O-1S
+//
+ID   V->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C-2H-4S
+//
+ID   P->T
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C-1O
+//
+ID   P->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C-2H-2S
+//
+ID   M->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   CH-2N2S-1
+//
+ID   R->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C3H-3N-3O
+//
+ID   E->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   CN2O-2
+//
+ID   K->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   H-5N
+//
+ID   Q->H
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   CH-1NO-1
+//
+ID   F->R
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C-3H3N3
+//
+ID   H->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C3H2N-2
+//
+ID   S->P
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C2H2O-1
+//
+ID   C->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C3H6S-1
+//
+ID   C->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C3H6S-1
+//
+ID   C->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   CHNOS-1
+//
+ID   C->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   CO2S-1
+//
+ID   S->V
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C2H4O-1
+//
+ID   T->I
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C2H4O-1
+//
+ID   T->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C2H4O-1
+//
+ID   T->N
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   H-1N
+//
+ID   D->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   CH3NO-1
+//
+ID   D->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C2H7NO-2
+//
+ID   T->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   H-2O
+//
+ID   D->E
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   CH2
+//
+ID   G->A
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   CH2
+//
+ID   N->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   CH2
+//
+ID   S->T
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   CH2
+//
+ID   V->I
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   CH2
+//
+ID   V->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   CH2
+//
+ID   N->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C2H6O-1
+//
+ID   I->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-1H-3NO
+//
+ID   L->Q
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-3NO
+//
+ID   V->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C-1H-3NO
+//
+ID   N->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   CHN-1O
+//
+ID   I->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   HN
+//
+ID   L->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   HN
+//
+ID   I->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-1H-4O2
+//
+ID   L->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-4O2
+//
+ID   V->D
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C-1H-4O2
+//
+ID   S->C
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   O-1S
+//
+ID   A->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   O
+//
+ID   F->Y
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   O
+//
+ID   D->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   CH4O-2S
+//
+ID   M->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C4S-1
+//
+ID   P->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   CH4
+//
+ID   P->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   CH4
+//
+ID   P->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C-1H-1NO
+//
+ID   N->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   CH3N-1O-1S
+//
+ID   I->M
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C-1H-2S
+//
+ID   L->M
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C-1H-2S
+//
+ID   P->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C-1H-2O2
+//
+ID   E->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C4H2O-2
+//
+ID   K->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C3H-3N-1
+//
+ID   Q->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C4HN-1O-1
+//
+ID   H->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   H5N
+//
+ID   D->H
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C2H2N2O-2
+//
+ID   N->H
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C2HNO-1
+//
+ID   Y->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Y
+CF   C2HNO-1
+//
+ID   I->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   H-4N2
+//
+ID   L->H
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   H-4N2
+//
+ID   C->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C2H3NOS-1
+//
+ID   M->R
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   CH3N3S-1
+//
+ID   C->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C3H7NS-1
+//
+ID   H->Y
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C3H2N-2O
+//
+ID   A->P
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C2H2
+//
+ID   C->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C2H2O2S-1
+//
+ID   S->I
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C3H6O-1
+//
+ID   S->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C3H6O-1
+//
+ID   S->N
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   CHN
+//
+ID   T->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   CHN
+//
+ID   T->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C2H5NO-1
+//
+ID   E->R
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   CH5N3O-2
+//
+ID   S->D
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   CO
+//
+ID   T->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   CO
+//
+ID   K->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   N2
+//
+ID   A->V
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C2H4
+//
+ID   C->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C2H4
+//
+ID   Q->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   CH4N2O-1
+//
+ID   V->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   H-1NO
+//
+ID   V->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   CH3N
+//
+ID   V->E
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   H-2O2
+//
+ID   R->W
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   R
+CF   C5H-2N-2
+//
+ID   T->M
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   CH2O-1S
+//
+ID   A->T
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   CH2O
+//
+ID   G->S
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   CH2O
+//
+ID   P->Q
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   HNO
+//
+ID   P->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   CH5N
+//
+ID   A->C
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   S
+//
+ID   V->M
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   S
+//
+ID   P->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   O2
+//
+ID   M->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C4OS-1
+//
+ID   D->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C5H4O-2
+//
+ID   N->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C5H3N-1O-1
+//
+ID   I->F
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C3H-2
+//
+ID   L->F
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C3H-2
+//
+ID   P->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   H2S
+//
+ID   E->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C4H2O-1
+//
+ID   C->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C3H2N2S-1
+//
+ID   K->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C3H-3N-1O
+//
+ID   Q->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C4HN-1
+//
+ID   T->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C2N2O-1
+//
+ID   V->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   CH-2N2
+//
+ID   F->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   F
+CF   C2HN
+//
+ID   P->H
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   CN2
+//
+ID   G->P
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C3H4
+//
+ID   S->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C2H3N
+//
+ID   S->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C3H7NO-1
+//
+ID   D->R
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C2H7N3O-2
+//
+ID   S->E
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C2H2O
+//
+ID   A->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C3H6
+//
+ID   A->L
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C3H6
+//
+ID   G->V
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C3H6
+//
+ID   N->R
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C2H6N2O-1
+//
+ID   A->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   CHNO
+//
+ID   I->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   HN3
+//
+ID   L->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   HN3
+//
+ID   A->D
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   CO2
+//
+ID   S->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C2H4O-1S
+//
+ID   G->T
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C2H4O
+//
+ID   C->F
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C6H4S-1
+//
+ID   G->C
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   CH2S
+//
+ID   T->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C5H2O-1
+//
+ID   V->F
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C4
+//
+ID   D->Y
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C5H4O-1
+//
+ID   H->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   H
+CF   C5H3N-1
+//
+ID   N->Y
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C5H3N-1
+//
+ID   I->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C3H-2O
+//
+ID   L->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C3H-2O
+//
+ID   P->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C4H2
+//
+ID   S->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C3H2N2O-1
+//
+ID   C->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C3H7N3S-1
+//
+ID   M->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   M
+CF   C6HNS-1
+//
+ID   T->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C2H5N3O-1
+//
+ID   G->I
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C4H8
+//
+ID   G->L
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C4H8
+//
+ID   A->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C2H3NO
+//
+ID   G->N
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C2H3NO
+//
+ID   V->R
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   CH3N3
+//
+ID   E->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   E
+CF   C6H3NO-2
+//
+ID   A->K
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C3H7N
+//
+ID   K->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   K
+CF   C5H-2
+//
+ID   A->E
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C2H2O2
+//
+ID   G->D
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C2H2O2
+//
+ID   Q->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   Q
+CF   C6H2O-1
+//
+ID   P->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   CH5N3
+//
+ID   A->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C2H4S
+//
+ID   S->F
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C6H4O-1
+//
+ID   C->Y
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C6H4OS-1
+//
+ID   T->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C5H2
+//
+ID   V->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C4O
+//
+ID   P->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C4H2O
+//
+ID   A->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C3H2N2
+//
+ID   S->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C3H7N3O-1
+//
+ID   G->Q
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C3H5NO
+//
+ID   D->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   D
+CF   C7H5NO-2
+//
+ID   G->K
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C4H9N
+//
+ID   G->E
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C3H4O2
+//
+ID   N->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   N
+CF   C7H4O-1
+//
+ID   I->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   I
+CF   C5H-1N
+//
+ID   L->W
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   L
+CF   C5H-1N
+//
+ID   G->M
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C3H6S
+//
+ID   A->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C6H4
+//
+ID   S->Y
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C6H4
+//
+ID   G->H
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C4H4N2
+//
+ID   C->W
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   C
+CF   C8H5NS-1
+//
+ID   T->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   T
+CF   C7H3NO-1
+//
+ID   A->R
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C3H7N3
+//
+ID   V->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   V
+CF   C6HN
+//
+ID   P->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   P
+CF   C6H3N
+//
+ID   G->F
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C7H6
+//
+ID   A->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C6H4O
+//
+ID   S->W
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   S
+CF   C8H5NO-1
+//
+ID   G->R
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C4H9N3
+//
+ID   G->Y
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C7H6O
+//
+ID   A->W
+MT   2+ nucleotide substitution
+PP   Anywhere.
+TG   A
+CF   C8H5N
+//
+ID   G->W
+MT   1 nucleotide substitution
+PP   Anywhere.
+TG   G
+CF   C9H7N
+//
