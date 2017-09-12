@@ -263,7 +263,11 @@ namespace TaskLayer
             Status("Crosslink analysis engine", taskId);
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, modsDictionary, OutputFolder, crosslinker, terminusType, CommonParameters, new List<string> { taskId }).Run();
+            if (XlSearchParameters.XlOutAll)
+            {
+                WriteCrosslinkToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
 
+            }
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).OrderByDescending(p => p.ScanNumber).ToList();
             //Write Inter Psms FDR
             var interPsmsXLFDR = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderByDescending(p => p.XLTotalScore).ToList();

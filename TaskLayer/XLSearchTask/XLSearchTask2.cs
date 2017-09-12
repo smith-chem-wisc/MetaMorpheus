@@ -76,7 +76,7 @@ namespace TaskLayer
                                                 + "\t"
                                                 + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
                                                 + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPsmCross.PeptideMonisotopicMass.HasValue) ? (item.BetaPsmCross.ScanPrecursorMass - item.BetaPsmCross.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value).ToString(CultureInfo.InvariantCulture) : "---")
-                                                + "\t" + item.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture)
+                                                + "\t" + (item.FdrInfo != null ? item.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture) : "-")
                                                 + "\t" + item.ParentIonExist + "." + item.BetaPsmCross.ParentIonExist
                                                 + "\t" + (item.Charge2IonExist + item.BetaPsmCross.Charge2IonExist).ToString(CultureInfo.InvariantCulture)
                                                 + "\t" + label
