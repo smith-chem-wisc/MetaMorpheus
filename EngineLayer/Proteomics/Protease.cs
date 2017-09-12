@@ -5,6 +5,17 @@ namespace EngineLayer
 {
     public class Protease
     {
+        #region Private Fields
+
+        private static readonly Dictionary<CleavageSpecificity, TerminusType> semiSpecificProteaseAlterationDicitionary = new Dictionary<CleavageSpecificity, TerminusType>
+        {
+            {CleavageSpecificity.Full, TerminusType.None },
+            {CleavageSpecificity.FullMaxN, TerminusType.N },
+            {CleavageSpecificity.FullMaxC, TerminusType.C }
+        };
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public Protease(string name, IEnumerable<string> sequencesInducingCleavage, IEnumerable<string> sequencesPreventingCleavage, TerminusType cleavageTerminus, CleavageSpecificity cleavageSpecificity, string psiMSAccessionNumber, string psiMSName, string siteRegexp)
@@ -28,17 +39,15 @@ namespace EngineLayer
             PsiMsAccessionNumber = protease.PsiMsAccessionNumber;
             PsiMsName = protease.PsiMsName;
             SiteRegexp = protease.SiteRegexp;
-            if (protease.CleavageSpecificity == CleavageSpecificity.Full)
-            {
-                if (terminusType == TerminusType.N)
-                    CleavageSpecificity = CleavageSpecificity.FullMaxN;
-                else if (terminusType == TerminusType.C)
-                    CleavageSpecificity = CleavageSpecificity.FullMaxC;
-                else
-                    throw new MetaMorpheusException("Terminus obtained for NonSpecific search has not been implemented.");
-            }
+
+            if (terminusType == TerminusType.N)
+                CleavageSpecificity = CleavageSpecificity.FullMaxN;
+            else if (terminusType == TerminusType.C)
+                CleavageSpecificity = CleavageSpecificity.FullMaxC;
+            else if (terminusType == TerminusType.None)
+                CleavageSpecificity = CleavageSpecificity.Full;
             else
-                CleavageSpecificity = protease.CleavageSpecificity;
+                throw new MetaMorpheusException("Terminus obtained for NonSpecific search has not been implemented.");
         }
 
         #endregion Public Constructors
@@ -74,6 +83,14 @@ namespace EngineLayer
         public override int GetHashCode()
         {
             return Name.GetHashCode();
+        }
+
+        public bool ProteaseMustBeUpdated(TerminusType terminusType)
+        {
+            if (semiSpecificProteaseAlterationDicitionary.TryGetValue(CleavageSpecificity, out TerminusType value))
+                return value == terminusType ? false : true;
+            else
+                return false;
         }
 
         #endregion Public Methods
