@@ -181,6 +181,12 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CommonParameters.CIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
 
+            ckbAllResults.IsChecked = task.XlSearchParameters.XlOutAll;
+            ckbCLMSVault.IsChecked = task.XlSearchParameters.XlOutCLMSVault;
+            ckbPercolator.IsChecked = task.XlSearchParameters.XlOutPercolator;
+            ckbCrosslink.IsChecked = task.XlSearchParameters.XlOutCrosslink;
+            ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
+
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -299,6 +305,11 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.CIons = cCheckBox.IsChecked.Value;
             TheTask.CommonParameters.ZdotIons = zdotCheckBox.IsChecked.Value;
 
+            TheTask.XlSearchParameters.XlOutPercolator = ckbPercolator.IsChecked.Value;
+            TheTask.XlSearchParameters.XlOutPepXML = ckbPepXML.IsChecked.Value;
+            TheTask.XlSearchParameters.XlOutAll = ckbAllResults.IsChecked.Value;
+            TheTask.XlSearchParameters.XlOutCLMSVault = ckbCLMSVault.IsChecked.Value;
+            TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
             TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();

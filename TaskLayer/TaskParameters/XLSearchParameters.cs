@@ -20,6 +20,12 @@ namespace EngineLayer
             UdXLkerResidue = 'K';
             XlPrecusorMsTl = new PpmTolerance(10);
             XlBetaPrecusorMsTl = new PpmTolerance(10);
+
+            XlOutAll = true;
+            XlOutCrosslink = true;
+            XlOutCLMSVault = false;
+            XlOutPercolator = false;
+            XlOutPepXML = false;
         }
 
         #endregion Public Constructors
@@ -42,6 +48,11 @@ namespace EngineLayer
         public Tolerance XlBetaPrecusorMsTl { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }
 
+        public bool XlOutPercolator { get; set; }
+        public bool XlOutCLMSVault { get; set; }
+        public bool XlOutAll { get; set; }
+        public bool XlOutPepXML { get; set; }
+        public bool XlOutCrosslink { get; set; }
         #endregion Public Properties
     }
 }
