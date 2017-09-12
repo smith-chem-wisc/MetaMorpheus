@@ -398,9 +398,9 @@ namespace MetaMorpheusGUI
         {
 
             if (SelectedRawFiles.Count == 0)
-                ChangeParameters.IsEnabled = false;
+                ChangeParametersss.IsEnabled = false;
             else
-                ChangeParameters.IsEnabled = true;
+                ChangeParametersss.IsEnabled = true;
 
         }
 
@@ -735,8 +735,17 @@ namespace MetaMorpheusGUI
             }
         }
 
-        //run if fileSpecificParams are changed from GUI
-        private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
+        private void TestWindowTable_click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new TestWindowTable();
+            if (dialog.ShowDialog() == true)
+            {
+                Console.WriteLine("asdf");
+            }
+        }
+
+            //run if fileSpecificParams are changed from GUI
+            private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
         {
             string[] fullPathofTomls = tomlLocations;
 

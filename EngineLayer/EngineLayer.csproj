@@ -39,49 +39,49 @@
     <LangVersion>default</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Chemistry, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\Chemistry.dll</HintPath>
+    <Reference Include="Chemistry, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\Chemistry.dll</HintPath>
     </Reference>
     <Reference Include="FlashLFQ, Version=1.0.90.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\FlashLFQ.1.0.90\lib\net451\FlashLFQ.dll</HintPath>
     </Reference>
-    <Reference Include="ManagedThermoHelperLayer, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\ManagedThermoHelperLayer.dll</HintPath>
+    <Reference Include="ManagedThermoHelperLayer, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\ManagedThermoHelperLayer.dll</HintPath>
     </Reference>
-    <Reference Include="MassSpectrometry, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\MassSpectrometry.dll</HintPath>
+    <Reference Include="MassSpectrometry, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\MassSpectrometry.dll</HintPath>
     </Reference>
     <Reference Include="MathNet.Numerics, Version=3.20.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MathNet.Numerics.3.20.0\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
-    <Reference Include="mzIdentML, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\mzIdentML.dll</HintPath>
+    <Reference Include="mzIdentML, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\mzIdentML.dll</HintPath>
     </Reference>
-    <Reference Include="MzLibUtil, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\MzLibUtil.dll</HintPath>
+    <Reference Include="MzLibUtil, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\MzLibUtil.dll</HintPath>
     </Reference>
-    <Reference Include="MzML, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\MzML.dll</HintPath>
+    <Reference Include="MzML, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\MzML.dll</HintPath>
     </Reference>
-    <Reference Include="pepXML, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\pepXML.dll</HintPath>
+    <Reference Include="pepXML, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\pepXML.dll</HintPath>
     </Reference>
-    <Reference Include="Proteomics, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\Proteomics.dll</HintPath>
+    <Reference Include="Proteomics, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\Proteomics.dll</HintPath>
     </Reference>
-    <Reference Include="Spectra, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\Spectra.dll</HintPath>
+    <Reference Include="Spectra, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\Spectra.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\Thermo.dll</HintPath>
+    <Reference Include="Thermo, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\Thermo.dll</HintPath>
     </Reference>
-    <Reference Include="UsefulProteomicsDatabases, Version=1.0.224.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.224\lib\UsefulProteomicsDatabases.dll</HintPath>
+    <Reference Include="UsefulProteomicsDatabases, Version=1.0.228.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.228\lib\UsefulProteomicsDatabases.dll</HintPath>
     </Reference>
     <Reference Include="Zlib.Portable, Version=1.11.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Zlib.Portable.1.11.0\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch+MonoAndroid\Zlib.Portable.dll</HintPath>
@@ -240,12 +240,12 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\mzLib.1.0.224\build\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.224\build\mzLib.targets')" />
+  <Import Project="..\packages\mzLib.1.0.228\build\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.228\build\mzLib.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\mzLib.1.0.224\build\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.224\build\mzLib.targets'))" />
+    <Error Condition="!Exists('..\packages\mzLib.1.0.228\build\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.228\build\mzLib.targets'))" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

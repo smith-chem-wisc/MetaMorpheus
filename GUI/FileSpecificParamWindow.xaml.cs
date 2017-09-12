@@ -35,13 +35,24 @@ namespace MetaMorpheusGUI
         public FileSpecificParamWindow(ObservableCollection<RawDataForDataGrid> selectedRaw)
         {
             InitializeComponent();
+            CommonParameters cmmnParams = new CommonParameters();
             SelectedRaw = selectedRaw;
             FileSpecificSettingsList = new FileSpecificSettings[selectedRaw.Count];
             string tomlFileName = System.IO.Path.ChangeExtension(SelectedRaw[0].FilePath, ".toml").ToString();
-            var paramFile = Toml.ReadFile(tomlFileName, MetaMorpheusTask.tomlConfig);
-            var tomlSettingsList = paramFile.ToDictionary(p => p.Key);
+            Dictionary<string, KeyValuePair<string, TomlObject>> tomlSettingsList;
+            if (File.Exists(tomlFileName))
+            {
+                var paramFile = Toml.ReadFile(tomlFileName, MetaMorpheusTask.tomlConfig);
+                tomlSettingsList = paramFile.ToDictionary(p => p.Key);
+            }
+            else
+            {
+                tomlSettingsList = new Dictionary<string, KeyValuePair<string, TomlObject>>();
+            }
+            
             FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
             UpdateAndPopulateFields(settings);
+
         }
 
         private void UpdateAndPopulateFields(FileSpecificSettings settings)
@@ -66,7 +77,7 @@ namespace MetaMorpheusGUI
                 DeconvolutionMaxAssumedChargeStateTextBox.Text = settings.DeconvolutionMaxAssumedChargeState.ToString();
             if (settings.DeconvolutionMassTolerance != null)
                 DeconvolutionMassToleranceInPpmTextBox.Text = settings.DeconvolutionMassTolerance.ToString();
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)settings.InitiatorMethionineBehavior;
+            initiatorMethionineBehaviorComboBox.SelectedIndex = 1;
             if (settings.MaxMissedCleavages != null)
                 missedCleavagesTextBox.Text = settings.MaxMissedCleavages.ToString();
             txtMinPeptideLength.Text = settings.MinPeptideLength.HasValue ? settings.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";

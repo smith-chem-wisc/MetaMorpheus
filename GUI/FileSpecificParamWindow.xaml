@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="FileSpecificParamWindow" Height="600" Width="450" WindowStartupLocation="CenterScreen">
+    
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
