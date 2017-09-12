@@ -141,7 +141,7 @@ namespace TaskLayer
                         isolatedStuff = ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio).ToList();
                     }
 
-                    if (useProvidedPrecursorInfo)
+                    if (useProvidedPrecursorInfo && ms2scan.IsolationMz.HasValue)
                         if (ms2scan.SelectedIonChargeStateGuess.HasValue)
                         {
                             var PrecursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;

@@ -628,6 +628,164 @@ namespace Test
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
 
+        [Test]
+        public static void TestClassicSemiProtease()
+        {
+            var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
+            var variableModifications = new List<ModificationWithMass>();
+            var fixedModifications = new List<ModificationWithMass>();
+            var localizeableModifications = new List<ModificationWithMass>();
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int ii = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+
+            var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKGKKNKKGN", "hello") };
+
+            var productMassTolerance = new AbsoluteTolerance(0.01);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            var protease = new Protease("semi-trypsin", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.Semi, null, null, null);
+            var protease2 = new Protease("semi-trypsin", new List<string> { "N" }, new List<string>(), TerminusType.C, CleavageSpecificity.Semi, null, null, null);
+
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                ProductMassTolerance = productMassTolerance,
+            };
+            CommonParameters.DigestionParams = new DigestionParams
+            {
+                MaxMissedCleavages = 5,
+                Protease = protease,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
+            HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
+
+            bool DoPrecursorDeconvolution = true;
+            bool UseProvidedPrecursorInfo = true;
+            double DeconvolutionIntensityRatio = 4;
+            int DeconvolutionMaxAssumedChargeState = 10;
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
+
+
+            //////////////////////////////
+
+
+            CommonParameters CommonParameters2 = new CommonParameters
+            {
+                ProductMassTolerance = productMassTolerance,
+            };
+            CommonParameters2.DigestionParams = new DigestionParams
+            {
+                MaxMissedCleavages = 5,
+                Protease = protease2,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Cleave
+            };
+            HashSet<DigestionParams> digestParams2 = new HashSet<DigestionParams> { CommonParameters2.DigestionParams };
+
+            bool DoPrecursorDeconvolution2 = true;
+            bool UseProvidedPrecursorInfo2 = true;
+            double DeconvolutionIntensityRatio2 = 4;
+            int DeconvolutionMaxAssumedChargeState2 = 10;
+            Tolerance DeconvolutionMassTolerance2 = new PpmTolerance(5);
+
+            var listOfSortedms2Scans2 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution2, UseProvidedPrecursorInfo2, DeconvolutionIntensityRatio2, DeconvolutionMaxAssumedChargeState2, DeconvolutionMassTolerance2).OrderBy(b => b.PrecursorMass).ToArray();
+
+            Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans2.Length];
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters2, new List<string>()).Run();
+            // Single search mode
+            Assert.AreEqual(1, allPsmsArray2.Length);
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+
+            // Single ms2 scan
+            Assert.AreEqual(1, allPsmsArray2.Length);
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+
+            Assert.IsTrue(allPsmsArray2[0].Score > 4);
+            Assert.IsTrue(allPsmsArray[0].Score > 4);
+            Assert.AreEqual(2, allPsmsArray2[0].ScanNumber);
+            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
+
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, TerminusType.None, digestParams, new List<string>()).Run();
+            var hah2 = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm> { allPsmsArray2[0] }, proteinList, fixedModifications, variableModifications, TerminusType.None, digestParams2, new List<string>()).Run();
+
+            foreach (var huh in allPsmsArray)
+                if (huh != null && huh.MostProbableProteinInfo == null)
+                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+            foreach (var huh2 in allPsmsArray2)
+                if (huh2 != null && huh2.MostProbableProteinInfo == null)
+                    huh2.MatchToProteinLinkedPeptides(hah2.CompactPeptideToProteinPeptideMatching);
+
+            Assert.AreEqual("QQQGGGG", allPsmsArray2[0].BaseSequence);
+            Assert.AreEqual(allPsmsArray[0].BaseSequence, allPsmsArray2[0].BaseSequence);
+        }
+
+        [Test]
+        public static void TestClassicSemiProteolysis()
+        {
+            var variableModifications = new List<ModificationWithMass>();
+            var fixedModifications = new List<ModificationWithMass>();
+            var localizeableModifications = new List<ModificationWithMass>();
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int ii = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
+            var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello",  null, null, protprod) };
+
+            var protease = new Protease("semi-trypsin", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.Semi, null, null, null);
+
+            DigestionParams digestParams = new DigestionParams
+            {
+                MaxMissedCleavages = 2,
+                Protease = protease,
+                MinPeptideLength=2
+            };
+
+            //expect NNNQQQ, NNNQQ, NNNQ, NNN, NN and LK, KLK
+            Dictionary<string, bool> found = new Dictionary<string, bool>
+            {
+                {"NNNQQQ", false},
+                {"NNNQQ", false} ,
+                {"NNNQ", false},
+                {"NNN", false},
+                {"NN", false},
+                {"LK", false},
+                {"KLK", false}
+            };
+            IEnumerable<PeptideWithPossibleModifications> PWSMs= proteinList[0].Digest(digestParams, modsDictionary.Keys);
+            foreach(PeptideWithPossibleModifications PWSM in PWSMs)
+            {
+                if (found.TryGetValue(PWSM.BaseSequence, out bool b))
+                    found[PWSM.BaseSequence] = true;
+            }
+            foreach (KeyValuePair<string, bool> kvp in found)
+                Assert.IsTrue(kvp.Value);
+        }
+
         #endregion Public Methods
     }
 }
