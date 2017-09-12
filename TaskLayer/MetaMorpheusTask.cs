@@ -133,38 +133,37 @@ namespace TaskLayer
                 }
                 if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                     ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
-               
-                    List<Tuple<List<IMzPeak>, int>> isolatedStuff = new List<Tuple<List<IMzPeak>, int>>();
-                    if (doPrecursorDeconvolution && ms2scan.IsolationMz.HasValue)
-                    {
-                        isolatedStuff = ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio).ToList();
-                    }
 
-                    if (useProvidedPrecursorInfo && ms2scan.IsolationMz.HasValue)
-                        if (ms2scan.SelectedIonChargeStateGuess.HasValue)
+                List<Tuple<List<IMzPeak>, int>> isolatedStuff = new List<Tuple<List<IMzPeak>, int>>();
+                if (doPrecursorDeconvolution && ms2scan.IsolationMz.HasValue)
+                {
+                    isolatedStuff = ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio).ToList();
+                }
+
+                if (useProvidedPrecursorInfo)
+                    if (ms2scan.SelectedIonChargeStateGuess.HasValue)
+                    {
+                        var PrecursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+                        if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                         {
-                            var PrecursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
-                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                            var PrecursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
+                            if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
                             {
-                                var PrecursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                                if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
-                                {
-                                    isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonMonoisotopicGuessIntensity.Value) }, PrecursorCharge));
-                                }
-                            }
-                            else
-                            {
-                                var PrecursorMZ = ms2scan.SelectedIonMZ;
-                                if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
-                                {
-                                    isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonIntensity.Value) }, PrecursorCharge));
-                                }
+                                isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonMonoisotopicGuessIntensity.Value) }, PrecursorCharge));
                             }
                         }
+                        else
+                        {
+                            var PrecursorMZ = ms2scan.SelectedIonMZ;
+                            if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
+                            {
+                                isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonIntensity ?? double.NaN) }, PrecursorCharge));
+                            }
+                        }
+                    }
 
-                    foreach (var heh in isolatedStuff)
-                        yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, fullFilePath);
-                
+                foreach (var heh in isolatedStuff)
+                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, fullFilePath);
             }
         }
 
