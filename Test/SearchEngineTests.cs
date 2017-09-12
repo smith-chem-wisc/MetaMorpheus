@@ -629,7 +629,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestSemiTrypsin()
+        public static void TestClassicSemiProtease()
         {
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
@@ -732,6 +732,60 @@ namespace Test
             Assert.AreEqual("QQQGGGG", allPsmsArray2[0].BaseSequence);
             Assert.AreEqual(allPsmsArray[0].BaseSequence, allPsmsArray2[0].BaseSequence);
         }
+
+        [Test]
+        public static void TestClassicSemiProteolysis()
+        {
+            var variableModifications = new List<ModificationWithMass>();
+            var fixedModifications = new List<ModificationWithMass>();
+            var localizeableModifications = new List<ModificationWithMass>();
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int ii = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
+            var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello",  null, null, protprod) };
+
+            var protease = new Protease("semi-trypsin", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.Semi, null, null, null);
+
+            DigestionParams digestParams = new DigestionParams
+            {
+                MaxMissedCleavages = 2,
+                Protease = protease,
+                MinPeptideLength=2
+            };
+
+            //expect NNNQQQ, NNNQQ, NNNQ, NNN, NN and LK, KLK
+            Dictionary<string, bool> found = new Dictionary<string, bool>
+            {
+                {"NNNQQQ", false},
+                {"NNNQQ", false} ,
+                {"NNNQ", false},
+                {"NNN", false},
+                {"NN", false},
+                {"LK", false},
+                {"KLK", false}
+            };
+            IEnumerable<PeptideWithPossibleModifications> PWSMs= proteinList[0].Digest(digestParams, modsDictionary.Keys);
+            foreach(PeptideWithPossibleModifications PWSM in PWSMs)
+            {
+                if (found.TryGetValue(PWSM.BaseSequence, out bool b))
+                    found[PWSM.BaseSequence] = true;
+            }
+            foreach (KeyValuePair<string, bool> kvp in found)
+                Assert.IsTrue(kvp.Value);
+        }
+
         #endregion Public Methods
     }
 }
