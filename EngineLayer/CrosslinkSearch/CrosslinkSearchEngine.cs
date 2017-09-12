@@ -308,7 +308,7 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             var psmCrossAlpha = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
                             var psmCrossBeta = new PsmCross(theScanBestPeptide[inx].BestPeptide, theScanBestPeptide[inx].BestNotch, theScanBestPeptide[inx].BestScore, i, theScan);
-                            psmCrossAlpha.topPosition = new int[] { ind, inx };
+                            psmCrossAlpha.XlRank = new int[] { ind, inx };
                             PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha, crosslinker, lp, fragmentTolerance);
                             PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta, crosslinker, lp, fragmentTolerance);
                             psmCrossAlpha.XLTotalScore = psmCrossAlpha.XLBestScore + psmCrossBeta.XLBestScore;
@@ -334,9 +334,9 @@ namespace EngineLayer.CrosslinkSearch
                 bestPsmCross = bestPsmCrossList.OrderByDescending(p => p.XLTotalScore).First();
                 if (bestPsmCrossList.Count > 1)
                 {
-                    bestPsmCross.dScore = Math.Abs(bestPsmCrossList.First().XLTotalScore - bestPsmCrossList[1].XLTotalScore);
+                    bestPsmCross.DScore = Math.Abs(bestPsmCrossList.First().XLTotalScore - bestPsmCrossList[1].XLTotalScore);
                 }
-                else { bestPsmCross.dScore = bestPsmCross.XLTotalScore; }
+                else { bestPsmCross.DScore = bestPsmCross.XLTotalScore; }
             }
 
             return bestPsmCross;

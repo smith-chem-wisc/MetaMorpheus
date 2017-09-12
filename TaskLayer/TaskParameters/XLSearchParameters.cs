@@ -10,7 +10,7 @@ namespace EngineLayer
         {
             SearchDecoy = true;
             CrosslinkerType = CrosslinkerType.DSS;
-            CrosslinkSearchTopNum = 50;
+            CrosslinkSearchTopNum = 300;
             CrosslinkSearchWithAllBeta = false;
             UdXLkerName = null;
             UdXLkerCleavable = false;

@@ -268,10 +268,15 @@ namespace TaskLayer
             //Write Inter Psms FDR
             var interPsmsXLFDR = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderByDescending(p => p.XLTotalScore).ToList();
             interPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLFDR).Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.01).ToList();
-            WriteCrosslinkToTsv(interPsmsXLFDR, OutputFolder, "xl_inter_fdr", new List<string> { taskId });
-            WriteCrosslinkToTxtForCLMSVault(interPsmsXLFDR, OutputFolder, "xl_inter_fdr_CLMSVault", crosslinker, new List<string> { taskId });
-            //
-            if (interPsmsXLFDR.Count != 0)
+            if (XlSearchParameters.XlOutCrosslink)
+            {
+                WriteCrosslinkToTsv(interPsmsXLFDR, OutputFolder, "xl_inter_fdr", new List<string> { taskId });
+            }
+            if (XlSearchParameters.XlOutCLMSVault)
+            {
+                WriteCrosslinkToTxtForCLMSVault(interPsmsXLFDR, OutputFolder, "xl_inter_fdr_CLMSVault", crosslinker, new List<string> { taskId });
+            }
+            if (XlSearchParameters.XlOutPepXML && interPsmsXLFDR.Count != 0)
             {
                 foreach (var fullFilePath in currentRawFileList)
                 {
@@ -279,17 +284,24 @@ namespace TaskLayer
                     WritePepXML_xl(interPsmsXLFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
             }
-            //
-            var interPsmsXLPercolator = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderBy(p => p.ScanNumber).ToList();
-            WriteCrosslinkToTxtForPercolator(interPsmsXLPercolator, OutputFolder, "xl_inter_perc", crosslinker, new List<string> { taskId });
+            if (XlSearchParameters.XlOutPercolator)
+            {
+                var interPsmsXLPercolator = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderBy(p => p.ScanNumber).ToList();
+                WriteCrosslinkToTxtForPercolator(interPsmsXLPercolator, OutputFolder, "xl_inter_perc", crosslinker, new List<string> { taskId });
+            }
 
             //Write Intra Psms FDR
             var intraPsmsXLFDR = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderByDescending(p => p.XLTotalScore).ToList();
             intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXLFDR).Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true).ToList();
-            WriteCrosslinkToTsv(intraPsmsXLFDR, OutputFolder, "xl_intra_fdr", new List<string> { taskId });
-            WriteCrosslinkToTxtForCLMSVault(intraPsmsXLFDR, OutputFolder, "xl_intra_fdr_CLMSVault", crosslinker, new List<string> { taskId });
-            //
-            if (intraPsmsXLFDR.Count != 0)
+            if (XlSearchParameters.XlOutCrosslink)
+            {
+                WriteCrosslinkToTsv(intraPsmsXLFDR, OutputFolder, "xl_intra_fdr", new List<string> { taskId });
+            }
+            if (XlSearchParameters.XlOutCLMSVault)
+            {
+                WriteCrosslinkToTxtForCLMSVault(intraPsmsXLFDR, OutputFolder, "xl_intra_fdr_CLMSVault", crosslinker, new List<string> { taskId });
+            }
+            if (XlSearchParameters.XlOutPepXML && intraPsmsXLFDR.Count != 0)
             {
                 foreach (var fullFilePath in currentRawFileList)
                 {
@@ -297,9 +309,11 @@ namespace TaskLayer
                     WritePepXML_xl(intraPsmsXLFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
             }
-            //
-            var intraPsmsXLPercolator = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderBy(p => p.ScanNumber).ToList();
-            WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
+            if (XlSearchParameters.XlOutPercolator)
+            {
+                var intraPsmsXLPercolator = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderBy(p => p.ScanNumber).ToList();
+                WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
+            }
 
             return myTaskResults;
         }

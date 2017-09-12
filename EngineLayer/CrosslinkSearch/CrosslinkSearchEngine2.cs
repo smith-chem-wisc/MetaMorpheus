@@ -192,7 +192,7 @@ namespace EngineLayer.CrosslinkSearch
                         }
                         for (int itop = 0; itop < currentScanPsmParent.Count; itop++)
                         {
-                            currentScanPsmParent[itop].topPosition = new int[] { itop, 0 };
+                            currentScanPsmParent[itop].XlRank = new int[] { itop, 0 };
                         }
                         newPsmsTop[i] = currentScanPsmParent;
                     }
@@ -257,9 +257,9 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (item.Count > 1)
                 {
-                    item[0].dScore = item[0].XLTotalScore - item[1].XLTotalScore;
+                    item[0].DScore = item[0].XLTotalScore - item[1].XLTotalScore;
                 }
-                else { item[0].dScore = item[0].XLTotalScore; }
+                else { item[0].DScore = item[0].XLTotalScore; }
             }
             var AllCrossPsmsRe = AllCrossPsmsGroupOrder.Select(p => p.First()).ToList();
 
