@@ -213,6 +213,5 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         }
 
         #endregion Private Methods
-
     }
 }

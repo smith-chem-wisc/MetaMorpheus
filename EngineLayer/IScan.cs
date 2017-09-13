@@ -8,7 +8,7 @@ namespace EngineLayer
 
         string FullFilePath { get; }
         int OneBasedScanNumber { get; }
-        int OneBasedPrecursorScanNumber { get; }
+        int? OneBasedPrecursorScanNumber { get; }
         double RetentionTime { get; }
         int NumPeaks { get; }
         double TotalIonCurrent { get; }
