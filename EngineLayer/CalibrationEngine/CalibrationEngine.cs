@@ -87,7 +87,7 @@ namespace EngineLayer.Calibration
                     Console.WriteLine("DoFirst round " + round);
                     prevdataPointAcquisitionResult = dataPointAcquisitionResult;
                     dataPointAcquisitionResult = GetDataPoints();
-                    Calibrate(dataPointAcquisitionResult, CalibrationSetting.DoFirst);
+                    Calibrate(dataPointAcquisitionResult, CalibrationSetting.DoFirst, CalibrationSetting.Metric);
                 } while (CalibrationSetting.ContinueLoop.Item1(prevdataPointAcquisitionResult, dataPointAcquisitionResult));
             }
 
@@ -100,7 +100,7 @@ namespace EngineLayer.Calibration
                 Console.WriteLine("Round " + round);
                 prevdataPointAcquisitionResult = dataPointAcquisitionResult;
                 dataPointAcquisitionResult = GetDataPoints();
-                Calibrate(dataPointAcquisitionResult, CalibrationSetting.Learners);
+                Calibrate(dataPointAcquisitionResult, CalibrationSetting.Learners, CalibrationSetting.Metric);
             } while (CalibrationSetting.ContinueLoop.Item1(prevdataPointAcquisitionResult, dataPointAcquisitionResult));
 
             return new MetaMorpheusEngineResults(this);
@@ -191,10 +191,8 @@ namespace EngineLayer.Calibration
             return res;
         }
 
-        private Tuple<IPredictorModel<double>, IPredictorModel<double>> Calibrate(DataPointAquisitionResults res, List<ILearner<double>> learners)
+        private void Calibrate(DataPointAquisitionResults res, List<ILearner<double>> learners, IRegressionMetric metric)
         {
-            var metric = new MeanSquaredErrorRegressionMetric();
-
             var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
             var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
 
@@ -216,8 +214,9 @@ namespace EngineLayer.Calibration
             F64Matrix testList2Matrix = new F64Matrix(testList2Concat, testList2Concat.Length / numVars, numVars);
             double[] testList2Targets = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
 
-            IPredictorModel<double> bestMS1predictor = new IdentityCalibrationFunction().Learn(null, null);
-            IPredictorModel<double> bestMS2predictor = new IdentityCalibrationFunction().Learn(null, null);
+            IPredictorModel<double> bestMS1predictor = new IdentityCalibrationFunctionPredictorModel();
+            IPredictorModel<double> bestMS2predictor = new IdentityCalibrationFunctionPredictorModel();
+
             double bestMS1MSE = double.MaxValue;
             double bestMS2MSE = double.MaxValue;
 
@@ -226,6 +225,7 @@ namespace EngineLayer.Calibration
                 try
                 {
                     var ms1regressor = learner.Learn(trainList1Matrix, trainList1Targets);
+                    Console.WriteLine(" succeded! " + learner.ToString());
                     double MS1mse = 0;
                     for (int i = 0; i < testList1Matrix.RowCount; i++)
                         MS1mse += Math.Pow(ms1regressor.Predict(testList1Matrix.Row(i)) - testList1Targets[i], 2);
@@ -238,12 +238,13 @@ namespace EngineLayer.Calibration
                 }
                 catch
                 {
-                    Console.WriteLine("erorred! " + learner.ToString());
+                    Console.WriteLine(" ms1 erorred! " + learner.ToString());
                 }
 
                 try
                 {
                     var ms2regressor = learner.Learn(trainList2Matrix, trainList2Targets);
+                    Console.WriteLine(" succeded! " + learner.ToString());
                     double Ms2mse = 0;
                     for (int i = 0; i < testList2Matrix.RowCount; i++)
                         Ms2mse += Math.Pow(ms2regressor.Predict(testList2Matrix.Row(i)) - testList2Targets[i], 2);
@@ -256,20 +257,20 @@ namespace EngineLayer.Calibration
                 }
                 catch
                 {
-                    Console.WriteLine("erorred! " + learner.ToString());
+                    Console.WriteLine(" ms2 erorred! " + learner.ToString());
                 }
             }
 
-            Tuple<IPredictorModel<double>, IPredictorModel<double>> bestCf = new Tuple<IPredictorModel<double>, IPredictorModel<double>>(bestMS1predictor, bestMS2predictor);
+            MS1predictor ms1predictor = new MS1predictor(bestMS1predictor);
+
+            MS2predictor ms2predictor = new MS2predictor(bestMS2predictor);
 
             Status("Calibrating Spectra");
 
-            CalibrateSpectra(bestCf);
-
-            return bestCf;
+            CalibrateSpectra(ms1predictor, ms2predictor);
         }
 
-        private void CalibrateSpectra(Tuple<IPredictorModel<double>, IPredictorModel<double>> bestCf)
+        private void CalibrateSpectra(MS1predictor ms1predictor, MS2predictor ms2predictor)
         {
             foreach (var a in myMsDataFile)
             {
@@ -277,15 +278,15 @@ namespace EngineLayer.Calibration
                 {
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
-                    Func<IPeak, double> theFunc = x => x.X - bestCf.Item2.Predict(new[] { x.X, a.RetentionTime, x.Y, a.TotalIonCurrent, a.InjectionTime ?? double.NaN });
+                    Func<IPeak, double> theFunc = x => x.X - ms2predictor.Predict(x.X, a.RetentionTime, a.TotalIonCurrent, a.InjectionTime ?? double.NaN);
 
-                    Func<IPeak, double> theFuncForPrecursor = x => x.X - bestCf.Item1.Predict(new[] { x.X, precursorScan.RetentionTime, x.Y, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
+                    Func<IPeak, double> theFuncForPrecursor = x => x.X - ms1predictor.Predict(x.X, precursorScan.RetentionTime, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN);
 
                     theScan.TransformMzs(theFunc, theFuncForPrecursor);
                 }
                 else
                 {
-                    Func<IPeak, double> theFunc = x => x.X - bestCf.Item1.Predict(new[] { x.X, a.RetentionTime, x.Y, a.TotalIonCurrent, a.InjectionTime ?? double.NaN });
+                    Func<IPeak, double> theFunc = x => x.X - ms1predictor.Predict(x.X, a.RetentionTime, a.TotalIonCurrent, a.InjectionTime ?? double.NaN);
                     a.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
                 }
             }

@@ -130,6 +130,8 @@
     <Compile Include="CalibrationEngine\LabeledMs1DataPoint.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\RandomForestCalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\RegressionTree.cs" />
+    <Compile Include="CalibrationEngine\MS1predictor.cs" />
+    <Compile Include="CalibrationEngine\MS2predictor.cs" />
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="CommonParameters.cs" />
