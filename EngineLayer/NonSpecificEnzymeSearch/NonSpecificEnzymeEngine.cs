@@ -68,7 +68,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             if (currentBestScore > 1)
                             {
                                 // Existed! Need to compare with old match
-                                if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (CommonParameters.ReportAllAmbiguity || bestPeptides.Count == 0))
+                                if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (CommonParameters.ReportAllAmbiguity || bestPeptides != null))
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
                                     double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, terminusType, searchMode);
