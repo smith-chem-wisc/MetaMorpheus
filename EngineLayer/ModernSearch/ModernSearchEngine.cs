@@ -94,11 +94,11 @@ namespace EngineLayer.ModernSearch
                             if (currentBestScore > 1)
                             {
                                 // Existed! Need to compare with old match
-                                if ((Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement) && (CommonParameters.ReportAllAmbiguity || bestPeptides.Count == 0))
+                                if ((Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement) && (CommonParameters.ReportAllAmbiguity || bestPeptides != null))
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                    if (notch >= 0)
+                                    if (notch >= 0 && bestPeptides != null)
                                     {
                                         bestPeptides.Add(candidatePeptide);
                                         bestNotches.Add(notch);
