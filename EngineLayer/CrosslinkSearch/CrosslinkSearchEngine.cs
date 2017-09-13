@@ -254,7 +254,7 @@ namespace EngineLayer.CrosslinkSearch
                     psmCrossSingle.CrossType = PsmCrossType.Singe;
                     if (bestPsmCrossList.Count >= 2)
                     {
-                        bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                        bestPsmCrossList = (List<PsmCross>)bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
                         bestPsmCrossList.RemoveAt(1);
                         bestPsmCrossList.Add(psmCrossSingle);
                     }
@@ -271,7 +271,7 @@ namespace EngineLayer.CrosslinkSearch
                     psmCrossEnd.CrossType = PsmCrossType.DeadEnd;
                     if (bestPsmCrossList.Count >= 2)
                     {
-                        bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                        bestPsmCrossList = (List<PsmCross>)bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
                         bestPsmCrossList.RemoveAt(1);
                         bestPsmCrossList.Add(psmCrossEnd);
                     }
@@ -287,7 +287,7 @@ namespace EngineLayer.CrosslinkSearch
                     psmCrossLoop.CrossType = PsmCrossType.Loop;
                     if (bestPsmCrossList.Count >= 2)
                     {
-                        bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                        bestPsmCrossList = (List<PsmCross>)bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
                         bestPsmCrossList.RemoveAt(1);
                         bestPsmCrossList.Add(psmCrossLoop);
                     }
@@ -314,7 +314,7 @@ namespace EngineLayer.CrosslinkSearch
                             psmCrossAlpha.BetaPsmCross = psmCrossBeta;
                             if (bestPsmCrossList.Count >= 2)
                             {
-                                bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                                bestPsmCrossList = (List<PsmCross>)bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
                                 bestPsmCrossList.RemoveAt(1);
                                 bestPsmCrossList.Add(psmCrossAlpha);
                             }
