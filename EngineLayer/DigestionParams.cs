@@ -30,7 +30,7 @@ namespace EngineLayer
         public int MaxModsForPeptide { get; set; }
         public Protease Protease { get; set; }
         public bool SemiProteaseDigestion { get; set; } //for nonspecific searching of proteases
-        public TerminusType terminusTypeSemiProtease { get; set; }
+        public TerminusType TerminusTypeSemiProtease { get; set; }
 
         #endregion Public Properties
 
@@ -56,13 +56,6 @@ namespace EngineLayer
                 ^ InitiatorMethionineBehavior.GetHashCode()
                 ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
-        }
-
-        public void UpdateSemiProteaseDigestion(SearchType searchType, List<ProductType> ionTypes)
-        {
-            SemiProteaseDigestion = (searchType == SearchType.NonSpecific && Protease.CleavageSpecificity != CleavageSpecificity.SingleN && Protease.CleavageSpecificity != CleavageSpecificity.SingleC);
-            if (SemiProteaseDigestion)
-                terminusTypeSemiProtease = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
         }
 
         #endregion Public Methods

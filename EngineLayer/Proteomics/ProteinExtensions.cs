@@ -42,7 +42,7 @@ namespace EngineLayer
 
                 int lastIndex = oneBasedIndicesToCleaveAfter.Count - 1;
                 int maxIndex = maximumMissedCleavages < lastIndex ? maximumMissedCleavages : lastIndex;
-                if (digestionParams.terminusTypeSemiProtease==TerminusType.N) //tricky, it's N because we want the extra peptide at the C terminus |_
+                if (digestionParams.TerminusTypeSemiProtease==TerminusType.N) //tricky, it's N because we want the extra peptide at the C terminus |_
                 {
                     for (int i = 1; i <= maxIndex; i++)
                     {
