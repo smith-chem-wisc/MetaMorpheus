@@ -30,7 +30,7 @@ namespace EngineLayer
             SiteRegexp = siteRegexp;
         }
 
-        public Protease(Protease protease, TerminusType terminusType)
+        public Protease(Protease protease, List<ProductType> ionTypes)
         {
             Name = protease.Name;
             SequencesInducingCleavage = protease.SequencesInducingCleavage;
@@ -39,6 +39,7 @@ namespace EngineLayer
             PsiMsAccessionNumber = protease.PsiMsAccessionNumber;
             PsiMsName = protease.PsiMsName;
             SiteRegexp = protease.SiteRegexp;
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
             if (terminusType == TerminusType.N)
                 CleavageSpecificity = CleavageSpecificity.FullMaxN;
@@ -85,12 +86,10 @@ namespace EngineLayer
             return Name.GetHashCode();
         }
 
-        public bool ProteaseMustBeUpdated(TerminusType terminusType)
+        public bool ProteaseMustBeUpdated(SearchType searchType, List<ProductType> ionTypes)
         {
-            if (semiSpecificProteaseAlterationDicitionary.TryGetValue(CleavageSpecificity, out TerminusType value))
-                return value == terminusType ? false : true;
-            else
-                return false;
+            TerminusType terminusType = (searchType == SearchType.NonSpecific) ? ProductTypeToTerminusType.IdentifyTerminusType(ionTypes) : TerminusType.None;
+            return (semiSpecificProteaseAlterationDicitionary.TryGetValue(CleavageSpecificity, out TerminusType value)) ? value != terminusType : false;
         }
 
         #endregion Public Methods

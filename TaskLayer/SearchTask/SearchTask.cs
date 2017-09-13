@@ -711,7 +711,6 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.Zdot);
             if (CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
-            TerminusType terminusTypeForNonSpecificSearch = (SearchParameters.SearchType == SearchType.NonSpecific) ? ProductTypeToTerminusType.IdentifyTerminusType(ionTypes) : TerminusType.None;
 
             Status("Loading proteins...", new List<string> { taskId });
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
@@ -742,12 +741,12 @@ namespace TaskLayer
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
-            if (CommonParameters.DigestionParams.Protease.ProteaseMustBeUpdated(terminusTypeForNonSpecificSearch))
-                CommonParameters.DigestionParams.Protease = new Protease(CommonParameters.DigestionParams.Protease, terminusTypeForNonSpecificSearch);
+            if (CommonParameters.DigestionParams.Protease.ProteaseMustBeUpdated(SearchParameters.SearchType, ionTypes))
+                CommonParameters.DigestionParams.Protease = new Protease(CommonParameters.DigestionParams.Protease, ionTypes);
             foreach (FileSpecificSettings fileSpecificSettings in fileSettingsList)
                 if (fileSpecificSettings != null)
-                    if(fileSpecificSettings.Protease.ProteaseMustBeUpdated(terminusTypeForNonSpecificSearch))
-                        fileSpecificSettings.Protease = new Protease(fileSpecificSettings.Protease, terminusTypeForNonSpecificSearch);
+                    if(fileSpecificSettings.Protease.ProteaseMustBeUpdated(SearchParameters.SearchType, ionTypes))
+                        fileSpecificSettings.Protease = new Protease(fileSpecificSettings.Protease, ionTypes);
 
             HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
@@ -866,13 +865,13 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusTypeForNonSpecificSearch, ListOfDigestionParams, SearchParameters.MassDiffAcceptor, new List<string> { taskId });
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, SearchParameters.MassDiffAcceptor, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
             else
             {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusTypeForNonSpecificSearch, ListOfDigestionParams, new List<string> { taskId });
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
