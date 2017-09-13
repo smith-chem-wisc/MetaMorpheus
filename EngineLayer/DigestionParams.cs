@@ -1,4 +1,6 @@
-﻿namespace EngineLayer
+﻿using System.Collections.Generic;
+
+namespace EngineLayer
 {
     public class DigestionParams
     {
@@ -13,6 +15,7 @@
             Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"];
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             MaxModsForPeptide = 3;
+            SemiProteaseDigestion = false;
         }
 
         #endregion Public Constructors
@@ -26,6 +29,8 @@
         public int MaxModificationIsoforms { get; set; }
         public int MaxModsForPeptide { get; set; }
         public Protease Protease { get; set; }
+        public bool SemiProteaseDigestion { get; set; } //for nonspecific searching of proteases
+        public TerminusType terminusTypeSemiProtease { get; set; }
 
         #endregion Public Properties
 
@@ -51,6 +56,13 @@
                 ^ InitiatorMethionineBehavior.GetHashCode()
                 ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
+        }
+
+        public void UpdateSemiProteaseDigestion(SearchType searchType, List<ProductType> ionTypes)
+        {
+            SemiProteaseDigestion = (searchType == SearchType.NonSpecific && Protease.CleavageSpecificity != CleavageSpecificity.SingleN && Protease.CleavageSpecificity != CleavageSpecificity.SingleC);
+            if (SemiProteaseDigestion)
+                terminusTypeSemiProtease = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
         }
 
         #endregion Public Methods

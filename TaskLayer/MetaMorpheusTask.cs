@@ -362,7 +362,7 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinXML(fileName, true, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
-        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
+        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable, SearchType searchType)
         {
             HashSet<DigestionParams> okay = new HashSet<DigestionParams>
             {
@@ -370,7 +370,10 @@ namespace TaskLayer
             };
 
             foreach (var hah in enumerable)
+            {
+                hah.DigestionParams.UpdateSemiProteaseDigestion(searchType, hah.GetProductTypes());
                 okay.Add(hah.DigestionParams);
+            }
 
             return okay;
         }
