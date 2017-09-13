@@ -96,36 +96,36 @@ namespace EngineLayer
                         if ((i != 0 || initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
                             && (!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength)
                             && (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
-                            yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+                            yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i], "semi", allKnownFixedModifications);
 
                         // Cleave!
                         if ((i == 0 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
                             && (!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 >= minPeptidesLength)
                             && (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 <= maxPeptidesLength))
-                            yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, maximumMissedCleavages, "semi:M cleaved", allKnownFixedModifications);
+                            yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1, "semi:M cleaved", allKnownFixedModifications);
                     }
 
                     int lastIndex = oneBasedIndicesToCleaveAfter.Count - 1;
                     int maxIndex = maximumMissedCleavages < lastIndex ? maximumMissedCleavages : lastIndex;
-                    if (protease.CleavageSpecificity == CleavageSpecificity.FullMaxN)
+                    if (protease.CleavageSpecificity == CleavageSpecificity.FullMaxN) //tricky, it's N because we want the extra peptide at the C terminus |_
                     {
                         for (int i = 1; i <= maxIndex; i++)
                         {
                             if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i] >= minPeptidesLength) &&
                                 (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i] <= maxPeptidesLength))
                             {
-                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[lastIndex - i] + 1, oneBasedIndicesToCleaveAfter[lastIndex], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[lastIndex - i] + 1, oneBasedIndicesToCleaveAfter[lastIndex], protein, oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i], "semi", allKnownFixedModifications);
                             }
                         }
                     }
-                    else //FullMaxN, never cleave M
+                    else //FullMaxC, never cleave M
                     {
                         for (int i = 1; i <= maxIndex; i++)
                         {
                             if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0] >= minPeptidesLength) &&
                                 (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0] <= maxPeptidesLength))
                             {
-                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[0] + 1, oneBasedIndicesToCleaveAfter[i], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[0] + 1, oneBasedIndicesToCleaveAfter[i], protein, oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0], "semi", allKnownFixedModifications);
                             }
                         }
                     }
@@ -157,6 +157,140 @@ namespace EngineLayer
                             yield return new PeptideWithPossibleModifications(Math.Max(1, index - (maxPeptidesLength ?? 50)), index, protein, 0, "SingleC", allKnownFixedModifications);
                         }
                     }
+                    break;
+
+                case CleavageSpecificity.Semi:
+                    // these are the 1-based residue indices the protease cleaves AFTER
+                    oneBasedIndicesToCleaveAfter = protease.GetDigestionSiteIndices(protein.BaseSequence);
+                    // Cleave after 0, or before the first one
+                    oneBasedIndicesToCleaveAfter.Insert(0, 0);
+                    // Cleave after Length index
+                    oneBasedIndicesToCleaveAfter.Add(protein.Length);
+                    //Main Body
+                    for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - maximumMissedCleavages - 1; i++)
+                    {
+                        // Retain!
+                        if (i != 0 || initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
+                        {
+                            int nTermIndexofProtein = oneBasedIndicesToCleaveAfter[i];
+                            int cTermIndexofProtein = oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1];
+
+                            if ((!minPeptidesLength.HasValue || cTermIndexofProtein - nTermIndexofProtein >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || cTermIndexofProtein - nTermIndexofProtein <= maxPeptidesLength))
+                            {
+                                yield return new PeptideWithPossibleModifications(nTermIndexofProtein + 1, cTermIndexofProtein, protein, cTermIndexofProtein - nTermIndexofProtein, "semi", allKnownFixedModifications);
+                            }
+                            //fixedC
+                            for (int j = nTermIndexofProtein + 1; j < cTermIndexofProtein; j++)
+                            {
+                                if ((!minPeptidesLength.HasValue || cTermIndexofProtein - j >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || cTermIndexofProtein - j <= maxPeptidesLength))
+                                {
+                                    yield return new PeptideWithPossibleModifications(j + 1, cTermIndexofProtein, protein, cTermIndexofProtein - j, "semiC", allKnownFixedModifications);
+                                }
+                            }
+                            //fixedN
+                            for (int j = cTermIndexofProtein - 1; j > nTermIndexofProtein; j--)
+                            {
+                                if ((!minPeptidesLength.HasValue || j - nTermIndexofProtein >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || j - nTermIndexofProtein <= maxPeptidesLength))
+                                {
+                                    yield return new PeptideWithPossibleModifications(nTermIndexofProtein + 1, j, protein, j - nTermIndexofProtein, "semiN", allKnownFixedModifications);
+                                }
+                            }
+                        }
+                        // Cleave!
+                        if (i == 0 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
+                        {
+                            int nTermIndexOfProtein = 1;
+                            int cTermIndexOfProtein = oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1];
+                            if ((!minPeptidesLength.HasValue || cTermIndexOfProtein - nTermIndexOfProtein >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || cTermIndexOfProtein - nTermIndexOfProtein <= maxPeptidesLength))
+                            {
+                                yield return new PeptideWithPossibleModifications(nTermIndexOfProtein + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - nTermIndexOfProtein, "semi:M cleaved", allKnownFixedModifications);
+                            }
+                            //fixedC
+                            for (int j = nTermIndexOfProtein + 1; j < cTermIndexOfProtein; j++)
+                            {
+                                if ((!minPeptidesLength.HasValue || cTermIndexOfProtein - j >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || cTermIndexOfProtein - j <= maxPeptidesLength))
+                                {
+                                    yield return new PeptideWithPossibleModifications(j + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - j, "semiC", allKnownFixedModifications);
+                                }
+                            }
+                            //fixedN
+                            for (int j = cTermIndexOfProtein - 1; j > nTermIndexOfProtein; j--)
+                            {
+                                if ((!minPeptidesLength.HasValue || j - nTermIndexOfProtein >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || j - nTermIndexOfProtein <= maxPeptidesLength))
+                                {
+                                    yield return new PeptideWithPossibleModifications(nTermIndexOfProtein + 1, j, protein, j - nTermIndexOfProtein, "semiN", allKnownFixedModifications);
+                                }
+                            }
+                        }
+                    }
+                    int lastIndexSemi = oneBasedIndicesToCleaveAfter.Count - 1;
+                    int maxIndexSemi = maximumMissedCleavages < lastIndexSemi ? maximumMissedCleavages : lastIndexSemi;
+                    //Fringe C-term peptides
+                    for (int i = 1; i <= maxIndexSemi; i++)
+                    {
+                        //fixedN
+                        int nTermIndexOfProtein = oneBasedIndicesToCleaveAfter[lastIndexSemi - i];
+                        int cTermIndexOfProtein = oneBasedIndicesToCleaveAfter[lastIndexSemi] - 1;
+                        for (int j = cTermIndexOfProtein; j > nTermIndexOfProtein; j--)
+                        {
+                            if ((!minPeptidesLength.HasValue || j - nTermIndexOfProtein >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || j - nTermIndexOfProtein <= maxPeptidesLength))
+                            {
+                                yield return new PeptideWithPossibleModifications(nTermIndexOfProtein + 1, j, protein, j - nTermIndexOfProtein, "semiN", allKnownFixedModifications);
+                            }
+                        }
+                    }
+                    //Fringe N-term peptides
+                    for (int i = 1; i <= maxIndexSemi; i++)
+                    {
+                        //fixedC
+                        int nTermIndexOfProtein = oneBasedIndicesToCleaveAfter[0];
+                        int cTermIndexOfProtein = oneBasedIndicesToCleaveAfter[i];
+                        for (int j = nTermIndexOfProtein + 1; j < cTermIndexOfProtein; j++)
+                        {
+                            if ((!minPeptidesLength.HasValue || cTermIndexOfProtein - j >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || cTermIndexOfProtein - j <= maxPeptidesLength))
+                            {
+                                yield return new PeptideWithPossibleModifications(j + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - j, "semiC", allKnownFixedModifications);
+                            }
+                        }
+                    }
+
+                    // Also digest using the proteolysis product start/end indices
+                    foreach (var proteolysisProduct in protein.ProteolysisProducts)
+                        if (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length)
+                        {
+                            int i = 0;
+                            while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedBeginPosition)//"<" to prevent additions if same index as residues
+                                i++;
+                            // Start peptide
+                            for (int j = proteolysisProduct.OneBasedBeginPosition.Value; j < oneBasedIndicesToCleaveAfter[i]; j++)
+                            {
+                                if ((!minPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 <= maxPeptidesLength))
+                                {
+                                    yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, j, protein, j - proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.Type + " start", allKnownFixedModifications);
+                                }
+                            }
+                            while (oneBasedIndicesToCleaveAfter[i] <= proteolysisProduct.OneBasedEndPosition) //"<=" to prevent additions if same index as residues, since i-- is below
+                                i++;
+                            i--;
+                            // End
+                            for (int j = oneBasedIndicesToCleaveAfter[i] + 1; j < proteolysisProduct.OneBasedEndPosition.Value; j++)
+                            {
+                                if ((!minPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 <= maxPeptidesLength))
+                                {
+                                    yield return new PeptideWithPossibleModifications(j, proteolysisProduct.OneBasedEndPosition.Value, protein, proteolysisProduct.OneBasedEndPosition.Value - j, proteolysisProduct.Type + " end", allKnownFixedModifications);
+                                }
+                            }
+                        }
                     break;
 
                 case CleavageSpecificity.None:

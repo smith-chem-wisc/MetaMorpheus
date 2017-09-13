@@ -3,7 +3,6 @@ using MassSpectrometry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
@@ -77,9 +76,9 @@ namespace EngineLayer.ModernSearch
                     double thePrecursorMass = thisScan.PrecursorMass;
                     CalculatePeptideScores(thisScan.TheScan, fullPeptideScores, thePrecursorMass);
 
-                    bestPeptides = null;
+                    bestPeptides = new List<CompactPeptide>();
                     bestScores = 0;
-                    bestNotches = null;
+                    bestNotches = new List<int>();
 
                     for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
@@ -94,7 +93,7 @@ namespace EngineLayer.ModernSearch
                             if (currentBestScore > 1)
                             {
                                 // Existed! Need to compare with old match
-                                if ((Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement) && (CommonParameters.ReportAllAmbiguity || bestPeptides.Count == 0))
+                                if ((Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement) && (CommonParameters.ReportAllAmbiguity))
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
@@ -122,9 +121,9 @@ namespace EngineLayer.ModernSearch
                                 int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                 if (notch >= 0)
                                 {
-                                    bestPeptides = new List<CompactPeptide> { candidatePeptide };
+                                    bestPeptides.Add(candidatePeptide);
                                     bestScores = consideredScore;
-                                    bestNotches = new List<int> { notch };
+                                    bestNotches.Add(notch);
                                 }
                             }
                         }
@@ -199,7 +198,7 @@ namespace EngineLayer.ModernSearch
                     {
                         double massShiftForComplementaryConversion = thePrecursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
                         for (int i = numCompIons - 1; i >= 0; i--)
-                            complementaryIons[numCompIons-i-1] = (massShiftForComplementaryConversion - spectrum.MassSpectrum.XArray[i], spectrum.MassSpectrum.YArray[i]);
+                            complementaryIons[numCompIons - i - 1] = (massShiftForComplementaryConversion - spectrum.MassSpectrum.XArray[i], spectrum.MassSpectrum.YArray[i]);
 
                         //propogation of error from precursor mass and complementary product mass
                         //IMPLEMENT AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(CommonParameters.ProductMassTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
@@ -258,7 +257,6 @@ namespace EngineLayer.ModernSearch
                     break;
                 ipos++;
             }
-
         }
 
         #endregion Protected Methods

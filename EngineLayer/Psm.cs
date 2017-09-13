@@ -50,7 +50,7 @@ namespace EngineLayer
 
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
-        public int PrecursorScanNumber { get; }
+        public int? PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
         public int ScanExperimentalPeaks { get; }
         public double TotalIonCurrent { get; }
@@ -227,7 +227,7 @@ namespace EngineLayer
             sb.Append('\t' + ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture));
-            sb.Append('\t' + PrecursorScanNumber.ToString(CultureInfo.InvariantCulture));
+            sb.Append('\t' + (PrecursorScanNumber.HasValue ? PrecursorScanNumber.Value.ToString(CultureInfo.InvariantCulture) : "unknown"));
             sb.Append('\t' + ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + ScanPrecursorMonoisotopicPeak.Mz.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture));

@@ -347,9 +347,9 @@ namespace EngineLayer.Calibration
             {
                 if (a is IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> theScan)
                 {
-                    var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
+                    var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber.Value);
 
-                    Func<IPeak, double> theFunc = x => x.X - bestCf.Item2.Predict(new double[] { x.X, a.RetentionTime, x.Y, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, theScan.IsolationMz });
+                    Func<IPeak, double> theFunc = x => x.X - bestCf.Item2.Predict(new double[] { x.X, a.RetentionTime, x.Y, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, theScan.IsolationMz.Value });
 
                     Func<IPeak, double> theFuncForPrecursor = x => x.X - bestCf.Item1.Predict(new double[] { x.X, precursorScan.RetentionTime, x.Y, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
 
@@ -570,7 +570,7 @@ namespace EngineLayer.Calibration
                                      trainingPointsToAverage.Select(b => b.intensity).Average(),
                                      ms2DataScan.TotalIonCurrent,
                                      ms2DataScan.InjectionTime,
-                                     ms2DataScan.IsolationMz,
+                                     ms2DataScan.IsolationMz.Value,
                                      trainingPointsToAverage.Select(b => b.Label).Median(),
                                      identification);
                         }
