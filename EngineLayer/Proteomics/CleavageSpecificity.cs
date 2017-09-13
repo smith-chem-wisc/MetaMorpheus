@@ -5,6 +5,8 @@
         None,
         Semi,
         Full,
+        FullMaxN,
+        FullMaxC,
         SingleN,
         SingleC
     }

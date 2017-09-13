@@ -106,7 +106,7 @@ namespace TaskLayer
 
             Status("Running G-PTM-D...", new List<string> { taskId });
 
-            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)), SearchType.Classic);
+            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             object lock1 = new object();
             object lock2 = new object();

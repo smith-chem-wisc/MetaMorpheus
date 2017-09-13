@@ -87,23 +87,5 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; set; }
 
         #endregion Public Properties
-
-        #region Public Methods
-
-        public List<ProductType> GetProductTypes()
-        {
-            List<ProductType> ionTypes = new List<ProductType>();
-            if (BIons)
-                ionTypes.Add(ProductType.B);
-            if (YIons)
-                ionTypes.Add(ProductType.Y);
-            if (CIons)
-                ionTypes.Add(ProductType.C);
-            if (ZdotIons)
-                ionTypes.Add(ProductType.Zdot);
-            return ionTypes;
-        }
-
-        #endregion Public Methods
     }
 }

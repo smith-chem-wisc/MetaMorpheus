@@ -502,12 +502,11 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.FullMaxN, null, null, null);
 
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = productMassTolerance,
-                YIons = false
             };
             CommonParameters.DigestionParams = new DigestionParams
             {
@@ -515,7 +514,6 @@ namespace Test
                 Protease = protease,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
-            CommonParameters.DigestionParams.UpdateSemiProteaseDigestion(SearchType.NonSpecific, CommonParameters.GetProductTypes());
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, digestParams, 1, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -580,12 +578,11 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("singleC", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("singleC", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.FullMaxC, null, null, null);
 
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = productMassTolerance,
-                BIons = false
             };
             CommonParameters.DigestionParams = new DigestionParams
             {
@@ -593,8 +590,6 @@ namespace Test
                 Protease = protease,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
-            CommonParameters.DigestionParams.UpdateSemiProteaseDigestion(SearchType.NonSpecific, CommonParameters.GetProductTypes());
-
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, true, digestParams, 1, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();

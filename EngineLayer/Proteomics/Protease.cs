@@ -5,6 +5,16 @@ namespace EngineLayer
 {
     public class Protease
     {
+        #region Private Fields
+
+        private static readonly Dictionary<CleavageSpecificity, TerminusType> semiSpecificProteaseAlterationDicitionary = new Dictionary<CleavageSpecificity, TerminusType>
+        {
+            {CleavageSpecificity.Full, TerminusType.None },
+            {CleavageSpecificity.FullMaxN, TerminusType.N },
+            {CleavageSpecificity.FullMaxC, TerminusType.C }
+        };
+
+        #endregion Private Fields
 
         #region Public Constructors
 
@@ -18,6 +28,27 @@ namespace EngineLayer
             PsiMsAccessionNumber = psiMSAccessionNumber;
             PsiMsName = psiMSName;
             SiteRegexp = siteRegexp;
+        }
+
+        public Protease(Protease protease, List<ProductType> ionTypes)
+        {
+            Name = protease.Name;
+            SequencesInducingCleavage = protease.SequencesInducingCleavage;
+            SequencesPreventingCleavage = protease.SequencesPreventingCleavage;
+            CleavageTerminus = protease.CleavageTerminus;
+            PsiMsAccessionNumber = protease.PsiMsAccessionNumber;
+            PsiMsName = protease.PsiMsName;
+            SiteRegexp = protease.SiteRegexp;
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
+
+            if (terminusType == TerminusType.N)
+                CleavageSpecificity = CleavageSpecificity.FullMaxN;
+            else if (terminusType == TerminusType.C)
+                CleavageSpecificity = CleavageSpecificity.FullMaxC;
+            else if (terminusType == TerminusType.None)
+                CleavageSpecificity = CleavageSpecificity.Full;
+            else
+                throw new MetaMorpheusException("Terminus obtained for NonSpecific search has not been implemented.");
         }
 
         #endregion Public Constructors
@@ -53,6 +84,12 @@ namespace EngineLayer
         public override int GetHashCode()
         {
             return Name.GetHashCode();
+        }
+
+        public bool ProteaseMustBeUpdated(SearchType searchType, List<ProductType> ionTypes)
+        {
+            TerminusType terminusType = (searchType == SearchType.NonSpecific) ? ProductTypeToTerminusType.IdentifyTerminusType(ionTypes) : TerminusType.None;
+            return (semiSpecificProteaseAlterationDicitionary.TryGetValue(CleavageSpecificity, out TerminusType value)) ? value != terminusType : false;
         }
 
         #endregion Public Methods
