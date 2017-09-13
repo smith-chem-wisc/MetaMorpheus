@@ -193,7 +193,7 @@ namespace Test
 
         public int OneBasedScanNumber => 0;
 
-        public int OneBasedPrecursorScanNumber => 0;
+        public int? OneBasedPrecursorScanNumber => 0;
 
         public double RetentionTime => 0;
 
