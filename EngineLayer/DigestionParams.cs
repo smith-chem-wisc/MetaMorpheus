@@ -30,7 +30,7 @@ namespace EngineLayer
         public int MaxModsForPeptide { get; set; }
         public Protease Protease { get; set; }
         public bool SemiProteaseDigestion { get; set; } //for nonspecific searching of proteases
-        public TerminusType TerminusTypeSemiProtease { get; set; }
+        public TerminusType TerminusTypeSemiProtease { get; set; } //for nonspecific searching of proteases
 
         #endregion Public Properties
 
