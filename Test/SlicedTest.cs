@@ -13,30 +13,30 @@ namespace Test
     {
         #region Public Methods
 
-        [Test]
-        public static void SlicedTest1()
-        {
-            var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
+        //[Test]
+        //public static void SlicedTest1()
+        //{
+        //    var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
 
-            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
-            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, null);
+        //    DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
+        //    string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
+        //    EverythingRunnerEngine a = new EverythingRunnerEngine(new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, null);
 
-            a.Run();
+        //    a.Run();
 
-            var thisTaskOutputFolder = MySetUpClass.outputFolder;
+        //    var thisTaskOutputFolder = MySetUpClass.outputFolder;
 
-            var peaks = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_5ppmAroundZero_QuantifiedPeaks.tsv");
+        //    var peaks = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_5ppmAroundZero_QuantifiedPeaks.tsv");
 
-            Assert.AreEqual(2, File.ReadLines(peaks).Count());
+        //    Assert.AreEqual(2, File.ReadLines(peaks).Count());
 
-            var psms = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_PSMs_5ppmAroundZero.psmtsv");
+        //    var psms = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_PSMs_5ppmAroundZero.psmtsv");
 
-            Assert.AreEqual(3, File.ReadLines(psms).Count());
-            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_5ppmAroundZero_ProteinGroups.tsv");
+        //    Assert.AreEqual(3, File.ReadLines(psms).Count());
+        //    var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_5ppmAroundZero_ProteinGroups.tsv");
 
-            Assert.AreEqual(2, File.ReadLines(protGroups).Count());
-        }
+        //    Assert.AreEqual(2, File.ReadLines(protGroups).Count());
+        //}
 
         #endregion Public Methods
     }

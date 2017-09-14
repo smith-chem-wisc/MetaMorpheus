@@ -49,133 +49,133 @@ namespace Test
                 Assert.IsTrue(huh > 0);
         }
 
-        [Test]
-        public static void TestIdenticalPeaks()
-        {
-            IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
-            mods.Add(1, new List<Modification> { new ModificationWithMass("Hehe", null, motif, TerminusLocalization.NProt, 18.010565, null, null, null, null) });
-            var prot = new Protein("MMMM", null, null, mods);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
-            var ye = prot.Digest(digestionParams, new List<ModificationWithMass>()).First();
-            var thePep = ye.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).Last();
+        //[Test]
+        //public static void TestIdenticalPeaks()
+        //{
+        //    IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
+        //    ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
+        //    mods.Add(1, new List<Modification> { new ModificationWithMass("Hehe", null, motif, TerminusLocalization.NProt, 18.010565, null, null, null, null) });
+        //    var prot = new Protein("MMMM", null, null, mods);
+        //    DigestionParams digestionParams = new DigestionParams
+        //    {
+        //        MinPeptideLength = 1,
+        //    };
+        //    var ye = prot.Digest(digestionParams, new List<ModificationWithMass>()).First();
+        //    var thePep = ye.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).Last();
 
-            var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
-            Array.Sort(massArray);
-            double[] intensities = new double[] { 1, 1, 1, 1 };
-            double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
-            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
+        //    var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+        //    Array.Sort(massArray);
+        //    double[] intensities = new double[] { 1, 1, 1, 1 };
+        //    double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
+        //    MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
+        //    IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
-            Psm[] globalPsms = new Psm[1];
-            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
-                    MaxModificationIsoforms = int.MaxValue,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                },
-                ProductMassTolerance = new PpmTolerance(5),
-                ConserveMemory = false,
-                ScoreCutoff = 0
-            };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
+        //    Psm[] globalPsms = new Psm[1];
+        //    Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+        //    CommonParameters CommonParameters = new CommonParameters
+        //    {
+        //        DigestionParams = new DigestionParams
+        //        {
+        //            MaxMissedCleavages = 0,
+        //            MinPeptideLength = null,
+        //            MaxModificationIsoforms = int.MaxValue,
+        //            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+        //        },
+        //        ProductMassTolerance = new PpmTolerance(5),
+        //        ConserveMemory = false,
+        //        ScoreCutoff = 0
+        //    };
+        //    ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
 
-            cse.Run();
+        //    cse.Run();
 
-            Assert.Less(globalPsms[0].Score, 4);
-            Assert.Greater(globalPsms[0].Score, 3);
-        }
+        //    Assert.Less(globalPsms[0].Score, 4);
+        //    Assert.Greater(globalPsms[0].Score, 3);
+        //}
 
-        [Test]
-        public static void TestLastPeaks()
-        {
-            IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
-            var prot = new Protein("MMMM", null, null, mods);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
-            var ye = prot.Digest(digestionParams, new List<ModificationWithMass>()).First();
-            var thePep = ye.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).Last();
+        //[Test]
+        //public static void TestLastPeaks()
+        //{
+        //    IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
+        //    ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
+        //    var prot = new Protein("MMMM", null, null, mods);
+        //    DigestionParams digestionParams = new DigestionParams
+        //    {
+        //        MinPeptideLength = 1,
+        //    };
+        //    var ye = prot.Digest(digestionParams, new List<ModificationWithMass>()).First();
+        //    var thePep = ye.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).Last();
 
-            var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
-            Array.Sort(massArray);
-            double[] intensities = new double[] { 1, 1, 1 };
-            double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
-            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
+        //    var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+        //    Array.Sort(massArray);
+        //    double[] intensities = new double[] { 1, 1, 1 };
+        //    double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
+        //    MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
+        //    IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
-            Psm[] globalPsms = new Psm[1];
-            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
-                    MaxModificationIsoforms = int.MaxValue,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                },
-                ConserveMemory = false,
-                ScoreCutoff = 0
-            };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
+        //    Psm[] globalPsms = new Psm[1];
+        //    Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+        //    CommonParameters CommonParameters = new CommonParameters
+        //    {
+        //        ProductMassTolerance = new PpmTolerance(5),
+        //        DigestionParams = new DigestionParams
+        //        {
+        //            MaxMissedCleavages = 0,
+        //            MinPeptideLength = null,
+        //            MaxModificationIsoforms = int.MaxValue,
+        //            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+        //        },
+        //        ConserveMemory = false,
+        //        ScoreCutoff = 0
+        //    };
+        //    ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
 
-            cse.Run();
-            Assert.Less(globalPsms[0].Score, 2);
-            Assert.Greater(globalPsms[0].Score, 1);
-        }
+        //    cse.Run();
+        //    Assert.Less(globalPsms[0].Score, 2);
+        //    Assert.Greater(globalPsms[0].Score, 1);
+        //}
 
-        [Test]
-        public static void TestVeryCloseExperimentalsClassic()
-        {
-            IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
-            var prot = new Protein("MMMM", null, null, mods);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
-            var ye = prot.Digest(digestionParams, new List<ModificationWithMass>()).First();
-            var thePep = ye.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).Last();
+        //[Test]
+        //public static void TestVeryCloseExperimentalsClassic()
+        //{
+        //    IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
+        //    ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
+        //    var prot = new Protein("MMMM", null, null, mods);
+        //    DigestionParams digestionParams = new DigestionParams
+        //    {
+        //        MinPeptideLength = 1,
+        //    };
+        //    var ye = prot.Digest(digestionParams, new List<ModificationWithMass>()).First();
+        //    var thePep = ye.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).Last();
 
-            var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
-            Array.Sort(massArray);
-            double[] intensities = new double[] { 1, 1, 1, 1 };
-            double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
-            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
+        //    var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+        //    Array.Sort(massArray);
+        //    double[] intensities = new double[] { 1, 1, 1, 1 };
+        //    double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
+        //    MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
+        //    IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
-            Psm[] globalPsms = new Psm[1];
-            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
-                    MaxModificationIsoforms = int.MaxValue,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                },
-                ConserveMemory = false,
-                ScoreCutoff = 0
-            };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
+        //    Psm[] globalPsms = new Psm[1];
+        //    Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+        //    CommonParameters CommonParameters = new CommonParameters
+        //    {
+        //        ProductMassTolerance = new PpmTolerance(5),
+        //        DigestionParams = new DigestionParams
+        //        {
+        //            MaxMissedCleavages = 0,
+        //            MinPeptideLength = null,
+        //            MaxModificationIsoforms = int.MaxValue,
+        //            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+        //        },
+        //        ConserveMemory = false,
+        //        ScoreCutoff = 0
+        //    };
+        //    ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
 
-            cse.Run();
-            Assert.Less(globalPsms[0].Score, 2);
-            Assert.Greater(globalPsms[0].Score, 1);
-        }
+        //    cse.Run();
+        //    Assert.Less(globalPsms[0].Score, 2);
+        //    Assert.Greater(globalPsms[0].Score, 1);
+        //}
 
         [Test]
         public static void TestVeryCloseExperimentalsModern()
