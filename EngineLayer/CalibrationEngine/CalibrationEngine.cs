@@ -87,6 +87,7 @@ namespace EngineLayer.Calibration
                     Console.WriteLine("DoFirst round " + round);
                     prevdataPointAcquisitionResult = dataPointAcquisitionResult;
                     dataPointAcquisitionResult = GetDataPoints();
+                    Console.WriteLine(dataPointAcquisitionResult);
                     Calibrate(dataPointAcquisitionResult, CalibrationSetting.DoFirst, CalibrationSetting.Metric);
                 } while (CalibrationSetting.ContinueLoop.Item1(prevdataPointAcquisitionResult, dataPointAcquisitionResult));
             }
@@ -100,6 +101,7 @@ namespace EngineLayer.Calibration
                 Console.WriteLine("Round " + round);
                 prevdataPointAcquisitionResult = dataPointAcquisitionResult;
                 dataPointAcquisitionResult = GetDataPoints();
+                Console.WriteLine(dataPointAcquisitionResult);
                 Calibrate(dataPointAcquisitionResult, CalibrationSetting.Learners, CalibrationSetting.Metric);
             } while (CalibrationSetting.ContinueLoop.Item1(prevdataPointAcquisitionResult, dataPointAcquisitionResult));
 
@@ -248,10 +250,10 @@ namespace EngineLayer.Calibration
                         Console.WriteLine("ms1 improv! " + learner.ToString());
                     }
                 }
-                catch (Exception e)
+                catch
                 {
                     Console.WriteLine(" ms1 erorred! " + learner.ToString());
-                    Console.WriteLine(e);
+                    //Console.WriteLine(e);
                 }
 
                 try
@@ -268,10 +270,10 @@ namespace EngineLayer.Calibration
                         Console.WriteLine("ms2 improv! " + learner.ToString());
                     }
                 }
-                catch (Exception e)
+                catch
                 {
                     Console.WriteLine(" ms2 erorred! " + learner.ToString());
-                    Console.WriteLine(e);
+                    //Console.WriteLine(e);
                 }
             }
 

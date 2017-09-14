@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 
 namespace EngineLayer.Calibration
 {
@@ -21,5 +22,21 @@ namespace EngineLayer.Calibration
         public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 
         #endregion Public Properties
+
+        #region Public Methods
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(" Ms1List.Count " + Ms1List.Count);
+            sb.AppendLine(" Ms2List.Count " + Ms2List.Count);
+            sb.AppendLine(" numMs1MassChargeCombinationsConsidered " + numMs1MassChargeCombinationsConsidered);
+            sb.AppendLine(" numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            sb.AppendLine(" numMs2MassChargeCombinationsConsidered " + numMs2MassChargeCombinationsConsidered);
+            sb.Append(" numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks " + numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
     }
 }

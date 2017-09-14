@@ -203,9 +203,9 @@ namespace TaskLayer
 
                     List<(Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string)> ContinueLoops = new List<(Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string)>
                     {
+                        ((DataPointAquisitionResults a, DataPointAquisitionResults b) => b.Ms1List.Count()>= a.Ms1List.Count() && b.Ms2List.Count()>=b.Ms1List.Count() && b.Count > a.Count, "allIncrease"),
                         ((DataPointAquisitionResults a, DataPointAquisitionResults b) => false, "single"),
                         ((DataPointAquisitionResults a, DataPointAquisitionResults b) => b.Count > a.Count, "countIncrease"),
-                        ((DataPointAquisitionResults a, DataPointAquisitionResults b) => b.Ms1List.Count()>= a.Ms1List.Count() && b.Ms2List.Count()>=b.Ms1List.Count() && b.Count > a.Count, "allIncrease"),
                     };
 
                     List<bool> DoLinearMzSeparately = new List<bool>
@@ -281,26 +281,11 @@ namespace TaskLayer
                                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
                             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-
-                            // Run FDR analysis on single file results
+                            
                             new FdrAnalysisEngine(allPsms, searchModes, new List<string>()).Run();
 
                             var localizationEngine = new LocalizationEngine(allPsms, lp, myMsDataFile, CommonParameters.ProductMassTolerance, new List<string>(), false);
                             localizationEngine.Run();
-
-                            //Console.WriteLine("scan= " + allPsms.First().ScanNumber + " fullSeq= " + allPsms.First().FullSequence + " daError= " + (allPsms.First().ScanPrecursorMass - allPsms.First().PeptideMonisotopicMass) + " ppmError= " + ((allPsms.First().ScanPrecursorMass - allPsms.First().PeptideMonisotopicMass) / allPsms.First().PeptideMonisotopicMass * 1e6));
-                            //Console.Write('\t' + "[");
-                            //foreach (var kvp in allPsms.First().MatchedIonDictOnlyMatches)
-                            //    Console.Write("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "];");
-                            //Console.WriteLine("]");
-                            //Console.Write('\t' + "[");
-                            //foreach (var kvp in allPsms.First().ProductMassErrorDa)
-                            //    Console.Write("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
-                            //Console.WriteLine("]");
-                            //Console.Write('\t' + "[");
-                            //foreach (var kvp in allPsms.First().ProductMassErrorPpm)
-                            //    Console.Write("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
-                            //Console.WriteLine("]");
 
                             var goodIdentifications = allPsms.Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
