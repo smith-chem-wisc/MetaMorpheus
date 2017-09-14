@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer.Analysis
 {
@@ -26,10 +27,12 @@ namespace EngineLayer.Analysis
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
-            Status("Running analysis engine!", nestedIds);
 
             Status("Running FDR analysis...", nestedIds);
             DoFalseDiscoveryRateAnalysis(newPsms, searchModes);
+
+            myAnalysisResults.PsmsWithin1percentFdr = newPsms.Count(b => b.FdrInfo.QValue < 0.01);
+
             return myAnalysisResults;
         }
 
