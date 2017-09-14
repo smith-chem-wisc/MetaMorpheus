@@ -1,4 +1,5 @@
-﻿using MathNet.Numerics;
+﻿using EngineLayer;
+using MathNet.Numerics;
 using SharpLearning.Common.Interfaces;
 using SharpLearning.Containers.Matrices;
 using System;
@@ -65,6 +66,8 @@ namespace TaskLayer
 
             // Skip the intensities for now!!!
 
+            if (targetCoeffs.Count == 0)
+                throw new MetaMorpheusException("Not enough training points to learn to predict mz coefficients in SeparateMzLearner");
             F64Matrix kook = new F64Matrix(dps.ToArray(), targetCoeffs.Count, dps.Count / targetCoeffs.Count);
             IPredictorModel<double> predictMzCoeff = ok.Learn(kook, targetCoeffs.ToArray());
             return new MySeparatePredictorModel(predictMzCoeff);

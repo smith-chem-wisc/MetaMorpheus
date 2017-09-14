@@ -199,18 +199,30 @@ namespace EngineLayer.Calibration
             var numVars = shuffledMs1TrainingPoints[0].Inputs.Length;
 
             double[] trainList1Concat = shuffledMs1TrainingPoints.Take((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).SelectMany(b => b.Inputs).ToArray();
+
+            if (!trainList1Concat.Any())
+                throw new MetaMorpheusException("Not enough ms1 datapoints");
             F64Matrix trainList1Matrix = new F64Matrix(trainList1Concat, trainList1Concat.Length / numVars, numVars);
             double[] trainList1Targets = shuffledMs1TrainingPoints.Take((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
 
             double[] testList1Concat = shuffledMs1TrainingPoints.Skip((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).SelectMany(b => b.Inputs).ToArray();
+
+            if (!testList1Concat.Any())
+                throw new MetaMorpheusException("Not enough ms1 datapoints");
             F64Matrix testList1Matrix = new F64Matrix(testList1Concat, testList1Concat.Length / numVars, numVars);
             double[] testList1Targets = shuffledMs1TrainingPoints.Skip((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
 
             double[] trainList2Concat = shuffledMs2TrainingPoints.Take((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).SelectMany(b => b.Inputs).ToArray();
+
+            if (!trainList2Concat.Any())
+                throw new MetaMorpheusException("Not enough ms2 datapoints");
             F64Matrix trainList2Matrix = new F64Matrix(trainList2Concat, trainList2Concat.Length / numVars, numVars);
             double[] trainList2Targets = shuffledMs2TrainingPoints.Take((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
 
             double[] testList2Concat = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).SelectMany(b => b.Inputs).ToArray();
+
+            if (!testList2Concat.Any())
+                throw new MetaMorpheusException("Not enough ms2 datapoints");
             F64Matrix testList2Matrix = new F64Matrix(testList2Concat, testList2Concat.Length / numVars, numVars);
             double[] testList2Targets = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).Select(b => b.Label).ToArray();
 
@@ -236,9 +248,10 @@ namespace EngineLayer.Calibration
                         Console.WriteLine("ms1 improv! " + learner.ToString());
                     }
                 }
-                catch
+                catch (Exception e)
                 {
                     Console.WriteLine(" ms1 erorred! " + learner.ToString());
+                    Console.WriteLine(e);
                 }
 
                 try
@@ -255,9 +268,10 @@ namespace EngineLayer.Calibration
                         Console.WriteLine("ms2 improv! " + learner.ToString());
                     }
                 }
-                catch
+                catch (Exception e)
                 {
                     Console.WriteLine(" ms2 erorred! " + learner.ToString());
+                    Console.WriteLine(e);
                 }
             }
 
@@ -278,15 +292,15 @@ namespace EngineLayer.Calibration
                 {
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
-                    Func<IPeak, double> theFunc = x => x.X - ms2predictor.Predict(x.X, a.RetentionTime, a.TotalIonCurrent, a.InjectionTime ?? double.NaN);
+                    Func<IPeak, double> theFunc = x => x.X - ms2predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN);
 
-                    Func<IPeak, double> theFuncForPrecursor = x => x.X - ms1predictor.Predict(x.X, precursorScan.RetentionTime, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN);
+                    Func<IPeak, double> theFuncForPrecursor = x => x.X - ms1predictor.Predict(x.X, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN);
 
                     theScan.TransformMzs(theFunc, theFuncForPrecursor);
                 }
                 else
                 {
-                    Func<IPeak, double> theFunc = x => x.X - ms1predictor.Predict(x.X, a.RetentionTime, a.TotalIonCurrent, a.InjectionTime ?? double.NaN);
+                    Func<IPeak, double> theFunc = x => x.X - ms1predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN);
                     a.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
                 }
             }
@@ -382,9 +396,8 @@ namespace EngineLayer.Calibration
                         countForThisScan++;
                         yield return new LabeledMs1DataPoint(trainingPointsToAverage.Select(b => b.mz).Average(),
                                                              fullMS1scan.RetentionTime,
-                                                             // trainingPointsToAverage.Select(b => b.intensity).Average(),
-                                                             fullMS1scan.TotalIonCurrent,
-                                                             fullMS1scan.InjectionTime,
+                                                             Math.Log(fullMS1scan.TotalIonCurrent),
+                                                             fullMS1scan.InjectionTime.HasValue ? Math.Log(fullMS1scan.InjectionTime.Value) : double.NaN,
                                                              trainingPointsToAverage.Select(b => b.Label).Median(),
                                                              identification);
                     }
@@ -480,7 +493,7 @@ namespace EngineLayer.Calibration
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
                                 //trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, ms2DataScan.MassSpectrum.YArray[closestPeakIndex], double.NaN, null, closestPeakMZ - theMZ, null));
 
-                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, double.NaN, null, closestPeakMZ - theMZ, null));
+                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, closestPeakMZ - theMZ, null));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
@@ -502,9 +515,8 @@ namespace EngineLayer.Calibration
                             countForThisMS2a++;
                             yield return new LabeledMs2DataPoint(trainingPointsToAverage.Select(b => b.mz).Average(),
                                      ms2DataScan.RetentionTime,
-                                     //trainingPointsToAverage.Select(b => b.intensity).Average(),
-                                     ms2DataScan.TotalIonCurrent,
-                                     ms2DataScan.InjectionTime,
+                                     Math.Log(ms2DataScan.TotalIonCurrent),
+                                     ms2DataScan.InjectionTime.HasValue ? Math.Log(ms2DataScan.InjectionTime.Value) : double.NaN,
                                      trainingPointsToAverage.Select(b => b.Label).Median(),
                                      identification);
                         }

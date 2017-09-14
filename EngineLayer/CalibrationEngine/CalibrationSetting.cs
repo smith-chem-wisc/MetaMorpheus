@@ -22,7 +22,7 @@ namespace EngineLayer.Calibration
 
         public override string ToString()
         {
-            return " continueLoopString= " + ContinueLoop.Item2 + " DoFirst " + DoFirst == null ? "null" : string.Join(",", DoFirst) + " Learners " + string.Join(",", Learners) + " Metric " + Metric;
+            return " continueLoopString= " + ContinueLoop.Item2 + " DoFirst " + (DoFirst == null ? "null" : string.Join(",", DoFirst)) + " Learners " + string.Join(",", Learners) + " Metric " + Metric;
         }
 
         #endregion Public Methods
