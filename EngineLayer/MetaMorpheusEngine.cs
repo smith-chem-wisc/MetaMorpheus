@@ -207,7 +207,7 @@ namespace EngineLayer
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
                 return 0;
-            int MatchingProductsHere = 0;
+            double Score = 0;
             double MatchingIntensityHere = 0;
 
             int currentTheoreticalIndex = -1;
@@ -237,7 +237,12 @@ namespace EngineLayer
                 // If found match
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
-                    MatchingProductsHere++;
+                    {
+                        var currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
+                        currentTheoreticalMass = currentTheoreticalMz - Constants.protonMass;
+                        var ppmError = (currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass;
+                        Score += Math.Min(1, 2.036 / Math.Abs(ppmError));
+                    }
                     MatchingIntensityHere += experimental_intensities[experimentalIndex];
 
                     currentTheoreticalIndex++; //prevent multi counting
@@ -307,7 +312,7 @@ namespace EngineLayer
                             // If found match
                             if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                             {
-                                MatchingProductsHere++;
+                                Score++;
                                 MatchingIntensityHere += complementaryIntensities[experimentalIndex];
 
                                 currentTheoreticalIndex++;
@@ -350,7 +355,8 @@ namespace EngineLayer
                     }
                 }
             }
-            return (MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent);
+            return Score;
+            //return (Score + MatchingIntensityHere / thisScan.TotalIonCurrent);
         }
 
         public MetaMorpheusEngineResults Run()
