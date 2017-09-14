@@ -67,56 +67,56 @@ namespace Test
             Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
         }
 
-        [Test]
-        public static void TestClassicSearchEngineWithWeirdPeptide()
-        {
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams
-                {
-                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
-                    MaxMissedCleavages = 0,
-                },
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+        //[Test]
+        //public static void TestClassicSearchEngineWithWeirdPeptide()
+        //{
+        //    CommonParameters CommonParameters = new CommonParameters
+        //    {
+        //        DigestionParams = new DigestionParams
+        //        {
+        //            Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+        //            MinPeptideLength = null,
+        //            MaxMissedCleavages = 0,
+        //        },
+        //        ConserveMemory = false,
+        //        ScoreCutoff = 1,
+        //    };
 
-            var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<Protein> { new Protein("QXQ", null) };
+        //    var myMsDataFile = new TestDataFile();
+        //    var variableModifications = new List<ModificationWithMass>();
+        //    var fixedModifications = new List<ModificationWithMass>();
+        //    var proteinList = new List<Protein> { new Protein("QXQ", null) };
 
-            var searchModes = new OpenSearchMode();
+        //    var searchModes = new OpenSearchMode();
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
-            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+        //    bool DoPrecursorDeconvolution = true;
+        //    bool UseProvidedPrecursorInfo = true;
+        //    double DeconvolutionIntensityRatio = 4;
+        //    int DeconvolutionMaxAssumedChargeState = 10;
+        //    Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+        //    var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
+        //    Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+        //    new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
 
-            // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+        //    // Single search mode
+        //    Assert.AreEqual(1, allPsmsArray.Length);
 
-            // One Scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+        //    // One Scan
+        //    Assert.AreEqual(1, allPsmsArray.Length);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+        //    Assert.IsTrue(allPsmsArray[0].Score > 1);
+        //    Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>()).Run();
+        //    var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>()).Run();
 
-            foreach (var huh in allPsmsArray)
-                if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+        //    foreach (var huh in allPsmsArray)
+        //        if (huh != null && huh.MostProbableProteinInfo == null)
+        //            huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
-            Assert.AreEqual("QXQ", allPsmsArray[0].BaseSequence);
-        }
+        //    Assert.AreEqual("QXQ", allPsmsArray[0].BaseSequence);
+        //}
 
         [Test]
         public static void TestModernSearchEngine()
