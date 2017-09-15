@@ -108,7 +108,7 @@ namespace EngineLayer
             foreach(CompactPeptide key in compactPeptideToProteinPeptideMatching.Keys)
             {
                 HashSet<PeptideWithSetModifications> value = compactPeptideToProteinPeptideMatching[key];
-                compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { value.FirstOrDefault(b => b.Protein.IsDecoy) ?? value.First() };
+                compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { value.FirstOrDefault(b => !b.Protein.IsDecoy) ?? value.First() };
             }
         }
 
