@@ -87,6 +87,8 @@ namespace EngineLayer.Calibration
                     Console.WriteLine("DoFirst round " + round);
                     prevdataPointAcquisitionResult = dataPointAcquisitionResult;
                     dataPointAcquisitionResult = GetDataPoints();
+                    ms1ListAction(dataPointAcquisitionResult.Ms1List, "DoFirstRound" + round);
+                    ms2ListAction(dataPointAcquisitionResult.Ms2List, "DoFirstRound" + round);
                     Console.WriteLine(dataPointAcquisitionResult);
                     Calibrate(dataPointAcquisitionResult, CalibrationSetting.DoFirst, CalibrationSetting.Metric);
                 } while (CalibrationSetting.ContinueLoop.Item1(prevdataPointAcquisitionResult, dataPointAcquisitionResult));
@@ -101,8 +103,10 @@ namespace EngineLayer.Calibration
                 Console.WriteLine("Round " + round);
                 prevdataPointAcquisitionResult = dataPointAcquisitionResult;
                 dataPointAcquisitionResult = GetDataPoints();
+                ms1ListAction(dataPointAcquisitionResult.Ms1List, "Round" + round);
+                ms2ListAction(dataPointAcquisitionResult.Ms2List, "Round" + round);
                 Console.WriteLine(dataPointAcquisitionResult);
-                Calibrate(dataPointAcquisitionResult, CalibrationSetting.Learners, CalibrationSetting.Metric);
+                CalibrateSingle(dataPointAcquisitionResult, CalibrationSetting.Learner);
             } while (CalibrationSetting.ContinueLoop.Item1(prevdataPointAcquisitionResult, dataPointAcquisitionResult));
 
             return new MetaMorpheusEngineResults(this);
@@ -193,6 +197,48 @@ namespace EngineLayer.Calibration
             return res;
         }
 
+        private void CalibrateSingle(DataPointAquisitionResults res, ILearner<double> learner)
+        {
+            var numVarsMs1 = res.Ms1List[0].Inputs.Length;
+            F64Matrix trainList1Matrix = new F64Matrix(res.Ms1List.SelectMany(b => b.Inputs).ToArray(), res.Ms1List.Count, numVarsMs1);
+            double[] trainList1Targets = res.Ms1List.Select(b => b.Label).ToArray();
+
+            var numVarsMs2 = res.Ms2List[0].Inputs.Length;
+            F64Matrix trainList2Matrix = new F64Matrix(res.Ms2List.SelectMany(b => b.Inputs).ToArray(), res.Ms2List.Count, numVarsMs2);
+            double[] trainList2Targets = res.Ms2List.Select(b => b.Label).ToArray();
+
+            IPredictorModel<double> bestMS1predictor = new IdentityCalibrationFunctionPredictorModel();
+            IPredictorModel<double> bestMS2predictor = new IdentityCalibrationFunctionPredictorModel();
+
+            try
+            {
+                var ms1regressor = learner.Learn(trainList1Matrix, trainList1Targets);
+                bestMS1predictor = ms1regressor;
+            }
+            catch
+            {
+                Console.WriteLine(" ms1 erorred! " + learner.ToString());
+            }
+
+            try
+            {
+                var ms2regressor = learner.Learn(trainList2Matrix, trainList2Targets);
+                bestMS2predictor = ms2regressor;
+            }
+            catch
+            {
+                Console.WriteLine(" ms2 erorred! " + learner.ToString());
+            }
+
+            MS1predictor ms1predictor = new MS1predictor(bestMS1predictor);
+
+            MS2predictor ms2predictor = new MS2predictor(bestMS2predictor);
+
+            Status("Calibrating Spectra");
+
+            CalibrateSpectra(ms1predictor, ms2predictor);
+        }
+
         private void Calibrate(DataPointAquisitionResults res, List<ILearner<double>> learners, IRegressionMetric metric)
         {
             var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
@@ -231,8 +277,8 @@ namespace EngineLayer.Calibration
             IPredictorModel<double> bestMS1predictor = new IdentityCalibrationFunctionPredictorModel();
             IPredictorModel<double> bestMS2predictor = new IdentityCalibrationFunctionPredictorModel();
 
-            double bestMS1MSE = double.MaxValue;
-            double bestMS2MSE = double.MaxValue;
+            double bestMs1Metric = double.MaxValue;
+            double bestMs2Metric = double.MaxValue;
 
             foreach (var learner in learners)
             {
@@ -240,12 +286,13 @@ namespace EngineLayer.Calibration
                 {
                     var ms1regressor = learner.Learn(trainList1Matrix, trainList1Targets);
                     Console.WriteLine(" succeded! " + learner.ToString());
-                    double MS1mse = 0;
+                    double[] predicted = new double[testList1Matrix.RowCount];
                     for (int i = 0; i < testList1Matrix.RowCount; i++)
-                        MS1mse += Math.Pow(ms1regressor.Predict(testList1Matrix.Row(i)) - testList1Targets[i], 2);
-                    if (MS1mse < bestMS1MSE)
+                        predicted[i] = ms1regressor.Predict(testList1Matrix.Row(i));
+                    var currentMetric = metric.Error(testList1Targets, predicted);
+                    if (currentMetric < bestMs1Metric)
                     {
-                        bestMS1MSE = MS1mse;
+                        bestMs1Metric = currentMetric;
                         bestMS1predictor = ms1regressor;
                         Console.WriteLine("ms1 improv! " + learner.ToString());
                     }
@@ -260,12 +307,13 @@ namespace EngineLayer.Calibration
                 {
                     var ms2regressor = learner.Learn(trainList2Matrix, trainList2Targets);
                     Console.WriteLine(" succeded! " + learner.ToString());
-                    double Ms2mse = 0;
+                    double[] predicted = new double[testList2Matrix.RowCount];
                     for (int i = 0; i < testList2Matrix.RowCount; i++)
-                        Ms2mse += Math.Pow(ms2regressor.Predict(testList2Matrix.Row(i)) - testList2Targets[i], 2);
-                    if (Ms2mse < bestMS2MSE)
+                        predicted[i] = ms2regressor.Predict(testList2Matrix.Row(i));
+                    var currentMetric = metric.Error(testList2Targets, predicted);
+                    if (currentMetric < bestMs2Metric)
                     {
-                        bestMS2MSE = Ms2mse;
+                        bestMs2Metric = currentMetric;
                         bestMS2predictor = ms2regressor;
                         Console.WriteLine("ms2 improv! " + learner.ToString());
                     }

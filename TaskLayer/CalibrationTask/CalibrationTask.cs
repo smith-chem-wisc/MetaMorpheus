@@ -7,6 +7,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
 using SharpLearning.Common.Interfaces;
+using SharpLearning.Ensemble.Learners;
 using SharpLearning.GradientBoost.Learners;
 using SharpLearning.Metrics.Regression;
 using SharpLearning.RandomForest.Learners;
@@ -158,10 +159,27 @@ namespace TaskLayer
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
-                    var origDataFile = currentRawFileList[spectraFileIndex];
+                    var origDataFileE = currentRawFileList[spectraFileIndex];
+
+                    IIndexedLearner<double>[] forEnsemble = new IIndexedLearner<double>[]
+                    {
+                        new RegressionAbsoluteLossGradientBoostLearner(runParallel: false),
+                        new RegressionHuberLossGradientBoostLearner(runParallel: false),
+                        new RegressionSquareLossGradientBoostLearner(runParallel: false),
+                        new RegressionExtremelyRandomizedTreesLearner(runParallel: false),
+                    };
 
                     List<ILearner<double>> learners = new List<ILearner<double>>()
                     {
+                        new RegressionBackwardEliminationModelSelectingEnsembleLearner(forEnsemble,2),
+                        new RegressionRandomModelSelectingEnsembleLearner(forEnsemble,2),
+                        new RegressionForwardSearchModelSelectingEnsembleLearner(forEnsemble,2),
+
+                        new RegressionAbsoluteLossGradientBoostLearner(runParallel: false),
+                        new RegressionHuberLossGradientBoostLearner(runParallel: false),
+                        new RegressionSquareLossGradientBoostLearner(runParallel: false),
+                        new RegressionExtremelyRandomizedTreesLearner(runParallel: false),
+
                         new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0] }, 1)),
                         new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1] }, 1)),
                         new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[2] }, 1)),
@@ -180,89 +198,76 @@ namespace TaskLayer
                         new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1], b[2], b[3] }, 3)),
 
                         new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1], b[2], b[3] }, 4)),
-
-                        new RegressionAbsoluteLossGradientBoostLearner(runParallel: false),
-                        new RegressionAbsoluteLossGradientBoostLearner(),
-                        new RegressionHuberLossGradientBoostLearner(runParallel: false),
-                        new RegressionHuberLossGradientBoostLearner(),
-                        new RegressionSquareLossGradientBoostLearner(runParallel: false),
-                        new RegressionSquareLossGradientBoostLearner(),
-                        new RegressionExtremelyRandomizedTreesLearner(runParallel: false),
-                        new RegressionExtremelyRandomizedTreesLearner(),
-
-                        //new RandomForestCalibrationFunction(40, 10), //29-32
-
-                        //new RegressionGradientBoostLearner(),
-                        //new RegressionRandomForestLearner(),
-                        //new IdentityCalibrationFunction(),
-                        //new ConstantCalibrationFunction(),
-                        //new RegressionAdaBoostLearner(),
-                        //new RegressionDecisionTreeLearner(),
-                        //new RegressionQuantileLossGradientBoostLearner(),
-                        };
+                    };
 
                     List<(Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string)> ContinueLoops = new List<(Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string)>
                     {
-                        ((DataPointAquisitionResults a, DataPointAquisitionResults b) => b.Ms1List.Count()>= a.Ms1List.Count() && b.Ms2List.Count()>=b.Ms1List.Count() && b.Count > a.Count, "allIncrease"),
-                        ((DataPointAquisitionResults a, DataPointAquisitionResults b) => false, "single"),
+                        ((DataPointAquisitionResults a, DataPointAquisitionResults b) => b.Ms1List.Count()>= a.Ms1List.Count() && b.Ms2List.Count()>=a.Ms2List.Count() && b.Count > a.Count, "allIncreaseFixed"),
                         ((DataPointAquisitionResults a, DataPointAquisitionResults b) => b.Count > a.Count, "countIncrease"),
+                        ((DataPointAquisitionResults a, DataPointAquisitionResults b) => false, "single"),
                     };
 
                     List<bool> DoLinearMzSeparately = new List<bool>
                     {
-                        true,
                         false,
+                        true,
                     };
 
                     List<List<ILearner<double>>> DoFirst = new List<List<ILearner<double>>>()
                     {
-                        null,
+                        new List<ILearner<double>>()
+                        {
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0] }, 1)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1] }, 1)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[2] }, 1)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[3] }, 1)),
+
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1] }, 2)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[2] }, 2)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[3] }, 2)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1], b[2] }, 2)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1], b[3] }, 2)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[2], b[3] }, 2)),
+
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1], b[2] }, 3)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1], b[3] }, 3)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[2], b[3] }, 3)),
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1], b[2], b[3] }, 3)),
+
+                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1], b[2], b[3] }, 4)),
+                        },
                         new List<ILearner<double>>()
                         {
                             new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0] }, 1)),
                             new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1] }, 2)),
                         },
-                        new List<ILearner<double>>()
-                        {
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0] }, 1)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1] }, 1)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[2] }, 1)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[3] }, 1)),
-
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1] }, 2)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[2] }, 2)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[3] }, 2)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1], b[2] }, 2)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1], b[3] }, 2)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[2], b[3] }, 2)),
-
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1], b[2] }, 3)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1], b[3] }, 3)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[2], b[3] }, 3)),
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[1], b[2], b[3] }, 3)),
-
-                        new LinearCalibrationFunctionMathNet(new TransformFunction(b => new double[] { b[0], b[1], b[2], b[3] }, 4)),
-                        },
+                        null,
                     };
 
-                    List<IRegressionMetric> regressionMetrics = new List<IRegressionMetric>
+                    List<IRegressionMetric> regressionMetricsForDoFirst = new List<IRegressionMetric>
                     {
-                        new RootMeanLogRegressionMetric(),
-                        new MeanAbsolutErrorRegressionMetric(),
                         new MeanSquaredErrorRegressionMetric(),
+                        new MeanAbsolutErrorRegressionMetric(),
+                        new RootMeanLogRegressionMetric(),
                         new NormalizedGiniCoefficientRegressionMetric(),
                     };
 
                     int calibIndex = 0;
-                    foreach (var CalibrationSetting in GetAllCalibSettings(learners, ContinueLoops, DoLinearMzSeparately, DoFirst, regressionMetrics))
+                    foreach (var CalibrationSetting in GetAllCalibSettings(learners, ContinueLoops, DoLinearMzSeparately, DoFirst, regressionMetricsForDoFirst))
                     {
                         Console.WriteLine(CalibrationSetting);
                         calibIndex++;
                         //IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                        IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
 
+                        var currentDataFile = origDataFileE;
+
+                        Random rnd = new Random(42);
+
+                        for (int timeToSearchSameFile = 0; timeToSearchSameFile < 4; timeToSearchSameFile++)
                         {
-                            var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = Mzml.LoadAllStaticData(currentDataFile);
+
+                            var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                             Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
 
@@ -281,7 +286,7 @@ namespace TaskLayer
                                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
                             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-                            
+
                             new FdrAnalysisEngine(allPsms, searchModes, new List<string>()).Run();
 
                             var localizationEngine = new LocalizationEngine(allPsms, lp, myMsDataFile, CommonParameters.ProductMassTolerance, new List<string>(), false);
@@ -293,25 +298,19 @@ namespace TaskLayer
                             Action<List<LabeledMs2DataPoint>, string> ms2Action = (List<LabeledMs2DataPoint> theList, string s) => {; };
                             if (CalibrationParameters.WriteIntermediateFiles)
                             {
-                                ms1Action = (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "inLinear" + s, new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                                ms2Action = (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "inLinear" + s, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                                ms1Action = (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + s, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+                                ms2Action = (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + s, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                             }
 
                             int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
                             int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
                             int numFragmentsNeededForEveryIdentification = 10;
-                            Random rnd = new Random(spectraFileIndex);
 
-                            try
-                            {
-                                MetaMorpheusEngineResults theResult = new CalibrationEngine(myMsDataFile, CommonParameters.ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, CalibrationParameters.PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, false, rnd, new List<string>(), 10, 40, CalibrationSetting).Run();
+                            MetaMorpheusEngineResults theResult = new CalibrationEngine(myMsDataFile, CommonParameters.ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, CalibrationParameters.PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, false, rnd, new List<string>(), 10, 40, CalibrationSetting).Run();
 
-                                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, "joombas" + calibIndex + ".mzML"), false);
-                            }
-                            catch (MetaMorpheusException e)
-                            {
-                                Console.WriteLine(e);
-                            }
+                            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + calibIndex + "-Calibrated.mzML"), false);
+
+                            currentDataFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + calibIndex + "-Calibrated.mzML");
                         }
 
                         Warn("");
@@ -342,28 +341,29 @@ namespace TaskLayer
                 foreach (var ok2 in continueLoops)
                     foreach (var ok3 in DoLinearMzSeparately)
                         foreach (var ok4 in DoFirst)
-                        {
-                            if (ok3)
+                            foreach (var ok5 in learners)
                             {
-                                yield return new CalibrationSetting
+                                if (ok3)
                                 {
-                                    Learners = learners.Select(b => new SeparateMzLearner(b) as ILearner<double>).ToList(),
-                                    ContinueLoop = ok2,
-                                    DoFirst = ok4,
-                                    Metric = ok1,
-                                };
-                            }
-                            else
-                            {
-                                yield return new CalibrationSetting
+                                    yield return new CalibrationSetting
+                                    {
+                                        Learner = new SeparateMzLearner(ok5),
+                                        ContinueLoop = ok2,
+                                        DoFirst = ok4,
+                                        Metric = ok1,
+                                    };
+                                }
+                                else
                                 {
-                                    Learners = learners,
-                                    ContinueLoop = ok2,
-                                    DoFirst = ok4,
-                                    Metric = ok1,
-                                };
+                                    yield return new CalibrationSetting
+                                    {
+                                        Learner = ok5,
+                                        ContinueLoop = ok2,
+                                        DoFirst = ok4,
+                                        Metric = ok1,
+                                    };
+                                }
                             }
-                        }
         }
 
         #endregion Private Methods

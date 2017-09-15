@@ -9,7 +9,7 @@ namespace EngineLayer.Calibration
     {
         #region Public Properties
 
-        public List<ILearner<double>> Learners { get; set; }
+        public ILearner<double> Learner { get; set; }
         public (Func<DataPointAquisitionResults, DataPointAquisitionResults, bool>, string) ContinueLoop { get; set; }
         public List<ILearner<double>> DoFirst { get; set; }
         public IRegressionMetric Metric { get; set; }
@@ -20,7 +20,7 @@ namespace EngineLayer.Calibration
 
         public override string ToString()
         {
-            return " continueLoopString= " + ContinueLoop.Item2 + " DoFirst " + (DoFirst == null ? "null" : DoFirst.Count.ToString()) + " Learners " + Learners.Count + " Metric " + Metric;
+            return " continueLoopString= " + ContinueLoop.Item2 + " Learner " + Learner + " DoFirst " + (DoFirst == null ? "null" : DoFirst.Count.ToString()) + " Metric " + Metric;
         }
 
         #endregion Public Methods
