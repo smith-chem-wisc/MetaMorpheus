@@ -19,7 +19,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptors, bool reportAllAmbiguity, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, nestedIds)
         {
             this.massDiffAcceptors = massDiffAcceptors;
         }
@@ -288,6 +288,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                     psm.CompactCompactPeptides();
                 }
+
             return new SequencesToActualProteinPeptidesEngineResults(this, CPWMtoPWSM);
         }
 

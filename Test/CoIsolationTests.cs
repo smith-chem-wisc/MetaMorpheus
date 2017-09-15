@@ -82,7 +82,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
-            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm> { allPsmsArray[0], allPsmsArray[1] }, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>()).Run();
+            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm> { allPsmsArray[0], allPsmsArray[1] }, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
             {
