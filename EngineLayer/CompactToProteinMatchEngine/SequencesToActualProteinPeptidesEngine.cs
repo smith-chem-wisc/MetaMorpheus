@@ -98,7 +98,7 @@ namespace EngineLayer
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
 
-        protected void ResolveAmbiguities(Dictionary<CompactPeptideBase,HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
+        protected static void ResolveAmbiguities(Dictionary<CompactPeptideBase,HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
         {
             //If ambiguities are not desired, a single compact peptide has survived to this point for each PSM.
             //This single peptide sequence can originate from multiple unique proteins
@@ -108,18 +108,7 @@ namespace EngineLayer
             foreach(CompactPeptide key in compactPeptideToProteinPeptideMatching.Keys)
             {
                 HashSet<PeptideWithSetModifications> value = compactPeptideToProteinPeptideMatching[key];
-                PeptideWithSetModifications oneToSave = value.First();
-                if (oneToSave.Protein.IsDecoy)
-                {
-                    foreach (PeptideWithSetModifications PWSM in value)
-                    {
-                        if (!PWSM.Protein.IsDecoy)
-                        {
-                            oneToSave = PWSM;
-                            break;
-                        }
-                    }
-                }
+                PeptideWithSetModifications oneToSave = value.Where(x=>x.Protein.IsDecoy).DefaultIfEmpty(value.First()).First();
                 compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { oneToSave };
             }
         }
