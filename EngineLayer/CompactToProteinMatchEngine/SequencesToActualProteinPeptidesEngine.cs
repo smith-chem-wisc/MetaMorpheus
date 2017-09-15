@@ -16,12 +16,13 @@ namespace EngineLayer
         protected readonly List<Protein> proteinList;
         protected readonly TerminusType terminusType;
         protected readonly IEnumerable<DigestionParams> collectionOfDigestionParams;
+        protected readonly bool reportAllAmbiguity;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.allPsms = allPsms;
@@ -29,6 +30,7 @@ namespace EngineLayer
             this.variableModifications = variableModifications;
             this.terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
             this.collectionOfDigestionParams = collectionOfDigestionParams;
+            this.reportAllAmbiguity = reportAllAmbiguity;
         }
 
         #endregion Public Constructors
@@ -90,7 +92,24 @@ namespace EngineLayer
 
             #endregion Match Sequences to PeptideWithSetModifications
 
+            if (!reportAllAmbiguity)
+                ResolveAmbiguities(compactPeptideToProteinPeptideMatching);
+
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
+        }
+
+        protected static void ResolveAmbiguities(Dictionary<CompactPeptideBase,HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
+        {
+            //If ambiguities are not desired, a single compact peptide has survived to this point for each PSM.
+            //This single peptide sequence can originate from multiple unique proteins
+            //When there are multiple origins, both target and decoy peptides (even though they have the same sequence) can arise as of 9/15/17
+            //There should not be any overlap between the target and decoy databases, as TDA assumes that the decoy sequence is incorrect
+            //To prevent this error from dramatically overestimating the FDR, a violation of the 50-50 target-decoy ratio will be used for the time being, and decoys that share the same sequence as targets will be ignored
+            foreach(CompactPeptide key in compactPeptideToProteinPeptideMatching.Keys)
+            {
+                HashSet<PeptideWithSetModifications> value = compactPeptideToProteinPeptideMatching[key];
+                compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { value.FirstOrDefault(b => !b.Protein.IsDecoy) ?? value.First() };
+            }
         }
 
         #endregion Protected Methods
