@@ -170,33 +170,38 @@ namespace EngineLayer
 
         protected static IEnumerable<double> ComputeFollowingFragmentMasses(PeptideWithSetModifications yyy, double prevMass, int oneBasedIndexToLookAt, int direction)
         {
-            ModificationWithMass residue_variable_mod = null;
+            ModificationWithMass currentModification = null;
             do
             {
-                prevMass += Residue.ResidueMonoisotopicMass[yyy[oneBasedIndexToLookAt - 1]];
+                if (oneBasedIndexToLookAt != 0 && oneBasedIndexToLookAt != yyy.Length + 1)
+                    prevMass += Residue.ResidueMonoisotopicMass[yyy[oneBasedIndexToLookAt - 1]];
 
-                yyy.allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
-                if (residue_variable_mod == null)
+                // If modification exists
+                if (yyy.allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out currentModification))
                 {
-                    yield return Math.Round(prevMass, digitsForRoundingMasses);
-                }
-                else if (residue_variable_mod.neutralLosses.Count == 1)
-                {
-                    prevMass += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLosses.First();
-                    yield return Math.Round(prevMass, digitsForRoundingMasses);
-                }
-                else
-                {
-                    foreach (double nl in residue_variable_mod.neutralLosses)
+                    if (currentModification.neutralLosses.Count == 1 && oneBasedIndexToLookAt != 0 && oneBasedIndexToLookAt != yyy.Length + 1)
                     {
-                        var theMass = prevMass + residue_variable_mod.monoisotopicMass - nl;
-                        yield return Math.Round(theMass, digitsForRoundingMasses);
-                        if ((direction == 1 && oneBasedIndexToLookAt + direction < yyy.Length) ||
-                            (direction == -1 && oneBasedIndexToLookAt + direction > 1))
-                            foreach (var nextMass in ComputeFollowingFragmentMasses(yyy, theMass, oneBasedIndexToLookAt + direction, direction))
-                                yield return Math.Round(nextMass, digitsForRoundingMasses);
+                        prevMass += currentModification.monoisotopicMass - currentModification.neutralLosses.First();
+                        yield return Math.Round(prevMass, digitsForRoundingMasses);
                     }
-                    break;
+                    else
+                    {
+                        foreach (double nl in currentModification.neutralLosses)
+                        {
+                            var theMass = prevMass + currentModification.monoisotopicMass - nl;
+                            if (oneBasedIndexToLookAt != 0 && oneBasedIndexToLookAt != yyy.Length + 1)
+                                yield return Math.Round(theMass, digitsForRoundingMasses);
+                            if ((direction == 1 && oneBasedIndexToLookAt + direction < yyy.Length) ||
+                                (direction == -1 && oneBasedIndexToLookAt + direction > 1))
+                                foreach (var nextMass in ComputeFollowingFragmentMasses(yyy, theMass, oneBasedIndexToLookAt + direction, direction))
+                                    yield return Math.Round(nextMass, digitsForRoundingMasses);
+                        }
+                        break;
+                    }
+                }
+                else if (oneBasedIndexToLookAt != 0 && oneBasedIndexToLookAt != yyy.Length + 1) // No modification exists
+                {
+                    yield return Math.Round(prevMass, digitsForRoundingMasses);
                 }
                 oneBasedIndexToLookAt += direction;
             } while ((oneBasedIndexToLookAt > 1 && direction == -1) || (oneBasedIndexToLookAt < yyy.Length && direction == 1));

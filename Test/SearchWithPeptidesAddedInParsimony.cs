@@ -32,7 +32,7 @@ namespace Test
                     ScoreCutoff = 1,
                     DigestionParams = new DigestionParams
                     {
-                        MinPeptideLength = 1
+                        MinPeptideLength = 2
                     }
                 }
             };
