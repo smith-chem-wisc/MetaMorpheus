@@ -152,7 +152,6 @@ namespace TaskLayer
             if (CommonParameters.MaxDegreeOfParallelism.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
             Status("Calibrating...", new List<string> { taskId });
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -189,7 +188,7 @@ namespace TaskLayer
                     // Group and order psms
 
                     SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    
+
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
