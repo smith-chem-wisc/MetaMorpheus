@@ -364,6 +364,11 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.SearchType = SearchType.Modern;
             else //if (nonSpecificSearchRadioButton.IsChecked.Value)
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
+
+            //Code for determining SemiSpecific
+            TheTask.CommonParameters.DigestionParams.SemiProteaseDigestion = nonSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC;
+            TheTask.CommonParameters.DigestionParams.TerminusTypeSemiProtease = bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C;
+
             TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = checkBoxQuantification.IsChecked.Value;

@@ -340,7 +340,7 @@ namespace EngineLayer.Calibration
             {
                 if (a is IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> theScan)
                 {
-                    var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
+                    var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber.Value);
 
                     Func<IPeak, double> theFunc = x => x.X - ms2predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN);
 
