@@ -292,6 +292,24 @@ namespace Test
         }
 
         [Test]
+        public static void TestNeutralLossFragments()
+        {
+            Protein p = new Protein("PR", "ac");
+
+            ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
+            ModificationWithMass nTermAmmoniaLoss = new ModificationWithMass("ntermammonialoss", "mt", motif, TerminusLocalization.NPep, 0, neutralLosses: new List<double> { 0, -17 });
+            DigestionParams digestionParams = new DigestionParams
+            {
+                MinPeptideLength = 2,
+            };
+            var ah = p.Digest(digestionParams, new List<ModificationWithMass> { nTermAmmoniaLoss }).First();
+            var cool = ah.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            var nice = cool.CompactPeptide(TerminusType.None);
+            Assert.AreEqual(2, nice.NTerminalMasses.Length);
+            Assert.AreEqual(1, nice.CTerminalMasses.Length);
+        }
+
+        [Test]
         public static void TestQuantification()
         {
             string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");

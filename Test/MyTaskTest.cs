@@ -272,7 +272,7 @@ namespace Test
                 {
                     DigestionParams = new DigestionParams
                     {
-                        MinPeptideLength = null,
+                        MinPeptideLength = 2,
                     },
                     ScoreCutoff = 1,
                     DeconvolutionIntensityRatio = 999,
