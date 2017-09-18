@@ -32,8 +32,6 @@
 
         #endregion Public Properties
 
-        //for nonspecific searching of proteases
-
         #region Public Methods
 
         public override bool Equals(object obj)
