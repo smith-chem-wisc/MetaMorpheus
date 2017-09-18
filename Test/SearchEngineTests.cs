@@ -323,7 +323,6 @@ namespace Test
             CommonParameters.DigestionParams.MinPeptideLength = null;
             var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, new List<DigestionParams> { CommonParameters.DigestionParams }, SearchParameters.MassDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
-
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
@@ -515,8 +514,8 @@ namespace Test
                 MaxMissedCleavages = 2,
                 Protease = protease,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
-                SemiProteaseDigestion=true,
-                TerminusTypeSemiProtease=TerminusType.N
+                SemiProteaseDigestion = true,
+                TerminusTypeSemiProtease = TerminusType.N
             };
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, digestParams, 1, new List<string>());
@@ -687,9 +686,7 @@ namespace Test
             Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
 
-
             //////////////////////////////
-
 
             CommonParameters CommonParameters2 = new CommonParameters
             {
