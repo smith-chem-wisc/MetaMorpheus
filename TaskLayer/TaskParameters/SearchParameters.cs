@@ -18,7 +18,7 @@ namespace EngineLayer
             SearchTarget = true;
             SearchDecoy = true;
             DoHistogramAnalysis = false;
-            DoLocalizationAnalysis = true;
+            DoLocalizationAnalysis = false;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
             MassDiffAcceptor = GlobalEngineLevelSettings.SearchModesKnown.First();

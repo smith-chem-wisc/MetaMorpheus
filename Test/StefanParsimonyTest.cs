@@ -257,7 +257,7 @@ namespace Test
             };
 
             MassDiffAcceptor massDiffAcceptors = new SinglePpmAroundZeroSearchMode(5);
-            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, allKnownFixedModifications, variableModifications, TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>());
+            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;
