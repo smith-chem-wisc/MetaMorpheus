@@ -113,6 +113,20 @@ namespace EngineLayer
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
 
+        protected static void ResolveAmbiguities(Dictionary<CompactPeptideBase,HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
+        {
+            //If ambiguities are not desired, a single compact peptide has survived to this point for each PSM.
+            //This single peptide sequence can originate from multiple unique proteins
+            //When there are multiple origins, both target and decoy peptides (even though they have the same sequence) can arise as of 9/15/17
+            //There should not be any overlap between the target and decoy databases, as TDA assumes that the decoy sequence is incorrect
+            //To prevent this error from dramatically overestimating the FDR, a violation of the 50-50 target-decoy ratio will be used for the time being, and decoys that share the same sequence as targets will be ignored
+            foreach(CompactPeptide key in compactPeptideToProteinPeptideMatching.Keys)
+            {
+                HashSet<PeptideWithSetModifications> value = compactPeptideToProteinPeptideMatching[key];
+                compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { value.FirstOrDefault(b => !b.Protein.IsDecoy) ?? value.First() };
+            }
+        }
+
         #endregion Protected Methods
     }
 }
