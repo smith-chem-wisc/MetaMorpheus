@@ -39,15 +39,18 @@ namespace EngineLayer.Calibration
                 ok[i] = observations.Row(i);
             }
 
-            var ye = new Func<double[], double>[observations.Row(0).Length + 1];
+            var ye = new Func<double[], double>[v.Length + 1];
+            int k = 0;
             ye[0] = a => 1;
             for (int i = 0; i < observations.Row(0).Length; i++)
             {
-                int j = i;
                 if (v.Contains(i))
-                    ye[j + 1] = a => a[j];
-                else
-                    ye[j + 1] = a => 1;
+                {
+                    int ii = i;
+                    int kk = k;
+                    ye[kk + 1] = a => a[ii];
+                    k++;
+                }
             }
             var f = Fit.LinearMultiDimFunc(ok, targets, ye);
 

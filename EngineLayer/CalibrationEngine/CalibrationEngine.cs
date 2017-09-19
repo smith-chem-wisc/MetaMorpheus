@@ -29,6 +29,7 @@ namespace EngineLayer.Calibration
         private readonly FragmentTypes fragmentTypesForCalibration;
         private readonly Action<List<LabeledMs1DataPoint>> ms1ListAction;
         private readonly Action<List<LabeledMs2DataPoint>> ms2ListAction;
+        private readonly Action<int> writeAction;
         private readonly List<Psm> goodIdentifications;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private int numMs1MassChargeCombinationsConsidered;
@@ -46,7 +47,7 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CommonParameters commonParameters, List<Psm> goodIdentifications, Action<List<LabeledMs1DataPoint>> ms1ListAction, Action<List<LabeledMs2DataPoint>> ms2ListAction, CalibrationParameters calibrationParameters, List<ILearner<double>> learners, List<string> nestedIds) : base(nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CommonParameters commonParameters, List<Psm> goodIdentifications, Action<List<LabeledMs1DataPoint>> ms1ListAction, Action<List<LabeledMs2DataPoint>> ms2ListAction, Action<int> writeAction, CalibrationParameters calibrationParameters, List<ILearner<double>> learners, List<string> nestedIds) : base(nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.goodIdentifications = goodIdentifications;
@@ -68,6 +69,7 @@ namespace EngineLayer.Calibration
 
             this.ms1ListAction = ms1ListAction;
             this.ms2ListAction = ms2ListAction;
+            this.writeAction = writeAction;
             this.learners = learners;
         }
 
@@ -85,9 +87,10 @@ namespace EngineLayer.Calibration
             };
 
             int round = 0;
+            int bestRound = 0;
             do
             {
-                Console.WriteLine("Round: " + round++);
+                Console.WriteLine("Round: " + round);
                 prevResult = currentResult;
                 var prevms1Info = currentResult.Ms1List.Select(b => b.label).MeanStandardDeviation();
                 var prevms2Info = currentResult.Ms2List.Select(b => b.label).MeanStandardDeviation();
@@ -98,21 +101,47 @@ namespace EngineLayer.Calibration
                 var ms1Info = currentResult.Ms1List.Select(b => b.label).MeanStandardDeviation();
                 var ms2Info = currentResult.Ms2List.Select(b => b.label).MeanStandardDeviation();
                 Console.WriteLine("MS1 : " + ms1Info.Item1 + " : " + ms1Info.Item2 + " :  MS2 : " + ms2Info.Item1 + " : " + ms2Info.Item2);
-                if (prevms1Info.Item2 < ms1Info.Item2
-                    || prevms2Info.Item2 < ms2Info.Item2
-                    || (prevms1Info.Item2 == ms1Info.Item2 && prevms2Info.Item2 == ms2Info.Item2)
-                    || prevResult.Ms1List.Count > currentResult.Ms1List.Count
-                    || prevResult.Ms2List.Count > currentResult.Ms2List.Count)
+
+                var percentChangeMs1 = (double)currentResult.Ms1List.Count / prevResult.Ms1List.Count;
+                var percentChangeMs2 = (double)currentResult.Ms2List.Count / prevResult.Ms2List.Count;
+                Console.WriteLine("percentChangeMs1 : " + percentChangeMs1 + " : percentChangeMs2 : " + percentChangeMs2);
+
+                var percentChangeSd1 = (double)ms1Info.Item2 / prevms1Info.Item2; // Want this to be low
+                var percentChangeSd2 = (double)ms2Info.Item2 / prevms2Info.Item2; // Want this to be low
+                Console.WriteLine("percentChangeSd1 : " + percentChangeSd1 + " : percentChangeSd2 : " + percentChangeSd2);
+
+                if (percentChangeMs1 + percentChangeMs2 <= 1.9 || (percentChangeMs1 + percentChangeMs2 <= 2 && percentChangeSd1 + percentChangeSd2 >= 2))
                 {
                     Console.WriteLine("done with round!");
                     break;
                 }
+                bestRound = round - 1;
 
                 ms1ListAction(currentResult.Ms1List);
                 ms2ListAction(currentResult.Ms2List);
-                Fit(currentResult, learners);
+
+                var splitter = new RandomTrainingTestIndexSplitter<double>(fracForTraining);
+
+                var ms1splitResult = splitter.SplitSet(new F64Matrix(currentResult.Ms1List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), currentResult.Ms1List.Count, 5), currentResult.Ms1List.Select(b => b.label).ToArray());
+
+                var ms2splitResult = splitter.SplitSet(new F64Matrix(currentResult.Ms2List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), currentResult.Ms2List.Count, 5), currentResult.Ms2List.Select(b => b.label).ToArray());
+
+                Console.WriteLine("MS1");
+                MS1predictor ms1predictor = new MS1predictor(DoStuff(ms1splitResult, learners));
+
+                Console.WriteLine("MS2");
+                MS2predictor ms2predictor = new MS2predictor(DoStuff(ms2splitResult, learners));
+
+                Status("Calibrating Spectra");
+
+                CalibrateSpectra(ms1predictor, ms2predictor);
+
+                writeAction(round);
+
+                round++;
             } while (true);
-            return new MetaMorpheusEngineResults(this);
+
+            return new CalibrationResults(Math.Max(bestRound, 0), this);
         }
 
         #endregion Protected Methods
@@ -200,25 +229,6 @@ namespace EngineLayer.Calibration
             return res;
         }
 
-        private void Fit(DataPointAquisitionResults res, List<ILearner<double>> learners)
-        {
-            var splitter = new RandomTrainingTestIndexSplitter<double>(fracForTraining);
-
-            var ms1splitResult = splitter.SplitSet(new F64Matrix(res.Ms1List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), res.Ms1List.Count, 5), res.Ms1List.Select(b => b.label).ToArray());
-
-            var ms2splitResult = splitter.SplitSet(new F64Matrix(res.Ms2List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), res.Ms2List.Count, 5), res.Ms2List.Select(b => b.label).ToArray());
-
-            Console.WriteLine("MS1");
-            MS1predictor ms1predictor = new MS1predictor(DoStuff(ms1splitResult, learners));
-
-            Console.WriteLine("MS2");
-            MS2predictor ms2predictor = new MS2predictor(DoStuff(ms2splitResult, learners));
-
-            Status("Calibrating Spectra");
-
-            CalibrateSpectra(ms1predictor, ms2predictor);
-        }
-
         private IPredictorModel<double> DoStuff(TrainingTestSetSplit splitResult, List<ILearner<double>> learners)
         {
             Console.WriteLine("Selecting best model");
@@ -227,10 +237,10 @@ namespace EngineLayer.Calibration
             var predictions = new double[splitResult.TestSet.Targets.Length];
             IPredictorModel<double> bestModel = new IdentityCalibrationFunctionPredictorModel();
             var bestError = evaluator.Error(splitResult.TestSet.Targets, predictions);
+            Console.WriteLine("Identity error: " + bestError);
 
             foreach (var learner in learners)
             {
-                Console.WriteLine("Trying learner " + learner);
                 var model = learner.Learn(splitResult.TrainingSet.Observations, splitResult.TrainingSet.Targets);
 
                 predictions = new double[splitResult.TestSet.Targets.Length];
@@ -238,6 +248,9 @@ namespace EngineLayer.Calibration
                     predictions[i] = model.Predict(splitResult.TestSet.Observations.Row(i));
 
                 var thisError = evaluator.Error(splitResult.TestSet.Targets, predictions);
+
+                Console.WriteLine(learner + " error: " + thisError);
+
                 if (thisError < bestError)
                 {
                     Console.WriteLine("Improved!");

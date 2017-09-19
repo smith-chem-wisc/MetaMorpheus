@@ -143,6 +143,20 @@ namespace TaskLayer
 
                     List<ILearner<double>> linearLearners = new List<ILearner<double>>()
                     {
+                        new LinearCalibrationFunctionMathNet(new int[] { }),
+
+                        new LinearCalibrationFunctionMathNet(new [] { 0 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 1 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 2 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 3 }),
+
+                        new LinearCalibrationFunctionMathNet(new [] { 0, 1 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 0, 2 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 0, 3 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 1, 2 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 1, 3 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 2, 3 }),
+
                         new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2 }),
                         new LinearCalibrationFunctionMathNet(new [] { 0, 1, 3 }),
                         new LinearCalibrationFunctionMathNet(new [] { 0, 2, 3 }),
@@ -153,6 +167,7 @@ namespace TaskLayer
 
                     int prevGoodIds;
                     int currentGoodIDs = 0;
+                    Action<int> writeAction;
                     do
                     {
                         Console.WriteLine("SearchRound: " + searchRound);
@@ -175,11 +190,14 @@ namespace TaskLayer
                             ms2Action = (List<LabeledMs2DataPoint> theList) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + searchRound, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                         }
 
-                        new CalibrationEngine(myMsDataFile, CommonParameters, goodIdentifications, ms1Action, ms2Action, CalibrationParameters, linearLearners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+                        writeAction = (int round) => MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-LinearCalibSearchRound" + searchRound + "round" + round + ".mzML"), false);
+
+                        CalibrationResults res = (CalibrationResults)new CalibrationEngine(myMsDataFile, CommonParameters, goodIdentifications, ms1Action, ms2Action, writeAction, CalibrationParameters, linearLearners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+
+                        myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-LinearCalibSearchRound" + searchRound + "round" + res.bestRound + ".mzML"));
+
                         searchRound++;
                     } while (true);
-
-                    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-LinearCalibrated.mzML"), false);
 
                     IIndexedLearner<double>[] forEnsemble = new IIndexedLearner<double>[]
                     {
@@ -191,6 +209,20 @@ namespace TaskLayer
 
                     List<ILearner<double>> learners = new List<ILearner<double>>()
                     {
+                        new LinearCalibrationFunctionMathNet(new int[] { }),
+
+                        new LinearCalibrationFunctionMathNet(new [] { 0 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 1 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 2 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 3 }),
+
+                        new LinearCalibrationFunctionMathNet(new [] { 0, 1 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 0, 2 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 0, 3 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 1, 2 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 1, 3 }),
+                        new LinearCalibrationFunctionMathNet(new [] { 2, 3 }),
+
                         new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2 }),
                         new LinearCalibrationFunctionMathNet(new [] { 0, 1, 3 }),
                         new LinearCalibrationFunctionMathNet(new [] { 0, 2, 3 }),
@@ -198,9 +230,9 @@ namespace TaskLayer
 
                         new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2, 3 }),
 
-                        new RegressionBackwardEliminationModelSelectingEnsembleLearner(forEnsemble,2),
+                        //new RegressionBackwardEliminationModelSelectingEnsembleLearner(forEnsemble,2),
                         new RegressionRandomModelSelectingEnsembleLearner(forEnsemble,2),
-                        new RegressionForwardSearchModelSelectingEnsembleLearner(forEnsemble,2),
+                        //new RegressionForwardSearchModelSelectingEnsembleLearner(forEnsemble,2),
                     };
 
                     List<Psm> finalIdentifications = GetGoodIdentifications(myMsDataFile, searchMode, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
@@ -211,9 +243,9 @@ namespace TaskLayer
                         ms2Action = (List<LabeledMs2DataPoint> theList) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "beforeNonlinear", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                     }
 
-                    new CalibrationEngine(myMsDataFile, CommonParameters, finalIdentifications, ms1Action, ms2Action, CalibrationParameters, learners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+                    writeAction = (int round) => MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-NonLinearCalibround" + round + ".mzML"), false);
 
-                    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-NonlinearCalibrated.mzML"), false);
+                    new CalibrationEngine(myMsDataFile, CommonParameters, finalIdentifications, ms1Action, ms2Action, writeAction, CalibrationParameters, learners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                     Warn("");
                     Warn("");
