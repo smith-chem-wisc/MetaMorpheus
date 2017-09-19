@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
 using MzLibUtil;
 using NUnit.Framework;
