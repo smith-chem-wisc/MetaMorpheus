@@ -98,7 +98,11 @@ namespace EngineLayer.Calibration
                 var ms1Info = currentResult.Ms1List.Select(b => b.label).MeanStandardDeviation();
                 var ms2Info = currentResult.Ms2List.Select(b => b.label).MeanStandardDeviation();
                 Console.WriteLine("MS1 : " + ms1Info.Item1 + " : " + ms1Info.Item2 + " :  MS2 : " + ms2Info.Item1 + " : " + ms2Info.Item2);
-                if (prevms1Info.Item2 < ms1Info.Item2 || prevms2Info.Item2 < ms2Info.Item2 || (prevms1Info.Item2 == ms1Info.Item2 && prevms2Info.Item2 == ms2Info.Item2))
+                if (prevms1Info.Item2 < ms1Info.Item2
+                    || prevms2Info.Item2 < ms2Info.Item2
+                    || (prevms1Info.Item2 == ms1Info.Item2 && prevms2Info.Item2 == ms2Info.Item2)
+                    || prevResult.Ms1List.Count > currentResult.Ms1List.Count
+                    || prevResult.Ms2List.Count > currentResult.Ms2List.Count)
                 {
                     Console.WriteLine("done with round!");
                     break;
