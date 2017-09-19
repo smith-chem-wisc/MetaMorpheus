@@ -90,8 +90,8 @@ namespace EngineLayer.Calibration
             numMs2MassChargeCombinationsConsideredList.Add(res.numMs2MassChargeCombinationsConsidered);
             numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(res.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
             countList.Add(res.Count);
-            ms1meanSds.Add(res.Ms1List.Select(b => b.Label).MeanStandardDeviation());
-            ms2meanSds.Add(res.Ms2List.Select(b => b.Label).MeanStandardDeviation());
+            ms1meanSds.Add(res.Ms1List.Select(b => b.label).MeanStandardDeviation());
+            ms2meanSds.Add(res.Ms2List.Select(b => b.label).MeanStandardDeviation());
         }
 
         internal void Add(IPredictorModel<double> ms1calib, IPredictorModel<double> ms2calib)

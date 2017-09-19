@@ -21,9 +21,9 @@ namespace EngineLayer.Calibration
 
         #region Internal Methods
 
-        internal double Predict(double mz, double retentionTime, double LOGtotalIonCurrent, double LOGinjectionTime)
+        internal double Predict(double mz, double retentionTime, double logTotalIonCurrent, double logInjectionTime, double logIntensity)
         {
-            return bestMS1predictor.Predict(new[] { mz, retentionTime, LOGtotalIonCurrent, LOGinjectionTime });
+            return bestMS1predictor.Predict(new[] { mz, retentionTime, logTotalIonCurrent, logInjectionTime, logIntensity });
         }
 
         #endregion Internal Methods

@@ -1,42 +1,29 @@
 ﻿namespace EngineLayer.Calibration
 {
-    public class LabeledMs1DataPoint : IHasInputsAndOutputs
+    public class LabeledMs1DataPoint : LabeledDataPoint
     {
-        #region Public Fields
-
-        public readonly double mz;
-        public readonly double rt;
-        
-        public readonly double LOGtotalIonCurrent;
-
-        public readonly double LOGinjectionTime;
-        public readonly Psm identification;
-
-        #endregion Public Fields
-
         #region Public Constructors
 
-        public LabeledMs1DataPoint(double mz, double rt, double LOGtotalIonCurrent, double LOGinjectionTime, double label, Psm identification)
+        public LabeledMs1DataPoint(double mz, double rt, double LOGtotalIonCurrent, double LOGinjectionTime, double LOGintensity, double label, Psm identification)
+            : base(mz, rt, LOGtotalIonCurrent, LOGinjectionTime, LOGintensity, label, identification)
         {
-            this.mz = mz;
-            this.rt = rt;
-            this.LOGtotalIonCurrent = LOGtotalIonCurrent;
-            this.LOGinjectionTime = LOGinjectionTime;
-            this.Label = label;
-            this.identification = identification;
-            Inputs = new double[] { this.mz, this.rt, this.LOGtotalIonCurrent, this.LOGinjectionTime };
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        //public static string TabSeparatedHeaderForMs1 { get { return "mz\trt\tintensity\tTIC\tInjectionTime\tLabel"; } }
-        public static string TabSeparatedHeaderForMs1 { get { return "mz\trt\tLOGTIC\tLOGinjectionTime\tLabel"; } }
-
-        public double Label { get; private set; }
-        public double[] Inputs { get; private set; }
+        public static string TabSeparatedHeader { get { return "mz\trt\tLOGTIC\tLOGInjectionTime\tLOGIntensity\tLabel"; } }
 
         #endregion Public Properties
+
+        #region Public Methods
+
+        public string Values()
+        {
+            return mz + "\t" + rt + "\t" + logTotalIonCurrent + "\t" + logInjectionTime + "\t" + logIntensity + "\t" + label;
+        }
+
+        #endregion Public Methods
     }
 }

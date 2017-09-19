@@ -3,6 +3,7 @@ using SharpLearning.Common.Interfaces;
 using SharpLearning.Containers.Matrices;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer.Calibration
 {
@@ -10,46 +11,47 @@ namespace EngineLayer.Calibration
     {
         #region Private Fields
 
-        private readonly TransformFunction transformFunction;
+        private int[] v;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public LinearCalibrationFunctionMathNet(TransformFunction transformFunction)
+        public LinearCalibrationFunctionMathNet(int[] v)
         {
-            this.transformFunction = transformFunction;
-        }
-
-        public LinearCalibrationFunctionMathNet()
-        {
+            this.v = v;
         }
 
         #endregion Public Constructors
 
         #region Public Methods
 
+        public override string ToString()
+        {
+            return "LinearCalibrationFunctionMathNet " + string.Join(",", v);
+        }
+
         public IPredictorModel<double> Learn(F64Matrix observations, double[] targets)
         {
-            var numFeatures = transformFunction.numOutputs;
             double[][] ok = new double[targets.Length][];
-            int k = 0;
             for (int i = 0; i < targets.Length; i++)
             {
-                ok[k] = transformFunction.Transform(observations.Row(i));
-                k++;
+                ok[i] = observations.Row(i);
             }
 
-            var ye = new Func<double[], double>[numFeatures + 1];
+            var ye = new Func<double[], double>[observations.Row(0).Length + 1];
             ye[0] = a => 1;
-            for (int i = 0; i < numFeatures; i++)
+            for (int i = 0; i < observations.Row(0).Length; i++)
             {
                 int j = i;
-                ye[j + 1] = a => a[j];
+                if (v.Contains(i))
+                    ye[j + 1] = a => a[j];
+                else
+                    ye[j + 1] = a => 1;
             }
             var f = Fit.LinearMultiDimFunc(ok, targets, ye);
 
-            return new LinearCalibrationFunctionPredictorModel(transformFunction, f);
+            return new LinearCalibrationFunctionPredictorModel(f);
         }
 
         #endregion Public Methods
@@ -59,16 +61,14 @@ namespace EngineLayer.Calibration
     {
         #region Private Fields
 
-        private readonly TransformFunction transformFunction;
         private readonly Func<double[], double> f;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public LinearCalibrationFunctionPredictorModel(TransformFunction transformFunction, Func<double[], double> f)
+        public LinearCalibrationFunctionPredictorModel(Func<double[], double> f)
         {
-            this.transformFunction = transformFunction;
             this.f = f;
         }
 
@@ -88,7 +88,7 @@ namespace EngineLayer.Calibration
 
         public double Predict(double[] observation)
         {
-            return f(transformFunction.Transform(observation));
+            return f(observation);
         }
 
         #endregion Public Methods
