@@ -10,9 +10,13 @@ namespace EngineLayer.Analysis
         {
         }
 
-        public int PsmsWithin1percentFdr { get; set; }
-
         #endregion Public Constructors
+
+        #region Public Properties
+
+        public int PsmsWithin1PercentFdr { get; set; }
+
+        #endregion Public Properties
 
         #region Public Methods
 
@@ -20,7 +24,7 @@ namespace EngineLayer.Analysis
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            sb.Append("PSMs within 1% fdr: " + PsmsWithin1percentFdr);
+            sb.Append("PSMs within 1% fdr: " + PsmsWithin1PercentFdr);
             return sb.ToString();
         }
 
