@@ -14,7 +14,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    internal class AmbiguityTest
+    internal static class AmbiguityTest
     {
         [Test]
         public static void TestResolveAmbiguities()
