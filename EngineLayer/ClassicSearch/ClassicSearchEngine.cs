@@ -71,7 +71,7 @@ namespace EngineLayer.ClassicSearch
             var lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
             Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
