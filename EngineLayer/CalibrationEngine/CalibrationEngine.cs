@@ -204,8 +204,10 @@ namespace EngineLayer.Calibration
 
             var ms2splitResult = splitter.SplitSet(new F64Matrix(res.Ms2List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), res.Ms2List.Count, 5), res.Ms2List.Select(b => b.label).ToArray());
 
+            Console.WriteLine("MS1");
             MS1predictor ms1predictor = new MS1predictor(DoStuff(ms1splitResult, learners));
 
+            Console.WriteLine("MS2");
             MS2predictor ms2predictor = new MS2predictor(DoStuff(ms2splitResult, learners));
 
             Status("Calibrating Spectra");
@@ -215,6 +217,7 @@ namespace EngineLayer.Calibration
 
         private IPredictorModel<double> DoStuff(TrainingTestSetSplit splitResult, List<ILearner<double>> learners)
         {
+            Console.WriteLine("Selecting best model");
             var evaluator = new MeanAbsolutErrorRegressionMetric();
 
             var predictions = new double[splitResult.TestSet.Targets.Length];
@@ -223,6 +226,7 @@ namespace EngineLayer.Calibration
 
             foreach (var learner in learners)
             {
+                Console.WriteLine("Trying learner " + learner);
                 var model = learner.Learn(splitResult.TrainingSet.Observations, splitResult.TrainingSet.Targets);
 
                 predictions = new double[splitResult.TestSet.Targets.Length];
@@ -232,10 +236,13 @@ namespace EngineLayer.Calibration
                 var thisError = evaluator.Error(splitResult.TestSet.Targets, predictions);
                 if (thisError < bestError)
                 {
+                    Console.WriteLine("Improved!");
                     bestError = thisError;
                     bestModel = model;
                 }
             }
+            Console.WriteLine("Done with selecting best model");
+
             return bestModel;
         }
 
