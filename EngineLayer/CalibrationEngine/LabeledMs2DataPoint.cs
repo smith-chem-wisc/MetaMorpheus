@@ -21,7 +21,7 @@
 
         public string Values()
         {
-            return mz + "\t" + rt + "\t" + logTotalIonCurrent + "\t" + logInjectionTime + "\t" + logIntensity + "\t" + label;
+            return mz + "\t" + rt + "\t" + logTotalIonCurrent + "\t" + logInjectionTime + "\t" + logIntensity + "\t" + LabelTh + "\t" + LabelPPM;
         }
 
         #endregion Public Methods

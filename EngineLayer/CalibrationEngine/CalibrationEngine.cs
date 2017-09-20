@@ -29,7 +29,6 @@ namespace EngineLayer.Calibration
         private readonly FragmentTypes fragmentTypesForCalibration;
         private readonly Action<List<LabeledMs1DataPoint>> ms1ListAction;
         private readonly Action<List<LabeledMs2DataPoint>> ms2ListAction;
-        private readonly Action<int> writeAction;
         private readonly List<Psm> goodIdentifications;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private int numMs1MassChargeCombinationsConsidered;
@@ -47,7 +46,7 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CommonParameters commonParameters, List<Psm> goodIdentifications, Action<List<LabeledMs1DataPoint>> ms1ListAction, Action<List<LabeledMs2DataPoint>> ms2ListAction, Action<int> writeAction, CalibrationParameters calibrationParameters, List<ILearner<double>> learners, List<string> nestedIds) : base(nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CommonParameters commonParameters, List<Psm> goodIdentifications, Action<List<LabeledMs1DataPoint>> ms1ListAction, Action<List<LabeledMs2DataPoint>> ms2ListAction, CalibrationParameters calibrationParameters, List<ILearner<double>> learners, List<string> nestedIds) : base(nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.goodIdentifications = goodIdentifications;
@@ -69,7 +68,6 @@ namespace EngineLayer.Calibration
 
             this.ms1ListAction = ms1ListAction;
             this.ms2ListAction = ms2ListAction;
-            this.writeAction = writeAction;
             this.learners = learners;
         }
 
@@ -79,69 +77,44 @@ namespace EngineLayer.Calibration
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            DataPointAquisitionResults prevResult;
-            DataPointAquisitionResults currentResult = new DataPointAquisitionResults
-            {
-                Ms1List = new List<LabeledMs1DataPoint>(),
-                Ms2List = new List<LabeledMs2DataPoint>(),
-            };
+            var currentResult = GetDataPoints();
 
-            int round = 0;
-            int bestRound = 0;
-            do
-            {
-                Console.WriteLine("Round: " + round);
-                prevResult = currentResult;
-                var prevms1Info = currentResult.Ms1List.Select(b => b.label).MeanStandardDeviation();
-                var prevms2Info = currentResult.Ms2List.Select(b => b.label).MeanStandardDeviation();
-                currentResult = GetDataPoints();
+            ms1ListAction(currentResult.Ms1List);
+            ms2ListAction(currentResult.Ms2List);
 
-                Console.WriteLine("currentResult.Ms1List.Count : " + currentResult.Ms1List.Count + " : currentResult.Ms2List.Count : " + currentResult.Ms2List.Count + " :  currentResult.Count : " + currentResult.Count);
+            Console.WriteLine("currentResult.Ms1List.Count : " + currentResult.Ms1List.Count + " : currentResult.Ms2List.Count : " + currentResult.Ms2List.Count + " :  currentResult.Count : " + currentResult.Count);
+            Console.WriteLine("currentResult.numMs1MassChargeCombinationsConsidered : " + currentResult.numMs1MassChargeCombinationsConsidered);
+            Console.WriteLine("currentResult.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks : " + currentResult.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            Console.WriteLine("currentResult.numMs2MassChargeCombinationsConsidered : " + currentResult.numMs2MassChargeCombinationsConsidered);
+            Console.WriteLine("currentResult.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks : " + currentResult.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
-                var ms1Info = currentResult.Ms1List.Select(b => b.label).MeanStandardDeviation();
-                var ms2Info = currentResult.Ms2List.Select(b => b.label).MeanStandardDeviation();
-                Console.WriteLine("MS1 : " + ms1Info.Item1 + " : " + ms1Info.Item2 + " :  MS2 : " + ms2Info.Item1 + " : " + ms2Info.Item2);
+            var splitter = new RandomTrainingTestIndexSplitter<double>(fracForTraining);
 
-                var percentChangeMs1 = (double)currentResult.Ms1List.Count / prevResult.Ms1List.Count;
-                var percentChangeMs2 = (double)currentResult.Ms2List.Count / prevResult.Ms2List.Count;
-                Console.WriteLine("percentChangeMs1 : " + percentChangeMs1 + " : percentChangeMs2 : " + percentChangeMs2);
+            var ms1splitResult = splitter.SplitSet(new F64Matrix(currentResult.Ms1List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), currentResult.Ms1List.Count, 5), currentResult.Ms1List.Select(b => b.LabelTh).ToArray());
 
-                var percentChangeSd1 = (double)ms1Info.Item2 / prevms1Info.Item2; // Want this to be low
-                var percentChangeSd2 = (double)ms2Info.Item2 / prevms2Info.Item2; // Want this to be low
-                Console.WriteLine("percentChangeSd1 : " + percentChangeSd1 + " : percentChangeSd2 : " + percentChangeSd2);
+            var ms2splitResult = splitter.SplitSet(new F64Matrix(currentResult.Ms2List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), currentResult.Ms2List.Count, 5), currentResult.Ms2List.Select(b => b.LabelTh).ToArray());
 
-                if (percentChangeMs1 + percentChangeMs2 <= 1.9 || (percentChangeMs1 + percentChangeMs2 <= 2 && percentChangeSd1 + percentChangeSd2 >= 2))
-                {
-                    Console.WriteLine("done with round!");
-                    break;
-                }
-                bestRound = round - 1;
+            Console.WriteLine("MS1");
+            MS1predictor ms1predictor = new MS1predictor(DoStuff(ms1splitResult, learners));
 
-                ms1ListAction(currentResult.Ms1List);
-                ms2ListAction(currentResult.Ms2List);
+            Console.WriteLine("MS2");
+            MS2predictor ms2predictor = new MS2predictor(DoStuff(ms2splitResult, learners));
 
-                var splitter = new RandomTrainingTestIndexSplitter<double>(fracForTraining);
+            Status("Calibrating Spectra");
 
-                var ms1splitResult = splitter.SplitSet(new F64Matrix(currentResult.Ms1List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), currentResult.Ms1List.Count, 5), currentResult.Ms1List.Select(b => b.label).ToArray());
+            CalibrateSpectra(ms1predictor, ms2predictor);
 
-                var ms2splitResult = splitter.SplitSet(new F64Matrix(currentResult.Ms2List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), currentResult.Ms2List.Count, 5), currentResult.Ms2List.Select(b => b.label).ToArray());
+            var ms1InfoTh = currentResult.Ms1List.Select(b => b.LabelTh).MeanStandardDeviation();
+            var ms2InfoTh = currentResult.Ms2List.Select(b => b.LabelTh).MeanStandardDeviation();
 
-                Console.WriteLine("MS1");
-                MS1predictor ms1predictor = new MS1predictor(DoStuff(ms1splitResult, learners));
+            Console.WriteLine("MS1th : " + ms1InfoTh.Item1 + " : " + ms1InfoTh.Item2 + " :  MS2th : " + ms2InfoTh.Item1 + " : " + ms2InfoTh.Item2);
 
-                Console.WriteLine("MS2");
-                MS2predictor ms2predictor = new MS2predictor(DoStuff(ms2splitResult, learners));
+            var ms1InfoPPM = currentResult.Ms1List.Select(b => b.LabelPPM).MeanStandardDeviation();
+            var ms2InfoPPM = currentResult.Ms2List.Select(b => b.LabelPPM).MeanStandardDeviation();
 
-                Status("Calibrating Spectra");
+            Console.WriteLine("MS1ppm : " + ms1InfoPPM.Item1 + " : " + ms1InfoPPM.Item2 + " :  MS2ppm : " + ms2InfoPPM.Item1 + " : " + ms2InfoPPM.Item2);
 
-                CalibrateSpectra(ms1predictor, ms2predictor);
-
-                writeAction(round);
-
-                round++;
-            } while (true);
-
-            return new CalibrationResults(Math.Max(bestRound, 0), this);
+            return new CalibrationResults(ms1InfoPPM, ms2InfoPPM, this);
         }
 
         #endregion Protected Methods
@@ -348,7 +321,7 @@ namespace EngineLayer.Calibration
                         {
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), closestPeakMZ - theMZ, null));
+                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), theMZ, null));
                         }
                         else
                             break;
@@ -376,7 +349,7 @@ namespace EngineLayer.Calibration
                                                              Math.Log(fullMS1scan.TotalIonCurrent),
                                                              fullMS1scan.InjectionTime.HasValue ? Math.Log(fullMS1scan.InjectionTime.Value) : double.NaN,
                                                              trainingPointsToAverage.Select(b => b.logIntensity).Average(),
-                                                             trainingPointsToAverage.Select(b => b.label).Median(),
+                                                             trainingPointsToAverage.Select(b => b.expectedMZ).Average(),
                                                              identification);
                     }
                     chargeToLookAt++;
@@ -469,7 +442,7 @@ namespace EngineLayer.Calibration
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
-                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(ms2DataScan.MassSpectrum.YArray[closestPeakIndex]), closestPeakMZ - theMZ, null));
+                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(ms2DataScan.MassSpectrum.YArray[closestPeakIndex]), theMZ, null));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
@@ -494,7 +467,7 @@ namespace EngineLayer.Calibration
                                      Math.Log(ms2DataScan.TotalIonCurrent),
                                      ms2DataScan.InjectionTime.HasValue ? Math.Log(ms2DataScan.InjectionTime.Value) : double.NaN,
                                      trainingPointsToAverage.Select(b => b.logIntensity).Average(),
-                                     trainingPointsToAverage.Select(b => b.label).Median(),
+                                     trainingPointsToAverage.Select(b => b.expectedMZ).Average(),
                                      identification);
                         }
                     }

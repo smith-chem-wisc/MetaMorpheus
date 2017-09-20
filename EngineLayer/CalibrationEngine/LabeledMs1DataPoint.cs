@@ -2,10 +2,11 @@
 {
     public class LabeledMs1DataPoint : LabeledDataPoint
     {
+
         #region Public Constructors
 
-        public LabeledMs1DataPoint(double mz, double rt, double LOGtotalIonCurrent, double LOGinjectionTime, double LOGintensity, double label, Psm identification)
-            : base(mz, rt, LOGtotalIonCurrent, LOGinjectionTime, LOGintensity, label, identification)
+        public LabeledMs1DataPoint(double mz, double rt, double LOGtotalIonCurrent, double LOGinjectionTime, double LOGintensity, double expectedMz, Psm identification)
+            : base(mz, rt, LOGtotalIonCurrent, LOGinjectionTime, LOGintensity, expectedMz, identification)
         {
         }
 
@@ -13,7 +14,7 @@
 
         #region Public Properties
 
-        public static string TabSeparatedHeader { get { return "mz\trt\tLOGTIC\tLOGInjectionTime\tLOGIntensity\tLabel"; } }
+        public static string TabSeparatedHeader { get { return "mz\trt\tLOGTIC\tLOGInjectionTime\tLOGIntensity\tLabelTh\tlabelPPM"; } }
 
         #endregion Public Properties
 
@@ -21,7 +22,7 @@
 
         public string Values()
         {
-            return mz + "\t" + rt + "\t" + logTotalIonCurrent + "\t" + logInjectionTime + "\t" + logIntensity + "\t" + label;
+            return mz + "\t" + rt + "\t" + logTotalIonCurrent + "\t" + logInjectionTime + "\t" + logIntensity + "\t" + LabelTh + "\t" + LabelPPM;
         }
 
         #endregion Public Methods

@@ -11,7 +11,7 @@
 
         public readonly double logIntensity;
 
-        public readonly double label;
+        public readonly double expectedMZ;
 
         public readonly Psm identification;
 
@@ -19,7 +19,7 @@
 
         #region Public Constructors
 
-        public LabeledDataPoint(double mz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double label, Psm identification)
+        public LabeledDataPoint(double mz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double expectedMZ, Psm identification)
         {
             this.mz = mz;
             this.rt = rt;
@@ -28,11 +28,18 @@
 
             this.logIntensity = logIntensity;
 
-            this.label = label;
+            this.expectedMZ = expectedMZ;
 
             this.identification = identification;
         }
 
         #endregion Public Constructors
+
+        #region Public Properties
+
+        public double LabelTh { get { return mz - expectedMZ; } }
+        public double LabelPPM { get { return (mz - expectedMZ) / (expectedMZ) * 1e6; } }
+
+        #endregion Public Properties
     }
 }
