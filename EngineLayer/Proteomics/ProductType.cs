@@ -43,13 +43,20 @@ namespace EngineLayer
             {
                 if (productType == ProductType.B || productType == ProductType.C)
                     nIons.Add(productType);
-                else
+                else // Y and Z
                     cIons.Add(productType);
             }
-
-            return new List<List<ProductType>> { nIons, cIons };
+            if (nIons.Count != 0 && cIons.Count != 0)
+                return new List<List<ProductType>> { nIons, cIons };
+            else if (nIons.Count != 0)
+                return new List<List<ProductType>> { nIons };
+            else if (cIons.Count != 0)
+                return new List<List<ProductType>> { cIons };
+            else
+                throw new MetaMorpheusException("No ions types were selected.");
         }
 
         #endregion Public Methods
+
     }
 }
