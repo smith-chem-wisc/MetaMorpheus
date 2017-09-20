@@ -79,6 +79,32 @@ namespace Test
             Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
         }
 
+
+        [Test]
+        public static void TestSeparateIonsByTerminus()
+        {
+            List<ProductType> allIonTypes = new List<ProductType> { ProductType.B, ProductType.C, ProductType.Zdot, ProductType.Y };
+            List<List<ProductType>> separated = ProductTypeMethod.SeparateIonsByTerminus(allIonTypes);
+            Assert.IsTrue(separated.Count == 2);
+            Assert.IsTrue(separated[0].Count == 2);
+            Assert.IsTrue(separated[1].Count == 2);
+            Assert.IsTrue(separated[0].Contains(ProductType.B));
+            Assert.IsTrue(separated[0].Contains(ProductType.C));
+            Assert.IsTrue(separated[1].Contains(ProductType.Y));
+            Assert.IsTrue(separated[1].Contains(ProductType.Zdot));
+            List<List<ProductType>> nOnly = ProductTypeMethod.SeparateIonsByTerminus(separated[0]);
+            Assert.IsTrue(nOnly.Count == 1);
+            Assert.IsTrue(nOnly[0].Count == 2);
+            Assert.IsTrue(nOnly[0].Contains(ProductType.B));
+            Assert.IsTrue(nOnly[0].Contains(ProductType.C));
+            List<List<ProductType>> cOnly = ProductTypeMethod.SeparateIonsByTerminus(separated[1]);
+            Assert.IsTrue(cOnly.Count == 1);
+            Assert.IsTrue(cOnly[0].Count == 2);
+            Assert.IsTrue(cOnly[0].Contains(ProductType.Y));
+            Assert.IsTrue(cOnly[0].Contains(ProductType.Zdot));
+        }
+
         #endregion Public Methods
+
     }
 }

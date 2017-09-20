@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.NonSpecificEnzymeSearch
 {
-    public class NonSpecificEnzymeEngine : ModernSearch.ModernSearchEngine
+    public class NonSpecificEnzymeSearchEngine : ModernSearch.ModernSearchEngine
     {
         #region Private Fields
 
@@ -20,7 +20,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
+        public NonSpecificEnzymeSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
         {
         }
 
@@ -31,7 +31,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In nonspecific search engine..." + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds);
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
             var outputObject = new object();

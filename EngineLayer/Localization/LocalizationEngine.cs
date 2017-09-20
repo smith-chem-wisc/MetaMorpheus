@@ -37,7 +37,7 @@ namespace EngineLayer
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
 
             foreach (var ok in allResultingIdentifications)
             {
