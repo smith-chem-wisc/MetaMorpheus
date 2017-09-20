@@ -321,11 +321,13 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
             CommonParameters.DigestionParams.MinPeptideLength = null;
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, new List<DigestionParams> { CommonParameters.DigestionParams }, SearchParameters.MassDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List <Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, new List<DigestionParams> { CommonParameters.DigestionParams }, SearchParameters.MassDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+
 
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -403,11 +405,12 @@ namespace Test
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
             CommonParameters.DigestionParams.MinPeptideLength = null;
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, SearchParameters.MassDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List <Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, SearchParameters.MassDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -546,11 +549,12 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List <Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -625,11 +629,12 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List <Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }

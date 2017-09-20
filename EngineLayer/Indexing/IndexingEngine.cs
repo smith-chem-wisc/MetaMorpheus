@@ -77,7 +77,7 @@ namespace EngineLayer.Indexing
             var observed_sequences = new HashSet<CompactPeptide>();
             int proteinsSeen = 0;
             int old_progress = 0;
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var myInnerDictionary = new Dictionary<float, List<int>>(100000);

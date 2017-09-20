@@ -31,7 +31,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In nonspecific search engine..." + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds);
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
             var outputObject = new object();
