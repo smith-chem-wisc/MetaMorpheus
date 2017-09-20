@@ -214,21 +214,28 @@ namespace EngineLayer.Calibration
 
             foreach (var learner in learners)
             {
-                var model = learner.Learn(splitResult.TrainingSet.Observations, splitResult.TrainingSet.Targets);
-
-                predictions = new double[splitResult.TestSet.Targets.Length];
-                for (int i = 0; i < splitResult.TestSet.Targets.Length; i++)
-                    predictions[i] = model.Predict(splitResult.TestSet.Observations.Row(i));
-
-                var thisError = evaluator.Error(splitResult.TestSet.Targets, predictions);
-
-                Console.WriteLine(learner + " error: " + thisError);
-
-                if (thisError < bestError)
+                try
                 {
-                    Console.WriteLine("Improved!");
-                    bestError = thisError;
-                    bestModel = model;
+                    var model = learner.Learn(splitResult.TrainingSet.Observations, splitResult.TrainingSet.Targets);
+
+                    predictions = new double[splitResult.TestSet.Targets.Length];
+                    for (int i = 0; i < splitResult.TestSet.Targets.Length; i++)
+                        predictions[i] = model.Predict(splitResult.TestSet.Observations.Row(i));
+
+                    var thisError = evaluator.Error(splitResult.TestSet.Targets, predictions);
+
+                    Console.WriteLine(learner + " error: " + thisError);
+
+                    if (thisError < bestError)
+                    {
+                        Console.WriteLine("Improved!");
+                        bestError = thisError;
+                        bestModel = model;
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("Errored! " + learner);
                 }
             }
             Console.WriteLine("Done with selecting best model");

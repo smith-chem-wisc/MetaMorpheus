@@ -7,7 +7,6 @@ using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
 using SharpLearning.Common.Interfaces;
-using SharpLearning.Ensemble.Learners;
 using SharpLearning.GradientBoost.Learners;
 using System;
 using System.Collections.Generic;
@@ -136,7 +135,7 @@ namespace TaskLayer
                 {
                     var currentDataFile = currentRawFileList[spectraFileIndex];
 
-                    int searchRound = 1;
+                    int searchRound = 0;
 
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = Mzml.LoadAllStaticData(currentDataFile);
 
@@ -144,74 +143,46 @@ namespace TaskLayer
                     {
                         new MzMultiplier()
                     };
+                    
+                    List<int> NumberOfGoodIds = new List<int>();
+                    List<Tolerance> PrecursorMassTolerances = new List<Tolerance> { CalibrationParameters.PrecursorMassTolerance };
+                    List<Tolerance> ProductMassTolerances = new List<Tolerance> { CommonParameters.ProductMassTolerance };
+                    List<string> paths = new List<string> { currentDataFile };
 
-                    //List<ILearner<double>> linearLearners = new List<ILearner<double>>()
-                    //{
-                    //    new LinearCalibrationFunctionMathNet(new int[] { }),
-
-                    //    new LinearCalibrationFunctionMathNet(new [] { 0 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 1 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 2 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 3 }),
-
-                    //    new LinearCalibrationFunctionMathNet(new [] { 0, 1 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 0, 2 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 0, 3 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 1, 2 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 1, 3 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 2, 3 }),
-
-                    //    new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 0, 1, 3 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 0, 2, 3 }),
-                    //    new LinearCalibrationFunctionMathNet(new [] { 1, 2, 3 }),
-
-                    //    new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2, 3 }),
-                    //};
-
-                    int prevGoodIds;
-                    int currentGoodIDs = 0;
-                    Tolerance prevPrecursorMassTolerance = null;
-                    Tolerance prevProductMassTolerance = null;
-                    CalibrationResults res;
                     do
                     {
                         Console.WriteLine("SearchRound: " + searchRound);
-                        prevGoodIds = currentGoodIDs;
 
                         List<Psm> goodIdentifications = GetGoodIdentifications(myMsDataFile, searchMode, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
-                        currentGoodIDs = goodIdentifications.Count;
-                        Console.WriteLine("currentGoodIDs: " + currentGoodIDs);
+                        // Store
+                        NumberOfGoodIds.Add(goodIdentifications.Count);
 
-                        if (prevGoodIds >= currentGoodIDs)
-                        {
-                            Console.WriteLine("Done with linear!");
-                            break;
-                        }
+                        Console.WriteLine(" currentGoodIDs: " + NumberOfGoodIds.Last());
 
-                        if (CalibrationParameters.WriteIntermediateFiles)
-                        {
-                            ms1Action = (List<LabeledMs1DataPoint> theList) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + searchRound, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                            ms2Action = (List<LabeledMs2DataPoint> theList) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + searchRound, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                        }
+                        ms1Action = (List<LabeledMs1DataPoint> theList) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + searchRound, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+                        ms2Action = (List<LabeledMs2DataPoint> theList) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + searchRound, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
 
-                        res = (CalibrationResults)new CalibrationEngine(myMsDataFile, CommonParameters, goodIdentifications, ms1Action, ms2Action, CalibrationParameters, linearLearners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+                        CalibrationResults res = (CalibrationResults)new CalibrationEngine(myMsDataFile, CommonParameters, goodIdentifications, ms1Action, ms2Action, CalibrationParameters, linearLearners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-                        prevPrecursorMassTolerance = CalibrationParameters.PrecursorMassTolerance;
-                        prevProductMassTolerance = CommonParameters.ProductMassTolerance;
+                        // Store
+                        PrecursorMassTolerances.Add(new PpmTolerance(Math.Max(Math.Abs(res.ms1Info.Item1 + 5 * res.ms1Info.Item2), Math.Abs(res.ms1Info.Item1 - 5 * res.ms1Info.Item2))));
+                        ProductMassTolerances.Add(new PpmTolerance(Math.Max(Math.Abs(res.ms2Info.Item1 + 5 * res.ms2Info.Item2), Math.Abs(res.ms2Info.Item1 - 5 * res.ms2Info.Item2))));
 
-                        CalibrationParameters.PrecursorMassTolerance = new PpmTolerance(Math.Max(Math.Abs(res.ms1Info.Item1 + 5 * res.ms1Info.Item2), Math.Abs(res.ms1Info.Item1 - 5 * res.ms1Info.Item2)));
+                        Console.WriteLine(" PrecursorMassTolerance: " + PrecursorMassTolerances.Last());
+                        Console.WriteLine(" ProductMassTolerance: " + ProductMassTolerances.Last());
+
+                        // Update for reuse
+                        CalibrationParameters.PrecursorMassTolerance = PrecursorMassTolerances.Last();
                         searchMode = new SinglePpmAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
-                        CommonParameters.ProductMassTolerance = new PpmTolerance(Math.Max(Math.Abs(res.ms2Info.Item1 + 5 * res.ms2Info.Item2), Math.Abs(res.ms2Info.Item1 - 5 * res.ms2Info.Item2)));
+                        CommonParameters.ProductMassTolerance = ProductMassTolerances.Last();
 
-                        Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                        Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
-
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-LinearCalibSearchRound" + searchRound + ".mzML"), false);
+                        // Store
+                        paths.Add(Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-LinearCalibSearchRound" + searchRound + ".mzML"));
+                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, paths.Last(), false);
 
                         searchRound++;
-                    } while (true);
+                    } while (NumberOfGoodIds.Count == 1 || NumberOfGoodIds.Last() > NumberOfGoodIds[NumberOfGoodIds.Count - 2] || SlightDecreaseInNumberButHugeImprovementInTolerance(NumberOfGoodIds, PrecursorMassTolerances, ProductMassTolerances));
 
                     CalibrationParameters.PrecursorMassTolerance = prevPrecursorMassTolerance;
                     searchMode = new SinglePpmAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
@@ -220,7 +191,7 @@ namespace TaskLayer
                     Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
                     Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
 
-                    myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-LinearCalibSearchRound" + (searchRound - 2) + ".mzML"));
+                    myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-LinearCalibSearchRound" + Math.Max(searchRound - 2, 1) + ".mzML"));
 
                     //IIndexedLearner<double>[] forEnsemble = new IIndexedLearner<double>[]
                     //{
@@ -256,7 +227,8 @@ namespace TaskLayer
                         //new RegressionAbsoluteLossGradientBoostLearner(runParallel: false),
                         //new RegressionAbsoluteLossGradientBoostLearner(runParallel: false,iterations:1000),
                         //new RegressionAbsoluteLossGradientBoostLearner(runParallel: false,maximumTreeDepth:10),
-                        new RegressionAbsoluteLossGradientBoostLearner(runParallel: false,maximumTreeDepth:10,iterations:1000),
+                        new RegressionAbsoluteLossGradientBoostLearner(runParallel: false, iterations:1000),
+                        new RegressionAbsoluteLossGradientBoostLearner(runParallel: false, maximumTreeDepth:4, iterations:1000),
 
                         //new RegressionBackwardEliminationModelSelectingEnsembleLearner(forEnsemble,2),
                         //new RegressionRandomModelSelectingEnsembleLearner(forEnsemble,2),
@@ -265,59 +237,24 @@ namespace TaskLayer
 
                     List<Psm> finalIdentifications = GetGoodIdentifications(myMsDataFile, searchMode, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
+                    Console.WriteLine("finalIdentifications: " + finalIdentifications.Count);
                     if (CalibrationParameters.WriteIntermediateFiles)
                     {
                         ms1Action = (List<LabeledMs1DataPoint> theList) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "beforeNonlinear", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                         ms2Action = (List<LabeledMs2DataPoint> theList) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "beforeNonlinear", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                     }
 
-                    res = (CalibrationResults)new CalibrationEngine(myMsDataFile, CommonParameters, finalIdentifications, ms1Action, ms2Action, CalibrationParameters, learners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+                    CalibrationResults ress = (CalibrationResults)new CalibrationEngine(myMsDataFile, CommonParameters, finalIdentifications, ms1Action, ms2Action, CalibrationParameters, learners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-                    CalibrationParameters.PrecursorMassTolerance = new PpmTolerance(Math.Max(Math.Abs(res.ms1Info.Item1 + 5 * res.ms1Info.Item2), Math.Abs(res.ms1Info.Item1 - 5 * res.ms1Info.Item2)));
+                    CalibrationParameters.PrecursorMassTolerance = new PpmTolerance(Math.Max(Math.Abs(ress.ms1Info.Item1 + 5 * ress.ms1Info.Item2), Math.Abs(ress.ms1Info.Item1 - 5 * ress.ms1Info.Item2)));
                     searchMode = new SinglePpmAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
-                    CommonParameters.ProductMassTolerance = new PpmTolerance(Math.Max(Math.Abs(res.ms2Info.Item1 + 5 * res.ms2Info.Item2), Math.Abs(res.ms2Info.Item1 - 5 * res.ms2Info.Item2)));
+                    CommonParameters.ProductMassTolerance = new PpmTolerance(Math.Max(Math.Abs(ress.ms2Info.Item1 + 5 * ress.ms2Info.Item2), Math.Abs(ress.ms2Info.Item1 - 5 * ress.ms2Info.Item2)));
 
                     Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
                     Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
 
                     MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-NonLinearCalib.mzML"), false);
-
-                    finalIdentifications = GetGoodIdentifications(myMsDataFile, searchMode, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
-
-                    if (CalibrationParameters.WriteIntermediateFiles)
-                    {
-                        ms1Action = (List<LabeledMs1DataPoint> theList) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "beforeNonlinear2", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                        ms2Action = (List<LabeledMs2DataPoint> theList) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "beforeNonlinear2", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                    }
-                    res = (CalibrationResults)new CalibrationEngine(myMsDataFile, CommonParameters, finalIdentifications, ms1Action, ms2Action, CalibrationParameters, learners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-
-                    CalibrationParameters.PrecursorMassTolerance = new PpmTolerance(Math.Max(Math.Abs(res.ms1Info.Item1 + 5 * res.ms1Info.Item2), Math.Abs(res.ms1Info.Item1 - 5 * res.ms1Info.Item2)));
-                    searchMode = new SinglePpmAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
-                    CommonParameters.ProductMassTolerance = new PpmTolerance(Math.Max(Math.Abs(res.ms2Info.Item1 + 5 * res.ms2Info.Item2), Math.Abs(res.ms2Info.Item1 - 5 * res.ms2Info.Item2)));
-
-                    Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                    Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
-
-                    finalIdentifications = GetGoodIdentifications(myMsDataFile, searchMode, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
-
-                    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-NonLinearCalib2.mzML"), false);
-
-                    if (CalibrationParameters.WriteIntermediateFiles)
-                    {
-                        ms1Action = (List<LabeledMs1DataPoint> theList) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "beforeNonlinear3", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                        ms2Action = (List<LabeledMs2DataPoint> theList) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "beforeNonlinear3", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                    }
-                    res = (CalibrationResults)new CalibrationEngine(myMsDataFile, CommonParameters, finalIdentifications, ms1Action, ms2Action, CalibrationParameters, learners, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-
-                    CalibrationParameters.PrecursorMassTolerance = new PpmTolerance(Math.Max(Math.Abs(res.ms1Info.Item1 + 5 * res.ms1Info.Item2), Math.Abs(res.ms1Info.Item1 - 5 * res.ms1Info.Item2)));
-                    searchMode = new SinglePpmAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
-                    CommonParameters.ProductMassTolerance = new PpmTolerance(Math.Max(Math.Abs(res.ms2Info.Item1 + 5 * res.ms2Info.Item2), Math.Abs(res.ms2Info.Item1 - 5 * res.ms2Info.Item2)));
-
-                    Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                    Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
-
-                    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-NonLinearCalib3.mzML"), false);
-
+                    
                     Warn("");
                     Warn("");
                 }
@@ -329,6 +266,15 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private bool SlightDecreaseInNumberButHugeImprovementInTolerance(List<int> numberOfGoodIds, List<Tolerance> precursorMassTolerances, List<Tolerance> productMassTolerances)
+        {
+            var idRatio = (double)numberOfGoodIds.Last() / numberOfGoodIds[numberOfGoodIds.Count - 2];
+            var tolRatio1 = precursorMassTolerances[precursorMassTolerances.Count - 2].Value / precursorMassTolerances[precursorMassTolerances.Count - 3].Value;
+            var tolRatio2 = productMassTolerances[productMassTolerances.Count - 2].Value / productMassTolerances[productMassTolerances.Count - 3].Value;
+
+            return idRatio > 0.9 && tolRatio1 <= 1 && tolRatio2 <= 1 && (tolRatio1 < 0.9 || tolRatio2 < 0.9);
+        }
 
         private List<Psm> GetGoodIdentifications(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, MassDiffAcceptor searchMode, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId)
         {

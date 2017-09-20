@@ -13,7 +13,7 @@ namespace EngineLayer
             WriteIntermediateFiles = false;
             minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
             minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
-            numFragmentsNeededForEveryIdentification = 10;
+            numFragmentsNeededForEveryIdentification = 6;
         }
 
         #endregion Public Constructors
