@@ -29,7 +29,7 @@ namespace EngineLayer
             {
                 return TerminusType.C;
             }
-            else //if(lp.Contains(ProductType.B) || lp.Contains(ProductType.BnoB1ions) || lp.Contains(ProductType.C) || lp.Contains(ProductType.Adot))
+            else //"lp.Contains(ProductType.B) || lp.Contains(ProductType.BnoB1ions) || lp.Contains(ProductType.C) || lp.Contains(ProductType.Adot))"
             {
                 return TerminusType.N;
             }

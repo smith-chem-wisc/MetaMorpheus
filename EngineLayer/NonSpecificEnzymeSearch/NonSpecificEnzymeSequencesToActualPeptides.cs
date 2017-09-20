@@ -14,7 +14,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private readonly MassDiffAcceptor massDiffAcceptors;
-        private Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM;
+        private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM;
 
         #endregion Private Fields
 
