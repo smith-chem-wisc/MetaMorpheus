@@ -82,11 +82,11 @@ namespace EngineLayer.Calibration
             ms1ListAction(currentResult.Ms1List);
             ms2ListAction(currentResult.Ms2List);
 
-            Console.WriteLine("currentResult.Ms1List.Count : " + currentResult.Ms1List.Count + " : currentResult.Ms2List.Count : " + currentResult.Ms2List.Count + " :  currentResult.Count : " + currentResult.Count);
-            Console.WriteLine("currentResult.numMs1MassChargeCombinationsConsidered : " + currentResult.numMs1MassChargeCombinationsConsidered);
-            Console.WriteLine("currentResult.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks : " + currentResult.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
-            Console.WriteLine("currentResult.numMs2MassChargeCombinationsConsidered : " + currentResult.numMs2MassChargeCombinationsConsidered);
-            Console.WriteLine("currentResult.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks : " + currentResult.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            Console.WriteLine(" currentResult.Ms1List.Count : " + currentResult.Ms1List.Count + " : currentResult.Ms2List.Count : " + currentResult.Ms2List.Count + " :  currentResult.Count : " + currentResult.Count);
+            Console.WriteLine(" currentResult.numMs1MassChargeCombinationsConsidered : " + currentResult.numMs1MassChargeCombinationsConsidered);
+            Console.WriteLine(" currentResult.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks : " + currentResult.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            Console.WriteLine(" currentResult.numMs2MassChargeCombinationsConsidered : " + currentResult.numMs2MassChargeCombinationsConsidered);
+            Console.WriteLine(" currentResult.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks : " + currentResult.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
             var splitter = new RandomTrainingTestIndexSplitter<double>(fracForTraining);
 
@@ -94,10 +94,10 @@ namespace EngineLayer.Calibration
 
             var ms2splitResult = splitter.SplitSet(new F64Matrix(currentResult.Ms2List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), currentResult.Ms2List.Count, 5), currentResult.Ms2List.Select(b => b.LabelTh).ToArray());
 
-            Console.WriteLine("MS1");
+            Console.WriteLine(" MS1");
             MS1predictor ms1predictor = new MS1predictor(DoStuff(ms1splitResult, learners));
 
-            Console.WriteLine("MS2");
+            Console.WriteLine(" MS2");
             MS2predictor ms2predictor = new MS2predictor(DoStuff(ms2splitResult, learners));
 
             Status("Calibrating Spectra");
@@ -107,12 +107,12 @@ namespace EngineLayer.Calibration
             var ms1InfoTh = currentResult.Ms1List.Select(b => b.LabelTh).MeanStandardDeviation();
             var ms2InfoTh = currentResult.Ms2List.Select(b => b.LabelTh).MeanStandardDeviation();
 
-            Console.WriteLine("MS1th : " + ms1InfoTh.Item1 + " : " + ms1InfoTh.Item2 + " :  MS2th : " + ms2InfoTh.Item1 + " : " + ms2InfoTh.Item2);
+            Console.WriteLine(" MS1th : " + ms1InfoTh.Item1 + " : " + ms1InfoTh.Item2 + " :  MS2th : " + ms2InfoTh.Item1 + " : " + ms2InfoTh.Item2);
 
             var ms1InfoPPM = currentResult.Ms1List.Select(b => b.LabelPPM).MeanStandardDeviation();
             var ms2InfoPPM = currentResult.Ms2List.Select(b => b.LabelPPM).MeanStandardDeviation();
 
-            Console.WriteLine("MS1ppm : " + ms1InfoPPM.Item1 + " : " + ms1InfoPPM.Item2 + " :  MS2ppm : " + ms2InfoPPM.Item1 + " : " + ms2InfoPPM.Item2);
+            Console.WriteLine(" MS1ppm : " + ms1InfoPPM.Item1 + " : " + ms1InfoPPM.Item2 + " :  MS2ppm : " + ms2InfoPPM.Item1 + " : " + ms2InfoPPM.Item2);
 
             return new CalibrationResults(ms1InfoPPM, ms2InfoPPM, this);
         }
@@ -204,13 +204,13 @@ namespace EngineLayer.Calibration
 
         private IPredictorModel<double> DoStuff(TrainingTestSetSplit splitResult, List<ILearner<double>> learners)
         {
-            Console.WriteLine("Selecting best model");
+            Console.WriteLine(" Selecting best model");
             var evaluator = new MeanAbsolutErrorRegressionMetric();
 
             var predictions = new double[splitResult.TestSet.Targets.Length];
             IPredictorModel<double> bestModel = new IdentityCalibrationFunctionPredictorModel();
             var bestError = evaluator.Error(splitResult.TestSet.Targets, predictions);
-            Console.WriteLine("Identity error: " + bestError);
+            Console.WriteLine(" Identity error: " + bestError);
 
             foreach (var learner in learners)
             {
@@ -224,21 +224,25 @@ namespace EngineLayer.Calibration
 
                     var thisError = evaluator.Error(splitResult.TestSet.Targets, predictions);
 
-                    Console.WriteLine(learner + " error: " + thisError);
+                    Console.WriteLine("  " + learner + " error: " + thisError);
 
                     if (thisError < bestError)
                     {
-                        Console.WriteLine("Improved!");
+                        Console.WriteLine("  Improved!");
                         bestError = thisError;
                         bestModel = model;
                     }
+
+                    var dict = model.GetVariableImportance(new Dictionary<string, int> { { "mz", 0 }, { "rt", 1 }, { "tic", 2 }, { "injectiontime", 3 }, { "intensity", 4 } }).Select(b => b.Key + " : " + b.Value);
+                    if (dict.Any())
+                        Console.WriteLine("  " + string.Join(" ; ", dict));
                 }
                 catch
                 {
-                    Console.WriteLine("Errored! " + learner);
+                    Console.WriteLine("  Errored! " + learner);
                 }
             }
-            Console.WriteLine("Done with selecting best model");
+            Console.WriteLine(" Done with selecting best model");
 
             return bestModel;
         }

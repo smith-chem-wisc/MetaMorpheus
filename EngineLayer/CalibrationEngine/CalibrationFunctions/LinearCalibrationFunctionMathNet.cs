@@ -86,7 +86,7 @@ namespace EngineLayer.Calibration
 
         public Dictionary<string, double> GetVariableImportance(Dictionary<string, int> featureNameToIndex)
         {
-            throw new NotImplementedException();
+            return new Dictionary<string, double>();
         }
 
         public double Predict(double[] observation)

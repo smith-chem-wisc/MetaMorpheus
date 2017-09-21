@@ -13,7 +13,7 @@
 
         #region Public Properties
 
-        public static string TabSeparatedHeader { get { return "mz\trt\tLOGTIC\tLOGInjectionTime\tLOGIntensity\tLabel"; } }
+        public static string TabSeparatedHeader { get { return "mz\trt\tLOGTIC\tLOGInjectionTime\tLOGIntensity\tLabelTh\tlabelPPM"; } }
 
         #endregion Public Properties
 
