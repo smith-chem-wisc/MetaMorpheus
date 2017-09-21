@@ -79,7 +79,7 @@ namespace EngineLayer.Indexing
             double progress = 0;
             int oldPercentProgress = 0;
 
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
             int fragmentBinsPerDalton = 1000;
             List<int>[] fragmentIndex;
 
