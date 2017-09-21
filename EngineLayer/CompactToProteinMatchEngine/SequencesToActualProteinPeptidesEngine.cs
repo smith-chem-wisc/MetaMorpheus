@@ -99,7 +99,7 @@ namespace EngineLayer
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
 
-        protected static void ResolveAmbiguities(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
+        protected static void ResolveAmbiguities(Dictionary<CompactPeptideBase,HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
         {
             //If ambiguities are not desired, a single compact peptide has survived to this point for each PSM.
             //This single peptide sequence can originate from multiple unique proteins

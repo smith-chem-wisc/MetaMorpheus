@@ -4,7 +4,6 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace EngineLayer
 {
@@ -12,13 +11,13 @@ namespace EngineLayer
     {
         #region Protected Fields
 
-        protected readonly List<string> nestedIds;
-
         protected static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
         {
             { DissociationType.HCD, Constants.protonMass },
             { DissociationType.ETD, 2*Constants.protonMass }
         };
+
+        protected readonly List<string> nestedIds;
 
         #endregion Protected Fields
 
@@ -45,7 +44,7 @@ namespace EngineLayer
 
         #endregion Public Events
 
-        #region Public Methods     
+        #region Public Methods
 
         public static void MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
         {

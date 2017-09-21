@@ -35,11 +35,12 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * One of the following formats:
    * .raw
    * .mzML file in centroid mode
+   * .mgf files must be converted to .mzML using the MSConvert program within [ProteoWizard](http://proteowizard.sourceforge.net/) 
 * MS2 resolution of 15,000
 
 ## Database Requirements
 
-UniProt or fasta format, may be compressed.
+UniProt .XML or .fasta format, may be used in compressed (.gz) format.
 
 ## Test Installation (Windows GUI)
 

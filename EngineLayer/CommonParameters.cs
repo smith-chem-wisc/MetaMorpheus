@@ -36,9 +36,9 @@ namespace EngineLayer
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
             UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 4;
+            DeconvolutionIntensityRatio = 5;
             DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(5);
+            DeconvolutionMassTolerance = new PpmTolerance(20);
             ReportAllAmbiguity = true;
             ExcelCompatible = true;
 
