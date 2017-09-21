@@ -29,7 +29,7 @@ namespace EngineLayer
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
 
-        public int OneBasedPrecursorScanNumber => TheScan.OneBasedPrecursorScanNumber;
+        public int? OneBasedPrecursorScanNumber => TheScan.OneBasedPrecursorScanNumber;
 
         public double RetentionTime => TheScan.RetentionTime;
 

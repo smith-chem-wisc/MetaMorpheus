@@ -53,7 +53,7 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static void WriteMzidentml(IEnumerable<Psm> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, string searchMode, Tolerance productTolerance, int missedCleavages, string outputPath)
+        public static void WriteMzidentml(IEnumerable<Psm> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, string searchMode, Tolerance productTolerance, int missedCleavages, string outputPath)
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
@@ -555,7 +555,7 @@ namespace TaskLayer
 
                 int group_id = 0;
                 int protein_id = 0;
-                foreach (ProteinGroup proteinGroup in groups)
+                foreach (EngineLayer.ProteinGroup proteinGroup in groups)
                 {
                     _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id] = new mzIdentML110.Generated.ProteinAmbiguityGroupType()
                     {
@@ -609,10 +609,8 @@ namespace TaskLayer
                             {
                                 if (peptide.Protein == protein)
                                 {
-
                                     _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id] = new mzIdentML110.Generated.PeptideHypothesisType()
                                     {
-
                                         peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
                                         SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.Sequence].Item2.Count],
                                     };
@@ -713,7 +711,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.Zdot);
             if (CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
+
             Status("Loading proteins...", new List<string> { taskId });
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
@@ -743,13 +741,6 @@ namespace TaskLayer
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
-            if (SearchParameters.SearchType == SearchType.NonSpecific)
-            {
-                CommonParameters.DigestionParams.Protease = new Protease(CommonParameters.DigestionParams.Protease, terminusType);
-                foreach (FileSpecificSettings fileSpecificSettings in fileSettingsList)
-                    if (fileSpecificSettings != null)
-                        fileSpecificSettings.Protease = new Protease(fileSpecificSettings.Protease, terminusType);
-            }
             HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             int completedFiles = 0;
@@ -771,7 +762,7 @@ namespace TaskLayer
 
                 var fileSpecificPsms = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
-                if (SearchParameters.SearchType == SearchType.Modern || SearchParameters.SearchType == SearchType.NonSpecific)
+                if (SearchParameters.SearchType == SearchType.Modern)
                 {
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
@@ -785,48 +776,10 @@ namespace TaskLayer
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
-                        Dictionary<float, List<int>> fragmentIndexDict;
+                        Dictionary<float, List<int>> fragmentIndexDict = new Dictionary<float, List<int>>();
                         lock (indexLock)
                         {
-                            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-
-                            if (pathToFolderWithIndices == null)
-                            {
-                                var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
-                                Status("Writing params...", new List<string> { taskId });
-                                var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
-                                WriteIndexEngineParams(indexEngine, paramsFile);
-                                SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
-
-                                Status("Running Index Engine...", new List<string> { taskId });
-                                var indexResults = (IndexingResults)indexEngine.Run();
-                                peptideIndex = indexResults.PeptideIndex;
-                                fragmentIndexDict = indexResults.FragmentIndexDict;
-
-                                Status("Writing peptide index...", new List<string> { taskId });
-                                var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
-                                WritePeptideIndex(peptideIndex, peptideIndexFile);
-                                SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
-
-                                Status("Writing fragment index...", new List<string> { taskId });
-                                var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
-                                WriteFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
-                                SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
-                            }
-                            else
-                            {
-                                Status("Reading peptide index...", new List<string> { taskId });
-                                var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-                                var ser = new NetSerializer.Serializer(messageTypes);
-                                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                                    peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
-
-                                Status("Reading fragment index...", new List<string> { taskId });
-                                messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-                                ser = new NetSerializer.Serializer(messageTypes);
-                                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                                    fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
-                            }
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndexDict, taskId);
                         }
                         keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                         fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
@@ -834,12 +787,45 @@ namespace TaskLayer
                         #endregion Generate indices for modern search
 
                         Status("Searching files...", taskId);
-                        if (SearchParameters.SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, thisId).Run();
-                        else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, thisId).Run();
+
+                        new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                    }
+                }
+                else if (SearchParameters.SearchType==SearchType.NonSpecific)
+                {
+                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
+                    foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
+                    {
+                        for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
+                        {
+                            List<CompactPeptide> peptideIndex = null;
+                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+
+                            float[] keys = null;
+                            List<int>[] fragmentIndex = null;
+
+                            #region Generate indices for modern search
+
+                            Status("Getting fragment dictionary...", new List<string> { taskId });
+                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, terminusSpecificIons, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
+                            Dictionary<float, List<int>> fragmentIndexDict = new Dictionary<float, List<int>>();
+                            lock (indexLock)
+                            {
+                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndexDict, taskId);
+                            }
+                            keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+                            fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+
+                            #endregion Generate indices for modern search
+
+                            Status("Searching files...", taskId);
+
+                            new NonSpecificEnzymeSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, terminusSpecificIons, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, thisId).Run();
+
+                            ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                        }
                     }
                 }
                 else //If classic search
@@ -867,13 +853,13 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusType, ListOfDigestionParams, SearchParameters.MassDiffAcceptor, new List<string> { taskId });
-                var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-                compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+                List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
+                foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
+                    new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, allPsms, proteinList, fixedModifications, variableModifications, terminusSpecificIons, ListOfDigestionParams, SearchParameters.MassDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string> { taskId }).Run();
             }
             else
             {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, ListOfDigestionParams, new List<string> { taskId });
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
@@ -896,7 +882,7 @@ namespace TaskLayer
             Status("Running FDR analysis...", taskId);
             var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, SearchParameters.MassDiffAcceptor, new List<string> { taskId }).Run();
 
-            List<ProteinGroup> proteinGroups = null;
+            List<EngineLayer.ProteinGroup> proteinGroups = null;
 
             if (SearchParameters.DoParsimony)
             {
@@ -946,15 +932,13 @@ namespace TaskLayer
                 Dictionary<Psm, List<string>> psmToProteinGroupNames = new Dictionary<Psm, List<string>>();
                 if (proteinGroups != null)
                 {
-                    ProteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
+                    EngineLayer.ProteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
 
                     foreach (var proteinGroup in proteinGroups)
                     {
                         foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
                         {
-                            List<string> proteinGroupNames;
-
-                            if (psmToProteinGroupNames.TryGetValue(psm, out proteinGroupNames))
+                            if (psmToProteinGroupNames.TryGetValue(psm, out List<string> proteinGroupNames))
                                 proteinGroupNames.Add(proteinGroup.ProteinGroupName);
                             else
                                 psmToProteinGroupNames.Add(psm, new List<string> { proteinGroup.ProteinGroupName });
@@ -1006,22 +990,20 @@ namespace TaskLayer
                     Status("Quantifying proteins...", taskId);
                     var flashLfqProteinGroups = FlashLfqEngine.QuantifyProteins();
 
-                    Dictionary<string, ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, ProteinGroup>();
+                    Dictionary<string, EngineLayer.ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, EngineLayer.ProteinGroup>();
                     foreach (var proteinGroup in proteinGroups)
                         if (!proteinGroupNameToProteinGroup.ContainsKey(proteinGroup.ProteinGroupName))
                             proteinGroupNameToProteinGroup.Add(proteinGroup.ProteinGroupName, proteinGroup);
 
                     foreach (var flashLfqProteinGroup in flashLfqProteinGroups)
                     {
-                        ProteinGroup metamorpheusProteinGroup;
-
-                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out metamorpheusProteinGroup))
+                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out EngineLayer.ProteinGroup metamorpheusProteinGroup))
                             metamorpheusProteinGroup.IntensitiesByFile = flashLfqProteinGroup.intensitiesByFile;
                     }
 
                     foreach (var proteinGroup in proteinGroups)
                         if (proteinGroup.IntensitiesByFile == null)
-                            proteinGroup.IntensitiesByFile = new double[ProteinGroup.FilesForQuantification.Length];
+                            proteinGroup.IntensitiesByFile = new double[EngineLayer.ProteinGroup.FilesForQuantification.Length];
                 }
             }
 
@@ -1091,7 +1073,7 @@ namespace TaskLayer
 
             if (SearchParameters.DoParsimony)
             {
-                if(currentRawFileList.Count > 1)
+                if (currentRawFileList.Count > 1)
                     WriteProteinGroupsToTsv(proteinGroups, OutputFolder, "aggregateProteinGroups_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
 
                 // individual protein group files (local protein fdr, global parsimony, global psm fdr)
@@ -1101,7 +1083,7 @@ namespace TaskLayer
 
                     var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
-                    var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
+                    var subsetProteinGroupsForThisFile = new List<EngineLayer.ProteinGroup>();
                     foreach (var pg in proteinGroups)
                         subsetProteinGroupsForThisFile.Add(pg.ConstructSubsetProteinGroup(fullFilePath));
 
@@ -1221,6 +1203,49 @@ namespace TaskLayer
 
         #region Private Methods
 
+        private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref Dictionary<float, List<int>> fragmentIndexDict, string taskId)
+        {
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+            if (pathToFolderWithIndices == null)
+            {
+                var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
+                Status("Writing params...", new List<string> { taskId });
+                var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
+                WriteIndexEngineParams(indexEngine, paramsFile);
+                SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
+
+                Status("Running Index Engine...", new List<string> { taskId });
+                var indexResults = (IndexingResults)indexEngine.Run();
+                peptideIndex = indexResults.PeptideIndex;
+                fragmentIndexDict = indexResults.FragmentIndexDict;
+
+                Status("Writing peptide index...", new List<string> { taskId });
+                var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
+                WritePeptideIndex(peptideIndex, peptideIndexFile);
+                SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+
+                Status("Writing fragment index...", new List<string> { taskId });
+                var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
+                WriteFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
+                SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+            }
+            else
+            {
+                Status("Reading peptide index...", new List<string> { taskId });
+                var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                var ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                    peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+
+                Status("Reading fragment index...", new List<string> { taskId });
+                messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+                ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+                    fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+            }
+        }
+
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {
             yield return type;
@@ -1301,7 +1326,7 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
-        private void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
+        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {
             if (items != null)
             {
@@ -1309,7 +1334,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(ProteinGroup.GetTabSeparatedHeader(FileNames.Count == 1));
+                    output.WriteLine(EngineLayer.ProteinGroup.GetTabSeparatedHeader(FileNames.Count == 1));
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }
@@ -1318,7 +1343,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePeptideQuantificationResultsToTsv(List<FlashLFQ.FlashLFQSummedFeatureGroup> items, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePeptideQuantificationResultsToTsv(List<FlashLFQ.Peptide> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             if (items != null)
             {
@@ -1326,7 +1351,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(FlashLFQ.FlashLFQSummedFeatureGroup.TabSeparatedHeader);
+                    output.WriteLine(FlashLFQ.Peptide.TabSeparatedHeader);
 
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
@@ -1336,7 +1361,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePeakQuantificationResultsToTsv(List<FlashLFQ.FlashLFQFeature> items, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePeakQuantificationResultsToTsv(List<FlashLFQ.ChromatographicPeak> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             if (items != null)
             {
@@ -1344,7 +1369,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(FlashLFQ.FlashLFQFeature.TabSeparatedHeader);
+                    output.WriteLine(FlashLFQ.ChromatographicPeak.TabSeparatedHeader);
 
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);

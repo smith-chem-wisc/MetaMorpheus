@@ -196,8 +196,8 @@ namespace EngineLayer.CrosslinkSearch
         {
             for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
-                var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
+                var theAdd = 1 + spectrum.MassSpectrum.YArray[i] / spectrum.TotalIonCurrent;
+                var experimentalPeakInDaltons = spectrum.MassSpectrum.XArray[i] - Constants.protonMass;
                 float closestPeak;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
@@ -254,7 +254,7 @@ namespace EngineLayer.CrosslinkSearch
                     psmCrossSingle.CrossType = PsmCrossType.Singe;
                     if (bestPsmCrossList.Count >= 2)
                     {
-                        bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                        bestPsmCrossList = (List<PsmCross>)bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
                         bestPsmCrossList.RemoveAt(1);
                         bestPsmCrossList.Add(psmCrossSingle);
                     }
@@ -271,7 +271,7 @@ namespace EngineLayer.CrosslinkSearch
                     psmCrossEnd.CrossType = PsmCrossType.DeadEnd;
                     if (bestPsmCrossList.Count >= 2)
                     {
-                        bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                        bestPsmCrossList = (List<PsmCross>)bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
                         bestPsmCrossList.RemoveAt(1);
                         bestPsmCrossList.Add(psmCrossEnd);
                     }
@@ -287,7 +287,7 @@ namespace EngineLayer.CrosslinkSearch
                     psmCrossLoop.CrossType = PsmCrossType.Loop;
                     if (bestPsmCrossList.Count >= 2)
                     {
-                        bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                        bestPsmCrossList = (List<PsmCross>)bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
                         bestPsmCrossList.RemoveAt(1);
                         bestPsmCrossList.Add(psmCrossLoop);
                     }
@@ -314,7 +314,7 @@ namespace EngineLayer.CrosslinkSearch
                             psmCrossAlpha.BetaPsmCross = psmCrossBeta;
                             if (bestPsmCrossList.Count >= 2)
                             {
-                                bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                                bestPsmCrossList = (List<PsmCross>)bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
                                 bestPsmCrossList.RemoveAt(1);
                                 bestPsmCrossList.Add(psmCrossAlpha);
                             }

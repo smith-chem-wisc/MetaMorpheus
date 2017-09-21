@@ -12,12 +12,19 @@ namespace EngineLayer.Analysis
 
         #endregion Public Constructors
 
+        #region Public Properties
+
+        public int PsmsWithin1PercentFdr { get; set; }
+
+        #endregion Public Properties
+
         #region Public Methods
 
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append(base.ToString());
+            sb.AppendLine(base.ToString());
+            sb.Append("PSMs within 1% fdr: " + PsmsWithin1PercentFdr);
             return sb.ToString();
         }
 
