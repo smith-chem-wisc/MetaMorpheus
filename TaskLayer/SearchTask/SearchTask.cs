@@ -739,8 +739,8 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("report all ambiguity = " + CommonParameters.ReportAllAmbiguity + "; ");
 
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
+            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
             if (SearchParameters.SearchType == SearchType.NonSpecific)
@@ -777,15 +777,12 @@ namespace TaskLayer
                     {
                         List<CompactPeptide> peptideIndex = null;
                         List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
-
-                        float[] keys = null;
-                        List<int>[] fragmentIndex = null;
-
+                        
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
-                        Dictionary<float, List<int>> fragmentIndexDict;
+                        List<int>[] fragmentIndex;
                         lock (indexLock)
                         {
                             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -793,15 +790,15 @@ namespace TaskLayer
                             if (pathToFolderWithIndices == null)
                             {
                                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
-                                Status("Writing params...", new List<string> { taskId });
+                                Status("Writing indexing params...", new List<string> { taskId });
                                 var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
                                 WriteIndexEngineParams(indexEngine, paramsFile);
                                 SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
 
-                                Status("Running Index Engine...", new List<string> { taskId });
+                                Status("Creating fragment index...", new List<string> { taskId });
                                 var indexResults = (IndexingResults)indexEngine.Run();
                                 peptideIndex = indexResults.PeptideIndex;
-                                fragmentIndexDict = indexResults.FragmentIndexDict;
+                                fragmentIndex = indexResults.FragmentIndex;
 
                                 Status("Writing peptide index...", new List<string> { taskId });
                                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
@@ -810,7 +807,7 @@ namespace TaskLayer
 
                                 Status("Writing fragment index...", new List<string> { taskId });
                                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
-                                WriteFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
+                                WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
                             }
                             else
@@ -822,22 +819,20 @@ namespace TaskLayer
                                     peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
 
                                 Status("Reading fragment index...", new List<string> { taskId });
-                                messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+                                messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
                                 ser = new NetSerializer.Serializer(messageTypes);
                                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                                    fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                                    fragmentIndex = (List<int>[])ser.Deserialize(file);
                             }
                         }
-                        keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-                        fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
                         #endregion Generate indices for modern search
 
                         Status("Searching files...", taskId);
                         if (SearchParameters.SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, thisId).Run();
+                            new NonSpecificEnzymeSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, thisId).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, thisId).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
                     }
@@ -867,13 +862,13 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusType, ListOfDigestionParams, SearchParameters.MassDiffAcceptor, new List<string> { taskId });
-                var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-                compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+                List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
+                foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
+                    new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, allPsms, proteinList, fixedModifications, variableModifications, terminusSpecificIons, ListOfDigestionParams, SearchParameters.MassDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string> { taskId }).Run();
             }
             else
             {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, ListOfDigestionParams, new List<string> { taskId });
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
@@ -1245,9 +1240,9 @@ namespace TaskLayer
             }
         }
 
-        private static void WriteFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile)
+        private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
             var ser = new NetSerializer.Serializer(messageTypes);
 
             using (var file = File.Create(fragmentIndexFile))

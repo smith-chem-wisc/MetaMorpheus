@@ -203,7 +203,7 @@ namespace EngineLayer
             }
         }
 
-        public static double CalculateClassicScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static double CalculatePeptideScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)

@@ -111,8 +111,8 @@ namespace TaskLayer
             object lock1 = new object();
             object lock2 = new object();
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
+            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -145,7 +145,8 @@ namespace TaskLayer
 
             // Group and order psms
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), ListOfDigestionParams, new List<string> { taskId });
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, new List<string> { taskId });
+
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 

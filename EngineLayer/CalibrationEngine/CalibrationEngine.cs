@@ -3,6 +3,7 @@ using MassSpectrometry;
 using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using Proteomics;
+using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -346,18 +347,18 @@ namespace EngineLayer.Calibration
             {
                 if (a is IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> theScan)
                 {
-                    var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
+                    var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber.Value);
 
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, theScan.IsolationMz });
+                    Func<IPeak, double> theFunc = x => x.X - bestCf.Item2.Predict(new double[] { x.X, a.RetentionTime, x.Y, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, theScan.IsolationMz.Value });
 
-                    Func<IMzPeak, double> theFuncForPrecursor = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, precursorScan.RetentionTime, x.Intensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
+                    Func<IPeak, double> theFuncForPrecursor = x => x.X - bestCf.Item1.Predict(new double[] { x.X, precursorScan.RetentionTime, x.Y, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
 
                     theScan.TransformMzs(theFunc, theFuncForPrecursor);
                 }
                 else
                 {
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime ?? double.NaN });
-                    a.TransformByApplyingFunctionToSpectra(theFunc);
+                    Func<IPeak, double> theFunc = x => x.X - bestCf.Item1.Predict(new double[] { x.X, a.RetentionTime, x.Y, a.TotalIonCurrent, a.InjectionTime ?? double.NaN });
+                    a.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
                 }
             }
         }
@@ -417,15 +418,15 @@ namespace EngineLayer.Calibration
                             continue;
                         }
 
-                        var closestPeak = fullMS1spectrum.GetClosestPeak(theMZ);
-                        var closestPeakMZ = closestPeak.Mz;
+                        var closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
+                        var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex];
 
                         var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
                         if (!peaksAddedHashSet.Contains(theTuple))
                         {
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, closestPeak.Intensity, double.NaN, double.NaN, closestPeakMZ - theMZ, null));
+                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, fullMS1spectrum.YArray[closestPeakIndex], double.NaN, double.NaN, closestPeakMZ - theMZ, null));
                         }
                         else
                             break;
@@ -537,12 +538,14 @@ namespace EngineLayer.Calibration
                                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks++;
                                 continue;
                             }
-                            var closestPeak = ms2DataScan.MassSpectrum.GetClosestPeak(theMZ);
-                            var closestPeakMZ = closestPeak.Mz;
+
+                            var closestPeakIndex = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theMZ);
+                            var closestPeakMZ = ms2DataScan.MassSpectrum.XArray[closestPeakIndex];
+
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
-                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, closestPeak.Intensity, double.NaN, null, double.NaN, closestPeakMZ - theMZ, null));
+                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, ms2DataScan.MassSpectrum.YArray[closestPeakIndex], double.NaN, null, double.NaN, closestPeakMZ - theMZ, null));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
@@ -567,7 +570,7 @@ namespace EngineLayer.Calibration
                                      trainingPointsToAverage.Select(b => b.intensity).Average(),
                                      ms2DataScan.TotalIonCurrent,
                                      ms2DataScan.InjectionTime,
-                                     ms2DataScan.IsolationMz,
+                                     ms2DataScan.IsolationMz.Value,
                                      trainingPointsToAverage.Select(b => b.Label).Median(),
                                      identification);
                         }

@@ -124,7 +124,7 @@ namespace TaskLayer
         {
             foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
             {
-                var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber);
+                var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
 
                 ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
 

@@ -134,8 +134,8 @@ namespace TaskLayer
                 crosslinker.CrosslinkerModSite = XlSearchParameters.UdXLkerResidue;
             }
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
+            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             MyFileManager myFileManager = new MyFileManager(XlSearchParameters.DisposeOfFileWhenDone);
 
             int completedFiles = 0;
@@ -196,7 +196,7 @@ namespace TaskLayer
                     Status("Getting fragment dictionary...", new List<string> { taskId });
                     var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.SearchDecoy, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string> { taskId });
 
-                    Dictionary<float, List<int>> fragmentIndexDict;
+                    Dictionary<float, List<int>> fragmentIndexDict = null;
                     lock (indexLock)
                     {
                         string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -210,7 +210,7 @@ namespace TaskLayer
                             Status("Running Index Engine...", new List<string> { taskId });
                             var indexResults = (IndexingResults)indexEngine.Run();
                             peptideIndex = indexResults.PeptideIndex;
-                            fragmentIndexDict = indexResults.FragmentIndexDict;
+                            //fragmentIndexDict = indexResults.FragmentIndex;
 
                             Status("Writing peptide index...", new List<string> { taskId });
                             WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
@@ -232,8 +232,8 @@ namespace TaskLayer
                                 fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
                         }
                     }
-                    keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-                    fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+                    //keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+                    //fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
                     #endregion Generate indices for modern search
 

@@ -68,7 +68,7 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
@@ -111,7 +111,7 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
@@ -153,7 +153,7 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
@@ -195,7 +195,7 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
@@ -215,10 +215,10 @@ namespace Test
             var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
-            var fragmentIndexDict = indexResults.FragmentIndexDict;
-            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
-            var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType>(), 0, CommonParameters, false, new OpenSearchMode(), new List<string>());
+            var fragmentIndexDict = indexResults.FragmentIndex;
+            //var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+            //var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+            var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, peptideIndex, indexResults.FragmentIndex, new List<ProductType>(), 0, CommonParameters, false, new OpenSearchMode(), new List<string>());
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -242,7 +242,7 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, 3, 4 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };

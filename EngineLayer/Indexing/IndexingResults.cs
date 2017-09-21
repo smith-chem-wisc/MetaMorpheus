@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace EngineLayer.Indexing
@@ -7,17 +8,17 @@ namespace EngineLayer.Indexing
     {
         #region Public Constructors
 
-        public IndexingResults(List<CompactPeptide> peptideIndex, Dictionary<float, List<int>> fragmentIndexDict, IndexingEngine indexParams) : base(indexParams)
+        public IndexingResults(List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, IndexingEngine indexParams) : base(indexParams)
         {
             this.PeptideIndex = peptideIndex;
-            this.FragmentIndexDict = fragmentIndexDict;
+            this.FragmentIndex = fragmentIndex;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public Dictionary<float, List<int>> FragmentIndexDict { get; private set; }
+        public List<int>[] FragmentIndex { get; private set; }
         public List<CompactPeptide> PeptideIndex { get; private set; }
 
         #endregion Public Properties
@@ -28,7 +29,7 @@ namespace EngineLayer.Indexing
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndexDict.Count);
+            sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndex.Length);
             sb.AppendLine("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
             return sb.ToString();
         }

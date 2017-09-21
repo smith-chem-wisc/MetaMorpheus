@@ -25,7 +25,12 @@ namespace EngineLayer
             ListOfModsLocalize = null;
 
             ConserveMemory = true;
-            MaxDegreeOfParallelism = 1;
+            MaxParallelFilesToAnalyze = 1;
+
+            MaxThreadsToUse = Environment.ProcessorCount;
+            if (MaxThreadsToUse > 1)
+                MaxThreadsToUse--;
+
             ScoreCutoff = 5;
 
             // Deconvolution stuff
@@ -48,7 +53,8 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public int? MaxDegreeOfParallelism { get; set; }
+        public int? MaxParallelFilesToAnalyze { get; set; }
+        public int MaxThreadsToUse { get; set; }
         public bool LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
         public List<Tuple<string, string>> ListOfModsVariable { get; set; }
