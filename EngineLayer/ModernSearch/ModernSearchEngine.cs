@@ -130,25 +130,53 @@ namespace EngineLayer.ModernSearch
                             }
                         }
                     }
-                    
+
+                    //filter theoreticals into only the highests scoring ones
+                    /*          int highestScore = intScoreCutoff;
+                              HashSet<int> idsOfHighestScoringPeptides = new HashSet<int>();
+                              foreach(int id in idsOfPeptidesPossiblyObserved)
+                              {
+                                  if(scoringTable[id]<highestScore) //by far the most commonly correct, so here's an empty statement.
+                                  {
+                                  }
+                                  else if(scoringTable[id]==highestScore)
+                                  {
+                                      idsOfHighestScoringPeptides.Add(id);
+                                  }
+                                  else
+                                  {
+                                      highestScore = scoringTable[id];
+                                      idsOfHighestScoringPeptides.Clear();
+                                      idsOfHighestScoringPeptides.Add(id);
+                                  }
+                              }*/
+
+                    //above choice, or try
+                    /*   int highestScore = intScoreCutoff;
+                       HashSet<int> idsOfHighestScoringPeptides = new HashSet<int>();
+                       foreach (int id in idsOfPeptidesPossiblyObserved)
+                           if (scoringTable[id] > highestScore)
+                               highestScore = scoringTable[id];
+                       foreach (int id in idsOfPeptidesPossiblyObserved)
+                           if (scoringTable[id] == highestScore)
+                               idsOfHighestScoringPeptides.Add(id);*/
+
                     // done with initial scoring; refine scores and create PSMs
-                    foreach(int id in idsOfPeptidesPossiblyObserved)
+                    //foreach (int id in idsOfHighestScoringPeptides)
+                    foreach (int id in idsOfPeptidesPossiblyObserved)
                     {
-                        if(scoringTable[id] >= intScoreCutoff)
+                        var candidatePeptide = peptideIndex[id];
+                        int notch = massDiffAcceptors.Accepts(scan.PrecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+
+                        if (notch >= 0)
                         {
-                            var candidatePeptide = peptideIndex[id];
-                            int notch = massDiffAcceptors.Accepts(scan.PrecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                            double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
+                            double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
 
-                            if (notch >= 0)
-                            {
-                                double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
-                                double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
-
-                                if (globalPsms[i] == null)
-                                    globalPsms[i] = new Psm(candidatePeptide, notch, peptideScore, i, scan);
-                                else
-                                    globalPsms[i].AddOrReplace(candidatePeptide, peptideScore, notch, CommonParameters.ReportAllAmbiguity);
-                            }
+                            if (globalPsms[i] == null)
+                                globalPsms[i] = new Psm(candidatePeptide, notch, peptideScore, i, scan);
+                            else
+                                globalPsms[i].AddOrReplace(candidatePeptide, peptideScore, notch, CommonParameters.ReportAllAmbiguity);
                         }
                     }
 
