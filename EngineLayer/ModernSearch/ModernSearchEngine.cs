@@ -24,13 +24,7 @@ namespace EngineLayer.ModernSearch
         protected readonly List<DissociationType> dissociationTypes;
 
         #endregion Protected Fields
-
-        #region Private Fields
-
-        private const double tolForScoreImprovement = 1e-9;
-
-        #endregion Private Fields
-
+        
         #region Public Constructors
 
         public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(nestedIds)
@@ -60,7 +54,6 @@ namespace EngineLayer.ModernSearch
             int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
 
             int fragmentBinsPerDalton = 1000;
-            var indexPepMasses = peptideIndex.Select(p => p.MonoisotopicMassIncludingFixedMods).ToList();
             
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
             {
@@ -153,7 +146,6 @@ namespace EngineLayer.ModernSearch
 
                             if (notch >= 0)
                             {
-                                var test = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).ToList();
                                 double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
                                 double realScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
                                 
