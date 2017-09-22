@@ -57,7 +57,6 @@ namespace EngineLayer.ModernSearch
             
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
             {
-                // allocate one array per thread and clear it for each scan
                 byte[] scoringTable = new byte[peptideIndex.Count];
                 HashSet<int> idsOfPeptidesPossiblyObserved = new HashSet<int>();
 
@@ -68,7 +67,7 @@ namespace EngineLayer.ModernSearch
                     idsOfPeptidesPossiblyObserved.Clear();
                     var scan = listOfSortedms2Scans[i];
                     
-                    // filter ms2 fragment peaks
+                    // filter ms2 fragment peaks by intensity
                     int numFragmentsToUse = 0;
                     if (CommonParameters.TopNpeaks != null)
                         numFragmentsToUse = (int)CommonParameters.TopNpeaks;
@@ -78,10 +77,12 @@ namespace EngineLayer.ModernSearch
                     var peaks = scan.TheScan.MassSpectrum.FilterByNumberOfMostIntense(numFragmentsToUse).ToList();
                     double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
 
+                    // get allowed precursor masses
                     var t = massDiffAcceptors.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
                     double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
                     double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
                     
+                    // search peaks for matches
                     for (int k = 0; k < peaks.Count; k++)
                     {
                         if (CommonParameters.MinRatio == null || (peaks[k].Intensity / largestIntensity) >= CommonParameters.MinRatio)
@@ -131,11 +132,7 @@ namespace EngineLayer.ModernSearch
                             }
                         }
                     }
-
-                    CompactPeptide bestPeptide = null;
-                    double bestScore = 0;
-                    int notchofBestPeptide = -1;
-
+                    
                     // done with initial scoring; refine scores and create PSMs
                     foreach(int id in idsOfPeptidesPossiblyObserved)
                     {
@@ -147,20 +144,15 @@ namespace EngineLayer.ModernSearch
                             if (notch >= 0)
                             {
                                 double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
-                                double realScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
-                                
-                                if (realScore > bestScore)
-                                {
-                                    bestPeptide = candidatePeptide;
-                                    notchofBestPeptide = notch;
-                                    bestScore = realScore;
-                                }
+                                double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
+
+                                if (globalPsms[i] == null)
+                                    globalPsms[i] = new Psm(candidatePeptide, notch, peptideScore, i, scan);
+                                else
+                                    globalPsms[i].AddOrReplace(candidatePeptide, peptideScore, notch, CommonParameters.ReportAllAmbiguity);
                             }
                         }
                     }
-
-                    if(bestPeptide != null)
-                        globalPsms[i] = new Psm(bestPeptide, notchofBestPeptide, bestScore, i, scan, CommonParameters.ExcelCompatible);
 
                     // report search progress
                     progress++;
