@@ -73,7 +73,7 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
-            maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
+            maxParallelFiles.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
 
@@ -248,8 +248,8 @@ namespace MetaMorpheusGUI
             else
                 TheTask.CalibrationParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
-            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                TheTask.CommonParameters.MaxDegreeOfParallelism = jsakdf;
+            if (int.TryParse(maxParallelFiles.Text, out int jsakdf))
+                TheTask.CommonParameters.MaxParallelFilesToAnalyze = jsakdf;
 
             TheTask.CalibrationParameters.NonLinearCalibration = nonLinearCalibCheckBox.IsChecked.Value;
 

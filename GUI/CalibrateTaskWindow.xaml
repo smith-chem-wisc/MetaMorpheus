@@ -70,7 +70,7 @@
                         <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
                         <StackPanel Orientation="Horizontal" Margin="5">
                             <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
-                            <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
+                            <TextBox x:Name="maxParallelFiles" Width="45" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="5">
                             <Label x:Name="ffdf" Content="Minimum MM score allowed:" />

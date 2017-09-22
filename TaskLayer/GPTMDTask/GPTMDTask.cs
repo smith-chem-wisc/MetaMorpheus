@@ -111,8 +111,8 @@ namespace TaskLayer
             object lock1 = new object();
             object lock2 = new object();
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
+            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];

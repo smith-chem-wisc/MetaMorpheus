@@ -106,7 +106,7 @@ namespace Test
             Assert.AreEqual(1, results.PeptideIndex.Count);
 
             Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMassIncludingFixedMods);
-            Assert.AreEqual(2, results.FragmentIndexDict.Count);
+            Assert.AreEqual(0, results.FragmentIndex.Length);
         }
 
         #endregion Public Methods
