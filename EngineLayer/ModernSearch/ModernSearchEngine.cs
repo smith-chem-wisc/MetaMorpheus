@@ -107,7 +107,7 @@ namespace EngineLayer.ModernSearch
                                     {
                                         m = l + ((r - l) / 2);
                                         
-                                        if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods == lowestMassPeptideToLookFor || (r - l < 2))
+                                        if (r - l < 2)
                                             break;
                                         if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods < lowestMassPeptideToLookFor)
                                             l = m + 1;

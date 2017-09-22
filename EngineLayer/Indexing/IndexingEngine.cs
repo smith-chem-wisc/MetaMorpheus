@@ -126,9 +126,18 @@ namespace EngineLayer.Indexing
             // sort peptides by mass
             var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(threadsToUse).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
             peptideToId = null;
-
+            
             // create fragment index 
-            int maxFragmentMass = (int)Math.Ceiling(peptidesSortedByMass.Last().MonoisotopicMassIncludingFixedMods);
+            int maxFragmentMass = 0;
+            for(int i = peptidesSortedByMass.Count - 1; i >= 0; i--)
+            {
+                if (!Double.IsNaN(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods))
+                {
+                    maxFragmentMass = (int)Math.Ceiling(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods);
+                    break;
+                }
+            }
+            
             var fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton];
 
             // populate fragment index
