@@ -146,13 +146,14 @@ namespace EngineLayer.ModernSearch
                     // done with initial scoring; refine scores and create PSMs
                     foreach(int id in idsOfPeptidesPossiblyObserved)
                     {
-                        if(scoringTable[id] > intScoreCutoff)
+                        if(scoringTable[id] >= intScoreCutoff)
                         {
                             var candidatePeptide = peptideIndex[id];
                             int notch = massDiffAcceptors.Accepts(scan.PrecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
 
                             if (notch >= 0)
                             {
+                                var test = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).ToList();
                                 double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
                                 double realScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
                                 

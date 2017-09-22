@@ -218,7 +218,7 @@ namespace Test
             var fragmentIndexDict = indexResults.FragmentIndex;
             //var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             //var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
-            var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, peptideIndex, indexResults.FragmentIndex, new List<ProductType>(), 0, CommonParameters, false, new OpenSearchMode(), new List<string>());
+            var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, peptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, false, new OpenSearchMode(), new List<string>());
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
