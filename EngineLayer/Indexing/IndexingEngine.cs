@@ -12,7 +12,7 @@ namespace EngineLayer.Indexing
     {
         #region Private Fields
 
-        private const int decimalDigitsForFragmentMassRounding = 3;
+        private const int fragmentBinsPerDalton = 1000;
         private readonly List<Protein> proteinList;
 
         private readonly List<ModificationWithMass> fixedModifications;
@@ -78,10 +78,7 @@ namespace EngineLayer.Indexing
         {
             double progress = 0;
             int oldPercentProgress = 0;
-
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-            int fragmentBinsPerDalton = 1000;
-            List<int>[] fragmentIndex;
 
             // digest database
             HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
@@ -132,14 +129,13 @@ namespace EngineLayer.Indexing
 
             // create fragment index 
             int maxFragmentMass = (int)Math.Ceiling(peptidesSortedByMass.Last().MonoisotopicMassIncludingFixedMods);
-            fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton];
+            var fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton];
 
             // populate fragment index
             progress = 0;
             oldPercentProgress = 0;
             for (int i = 0; i < peptidesSortedByMass.Count; i++)
             {
-                var t = peptidesSortedByMass[i].ProductMassesMightHaveDuplicatesAndNaNs(lp).ToList();
                 var validFragments = peptidesSortedByMass[i].ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p));
 
                 foreach (var theoreticalFragmentMass in validFragments)
