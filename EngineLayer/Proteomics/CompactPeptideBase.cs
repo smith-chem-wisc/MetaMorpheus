@@ -140,27 +140,34 @@ namespace EngineLayer
 
         public bool Equals(CompactPeptideBase cp)
         {
-            if (CTerminalMasses == null && cp.CTerminalMasses == null)
+            if (CTerminalMasses != null && cp.CTerminalMasses != null)
+            {
+                if (NTerminalMasses != null && cp.NTerminalMasses != null) //neither series is nulll
+                {
+                    return (
+                        ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                        && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                        && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                        );
+                }
+                else //No N-terminal ions
+                {
+                    return (
+                        ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                        && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                        );
+                }
+            }
+            else if (NTerminalMasses != null && cp.NTerminalMasses != null) //No C-terminal ions
             {
                 return (
                     ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
                     && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
                     );
             }
-            else if (NTerminalMasses == null && cp.NTerminalMasses == null)
+            else //Cannot compare
             {
-                return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
-                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
-                    );
-            }
-            else
-            {
-                return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
-                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
-                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
-                    );
+                return false;
             }
         }
 
