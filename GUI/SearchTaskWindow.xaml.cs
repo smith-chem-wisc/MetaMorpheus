@@ -181,7 +181,7 @@ namespace MetaMorpheusGUI
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
+            maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
             disposeOfFilesWhenDone.IsChecked = task.SearchParameters.DisposeOfFileWhenDone;
             allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             excelCompatible.IsChecked = task.CommonParameters.ExcelCompatible;
@@ -420,7 +420,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
             TheTask.SearchParameters.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                TheTask.CommonParameters.MaxDegreeOfParallelism = jsakdf;
+                TheTask.CommonParameters.MaxParallelFilesToAnalyze = jsakdf;
 
             #endregion Save Parameters
 

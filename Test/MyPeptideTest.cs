@@ -215,10 +215,10 @@ namespace Test
             var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
-            var fragmentIndexDict = indexResults.FragmentIndexDict;
-            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
-            var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType>(), 0, CommonParameters, false, new OpenSearchMode(), new List<string>());
+            var fragmentIndexDict = indexResults.FragmentIndex;
+            //var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+            //var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+            var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, peptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, false, new OpenSearchMode(), new List<string>());
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
