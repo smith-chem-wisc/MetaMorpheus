@@ -52,7 +52,7 @@ namespace EngineLayer.ModernSearch
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing modern search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
 
             int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
-            //test
+
             int fragmentBinsPerDalton = 1000;
             
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
@@ -96,20 +96,20 @@ namespace EngineLayer.ModernSearch
                             {
                                 if (fragmentIndex[fragmentBin] != null)
                                 {
-                                    var peptideIdsInThisBin = fragmentIndex[fragmentBin];
-                                    int l = 0;
+                                    List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
+                                    int y = 0;
                                     int r = peptideIdsInThisBin.Count - 1;
                                     int m = 0;
                                     
                                     // binary search in the fragment bin for lowest acceptable precursor mass
-                                    while (l <= r)
+                                    while (y <= r)
                                     {
-                                        m = l + ((r - l) / 2);
+                                        m = y + ((r - y) / 2);
                                         
-                                        if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods == lowestMassPeptideToLookFor || (r - l < 2))
+                                        if (r - y < 2)
                                             break;
                                         if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods < lowestMassPeptideToLookFor)
-                                            l = m + 1;
+                                            y = m + 1;
                                         else
                                             r = m - 1;
                                     }
@@ -120,11 +120,9 @@ namespace EngineLayer.ModernSearch
                                     for (int h = m; h < peptideIdsInThisBin.Count; h++)
                                     {
                                         int pepId = peptideIdsInThisBin[h];
-                                        var pep = peptideIndex[peptideIdsInThisBin[h]];
-
                                         idsOfPeptidesPossiblyObserved.Add(pepId);
                                         scoringTable[pepId]++;
-                                        if (pep.MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)
+                                        if (peptideIndex[peptideIdsInThisBin[h]].MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)
                                             break;
                                     }
                                 }
