@@ -1,9 +1,5 @@
 ﻿using MassSpectrometry;
-using MathNet.Numerics.Statistics;
-using SharpLearning.Common.Interfaces;
-using System.Linq;
 using System.Text;
-using System;
 
 namespace EngineLayer.Calibration
 {
@@ -12,8 +8,6 @@ namespace EngineLayer.Calibration
         //public readonly List<Tuple<double, double>> ms1meanSds;
         //public readonly List<Tuple<double, double>> ms2meanSds;
 
-        #region Public Fields
-
         //private readonly List<int> numMs1MassChargeCombinationsConsideredList;
         //private readonly List<int> numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
         //private readonly List<int> numMs2MassChargeCombinationsConsideredList;
@@ -21,17 +15,11 @@ namespace EngineLayer.Calibration
         //private readonly List<int> countList;
         //private readonly List<IPredictorModel<double>> ms1calibrationFunctions;
         //private readonly List<IPredictorModel<double>> ms2calibrationFunctions;
-        public readonly Tuple<double, double> ms1Info;
-        public readonly Tuple<double, double> ms2Info;
-
-        #endregion Public Fields
 
         #region Public Constructors
-        
-        public CalibrationResults(Tuple<double, double> ms1Info, Tuple<double, double> ms2Info, CalibrationEngine s) : base(s)
+
+        public CalibrationResults(CalibrationEngine s) : base(s)
         {
-            this.ms1Info = ms1Info;
-            this.ms2Info = ms2Info;
         }
 
         #endregion Public Constructors

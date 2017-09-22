@@ -125,6 +125,7 @@
     <Compile Include="CalibrationEngine\CalibrationFunctions\IdentityCalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\MzMultiplier.cs" />
+    <Compile Include="CalibrationEngine\CalibrationFunctions\SeparateMzLearner.cs" />
     <Compile Include="CalibrationEngine\DataPointAquisitionResults.cs" />
     <Compile Include="CalibrationEngine\LabeledDataPoint.cs" />
     <Compile Include="CalibrationEngine\LabeledMs2DataPoint.cs" />
@@ -136,6 +137,7 @@
     <Compile Include="CommonParameters.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
     <Compile Include="CrosslinkSearch\PsmCrossType.cs" />
+    <Compile Include="DataPointAcquisitionEngine.cs" />
     <Compile Include="IScan.cs" />
     <Compile Include="MetaMorpheusException.cs" />
     <Compile Include="DigestionParams.cs" />
