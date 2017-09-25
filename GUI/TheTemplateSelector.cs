@@ -23,17 +23,14 @@ namespace MetaMorpheusGUI
                 }
                 else if (settings.ValueType == "Bool")
                 {
-                    //Convert.ChangeType(settings.Value, typeof(bool?));
                     return Bool;
                 }
                 else if (settings.ValueType == "ComboBoxInit")
                 {
-                    //Convert.ChangeType(settings.Value, typeof(bool?));
                     return ComboBoxInit;
                 }
                 else if (settings.ValueType == "ProductMassToleranceList")
                 {
-                    //Convert.ChangeType(settings.Value, typeof(bool?));
                     return ComboBoxTolerance;
                 }
                 else if(settings.ValueType == "TextBox")

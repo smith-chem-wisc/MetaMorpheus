@@ -47,17 +47,13 @@ namespace MetaMorpheusGUI
             }
             ParameterGrid.Items.Refresh();
 
-            //ParameterGrid.Items.get
-            // ParameterGrid.Items.Add(new Parameter("asdf", "comboBox"));
-
-
 
             FileSpecificSettingsList = new FileSpecificSettings[selectedRaw.Count];
 
 
             if (selectedRaw.Count == 1)
             {
-                string tomlFileName = System.IO.Path.ChangeExtension(SelectedRaw[0].FilePath, ".toml").ToString();
+                string tomlFileName = System.IO.Path.ChangeExtension(SelectedRaw[0].FilePath, ".toml");
                 Dictionary<string, KeyValuePair<string, Nett.TomlObject>> tomlSettingsList;
                 if (File.Exists(tomlFileName))
                 {
@@ -90,7 +86,7 @@ namespace MetaMorpheusGUI
                 for (int i = 0; i < selectedRaw.Count; i++)
                 {
 
-                    tomlFileNames[i] = System.IO.Path.ChangeExtension(SelectedRaw[i].FilePath, ".toml").ToString();
+                    tomlFileNames[i] = System.IO.Path.ChangeExtension(SelectedRaw[i].FilePath, ".toml");
                     if (File.Exists(tomlFileNames[i]))
                     {
                         var paramFile = Toml.ReadFile(tomlFileNames[i], MetaMorpheusTask.tomlConfig);
@@ -105,7 +101,6 @@ namespace MetaMorpheusGUI
                 }
 
                 //check every value against every other value; if same, then add to list to set 'different in multiple files' later in Parameter Object
-                Console.WriteLine(tomlSettingsListList[0]);
                 for (int i = 0; i < tomlSettingsListList.Count; i++)
                 {
                     for (int j = 0; j < tomlSettingsListList.Count; j++)
@@ -234,8 +229,6 @@ namespace MetaMorpheusGUI
         }
         private void UpdateAndPopulateFields(FileSpecificSettings settings)
         {
-            CommonParameters commonparams = new CommonParameters();
-
 
             var a = ParameterGrid.Items.GetItemAt(0) as Parameter;
             int? index = paramList[0].ProtList.IndexOf(settings.Protease);
@@ -294,10 +287,8 @@ namespace MetaMorpheusGUI
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
-            {
-                
-            }
+            if (ye.Content is TextBlock hm &&
+            !string.IsNullOrEmpty(hm.Text)) { }
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -404,7 +395,7 @@ namespace MetaMorpheusGUI
 
         private Parameter[] InitializeParameterList()
         {
-            Parameter[] paramList = new Parameter[21];
+            paramList = new Parameter[21];
 
             paramList[0] = new Parameter("Protease", "ComboBoxProtease");
             paramList[1] = new Parameter("Conserve Memory", "Bool");
@@ -445,17 +436,6 @@ namespace MetaMorpheusGUI
             DialogResult = false;
         }
 
-        static private int? TryParseNullable(string val)
-        {
-            int outValue;
-            return int.TryParse(val, out outValue) ? (int?)outValue : null;
-        }
-
-        static private double? TryParseNullableDouble(string val)
-        {
-            double outValue;
-            return double.TryParse(val, out outValue) ? (double?)outValue : null;
-        }
     }
 }
 
