@@ -341,7 +341,7 @@ namespace EngineLayer.CrosslinkSearch
             var lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
             Status("Starting xlclassic search loop...");
             //Parallel.ForEach(Partitioner.Create(0, 1), partitionRange =>
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
