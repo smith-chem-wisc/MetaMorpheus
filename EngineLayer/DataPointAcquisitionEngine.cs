@@ -4,8 +4,10 @@ using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer
 {
@@ -65,60 +67,80 @@ namespace EngineLayer
             List<LabeledMs1DataPoint> Ms1List = new List<LabeledMs1DataPoint>();
             List<LabeledMs2DataPoint> Ms2List = new List<LabeledMs2DataPoint>();
 
-            // Set of peaks, identified by m/z and retention time. If a peak is in here, it means it has been a part of an accepted identification, and should be rejected
-            var peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
+            //// Set of peaks, identified by m/z and retention time. If a peak is in here, it means it has been a part of an accepted identification, and should be rejected
+            //var peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
 
             int numIdentifications = goodIdentifications.Count;
             // Loop over identifications
-            for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
+
+            HashSet<string> sequences = new HashSet<string>();
+
+            object lockObj = new object();
+            object lockObj2 = new object();
+            object lockObj3 = new object();
+            Parallel.ForEach(Partitioner.Create(0, numIdentifications), fff =>
             {
-                Psm identification = goodIdentifications[matchIndex];
+                for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
+                {
+                    Psm identification = goodIdentifications[matchIndex];
 
-                // Progress
-                if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
-                    ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
+                    //// Progress
+                    //if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
+                    //    ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
-                // Each identification has an MS2 spectrum attached to it.
-                int ms2scanNumber = identification.ScanNumber;
-                int peptideCharge = identification.ScanPrecursorCharge;
-                if (identification.FullSequence == null)
-                    continue;
+                    // Each identification has an MS2 spectrum attached to it.
+                    int ms2scanNumber = identification.ScanNumber;
+                    int peptideCharge = identification.ScanPrecursorCharge;
+                    if (identification.FullSequence == null)
+                        continue;
 
-                var representativeSinglePeptide = identification.CompactPeptides.First().Value.Item2.First();
+                    var representativeSinglePeptide = identification.CompactPeptides.First().Value.Item2.First();
 
-                // Get the peptide, don't forget to add the modifications!!!!
-                var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
-                    continue;
-                Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
-                
-                var ms2tuple = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2scanNumber) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, coolPeptide, peptideCharge, identification);
-                Ms2List.AddRange(ms2tuple.Item1);
-                numMs2MassChargeCombinationsConsidered += ms2tuple.Item2;
-                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms2tuple.Item3;
-                
-                // If MS2 has low evidence for peptide, skip and go to next one
-                if (ms2tuple.Item4 < numFragmentsNeededForEveryIdentification)
-                    continue;
-                
-                // Calculate isotopic distribution of the full peptide
-                var dist = IsotopicDistribution.GetDistribution(coolPeptide.GetChemicalFormula(), fineResolutionForIsotopeDistCalculation, 0.001);
+                    // Get the peptide, don't forget to add the modifications!!!!
+                    var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
+                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
+                        continue;
+                    Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
-                double[] masses = dist.Masses.ToArray();
-                double[] intensities = dist.Intensities.ToArray();
+                    var ms2tuple = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2scanNumber) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, coolPeptide, peptideCharge, identification);
 
-                Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
+                    // If MS2 has low evidence for peptide, skip and go to next one
+                    if (ms2tuple.Item4 < numFragmentsNeededForEveryIdentification)
+                        continue;
 
-                var ms1tuple = SearchMS1Spectra(masses, intensities, ms2scanNumber, -1, peaksAddedFromMS1HashSet, peptideCharge, identification);
-                Ms1List.AddRange(ms1tuple.Item1);
-                numMs1MassChargeCombinationsConsidered += ms1tuple.Item2;
-                numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms1tuple.Item3;
+                    lock (lockObj2)
+                    {
+                        Ms2List.AddRange(ms2tuple.Item1);
+                        numMs2MassChargeCombinationsConsidered += ms2tuple.Item2;
+                        numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms2tuple.Item3;
+                        if (sequences.Contains(identification.FullSequence))
+                            continue; // Do not search same sequence multiple times in MS1 scans
+                        sequences.Add(identification.FullSequence);
+                    }
 
-                SearchMS1Spectra(masses, intensities, ms2scanNumber, 1, peaksAddedFromMS1HashSet, peptideCharge, identification);
-                Ms1List.AddRange(ms1tuple.Item1);
-                numMs1MassChargeCombinationsConsidered += ms1tuple.Item2;
-                numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms1tuple.Item3;
-            }
+                    // Calculate isotopic distribution of the full peptide
+                    var dist = IsotopicDistribution.GetDistribution(coolPeptide.GetChemicalFormula(), fineResolutionForIsotopeDistCalculation, 0.001);
+
+                    double[] theoreticalMasses = dist.Masses.ToArray();
+                    double[] theoreticalIntensities = dist.Intensities.ToArray();
+
+                    Array.Sort(theoreticalIntensities, theoreticalMasses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
+
+                    var ms1tupleBack = SearchMS1Spectra(theoreticalMasses, theoreticalIntensities, ms2scanNumber, -1, peptideCharge, identification);
+
+                    var ms1tupleForward = SearchMS1Spectra(theoreticalMasses, theoreticalIntensities, ms2scanNumber, 1, peptideCharge, identification);
+
+                    lock (lockObj)
+                    {
+                        Ms1List.AddRange(ms1tupleBack.Item1);
+                        numMs1MassChargeCombinationsConsidered += ms1tupleBack.Item2;
+                        numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms1tupleBack.Item3;
+                        Ms1List.AddRange(ms1tupleForward.Item1);
+                        numMs1MassChargeCombinationsConsidered += ms1tupleForward.Item2;
+                        numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms1tupleForward.Item3;
+                    }
+                }
+            });
 
             return new DataPointAquisitionResults(this,
                 Ms1List,
@@ -134,7 +156,7 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private (List<LabeledMs1DataPoint>, int, int) SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge, Psm identification)
+        private (List<LabeledMs1DataPoint>, int, int) SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, Psm identification)
         {
             List<LabeledMs1DataPoint> result = new List<LabeledMs1DataPoint>();
             int numMs1MassChargeCombinationsConsidered = 0;
@@ -169,15 +191,15 @@ namespace EngineLayer
                 int chargeToLookAt = 1;
                 do
                 {
-                    if (originalMasses[0].ToMz(chargeToLookAt) > scanWindowRange.Maximum)
+                    if (theoreticalMasses[0].ToMz(chargeToLookAt) > scanWindowRange.Maximum)
                     {
                         chargeToLookAt++;
                         continue;
                     }
-                    if (originalMasses[0].ToMz(chargeToLookAt) < scanWindowRange.Minimum)
+                    if (theoreticalMasses[0].ToMz(chargeToLookAt) < scanWindowRange.Minimum)
                         break;
                     var trainingPointsToAverage = new List<LabeledMs1DataPoint>();
-                    foreach (double a in originalMasses)
+                    foreach (double a in theoreticalMasses)
                     {
                         double theMZ = a.ToMz(chargeToLookAt);
 
@@ -196,27 +218,20 @@ namespace EngineLayer
                         var closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
                         var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex];
 
-                        var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
-                        if (!peaksAddedHashSet.Contains(theTuple))
-                        {
-                            peaksAddedHashSet.Add(theTuple);
-                            highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), theMZ, null));
-                        }
-                        else
-                            break;
+                        highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
+                        trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), theMZ, null));
                     }
                     // If started adding and suddnely stopped, go to next one, no need to look at higher charges
                     if (trainingPointsToAverage.Count == 0 && startingToAddCharges == true)
                     {
                         break;
                     }
-                    if ((trainingPointsToAverage.Count == 0 || (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)) && (peptideCharge <= chargeToLookAt))
+                    if ((trainingPointsToAverage.Count == 0 || (trainingPointsToAverage.Count == 1 && theoreticalIntensities[0] < 0.65)) && (peptideCharge <= chargeToLookAt))
                     {
                         break;
                     }
-                    if ((trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
-                        || trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, originalIntensities.Count()))
+                    if ((trainingPointsToAverage.Count == 1 && theoreticalIntensities[0] < 0.65)
+                        || trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, theoreticalIntensities.Count()))
                     {
                     }
                     else
