@@ -122,6 +122,8 @@ namespace EngineLayer
             yield return new IntervalMassDiffAcceptor("2.1aroundZero", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
             yield return new IntervalMassDiffAcceptor("3.5aroundZero", new List<DoubleRange>() { new DoubleRange(-3.5, 3.5) });
             yield return new OpenSearchMode();
+            yield return new OpenLowTheoSearchMode();
+            yield return new OpenHighTheoSearchMode();
             yield return new IntervalMassDiffAcceptor("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
             foreach (var sm in GetResidueInclusionExclusionSearchModes(new DoubleRange(-187, double.PositiveInfinity), 0.0075))
                 yield return sm;
