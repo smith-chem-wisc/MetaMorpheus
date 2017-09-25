@@ -7,8 +7,11 @@
         mc:Ignorable="d"
         Title="ChangeParametersWindow" Height="700" Width="500" WindowStartupLocation="CenterScreen">
     <StackPanel>
-        <DataGrid x:Name="ParameterGrid" ItemsSource="{Binding UpdateSourceTrigger=LostFocus}" AlternatingRowBackground="LightGray" AlternationCount="2" >
+        <DataGrid x:Name="ParameterGrid" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" AlternatingRowBackground="LightGray" AlternationCount="2" >
             <DataGrid.Resources>
+                <Style TargetType="DataGridCell">
+                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                </Style>
                 <local:TheTemplateSelector x:Key="templateSelector" >
                     <local:TheTemplateSelector.ComboBoxProtease>
                         <DataTemplate>
@@ -45,7 +48,7 @@
 
             </DataGrid.Resources>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Parameter Name"  Width="12*" Binding="{Binding ParamName}"/>
+                <DataGridTextColumn Header="Parameter Name"  Width="12*" Binding="{Binding ParamName, Mode=OneWay}"/>
                 <DataGridTemplateColumn CellTemplateSelector="{StaticResource templateSelector}" Header="Value" Width ="12*"/>
                 <DataGridTemplateColumn Header="Unset">
                     <DataGridTemplateColumn.CellTemplate>
@@ -57,6 +60,7 @@
                 <DataGridCheckBoxColumn Header="Different in Selected Files"  Width ="10*" Binding="{Binding Different}"/>
             </DataGrid.Columns>
             <Style  TargetType="{x:Type DataGridColumnHeader}">
+                <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
                 <Setter Property="Background" Value="Orange"/>
                 <Setter Property="FontSize" Value="20"/>
                 <Setter Property="Padding" Value="5"/>

@@ -231,8 +231,6 @@ namespace MetaMorpheusGUI
 
 
 
-
-
         }
         private void UpdateAndPopulateFields(FileSpecificSettings settings)
         {
@@ -276,6 +274,8 @@ namespace MetaMorpheusGUI
             var o = ParameterGrid.Items.GetItemAt(14) as Parameter;
             if (index2.HasValue)
                 o.Value = index2;
+            else
+                o.Value = null;
             var p = ParameterGrid.Items.GetItemAt(15) as Parameter;
             p.Value = settings.DeconvolutionMassTolerance;
             var q = ParameterGrid.Items.GetItemAt(16) as Parameter;
@@ -289,29 +289,15 @@ namespace MetaMorpheusGUI
 
             ParameterGrid.Items.Refresh();
 
-            //ParameterGrid.Items[0] = settings.ConserveMemory ?? commonparams.ConserveMemory; ;
-            /*UseProvidedPrecursorInfo.IsChecked = settings.UseProvidedPrecursorInfo ?? commonparams.UseProvidedPrecursorInfo;
-            if (settings.DeconvolutionIntensityRatio != null)
-                DeconvolutionIntensityRatioTextBox.Text = settings.DeconvolutionIntensityRatio.ToString();
-            if (settings.DeconvolutionMaxAssumedChargeState != null)
-                DeconvolutionMaxAssumedChargeStateTextBox.Text = settings.DeconvolutionMaxAssumedChargeState.ToString();
-            if (settings.DeconvolutionMassTolerance != null)
-                DeconvolutionMassToleranceInPpmTextBox.Text = settings.DeconvolutionMassTolerance.ToString();
-            initiatorMethionineBehaviorComboBox.SelectedIndex = 1;
-            if (settings.MaxMissedCleavages != null)
-                missedCleavagesTextBox.Text = settings.MaxMissedCleavages.ToString();
-            txtMinPeptideLength.Text = settings.MinPeptideLength.HasValue ? settings.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtMaxPeptideLength.Text = settings.MaxPeptideLength.HasValue ? settings.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
-            if (settings.MaxModificationIsoforms != null)
-                maxModificationIsoformsTextBox.Text = settings.MaxModificationIsoforms.ToString();
-            if (settings.TotalPartitions != null)
-                numberOfDatabaseSearchesTextBox.Text = settings.TotalPartitions.ToString();
-            if (settings.Protease != null)
-                proteaseComboBox.SelectedItem = settings.Protease;
-            if (settings.ScoreCutoff != null)
-                minScoreAllowed.Text = settings.ScoreCutoff.ToString();
-            if (settings.Max_mods_for_peptide != null)
-                MaxModsForPeptides.Text = settings.Max_mods_for_peptide.ToString();*/
+        }
+
+        private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var ye = sender as DataGridCell;
+            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
+            {
+                
+            }
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -322,11 +308,7 @@ namespace MetaMorpheusGUI
             {
                 FileSpecificSettingsList[i] = new FileSpecificSettings();
                 int? index = paramList[0].Value as int?;
-                /*if (paramList[0].Value != null)
-                {
-                    
-                    FileSpecificSettingsList[i].Protease = GlobalEngineLevelSettings.ProteaseDictionary.ElementAt(index.Value).Value;
-                }*/
+      
                 if (index.HasValue && index >= 0)
                 {
                     FileSpecificSettingsList[i].Protease = paramList[0].ProtList[index.Value];
@@ -422,10 +404,7 @@ namespace MetaMorpheusGUI
 
         private Parameter[] InitializeParameterList()
         {
-
-
-
-            Parameter[] paramList = new Parameter[20];
+            Parameter[] paramList = new Parameter[21];
 
             paramList[0] = new Parameter("Protease", "ComboBoxProtease");
             paramList[1] = new Parameter("Conserve Memory", "Bool");
@@ -447,6 +426,7 @@ namespace MetaMorpheusGUI
             paramList[17] = new Parameter("TrimMs1Peaks", "Bool");
             paramList[18] = new Parameter("MinRatio", "TextBox");
             paramList[19] = new Parameter("TopNpeaks", "TextBox");
+            paramList[20] = new Parameter("Tolerance Type", "ProductMassToleranceList");
 
             return paramList;
         }

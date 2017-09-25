@@ -31,7 +31,7 @@ namespace MetaMorpheusGUI
                     //Convert.ChangeType(settings.Value, typeof(bool?));
                     return ComboBoxInit;
                 }
-                else if (settings.ValueType == "ComboBoxTolerance")
+                else if (settings.ValueType == "ProductMassToleranceList")
                 {
                     //Convert.ChangeType(settings.Value, typeof(bool?));
                     return ComboBoxTolerance;
@@ -40,6 +40,8 @@ namespace MetaMorpheusGUI
                 {
                     return TextBox;
                 }
+               
+                
             }
             return null;
         }
