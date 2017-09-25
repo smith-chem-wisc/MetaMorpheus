@@ -5,21 +5,78 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="ChangeParametersWindow" Height="700" Width="500">
-    <DataGrid x:Name="ParameterGrid" ItemsSource="{Binding}" AlternatingRowBackground="LightBlue" AlternationCount="2" >
-        <DataGrid.Columns>
-            <DataGridTextColumn Header="Parameter Name"  Width="12*" Binding="{Binding FirstName}"/>
-            <DataGridTextColumn Header="Value" Width ="12*" />
-            <DataGridHyperlinkColumn Header="Unset" Width ="5*"/>
-            <DataGridCheckBoxColumn Header="Different in Selected Files"  Width ="10*"/>
-        </DataGrid.Columns>
-        
+        Title="ChangeParametersWindow" Height="700" Width="500" WindowStartupLocation="CenterScreen">
+    <StackPanel>
+        <DataGrid x:Name="ParameterGrid" ItemsSource="{Binding UpdateSourceTrigger=LostFocus}" AlternatingRowBackground="LightGray" AlternationCount="2" >
+            <DataGrid.Resources>
+                <local:TheTemplateSelector x:Key="templateSelector" >
+                    <local:TheTemplateSelector.ComboBoxProtease>
+                        <DataTemplate>
+                            <ComboBox Name="ComboBoxProtease" Width="81" ItemsSource="{Binding ProtList}" SelectedIndex="{Binding Value, UpdateSourceTrigger=LostFocus}"/>
+                        </DataTemplate>
+                    </local:TheTemplateSelector.ComboBoxProtease>
+                    <local:TheTemplateSelector.ComboBoxTolerance>
+                        <DataTemplate>
+                            <ComboBox Name="ComboBoxTolerance" Width="81" ItemsSource="{Binding ProductMassToleranceList}" SelectedIndex="{Binding Value, UpdateSourceTrigger=LostFocus}"/>
+                        </DataTemplate>
+                    </local:TheTemplateSelector.ComboBoxTolerance>
+                    <local:TheTemplateSelector.ComboBoxInit>
+                        <DataTemplate>
+                            <ComboBox Name="ComboBoxInit" Width="81" ItemsSource="{Binding InitList}" SelectedIndex="{Binding Value, UpdateSourceTrigger=LostFocus}"/>
+                        </DataTemplate>
+                    </local:TheTemplateSelector.ComboBoxInit>
+                    <local:TheTemplateSelector.TextBox>
+                        <DataTemplate>
+                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                         
+                         TextDecorations="underline" 
+                         Foreground="Red"
+                         TextAlignment="Right" 
+                         IsReadOnly="False"
+                                   />
+                        </DataTemplate>
+                    </local:TheTemplateSelector.TextBox>
+                    <local:TheTemplateSelector.Bool>
+                        <DataTemplate>
+                            <CheckBox HorizontalAlignment="Center" IsChecked="{Binding Value, UpdateSourceTrigger=LostFocus }"/>
+                        </DataTemplate>
+                    </local:TheTemplateSelector.Bool>
+                </local:TheTemplateSelector>
+
+                <DataTemplate x:Key="TextBoxTemplate">
+                    <TextBox Text="{Binding Value}"/>
+                </DataTemplate>
+                <DataTemplate x:Key="CheckBoxTemplate">
+                    <CheckBox IsChecked="{Binding Value}"/>
+                </DataTemplate>
+                <DataTemplate x:Key="ComboBoxTemplate">
+                    <ComboBox SelectedItem="{Binding Value}"/>
+                </DataTemplate>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Parameter Name"  Width="12*" Binding="{Binding ParamName}"/>
+                <DataGridTemplateColumn CellTemplateSelector="{StaticResource templateSelector}" Header="Value" Width ="12*"/>
+                <DataGridTemplateColumn Header="Unset">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Click="Unset">Unset</Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridCheckBoxColumn Header="Different in Selected Files"  Width ="10*" Binding="{Binding Different}"/>
+            </DataGrid.Columns>
             <Style  TargetType="{x:Type DataGridColumnHeader}">
-            <Setter Property="Background" Value="Orange"/>
-            <Setter Property="FontSize" Value="20"/>
-            <Setter Property="Padding" Value="5"/>
-            <Setter Property="BorderBrush" Value="Red"/>
-            <Setter Property="BorderThickness" Value="0 0 3 0"/>
-        </Style>
-    </DataGrid>
+                <Setter Property="Background" Value="Orange"/>
+                <Setter Property="FontSize" Value="20"/>
+                <Setter Property="Padding" Value="5"/>
+                <Setter Property="BorderBrush" Value="Red"/>
+                <Setter Property="BorderThickness" Value="0 0 3 0"/>
+            </Style>
+        </DataGrid>
+        <DockPanel>
+            <Frame DockPanel.Dock="Bottom" />
+            <Button x:Name="Save" Content="Save File Specific Settings" Click="Save_Click" FontSize="25" Grid.Row="3"/>
+            <Button x:Name="Cancel" Content="Cancel" Click="Cancel_Click" FontSize="15" Grid.Row="3" />
+        </DockPanel>
+    </StackPanel>
 </Window>

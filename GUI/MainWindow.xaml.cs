@@ -398,9 +398,16 @@ namespace MetaMorpheusGUI
         {
 
             if (SelectedRawFiles.Count == 0)
+            {
                 ChangeParameters.IsEnabled = false;
+                ChangeFileParameters.IsEnabled = false;
+            }
             else
+            {
                 ChangeParameters.IsEnabled = true;
+                ChangeFileParameters.IsEnabled = true;
+
+            }
 
         }
 
@@ -735,17 +742,17 @@ namespace MetaMorpheusGUI
             }
         }
 
-       /* private void TestWindowTable_click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new TestWindowTable();
-            if (dialog.ShowDialog() == true)
-            {
-                Console.WriteLine("asdf");
-            }
-        }*/
+        /* private void TestWindowTable_click(object sender, RoutedEventArgs e)
+         {
+             var dialog = new TestWindowTable();
+             if (dialog.ShowDialog() == true)
+             {
+                 Console.WriteLine("asdf");
+             }
+         }*/
 
-            //run if fileSpecificParams are changed from GUI
-            private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
+        //run if fileSpecificParams are changed from GUI
+        private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
         {
             string[] fullPathofTomls = tomlLocations;
 
@@ -825,11 +832,23 @@ namespace MetaMorpheusGUI
         //yeah yeah
         private void ChangeFileParameters_Click(object sender, RoutedEventArgs e)
         {
+
+
             var dialog = new ChangeParametersWindow(SelectedRawFiles);
             if (dialog.ShowDialog() == true)
             {
+                string[] fullPathofToml = new string[dialog.FileSpecificSettingsList.Count()];
+                for (int i = 0; i < dialog.FileSpecificSettingsList.Count(); i++)
+                {
+                    string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
+                    string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
+                    fullPathofToml[i] = Path.Combine(directory, fileName);
+                    Toml.WriteFile(dialog.FileSpecificSettingsList[i], fullPathofToml[i] + ".toml", MetaMorpheusTask.tomlConfig);
+                }
+                UpdateFileSpecificParamsDisplay(fullPathofToml);
 
             }
+
         }
     }
 }
