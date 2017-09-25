@@ -174,10 +174,6 @@ namespace EngineLayer.Indexing
                 }
             }
 
-            for (int k = 0; k < fragmentIndex.Length; k++)
-                if(fragmentIndex[k] == null)
-                    fragmentIndex[k] = new List<int>();
-            
             return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
         }
 
