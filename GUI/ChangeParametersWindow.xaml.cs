@@ -132,7 +132,7 @@ namespace MetaMorpheusGUI
                     {
                         paramList[1].Different = true;
                     }
-                   
+
                     if (key == "Max_mods_for_peptide")
                     {
                         paramList[2].Different = true;
@@ -299,7 +299,7 @@ namespace MetaMorpheusGUI
             {
                 FileSpecificSettingsList[i] = new FileSpecificSettings();
                 int? index = paramList[0].Value as int?;
-      
+
                 if (index.HasValue && index >= 0)
                 {
                     FileSpecificSettingsList[i].Protease = paramList[0].ProtList[index.Value];
@@ -379,8 +379,6 @@ namespace MetaMorpheusGUI
             DialogResult = true;
 
         }
-
-
 
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {

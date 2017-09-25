@@ -31,9 +31,8 @@
                     <local:TheTemplateSelector.TextBox>
                         <DataTemplate>
                             <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus, Mode=TwoWay}"
-                         
-                         TextDecorations="underline" 
-                         Foreground="Red"
+                          
+                         Foreground="Black"
                          TextAlignment="Right" 
                          IsReadOnly="False"
                                    />

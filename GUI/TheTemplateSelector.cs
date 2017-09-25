@@ -33,12 +33,12 @@ namespace MetaMorpheusGUI
                 {
                     return ComboBoxTolerance;
                 }
-                else if(settings.ValueType == "TextBox")
+                else if (settings.ValueType == "TextBox")
                 {
                     return TextBox;
                 }
-               
-                
+
+
             }
             return null;
         }
