@@ -140,7 +140,7 @@
     <Compile Include="IScan.cs" />
     <Compile Include="MetaMorpheusException.cs" />
     <Compile Include="DigestionParams.cs" />
-    <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeEngine.cs" />
+    <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSearchEngine.cs" />
     <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSequencesToActualPeptides.cs" />
     <Compile Include="PrecursorSearchModes\AllowedIntervalWithNotch.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />
@@ -163,7 +163,6 @@
     <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrResults.cs" />
     <Compile Include="Proteomics\CompactPeptideBase.cs" />
     <Compile Include="Proteomics\CompactPeptideWithModifiedMass.cs" />
-    <Compile Include="Proteomics\ProductTypeToTerminusType.cs" />
     <Compile Include="SearchType.cs" />
     <Compile Include="Localization\LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />

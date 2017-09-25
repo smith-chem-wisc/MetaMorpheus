@@ -31,7 +31,7 @@ namespace EngineLayer.Analysis
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(newPsms, searchModes);
 
-            myAnalysisResults.PsmsWithin1percentFdr = newPsms.Count(b => b.FdrInfo.QValue < 0.01);
+            myAnalysisResults.PsmsWithin1PercentFdr = newPsms.Count(b => b.FdrInfo.QValue < 0.01);
 
             return myAnalysisResults;
         }

@@ -128,7 +128,7 @@ namespace EngineLayer.ModernSearch
                             }
                         }
                     }
-                    if (bestPeptides != null)
+                    if (bestPeptides.Count!=0)
                     {
                         int startIndex = 0;
 

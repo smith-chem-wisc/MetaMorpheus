@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace EngineLayer
+﻿namespace EngineLayer
 {
     public class DigestionParams
     {
@@ -30,7 +28,7 @@ namespace EngineLayer
         public int MaxModsForPeptide { get; set; }
         public Protease Protease { get; set; }
         public bool SemiProteaseDigestion { get; set; } //for nonspecific searching of proteases
-        public TerminusType TerminusTypeSemiProtease { get; set; } //for nonspecific searching of proteases
+        public TerminusType TerminusTypeSemiProtease { get; set; }
 
         #endregion Public Properties
 
