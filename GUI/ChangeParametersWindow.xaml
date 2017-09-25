@@ -27,7 +27,7 @@
                     </local:TheTemplateSelector.ComboBoxInit>
                     <local:TheTemplateSelector.TextBox>
                         <DataTemplate>
-                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus, Mode=TwoWay}"
                          
                          TextDecorations="underline" 
                          Foreground="Red"
@@ -43,15 +43,6 @@
                     </local:TheTemplateSelector.Bool>
                 </local:TheTemplateSelector>
 
-                <DataTemplate x:Key="TextBoxTemplate">
-                    <TextBox Text="{Binding Value}"/>
-                </DataTemplate>
-                <DataTemplate x:Key="CheckBoxTemplate">
-                    <CheckBox IsChecked="{Binding Value}"/>
-                </DataTemplate>
-                <DataTemplate x:Key="ComboBoxTemplate">
-                    <ComboBox SelectedItem="{Binding Value}"/>
-                </DataTemplate>
             </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Parameter Name"  Width="12*" Binding="{Binding ParamName}"/>

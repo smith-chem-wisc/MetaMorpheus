@@ -45,12 +45,16 @@ namespace MetaMorpheusGUI
             {
                 ParameterGrid.Items.Add(paramList[i]);
             }
+            ParameterGrid.Items.Refresh();
+
             //ParameterGrid.Items.get
             // ParameterGrid.Items.Add(new Parameter("asdf", "comboBox"));
 
 
 
             FileSpecificSettingsList = new FileSpecificSettings[selectedRaw.Count];
+
+
             if (selectedRaw.Count == 1)
             {
                 string tomlFileName = System.IO.Path.ChangeExtension(SelectedRaw[0].FilePath, ".toml").ToString();
@@ -60,7 +64,9 @@ namespace MetaMorpheusGUI
                     var paramFile = Toml.ReadFile(tomlFileName, MetaMorpheusTask.tomlConfig);
                     tomlSettingsList = paramFile.ToDictionary(p => p.Key);
                     FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
-                    //UpdateAndPopulateFields(settings);
+
+
+                    UpdateAndPopulateFields(settings);
                 }
                 else
                 {
@@ -69,7 +75,7 @@ namespace MetaMorpheusGUI
                     settings.ConserveMemory = null;
                     settings.DoPrecursorDeconvolution = null;
                     settings.UseProvidedPrecursorInfo = null;
-                    //UpdateAndPopulateFields(settings);
+                    UpdateAndPopulateFields(settings);
                 }
             }
 
@@ -79,11 +85,11 @@ namespace MetaMorpheusGUI
                 string[] tomlFileNames = new string[SelectedRaw.Count];
                 List<string> nonEqualValueNames = new List<string>();
                 List<Dictionary<string, KeyValuePair<string, Nett.TomlObject>>> tomlSettingsListList = new List<Dictionary<string, KeyValuePair<string, Nett.TomlObject>>>();
-                
+
                 //Set tomlSettingListList (list of tomlSettings)
                 for (int i = 0; i < selectedRaw.Count; i++)
                 {
-                    
+
                     tomlFileNames[i] = System.IO.Path.ChangeExtension(SelectedRaw[i].FilePath, ".toml").ToString();
                     if (File.Exists(tomlFileNames[i]))
                     {
@@ -108,7 +114,7 @@ namespace MetaMorpheusGUI
                         {
                             if (tomlSettingsListList[j].ContainsKey(tomlSettingsListList[i][key].Key))
                             {
-                                if (!tomlSettingsListList[i][key].Value.Equals(tomlSettingsListList[j][key].Value)) 
+                                if (!tomlSettingsListList[i][key].Value.Equals(tomlSettingsListList[j][key].Value))
                                 {
                                     nonEqualValueNames.Add(tomlSettingsListList[i][key].Key);
                                 }
@@ -117,112 +123,283 @@ namespace MetaMorpheusGUI
                     }
 
                 }
+
                 //now set settings so that it reflects if values are different
                 FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsListList[0]);
-                foreach(string key in nonEqualValueNames)
+                foreach (string key in nonEqualValueNames)
                 {
-                    if (key == "ConserveMemory")
-                    {
-                        paramList[1].Different = true;
-                    }
                     if (key == "Protease")
                     {
                         paramList[0].Different = true;
                     }
+
                     if (key == "ConserveMemory")
                     {
                         paramList[1].Different = true;
                     }
-                    if (key == "ConserveMemory")
+                   
+                    if (key == "Max_mods_for_peptide")
                     {
-                        paramList[1].Different = true;
+                        paramList[2].Different = true;
                     }
                     if (key == "ConserveMemory")
                     {
-                        paramList[1].Different = true;
+                        paramList[3].Different = true;
                     }
-                    if (key == "ConserveMemory")
+                    if (key == "DeconvolutionIntensityRatio")
                     {
-                        paramList[1].Different = true;
+                        paramList[4].Different = true;
+                    }
+                    if (key == "UseProvidedPrecursorInfo")
+                    {
+                        paramList[5].Different = true;
+                    }
+
+                    if (key == "ScoreCutoff")
+                    {
+                        paramList[6].Different = true;
+                    }
+
+                    if (key == "ProductMassTolerance")
+                    {
+                        paramList[7].Different = true;
+                    }
+
+                    if (key == "DeconvolutionMaxAssumedChargeState")
+                    {
+                        paramList[8].Different = true;
+                    }
+
+                    if (key == "TotalPartitions")
+                    {
+                        paramList[9].Different = true;
+                    }
+
+                    if (key == "MaxModificationIsoforms")
+                    {
+                        paramList[10].Different = true;
+                    }
+
+                    if (key == "MaxPeptideLength")
+                    {
+                        paramList[11].Different = true;
+                    }
+
+                    if (key == "MinPeptideLength")
+                    {
+                        paramList[12].Different = true;
+                    }
+
+                    if (key == "MaxMissedCleavages")
+                    {
+                        paramList[13].Different = true;
+                    }
+
+                    if (key == "InitiatorMethionineBehavior")
+                    {
+                        paramList[14].Different = true;
+                    }
+
+                    if (key == "DeconvolutionMassTolerance")
+                    {
+                        paramList[15].Different = true;
+                    }
+
+                    if (key == "TrimMsMsPeaks")
+                    {
+                        paramList[16].Different = true;
+                    }
+
+                    if (key == "TrimMs1Peaks")
+                    {
+                        paramList[17].Different = true;
+                    }
+
+                    if (key == "MinRatio")
+                    {
+                        paramList[18].Different = true;
+                    }
+
+                    if (key == "TopNpeaks")
+                    {
+                        paramList[19].Different = true;
                     }
                 }
-
+                UpdateAndPopulateFields(settings);
             }
 
-            //DialogResult = true;
 
 
 
-            /* private void UpdateAndPopulateFields(FileSpecificSettings settings)
-              {
-                  CommonParameters commonparams = new CommonParameters();
-                  foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
-                      proteaseComboBox.Items.Add(protease);
-                  proteaseComboBox.SelectedIndex = 12;
 
-                  foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
-                      initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
-                  productMassToleranceComboBox.Items.Add("Absolute");
-                  productMassToleranceComboBox.Items.Add("Ppm");
-
-                  DoPrecursorDeconvolution.IsChecked = settings.DoPrecursorDeconvolution ?? commonparams.DoPrecursorDeconvolution;
-                  conserveMemoryCheckBox.IsChecked = settings.ConserveMemory ?? commonparams.ConserveMemory; ;
-                  UseProvidedPrecursorInfo.IsChecked = settings.UseProvidedPrecursorInfo ?? commonparams.UseProvidedPrecursorInfo;
-                  if (settings.DeconvolutionIntensityRatio != null)
-                      DeconvolutionIntensityRatioTextBox.Text = settings.DeconvolutionIntensityRatio.ToString();
-                  if (settings.DeconvolutionMaxAssumedChargeState != null)
-                      DeconvolutionMaxAssumedChargeStateTextBox.Text = settings.DeconvolutionMaxAssumedChargeState.ToString();
-                  if (settings.DeconvolutionMassTolerance != null)
-                      DeconvolutionMassToleranceInPpmTextBox.Text = settings.DeconvolutionMassTolerance.ToString();
-                  initiatorMethionineBehaviorComboBox.SelectedIndex = 1;
-                  if (settings.MaxMissedCleavages != null)
-                      missedCleavagesTextBox.Text = settings.MaxMissedCleavages.ToString();
-                  txtMinPeptideLength.Text = settings.MinPeptideLength.HasValue ? settings.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
-                  txtMaxPeptideLength.Text = settings.MaxPeptideLength.HasValue ? settings.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
-                  if (settings.MaxModificationIsoforms != null)
-                      maxModificationIsoformsTextBox.Text = settings.MaxModificationIsoforms.ToString();
-                  if (settings.TotalPartitions != null)
-                      numberOfDatabaseSearchesTextBox.Text = settings.TotalPartitions.ToString();
-                  if (settings.Protease != null)
-                      proteaseComboBox.SelectedItem = settings.Protease;
-                  if (settings.ScoreCutoff != null)
-                      minScoreAllowed.Text = settings.ScoreCutoff.ToString();
-                  if (settings.Max_mods_for_peptide != null)
-                      MaxModsForPeptides.Text = settings.Max_mods_for_peptide.ToString();
-              }*/
         }
+        private void UpdateAndPopulateFields(FileSpecificSettings settings)
+        {
+            CommonParameters commonparams = new CommonParameters();
+
+
+            var a = ParameterGrid.Items.GetItemAt(0) as Parameter;
+            int? index = paramList[0].ProtList.IndexOf(settings.Protease);
+            if (index.HasValue)
+                a.Value = index;
+            //GlobalEngineLevelSettings.ProteaseDictionary
+            var b = ParameterGrid.Items.GetItemAt(1) as Parameter;
+            b.Value = settings.ConserveMemory;
+            var c = ParameterGrid.Items.GetItemAt(2) as Parameter;
+            c.Value = settings.Max_mods_for_peptide;
+            paramList[2].Value = c.Value;
+            var d = ParameterGrid.Items.GetItemAt(3) as Parameter;
+            d.Value = settings.DeconvolutionIntensityRatio;
+            paramList[3].Value = d.Value;
+            var e = ParameterGrid.Items.GetItemAt(4) as Parameter;
+            e.Value = settings.DoPrecursorDeconvolution;
+            var f = ParameterGrid.Items.GetItemAt(5) as Parameter;
+            f.Value = settings.UseProvidedPrecursorInfo;
+            var g = ParameterGrid.Items.GetItemAt(6) as Parameter;
+            g.Value = settings.ScoreCutoff;
+            var h = ParameterGrid.Items.GetItemAt(7) as Parameter;
+            h.Value = settings.ProductMassTolerance;
+            var i = ParameterGrid.Items.GetItemAt(8) as Parameter;
+            i.Value = settings.DeconvolutionMaxAssumedChargeState;
+            var j = ParameterGrid.Items.GetItemAt(9) as Parameter;
+            j.Value = settings.TotalPartitions;
+            var k = ParameterGrid.Items.GetItemAt(10) as Parameter;
+            k.Value = settings.MaxModificationIsoforms;
+            var l = ParameterGrid.Items.GetItemAt(11) as Parameter;
+            l.Value = settings.MaxPeptideLength;
+            var m = ParameterGrid.Items.GetItemAt(12) as Parameter;
+            m.Value = settings.MinPeptideLength;
+            var n = ParameterGrid.Items.GetItemAt(13) as Parameter;
+            n.Value = settings.MaxMissedCleavages;
+            int? index2 = paramList[0].InitList.IndexOf(settings.InitiatorMethionineBehavior.ToString());
+            var o = ParameterGrid.Items.GetItemAt(14) as Parameter;
+            if (index2.HasValue)
+                o.Value = index2;
+            var p = ParameterGrid.Items.GetItemAt(15) as Parameter;
+            p.Value = settings.DeconvolutionMassTolerance;
+            var q = ParameterGrid.Items.GetItemAt(16) as Parameter;
+            q.Value = settings.TrimMsMsPeaks;
+            var r = ParameterGrid.Items.GetItemAt(17) as Parameter;
+            r.Value = settings.TrimMs1Peaks;
+            var s = ParameterGrid.Items.GetItemAt(18) as Parameter;
+            s.Value = settings.MinRatio;
+            var t = ParameterGrid.Items.GetItemAt(19) as Parameter;
+            t.Value = settings.TopNpeaks;
+
+            ParameterGrid.Items.Refresh();
+
+            //ParameterGrid.Items[0] = settings.ConserveMemory ?? commonparams.ConserveMemory; ;
+            /*UseProvidedPrecursorInfo.IsChecked = settings.UseProvidedPrecursorInfo ?? commonparams.UseProvidedPrecursorInfo;
+            if (settings.DeconvolutionIntensityRatio != null)
+                DeconvolutionIntensityRatioTextBox.Text = settings.DeconvolutionIntensityRatio.ToString();
+            if (settings.DeconvolutionMaxAssumedChargeState != null)
+                DeconvolutionMaxAssumedChargeStateTextBox.Text = settings.DeconvolutionMaxAssumedChargeState.ToString();
+            if (settings.DeconvolutionMassTolerance != null)
+                DeconvolutionMassToleranceInPpmTextBox.Text = settings.DeconvolutionMassTolerance.ToString();
+            initiatorMethionineBehaviorComboBox.SelectedIndex = 1;
+            if (settings.MaxMissedCleavages != null)
+                missedCleavagesTextBox.Text = settings.MaxMissedCleavages.ToString();
+            txtMinPeptideLength.Text = settings.MinPeptideLength.HasValue ? settings.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtMaxPeptideLength.Text = settings.MaxPeptideLength.HasValue ? settings.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
+            if (settings.MaxModificationIsoforms != null)
+                maxModificationIsoformsTextBox.Text = settings.MaxModificationIsoforms.ToString();
+            if (settings.TotalPartitions != null)
+                numberOfDatabaseSearchesTextBox.Text = settings.TotalPartitions.ToString();
+            if (settings.Protease != null)
+                proteaseComboBox.SelectedItem = settings.Protease;
+            if (settings.ScoreCutoff != null)
+                minScoreAllowed.Text = settings.ScoreCutoff.ToString();
+            if (settings.Max_mods_for_peptide != null)
+                MaxModsForPeptides.Text = settings.Max_mods_for_peptide.ToString();*/
+        }
+
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+            ParameterGrid.Items.Refresh();
+
             for (int i = 0; i < FileSpecificSettingsList.Count(); i++)
             {
                 FileSpecificSettingsList[i] = new FileSpecificSettings();
                 int? index = paramList[0].Value as int?;
-                if (index.HasValue)
+                /*if (paramList[0].Value != null)
                 {
-                    FileSpecificSettingsList[i].Protease = GlobalEngineLevelSettings.ProteaseDictionary.ElementAt(index.Value).Value;    //paramList[0].Value;
+                    
+                    FileSpecificSettingsList[i].Protease = GlobalEngineLevelSettings.ProteaseDictionary.ElementAt(index.Value).Value;
+                }*/
+                if (index.HasValue && index >= 0)
+                {
+                    FileSpecificSettingsList[i].Protease = paramList[0].ProtList[index.Value];
                 }
+
                 FileSpecificSettingsList[i].ConserveMemory = paramList[1].Value as bool?;
-                FileSpecificSettingsList[i].Max_mods_for_peptide = TryParseNullable(paramList[2].Value as string);
-                FileSpecificSettingsList[i].DeconvolutionIntensityRatio = paramList[3].Value as double?;
+                if (paramList[2].Value != null)
+                {
+                    int.TryParse(paramList[2].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].Max_mods_for_peptide = a;
+                }
+                if (paramList[3].Value != null)
+                {
+                    int.TryParse(paramList[2].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].DeconvolutionIntensityRatio = a;
+                }
                 FileSpecificSettingsList[i].DoPrecursorDeconvolution = paramList[4].Value as bool?;
                 FileSpecificSettingsList[i].UseProvidedPrecursorInfo = paramList[5].Value as bool?;
-                FileSpecificSettingsList[i].ScoreCutoff = paramList[6].Value as double?;
-                FileSpecificSettingsList[i].ProductMassTolerance = paramList[7].Value as Tolerance;
-                FileSpecificSettingsList[i].DeconvolutionMaxAssumedChargeState = paramList[8].Value as int?;
-                FileSpecificSettingsList[i].TotalPartitions = paramList[9].Value as int?;
-                FileSpecificSettingsList[i].MaxModificationIsoforms = paramList[10].Value as int?;
-                FileSpecificSettingsList[i].MaxPeptideLength = paramList[11].Value as int?;
-                FileSpecificSettingsList[i].MinPeptideLength = paramList[12].Value as int?;
-                FileSpecificSettingsList[i].MaxMissedCleavages = paramList[13].Value as int?;
+                if (paramList[6].Value != null)
+                {
+                    double.TryParse(paramList[6].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].ScoreCutoff = a;
+                }
+                if (paramList[7].Value != null)
+                {
+                    FileSpecificSettingsList[i].ProductMassTolerance = Tolerance.ParseToleranceString(paramList[7].Value.ToString());
+                }
+                if (paramList[8].Value != null)
+                {
+                    int.TryParse(paramList[8].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].DeconvolutionMaxAssumedChargeState = a;
+                }
+                if (paramList[9].Value != null)
+                {
+                    int.TryParse(paramList[9].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].TotalPartitions = a;
+                }
+                if (paramList[10].Value != null)
+                {
+                    int.TryParse(paramList[10].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].MaxModificationIsoforms = a;
+                }
+                if (paramList[11].Value != null)
+                {
+                    int.TryParse(paramList[11].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].MaxPeptideLength = a;
+                }
+                if (paramList[12].Value != null)
+                {
+                    int.TryParse(paramList[12].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].MinPeptideLength = a;
+                }
+                if (paramList[13].Value != null)
+                {
+                    int.TryParse(paramList[13].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].MaxMissedCleavages = a;
+                }
+
                 if (paramList[14].Value != null)
                     FileSpecificSettingsList[i].InitiatorMethionineBehavior = (InitiatorMethionineBehavior)paramList[14].Value;
                 FileSpecificSettingsList[i].DeconvolutionMassTolerance = paramList[15].Value as Tolerance;
                 FileSpecificSettingsList[i].TrimMsMsPeaks = paramList[16].Value as bool?;
                 FileSpecificSettingsList[i].TrimMs1Peaks = paramList[17].Value as bool?;
-                FileSpecificSettingsList[i].MinRatio = paramList[18].Value as double?;
-                FileSpecificSettingsList[i].TopNpeaks = paramList[19].Value as int?;
-
+                if (paramList[18].Value != null)
+                {
+                    int.TryParse(paramList[18].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].MinRatio = a;
+                }
+                if (paramList[19].Value != null)
+                {
+                    int.TryParse(paramList[19].Value.ToString(), out var a);
+                    FileSpecificSettingsList[i].TopNpeaks = a;
+                }
 
             }
 
@@ -230,10 +407,6 @@ namespace MetaMorpheusGUI
 
         }
 
-        private void CheckIfEqual()
-        {
-
-        }
 
 
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
@@ -294,7 +467,14 @@ namespace MetaMorpheusGUI
 
         static private int? TryParseNullable(string val)
         {
-            return int.TryParse(val, out int outValue) ? (int?)outValue : null;
+            int outValue;
+            return int.TryParse(val, out outValue) ? (int?)outValue : null;
+        }
+
+        static private double? TryParseNullableDouble(string val)
+        {
+            double outValue;
+            return double.TryParse(val, out outValue) ? (double?)outValue : null;
         }
     }
 }

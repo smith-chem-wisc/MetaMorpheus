@@ -54,6 +54,7 @@ namespace MetaMorpheusGUI
                 settings.ConserveMemory = null;
                 settings.DoPrecursorDeconvolution = null;
                 settings.UseProvidedPrecursorInfo = null;
+                settings.InitiatorMethionineBehavior = 0;
                 UpdateAndPopulateFields(settings);
             }
 
