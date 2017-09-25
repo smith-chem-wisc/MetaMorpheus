@@ -60,8 +60,7 @@ namespace MetaMorpheusGUI
                     var paramFile = Toml.ReadFile(tomlFileName, MetaMorpheusTask.tomlConfig);
                     tomlSettingsList = paramFile.ToDictionary(p => p.Key);
                     FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
-
-
+                    
                     UpdateAndPopulateFields(settings);
                 }
                 else
@@ -81,7 +80,7 @@ namespace MetaMorpheusGUI
                 string[] tomlFileNames = new string[SelectedRaw.Count];
                 List<string> nonEqualValueNames = new List<string>();
                 List<Dictionary<string, KeyValuePair<string, Nett.TomlObject>>> tomlSettingsListList = new List<Dictionary<string, KeyValuePair<string, Nett.TomlObject>>>();
-
+                
                 //Set tomlSettingListList (list of tomlSettings)
                 for (int i = 0; i < selectedRaw.Count; i++)
                 {
@@ -265,7 +264,7 @@ namespace MetaMorpheusGUI
             n.Value = settings.MaxMissedCleavages;
             int? index2 = paramList[0].InitList.IndexOf(settings.InitiatorMethionineBehavior.ToString());
             var o = ParameterGrid.Items.GetItemAt(14) as Parameter;
-            if (index2.HasValue)
+            if (index2.HasValue && index2.Value != 0)
                 o.Value = index2;
             else
                 o.Value = null;
@@ -281,7 +280,7 @@ namespace MetaMorpheusGUI
             t.Value = settings.TopNpeaks;
 
             ParameterGrid.Items.Refresh();
-
+  
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -313,7 +312,7 @@ namespace MetaMorpheusGUI
                 }
                 if (paramList[3].Value != null)
                 {
-                    int.TryParse(paramList[2].Value.ToString(), out var a);
+                    int.TryParse(paramList[3].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].DeconvolutionIntensityRatio = a;
                 }
                 FileSpecificSettingsList[i].DoPrecursorDeconvolution = paramList[4].Value as bool?;
@@ -358,8 +357,11 @@ namespace MetaMorpheusGUI
                     FileSpecificSettingsList[i].MaxMissedCleavages = a;
                 }
 
-                if (paramList[14].Value != null)
+                if (paramList[14].Value != null )
+                    if(!paramList[14].Value.Equals("Undefined"))
                     FileSpecificSettingsList[i].InitiatorMethionineBehavior = (InitiatorMethionineBehavior)paramList[14].Value;
+                else
+                    paramList[14].Value = null;
                 FileSpecificSettingsList[i].DeconvolutionMassTolerance = paramList[15].Value as Tolerance;
                 FileSpecificSettingsList[i].TrimMsMsPeaks = paramList[16].Value as bool?;
                 FileSpecificSettingsList[i].TrimMs1Peaks = paramList[17].Value as bool?;

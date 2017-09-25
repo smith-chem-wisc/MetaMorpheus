@@ -2,6 +2,7 @@ using EngineLayer;
 using Nett;
 using Proteomics;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -843,7 +844,20 @@ namespace MetaMorpheusGUI
                     string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
                     string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
                     fullPathofToml[i] = Path.Combine(directory, fileName);
+                    //REMOVE DEFAULT INIT METHONINE:
+
+                   
+                    string badLine = "InitiatorMethionineBehavior = \"Undefined\"";
+                    
                     Toml.WriteFile(dialog.FileSpecificSettingsList[i], fullPathofToml[i] + ".toml", MetaMorpheusTask.tomlConfig);
+                    string[] lineArray = File.ReadAllLines(fullPathofToml[i] + ".toml");
+                    List<string> lines = lineArray.ToList();
+                    foreach(string line in lineArray)
+                    {
+                        if (line.Equals(badLine))
+                            lines.Remove(line);
+                    }
+                    File.WriteAllLines(fullPathofToml[i] + ".toml", lines);
                 }
                 UpdateFileSpecificParamsDisplay(fullPathofToml);
 
