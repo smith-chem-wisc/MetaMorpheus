@@ -33,7 +33,7 @@
                             <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus, Mode=TwoWay}"
                           
                          Foreground="Black"
-                         TextAlignment="Right" 
+                         TextAlignment="Center" 
                          IsReadOnly="False"
                                    />
                         </DataTemplate>
@@ -48,7 +48,7 @@
             </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Parameter Name"  Width="12*" Binding="{Binding ParamName, Mode=OneWay}"/>
-                <DataGridTemplateColumn CellTemplateSelector="{StaticResource templateSelector}" Header="Value" Width ="12*"/>
+                <DataGridTemplateColumn CellTemplateSelector="{StaticResource templateSelector}" Header="Value" Width ="12*" IsReadOnly="True"/>
                 <DataGridTemplateColumn Header="Unset">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -56,7 +56,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridCheckBoxColumn Header="Different in Selected Files"  Width ="10*" Binding="{Binding Different}"/>
+                <DataGridCheckBoxColumn Header="Different in Selected Files"  Width ="10*" Binding="{Binding Different}" IsReadOnly="True"/>
             </DataGrid.Columns>
             <Style  TargetType="{x:Type DataGridColumnHeader}">
                 <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />

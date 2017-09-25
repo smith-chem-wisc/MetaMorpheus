@@ -18,7 +18,7 @@ namespace MetaMorpheusGUI
         public object Value { get; set; }
 
         public bool Different { get; set; }
-
+        
         public ObservableCollection<Protease> ProtList { get; private set; }
 
         public ObservableCollection<string> InitList { get; private set; }
@@ -33,6 +33,7 @@ namespace MetaMorpheusGUI
         {
             ParamName = name;
             ValueType = valueType;
+            
             ProtList = new ObservableCollection<Protease>();
             InitList = new ObservableCollection<string>();
             ProductMassToleranceList = new ObservableCollection<string>();
