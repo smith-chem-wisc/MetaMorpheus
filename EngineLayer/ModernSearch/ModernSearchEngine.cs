@@ -97,25 +97,29 @@ namespace EngineLayer.ModernSearch
                             {
                                 if (fragmentIndex[fragmentBin] != null)
                                 {
-                                    var peptideIdsInThisBin = fragmentIndex[fragmentBin];
-                                    int l = 0;
-                                    int r = peptideIdsInThisBin.Count - 1;
+                                    List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
+
                                     int m = 0;
-
-                                    // binary search in the fragment bin for lowest acceptable precursor mass
-                                    while (l <= r)
+                                    if (!Double.IsInfinity(lowestMassPeptideToLookFor))
                                     {
-                                        m = l + ((r - l) / 2);
+                                        int l = 0;
+                                        int r = peptideIdsInThisBin.Count - 1;
 
-                                        if (r - l < 2)
-                                            break;
-                                        if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods < lowestMassPeptideToLookFor)
-                                            l = m + 1;
-                                        else
-                                            r = m - 1;
+                                        // binary search in the fragment bin for lowest acceptable precursor mass
+                                        while (l <= r)
+                                        {
+                                            m = l + ((r - l) / 2);
+
+                                            if (r - l < 2)
+                                                break;
+                                            if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods < lowestMassPeptideToLookFor)
+                                                l = m + 1;
+                                            else
+                                                r = m - 1;
+                                        }
+                                        if (m > 0)
+                                            m--;
                                     }
-                                    if (m > 0)
-                                        m--;
 
                                     // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
                                     if (!Double.IsInfinity(highestMassPeptideToLookFor))
@@ -148,7 +152,7 @@ namespace EngineLayer.ModernSearch
                                             scoringTable[id]++;
 
                                             // add possible search results to the hashset of id's
-                                            if (scoringTable[id] >= intScoreCutoff)
+                                            if (scoringTable[id] == intScoreCutoff)
                                             {
                                                 int notch = massDiffAcceptors.Accepts(scan.PrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods);
 
