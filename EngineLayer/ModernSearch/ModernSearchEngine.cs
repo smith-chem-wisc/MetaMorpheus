@@ -21,7 +21,7 @@ namespace EngineLayer.ModernSearch
         protected readonly int currentPartition;
         protected readonly CommonParameters CommonParameters;
         protected readonly bool addCompIons;
-        protected readonly MassDiffAcceptor massDiffAcceptors;
+        protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
         protected static readonly int fragmentBinsPerDalton = 1000;
 
@@ -39,7 +39,7 @@ namespace EngineLayer.ModernSearch
             this.currentPartition = currentPartition + 1;
             this.CommonParameters = CommonParameters;
             this.addCompIons = addCompIons;
-            this.massDiffAcceptors = massDiffAcceptors;
+            this.massDiffAcceptor = massDiffAcceptors;
             this.dissociationTypes = DetermineDissociationType(lp);
         }
 
@@ -80,7 +80,7 @@ namespace EngineLayer.ModernSearch
                     double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
 
                     // get allowed precursor masses
-                    var t = massDiffAcceptors.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
+                    var t = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
                     double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
                     double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
 
@@ -120,7 +120,7 @@ namespace EngineLayer.ModernSearch
                             var candidatePeptide = peptideIndex[id];
                             double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
                             double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
-                            int notch = massDiffAcceptors.Accepts(scan.PrecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                            int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
 
                             if (globalPsms[i] == null)
                                 globalPsms[i] = new Psm(candidatePeptide, notch, peptideScore, i, scan);
@@ -144,7 +144,11 @@ namespace EngineLayer.ModernSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        protected void FirstPassIndexedScoring(double peakMz, int fragmentFloorMz, int fragmentCeilingMz, byte[] scoringTable, byte byteScoreCutoff, HashSet<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor, double highestMassPeptideToLookFor)
+        #endregion Protected Methods
+
+        #region Private Methods
+
+        private void FirstPassIndexedScoring(double peakMz, int fragmentFloorMz, int fragmentCeilingMz, byte[] scoringTable, byte byteScoreCutoff, HashSet<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor, double highestMassPeptideToLookFor)
         {
             // get all theoretical fragments this experimental fragment could be
             for (int fragmentBin = fragmentFloorMz; fragmentBin <= fragmentCeilingMz; fragmentBin++)
@@ -186,7 +190,7 @@ namespace EngineLayer.ModernSearch
                             // add possible search results to the hashset of id's
                             if (scoringTable[id] == byteScoreCutoff)
                             {
-                                int notch = massDiffAcceptors.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods);
+                                int notch = massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods);
 
                                 if (notch >= 0)
                                 {
@@ -208,7 +212,7 @@ namespace EngineLayer.ModernSearch
                             // add possible search results to the hashset of id's
                             if (scoringTable[id] == byteScoreCutoff)
                             {
-                                int notch = massDiffAcceptors.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods);
+                                int notch = massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods);
 
                                 if (notch >= 0)
                                 {
@@ -221,7 +225,7 @@ namespace EngineLayer.ModernSearch
             }
         }       
 
-        #endregion Protected Methods
+        #endregion Private Methods
 
     }
 }
