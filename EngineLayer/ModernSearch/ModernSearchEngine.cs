@@ -52,9 +52,9 @@ namespace EngineLayer.ModernSearch
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing modern search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
 
             int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
-
+            int minScoreFilter = Math.Max(intScoreCutoff - 2, 3);
             int fragmentBinsPerDalton = 1000;
-            
+            int maxNumberOfPeptidesContainingAFragmentAllowed = (int)Math.Round(peptideIndex.Count * 0.1);
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
             {
                 byte[] scoringTable = new byte[peptideIndex.Count];
@@ -97,47 +97,54 @@ namespace EngineLayer.ModernSearch
                             // get all theoretical fragments this experimental fragment could be
                             for (int fragmentBin = fragmentFloorMz; fragmentBin <= fragmentCeilingMz; fragmentBin++)
                             {
-                                if (fragmentIndex[fragmentBin].Count != 0)
+                                List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
+                                if (fragmentIndex[fragmentBin] != null)
                                 {
-                                    List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
-                                    int m = 0;
-                                    if (lowestMassPeptideToLookFor !=0)
+                                    if (peptideIdsInThisBin.Count > maxNumberOfPeptidesContainingAFragmentAllowed && highestScore > minScoreFilter)
                                     {
-                                        int y = 0;
-                                        int r = peptideIdsInThisBin.Count - 1;
-
-                                        // binary search in the fragment bin for lowest acceptable precursor mass
-                                        while (y <= r)
-                                        {
-                                            m = y + ((r - y) / 2);
-
-                                            if (r - y < 2)
-                                                break;
-                                            if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods < lowestMassPeptideToLookFor)
-                                                y = m + 1;
-                                            else
-                                                r = m - 1;
-                                        }
-                                        if (m > 0)
-                                            m--;
-                                    }
-
-                                    // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
-                                    if (highestMassPeptideToLookFor > 0)
-                                    {
-                                        for (int h = m; h < peptideIdsInThisBin.Count; h++)
-                                        {
-                                            int pepId = peptideIdsInThisBin[h];
-                                            scoringTable[pepId]++;
-                                            if (peptideIndex[pepId].MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)
-                                                break;
-                                        }
+                                        highestScore--;
                                     }
                                     else
                                     {
-                                        for (int h = m; h < peptideIdsInThisBin.Count; h++)
+                                        int m = 0;
+                                        if (lowestMassPeptideToLookFor > 0)
                                         {
-                                            scoringTable[peptideIdsInThisBin[h]]++;
+                                            int y = 0;
+                                            int r = peptideIdsInThisBin.Count - 1;
+
+                                            // binary search in the fragment bin for lowest acceptable precursor mass
+                                            while (y <= r)
+                                            {
+                                                m = y + ((r - y) / 2);
+
+                                                if (r - y < 2)
+                                                    break;
+                                                if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods < lowestMassPeptideToLookFor)
+                                                    y = m + 1;
+                                                else
+                                                    r = m - 1;
+                                            }
+                                            if (m > 0)
+                                                m--;
+                                        }
+
+                                        // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
+                                        if (highestMassPeptideToLookFor > 0)
+                                        {
+                                            for (int h = m; h < peptideIdsInThisBin.Count; h++)
+                                            {
+                                                int pepId = peptideIdsInThisBin[h];
+                                                scoringTable[pepId]++;
+                                                if (peptideIndex[pepId].MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            for (int h = m; h < peptideIdsInThisBin.Count; h++)
+                                            {
+                                                scoringTable[peptideIdsInThisBin[h]]++;
+                                            }
                                         }
                                     }
                                 }
@@ -145,41 +152,42 @@ namespace EngineLayer.ModernSearch
                         }
                     }
 
+                    bool somethingFound = false;
+                    int maxhighestScore = intScoreCutoff - 1;
+
                     //filter theoreticals into only the highests scoring ones
                     for (int j = 0; j < scoringTable.Length; j++)
+                        if (scoringTable[j] > maxhighestScore)
+                        {
+                            maxhighestScore = scoringTable[j];
+                            somethingFound = true;
+                        }
+
+                    if (somethingFound)
                     {
-                        if(scoringTable[j]<highestScore)
-                        {
-                        }
-                        else if(scoringTable[j]==highestScore)
-                        {
-                            idsOfHighestScoringPeptides.Add(j);
-                        }
-                        else
-                        {
-                            idsOfHighestScoringPeptides.Clear();
-                            idsOfHighestScoringPeptides.Add(j);
-                            highestScore = scoringTable[j];
-                        }
-                    }
+                        int minScore = maxhighestScore + highestScore - intScoreCutoff;
+                        for (int j = 0; j < scoringTable.Length; j++)
+                            if (scoringTable[j] > minScore)
+                                idsOfHighestScoringPeptides.Add(j);
 
-                    foreach(int id in idsOfHighestScoringPeptides)
-                    { 
-                        var candidatePeptide = peptideIndex[id];
-                        int notch = massDiffAcceptors.Accepts(scan.PrecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-
-                        if (notch >= 0)
+                        foreach (int id in idsOfHighestScoringPeptides)
                         {
-                            double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
-                            double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
+                            var candidatePeptide = peptideIndex[id];
+                            int notch = massDiffAcceptors.Accepts(scan.PrecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
 
-                            if (globalPsms[i] == null)
-                                globalPsms[i] = new Psm(candidatePeptide, notch, peptideScore, i, scan);
-                            else
-                                globalPsms[i].AddOrReplace(candidatePeptide, peptideScore, notch, CommonParameters.ReportAllAmbiguity);
+                            if (notch >= 0)
+                            {
+                                double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                                Array.Sort(fragmentMasses);
+                                double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
+
+                                if (globalPsms[i] == null)
+                                    globalPsms[i] = new Psm(candidatePeptide, notch, peptideScore, i, scan);
+                                else
+                                    globalPsms[i].AddOrReplace(candidatePeptide, peptideScore, notch, CommonParameters.ReportAllAmbiguity);
+                            }
                         }
                     }
-
                     // report search progress
                     progress++;
                     var percentProgress = (int)((progress / listOfSortedms2Scans.Length) * 100);
