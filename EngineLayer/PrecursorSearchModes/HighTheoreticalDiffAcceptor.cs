@@ -1,14 +1,15 @@
 ﻿using MzLibUtil;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+
 
 namespace EngineLayer
 {
-    public class OpenSearchMode : MassDiffAcceptor
+    public class OpenHighTheoSearchMode : MassDiffAcceptor
     {
         #region Public Constructors
 
-        public OpenSearchMode() : base("OpenSearch")
+        public OpenHighTheoSearchMode() : base("OpenHigh")
         {
         }
 
@@ -18,24 +19,28 @@ namespace EngineLayer
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            return 0;
+            if (scanPrecursorMass < peptideMass + 1)
+                return 0;
+            else
+                return -1;
         }
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            yield return new AllowedIntervalWithNotch(new DoubleRange(Double.NegativeInfinity, Double.PositiveInfinity), 0);
+            yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass-1, Double.PositiveInfinity), 0);
         }
 
         public override string ToProseString()
         {
-            return ("unbounded");
+            return ("unboundedHigh");
         }
 
         public override string ToString()
         {
-            return FileNameAddition + " OpenSearch";
+            return FileNameAddition + " OpenHighSearch";
         }
 
         #endregion Public Methods
     }
 }
+
