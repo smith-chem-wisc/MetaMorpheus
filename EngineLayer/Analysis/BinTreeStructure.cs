@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace EngineLayer.Analysis
 {
@@ -214,7 +215,7 @@ namespace EngineLayer.Analysis
                 foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
                 {
                     int inModLevel = 0;
-                    string currentMod = "";
+                    StringBuilder currentMod = new StringBuilder();
                     HashSet<string> modsHere = new HashSet<string>();
                     for (int i = 0; i < hehe.Item2.Count(); i++)
                     {
@@ -230,14 +231,14 @@ namespace EngineLayer.Analysis
                             inModLevel--;
                             if (inModLevel == 0)
                             {
-                                if (!currentMod.StartsWith("Common Fixed:"))
-                                    modsHere.Add(currentMod);
-                                currentMod = "";
+                                if (!currentMod.ToString().StartsWith("Common Fixed:"))
+                                    modsHere.Add(currentMod.ToString());
+                                currentMod.Clear();
                             }
                             continue;
                         }
                         if (inModLevel > 0)
-                            currentMod += ye;
+                            currentMod.Append(ye);
                     }
                     foreach (var modInHS in modsHere)
                     {
