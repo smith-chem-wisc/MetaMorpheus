@@ -98,6 +98,9 @@ namespace MetaMorpheusCommandLine
             Console.WriteLine("\t-t --tasks     List of task poml files");
             Console.WriteLine("\t-s --spectra   List of spectra files");
             Console.WriteLine("\t-d --databases List of database files");
+
+
+
         }
 
         private static bool IsContaminant(string b)

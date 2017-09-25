@@ -249,7 +249,7 @@ namespace TaskLayer
                     {
                         Console.WriteLine("Round " + round + ": alignment");
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, initLearners, "mz", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-                        round++;
+                        
 
                         prevCount = count;
                         prevPrecTol = CalibrationParameters.PrecursorMassTolerance;
@@ -257,13 +257,14 @@ namespace TaskLayer
 
                         (count, datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
-                        if (round >= 4 && !ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count))
+                        if (round >= 3 && !ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count))
                             break;
 
                         WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "alignment", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                         WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "alignment", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
 
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "alignment.mzml"), false);
+                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "alignment.mzml"), false);
+                        round++;
                     } while (true);
 
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
@@ -272,13 +273,13 @@ namespace TaskLayer
                     Console.WriteLine("   PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
                     Console.WriteLine("   ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
 
-                    myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "alignment.mzml"));
+                    myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + (round - 1) + "alignment.mzml"));
 
                     do
                     {
                         Console.WriteLine("Round " + round + ": inter-scan");
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, mzSepLearners, "mzRtTicInj", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-                        round++;
+                        
 
                         prevCount = count;
                         prevPrecTol = CalibrationParameters.PrecursorMassTolerance;
@@ -292,7 +293,8 @@ namespace TaskLayer
                         WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "inter-scan", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                         WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "inter-scan", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
 
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "inter-scan.mzml"), false);
+                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "inter-scan.mzml"), false);
+                        round++;
                     } while (true);
 
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
@@ -301,13 +303,13 @@ namespace TaskLayer
                     Console.WriteLine("   PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
                     Console.WriteLine("   ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
 
-                    myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "inter-scan.mzml"));
+                    myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + (round - 1) + "inter-scan.mzml"));
 
                     do
                     {
                         Console.WriteLine("Round " + round + ": final");
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, learners, "mzRtTicInjInt", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-                        round++;
+                        
 
                         prevCount = count;
                         prevPrecTol = CalibrationParameters.PrecursorMassTolerance;
@@ -321,7 +323,8 @@ namespace TaskLayer
                         WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                         WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
 
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "final.mzml"), false);
+                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final.mzml"), false);
+                        round++;
                     } while (true);
 
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
