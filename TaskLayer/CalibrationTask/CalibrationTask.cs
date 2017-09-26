@@ -199,21 +199,7 @@ namespace TaskLayer
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
                     };
-
-                    var indLearners = new List<ILearner<double>>()
-                    {
-                        new LinearCalibrationFunctionMathNet(new int[] { }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1 }),
-
-                        new RegressionAbsoluteLossGradientBoostLearner(iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
-                    };
-
+                    
                     var intLearners = new List<ILearner<double>>()
                     {
                         new LinearCalibrationFunctionMathNet(new int[] { }),
@@ -224,27 +210,7 @@ namespace TaskLayer
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
                     };
-                    var identityLearners = new List<ILearner<double>>()
-                    {
-                        new IdentityCalibrationFunction(),
-                    };
-
-                    //List<string> learnerType = new List<string> { "init", "mid", "final" };
-                    //List<List<ILearner<double>>> alllearnerse = new List<List<ILearner<double>>> { initLearners, mzSepLearners, learners };
-                    //List<string> learnerType = new List<string> { "mid", "final" };
-                    //List<List<ILearner<double>>> alllearnerse = new List<List<ILearner<double>>> { mzSepLearners, learners };
-                    //List<string> learnerType = new List<string> {  "final" };
-                    //List<List<ILearner<double>>> alllearnerse = new List<List<ILearner<double>>> { learners };
-                    //List<string> learnerType = new List<string> { "init", "final" };
-                    ////List<List<ILearner<double>>> alllearnerse = new List<List<ILearner<double>>> { initLearners, learners };
-                    //List<string> learnerType = new List<string> { "mid", "onlyIndividual" };
-                    ////List<List<ILearner<double>>> alllearners = new List<List<ILearner<double>>> { mzSepLearners, indLearners };
-                    //List<string> learnerType = new List<string> { "init", "init", "init", "init", "init", "init", "mid", "onlyIndividual" };
-                    //List<List<ILearner<double>>> alllearners = new List<List<ILearner<double>>> { initLearners, initLearners, initLearners, initLearners, initLearners, initLearners, mzSepLearners, indLearners };
-
-                    //List<string> learnerType = new List<string> { "mz", "mz", "mz", "mz", "mzRtTicInj", "mzRtTicInj", "mzRtTicInj", "mzInt", "mzInt", "mzInt" };
-                    //List<List<ILearner<double>>> alllearners = new List<List<ILearner<double>>> { initLearners, initLearners, initLearners, initLearners, mzSepLearners, mzSepLearners, mzSepLearners, indLearners, indLearners, indLearners };
-
+                    
                     (int count, DataPointAquisitionResults datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
                     WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "init", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
@@ -419,9 +385,9 @@ namespace TaskLayer
                     myMsDataFile,
                     testPrecursorMassToleranceForDatapointAcquisition,
                     testProductMassToleranceForDatapointAcquisition,
-                    CalibrationParameters.numFragmentsNeededForEveryIdentification,
-                    CalibrationParameters.minMS1isotopicPeaksNeededForConfirmedIdentification,
-                    CalibrationParameters.minMS2isotopicPeaksNeededForConfirmedIdentification,
+                    CalibrationParameters.NumFragmentsNeededForEveryIdentification,
+                    CalibrationParameters.MinMS1isotopicPeaksNeededForConfirmedIdentification,
+                    CalibrationParameters.MinMS2isotopicPeaksNeededForConfirmedIdentification,
                     fragmentTypesForCalibration,
                     new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 

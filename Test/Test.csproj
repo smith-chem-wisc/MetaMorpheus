@@ -141,7 +141,6 @@
     <Compile Include="MyPeptideTest.cs" />
     <Compile Include="MyTaskTest.cs" />
     <Compile Include="RobTest.cs" />
-    <Compile Include="CalibrationEngineTest.cs" />
     <Compile Include="ModFitsTest.cs" />
     <Compile Include="CoIsolationTests.cs" />
     <Compile Include="SearchModesTest.cs" />

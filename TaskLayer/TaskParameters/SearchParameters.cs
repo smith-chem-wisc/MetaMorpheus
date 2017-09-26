@@ -1,6 +1,7 @@
-﻿using System.Linq;
+﻿using EngineLayer;
+using System.Linq;
 
-namespace EngineLayer
+namespace TaskLayer
 {
     public class SearchParameters
     {

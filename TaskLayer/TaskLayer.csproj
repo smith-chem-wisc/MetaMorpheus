@@ -126,6 +126,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TaskParameters\CalibrationParameters.cs" />
     <Compile Include="CalibrationTask\IdentityCalibrationFunction.cs" />
     <Compile Include="FileSpecificSettings.cs" />
     <Compile Include="EventArgs\XmlForTaskListEventArgs.cs" />

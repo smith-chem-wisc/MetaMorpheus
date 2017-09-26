@@ -132,7 +132,6 @@
     <Compile Include="CalibrationEngine\LabeledMs1DataPoint.cs" />
     <Compile Include="CalibrationEngine\MS1predictor.cs" />
     <Compile Include="CalibrationEngine\MS2predictor.cs" />
-    <Compile Include="CalibrationParameters.cs" />
     <Compile Include="CommonParameters.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
     <Compile Include="CrosslinkSearch\PsmCrossType.cs" />

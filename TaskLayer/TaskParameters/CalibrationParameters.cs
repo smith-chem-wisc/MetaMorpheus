@@ -1,6 +1,6 @@
 ﻿using MzLibUtil;
 
-namespace EngineLayer
+namespace TaskLayer
 {
     public class CalibrationParameters
     {
@@ -11,9 +11,9 @@ namespace EngineLayer
             PrecursorMassTolerance = new PpmTolerance(10);
             NonLinearCalibration = true;
             WriteIntermediateFiles = false;
-            minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
-            minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
-            numFragmentsNeededForEveryIdentification = 6;
+            MinMS1isotopicPeaksNeededForConfirmedIdentification = 3;
+            MinMS2isotopicPeaksNeededForConfirmedIdentification = 2;
+            NumFragmentsNeededForEveryIdentification = 6;
         }
 
         #endregion Public Constructors
@@ -25,9 +25,9 @@ namespace EngineLayer
         public bool WriteIntermediateFiles { get; set; }
 
 
-        public int minMS1isotopicPeaksNeededForConfirmedIdentification { get; set; }
-        public int minMS2isotopicPeaksNeededForConfirmedIdentification { get; set; }
-        public int numFragmentsNeededForEveryIdentification { get; set; }
+        public int MinMS1isotopicPeaksNeededForConfirmedIdentification { get; set; }
+        public int MinMS2isotopicPeaksNeededForConfirmedIdentification { get; set; }
+        public int NumFragmentsNeededForEveryIdentification { get; set; }
 
         #endregion Public Properties
     }
