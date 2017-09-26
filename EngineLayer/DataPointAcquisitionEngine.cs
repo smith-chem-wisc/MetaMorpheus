@@ -67,9 +67,6 @@ namespace EngineLayer
             List<LabeledMs1DataPoint> Ms1List = new List<LabeledMs1DataPoint>();
             List<LabeledMs2DataPoint> Ms2List = new List<LabeledMs2DataPoint>();
 
-            //// Set of peaks, identified by m/z and retention time. If a peak is in here, it means it has been a part of an accepted identification, and should be rejected
-            //var peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
-
             int numIdentifications = goodIdentifications.Count;
 
             // Loop over identifications
@@ -78,16 +75,11 @@ namespace EngineLayer
 
             object lockObj = new object();
             object lockObj2 = new object();
-            object lockObj3 = new object();
             Parallel.ForEach(Partitioner.Create(0, numIdentifications), fff =>
             {
                 for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
                 {
                     Psm identification = goodIdentifications[matchIndex];
-
-                    //// Progress
-                    //if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
-                    //    ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
                     // Each identification has an MS2 spectrum attached to it.
                     int ms2scanNumber = identification.ScanNumber;
@@ -146,10 +138,6 @@ namespace EngineLayer
             return new DataPointAquisitionResults(this,
                 Ms1List,
                 Ms2List
-            //numMs1MassChargeCombinationsConsidered,
-            //numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
-            //numMs2MassChargeCombinationsConsidered,
-            //numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks
             );
         }
 
@@ -164,10 +152,7 @@ namespace EngineLayer
             int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
 
             int theIndex;
-            if (direction == 1)
-                theIndex = ms2spectrumIndex;
-            else
-                theIndex = ms2spectrumIndex - 1;
+            theIndex = direction == 1 ? ms2spectrumIndex : ms2spectrumIndex - 1;
 
             bool addedAscan = true;
 
@@ -182,7 +167,6 @@ namespace EngineLayer
                 }
                 addedAscan = false;
                 var fullMS1scan = myMsDataFile.GetOneBasedScan(theIndex);
-                double ms1RetentionTime = fullMS1scan.RetentionTime;
                 var scanWindowRange = fullMS1scan.ScanWindowRange;
                 var fullMS1spectrum = fullMS1scan.MassSpectrum;
                 if (fullMS1spectrum.Size == 0)
@@ -223,7 +207,7 @@ namespace EngineLayer
                         trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), theMZ, null));
                     }
                     // If started adding and suddnely stopped, go to next one, no need to look at higher charges
-                    if (trainingPointsToAverage.Count == 0 && startingToAddCharges == true)
+                    if (trainingPointsToAverage.Count == 0 && startingToAddCharges)
                     {
                         break;
                     }
@@ -288,20 +272,16 @@ namespace EngineLayer
                         break;
                     var closestPeakMZ = ms2DataScan.MassSpectrum.GetClosestPeakXvalue(monoisotopicMZ);
 
-                    if (mzToleranceForMs2Search.Within(closestPeakMZ, monoisotopicMZ))
+                    if (mzToleranceForMs2Search.Within(closestPeakMZ, monoisotopicMZ) && !computedIsotopologues)
                     {
-                        if (!computedIsotopologues)
-                        {
-                            var dist = IsotopicDistribution.GetDistribution(fragment.ThisChemicalFormula, fineResolutionForIsotopeDistCalculation, 0.001);
+                        var dist = IsotopicDistribution.GetDistribution(fragment.ThisChemicalFormula, fineResolutionForIsotopeDistCalculation, 0.001);
 
-                            masses = dist.Masses.ToArray();
-                            intensities = dist.Intensities.ToArray();
+                        masses = dist.Masses.ToArray();
+                        intensities = dist.Intensities.ToArray();
 
-                            Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
-                            computedIsotopologues = true;
-
-                            break;
-                        }
+                        Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
+                        computedIsotopologues = true;
+                        break;
                     }
                 }
 

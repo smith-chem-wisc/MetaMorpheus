@@ -11,7 +11,7 @@ namespace EngineLayer.Calibration
     {
         #region Private Fields
 
-        private int[] v;
+        private readonly int[] v;
 
         #endregion Private Fields
 

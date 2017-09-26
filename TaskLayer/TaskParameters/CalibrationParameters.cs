@@ -11,8 +11,8 @@ namespace TaskLayer
             PrecursorMassTolerance = new PpmTolerance(10);
             NonLinearCalibration = true;
             WriteIntermediateFiles = false;
-            MinMS1isotopicPeaksNeededForConfirmedIdentification = 3;
-            MinMS2isotopicPeaksNeededForConfirmedIdentification = 2;
+            MinMS1IsotopicPeaksNeededForConfirmedIdentification = 3;
+            MinMS2IsotopicPeaksNeededForConfirmedIdentification = 2;
             NumFragmentsNeededForEveryIdentification = 6;
         }
 
@@ -24,8 +24,8 @@ namespace TaskLayer
         public bool NonLinearCalibration { get; set; }
         public bool WriteIntermediateFiles { get; set; }
 
-        public int MinMS1isotopicPeaksNeededForConfirmedIdentification { get; set; }
-        public int MinMS2isotopicPeaksNeededForConfirmedIdentification { get; set; }
+        public int MinMS1IsotopicPeaksNeededForConfirmedIdentification { get; set; }
+        public int MinMS2IsotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int NumFragmentsNeededForEveryIdentification { get; set; }
 
         #endregion Public Properties

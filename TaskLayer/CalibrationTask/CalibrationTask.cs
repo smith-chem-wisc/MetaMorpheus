@@ -113,7 +113,6 @@ namespace TaskLayer
 
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
-            //proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + searchMode.ToProseString() + "}; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
@@ -129,12 +128,12 @@ namespace TaskLayer
 
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = Mzml.LoadAllStaticData(currentDataFile);
 
-                    var initLearners = new List<ILearner<double>>()
+                    var initLearners = new List<ILearner<double>>
                     {
                         new MzMultiplier()
                     };
 
-                    var mzSepLearners = new List<ILearner<double>>()
+                    var mzSepLearners = new List<ILearner<double>>
                     {
                         new LinearCalibrationFunctionMathNet(new int[] { }),
 
@@ -155,7 +154,7 @@ namespace TaskLayer
 
                     mzSepLearners = mzSepLearners.Select(b => new SeparateMzLearner(b) as ILearner<double>).ToList();
 
-                    var learners = new List<ILearner<double>>()
+                    var learners = new List<ILearner<double>>
                     {
                         new LinearCalibrationFunctionMathNet(new int[] { }),
 
@@ -200,7 +199,7 @@ namespace TaskLayer
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
                     };
 
-                    var intLearners = new List<ILearner<double>>()
+                    var intLearners = new List<ILearner<double>>
                     {
                         new LinearCalibrationFunctionMathNet(new int[] { }),
 
@@ -223,7 +222,6 @@ namespace TaskLayer
                     var round = 1;
                     do
                     {
-                        Console.WriteLine("Round " + round + ": alignment");
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, initLearners, "mz", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                         prevCount = count;
@@ -247,15 +245,11 @@ namespace TaskLayer
 
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
-
-                    Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                    Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
-
+                    
                     myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
 
                     do
                     {
-                        Console.WriteLine("Round " + round + ": inter-scan");
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, mzSepLearners, "mzRtTicInj", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                         prevCount = count;
@@ -278,15 +272,11 @@ namespace TaskLayer
 
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
-
-                    Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                    Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
-
+                    
                     myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
 
                     do
                     {
-                        Console.WriteLine("Round " + round + ": final");
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, intLearners, "Int", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                         prevCount = count;
@@ -309,11 +299,7 @@ namespace TaskLayer
 
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
-
-                    Console.WriteLine("bestFilePath: " + bestFilePath);
-                    Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                    Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
-
+                    
                     Warn("");
                     Warn("");
 
@@ -371,9 +357,7 @@ namespace TaskLayer
                 return (0, null);
 
             // Store
-
-            Console.WriteLine("      CurrentGoodIDs: " + goodIdentifications.Count);
-
+            
             DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>());
 
             Tolerance bestPrecursorMassToleranceForDatapointAcquisition = CalibrationParameters.PrecursorMassTolerance;
@@ -385,33 +369,22 @@ namespace TaskLayer
             var round = 1;
             do
             {
-                Console.WriteLine("      Datapoint Acquisition round: " + round);
                 DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
                     goodIdentifications,
                     myMsDataFile,
                     testPrecursorMassToleranceForDatapointAcquisition,
                     testProductMassToleranceForDatapointAcquisition,
                     CalibrationParameters.NumFragmentsNeededForEveryIdentification,
-                    CalibrationParameters.MinMS1isotopicPeaksNeededForConfirmedIdentification,
-                    CalibrationParameters.MinMS2isotopicPeaksNeededForConfirmedIdentification,
+                    CalibrationParameters.MinMS1IsotopicPeaksNeededForConfirmedIdentification,
+                    CalibrationParameters.MinMS2IsotopicPeaksNeededForConfirmedIdentification,
                     fragmentTypesForCalibration,
                     new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-                var computedPrecursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPPM.Item1 + 6 * currentResult.Ms1InfoPPM.Item2), Math.Abs(currentResult.Ms1InfoPPM.Item1 - 6 * currentResult.Ms1InfoPPM.Item2)));
-                var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPPM.Item1 + 6 * currentResult.Ms2InfoPPM.Item2), Math.Abs(currentResult.Ms2InfoPPM.Item1 - 6 * currentResult.Ms2InfoPPM.Item2)));
-
-                #region result output and writing
-
-                Console.WriteLine("         MS1th : " + currentResult.Ms1InfoTh.Item1 + " : " + currentResult.Ms1InfoTh.Item2 + " :  MS2th : " + currentResult.Ms2InfoTh.Item1 + " : " + currentResult.Ms2InfoTh.Item2);
-                Console.WriteLine("         MS1ppm : " + currentResult.Ms1InfoPPM.Item1 + " : " + currentResult.Ms1InfoPPM.Item2 + " :  MS2ppm : " + currentResult.Ms2InfoPPM.Item1 + " : " + currentResult.Ms2InfoPPM.Item2);
-                Console.WriteLine("         currentResult.Ms1List.Count : " + currentResult.Ms1List.Count + " : currentResult.Ms2List.Count : " + currentResult.Ms2List.Count + " :  currentResult.Count : " + currentResult.Count);
-                Console.WriteLine("         computedPrecursorMassToleranceForDatapointAcquisition : " + computedPrecursorMassToleranceForDatapointAcquisition);
-                Console.WriteLine("         computedProductMassToleranceForDatapointAcquisition : " + computedProductMassToleranceForDatapointAcquisition);
-
-                #endregion result output and writing
-
-                bool ms1Worse = currentResult.Ms1List.Count <= bestResult.Ms1List.Count && ((currentResult.Ms1InfoPPM.Item2 / bestResult.Ms1InfoPPM.Item2) >= ((double)currentResult.Ms1List.Count / bestResult.Ms1List.Count));
-                bool ms2Worse = currentResult.Ms2List.Count <= bestResult.Ms2List.Count && ((currentResult.Ms2InfoPPM.Item2 / bestResult.Ms2InfoPPM.Item2) >= ((double)currentResult.Ms2List.Count / bestResult.Ms2List.Count));
+                var computedPrecursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPpm.Item1 + 6 * currentResult.Ms1InfoPpm.Item2), Math.Abs(currentResult.Ms1InfoPpm.Item1 - 6 * currentResult.Ms1InfoPpm.Item2)));
+                var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPpm.Item1 + 6 * currentResult.Ms2InfoPpm.Item2), Math.Abs(currentResult.Ms2InfoPpm.Item1 - 6 * currentResult.Ms2InfoPpm.Item2)));
+                
+                bool ms1Worse = currentResult.Ms1List.Count <= bestResult.Ms1List.Count && ((currentResult.Ms1InfoPpm.Item2 / bestResult.Ms1InfoPpm.Item2) >= ((double)currentResult.Ms1List.Count / bestResult.Ms1List.Count));
+                bool ms2Worse = currentResult.Ms2List.Count <= bestResult.Ms2List.Count && ((currentResult.Ms2InfoPpm.Item2 / bestResult.Ms2InfoPpm.Item2) >= ((double)currentResult.Ms2List.Count / bestResult.Ms2List.Count));
 
                 if (ms1Worse || ms2Worse)
                     break;
@@ -425,10 +398,7 @@ namespace TaskLayer
                 bestResult = currentResult;
                 round++;
             } while (true);
-
-            Console.WriteLine("      bestPrecursorMassToleranceForDatapointAcquisition : " + bestPrecursorMassToleranceForDatapointAcquisition);
-            Console.WriteLine("      bestProductMassToleranceForDatapointAcquisition : " + bestProductMassToleranceForDatapointAcquisition);
-
+            
             CalibrationParameters.PrecursorMassTolerance = bestPrecursorMassToleranceForDatapointAcquisition;
             CommonParameters.ProductMassTolerance = bestProductMassToleranceForDatapointAcquisition;
 

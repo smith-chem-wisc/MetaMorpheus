@@ -20,8 +20,8 @@ namespace EngineLayer.Calibration
             Ms1InfoTh = Ms1List.Select(b => b.LabelTh).MeanStandardDeviation();
             Ms2InfoTh = Ms2List.Select(b => b.LabelTh).MeanStandardDeviation();
 
-            Ms1InfoPPM = Ms1List.Select(b => b.LabelPPM).MeanStandardDeviation();
-            Ms2InfoPPM = Ms2List.Select(b => b.LabelPPM).MeanStandardDeviation();
+            Ms1InfoPpm = Ms1List.Select(b => b.LabelPpm).MeanStandardDeviation();
+            Ms2InfoPpm = Ms2List.Select(b => b.LabelPpm).MeanStandardDeviation();
         }
 
         #endregion Public Constructors
@@ -30,8 +30,8 @@ namespace EngineLayer.Calibration
 
         public Tuple<double, double> Ms1InfoTh { get; }
         public Tuple<double, double> Ms2InfoTh { get; }
-        public Tuple<double, double> Ms1InfoPPM { get; }
-        public Tuple<double, double> Ms2InfoPPM { get; }
+        public Tuple<double, double> Ms1InfoPpm { get; }
+        public Tuple<double, double> Ms2InfoPpm { get; }
         public List<LabeledMs1DataPoint> Ms1List { get; }
         public List<LabeledMs2DataPoint> Ms2List { get; }
 

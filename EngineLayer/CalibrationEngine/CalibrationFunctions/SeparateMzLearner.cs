@@ -11,7 +11,7 @@ namespace EngineLayer.Calibration
     {
         #region Private Fields
 
-        private ILearner<double> ok;
+        private readonly ILearner<double> ok;
 
         #endregion Private Fields
 

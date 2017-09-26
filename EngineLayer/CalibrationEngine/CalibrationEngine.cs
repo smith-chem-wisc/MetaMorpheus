@@ -77,11 +77,9 @@ namespace EngineLayer.Calibration
                 default:
                     throw new MetaMorpheusException("unknown vars to use array: " + varsToUse);
             }
-            Console.WriteLine("   MS1");
-            MS1predictor ms1predictor = new MS1predictor(DoStuff(ms1splitResult, learners));
-
-            Console.WriteLine("   MS2");
-            MS2predictor ms2predictor = new MS2predictor(DoStuff(ms2splitResult, learners));
+            MS1Predictor ms1predictor = new MS1Predictor(DoStuff(ms1splitResult, learners));
+            
+            MS2Predictor ms2predictor = new MS2Predictor(DoStuff(ms2splitResult, learners));
 
             Status("Calibrating Spectra");
 
@@ -94,15 +92,13 @@ namespace EngineLayer.Calibration
 
         #region Private Methods
 
-        private IPredictorModel<double> DoStuff(TrainingTestSetSplit splitResult, List<ILearner<double>> learners)
+        private static IPredictorModel<double> DoStuff(TrainingTestSetSplit splitResult, List<ILearner<double>> learners)
         {
-            Console.WriteLine("   Selecting best model");
             var evaluator = new MeanAbsolutErrorRegressionMetric();
 
             var predictions = new double[splitResult.TestSet.Targets.Length];
             IPredictorModel<double> bestModel = new IdentityCalibrationFunctionPredictorModel();
             var bestError = evaluator.Error(splitResult.TestSet.Targets, predictions);
-            Console.WriteLine("   Identity error: " + bestError);
 
             foreach (var learner in learners)
             {
@@ -115,15 +111,10 @@ namespace EngineLayer.Calibration
                         predictions[i] = model.Predict(splitResult.TestSet.Observations.Row(i));
 
                     var thisError = evaluator.Error(splitResult.TestSet.Targets, predictions);
-
-                    Console.WriteLine("      " + learner + " error: " + thisError);
+                    
 
                     if (thisError < bestError * 0.999)
                     {
-                        Console.WriteLine("      Improved!");
-                        //var dict = model.GetVariableImportance(new Dictionary<string, int> { { "mz", 0 }, { "rt", 1 }, { "tic", 2 }, { "injectiontime", 3 }, { "intensity", 4 } }).Select(b => b.Key + " : " + b.Value);
-                        //if (dict.Any())
-                        //    Console.WriteLine("    " + string.Join(" ; ", dict));
 
                         bestError = thisError;
                         bestModel = model;
@@ -131,15 +122,13 @@ namespace EngineLayer.Calibration
                 }
                 catch
                 {
-                    Console.WriteLine("      Errored! " + learner);
                 }
             }
-            Console.WriteLine("   Done with selecting best model");
 
             return bestModel;
         }
 
-        private void CalibrateSpectra(MS1predictor ms1predictor, MS2predictor ms2predictor)
+        private void CalibrateSpectra(MS1Predictor ms1predictor, MS2Predictor ms2predictor)
         {
             Parallel.ForEach(Partitioner.Create(1, myMsDataFile.NumSpectra + 1), fff =>
               {

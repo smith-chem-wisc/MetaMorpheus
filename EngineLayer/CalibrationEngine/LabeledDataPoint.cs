@@ -19,7 +19,7 @@
 
         #region Public Constructors
 
-        public LabeledDataPoint(double mz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double expectedMZ, Psm identification)
+        protected LabeledDataPoint(double mz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double expectedMZ, Psm identification)
         {
             this.mz = mz;
             this.rt = rt;
@@ -38,7 +38,7 @@
         #region Public Properties
 
         public double LabelTh { get { return mz - expectedMZ; } }
-        public double LabelPPM { get { return (mz - expectedMZ) / (expectedMZ) * 1e6; } }
+        public double LabelPpm { get { return (mz - expectedMZ) / (expectedMZ) * 1e6; } }
 
         #endregion Public Properties
     }

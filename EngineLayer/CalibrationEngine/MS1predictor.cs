@@ -2,17 +2,17 @@
 
 namespace EngineLayer.Calibration
 {
-    internal class MS1predictor
+    internal class MS1Predictor
     {
         #region Private Fields
 
-        private IPredictorModel<double> bestMS1predictor;
+        private readonly IPredictorModel<double> bestMS1predictor;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public MS1predictor(IPredictorModel<double> bestMS1predictor)
+        public MS1Predictor(IPredictorModel<double> bestMS1predictor)
         {
             this.bestMS1predictor = bestMS1predictor;
         }
