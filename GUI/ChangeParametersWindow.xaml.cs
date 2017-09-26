@@ -249,7 +249,8 @@ namespace MetaMorpheusGUI
             var g = ParameterGrid.Items.GetItemAt(6) as Parameter;
             g.Value = settings.ScoreCutoff;
             var h = ParameterGrid.Items.GetItemAt(7) as Parameter;
-            h.Value = settings.ProductMassTolerance.Value;
+            if (settings.ProductMassTolerance != null)
+                h.Value = settings.ProductMassTolerance.Value;
             var i = ParameterGrid.Items.GetItemAt(8) as Parameter;
             i.Value = settings.DeconvolutionMaxAssumedChargeState;
             var j = ParameterGrid.Items.GetItemAt(9) as Parameter;
@@ -269,7 +270,8 @@ namespace MetaMorpheusGUI
             else
                 o.Value = null;
             var p = ParameterGrid.Items.GetItemAt(15) as Parameter;
-            p.Value = settings.DeconvolutionMassTolerance.Value;
+            if (settings.DeconvolutionMassTolerance != null)
+                p.Value = settings.DeconvolutionMassTolerance.Value;
             var q = ParameterGrid.Items.GetItemAt(16) as Parameter;
             q.Value = settings.TrimMsMsPeaks;
             var r = ParameterGrid.Items.GetItemAt(17) as Parameter;
@@ -279,7 +281,7 @@ namespace MetaMorpheusGUI
             var t = ParameterGrid.Items.GetItemAt(19) as Parameter;
             t.Value = settings.TopNpeaks;
             var u = ParameterGrid.Items.GetItemAt(20) as Parameter;
-            
+
 
             ParameterGrid.Items.Refresh();
 
@@ -309,7 +311,7 @@ namespace MetaMorpheusGUI
                     if ((int)paramList[20].Value == 1)
                         toleranceType = "PPM";
                 }
-                    if (index.HasValue && index >= 0)
+                if (index.HasValue && index >= 0)
                 {
                     FileSpecificSettingsList[i].Protease = paramList[0].ProtList[index.Value];
                 }
