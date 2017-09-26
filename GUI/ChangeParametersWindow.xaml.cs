@@ -114,6 +114,7 @@ namespace MetaMorpheusGUI
                                 {
                                     //Need to convert first letter yo uppercase to match Type
                                     string h = tomlSettingsListList[j][key].Value.ReadableTypeName;
+                                    //convert string to appropritate format
                                     if (!string.IsNullOrEmpty(h))
                                     {
                                         h = h.First().ToString().ToUpper() + h.Substring(1);
@@ -133,14 +134,14 @@ namespace MetaMorpheusGUI
                                     }
 
 
-                                    Type asdf = Type.GetType("System." + h);
-                                    var a = tomlSettingsListList[j][key].Value.Get(asdf);
+                                    Type typeAsString = Type.GetType("System." + h);
+                                    var a = tomlSettingsListList[j][key].Value.Get(typeAsString);
 
                                     var c = tomlSettingsListList[j][key].Value.ReadableTypeName;
                                     var d = tomlSettingsListList[j].Values.ToList();
                                     h = tomlSettingsListList[i][key].Value.ReadableTypeName;
 
-                                    var b = tomlSettingsListList[i][key].Value.Get(asdf);
+                                    var b = tomlSettingsListList[i][key].Value.Get(typeAsString);
                                     string asd = a.ToString();
                                     if (!a.Equals(b))
                                     {
@@ -151,6 +152,7 @@ namespace MetaMorpheusGUI
 
                                 }
                             }
+                            //add if nullere
                             else nonEqualValueNames.Add(key);
                         }
                     }
