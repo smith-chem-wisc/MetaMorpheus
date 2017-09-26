@@ -59,11 +59,7 @@ namespace EngineLayer
         {
             Status("Extracting data points:");
             // The final training point list
-
-            int numMs1MassChargeCombinationsConsidered = 0;
-            int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
-            int numMs2MassChargeCombinationsConsidered = 0;
-            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
+            
             List<LabeledMs1DataPoint> Ms1List = new List<LabeledMs1DataPoint>();
             List<LabeledMs2DataPoint> Ms2List = new List<LabeledMs2DataPoint>();
 
@@ -71,6 +67,10 @@ namespace EngineLayer
             //var peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
 
             int numIdentifications = goodIdentifications.Count;
+
+            if (numIdentifications == 0)
+                throw new MetaMorpheusException("Not enough identifications");
+
             // Loop over identifications
 
             HashSet<string> sequences = new HashSet<string>();
@@ -105,14 +105,12 @@ namespace EngineLayer
                     var ms2tuple = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2scanNumber) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, coolPeptide, peptideCharge, identification);
 
                     // If MS2 has low evidence for peptide, skip and go to next one
-                    if (ms2tuple.Item4 < numFragmentsNeededForEveryIdentification)
+                    if (ms2tuple.Item2 < numFragmentsNeededForEveryIdentification)
                         continue;
 
                     lock (lockObj2)
                     {
                         Ms2List.AddRange(ms2tuple.Item1);
-                        numMs2MassChargeCombinationsConsidered += ms2tuple.Item2;
-                        numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms2tuple.Item3;
                         if (sequences.Contains(identification.FullSequence))
                             continue; // Do not search same sequence multiple times in MS1 scans
                         sequences.Add(identification.FullSequence);
@@ -132,23 +130,15 @@ namespace EngineLayer
 
                     lock (lockObj)
                     {
-                        Ms1List.AddRange(ms1tupleBack.Item1);
-                        numMs1MassChargeCombinationsConsidered += ms1tupleBack.Item2;
-                        numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms1tupleBack.Item3;
-                        Ms1List.AddRange(ms1tupleForward.Item1);
-                        numMs1MassChargeCombinationsConsidered += ms1tupleForward.Item2;
-                        numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += ms1tupleForward.Item3;
+                        Ms1List.AddRange(ms1tupleBack);
+                        Ms1List.AddRange(ms1tupleForward);
                     }
                 }
             });
 
             return new DataPointAquisitionResults(this,
                 Ms1List,
-                Ms2List,
-                numMs1MassChargeCombinationsConsidered,
-                numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
-                numMs2MassChargeCombinationsConsidered,
-                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks
+                Ms2List
             );
         }
 
@@ -156,11 +146,9 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private (List<LabeledMs1DataPoint>, int, int) SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, Psm identification)
+        private List<LabeledMs1DataPoint> SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, Psm identification)
         {
             List<LabeledMs1DataPoint> result = new List<LabeledMs1DataPoint>();
-            int numMs1MassChargeCombinationsConsidered = 0;
-            int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
 
             int theIndex;
             if (direction == 1)
@@ -202,22 +190,13 @@ namespace EngineLayer
                     foreach (double a in theoreticalMasses)
                     {
                         double theMZ = a.ToMz(chargeToLookAt);
-
-                        var npwr = fullMS1spectrum.NumPeaksWithinRange(mzToleranceForMs1Search.GetMinimumValue(theMZ), mzToleranceForMs1Search.GetMaximumValue(theMZ));
-                        if (npwr == 0)
-                        {
-                            break;
-                        }
-                        numMs1MassChargeCombinationsConsidered++;
-                        if (npwr > 1)
-                        {
-                            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks++;
-                            continue;
-                        }
-
+                        
                         var closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
                         var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex];
 
+                        if (!mzToleranceForMs1Search.Within(closestPeakMZ, theMZ))
+                            break;
+                                                
                         highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
                         trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), theMZ, null));
                     }
@@ -251,17 +230,17 @@ namespace EngineLayer
                 } while (chargeToLookAt <= highestKnownChargeForThisPeptide + 1);
                 theIndex += direction;
             }
-            return (result, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            return result;
         }
 
-        private (List<LabeledMs2DataPoint>, int, int, int) SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, Psm identification)
+        private (List<LabeledMs2DataPoint>, int) SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, Psm identification)
         {
             List<LabeledMs2DataPoint> result = new List<LabeledMs2DataPoint>();
-            int numMs2MassChargeCombinationsConsidered = 0;
-            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
+            //int numMs2MassChargeCombinationsConsidered = 0;
+            //int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
             int numFragmentsIdentified = 0;
             // Key: mz value, Value: error
-            var addedPeaks = new Dictionary<double, double>();
+            var addedPeaks = new HashSet<double>();
 
             var countForThisMS2 = 0;
             var countForThisMS2a = 0;
@@ -321,24 +300,16 @@ namespace EngineLayer
                         foreach (double a in masses)
                         {
                             double theMZ = a.ToMz(chargeToLookAt);
-                            var npwr = ms2DataScan.MassSpectrum.NumPeaksWithinRange(mzToleranceForMs2Search.GetMinimumValue(theMZ), mzToleranceForMs2Search.GetMaximumValue(theMZ));
-                            if (npwr == 0)
-                            {
-                                break;
-                            }
-                            numMs2MassChargeCombinationsConsidered++;
-                            if (npwr > 1)
-                            {
-                                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks++;
-                                continue;
-                            }
-
+                            
                             var closestPeakIndex = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theMZ);
                             var closestPeakMZ = ms2DataScan.MassSpectrum.XArray[closestPeakIndex];
 
-                            if (!addedPeaks.ContainsKey(closestPeakMZ))
+                            if(!mzToleranceForMs2Search.Within(closestPeakMZ, theMZ))
+                                break;
+
+                            if (!addedPeaks.Contains(closestPeakMZ))
                             {
-                                addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
+                                addedPeaks.Add(closestPeakMZ);
                                 trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(ms2DataScan.MassSpectrum.YArray[closestPeakIndex]), theMZ, null));
                             }
                         }
@@ -371,7 +342,7 @@ namespace EngineLayer
                 }
             }
 
-            return (result, numMs2MassChargeCombinationsConsidered, numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, numFragmentsIdentified);
+            return (result, numFragmentsIdentified);
         }
 
         #endregion Private Methods

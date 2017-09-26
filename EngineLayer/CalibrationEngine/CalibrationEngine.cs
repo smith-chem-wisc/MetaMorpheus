@@ -69,6 +69,11 @@ namespace EngineLayer.Calibration
                     ms2splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms2List.SelectMany(b => new[] { b.mz, b.logIntensity }).ToArray(), datapoints.Ms2List.Count, 2), datapoints.Ms2List.Select(b => b.LabelTh).ToArray());
                     break;
 
+                case "Int":
+                    ms1splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms1List.SelectMany(b => new[] { b.logIntensity }).ToArray(), datapoints.Ms1List.Count, 1), datapoints.Ms1List.Select(b => b.LabelTh).ToArray());
+                    ms2splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms2List.SelectMany(b => new[] { b.logIntensity }).ToArray(), datapoints.Ms2List.Count, 1), datapoints.Ms2List.Select(b => b.LabelTh).ToArray());
+                    break;
+
                 default:
                     throw new MetaMorpheusException("unknown vars to use array: " + varsToUse);
             }
