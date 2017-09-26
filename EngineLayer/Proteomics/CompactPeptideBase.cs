@@ -54,7 +54,7 @@ namespace EngineLayer
                 throw new NotImplementedException();
             if (containsBnoB1)
                 massLen += NTerminalMasses.Length - 1;
-            if (containsB)
+            else if (containsB)
                 massLen += NTerminalMasses.Length;
             if (containsC)
                 massLen += NTerminalMasses.Length;
@@ -77,7 +77,7 @@ namespace EngineLayer
                         massesToReturn[i] = hm;
                         i++;
                     }
-                    if (containsB)
+                    else if (containsB)
                     {
                         massesToReturn[i] = hm;
                         i++;
@@ -89,9 +89,8 @@ namespace EngineLayer
                     }
                 }
             if (CTerminalMasses != null)
-                for (int j = 0; j < CTerminalMasses.Length; j++)
+                foreach (double hm in CTerminalMasses)
                 {
-                    var hm = CTerminalMasses[j];
                     if (containsY)
                     {
                         massesToReturn[i] = hm + waterMonoisotopicMass;
