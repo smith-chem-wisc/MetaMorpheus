@@ -104,15 +104,54 @@ namespace MetaMorpheusGUI
                 {
                     for (int j = 0; j < tomlSettingsListList.Count; j++)
                     {
-                        foreach (var key in tomlSettingsListList[i].Keys)
+                        foreach (var key in tomlSettingsListList[j].Keys)
                         {
-                            if (tomlSettingsListList[j].ContainsKey(tomlSettingsListList[i][key].Key))
+                            //var keys = tomlSettingsListList[j].Keys.ToList();
+                            //var key = keys[i];
+                            if (tomlSettingsListList[i].ContainsKey(key))
                             {
-                                if (!tomlSettingsListList[i][key].Value.Equals(tomlSettingsListList[j][key].Value))
+                                if (tomlSettingsListList[j].ContainsKey(tomlSettingsListList[i][key].Key))
                                 {
-                                    nonEqualValueNames.Add(tomlSettingsListList[i][key].Key);
+                                    //Need to convert first letter yo uppercase to match Type
+                                    string h = tomlSettingsListList[j][key].Value.ReadableTypeName;
+                                    if (!string.IsNullOrEmpty(h))
+                                    {
+                                        h = h.First().ToString().ToUpper() + h.Substring(1);
+                                    }
+                                    if (h == "Int")
+                                    {
+                                        h = "Int32";
+                                    }
+                                    if (h == "Bool")
+                                    {
+                                        h = "Boolean";
+                                    }
+
+                                    if (h == "Float")
+                                    {
+                                        h = "Single";
+                                    }
+
+
+                                    Type asdf = Type.GetType("System." + h);
+                                    var a = tomlSettingsListList[j][key].Value.Get(asdf);
+
+                                    var c = tomlSettingsListList[j][key].Value.ReadableTypeName;
+                                    var d = tomlSettingsListList[j].Values.ToList();
+                                    h = tomlSettingsListList[i][key].Value.ReadableTypeName;
+
+                                    var b = tomlSettingsListList[i][key].Value.Get(asdf);
+                                    string asd = a.ToString();
+                                    if (!a.Equals(b))
+                                    {
+                                        Console.WriteLine(a);
+                                        nonEqualValueNames.Add(tomlSettingsListList[j][key].Key);
+                                    }
+
+
                                 }
                             }
+                            else nonEqualValueNames.Add(key);
                         }
                     }
 
@@ -219,6 +258,7 @@ namespace MetaMorpheusGUI
                         paramList[19].Different = true;
                     }
                 }
+
                 UpdateAndPopulateFields(settings);
             }
 
@@ -226,6 +266,7 @@ namespace MetaMorpheusGUI
 
 
         }
+        //Updates fields of display so that it reflects current settings
         private void UpdateAndPopulateFields(FileSpecificSettings settings)
         {
 
@@ -233,7 +274,6 @@ namespace MetaMorpheusGUI
             int? index = paramList[0].ProtList.IndexOf(settings.Protease);
             if (index.HasValue)
                 a.Value = index;
-            //GlobalEngineLevelSettings.ProteaseDictionary
             var b = ParameterGrid.Items.GetItemAt(1) as Parameter;
             b.Value = settings.ConserveMemory;
             var c = ParameterGrid.Items.GetItemAt(2) as Parameter;
@@ -282,6 +322,23 @@ namespace MetaMorpheusGUI
             t.Value = settings.TopNpeaks;
             var u = ParameterGrid.Items.GetItemAt(20) as Parameter;
 
+            //choosing correct tolerance type (can't use settings because there is no explicit tolerance type field)
+            string[] tempString = new string[2];
+            if (settings.ProductMassTolerance != null)
+            {
+                tempString = settings.ProductMassTolerance.ToString().Split(' ');
+            }
+            else if (settings.DeconvolutionMassTolerance != null)
+            {
+                tempString = settings.DeconvolutionMassTolerance.ToString().Split(' ');
+            }
+            if (tempString[1] != null)
+            {
+                if (tempString[1].Equals("Absolute"))
+                    u.Value = 0;
+                else if (tempString[1].Equals("PPM"))
+                    u.Value = 1;
+            }
 
             ParameterGrid.Items.Refresh();
 
@@ -294,6 +351,8 @@ namespace MetaMorpheusGUI
             !string.IsNullOrEmpty(hm.Text)) { }
         }
 
+        //upon clicking save button, settings are saved to memory in FileSettingsList in order to be 
+        //written to a toml file later
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             ParameterGrid.Items.Refresh();
@@ -436,6 +495,7 @@ namespace MetaMorpheusGUI
             return paramList;
         }
 
+        //Undoes value(sets to null)
         void Unset(object sender, RoutedEventArgs e)
         {
             int index = ParameterGrid.SelectedIndex;
