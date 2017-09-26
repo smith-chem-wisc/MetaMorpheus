@@ -49,7 +49,7 @@ namespace TaskLayer
                         .ConfigureType<OpenSearchMode>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())))
-                        .ConfigureType<OpenHighTheoSearchMode>(type => type
+                        .ConfigureType<OpenLowTheoSearchMode>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())))
                         .ConfigureType<SingleAbsoluteAroundZeroSearchMode>(type => type
