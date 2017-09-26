@@ -151,18 +151,6 @@ namespace EngineLayer.Indexing
                 {
                     if (theoreticalFragmentMass > 0 && theoreticalFragmentMass < maxFragmentMass)
                     {
-                        /*
-                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * fragmentBinsPerDalton);
-                        if (fragmentBin < maxFragmentMass * fragmentBinsPerDalton)
-                        {
-                            if (fragmentIndex[fragmentBin] == null)
-                                fragmentIndex[fragmentBin] = new List<int> { i };
-                            else
-                                fragmentIndex[fragmentBin].Add(i);
-                        }
-                        */
-
-                        
                         double mz = Chemistry.ClassExtensions.ToMz(theoreticalFragmentMass, 1);
                         int fragmentBin = (int)Math.Round(mz * fragmentBinsPerDalton);
 

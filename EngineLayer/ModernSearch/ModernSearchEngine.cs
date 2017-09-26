@@ -23,7 +23,7 @@ namespace EngineLayer.ModernSearch
         protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
-        protected static readonly int fragmentBinsPerDalton = 1000;
+        protected const int fragmentBinsPerDalton = 1000;
 
         #endregion Protected Fields
 
@@ -52,10 +52,8 @@ namespace EngineLayer.ModernSearch
             double progress = 0;
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing modern search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
-
-            int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
-            //var roundedPepMasses = peptideIndex.Select(p => (int)Math.Round(p.MonoisotopicMassIncludingFixedMods * 100, 0)).ToList();
-            byte byteScoreCutoff = Convert.ToByte(intScoreCutoff);
+            
+            byte byteScoreCutoff = Convert.ToByte((int)CommonParameters.ScoreCutoff);
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
             {
@@ -70,19 +68,17 @@ namespace EngineLayer.ModernSearch
                     var scan = listOfSortedms2Scans[i];
 
                     // filter ms2 fragment peaks by intensity
-                    int numFragmentsToUse = 0;
+                    int numFragmentsToUse = scan.NumPeaks;
                     if (CommonParameters.TopNpeaks != null)
                         numFragmentsToUse = (int)CommonParameters.TopNpeaks;
-                    else
-                        numFragmentsToUse = scan.NumPeaks;
 
                     var peaks = scan.TheScan.MassSpectrum.FilterByNumberOfMostIntense(numFragmentsToUse).ToList();
                     double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
 
                     // get allowed precursor masses
-                    var t = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
-                    double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
-                    double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
+                    var allowedMassDifferences = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
+                    double lowestMassPeptideToLookFor = allowedMassDifferences.Min(p => p.allowedInterval.Minimum);
+                    double highestMassPeptideToLookFor = allowedMassDifferences.Max(p => p.allowedInterval.Maximum);
 
                     int numChecksSkipped = 1;
                     int obsPreviousFragmentCeilingMz = 0;
@@ -113,8 +109,7 @@ namespace EngineLayer.ModernSearch
                             }
                         }
                     }
-                        
-
+                    
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
@@ -162,6 +157,7 @@ namespace EngineLayer.ModernSearch
                 {
                     List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
 
+                    // get lowest possible precursor mass for this fragment (start at first element in bin if lower bound is -infinity)
                     int m = 0;
                     if (!Double.IsInfinity(lowestMassPeptideToLookFor))
                     {
@@ -200,9 +196,7 @@ namespace EngineLayer.ModernSearch
                                     int notch = massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods);
 
                                     if (notch >= 0)
-                                    {
                                         idsOfPeptidesPossiblyObserved.Add(id);
-                                    }
                                 }
 
                                 if (peptideIndex[id].MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)

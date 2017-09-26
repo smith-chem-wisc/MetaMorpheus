@@ -37,7 +37,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
 
             int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
-            //var roundedPepMasses = peptideIndex.Select(p => (int)Math.Round(p.MonoisotopicMassIncludingFixedMods * 100, 0)).ToList();
             byte byteScoreCutoff = Convert.ToByte(intScoreCutoff);
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
@@ -64,8 +63,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                     // get allowed precursor masses
                     var t = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
-                    double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
-                    double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
 
                     int numChecksSkipped = 1;
                     int obsPreviousFragmentCeilingMz = 0;
