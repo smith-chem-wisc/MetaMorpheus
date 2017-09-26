@@ -282,8 +282,8 @@ namespace TaskLayer
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
 
-                    Console.WriteLine("   PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                    Console.WriteLine("   ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
+                    Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
+                    Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
 
                     myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
 
@@ -313,8 +313,8 @@ namespace TaskLayer
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
 
-                    Console.WriteLine("   PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                    Console.WriteLine("   ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
+                    Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
+                    Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
 
                     myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
 
@@ -344,9 +344,9 @@ namespace TaskLayer
                     CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
 
-                    Console.WriteLine("   bestFilePath: " + bestFilePath);
-                    Console.WriteLine("   PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
-                    Console.WriteLine("   ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
+                    Console.WriteLine("bestFilePath: " + bestFilePath);
+                    Console.WriteLine("PrecursorMassTolerance: " + CalibrationParameters.PrecursorMassTolerance);
+                    Console.WriteLine("ProductMassTolerance: " + CommonParameters.ProductMassTolerance);
 
                     Warn("");
                     Warn("");
@@ -400,87 +400,67 @@ namespace TaskLayer
 
             // Store
 
-            Console.WriteLine("   CurrentGoodIDs: " + goodIdentifications.Count);
+            Console.WriteLine("      CurrentGoodIDs: " + goodIdentifications.Count);
 
             DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>());
+
             Tolerance bestPrecursorMassToleranceForDatapointAcquisition = CalibrationParameters.PrecursorMassTolerance;
             Tolerance bestProductMassToleranceForDatapointAcquisition = CommonParameters.ProductMassTolerance;
 
-            Tolerance precursorMassToleranceForDatapointAcquisition = CalibrationParameters.PrecursorMassTolerance;
-            Tolerance productMassToleranceForDatapointAcquisition = CommonParameters.ProductMassTolerance;
+            Tolerance testPrecursorMassToleranceForDatapointAcquisition = CalibrationParameters.PrecursorMassTolerance;
+            Tolerance testProductMassToleranceForDatapointAcquisition = CommonParameters.ProductMassTolerance;
+
             var round = 1;
             do
             {
-                Console.WriteLine("   Datapoint Acquisition round: " + round);
+                Console.WriteLine("      Datapoint Acquisition round: " + round);
                 DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
                     goodIdentifications,
                     myMsDataFile,
-                    precursorMassToleranceForDatapointAcquisition,
-                    productMassToleranceForDatapointAcquisition,
+                    testPrecursorMassToleranceForDatapointAcquisition,
+                    testProductMassToleranceForDatapointAcquisition,
                     CalibrationParameters.numFragmentsNeededForEveryIdentification,
                     CalibrationParameters.minMS1isotopicPeaksNeededForConfirmedIdentification,
                     CalibrationParameters.minMS2isotopicPeaksNeededForConfirmedIdentification,
                     fragmentTypesForCalibration,
                     new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-                precursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPPM.Item1 + 6 * currentResult.Ms1InfoPPM.Item2), Math.Abs(currentResult.Ms1InfoPPM.Item1 - 6 * currentResult.Ms1InfoPPM.Item2)));
-                productMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPPM.Item1 + 6 * currentResult.Ms2InfoPPM.Item2), Math.Abs(currentResult.Ms2InfoPPM.Item1 - 6 * currentResult.Ms2InfoPPM.Item2)));
+                var computedPrecursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPPM.Item1 + 6 * currentResult.Ms1InfoPPM.Item2), Math.Abs(currentResult.Ms1InfoPPM.Item1 - 6 * currentResult.Ms1InfoPPM.Item2)));
+                var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPPM.Item1 + 6 * currentResult.Ms2InfoPPM.Item2), Math.Abs(currentResult.Ms2InfoPPM.Item1 - 6 * currentResult.Ms2InfoPPM.Item2)));
 
                 #region result output and writing
 
-                Console.WriteLine("      MS1th : " + currentResult.Ms1InfoTh.Item1 + " : " + currentResult.Ms1InfoTh.Item2 + " :  MS2th : " + currentResult.Ms2InfoTh.Item1 + " : " + currentResult.Ms2InfoTh.Item2);
-                Console.WriteLine("      MS1ppm : " + currentResult.Ms1InfoPPM.Item1 + " : " + currentResult.Ms1InfoPPM.Item2 + " :  MS2ppm : " + currentResult.Ms2InfoPPM.Item1 + " : " + currentResult.Ms2InfoPPM.Item2);
-                Console.WriteLine("      currentResult.Ms1List.Count : " + currentResult.Ms1List.Count + " : currentResult.Ms2List.Count : " + currentResult.Ms2List.Count + " :  currentResult.Count : " + currentResult.Count);
-                Console.WriteLine("      precursorMassToleranceForDatapointAcquisition : " + precursorMassToleranceForDatapointAcquisition);
-                Console.WriteLine("      productMassToleranceForDatapointAcquisition : " + productMassToleranceForDatapointAcquisition);
+                Console.WriteLine("         MS1th : " + currentResult.Ms1InfoTh.Item1 + " : " + currentResult.Ms1InfoTh.Item2 + " :  MS2th : " + currentResult.Ms2InfoTh.Item1 + " : " + currentResult.Ms2InfoTh.Item2);
+                Console.WriteLine("         MS1ppm : " + currentResult.Ms1InfoPPM.Item1 + " : " + currentResult.Ms1InfoPPM.Item2 + " :  MS2ppm : " + currentResult.Ms2InfoPPM.Item1 + " : " + currentResult.Ms2InfoPPM.Item2);
+                Console.WriteLine("         currentResult.Ms1List.Count : " + currentResult.Ms1List.Count + " : currentResult.Ms2List.Count : " + currentResult.Ms2List.Count + " :  currentResult.Count : " + currentResult.Count);
+                Console.WriteLine("         computedPrecursorMassToleranceForDatapointAcquisition : " + computedPrecursorMassToleranceForDatapointAcquisition);
+                Console.WriteLine("         computedProductMassToleranceForDatapointAcquisition : " + computedProductMassToleranceForDatapointAcquisition);
 
                 #endregion result output and writing
 
-                bool ms1Worse = ((currentResult.Ms1InfoPPM.Item2 / bestResult.Ms1InfoPPM.Item2) >= ((double)currentResult.Ms1List.Count / bestResult.Ms1List.Count));
-                bool ms2Worse = ((currentResult.Ms2InfoPPM.Item2 / bestResult.Ms2InfoPPM.Item2) >= ((double)currentResult.Ms2List.Count / bestResult.Ms2List.Count));
+                bool ms1Worse = currentResult.Ms1List.Count <= bestResult.Ms1List.Count && ((currentResult.Ms1InfoPPM.Item2 / bestResult.Ms1InfoPPM.Item2) >= ((double)currentResult.Ms1List.Count / bestResult.Ms1List.Count));
+                bool ms2Worse = currentResult.Ms2List.Count <= bestResult.Ms2List.Count && ((currentResult.Ms2InfoPPM.Item2 / bestResult.Ms2InfoPPM.Item2) >= ((double)currentResult.Ms2List.Count / bestResult.Ms2List.Count));
 
-                if (ms1Worse && ms2Worse)
+                if (ms1Worse || ms2Worse)
                     break;
-                else if (ms1Worse)
-                {
-                    precursorMassToleranceForDatapointAcquisition = bestPrecursorMassToleranceForDatapointAcquisition;
-                    bestProductMassToleranceForDatapointAcquisition = productMassToleranceForDatapointAcquisition;
-                }
-                else if (ms2Worse)
-                {
-                    bestPrecursorMassToleranceForDatapointAcquisition = precursorMassToleranceForDatapointAcquisition;
-                    productMassToleranceForDatapointAcquisition = bestProductMassToleranceForDatapointAcquisition;
-                }
-                else
-                {
-                    bestPrecursorMassToleranceForDatapointAcquisition = precursorMassToleranceForDatapointAcquisition;
-                    bestProductMassToleranceForDatapointAcquisition = productMassToleranceForDatapointAcquisition;
-                }
+                
+                bestPrecursorMassToleranceForDatapointAcquisition = testPrecursorMassToleranceForDatapointAcquisition;
+                bestProductMassToleranceForDatapointAcquisition = testProductMassToleranceForDatapointAcquisition;
+
+                testPrecursorMassToleranceForDatapointAcquisition = computedPrecursorMassToleranceForDatapointAcquisition;
+                testProductMassToleranceForDatapointAcquisition = computedProductMassToleranceForDatapointAcquisition;
+
                 bestResult = currentResult;
                 round++;
             } while (true);
+
+            Console.WriteLine("      bestPrecursorMassToleranceForDatapointAcquisition : " + bestPrecursorMassToleranceForDatapointAcquisition);
+            Console.WriteLine("      bestProductMassToleranceForDatapointAcquisition : " + bestProductMassToleranceForDatapointAcquisition);
 
             CalibrationParameters.PrecursorMassTolerance = bestPrecursorMassToleranceForDatapointAcquisition;
             CommonParameters.ProductMassTolerance = bestProductMassToleranceForDatapointAcquisition;
 
             return (goodIdentifications.Count, bestResult);
-        }
-
-        private bool BreakBecauseOfWorseResults(List<int> numberOfGoodIds, List<Tolerance> precursorMassTolerances, List<Tolerance> productMassTolerances)
-        {
-            var idRatio = (double)numberOfGoodIds.Last() / numberOfGoodIds[numberOfGoodIds.Count - 2];
-            var tolRatio1 = precursorMassTolerances.Last().Value / precursorMassTolerances[precursorMassTolerances.Count - 2].Value;
-            var tolRatio2 = productMassTolerances.Last().Value / productMassTolerances[productMassTolerances.Count - 2].Value;
-
-            return
-                    // Break if too much decrease in number of ids
-                    idRatio <= 0.9 // Break if too much decrease in number of ids
-                ||
-                   // Break if ids decreased a bit, but tols did not decrase enough
-                   (idRatio > 0.9 && idRatio < 1) && (tolRatio1 > 1 || tolRatio2 > 1 || (tolRatio1 >= 0.9 && tolRatio2 >= 0.9))
-                ||
-                   // Break if ids did not decrease but tols did not decrease
-                   (idRatio >= 1) && (tolRatio1 >= 1 || tolRatio2 >= 1);
         }
 
         private List<Psm> GetGoodIdentifications(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, MassDiffAcceptor searchMode, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId)
