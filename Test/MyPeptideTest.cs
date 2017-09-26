@@ -210,7 +210,7 @@ namespace Test
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 },
                 ConserveMemory = false,
-                ScoreCutoff = 0
+                ScoreCutoff = 1
             };
             var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();

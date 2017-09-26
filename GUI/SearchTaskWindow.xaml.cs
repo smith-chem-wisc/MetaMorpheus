@@ -328,9 +328,9 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 0)
+            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 1)
             {
-                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive number.");
+                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
 
