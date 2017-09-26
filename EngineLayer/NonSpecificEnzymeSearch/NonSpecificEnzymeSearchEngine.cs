@@ -67,10 +67,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
                     double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
 
+                    int numChecksSkipped = 1;
                     int obsPreviousFragmentCeilingMz = 0;
-                    int[] compPreviousFragmentFloorMz = new int[dissociationTypes.Count];
-                    for (int j = 0; j < compPreviousFragmentFloorMz.Length; j++)
-                        compPreviousFragmentFloorMz[j] = (int)Math.Ceiling(scan.PrecursorMass * fragmentBinsPerDalton);
+
                     // search peaks for matches
                     foreach (IMzPeak peak in peaks)
                     {
@@ -88,12 +87,20 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 if (fragmentIndex[fragmentBin] != null)
                                 {
-                                    List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
-                                    foreach (int id in peptideIdsInThisBin)
+                                    if (numChecksSkipped == intScoreCutoff)
                                     {
-                                        scoringTable[id]++;
-                                        if (scoringTable[id] == byteScoreCutoff)
-                                            idsOfPeptidesPossiblyObserved.Add(id);
+                                        List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
+                                        foreach (int id in peptideIdsInThisBin)
+                                        {
+                                            scoringTable[id]++;
+                                            if (scoringTable[id] == byteScoreCutoff)
+                                                idsOfPeptidesPossiblyObserved.Add(id);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        numChecksSkipped++;
+                                        fragmentIndex[fragmentBin].ForEach(id => scoringTable[id]++);
                                     }
                                 }
                             }
@@ -102,23 +109,29 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
                                 for(int j=0; j<dissociationTypes.Count; j++)
                                 {
-                                    double complementaryPeak = scan.PrecursorMass - peak.Mz + complementaryIonConversionDictionary[dissociationTypes[j]] + Constants.protonMass;
-                                    int compFragmentFloorMz = (int)Math.Floor((complementaryPeak - mzTolerance) * fragmentBinsPerDalton);
-                                    int compFragmentCeilingMz = (int)Math.Ceiling((complementaryPeak + mzTolerance) * fragmentBinsPerDalton);
-                                    if (compFragmentCeilingMz > compPreviousFragmentFloorMz[j])
-                                        compFragmentCeilingMz = compPreviousFragmentFloorMz[j];
-                                    compPreviousFragmentFloorMz[j] = compFragmentFloorMz;
+                                    int compPrecursor = (int)((scan.PrecursorMass + complementaryIonConversionDictionary[dissociationTypes[j]] + Constants.protonMass) * fragmentBinsPerDalton);
+                                    int compFragmentFloorMz = compPrecursor - obsFragmentCeilingMz;
+                                    int compFragmentCeilingMz = compPrecursor - obsFragmentFloorMz;
+
                                     // get all theoretical fragments this experimental fragment could be
                                     for (int fragmentBin = compFragmentFloorMz; fragmentBin <= compFragmentCeilingMz; fragmentBin++)
                                     {
                                         if (fragmentIndex[fragmentBin] != null)
                                         {
-                                            List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
-                                            foreach (int id in peptideIdsInThisBin)
+                                            if (numChecksSkipped == intScoreCutoff)
                                             {
-                                                scoringTable[id]++;
-                                                if (scoringTable[id] == byteScoreCutoff)
-                                                    idsOfPeptidesPossiblyObserved.Add(id);
+                                                List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
+                                                foreach (int id in peptideIdsInThisBin)
+                                                {
+                                                    scoringTable[id]++;
+                                                    if (scoringTable[id] == byteScoreCutoff)
+                                                        idsOfPeptidesPossiblyObserved.Add(id);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                numChecksSkipped++;
+                                                fragmentIndex[fragmentBin].ForEach(id => scoringTable[id]++);
                                             }
                                         }
                                     }
