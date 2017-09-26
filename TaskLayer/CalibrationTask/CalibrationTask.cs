@@ -199,7 +199,7 @@ namespace TaskLayer
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
                     };
-                    
+
                     var intLearners = new List<ILearner<double>>()
                     {
                         new LinearCalibrationFunctionMathNet(new int[] { }),
@@ -210,7 +210,7 @@ namespace TaskLayer
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
                     };
-                    
+
                     (int count, DataPointAquisitionResults datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
                     WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "init", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
@@ -316,7 +316,10 @@ namespace TaskLayer
 
                     Warn("");
                     Warn("");
+
+                    myTaskResults.newSpectra.Add(bestFilePath);
                 }
+
                 );
 
             return myTaskResults;
@@ -364,6 +367,9 @@ namespace TaskLayer
 
             List<Psm> goodIdentifications = GetGoodIdentifications(myMsDataFile, searchMode, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
+            if (!goodIdentifications.Any())
+                return (0, null);
+
             // Store
 
             Console.WriteLine("      CurrentGoodIDs: " + goodIdentifications.Count);
@@ -409,7 +415,7 @@ namespace TaskLayer
 
                 if (ms1Worse || ms2Worse)
                     break;
-                
+
                 bestPrecursorMassToleranceForDatapointAcquisition = testPrecursorMassToleranceForDatapointAcquisition;
                 bestProductMassToleranceForDatapointAcquisition = testProductMassToleranceForDatapointAcquisition;
 

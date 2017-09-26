@@ -71,10 +71,7 @@ namespace EngineLayer
             //var peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
 
             int numIdentifications = goodIdentifications.Count;
-
-            if (numIdentifications == 0)
-                throw new MetaMorpheusException("Not enough identifications");
-
+            
             // Loop over identifications
 
             HashSet<string> sequences = new HashSet<string>();
