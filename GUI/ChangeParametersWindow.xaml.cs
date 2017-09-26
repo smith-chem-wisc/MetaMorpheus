@@ -127,7 +127,6 @@ namespace MetaMorpheusGUI
                                     {
                                         h = "Boolean";
                                     }
-
                                     if (h == "Float")
                                     {
                                         h = "Single";
@@ -152,7 +151,7 @@ namespace MetaMorpheusGUI
 
                                 }
                             }
-                            //add if nullere
+                            //add different checked if null and others are not
                             else nonEqualValueNames.Add(key);
                         }
                     }
@@ -224,7 +223,7 @@ namespace MetaMorpheusGUI
                     {
                         paramList[12].Different = true;
                     }
-                     
+
                     if (key == "MaxMissedCleavages")
                     {
                         paramList[13].Different = true;

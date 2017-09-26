@@ -830,7 +830,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-        //yeah yeah more
         private void ChangeFileParameters_Click(object sender, RoutedEventArgs e)
         {
 
