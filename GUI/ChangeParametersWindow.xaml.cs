@@ -60,7 +60,7 @@ namespace MetaMorpheusGUI
                     var paramFile = Toml.ReadFile(tomlFileName, MetaMorpheusTask.tomlConfig);
                     tomlSettingsList = paramFile.ToDictionary(p => p.Key);
                     FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
-                    
+
                     UpdateAndPopulateFields(settings);
                 }
                 else
@@ -80,7 +80,7 @@ namespace MetaMorpheusGUI
                 string[] tomlFileNames = new string[SelectedRaw.Count];
                 List<string> nonEqualValueNames = new List<string>();
                 List<Dictionary<string, KeyValuePair<string, Nett.TomlObject>>> tomlSettingsListList = new List<Dictionary<string, KeyValuePair<string, Nett.TomlObject>>>();
-                
+
                 //Set tomlSettingListList (list of tomlSettings)
                 for (int i = 0; i < selectedRaw.Count; i++)
                 {
@@ -249,7 +249,7 @@ namespace MetaMorpheusGUI
             var g = ParameterGrid.Items.GetItemAt(6) as Parameter;
             g.Value = settings.ScoreCutoff;
             var h = ParameterGrid.Items.GetItemAt(7) as Parameter;
-            h.Value = settings.ProductMassTolerance;
+            h.Value = settings.ProductMassTolerance.Value;
             var i = ParameterGrid.Items.GetItemAt(8) as Parameter;
             i.Value = settings.DeconvolutionMaxAssumedChargeState;
             var j = ParameterGrid.Items.GetItemAt(9) as Parameter;
@@ -269,7 +269,7 @@ namespace MetaMorpheusGUI
             else
                 o.Value = null;
             var p = ParameterGrid.Items.GetItemAt(15) as Parameter;
-            p.Value = settings.DeconvolutionMassTolerance;
+            p.Value = settings.DeconvolutionMassTolerance.Value;
             var q = ParameterGrid.Items.GetItemAt(16) as Parameter;
             q.Value = settings.TrimMsMsPeaks;
             var r = ParameterGrid.Items.GetItemAt(17) as Parameter;
@@ -278,9 +278,11 @@ namespace MetaMorpheusGUI
             s.Value = settings.MinRatio;
             var t = ParameterGrid.Items.GetItemAt(19) as Parameter;
             t.Value = settings.TopNpeaks;
+            var u = ParameterGrid.Items.GetItemAt(20) as Parameter;
+            
 
             ParameterGrid.Items.Refresh();
-  
+
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -299,10 +301,19 @@ namespace MetaMorpheusGUI
                 FileSpecificSettingsList[i] = new FileSpecificSettings();
                 int? index = paramList[0].Value as int?;
 
-                if (index.HasValue && index >= 0)
+                string toleranceType = "PPM";
+                if (paramList[20].Value != null)
+                {
+                    if ((int)paramList[20].Value == 0)
+                        toleranceType = "Absolute";
+                    if ((int)paramList[20].Value == 1)
+                        toleranceType = "PPM";
+                }
+                    if (index.HasValue && index >= 0)
                 {
                     FileSpecificSettingsList[i].Protease = paramList[0].ProtList[index.Value];
                 }
+
 
                 FileSpecificSettingsList[i].ConserveMemory = paramList[1].Value as bool?;
                 if (paramList[2].Value != null)
@@ -323,9 +334,8 @@ namespace MetaMorpheusGUI
                     FileSpecificSettingsList[i].ScoreCutoff = a;
                 }
                 if (paramList[7].Value != null)
-                {
-                    FileSpecificSettingsList[i].ProductMassTolerance = Tolerance.ParseToleranceString(paramList[7].Value.ToString());
-                }
+                    FileSpecificSettingsList[i].ProductMassTolerance = Tolerance.ParseToleranceString(paramList[7].Value + " " + toleranceType); ;
+
                 if (paramList[8].Value != null)
                 {
                     int.TryParse(paramList[8].Value.ToString(), out var a);
@@ -357,12 +367,13 @@ namespace MetaMorpheusGUI
                     FileSpecificSettingsList[i].MaxMissedCleavages = a;
                 }
 
-                if (paramList[14].Value != null )
-                    if(!paramList[14].Value.Equals("Undefined"))
-                    FileSpecificSettingsList[i].InitiatorMethionineBehavior = (InitiatorMethionineBehavior)paramList[14].Value;
-                else
-                    paramList[14].Value = null;
-                FileSpecificSettingsList[i].DeconvolutionMassTolerance = paramList[15].Value as Tolerance;
+                if (paramList[14].Value != null)
+                    if (!paramList[14].Value.Equals("Undefined"))
+                        FileSpecificSettingsList[i].InitiatorMethionineBehavior = (InitiatorMethionineBehavior)paramList[14].Value;
+                    else
+                        paramList[14].Value = null;
+                if (paramList[15].Value != null)
+                    FileSpecificSettingsList[i].DeconvolutionMassTolerance = Tolerance.ParseToleranceString(paramList[15].Value + " " + toleranceType);
                 FileSpecificSettingsList[i].TrimMsMsPeaks = paramList[16].Value as bool?;
                 FileSpecificSettingsList[i].TrimMs1Peaks = paramList[17].Value as bool?;
                 if (paramList[18].Value != null)
@@ -370,6 +381,7 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[18].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].MinRatio = a;
                 }
+
                 if (paramList[19].Value != null)
                 {
                     int.TryParse(paramList[19].Value.ToString(), out var a);
@@ -404,7 +416,7 @@ namespace MetaMorpheusGUI
             paramList[4] = new Parameter("Do Precursor Deconvolution", "Bool");
             paramList[5] = new Parameter("Use Provided Precursor Info", "Bool");
             paramList[6] = new Parameter("Minimum MM Score Allowed", "TextBox");
-            paramList[7] = new Parameter("Product Mass Tolerance in PPM", "TextBox");
+            paramList[7] = new Parameter("Product Mass Tolerance", "TextBox");
             paramList[8] = new Parameter("Deconvolution Max Assumed Charge State", "TextBox");
             paramList[9] = new Parameter("Number of Database Partitions", "TextBox");
             paramList[10] = new Parameter("Max Modification Isoforms", "TextBox");
@@ -412,7 +424,7 @@ namespace MetaMorpheusGUI
             paramList[12] = new Parameter("Min Peptide Length", "TextBox");
             paramList[13] = new Parameter("Max Missed Cleavages", "TextBox");
             paramList[14] = new Parameter("Initiator Methonine", "ComboBoxInit");
-            paramList[15] = new Parameter("Deconvolution Mass Tolerance in PPM", "TextBox");
+            paramList[15] = new Parameter("Deconvolution Mass Tolerance", "TextBox");
             paramList[16] = new Parameter("TrimMsMsPeaks", "Bool");
             paramList[17] = new Parameter("TrimMs1Peaks", "Bool");
             paramList[18] = new Parameter("MinRatio", "TextBox");
@@ -425,7 +437,6 @@ namespace MetaMorpheusGUI
         void Unset(object sender, RoutedEventArgs e)
         {
             int index = ParameterGrid.SelectedIndex;
-            MessageBox.Show(index.ToString());
             Parameter a = ParameterGrid.Items[index] as Parameter;
             a.Value = null;
             ParameterGrid.Items.Refresh();
