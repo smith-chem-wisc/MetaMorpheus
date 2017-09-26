@@ -224,7 +224,7 @@ namespace MetaMorpheusGUI
                     {
                         paramList[12].Different = true;
                     }
-
+                     
                     if (key == "MaxMissedCleavages")
                     {
                         paramList[13].Different = true;
