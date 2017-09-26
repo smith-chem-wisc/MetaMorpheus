@@ -84,6 +84,11 @@ namespace EngineLayer.ModernSearch
                     double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
                     double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
 
+                    int obsPreviousFragmentCeilingMz = 0;
+                    int[] compPreviousFragmentFloorMz = new int[dissociationTypes.Count];
+                    for (int j = 0; j < compPreviousFragmentFloorMz.Length; j++)
+                        compPreviousFragmentFloorMz[j] = (int)Math.Ceiling(scan.PrecursorMass * fragmentBinsPerDalton);
+
                     // search peaks for matches
                     foreach (IMzPeak peak in peaks)
                     {
@@ -92,17 +97,23 @@ namespace EngineLayer.ModernSearch
                             // assume charge state 1 to calculate mz tolerance
                             var mzTolerance = (CommonParameters.ProductMassTolerance.Value / 1e6) * peak.Mz;
                             int fragmentFloorMz = (int)Math.Floor((peak.Mz - mzTolerance) * fragmentBinsPerDalton);
+                            if (fragmentFloorMz < obsPreviousFragmentCeilingMz)
+                                fragmentFloorMz = obsPreviousFragmentCeilingMz;
                             int fragmentCeilingMz = (int)Math.Ceiling((peak.Mz + mzTolerance) * fragmentBinsPerDalton);
+                            obsPreviousFragmentCeilingMz = fragmentCeilingMz+1;
                             FirstPassIndexedScoring(peak.Mz, fragmentFloorMz, fragmentCeilingMz, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor);
 
                             if (addCompIons)
                             {
                                 //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
-                                foreach (DissociationType dissociationType in dissociationTypes)
+                                for(int j=0; j<dissociationTypes.Count; j++)
                                 {
-                                    double complementaryPeak = scan.PrecursorMass - peak.Mz + complementaryIonConversionDictionary[dissociationType];
-                                    fragmentFloorMz = (int)Math.Floor((complementaryPeak - mzTolerance) * fragmentBinsPerDalton);
-                                    fragmentCeilingMz = (int)Math.Ceiling((complementaryPeak + mzTolerance) * fragmentBinsPerDalton);
+                                    double complementaryPeak = scan.PrecursorMass - peak.Mz + complementaryIonConversionDictionary[dissociationTypes[j]] + Constants.protonMass;
+                                    int compFragmentFloorMz = (int)Math.Floor((complementaryPeak - mzTolerance) * fragmentBinsPerDalton);
+                                    int compFragmentCeilingMz = (int)Math.Ceiling((complementaryPeak + mzTolerance) * fragmentBinsPerDalton);
+                                    if (compFragmentCeilingMz > compPreviousFragmentFloorMz[j])
+                                        compFragmentCeilingMz = compPreviousFragmentFloorMz[j];
+                                    compPreviousFragmentFloorMz[j] = compFragmentFloorMz-1;
                                     FirstPassIndexedScoring(complementaryPeak, fragmentFloorMz, fragmentCeilingMz, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor);
                                 }
                             }

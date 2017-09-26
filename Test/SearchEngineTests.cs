@@ -200,7 +200,7 @@ namespace Test
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
                 },
-                ScoreCutoff = 1000
+                ScoreCutoff = 255
             };
 
             var myMsDataFile = new TestDataFile(true); //empty

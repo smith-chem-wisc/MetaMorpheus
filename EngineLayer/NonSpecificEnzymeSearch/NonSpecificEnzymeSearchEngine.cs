@@ -67,6 +67,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
                     double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
 
+                    int obsPreviousFragmentCeilingMz = 0;
+                    int[] compPreviousFragmentFloorMz = new int[dissociationTypes.Count];
+                    for (int j = 0; j < compPreviousFragmentFloorMz.Length; j++)
+                        compPreviousFragmentFloorMz[j] = (int)Math.Ceiling(scan.PrecursorMass * fragmentBinsPerDalton);
                     // search peaks for matches
                     foreach (IMzPeak peak in peaks)
                     {
@@ -74,34 +78,48 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         {
                             // assume charge state 1 to calculate mz tolerance
                             var mzTolerance = (CommonParameters.ProductMassTolerance.Value / 1e6) * peak.Mz;
-                            int fragmentFloorMz = (int)Math.Floor((peak.Mz - mzTolerance) * fragmentBinsPerDalton);
-                            int fragmentCeilingMz = (int)Math.Ceiling((peak.Mz + mzTolerance) * fragmentBinsPerDalton);
+                            int obsFragmentFloorMz = (int)Math.Floor((peak.Mz - mzTolerance) * fragmentBinsPerDalton);
+                            obsFragmentFloorMz = obsFragmentFloorMz > obsPreviousFragmentCeilingMz ? obsFragmentFloorMz : obsPreviousFragmentCeilingMz;
+                            int obsFragmentCeilingMz = (int)Math.Ceiling((peak.Mz + mzTolerance) * fragmentBinsPerDalton);
+                            obsPreviousFragmentCeilingMz = obsFragmentCeilingMz + 1;
+
                             // get all theoretical fragments this experimental fragment could be
-                            for (int fragmentBin = fragmentFloorMz; fragmentBin <= fragmentCeilingMz; fragmentBin++)
+                            for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
                             {
                                 if (fragmentIndex[fragmentBin] != null)
                                 {
                                     List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
                                     foreach (int id in peptideIdsInThisBin)
+                                    {
                                         scoringTable[id]++;
+                                        if (scoringTable[id] == byteScoreCutoff)
+                                            idsOfPeptidesPossiblyObserved.Add(id);
+                                    }
                                 }
                             }
                             if (addCompIons)
                             {
                                 //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
-                                foreach (DissociationType dissociationType in dissociationTypes)
+                                for(int j=0; j<dissociationTypes.Count; j++)
                                 {
-                                    double complementaryPeak = scan.PrecursorMass - peak.Mz + complementaryIonConversionDictionary[dissociationType];
-                                    fragmentFloorMz = (int)Math.Floor((complementaryPeak - mzTolerance) * fragmentBinsPerDalton);
-                                    fragmentCeilingMz = (int)Math.Ceiling((complementaryPeak + mzTolerance) * fragmentBinsPerDalton);
+                                    double complementaryPeak = scan.PrecursorMass - peak.Mz + complementaryIonConversionDictionary[dissociationTypes[j]] + Constants.protonMass;
+                                    int compFragmentFloorMz = (int)Math.Floor((complementaryPeak - mzTolerance) * fragmentBinsPerDalton);
+                                    int compFragmentCeilingMz = (int)Math.Ceiling((complementaryPeak + mzTolerance) * fragmentBinsPerDalton);
+                                    if (compFragmentCeilingMz > compPreviousFragmentFloorMz[j])
+                                        compFragmentCeilingMz = compPreviousFragmentFloorMz[j];
+                                    compPreviousFragmentFloorMz[j] = compFragmentFloorMz;
                                     // get all theoretical fragments this experimental fragment could be
-                                    for (int fragmentBin = fragmentFloorMz; fragmentBin <= fragmentCeilingMz; fragmentBin++)
+                                    for (int fragmentBin = compFragmentFloorMz; fragmentBin <= compFragmentCeilingMz; fragmentBin++)
                                     {
                                         if (fragmentIndex[fragmentBin] != null)
                                         {
                                             List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
                                             foreach (int id in peptideIdsInThisBin)
+                                            {
                                                 scoringTable[id]++;
+                                                if (scoringTable[id] == byteScoreCutoff)
+                                                    idsOfPeptidesPossiblyObserved.Add(id);
+                                            }
                                         }
                                     }
                                 }
@@ -124,15 +142,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 if (notchAndPrecursor.Item1 >= 0)
                                 {
                                     CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, notchAndPrecursor.Item2);
-                                    cp.SwapMonoisotopicMassWithModifiedMass();
 
                                     if (globalPsms[i] == null)
                                         globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, peptideScore, i, scan);
                                     else
-                                        globalPsms[i].AddOrReplace(candidatePeptide, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                        globalPsms[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
                                 }
                             }
-                            if (globalPsms[i] == null)
+                            if (globalPsms[i] != null)
                                 break;
                             maxInitialScore--;
                         }
