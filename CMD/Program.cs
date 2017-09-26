@@ -1,5 +1,4 @@
-﻿using Chemistry;
-using EngineLayer;
+﻿using EngineLayer;
 using Fclp;
 using Nett;
 using Proteomics;
@@ -13,6 +12,7 @@ namespace MetaMorpheusCommandLine
 {
     internal static class Program
     {
+        private static bool inProgress;
         #region Private Methods
 
         private static void Main(string[] args)
@@ -98,9 +98,6 @@ namespace MetaMorpheusCommandLine
             Console.WriteLine("\t-t --tasks     List of task poml files");
             Console.WriteLine("\t-s --spectra   List of spectra files");
             Console.WriteLine("\t-d --databases List of database files");
-
-
-
         }
 
         private static bool IsContaminant(string b)
@@ -113,59 +110,59 @@ namespace MetaMorpheusCommandLine
 
         private static void MyTaskEngine_startingSingleTaskHander(object sender, SingleTaskEventArgs e)
         {
-            //if (inProgress)
-            //    Console.WriteLine();
-            //inProgress = false;
-            //Console.WriteLine("Starting task:");
-            //Console.WriteLine(e.TaskId);
+            if (inProgress)
+                Console.WriteLine();
+            inProgress = false;
+            Console.WriteLine("Starting task:");
+            Console.WriteLine(e.TaskId);
         }
 
         private static void MyTaskEngine_finishedWritingFileHandler(object sender, SingleFileEventArgs e)
         {
-            //if (inProgress)
-            //    Console.WriteLine();
-            //inProgress = false;
-            //Console.WriteLine("Finished writing file: " + e.writtenFile);
+            if (inProgress)
+                Console.WriteLine();
+            inProgress = false;
+            Console.WriteLine("Finished writing file: " + e.writtenFile);
         }
 
         private static void MyTaskEngine_finishedSingleTaskHandler(object sender, SingleTaskEventArgs e)
         {
-            //if (inProgress)
-            //    Console.WriteLine();
-            //inProgress = false;
-            //Console.WriteLine("Finished task: " + e.TaskId.GetType().Name);
+            if (inProgress)
+                Console.WriteLine();
+            inProgress = false;
+            Console.WriteLine("Finished task: " + e.TaskId.GetType().Name);
         }
 
         private static void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
         {
-            //if (inProgress)
-            //    Console.WriteLine();
-            //inProgress = false;
-            //Console.WriteLine("Starting engine:" + e.myEngine.GetType().Name);
+            if (inProgress)
+                Console.WriteLine();
+            inProgress = false;
+            Console.WriteLine("Starting engine:" + e.myEngine.GetType().Name);
         }
 
         private static void MyEngine_outProgressHandler(object sender, ProgressEventArgs e)
         {
-            //Console.Write(e.new_progress + " ");
-            //inProgress = true;
+            Console.Write(e.new_progress + " ");
+            inProgress = true;
         }
 
         private static void MyEngine_outLabelStatusHandler(object sender, StringEventArgs e)
         {
-            //if (inProgress)
-            //    Console.WriteLine();
-            //inProgress = false;
-            //Console.WriteLine("Status: " + e.s);
+            if (inProgress)
+                Console.WriteLine();
+            inProgress = false;
+            Console.WriteLine("Status: " + e.s);
             Console.WriteLine(e.s);
         }
 
         private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
-            //if (inProgress)
-            //    Console.WriteLine();
-            //inProgress = false;
-            //Console.WriteLine("Finished engine: ");
-            //Console.WriteLine(e);
+            if (inProgress)
+                Console.WriteLine();
+            inProgress = false;
+            Console.WriteLine("Finished engine: ");
+            Console.WriteLine(e);
         }
 
         #endregion Private Methods

@@ -24,7 +24,6 @@ namespace TaskLayer
         public bool NonLinearCalibration { get; set; }
         public bool WriteIntermediateFiles { get; set; }
 
-
         public int MinMS1isotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int MinMS2isotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int NumFragmentsNeededForEveryIdentification { get; set; }

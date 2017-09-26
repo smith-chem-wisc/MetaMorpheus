@@ -2,7 +2,6 @@
 {
     public class LabeledMs1DataPoint : LabeledDataPoint
     {
-
         #region Public Constructors
 
         public LabeledMs1DataPoint(double mz, double rt, double LOGtotalIonCurrent, double LOGinjectionTime, double LOGintensity, double expectedMz, Psm identification)

@@ -71,7 +71,7 @@ namespace EngineLayer
             //var peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
 
             int numIdentifications = goodIdentifications.Count;
-            
+
             // Loop over identifications
 
             HashSet<string> sequences = new HashSet<string>();
@@ -146,10 +146,10 @@ namespace EngineLayer
             return new DataPointAquisitionResults(this,
                 Ms1List,
                 Ms2List
-                //numMs1MassChargeCombinationsConsidered,
-                //numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
-                //numMs2MassChargeCombinationsConsidered,
-                //numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks
+            //numMs1MassChargeCombinationsConsidered,
+            //numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
+            //numMs2MassChargeCombinationsConsidered,
+            //numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks
             );
         }
 
