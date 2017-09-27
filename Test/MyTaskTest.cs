@@ -473,8 +473,7 @@ namespace Test
             #endregion Protein and Mod Creation
 
             #region XML File
-
-            Console.WriteLine("hi");
+            
             //First Write XML Database
 
             string xmlName = "okkk.xml";
