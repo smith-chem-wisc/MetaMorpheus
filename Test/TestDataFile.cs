@@ -82,8 +82,8 @@ namespace Test
             for (int i = 0; i < pepWithSetModss.Count; i++)
             {
                 var pepWithSetMods = pepWithSetModss[i];
-                var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(2) };
-                var intensities1 = new double[] { 1, 1, 1 };
+                var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(3), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(3), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(3), pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(2) };
+                var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
                 var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
 
                 ScansHere.Add(new MzmlScan(2 * i + 1, MassSpectrum1, 1, true, Polarity.Positive, 2 * i, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 1000, 1, "scan=1"));
