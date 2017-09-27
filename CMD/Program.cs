@@ -44,7 +44,7 @@ namespace MetaMorpheusCommandLine
             if (result.HasErrors == false)
             {
                 MetaMorpheusEngine.WarnHandler += MyEngine_outLabelStatusHandler;
-                MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+                //MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
                 MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
                 MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
@@ -148,7 +148,15 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Starting engine:" + e.myEngine.GetType().Name);
+            Console.WriteLine("Starting engine: " + e.myEngine.GetType().Name + " " + e.myEngine.GetId());
+        }
+
+        private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
+        {
+            if (inProgress)
+                Console.WriteLine();
+            inProgress = false;
+            Console.WriteLine("Finished engine: " + e);
         }
 
         private static void MyEngine_outProgressHandler(object sender, ProgressEventArgs e)
@@ -164,15 +172,6 @@ namespace MetaMorpheusCommandLine
             inProgress = false;
             Console.WriteLine("Status: " + e.s);
             Console.WriteLine(e.s);
-        }
-
-        private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
-        {
-            if (inProgress)
-                Console.WriteLine();
-            inProgress = false;
-            Console.WriteLine("Finished engine: ");
-            Console.WriteLine(e);
         }
 
         #endregion Private Methods

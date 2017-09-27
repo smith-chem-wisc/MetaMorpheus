@@ -365,16 +365,12 @@ namespace EngineLayer
             return myResults;
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal string GetId()
+        public string GetId()
         {
             return string.Join(",", nestedIds);
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
 
         #region Protected Methods
 
