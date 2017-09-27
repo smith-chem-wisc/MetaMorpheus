@@ -69,11 +69,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //separate bins by common and uncommon fragments to improve search speed
                     List<int> commonBinsFound = MostCommonBinsFound(binsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
 
-                    // get allowed precursor masses
-                    var t = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
-                    double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
-                    double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
-
                     for (int j = 0; j < commonBinsFound.Count; j++)
                         fragmentIndex[commonBinsFound[j]].ForEach(id => scoringTable[id]++);
 
