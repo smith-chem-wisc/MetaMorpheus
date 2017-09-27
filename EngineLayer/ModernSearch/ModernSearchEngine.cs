@@ -81,10 +81,10 @@ namespace EngineLayer.ModernSearch
                     double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
 
                     //get bins to add points to
-                    List<int> binsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
+                    List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
                     
                     //separate bins by common and uncommon fragments to improve search speed
-                    List<int> commonBinsFound = MostCommonBinsFound(binsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
+                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
                     
                     // get allowed precursor masses
                     AllowedIntervalWithNotch[] notches = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass).ToArray();
@@ -97,9 +97,9 @@ namespace EngineLayer.ModernSearch
                     }
 
                     //First pass scoring commonly viewed fragments but not searching for candidates
-                    IndexedScoringCommon(commonBinsFound, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookForArray, highestMassPeptideToLookForArray);
+                    IndexedScoringCommon(commonBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookForArray, highestMassPeptideToLookForArray);
                     //Second pass scoring all other peaks and collecting theoretical peptides with high enough scores
-                    IndexedScoringUncommon(binsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookForArray, highestMassPeptideToLookForArray);
+                    IndexedScoringUncommon(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookForArray, highestMassPeptideToLookForArray);
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
@@ -210,7 +210,11 @@ namespace EngineLayer.ModernSearch
             return commonBinsFound;
         }
 
-        protected static int FindLowestMassIndexAllowed(List<CompactPeptide> peptideIndex, List<int> peptideIdsInThisBin, double lowestMassPeptideToLookFor)
+        #endregion Protected Methods
+
+        #region Private Methods
+
+        private static int FindLowestMassIndexAllowed(List<CompactPeptide> peptideIndex, List<int> peptideIdsInThisBin, double lowestMassPeptideToLookFor)
         {
             int m = 0;
             int l = 0;
@@ -232,10 +236,6 @@ namespace EngineLayer.ModernSearch
                 m--;
             return m;
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private void IndexedScoringCommon(List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, HashSet<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double[] lowestMassPeptideToLookForArray, double[] highestMassPeptideToLookForArray)
         {

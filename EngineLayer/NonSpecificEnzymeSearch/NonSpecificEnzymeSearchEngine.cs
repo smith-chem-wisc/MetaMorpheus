@@ -64,16 +64,16 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
 
                     //get bins to add points to
-                    List<int> binsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
+                    List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
 
                     //separate bins by common and uncommon fragments to improve search speed
-                    List<int> commonBinsFound = MostCommonBinsFound(binsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
+                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
 
-                    for (int j = 0; j < commonBinsFound.Count; j++)
-                        fragmentIndex[commonBinsFound[j]].ForEach(id => scoringTable[id]++);
+                    for (int j = 0; j < commonBinsToSearch.Count; j++)
+                        fragmentIndex[commonBinsToSearch[j]].ForEach(id => scoringTable[id]++);
 
-                    for (int j = 0; j < binsToSearch.Count; j++)
-                        foreach (int id in fragmentIndex[binsToSearch[j]])
+                    for (int j = 0; j < allBinsToSearch.Count; j++)
+                        foreach (int id in fragmentIndex[allBinsToSearch[j]])
                         {
                             scoringTable[id]++;
                             if (scoringTable[id] == byteScoreCutoff)
