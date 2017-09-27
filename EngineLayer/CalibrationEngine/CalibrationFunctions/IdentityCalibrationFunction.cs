@@ -1,9 +1,22 @@
 ﻿using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
 using System.Collections.Generic;
 
-namespace EngineLayer.Calibration
+namespace EngineLayer
 {
-    public class IdentityCalibrationFunctionPredictorModel : IPredictorModel<double>
+    internal class IdentityCalibrationFunction : ILearner<double>
+    {
+        #region Public Methods
+
+        public IPredictorModel<double> Learn(F64Matrix observations, double[] targets)
+        {
+            return new IdentityCalibrationFunctionPredictorModel();
+        }
+
+        #endregion Public Methods
+    }
+
+    internal class IdentityCalibrationFunctionPredictorModel : IPredictorModel<double>
     {
         #region Public Methods
 
