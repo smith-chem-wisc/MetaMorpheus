@@ -137,16 +137,16 @@ namespace EngineLayer.ModernSearch
 
         protected static List<int> IdentifyMostCommonBinsAll(List<int>[] fragmentIndex)
         {
-            Tuple<int, int>[] mostCommonBins = new Tuple<int, int>[200];
+            Tuple<int, int>[] mostCommonBins = new Tuple<int, int>[500];
             for (int i = 0; i < mostCommonBins.Length; i++)
                 mostCommonBins[i] = new Tuple<int, int>(0, 0);
             for (int i = 0; i < fragmentIndex.Length; i++)
             {
                 if (fragmentIndex[i] != null)
                 {
-                    if (mostCommonBins[199].Item2 < fragmentIndex[i].Count)
+                    if (mostCommonBins[499].Item2 < fragmentIndex[i].Count)
                     {
-                        mostCommonBins[199] = new Tuple<int, int>(i, fragmentIndex[i].Count);
+                        mostCommonBins[499] = new Tuple<int, int>(i, fragmentIndex[i].Count);
                         mostCommonBins = mostCommonBins.OrderByDescending(s => s.Item2).ToArray();
                     }
                 }
@@ -295,7 +295,7 @@ namespace EngineLayer.ModernSearch
                             int id = peptideIdsInThisBin[h];
                             scoringTable[id]++;
 
-                            // add possible search results to the hashset of id's
+                            // add possible search results to the hashset of id's, should be only difference between IndexedScoringUncommon and IndexedScoringCommon
                             if (scoringTable[id] == byteScoreCutoff)
                                     idsOfPeptidesPossiblyObserved.Add(id);
 
@@ -310,7 +310,7 @@ namespace EngineLayer.ModernSearch
                             int id = peptideIdsInThisBin[h];
                             scoringTable[id]++;
 
-                            // add possible search results to the hashset of id's
+                            // add possible search results to the hashset of id's, should be only difference between IndexedScoringUncommon and IndexedScoringCommon
                             if (scoringTable[id] == byteScoreCutoff)
                                 idsOfPeptidesPossiblyObserved.Add(id);
                         }
