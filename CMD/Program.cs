@@ -12,7 +12,12 @@ namespace MetaMorpheusCommandLine
 {
     internal static class Program
     {
+        #region Private Fields
+
         private static bool inProgress;
+
+        #endregion Private Fields
+
         #region Private Methods
 
         private static void Main(string[] args)
@@ -39,9 +44,14 @@ namespace MetaMorpheusCommandLine
             if (result.HasErrors == false)
             {
                 MetaMorpheusEngine.WarnHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
+                MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
+                MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
                 MetaMorpheusTask.WarnHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+                MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
                 foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
                     GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));

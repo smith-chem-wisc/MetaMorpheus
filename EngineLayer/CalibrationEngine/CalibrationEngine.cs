@@ -78,7 +78,7 @@ namespace EngineLayer.Calibration
                     throw new MetaMorpheusException("unknown vars to use array: " + varsToUse);
             }
             MS1Predictor ms1predictor = new MS1Predictor(DoStuff(ms1splitResult, learners));
-            
+
             MS2Predictor ms2predictor = new MS2Predictor(DoStuff(ms2splitResult, learners));
 
             Status("Calibrating Spectra");
@@ -111,11 +111,9 @@ namespace EngineLayer.Calibration
                         predictions[i] = model.Predict(splitResult.TestSet.Observations.Row(i));
 
                     var thisError = evaluator.Error(splitResult.TestSet.Targets, predictions);
-                    
 
-                    if (thisError < bestError * 0.999)
+                    if (thisError < bestError)
                     {
-
                         bestError = thisError;
                         bestModel = model;
                     }

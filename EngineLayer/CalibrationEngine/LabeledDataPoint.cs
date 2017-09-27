@@ -17,7 +17,7 @@
 
         #endregion Public Fields
 
-        #region Public Constructors
+        #region Protected Constructors
 
         protected LabeledDataPoint(double mz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double expectedMZ, Psm identification)
         {
@@ -33,7 +33,7 @@
             this.identification = identification;
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
 
         #region Public Properties
 
