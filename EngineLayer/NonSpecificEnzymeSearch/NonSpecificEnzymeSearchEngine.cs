@@ -83,26 +83,29 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]);
-
-                        foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
+                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id])+1;
+                        while (maxInitialScore != intScoreCutoff)
                         {
-                            var candidatePeptide = peptideIndex[id];
-                            double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
-                            double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
-                            Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, candidatePeptide, terminusType, massDiffAcceptor);
-                            if (notchAndPrecursor.Item1 >= 0)
+                            maxInitialScore--;
+                            foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                             {
-                                CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, notchAndPrecursor.Item2);
+                                var candidatePeptide = peptideIndex[id];
+                                double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
+                                double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
+                                Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, candidatePeptide, terminusType, massDiffAcceptor);
+                                if (notchAndPrecursor.Item1 >= 0)
+                                {
+                                    CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, notchAndPrecursor.Item2);
 
-                                if (globalPsms[i] == null)
-                                    globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, peptideScore, i, scan);
-                                else
-                                    globalPsms[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                    if (globalPsms[i] == null)
+                                        globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, peptideScore, i, scan);
+                                    else
+                                        globalPsms[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                }
                             }
+                            if (globalPsms[i] != null)
+                                break;
                         }
-                        if (globalPsms[i] != null)
-                            break;
                     }
 
                     // report search progress
@@ -112,7 +115,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (percentProgress > oldPercentProgress)
                     {
                         oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing modern search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing nonspecific search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
                     }
                 }
             });
