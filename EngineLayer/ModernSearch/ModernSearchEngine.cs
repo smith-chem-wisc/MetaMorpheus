@@ -160,6 +160,8 @@ namespace EngineLayer.ModernSearch
             List<int> binsToSearch = new List<int>();
             foreach (IMzPeak peak in peaks)
             {
+                if (peak.Mz > precursorMass)
+                    break;
                 if (CommonParameters.MinRatio == null || (peak.Intensity / largestIntensity) >= CommonParameters.MinRatio)
                 {
                     // assume charge state 1 to calculate mz tolerance
