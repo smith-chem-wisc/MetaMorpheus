@@ -796,18 +796,15 @@ namespace TaskLayer
                             List<CompactPeptide> peptideIndex = null;
                             List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
                             
-                            List<int>[] fragmentIndex = null;
+                            List<int>[] fragmentIndex = new List<int>[1];
 
 
                             #region Generate indices for modern search
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, terminusSpecificIons, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
-                            List<int>[] fragmentIndexDict = new List<int>[1];
                             lock (indexLock)
-                            {
-                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndexDict, taskId);
-                            }
+                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
 
                             #endregion Generate indices for modern search
 
@@ -1194,7 +1191,7 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndexDict, string taskId)
+        private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
@@ -1209,7 +1206,7 @@ namespace TaskLayer
                 Status("Running Index Engine...", new List<string> { taskId });
                 var indexResults = (IndexingResults)indexEngine.Run();
                 peptideIndex = indexResults.PeptideIndex;
-                fragmentIndexDict = indexResults.FragmentIndex;
+                fragmentIndex = indexResults.FragmentIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
@@ -1218,7 +1215,7 @@ namespace TaskLayer
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
-                WriteFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
+                WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
             }
             else
@@ -1233,7 +1230,7 @@ namespace TaskLayer
                 messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                    fragmentIndexDict = (List<int>[])ser.Deserialize(file);
+                    fragmentIndex = (List<int>[])ser.Deserialize(file);
             }
         }
 
