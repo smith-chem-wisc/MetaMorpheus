@@ -286,9 +286,9 @@ namespace MetaMorpheusGUI
 
             if (nonSpecificSearchRadioButton.IsChecked.Value)
             {
-                if (((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity == CleavageSpecificity.SingleC && (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC") && (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
                     MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
-                if (((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity==CleavageSpecificity.SingleN && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                     MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
@@ -333,11 +333,7 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
-            if (((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity == CleavageSpecificity.NoneLengthLimited && !(int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp)))
-            {
-                MessageBox.Show("A maximum peptide length is required to limit top-down protein digestion. \n If you would like to identify only intact proteins, please use the 'top-down' protease.");
-                return;
-            }
+
             #endregion Check Task Validity
 
             #region Save Parameters
@@ -367,7 +363,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.SearchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
             TheTask.CommonParameters.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
             TheTask.CommonParameters.DigestionParams.Protease = (Protease)proteaseComboBox.SelectedItem;
             TheTask.CommonParameters.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
