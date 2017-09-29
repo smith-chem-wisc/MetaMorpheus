@@ -37,8 +37,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
 
             int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
-            //var roundedPepMasses = peptideIndex.Select(p => (int)Math.Round(p.MonoisotopicMassIncludingFixedMods * 100, 0)).ToList();
             byte byteScoreCutoff = Convert.ToByte(intScoreCutoff);
+
+            List<int> mostCommonBins = IdentifyMostCommonBinsAll(fragmentIndex);
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
             {
@@ -62,90 +63,30 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     var peaks = scan.TheScan.MassSpectrum.FilterByNumberOfMostIntense(numFragmentsToUse).ToList();
                     double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
 
-                    // get allowed precursor masses
-                    var t = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
-                    double lowestMassPeptideToLookFor = t.Min(p => p.allowedInterval.Minimum);
-                    double highestMassPeptideToLookFor = t.Max(p => p.allowedInterval.Maximum);
+                    //get bins to add points to
+                    List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
 
-                    int numChecksSkipped = 1;
-                    int obsPreviousFragmentCeilingMz = 0;
+                    //separate bins by common and uncommon fragments to improve search speed
+                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
 
-                    // search peaks for matches
-                    foreach (IMzPeak peak in peaks)
-                    {
-                        if (CommonParameters.MinRatio == null || (peak.Intensity / largestIntensity) >= CommonParameters.MinRatio)
+                    for (int j = 0; j < commonBinsToSearch.Count; j++)
+                        fragmentIndex[commonBinsToSearch[j]].ForEach(id => scoringTable[id]++);
+
+                    for (int j = 0; j < allBinsToSearch.Count; j++)
+                        foreach (int id in fragmentIndex[allBinsToSearch[j]])
                         {
-                            // assume charge state 1 to calculate mz tolerance
-                            var mzTolerance = (CommonParameters.ProductMassTolerance.Value / 1e6) * peak.Mz;
-                            int obsFragmentFloorMz = (int)Math.Floor((peak.Mz - mzTolerance) * fragmentBinsPerDalton);
-                            obsFragmentFloorMz = obsFragmentFloorMz > obsPreviousFragmentCeilingMz ? obsFragmentFloorMz : obsPreviousFragmentCeilingMz;
-                            int obsFragmentCeilingMz = (int)Math.Ceiling((peak.Mz + mzTolerance) * fragmentBinsPerDalton);
-                            obsPreviousFragmentCeilingMz = obsFragmentCeilingMz + 1;
-
-                            // get all theoretical fragments this experimental fragment could be
-                            for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
-                            {
-                                if (fragmentIndex[fragmentBin] != null)
-                                {
-                                    if (numChecksSkipped == intScoreCutoff)
-                                    {
-                                        List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
-                                        foreach (int id in peptideIdsInThisBin)
-                                        {
-                                            scoringTable[id]++;
-                                            if (scoringTable[id] == byteScoreCutoff)
-                                                idsOfPeptidesPossiblyObserved.Add(id);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        numChecksSkipped++;
-                                        fragmentIndex[fragmentBin].ForEach(id => scoringTable[id]++);
-                                    }
-                                }
-                            }
-                            if (addCompIons)
-                            {
-                                //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
-                                for(int j=0; j<dissociationTypes.Count; j++)
-                                {
-                                    int compPrecursor = (int)((scan.PrecursorMass + complementaryIonConversionDictionary[dissociationTypes[j]] + Constants.protonMass) * fragmentBinsPerDalton);
-                                    int compFragmentFloorMz = compPrecursor - obsFragmentCeilingMz;
-                                    int compFragmentCeilingMz = compPrecursor - obsFragmentFloorMz;
-
-                                    // get all theoretical fragments this experimental fragment could be
-                                    for (int fragmentBin = compFragmentFloorMz; fragmentBin <= compFragmentCeilingMz; fragmentBin++)
-                                    {
-                                        if (fragmentIndex[fragmentBin] != null)
-                                        {
-                                            if (numChecksSkipped == intScoreCutoff)
-                                            {
-                                                List<int> peptideIdsInThisBin = fragmentIndex[fragmentBin];
-                                                foreach (int id in peptideIdsInThisBin)
-                                                {
-                                                    scoringTable[id]++;
-                                                    if (scoringTable[id] == byteScoreCutoff)
-                                                        idsOfPeptidesPossiblyObserved.Add(id);
-                                                }
-                                            }
-                                            else
-                                            {
-                                                numChecksSkipped++;
-                                                fragmentIndex[fragmentBin].ForEach(id => scoringTable[id]++);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            scoringTable[id]++;
+                            if (scoringTable[id] == byteScoreCutoff)
+                                idsOfPeptidesPossiblyObserved.Add(id);
                         }
-                    }
 
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]);
-                        while (maxInitialScore >= intScoreCutoff)
+                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id])+1;
+                        while (maxInitialScore != intScoreCutoff)
                         {
+                            maxInitialScore--;
                             foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                             {
                                 var candidatePeptide = peptideIndex[id];
@@ -164,7 +105,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             }
                             if (globalPsms[i] != null)
                                 break;
-                            maxInitialScore--;
                         }
                     }
 
@@ -175,7 +115,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (percentProgress > oldPercentProgress)
                     {
                         oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing modern search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing nonspecific search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
                     }
                 }
             });
