@@ -292,6 +292,48 @@ namespace EngineLayer
                                 }
                             }
                         break;
+                    case CleavageSpecificity.NoneLengthLimited:
+                        int allowedLength = Math.Min(protein.Length, maxPeptidesLength.Value);
+                        if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
+                        {
+                            if (!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength)
+                            {
+                                yield return new PeptideWithPossibleModifications(1, allowedLength, protein, 0, "full", allKnownFixedModifications);
+                            }
+                        }
+                        if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
+                        {
+                            if (!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength)
+                            {
+                                yield return new PeptideWithPossibleModifications(2, allowedLength, protein, 0, "full:M cleaved", allKnownFixedModifications);
+                            }
+                        }
+                        if (!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength)
+                        {
+                            int numPartitions = protein.Length % allowedLength;
+                            for (int partition = 1; partition < numPartitions; partition++)
+                            {
+                                yield return new PeptideWithPossibleModifications(1 + partition * allowedLength, (partition + 1) * allowedLength, protein, 0, "limited", allKnownFixedModifications);
+                            }
+                            if(numPartitions!=1)
+                                yield return new PeptideWithPossibleModifications(protein.Length - allowedLength, protein.Length, protein, 0, "limited", allKnownFixedModifications);
+                        }
+
+                        // Also digest using the proteolysis product start/end indices
+                        foreach (var proteolysisProduct in protein.ProteolysisProducts)
+                            if (proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue)
+                            {
+                                if ((!minPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1) >= minPeptidesLength) &&
+                                               (!maxPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1) <= maxPeptidesLength))
+                                {
+                                    yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type, allKnownFixedModifications);
+                                }
+                                else
+                                {
+
+                                }
+                            }
+                        break;
 
                     case CleavageSpecificity.None:
                         if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
