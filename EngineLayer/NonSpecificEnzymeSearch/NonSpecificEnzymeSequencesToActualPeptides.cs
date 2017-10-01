@@ -14,14 +14,16 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private readonly MassDiffAcceptor massDiffAcceptors;
+        private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, terminusType, CollectionOfDigestionParams, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM, List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptors, bool reportAllAmbiguity, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, nestedIds)
         {
             this.massDiffAcceptors = massDiffAcceptors;
+            this.CPWMtoPWSM = CPWMtoPWSM;
         }
 
         #endregion Public Constructors
@@ -55,7 +57,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //CP==CompactPeptide
             //CPWM==CompactPeptideWithMass (Patched to respresent a double)
             //PWSM==PeptideWithSetModification
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             int totalProteins = proteinList.Count;
             int proteinsSeen = 0;
             int old_progress = 0;
@@ -288,7 +289,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                     psm.CompactCompactPeptides();
                 }
-            return new SequencesToActualProteinPeptidesEngineResults(this, CPWMtoPWSM);
+            return new MetaMorpheusEngineResults(this);
         }
 
         #endregion Protected Methods

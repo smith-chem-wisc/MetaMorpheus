@@ -122,7 +122,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.Zdot);
             if (CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
-            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ionTypes);
 
             var crosslinker = new CrosslinkerTypeClass();
             crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);
