@@ -73,7 +73,7 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputFolder, fileName + ".mytsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
+                output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass\tCross-link type" +
                     "\tPep1\tPep1 Protein Access(Protein link site)\tPep1 Base sequence(crosslink site)\tPep1 Full sequence\tPep1 mass\tPep1 Score\tPep1 XLBestScore\tPep1 Rank" +
                     "\tPep2\tPep2 Protein Access(Protein link site)\tPep2 Base sequence(crosslink site)\tPep2 Full sequence\tPep2 mass\tPep2 Score\tPep2 XLBestScore\tPep2 Rank" +
                     "\tSummary\tTotalScore\tMass diff\tQValue\tParentIons\tCharge2Number");
@@ -87,6 +87,7 @@ namespace TaskLayer
                             + "\t" + item.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
                             + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.CrossType.ToString()
                             + "\t"
                             + "\t" + item.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                             + "(" + (item.MostProbableProteinInfo.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + item.XlPos - 1).ToString(CultureInfo.InvariantCulture) + ")"
@@ -106,6 +107,7 @@ namespace TaskLayer
                                                 + "\t" + item.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
                                                 + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                                                 + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
+                                                + "\t" + item.CrossType.ToString()
                                                 + "\t"
                                                 + "\t" + item.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                                                        + "(" + (item.MostProbableProteinInfo.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + item.XlPos - 1).ToString(CultureInfo.InvariantCulture) + ")"
