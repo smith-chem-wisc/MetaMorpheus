@@ -264,7 +264,7 @@ namespace EngineLayer.CrosslinkSearch
             var AllCrossPsmsRe = AllCrossPsmsGroupOrder.Select(p => p.First()).ToList();
 
             psmCross.AddRange(AllCrossPsmsRe);
-            return new CrosslinkSearchResults(AllCrossPsmsRe, this);
+            return new CrosslinkSearchResults(psmCross, this);
         }
 
         #endregion Protected Methods
@@ -344,7 +344,9 @@ namespace EngineLayer.CrosslinkSearch
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             Status("Starting xlclassic search loop...", nestedIds);
             //Parallel.ForEach(Partitioner.Create(0, 1), partitionRange =>
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
+            //Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
+            Parallel.ForEach(Partitioner.Create(0, totalProteins),
+                new ParallelOptions { MaxDegreeOfParallelism = 1 }, partitionRange =>
             {
                 var psms = new PsmCross[selectedScan.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
@@ -372,7 +374,6 @@ namespace EngineLayer.CrosslinkSearch
                             }
 
                             var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                            //var productNames = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).ProductName;
                             Array.Sort(productMasses);
 
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
