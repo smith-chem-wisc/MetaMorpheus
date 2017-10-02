@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿using TaskLayer;
 
 namespace EngineLayer
 {
@@ -21,7 +21,7 @@ namespace EngineLayer
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
-            MassDiffAcceptor = GlobalEngineLevelSettings.SearchModesKnown.First();
+            MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
         }
 
         #endregion Public Constructors
@@ -38,12 +38,13 @@ namespace EngineLayer
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
         public bool SearchDecoy { get; set; }
-        public MassDiffAcceptor MassDiffAcceptor { get; set; }
+        public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
+        public string CustomMdac { get; set; }
 
         #endregion Public Properties
     }

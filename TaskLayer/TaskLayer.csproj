@@ -107,6 +107,8 @@
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="EventArgs\SingleTaskEventArgs.cs" />
+    <Compile Include="SearchTask\MassDiffAcceptorType.cs" />
+    <Compile Include="SearchTask\SearchType.cs" />
     <Compile Include="TaskParameters\CalibrationParameters.cs" />
     <Compile Include="TaskParameters\GPTMDParameters.cs" />
     <Compile Include="TaskParameters\SearchParameters.cs" />

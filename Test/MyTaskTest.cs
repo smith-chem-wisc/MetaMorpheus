@@ -281,7 +281,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     SearchDecoy = false,
-                    MassDiffAcceptor = new OpenSearchMode(),
+                    MassDiffAcceptorType = MassDiffAcceptorType.Open,
                 }
             };
 

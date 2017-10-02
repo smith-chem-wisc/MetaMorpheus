@@ -38,8 +38,6 @@ namespace EngineLayer
 
         public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
 
-        public static event EventHandler<StringEventArgs> WarnHandler;
-
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
         #endregion Public Events

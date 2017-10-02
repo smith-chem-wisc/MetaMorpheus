@@ -166,9 +166,9 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
             productMassToleranceComboBox.Items.Add("Absolute");
-            productMassToleranceComboBox.Items.Add("Ppm");
+            productMassToleranceComboBox.Items.Add("ppm");
             precursorMassToleranceComboBox.Items.Add("Absolute");
-            precursorMassToleranceComboBox.Items.Add("Ppm");
+            precursorMassToleranceComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {

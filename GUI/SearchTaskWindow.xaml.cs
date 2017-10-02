@@ -117,7 +117,10 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
             productMassToleranceComboBox.Items.Add("Absolute");
-            productMassToleranceComboBox.Items.Add("Ppm");
+            productMassToleranceComboBox.Items.Add("ppm");
+
+            precursorMassToleranceComboBox.Items.Add("Absolute");
+            precursorMassToleranceComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
@@ -144,9 +147,6 @@ namespace MetaMorpheusGUI
             }
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
 
-            foreach (var uu in GlobalEngineLevelSettings.SearchModesKnown)
-                SearchModesForThisTask.Add(new SearchModeForDataGrid(uu));
-            searchModesDataGrid.DataContext = SearchModesForThisTask;
         }
 
         private void UpdateFieldsFromTask(SearchTask task)
@@ -154,6 +154,7 @@ namespace MetaMorpheusGUI
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
             nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific;
+
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
@@ -172,6 +173,8 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             addCompIonCheckBox.IsChecked = task.SearchParameters.AddCompIons;
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
@@ -266,13 +269,22 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
+            
+            mdacExact.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Exact;
+            mdac1mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.OneMM;
+            mdac2mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.TwoMM;
+            mdac3mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ThreeMM;
+            mdac187.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen;
+            mdacOpen.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open;
+            mdacCustom.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom;
 
-            SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(task.SearchParameters.MassDiffAcceptor.FileNameAddition)).Use = true;
+            if (task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom)
+                customkMdacTextBox.Text = task.SearchParameters.CustomMdac;
+
 
             writePrunedDatabaseCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
             keepAllUniprotModsCheckBox.IsChecked = task.SearchParameters.KeepAllUniprotMods;
-
-            searchModesDataGrid.Items.Refresh();
+            
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -388,6 +400,10 @@ namespace MetaMorpheusGUI
                 TheTask.CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             else
                 TheTask.CommonParameters.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            if (precursorMassToleranceComboBox.SelectedIndex == 0)
+                TheTask.CommonParameters.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            else
+                TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
             TheTask.SearchParameters.AddCompIons = addCompIonCheckBox.IsChecked.Value;
             TheTask.CommonParameters.BIons = bCheckBox.IsChecked.Value;
@@ -429,7 +445,24 @@ namespace MetaMorpheusGUI
                     TheTask.CommonParameters.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.SearchParameters.MassDiffAcceptor = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).First();
+            if(mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
+                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
+            if (mdac1mm.IsChecked.HasValue && mdacExact.IsChecked.Value)
+                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
+            if (mdac2mm.IsChecked.HasValue && mdacExact.IsChecked.Value)
+                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.TwoMM;
+            if (mdac3mm.IsChecked.HasValue && mdacExact.IsChecked.Value)
+                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM;
+            if (mdac187.IsChecked.HasValue && mdacExact.IsChecked.Value)
+                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ModOpen;
+            if (mdacOpen.IsChecked.HasValue && mdacExact.IsChecked.Value)
+                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Open;
+            if (mdacCustom.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            {
+                TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
+                TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
+            }
+
             TheTask.SearchParameters.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
 
             TheTask.SearchParameters.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
@@ -441,22 +474,7 @@ namespace MetaMorpheusGUI
 
             DialogResult = true;
         }
-
-        private void AddNewAllowedPrecursorMassDiffsButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var ye = MetaMorpheusTask.ParseSearchMode(newAllowedPrecursorMassDiffsTextBox.Text);
-                GlobalEngineLevelSettings.SearchModesKnown.Add(ye);
-                SearchModesForThisTask.Add(new SearchModeForDataGrid(ye));
-                searchModesDataGrid.Items.Refresh();
-            }
-            catch
-            {
-                MessageBox.Show("Examples:" + Environment.NewLine + "name dot 5 ppm 0,1.003,2.006" + Environment.NewLine + "name interval [-4;-3],[-0.5;0.5],[101;102]", "Error parsing search mode text box", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
+        
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
