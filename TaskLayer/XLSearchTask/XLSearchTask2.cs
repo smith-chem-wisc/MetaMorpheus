@@ -159,7 +159,7 @@ namespace TaskLayer
             foreach (var x in CommonParameters.ListOfModsFixed) { modsFixed += x.Item2 + "."; }
             foreach (var x in CommonParameters.ListOfModsVariable) { modsVar += x.Item2 + "."; }
 
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
             uint proteinTot = Convert.ToUInt32(proteinList.Count);
 
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].FullFilePath);
