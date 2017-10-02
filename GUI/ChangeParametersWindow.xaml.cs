@@ -110,8 +110,7 @@ namespace MetaMorpheusGUI
                     {
                         foreach (var key in tomlSettingsListList[j].Keys)
                         {
-                            //var keys = tomlSettingsListList[j].Keys.ToList();
-                            //var key = keys[i];
+                           
                             if (tomlSettingsListList[i].ContainsKey(key))
                             {
                                 if (tomlSettingsListList[j].ContainsKey(tomlSettingsListList[i][key].Key))
@@ -395,10 +394,7 @@ namespace MetaMorpheusGUI
             }
 
             ParameterGrid.Items.Refresh();
-            // foreach(Parameter param in tempParamList)
-            // {
-            //   param.HasChanged = false;
-            // }
+
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)

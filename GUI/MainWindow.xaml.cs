@@ -711,39 +711,7 @@ namespace MetaMorpheusGUI
                 }
             UpdateTaskGuiStuff();
         }
-
-       /* private void ChangeFileSpecificParams_click(object sender, RoutedEventArgs e)
-        {
-            bool selectedAreEqual = true;
-            for (int i = 1; i < SelectedRawFiles.Count(); i++)
-            {
-                if (!SelectedRawFiles[i].Parameters.Equals(SelectedRawFiles[i - 1].Parameters))
-                    selectedAreEqual = false;
-            }
-
-            if (selectedAreEqual)
-            {
-                var dialog = new FileSpecificParamWindow(SelectedRawFiles);
-                if (dialog.ShowDialog() == true)
-                {
-                    string[] fullPathofToml = new string[dialog.FileSpecificSettingsList.Count()];
-                    for (int i = 0; i < dialog.FileSpecificSettingsList.Count(); i++)
-                    {
-                        string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
-                        string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
-                        fullPathofToml[i] = Path.Combine(directory, fileName);
-                        Toml.WriteFile(dialog.FileSpecificSettingsList[i], fullPathofToml[i] + ".toml", MetaMorpheusTask.tomlConfig);
-                    }
-                    UpdateFileSpecificParamsDisplay(fullPathofToml);
-
-                }
-            }
-            else
-            {
-                MessageBox.Show("The Files you have chosen contain different file specific Parameters. Please select files with the same file specific parameters or edit one at a time.", "Different File Specifc Parameters", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }*/
-
+      
         //run if fileSpecificParams are changed from GUI
         private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
         {
