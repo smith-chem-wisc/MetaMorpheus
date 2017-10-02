@@ -403,12 +403,10 @@ namespace MetaMorpheusGUI
 
             if (SelectedRawFiles.Count == 0)
             {
-                ChangeParameters.IsEnabled = false;
                 ChangeFileParameters.IsEnabled = false;
             }
             else
             {
-                ChangeParameters.IsEnabled = true;
                 ChangeFileParameters.IsEnabled = true;
 
             }
@@ -714,7 +712,7 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
         }
 
-        private void ChangeFileSpecificParams_click(object sender, RoutedEventArgs e)
+       /* private void ChangeFileSpecificParams_click(object sender, RoutedEventArgs e)
         {
             bool selectedAreEqual = true;
             for (int i = 1; i < SelectedRawFiles.Count(); i++)
@@ -744,16 +742,7 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show("The Files you have chosen contain different file specific Parameters. Please select files with the same file specific parameters or edit one at a time.", "Different File Specifc Parameters", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
-        }
-
-        /* private void TestWindowTable_click(object sender, RoutedEventArgs e)
-         {
-             var dialog = new TestWindowTable();
-             if (dialog.ShowDialog() == true)
-             {
-                 Console.WriteLine("asdf");
-             }
-         }*/
+        }*/
 
         //run if fileSpecificParams are changed from GUI
         private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)

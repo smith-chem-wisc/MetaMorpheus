@@ -97,7 +97,7 @@ namespace MetaMorpheusGUI
                     }
                     else
                     {
-                        tomlSettingsListList[i] = new Dictionary<string, KeyValuePair<string, TomlObject>>();
+                        tomlSettingsListList.Add(new Dictionary<string, KeyValuePair<string, TomlObject>>());
                     }
 
 
