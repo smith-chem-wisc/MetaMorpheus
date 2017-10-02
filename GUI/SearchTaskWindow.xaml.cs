@@ -146,7 +146,6 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
-
         }
 
         private void UpdateFieldsFromTask(SearchTask task)
@@ -269,7 +268,7 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
-            
+
             mdacExact.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Exact;
             mdac1mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.OneMM;
             mdac2mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.TwoMM;
@@ -281,10 +280,8 @@ namespace MetaMorpheusGUI
             if (task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom)
                 customkMdacTextBox.Text = task.SearchParameters.CustomMdac;
 
-
             writePrunedDatabaseCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
             keepAllUniprotModsCheckBox.IsChecked = task.SearchParameters.KeepAllUniprotMods;
-            
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -430,7 +427,7 @@ namespace MetaMorpheusGUI
                     TheTask.CommonParameters.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            if(mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            if (mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
             if (mdac1mm.IsChecked.HasValue && mdacExact.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
@@ -459,7 +456,7 @@ namespace MetaMorpheusGUI
 
             DialogResult = true;
         }
-        
+
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));

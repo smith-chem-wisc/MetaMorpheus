@@ -43,7 +43,7 @@ namespace EngineLayer
             MetaMorpheusVersion = typeof(GlobalEngineLevelSettings).Assembly.GetName().Version.ToString();
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
                 MetaMorpheusVersion = "Not a release version";
-            
+
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
         }
@@ -109,7 +109,7 @@ namespace EngineLayer
             }
             return dict;
         }
-        
+
         /// <summary>
         /// Ideally v is less than 0.00168565165, so no overlaps happen
         /// </summary>

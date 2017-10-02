@@ -177,7 +177,7 @@
                                     <RadioButton x:Name="mdac187" Content="-187 and Up" />
                                     <RadioButton x:Name="mdacOpen" Content="Accept all" />
                                     <RadioButton x:Name="mdacCustom" Content="Custom:" />
-                                    <TextBox x:Name="customkMdacTextBox"  IsEnabled="{Binding IsChecked, ElementName=mdacCustom}"/>
+                                    <TextBox x:Name="customkMdacTextBox"  IsEnabled="{Binding IsChecked, ElementName=mdacCustom}" />
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Ambiguity Parameters">

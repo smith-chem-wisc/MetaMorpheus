@@ -93,7 +93,7 @@ namespace Test
             }
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
-            
+
             SearchParameters SearchParameters = new SearchParameters
             {
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact

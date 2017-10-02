@@ -7,7 +7,6 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -138,7 +137,6 @@ namespace TaskLayer
                     yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, fullFilePath);
             }
         }
-
 
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
         {
