@@ -249,7 +249,7 @@ namespace MetaMorpheusGUI
 
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 TheTask.CommonParameters.MaxDegreeOfParallelism = jsakdf;
-            
+
             DialogResult = true;
         }
 
