@@ -8,7 +8,7 @@
         {
             MaxMissedCleavages = 2;
             MinPeptideLength = 5;
-            MaxPeptideLength = null;
+            MaxPeptideLength = 50;
             MaxModificationIsoforms = 4096;
             Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"];
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
