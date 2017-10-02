@@ -372,7 +372,7 @@ namespace MetaMorpheusGUI
             if (paramList[20].Different)
                 u.Value = null;
 
-            //choosing correct tolerance type (can't use settings because there is no explicit tolerance type field)
+            //choosing correct tolerance type (can't use value from settings because there is no explicit tolerance type field)
             string[] tempString = new string[2];
             if (settings.ProductMassTolerance != null)
             {
