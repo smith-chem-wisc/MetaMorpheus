@@ -429,17 +429,17 @@ namespace MetaMorpheusGUI
 
             if (mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
-            if (mdac1mm.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            if (mdac1mm.IsChecked.HasValue && mdac1mm.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
-            if (mdac2mm.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            if (mdac2mm.IsChecked.HasValue && mdac2mm.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.TwoMM;
-            if (mdac3mm.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            if (mdac3mm.IsChecked.HasValue && mdac3mm.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM;
-            if (mdac187.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            if (mdac187.IsChecked.HasValue && mdac187.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ModOpen;
-            if (mdacOpen.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            if (mdacOpen.IsChecked.HasValue && mdacOpen.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Open;
-            if (mdacCustom.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            if (mdacCustom.IsChecked.HasValue && mdacCustom.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
