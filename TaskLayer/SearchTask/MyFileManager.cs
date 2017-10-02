@@ -1,4 +1,5 @@
-﻿using IO.MzML;
+﻿using EngineLayer;
+using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
 using System;
@@ -7,7 +8,7 @@ using System.IO;
 
 namespace TaskLayer
 {
-    internal class MyFileManager
+    public class MyFileManager
     {
         #region Private Fields
 
@@ -26,6 +27,12 @@ namespace TaskLayer
 
         #endregion Public Constructors
 
+        #region Public Events
+
+        public static event EventHandler<StringEventArgs> WarnHandler;
+
+        #endregion Public Events
+
         #region Internal Methods
 
         internal IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
@@ -38,7 +45,11 @@ namespace TaskLayer
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
                 else
+                {
+                    if (trimMs1Peaks || trimMsMsPeaks)
+                        Warn("Thermo files do not have peak trimming implemented yet");
                     myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile);
+                }
 
             return myMsDataFiles[origDataFile];
         }
@@ -50,5 +61,14 @@ namespace TaskLayer
         }
 
         #endregion Internal Methods
+
+        #region Private Methods
+
+        private void Warn(string v)
+        {
+            WarnHandler?.Invoke(this, new StringEventArgs(v, null));
+        }
+
+        #endregion Private Methods
     }
 }

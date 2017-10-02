@@ -285,7 +285,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     SearchDecoy = false,
-                    MassDiffAcceptor = new OpenSearchMode(),
+                    MassDiffAcceptorType = MassDiffAcceptorType.Open,
                 }
             };
 
@@ -369,13 +369,13 @@ namespace Test
                         },
                         ListOfModsVariable = new List<Tuple<string, string>>(),
                         ListOfModsFixed = new List<Tuple<string, string>>(),
-                        ScoreCutoff = 1
+                        ScoreCutoff = 1,
+                        PrecursorMassTolerance = new AbsoluteTolerance(1)
                     },
 
                     GptmdParameters = new GptmdParameters
                     {
                         ListOfModsGptmd = new List<Tuple<string, string>> { new Tuple<string, string>("okType", "ok") },
-                        PrecursorMassTolerance = new AbsoluteTolerance(1)
                     }
                 };
             }
@@ -435,7 +435,8 @@ namespace Test
             {
                 SearchParameters = new SearchParameters
                 {
-                    WritePrunedDatabase = true
+                    WritePrunedDatabase = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact
                 }
             };
 
@@ -546,7 +547,8 @@ namespace Test
                 },
                 SearchParameters = new SearchParameters
                 {
-                    WritePrunedDatabase = true
+                    WritePrunedDatabase = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact
                 }
             };
 
