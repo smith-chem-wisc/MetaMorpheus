@@ -391,11 +391,6 @@ namespace EngineLayer
             return dissociationTypes;
         }
 
-        protected void Warn(string v, List<string> nestedIds)
-        {
-            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
-        }
-
         protected void Status(string v, List<string> nestedIds)
         {
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
