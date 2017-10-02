@@ -126,7 +126,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CalibrationParameters.cs" />
     <Compile Include="MassDiffAcceptorType.cs" />
     <Compile Include="SearchType.cs" />
     <Compile Include="TaskParameters\CalibrationParameters.cs" />

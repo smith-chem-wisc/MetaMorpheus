@@ -94,7 +94,7 @@ namespace TaskLayer
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, true, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();
 
             proseCreatedWhileRunning.Append("The following calibration settings were used: ");
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
@@ -236,7 +236,7 @@ namespace TaskLayer
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, initLearners, "mz", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                         prevCount = count;
-                        prevPrecTol = CalibrationParameters.PrecursorMassTolerance;
+                        prevPrecTol = CommonParameters.PrecursorMassTolerance;
                         prevProdTol = CommonParameters.ProductMassTolerance;
 
                         (count, datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
@@ -267,7 +267,7 @@ namespace TaskLayer
                         round++;
                     } while (true);
 
-                    CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
+                    CommonParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
 
                     myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
@@ -277,7 +277,7 @@ namespace TaskLayer
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, mzSepLearners, "mzRtTicInj", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                         prevCount = count;
-                        prevPrecTol = CalibrationParameters.PrecursorMassTolerance;
+                        prevPrecTol = CommonParameters.PrecursorMassTolerance;
                         prevProdTol = CommonParameters.ProductMassTolerance;
 
                         (count, datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
@@ -307,7 +307,7 @@ namespace TaskLayer
                         round++;
                     } while (true);
 
-                    CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
+                    CommonParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
 
                     myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
@@ -317,7 +317,7 @@ namespace TaskLayer
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, intLearners, "Int", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                         prevCount = count;
-                        prevPrecTol = CalibrationParameters.PrecursorMassTolerance;
+                        prevPrecTol = CommonParameters.PrecursorMassTolerance;
                         prevProdTol = CommonParameters.ProductMassTolerance;
 
                         (count, datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
@@ -347,7 +347,7 @@ namespace TaskLayer
                         round++;
                     } while (true);
 
-                    CalibrationParameters.PrecursorMassTolerance = prevPrecTol;
+                    CommonParameters.PrecursorMassTolerance = prevPrecTol;
                     CommonParameters.ProductMassTolerance = prevProdTol;
 
                     myTaskResults.newSpectra.Add(bestFilePath);
@@ -367,7 +367,7 @@ namespace TaskLayer
             if (count > prevCount)
                 return true;
 
-            Tolerance currentPrecTol = CalibrationParameters.PrecursorMassTolerance;
+            Tolerance currentPrecTol = CommonParameters.PrecursorMassTolerance;
             Tolerance currentProdTol = CommonParameters.ProductMassTolerance;
 
             var precRatio = currentPrecTol.Value / prevPrecTol.Value;
@@ -383,10 +383,10 @@ namespace TaskLayer
         private (int, DataPointAquisitionResults) GetDataAcquisitionResultsAndSetTolerances(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId)
         {
             MassDiffAcceptor searchMode;
-            if (CalibrationParameters.PrecursorMassTolerance is PpmTolerance)
-                searchMode = new SinglePpmAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
+            if (CommonParameters.PrecursorMassTolerance is PpmTolerance)
+                searchMode = new SinglePpmAroundZeroSearchMode(CommonParameters.PrecursorMassTolerance.Value);
             else
-                searchMode = new SingleAbsoluteAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
+                searchMode = new SingleAbsoluteAroundZeroSearchMode(CommonParameters.PrecursorMassTolerance.Value);
 
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
             if (CommonParameters.BIons)
@@ -407,10 +407,10 @@ namespace TaskLayer
 
             DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>());
 
-            Tolerance bestPrecursorMassToleranceForDatapointAcquisition = CalibrationParameters.PrecursorMassTolerance;
+            Tolerance bestPrecursorMassToleranceForDatapointAcquisition = CommonParameters.PrecursorMassTolerance;
             Tolerance bestProductMassToleranceForDatapointAcquisition = CommonParameters.ProductMassTolerance;
 
-            Tolerance testPrecursorMassToleranceForDatapointAcquisition = CalibrationParameters.PrecursorMassTolerance;
+            Tolerance testPrecursorMassToleranceForDatapointAcquisition = CommonParameters.PrecursorMassTolerance;
             Tolerance testProductMassToleranceForDatapointAcquisition = CommonParameters.ProductMassTolerance;
 
             var round = 1;
@@ -449,7 +449,7 @@ namespace TaskLayer
                 round++;
             } while (true);
 
-            CalibrationParameters.PrecursorMassTolerance = bestPrecursorMassToleranceForDatapointAcquisition;
+            CommonParameters.PrecursorMassTolerance = bestPrecursorMassToleranceForDatapointAcquisition;
             CommonParameters.ProductMassTolerance = bestProductMassToleranceForDatapointAcquisition;
 
             return (goodIdentifications.Count, bestResult);

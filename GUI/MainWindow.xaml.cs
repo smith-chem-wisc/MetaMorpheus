@@ -75,7 +75,7 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusEngine.WarnHandler += GuiWarnHandler;
 
-            MyFileManager.WarnHandler += EverythingRunnerEngine_warnHandler;
+            MyFileManager.WarnHandler += GuiWarnHandler;
 
             UpdateTaskGuiStuff();
         }

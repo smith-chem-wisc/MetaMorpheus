@@ -1,6 +1,4 @@
-﻿using MzLibUtil;
-
-namespace TaskLayer
+﻿namespace TaskLayer
 {
     public class CalibrationParameters
     {
@@ -8,7 +6,6 @@ namespace TaskLayer
 
         public CalibrationParameters()
         {
-            NonLinearCalibration = true;
             WriteIntermediateFiles = false;
             MinMS1IsotopicPeaksNeededForConfirmedIdentification = 3;
             MinMS2IsotopicPeaksNeededForConfirmedIdentification = 2;
@@ -18,8 +15,7 @@ namespace TaskLayer
         #endregion Public Constructors
 
         #region Public Properties
-        
-        public bool NonLinearCalibration { get; set; }
+
         public bool WriteIntermediateFiles { get; set; }
 
         public int MinMS1IsotopicPeaksNeededForConfirmedIdentification { get; set; }
