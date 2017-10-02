@@ -162,7 +162,6 @@
     <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrResults.cs" />
     <Compile Include="Proteomics\CompactPeptideBase.cs" />
     <Compile Include="Proteomics\CompactPeptideWithModifiedMass.cs" />
-    <Compile Include="SearchType.cs" />
     <Compile Include="Localization\LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />
     <Compile Include="ClassicSearch\ScanWithIndexAndNotchInfo.cs" />

@@ -1,6 +1,4 @@
-﻿using TaskLayer;
-
-namespace EngineLayer
+﻿namespace TaskLayer
 {
     public class SearchParameters
     {
