@@ -1,5 +1,4 @@
-﻿using MzLibUtil;
-using Proteomics;
+﻿using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -108,55 +107,6 @@ namespace EngineLayer
                 }
             }
             return dict;
-        }
-
-        /// <summary>
-        /// Ideally v is less than 0.00168565165, so no overlaps happen
-        /// </summary>
-        /// <param name="doubleRange"></param>
-        /// <param name="v"></param>
-        /// <returns></returns>
-        private static IEnumerable<MassDiffAcceptor> GetResidueInclusionExclusionSearchModes(DoubleRange doubleRange, double v)
-        {
-            List<double> massesToExclude = new List<double>();
-            for (char c = 'A'; c <= 'Z'; c++)
-            {
-                if (Residue.TryGetResidue(c, out Residue residue))
-                {
-                    massesToExclude.Add(residue.MonoisotopicMass);
-                    massesToExclude.Add(-residue.MonoisotopicMass);
-                    for (char cc = 'A'; cc <= 'Z'; cc++)
-                    {
-                        if (Residue.TryGetResidue(cc, out Residue residueCC))
-                        {
-                            massesToExclude.Add(residue.MonoisotopicMass + residueCC.MonoisotopicMass);
-                            massesToExclude.Add(residue.MonoisotopicMass - residueCC.MonoisotopicMass);
-                            massesToExclude.Add(-residue.MonoisotopicMass + residueCC.MonoisotopicMass);
-                            massesToExclude.Add(-residue.MonoisotopicMass - residueCC.MonoisotopicMass);
-                        }
-                    }
-                }
-            }
-            List<double> filteredMasses = massesToExclude.GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b).ToList();
-
-            yield return new DotMassDiffAcceptor("OnlyAAs", filteredMasses, new AbsoluteTolerance(v));
-
-            List<DoubleRange> doubleRanges = new List<DoubleRange>();
-
-            var prevGoodMin = double.NegativeInfinity;
-
-            for (int i = 0; i < filteredMasses.Count; i++)
-            {
-                if (Math.Round(filteredMasses[i], 6) == 0)
-                    continue;
-                doubleRanges.Add(new DoubleRange(prevGoodMin, filteredMasses[i] - v));
-                prevGoodMin = filteredMasses[i] + v;
-            }
-            doubleRanges.Add(new DoubleRange(prevGoodMin, double.PositiveInfinity));
-
-            doubleRanges = doubleRanges.Where(b => b.Minimum <= doubleRange.Maximum && b.Maximum >= doubleRange.Minimum).Select(b => new DoubleRange(Math.Max(doubleRange.Minimum, b.Minimum), Math.Min(doubleRange.Maximum, b.Maximum))).ToList();
-
-            yield return new IntervalMassDiffAcceptor("ExcludeAAs", doubleRanges);
         }
 
         #endregion Private Methods
