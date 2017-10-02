@@ -28,7 +28,7 @@ namespace EngineLayer
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
             this.ScanNumber = scan.OneBasedScanNumber;
-            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber.Value;
+            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
             this.ScanRetentionTime = scan.RetentionTime;
             this.ScanExperimentalPeaks = scan.NumPeaks;
             this.TotalIonCurrent = scan.TotalIonCurrent;

@@ -68,7 +68,7 @@ namespace MetaMorpheusGUI
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 InitList.Add(initiatior_methionine_behavior);
             ProductMassToleranceList.Add("Absolute");
-            ProductMassToleranceList.Add("Ppm");
+            ProductMassToleranceList.Add("ppm");
 
         }
 
