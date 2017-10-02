@@ -298,21 +298,6 @@ namespace MetaMorpheusGUI
 
             if (nonSpecificSearchRadioButton.IsChecked.Value)
             {
-                if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value)) //NonSpecific does not expect multipe terminus types
-                {
-                    string ionsChosen = "";
-                    if (bCheckBox.IsChecked.Value)
-                        ionsChosen += "B, ";
-                    if (cCheckBox.IsChecked.Value)
-                        ionsChosen += "C, ";
-                    if (yCheckBox.IsChecked.Value)
-                        ionsChosen += "Y, ";
-                    if (zdotCheckBox.IsChecked.Value)
-                        ionsChosen += "Zdot, ";
-                    ionsChosen = ionsChosen.Substring(0, ionsChosen.Length - 2);
-                    MessageBox.Show("Non-specific searches cannot possess ion types from multiple termini. \n You chose the following ion types: " + ionsChosen);
-                    return;
-                }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC") && (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
                     MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))

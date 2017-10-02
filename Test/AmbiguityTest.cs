@@ -1,9 +1,5 @@
-﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
-using EngineLayer.Indexing;
-using EngineLayer.ModernSearch;
-using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;

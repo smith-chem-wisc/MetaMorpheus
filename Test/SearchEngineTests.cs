@@ -197,6 +197,72 @@ namespace Test
         }
 
         [Test]
+        public static void TestNonViablePSM()
+        {
+            //just check if it crashes or not.
+            SearchParameters SearchParameters = new SearchParameters();
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                },
+                ScoreCutoff = 1000
+            };
+
+            var myMsDataFile = new TestDataFile(true); //empty
+            var variableModifications = new List<ModificationWithMass>();
+            var fixedModifications = new List<ModificationWithMass>();
+            var localizeableModifications = new List<ModificationWithMass>();
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int ii = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            SearchParameters.MassDiffAcceptor = searchModes;
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
+            var indexResults = (IndexingResults)indexEngine.Run();
+            var peptideIndex = indexResults.PeptideIndex;
+            var fragmentIndexDict = indexResults.FragmentIndexDict;
+            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+
+            bool DoPrecursorDeconvolution = true;
+            bool UseProvidedPrecursorInfo = true;
+            double DeconvolutionIntensityRatio = 4;
+            int DeconvolutionMaxAssumedChargeState = 10;
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+
+            //Classic
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
+
+            //Modern
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, new List<string>()).Run();
+
+            //NonSpecific
+            new NonSpecificEnzymeSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, new List<string>()).Run();
+
+        }
+
+        [Test]
         public static void TestModernSearchEngineWithWeirdPeptide()
         {
             SearchParameters SearchParameters = new SearchParameters
@@ -258,7 +324,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestNonSpecificEnzymeEngineSingleN()
+        public static void TestNonSpecificEnzymeSearchEngineSingleN()
         {
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -317,8 +383,9 @@ namespace Test
 
             Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
             CommonParameters.DigestionParams.MinPeptideLength = 5;
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, new List<string>());
-            var searchResults = engine.Run();
+
+            new NonSpecificEnzymeSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, new List<string>()).Run();
+
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
@@ -329,17 +396,20 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
             CommonParameters.DigestionParams.MinPeptideLength = null;
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, new List<DigestionParams> { CommonParameters.DigestionParams }, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List <Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, new List<DigestionParams> { CommonParameters.DigestionParams }, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+
 
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
 
         [Test]
-        public static void TestNonSpecificEnzymeEngineSingleC()
+        public static void TestNonSpecificEnzymeSearchEngineSingleC()
         {
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -398,7 +468,9 @@ namespace Test
 
             Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
             CommonParameters.DigestionParams.MinPeptideLength = 5;
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, new List<string>());
+
+            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, new List<string>());
+
             var searchResults = engine.Run();
 
             // Single search mode
@@ -411,11 +483,14 @@ namespace Test
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
             CommonParameters.DigestionParams.MinPeptideLength = null;
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List <Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+
 
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -542,7 +617,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
             Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B }, 1, CommonParameters, true, searchModes, new List<string>());
+            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B }, 1, CommonParameters, true, searchModes, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -554,11 +629,12 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List <Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -621,7 +697,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
             Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 1, CommonParameters, true, searchModes, new List<string>());
+            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 1, CommonParameters, true, searchModes, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -633,11 +709,12 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List <Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }

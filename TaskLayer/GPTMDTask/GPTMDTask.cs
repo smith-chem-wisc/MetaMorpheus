@@ -79,7 +79,7 @@ namespace TaskLayer
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um = null;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, localizeableModifications, b.IsContaminant, out um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, true, localizeableModifications, b.IsContaminant, out um)).ToList();
 
             var numRawFiles = currentRawFileList.Count;
 

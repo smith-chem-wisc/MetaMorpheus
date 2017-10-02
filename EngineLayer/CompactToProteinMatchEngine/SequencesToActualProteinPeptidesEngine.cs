@@ -28,7 +28,7 @@ namespace EngineLayer
             this.allPsms = allPsms;
             this.fixedModifications = fixedModifications;
             this.variableModifications = variableModifications;
-            this.terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
+            this.terminusType = ProductTypeMethod.IdentifyTerminusType(ionTypes);
             this.collectionOfDigestionParams = collectionOfDigestionParams;
             this.reportAllAmbiguity = reportAllAmbiguity;
         }
