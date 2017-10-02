@@ -10,6 +10,9 @@ namespace EngineLayer
 
         public CommonParameters()
         {
+            ProductMassTolerance = new PpmTolerance(20);
+            PrecursorMassTolerance = new PpmTolerance(5);
+
             DigestionParams = new DigestionParams();
 
             BIons = true;
@@ -31,15 +34,14 @@ namespace EngineLayer
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
             UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 4;
+            DeconvolutionIntensityRatio = 5;
             DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(5);
+            DeconvolutionMassTolerance = new PpmTolerance(20);
             ReportAllAmbiguity = true;
             ExcelCompatible = true;
 
             TopNpeaks = 200;
             MinRatio = 0.01;
-            ProductMassTolerance = new PpmTolerance(20);
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
         }
@@ -71,6 +73,7 @@ namespace EngineLayer
         public bool CIons { get; set; }
 
         public Tolerance ProductMassTolerance { get; set; }
+        public Tolerance PrecursorMassTolerance { get; set; }
 
         public bool ConserveMemory { get; set; }
 
