@@ -110,7 +110,7 @@ namespace MetaMorpheusGUI
                     {
                         foreach (var key in tomlSettingsListList[j].Keys)
                         {
-                           
+
                             if (tomlSettingsListList[i].ContainsKey(key))
                             {
                                 if (tomlSettingsListList[j].ContainsKey(tomlSettingsListList[i][key].Key))
@@ -139,7 +139,7 @@ namespace MetaMorpheusGUI
                                     var a = tomlSettingsListList[j][key].Value.Get(typeAsString);
 
                                     var b = tomlSettingsListList[i][key].Value.Get(typeAsString);
-                                        
+
                                     if (!a.Equals(b))
                                     {
                                         Console.WriteLine(a);
@@ -179,10 +179,12 @@ namespace MetaMorpheusGUI
                     {
                         paramList[3].Different = true;
                     }
+
                     if (key == "DoPrecursorDeconvolution")
                     {
                         paramList[4].Different = true;
                     }
+
                     if (key == "UseProvidedPrecursorInfo")
                     {
                         paramList[5].Different = true;
@@ -263,7 +265,7 @@ namespace MetaMorpheusGUI
                 for (int i = 0; i < tomlSettingsListList.Count(); i++)
                 {
                     TempSettings[i] = new FileSpecificSettings();
-                    TempSettings[i] = new FileSpecificSettings(tomlSettingsListList[i]); //LEFT OFF HERE
+                    TempSettings[i] = new FileSpecificSettings(tomlSettingsListList[i]);
                 }
 
                 UpdateAndPopulateFields(settings);
@@ -277,7 +279,6 @@ namespace MetaMorpheusGUI
         //Updates fields of display so that it reflects current settings
         private void UpdateAndPopulateFields(FileSpecificSettings settings)
         {
-
             var a = ParameterGrid.Items.GetItemAt(0) as Parameter;
             int? index = paramList[0].ProtList.IndexOf(settings.Protease);
             if (index.HasValue)
@@ -377,10 +378,12 @@ namespace MetaMorpheusGUI
             {
                 tempString = settings.ProductMassTolerance.ToString().Split(' ');
             }
+
             else if (settings.DeconvolutionMassTolerance != null)
             {
                 tempString = settings.DeconvolutionMassTolerance.ToString().Split(' ');
             }
+
             if (tempString[1] != null)
             {
                 if (tempString[1].Equals("Absolute"))

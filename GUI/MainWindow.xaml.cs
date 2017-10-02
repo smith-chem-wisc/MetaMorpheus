@@ -711,7 +711,7 @@ namespace MetaMorpheusGUI
                 }
             UpdateTaskGuiStuff();
         }
-      
+
         //run if fileSpecificParams are changed from GUI
         private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
         {
@@ -805,13 +805,13 @@ namespace MetaMorpheusGUI
                     fullPathofToml[i] = Path.Combine(directory, fileName);
                     //REMOVE DEFAULT INIT METHONINE:
 
-                   
+
                     string badLine = "InitiatorMethionineBehavior = \"Undefined\"";
-                    
+
                     Toml.WriteFile(dialog.FileSpecificSettingsList[i], fullPathofToml[i] + ".toml", MetaMorpheusTask.tomlConfig);
                     string[] lineArray = File.ReadAllLines(fullPathofToml[i] + ".toml");
                     List<string> lines = lineArray.ToList();
-                    foreach(string line in lineArray)
+                    foreach (string line in lineArray)
                     {
                         if (line.Equals(badLine))
                             lines.Remove(line);
