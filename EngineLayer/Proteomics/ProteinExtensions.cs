@@ -293,34 +293,6 @@ namespace EngineLayer
                             }
                         break;
 
-                    case CleavageSpecificity.NoneLengthLimited:
-                        int allowedLength = Math.Min(protein.Length, maxPeptidesLength.Value);
-                        if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
-                        {
-                            if (!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength)
-                            {
-                                yield return new PeptideWithPossibleModifications(1, allowedLength, protein, 0, "full", allKnownFixedModifications);
-                            }
-                        }
-                        if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
-                        {
-                            if (!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength)
-                            {
-                                yield return new PeptideWithPossibleModifications(2, allowedLength, protein, 0, "full:M cleaved", allKnownFixedModifications);
-                            }
-                        }
-                        if (!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength)
-                        {
-                            int numPartitions = protein.Length % allowedLength;
-                            for (int partition = 1; partition < numPartitions; partition++)
-                            {
-                                yield return new PeptideWithPossibleModifications(1 + partition * allowedLength, (partition + 1) * allowedLength, protein, 0, "limited", allKnownFixedModifications);
-                            }
-                            if (numPartitions != 1)
-                                yield return new PeptideWithPossibleModifications(protein.Length - allowedLength, protein.Length, protein, 0, "limited", allKnownFixedModifications);
-                        }
-                        break;
-
                     case CleavageSpecificity.None:
                         if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
                         {
