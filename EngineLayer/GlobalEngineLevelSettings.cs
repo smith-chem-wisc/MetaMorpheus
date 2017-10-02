@@ -1,5 +1,4 @@
-﻿using MzLibUtil;
-using Proteomics;
+﻿using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -44,7 +43,6 @@ namespace EngineLayer
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
                 MetaMorpheusVersion = "Not a release version";
 
-            SearchModesKnown = LoadSearchModesFromFile().ToList();
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
         }
@@ -59,7 +57,6 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
 
         public static Dictionary<string, Protease> ProteaseDictionary { get; }
-        public static List<MassDiffAcceptor> SearchModesKnown { get; set; }
         public static List<Modification> AllModsKnown { get; set; }
 
         #endregion Public Properties
@@ -110,70 +107,6 @@ namespace EngineLayer
                 }
             }
             return dict;
-        }
-
-        private static IEnumerable<MassDiffAcceptor> LoadSearchModesFromFile()
-        {
-            yield return new SinglePpmAroundZeroSearchMode(5);
-            yield return new SinglePpmAroundZeroSearchMode(10);
-            yield return new SinglePpmAroundZeroSearchMode(20);
-            yield return new DotMassDiffAcceptor("1mm5ppm", new double[] { 0, 1.0029 }, new PpmTolerance(5));
-            yield return new DotMassDiffAcceptor("3mm5ppm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new PpmTolerance(5));
-            yield return new IntervalMassDiffAcceptor("2.1aroundZero", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
-            yield return new IntervalMassDiffAcceptor("3.5aroundZero", new List<DoubleRange>() { new DoubleRange(-3.5, 3.5) });
-            yield return new OpenSearchMode();
-            yield return new IntervalMassDiffAcceptor("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
-            foreach (var sm in GetResidueInclusionExclusionSearchModes(new DoubleRange(-187, double.PositiveInfinity), 0.0075))
-                yield return sm;
-        }
-
-        /// <summary>
-        /// Ideally v is less than 0.00168565165, so no overlaps happen
-        /// </summary>
-        /// <param name="doubleRange"></param>
-        /// <param name="v"></param>
-        /// <returns></returns>
-        private static IEnumerable<MassDiffAcceptor> GetResidueInclusionExclusionSearchModes(DoubleRange doubleRange, double v)
-        {
-            List<double> massesToExclude = new List<double>();
-            for (char c = 'A'; c <= 'Z'; c++)
-            {
-                if (Residue.TryGetResidue(c, out Residue residue))
-                {
-                    massesToExclude.Add(residue.MonoisotopicMass);
-                    massesToExclude.Add(-residue.MonoisotopicMass);
-                    for (char cc = 'A'; cc <= 'Z'; cc++)
-                    {
-                        if (Residue.TryGetResidue(cc, out Residue residueCC))
-                        {
-                            massesToExclude.Add(residue.MonoisotopicMass + residueCC.MonoisotopicMass);
-                            massesToExclude.Add(residue.MonoisotopicMass - residueCC.MonoisotopicMass);
-                            massesToExclude.Add(-residue.MonoisotopicMass + residueCC.MonoisotopicMass);
-                            massesToExclude.Add(-residue.MonoisotopicMass - residueCC.MonoisotopicMass);
-                        }
-                    }
-                }
-            }
-            List<double> filteredMasses = massesToExclude.GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b).ToList();
-
-            yield return new DotMassDiffAcceptor("OnlyAAs", filteredMasses, new AbsoluteTolerance(v));
-
-            List<DoubleRange> doubleRanges = new List<DoubleRange>();
-
-            var prevGoodMin = double.NegativeInfinity;
-
-            for (int i = 0; i < filteredMasses.Count; i++)
-            {
-                if (Math.Round(filteredMasses[i], 6) == 0)
-                    continue;
-                doubleRanges.Add(new DoubleRange(prevGoodMin, filteredMasses[i] - v));
-                prevGoodMin = filteredMasses[i] + v;
-            }
-            doubleRanges.Add(new DoubleRange(prevGoodMin, double.PositiveInfinity));
-
-            doubleRanges = doubleRanges.Where(b => b.Minimum <= doubleRange.Maximum && b.Maximum >= doubleRange.Minimum).Select(b => new DoubleRange(Math.Max(doubleRange.Minimum, b.Minimum), Math.Min(doubleRange.Maximum, b.Maximum))).ToList();
-
-            yield return new IntervalMassDiffAcceptor("ExcludeAAs", doubleRanges);
         }
 
         #endregion Private Methods

@@ -106,10 +106,10 @@ namespace MetaMorpheusGUI
                 cbCrosslinker.Items.Add(crosslinkerName);
 
             cbbXLprecusorMsTl.Items.Add("Absolute");
-            cbbXLprecusorMsTl.Items.Add("Ppm");
+            cbbXLprecusorMsTl.Items.Add("ppm");
 
             cbbXLBetaprecusorMsTl.Items.Add("Absolute");
-            cbbXLBetaprecusorMsTl.Items.Add("Ppm");
+            cbbXLBetaprecusorMsTl.Items.Add("ppm");
 
             foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
@@ -119,7 +119,7 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
             productMassToleranceComboBox.Items.Add("Absolute");
-            productMassToleranceComboBox.Items.Add("Ppm");
+            productMassToleranceComboBox.Items.Add("ppm");
 
             //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
             //    productMassToleranceComboBox.Items.Add(toleranceUnit);
