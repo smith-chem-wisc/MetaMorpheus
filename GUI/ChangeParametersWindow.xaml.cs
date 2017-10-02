@@ -30,7 +30,7 @@ namespace MetaMorpheusGUI
         internal FileSpecificSettings[] FileSpecificSettingsList { get; private set; }
         Parameter[] paramList;
         Parameter[] tempParamList;
-        FileSpecificSettings[] tempSettings { get; set; }
+        FileSpecificSettings[] TempSettings { get; set; }
 
 
         public ChangeParametersWindow(ObservableCollection<RawDataForDataGrid> selectedRaw)
@@ -138,12 +138,8 @@ namespace MetaMorpheusGUI
                                     Type typeAsString = Type.GetType("System." + h);
                                     var a = tomlSettingsListList[j][key].Value.Get(typeAsString);
 
-                                    var c = tomlSettingsListList[j][key].Value.ReadableTypeName;
-                                    var d = tomlSettingsListList[j].Values.ToList();
-                                    h = tomlSettingsListList[i][key].Value.ReadableTypeName;
-
                                     var b = tomlSettingsListList[i][key].Value.Get(typeAsString);
-                                    string asd = a.ToString();
+                                        
                                     if (!a.Equals(b))
                                     {
                                         Console.WriteLine(a);
@@ -262,12 +258,12 @@ namespace MetaMorpheusGUI
                         paramList[19].Different = true;
                     }
                 }
-                tempSettings = new FileSpecificSettings[selectedRaw.Count];
+                TempSettings = new FileSpecificSettings[selectedRaw.Count];
                 Array.Copy(paramList, tempParamList, 20);
                 for (int i = 0; i < tomlSettingsListList.Count(); i++)
                 {
-                    tempSettings[i] = new FileSpecificSettings();
-                    tempSettings[i] = new FileSpecificSettings(tomlSettingsListList[i]); //LEFT OFF HERE
+                    TempSettings[i] = new FileSpecificSettings();
+                    TempSettings[i] = new FileSpecificSettings(tomlSettingsListList[i]); //LEFT OFF HERE
                 }
 
                 UpdateAndPopulateFields(settings);
@@ -426,27 +422,29 @@ namespace MetaMorpheusGUI
                 }
 
                 //Cases for each Parameter:
-                //If one file with Changed value: write value to File settings
-                //If one file with unchanged Value: Do nothing; will be null
-                //If multiple files editing the same setting: write same setting to each file
-                //If multiple files with different values for an attribute that is unchanged, then get each paramter setting
-                //from Temorary Settings
+                //1. If one file with Changed value: write value to File settings
+                //2. If one file with unchanged Value: Do nothing; will be null
+                //3. If multiple files editing the same setting: write same setting to each file
+                /* 4. If multiple files with different values for an attribute that is unchanged, then get each paramter setting
+                from Temporary Settings. If this parameter is changed, then it will be the same so going to temp settings
+                is Not necesarry
+                */
 
                 //Protease
                 if (index.HasValue && index >= 0 && paramList[0].HasChanged)
                 {
                     FileSpecificSettingsList[i].Protease = paramList[0].ProtList[index.Value];
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].Protease != null && FileSpecificSettingsList[i].Protease == null)
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].Protease != null && FileSpecificSettingsList[i].Protease == null)
                 {
-                    FileSpecificSettingsList[i].Protease = tempSettings[i].Protease;
+                    FileSpecificSettingsList[i].Protease = TempSettings[i].Protease;
                 }
 
                 //Conserve Memory
                 if (paramList[1].Value != null)
                     FileSpecificSettingsList[i].ConserveMemory = paramList[1].Value as bool?;
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].ConserveMemory != null && FileSpecificSettingsList[i].ConserveMemory == null)
-                    FileSpecificSettingsList[i].ConserveMemory = tempSettings[i].ConserveMemory;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].ConserveMemory != null && FileSpecificSettingsList[i].ConserveMemory == null)
+                    FileSpecificSettingsList[i].ConserveMemory = TempSettings[i].ConserveMemory;
 
                 //Max Mods for Peptide
                 if (paramList[2].Value != null)
@@ -454,8 +452,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[2].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].Max_mods_for_peptide = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].Max_mods_for_peptide != null && FileSpecificSettingsList[i].Max_mods_for_peptide == null)
-                    FileSpecificSettingsList[i].Max_mods_for_peptide = tempSettings[i].Max_mods_for_peptide;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].Max_mods_for_peptide != null && FileSpecificSettingsList[i].Max_mods_for_peptide == null)
+                    FileSpecificSettingsList[i].Max_mods_for_peptide = TempSettings[i].Max_mods_for_peptide;
 
                 //Deconvolution Intensity Ratio
                 if (paramList[3].Value != null)
@@ -463,20 +461,20 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[3].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].DeconvolutionIntensityRatio = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].DeconvolutionIntensityRatio != null && FileSpecificSettingsList[i].DeconvolutionIntensityRatio == null)
-                    FileSpecificSettingsList[i].DeconvolutionIntensityRatio = tempSettings[i].DeconvolutionIntensityRatio;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].DeconvolutionIntensityRatio != null && FileSpecificSettingsList[i].DeconvolutionIntensityRatio == null)
+                    FileSpecificSettingsList[i].DeconvolutionIntensityRatio = TempSettings[i].DeconvolutionIntensityRatio;
 
                 //Precursor Deconvolution
                 if (paramList[4].Value != null)
                     FileSpecificSettingsList[i].DoPrecursorDeconvolution = paramList[4].Value as bool?;
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].DoPrecursorDeconvolution != null && FileSpecificSettingsList[i].DoPrecursorDeconvolution == null)
-                    FileSpecificSettingsList[i].DoPrecursorDeconvolution = tempSettings[i].DoPrecursorDeconvolution;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].DoPrecursorDeconvolution != null && FileSpecificSettingsList[i].DoPrecursorDeconvolution == null)
+                    FileSpecificSettingsList[i].DoPrecursorDeconvolution = TempSettings[i].DoPrecursorDeconvolution;
 
                 //Use Provided Precursor Info
                 if (paramList[5].Value != null)
                     FileSpecificSettingsList[i].UseProvidedPrecursorInfo = paramList[5].Value as bool?;
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].UseProvidedPrecursorInfo != null && FileSpecificSettingsList[i].UseProvidedPrecursorInfo == null)
-                    FileSpecificSettingsList[i].UseProvidedPrecursorInfo = tempSettings[i].UseProvidedPrecursorInfo;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].UseProvidedPrecursorInfo != null && FileSpecificSettingsList[i].UseProvidedPrecursorInfo == null)
+                    FileSpecificSettingsList[i].UseProvidedPrecursorInfo = TempSettings[i].UseProvidedPrecursorInfo;
 
                 //Score Cutoff
                 if (paramList[6].Value != null)
@@ -484,14 +482,14 @@ namespace MetaMorpheusGUI
                     double.TryParse(paramList[6].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].ScoreCutoff = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].ScoreCutoff != null && FileSpecificSettingsList[i].ScoreCutoff == null)
-                    FileSpecificSettingsList[i].ScoreCutoff = tempSettings[i].ScoreCutoff;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].ScoreCutoff != null && FileSpecificSettingsList[i].ScoreCutoff == null)
+                    FileSpecificSettingsList[i].ScoreCutoff = TempSettings[i].ScoreCutoff;
 
                 //Product Mass Tolerance
                 if (paramList[7].Value != null)
                     FileSpecificSettingsList[i].ProductMassTolerance = Tolerance.ParseToleranceString(paramList[7].Value + " " + toleranceType);
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].ProductMassTolerance != null && FileSpecificSettingsList[i].ProductMassTolerance == null)
-                    FileSpecificSettingsList[i].ProductMassTolerance = tempSettings[i].ProductMassTolerance;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].ProductMassTolerance != null && FileSpecificSettingsList[i].ProductMassTolerance == null)
+                    FileSpecificSettingsList[i].ProductMassTolerance = TempSettings[i].ProductMassTolerance;
 
                 //Deconvolution Max ASsumed Charge State
                 if (paramList[8].Value != null)
@@ -499,8 +497,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[8].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].DeconvolutionMaxAssumedChargeState = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].DeconvolutionMaxAssumedChargeState != null && FileSpecificSettingsList[i].DeconvolutionMaxAssumedChargeState == null)
-                    FileSpecificSettingsList[i].DeconvolutionMaxAssumedChargeState = tempSettings[i].DeconvolutionMaxAssumedChargeState;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].DeconvolutionMaxAssumedChargeState != null && FileSpecificSettingsList[i].DeconvolutionMaxAssumedChargeState == null)
+                    FileSpecificSettingsList[i].DeconvolutionMaxAssumedChargeState = TempSettings[i].DeconvolutionMaxAssumedChargeState;
 
                 //Total Partitions
                 if (paramList[9].Value != null)
@@ -508,8 +506,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[9].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].TotalPartitions = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].TotalPartitions != null && FileSpecificSettingsList[i].TotalPartitions == null)
-                    FileSpecificSettingsList[i].TotalPartitions = tempSettings[i].TotalPartitions;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].TotalPartitions != null && FileSpecificSettingsList[i].TotalPartitions == null)
+                    FileSpecificSettingsList[i].TotalPartitions = TempSettings[i].TotalPartitions;
 
                 //Max Modification Isoforms
                 if (paramList[10].Value != null)
@@ -517,8 +515,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[10].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].MaxModificationIsoforms = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].MaxModificationIsoforms != null && FileSpecificSettingsList[i].MaxModificationIsoforms == null)
-                    FileSpecificSettingsList[i].MaxModificationIsoforms = tempSettings[i].MaxModificationIsoforms;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].MaxModificationIsoforms != null && FileSpecificSettingsList[i].MaxModificationIsoforms == null)
+                    FileSpecificSettingsList[i].MaxModificationIsoforms = TempSettings[i].MaxModificationIsoforms;
 
                 //Max Pep Length
                 if (paramList[11].Value != null)
@@ -526,8 +524,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[11].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].MaxPeptideLength = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].MaxPeptideLength != null && FileSpecificSettingsList[i].MaxPeptideLength == null)
-                    FileSpecificSettingsList[i].MaxPeptideLength = tempSettings[i].MaxPeptideLength;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].MaxPeptideLength != null && FileSpecificSettingsList[i].MaxPeptideLength == null)
+                    FileSpecificSettingsList[i].MaxPeptideLength = TempSettings[i].MaxPeptideLength;
 
                 //Min Pep Length
                 if (paramList[12].Value != null)
@@ -535,8 +533,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[12].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].MinPeptideLength = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].MinPeptideLength != null && FileSpecificSettingsList[i].MinPeptideLength == null)
-                    FileSpecificSettingsList[i].MinPeptideLength = tempSettings[i].MinPeptideLength;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].MinPeptideLength != null && FileSpecificSettingsList[i].MinPeptideLength == null)
+                    FileSpecificSettingsList[i].MinPeptideLength = TempSettings[i].MinPeptideLength;
 
                 //Max Missed Cleavages
                 if (paramList[13].Value != null)
@@ -544,8 +542,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[13].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].MaxMissedCleavages = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].MaxMissedCleavages != null && FileSpecificSettingsList[i].MaxMissedCleavages == null)
-                    FileSpecificSettingsList[i].MaxMissedCleavages = tempSettings[i].MaxMissedCleavages;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].MaxMissedCleavages != null && FileSpecificSettingsList[i].MaxMissedCleavages == null)
+                    FileSpecificSettingsList[i].MaxMissedCleavages = TempSettings[i].MaxMissedCleavages;
 
                 //Init Methonine Behavior
                 if (paramList[14].Value != null)
@@ -553,26 +551,26 @@ namespace MetaMorpheusGUI
                         FileSpecificSettingsList[i].InitiatorMethionineBehavior = (InitiatorMethionineBehavior)paramList[14].Value;
                     else
                         paramList[14].Value = null;
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].InitiatorMethionineBehavior != 0 && FileSpecificSettingsList[i].InitiatorMethionineBehavior == 0)
-                    FileSpecificSettingsList[i].InitiatorMethionineBehavior = tempSettings[i].InitiatorMethionineBehavior;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].InitiatorMethionineBehavior != 0 && FileSpecificSettingsList[i].InitiatorMethionineBehavior == 0)
+                    FileSpecificSettingsList[i].InitiatorMethionineBehavior = TempSettings[i].InitiatorMethionineBehavior;
 
                 //Deconvolution Mass Tolerance
                 if (paramList[15].Value != null)
                     FileSpecificSettingsList[i].DeconvolutionMassTolerance = Tolerance.ParseToleranceString(paramList[15].Value + " " + toleranceType);
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].DeconvolutionMassTolerance != null && FileSpecificSettingsList[i].DeconvolutionMassTolerance == null)
-                    FileSpecificSettingsList[i].DeconvolutionMassTolerance = tempSettings[i].DeconvolutionMassTolerance;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].DeconvolutionMassTolerance != null && FileSpecificSettingsList[i].DeconvolutionMassTolerance == null)
+                    FileSpecificSettingsList[i].DeconvolutionMassTolerance = TempSettings[i].DeconvolutionMassTolerance;
 
                 //Trim Ms/Ms Peaks
                 if (paramList[16].Value != null)
                     FileSpecificSettingsList[i].TrimMsMsPeaks = paramList[16].Value as bool?;
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].TrimMsMsPeaks != null && FileSpecificSettingsList[i].TrimMsMsPeaks == null)
-                    FileSpecificSettingsList[i].TrimMsMsPeaks = tempSettings[i].TrimMsMsPeaks;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].TrimMsMsPeaks != null && FileSpecificSettingsList[i].TrimMsMsPeaks == null)
+                    FileSpecificSettingsList[i].TrimMsMsPeaks = TempSettings[i].TrimMsMsPeaks;
 
                 //TrimMs1Peaks
                 if (paramList[17].Value != null)
                     FileSpecificSettingsList[i].TrimMs1Peaks = paramList[17].Value as bool?;
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].TrimMs1Peaks != null && FileSpecificSettingsList[i].TrimMs1Peaks == null)
-                    FileSpecificSettingsList[i].TrimMs1Peaks = tempSettings[i].TrimMs1Peaks;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].TrimMs1Peaks != null && FileSpecificSettingsList[i].TrimMs1Peaks == null)
+                    FileSpecificSettingsList[i].TrimMs1Peaks = TempSettings[i].TrimMs1Peaks;
 
                 //min Ratio
                 if (paramList[18].Value != null)
@@ -580,8 +578,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[18].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].MinRatio = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].MinRatio != null && FileSpecificSettingsList[i].MinRatio == null)
-                    FileSpecificSettingsList[i].MinRatio = tempSettings[i].MinRatio;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].MinRatio != null && FileSpecificSettingsList[i].MinRatio == null)
+                    FileSpecificSettingsList[i].MinRatio = TempSettings[i].MinRatio;
 
                 //Top N Peaks
                 if (paramList[19].Value != null)
@@ -589,8 +587,8 @@ namespace MetaMorpheusGUI
                     int.TryParse(paramList[19].Value.ToString(), out var a);
                     FileSpecificSettingsList[i].TopNpeaks = a;
                 }
-                else if (FileSpecificSettingsList.Count() > 1 && tempSettings[i].TopNpeaks != null && FileSpecificSettingsList[i].TopNpeaks == null)
-                    FileSpecificSettingsList[i].TopNpeaks = tempSettings[i].TopNpeaks;
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].TopNpeaks != null && FileSpecificSettingsList[i].TopNpeaks == null)
+                    FileSpecificSettingsList[i].TopNpeaks = TempSettings[i].TopNpeaks;
             }
 
             DialogResult = true;
@@ -643,12 +641,11 @@ namespace MetaMorpheusGUI
             int index = ParameterGrid.SelectedIndex;
             Parameter a = ParameterGrid.Items[index] as Parameter;
             a.Value = null;
-            //a.HasChanged = true;
-            if (tempSettings != null)
+            if (TempSettings != null)
             {
-                for (int i = 0; i < tempSettings.Length; i++)
+                for (int i = 0; i < TempSettings.Length; i++)
                 {
-                    FileSpecificSettings b = tempSettings.GetValue(i) as FileSpecificSettings;
+                    FileSpecificSettings b = TempSettings.GetValue(i) as FileSpecificSettings;
                     switch (index)
                     {
                         case 0:
