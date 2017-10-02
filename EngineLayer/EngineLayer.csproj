@@ -107,6 +107,7 @@
     <Compile Include="CommonParameters.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
     <Compile Include="CrosslinkSearch\PsmCrossType.cs" />
+    <Compile Include="Indexing\PrecursorIndexingEngine.cs" />
     <Compile Include="IScan.cs" />
     <Compile Include="MetaMorpheusException.cs" />
     <Compile Include="DigestionParams.cs" />

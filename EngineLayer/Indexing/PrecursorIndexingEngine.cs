@@ -8,40 +8,12 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.Indexing
 {
-    public class IndexingEngine : MetaMorpheusEngine
+    public class PrecursorIndexingEngine : IndexingEngine
     {
-        #region Protected Fields
-
-        protected const int fragmentBinsPerDalton = 1000;
-        protected readonly List<Protein> proteinList;
-
-        protected readonly List<ModificationWithMass> fixedModifications;
-        protected readonly List<ModificationWithMass> variableModifications;
-        protected readonly List<ProductType> lp;
-        protected readonly int currentPartition;
-        protected readonly bool searchDecoys;
-        protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
-        protected readonly int totalPartitions;
-        protected readonly int threadsToUse;
-
-        #endregion Protected Fields
-
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchDecoys, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(nestedIds)
+        public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchDecoys, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, searchDecoys, CollectionOfDigestionParams, totalPartitions, nestedIds)
         {
-            this.proteinList = proteinList;
-            this.variableModifications = variableModifications;
-            this.fixedModifications = fixedModifications;
-            this.lp = lp;
-            this.currentPartition = currentPartition + 1;
-            this.searchDecoys = searchDecoys;
-            this.CollectionOfDigestionParams = CollectionOfDigestionParams;
-            this.totalPartitions = totalPartitions;
-
-            this.threadsToUse = Environment.ProcessorCount;
-            if (threadsToUse > 1)
-                threadsToUse--;
         }
 
         #endregion Public Constructors
@@ -51,6 +23,7 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.Append("Precursor Mass Only");
             sb.AppendLine("Index partitions: " + currentPartition + "/" + totalPartitions);
             sb.AppendLine("Search Decoys: " + searchDecoys);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
@@ -118,7 +91,7 @@ namespace EngineLayer.Indexing
                     if (percentProgress > oldPercentProgress)
                     {
                         oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins...", nestedIds));
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins for precursor...", nestedIds));
                     }
                 }
             });
@@ -145,24 +118,14 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int i = 0; i < peptidesSortedByMass.Count; i++)
             {
-                var validFragments = peptidesSortedByMass[i].ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p));
+                double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods, 1);
 
-                foreach (var theoreticalFragmentMass in validFragments)
-                {
-                    if (theoreticalFragmentMass > 0 && theoreticalFragmentMass < maxFragmentMass)
-                    {
-                        double mz = Chemistry.ClassExtensions.ToMz(theoreticalFragmentMass, 1);
-                        int fragmentBin = (int)Math.Round(mz * fragmentBinsPerDalton);
+                int fragmentBin = (int)Math.Round(mz * fragmentBinsPerDalton);
 
-                        if (fragmentBin < maxFragmentMass * fragmentBinsPerDalton)
-                        {
-                            if (fragmentIndex[fragmentBin] == null)
-                                fragmentIndex[fragmentBin] = new List<int> { i };
-                            else
-                                fragmentIndex[fragmentBin].Add(i);
-                        }
-                    }
-                }
+                if (fragmentIndex[fragmentBin] == null)
+                    fragmentIndex[fragmentBin] = new List<int> { i };
+                else
+                    fragmentIndex[fragmentBin].Add(i);
 
                 progress++;
                 var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
@@ -170,7 +133,7 @@ namespace EngineLayer.Indexing
                 if (percentProgress > oldPercentProgress)
                 {
                     oldPercentProgress = percentProgress;
-                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index...", nestedIds));
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index for precursor...", nestedIds));
                 }
             }
 

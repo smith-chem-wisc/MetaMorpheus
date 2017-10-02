@@ -16,13 +16,16 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private readonly List<int>[] fragmentIndexPrecursor;
+
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
+        public NonSpecificEnzymeSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex,  List<int>[] fragmentIndex, List<int>[] fragmentIndexPrecursor, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
         {
+            this.fragmentIndexPrecursor = fragmentIndexPrecursor;
         }
 
         #endregion Public Constructors
@@ -38,8 +41,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
             int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
             byte byteScoreCutoff = Convert.ToByte(intScoreCutoff);
-
-            List<int> mostCommonBins = IdentifyMostCommonBinsAll(fragmentIndex);
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
             {
@@ -66,19 +67,25 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //get bins to add points to
                     List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
 
-                    //separate bins by common and uncommon fragments to improve search speed
-                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
-
-                    for (int j = 0; j < commonBinsToSearch.Count; j++)
-                        fragmentIndex[commonBinsToSearch[j]].ForEach(id => scoringTable[id]++);
-
                     for (int j = 0; j < allBinsToSearch.Count; j++)
-                        foreach (int id in fragmentIndex[allBinsToSearch[j]])
-                        {
-                            scoringTable[id]++;
-                            if (scoringTable[id] == byteScoreCutoff)
-                                idsOfPeptidesPossiblyObserved.Add(id);
-                        }
+                        fragmentIndex[allBinsToSearch[j]].ForEach(id => scoringTable[id]++);
+
+                    //populate ids of possibly observed with those containing allowed precursor masses
+                   // int obsPreviousFragmentCeilingMz = 0;
+                    List<int> binsToSearch = new List<int>();
+
+                    // assume charge state 1 to calculate mz tolerance
+            /*                int obsFragmentFloorMz = (int)Math.Floor((massDiffAcceptor.GetAllowedPrecursorMassIntervals.Minimum(scan.PrecursorMass) * fragmentBinsPerDalton);
+                            if (obsFragmentFloorMz < obsPreviousFragmentCeilingMz)
+                                obsFragmentFloorMz = obsPreviousFragmentCeilingMz;
+                            int obsFragmentCeilingMz = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(peak.Mz)) * fragmentBinsPerDalton);
+                            obsPreviousFragmentCeilingMz = obsFragmentCeilingMz + 1;
+                            for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
+                                if (fragmentIndex[fragmentBin] != null)
+                                    binsToSearch.Add(fragmentBin);
+
+    */
+
 
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
