@@ -319,7 +319,7 @@ namespace TaskLayer
             return false;
         }
 
-        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
+        //Calculate the FDR of crosslinked peptide FP/TP
         private static List<PsmCross> CrosslinkDoFalseDiscoveryRateAnalysis(List<PsmCross> items)
         {
             var ids = new List<PsmCross>();
@@ -341,7 +341,7 @@ namespace TaskLayer
                 else
                     cumulative_target++;
 
-                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
+                double temp_q_value = (double)cumulative_decoy / cumulative_target;
                 item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
                 item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
             }
