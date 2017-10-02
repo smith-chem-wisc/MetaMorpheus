@@ -365,13 +365,13 @@ namespace Test
                         },
                         ListOfModsVariable = new List<Tuple<string, string>>(),
                         ListOfModsFixed = new List<Tuple<string, string>>(),
-                        ScoreCutoff = 1
+                        ScoreCutoff = 1,
+                        PrecursorMassTolerance = new AbsoluteTolerance(1)
                     },
 
                     GptmdParameters = new GptmdParameters
                     {
                         ListOfModsGptmd = new List<Tuple<string, string>> { new Tuple<string, string>("okType", "ok") },
-                        PrecursorMassTolerance = new AbsoluteTolerance(1)
                     }
                 };
             }
