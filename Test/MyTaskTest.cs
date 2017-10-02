@@ -431,7 +431,8 @@ namespace Test
             {
                 SearchParameters = new SearchParameters
                 {
-                    WritePrunedDatabase = true
+                    WritePrunedDatabase = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact
                 }
             };
 
@@ -543,7 +544,8 @@ namespace Test
                 },
                 SearchParameters = new SearchParameters
                 {
-                    WritePrunedDatabase = true
+                    WritePrunedDatabase = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact
                 }
             };
 
