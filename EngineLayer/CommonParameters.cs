@@ -11,7 +11,7 @@ namespace EngineLayer
         public CommonParameters()
         {
             ProductMassTolerance = new PpmTolerance(20);
-            PrecursorMassTolerance = new PpmTolerance(10);
+            PrecursorMassTolerance = new PpmTolerance(5);
 
             DigestionParams = new DigestionParams();
 
