@@ -19,7 +19,6 @@ namespace Test
         [Test]
         public static void TestBinGeneration()
         {
-            MassDiffAcceptor massDiffAcceptors = new OpenSearchMode();
             SearchTask st = new SearchTask
             {
                 CommonParameters = new CommonParameters
@@ -34,7 +33,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
-                    MassDiffAcceptor = massDiffAcceptors,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Open,
                     SearchDecoy = false,
                     DoParsimony = true,
                     DoQuantification = true
@@ -86,7 +85,6 @@ namespace Test
         [Test]
         public static void TestProteinSplitAcrossFiles()
         {
-            MassDiffAcceptor massDiffAcceptors = new OpenSearchMode();
             SearchTask st = new SearchTask()
             {
                 CommonParameters = new CommonParameters
@@ -102,7 +100,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
-                    MassDiffAcceptor = massDiffAcceptors,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Open,
                     MatchBetweenRuns = true,
                     DoQuantification = true
                 },
