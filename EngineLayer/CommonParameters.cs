@@ -45,6 +45,7 @@ namespace EngineLayer
             TopNpeaks = 200;
             MinRatio = 0.01;
             ProductMassTolerance = new PpmTolerance(20);
+            PrecursorMassTolerance = new PpmTolerance(5);
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
         }
@@ -77,6 +78,7 @@ namespace EngineLayer
         public bool CIons { get; set; }
 
         public Tolerance ProductMassTolerance { get; set; }
+        public Tolerance PrecursorMassTolerance { get; set; }
 
         public bool ConserveMemory { get; set; }
 

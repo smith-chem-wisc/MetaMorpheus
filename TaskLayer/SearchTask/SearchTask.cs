@@ -794,7 +794,6 @@ namespace TaskLayer
                         for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                         {
 
-
                             #region Generate indices for modern search
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
@@ -813,7 +812,7 @@ namespace TaskLayer
                             List<CompactPeptide> peptideIndexPrecursor = null;
                             List<Protein> proteinListSubsetPrecursor = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
                             List<int>[] fragmentIndexPrecursor = new List<int>[1];
-                            var indexEnginePrecursor = new IndexingEngine(proteinListSubsetPrecursor, variableModifications, fixedModifications, terminusSpecificIons, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
+                            var indexEnginePrecursor = new PrecursorIndexingEngine(proteinListSubsetPrecursor, variableModifications, fixedModifications, terminusSpecificIons, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
                             lock (indexLock)
                                 GenerateIndexes(indexEnginePrecursor, dbFilenameList, ref peptideIndexPrecursor, ref fragmentIndexPrecursor, taskId);
 

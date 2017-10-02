@@ -71,26 +71,20 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         fragmentIndex[allBinsToSearch[j]].ForEach(id => scoringTable[id]++);
 
                     //populate ids of possibly observed with those containing allowed precursor masses
-                   // int obsPreviousFragmentCeilingMz = 0;
                     List<int> binsToSearch = new List<int>();
+                    int obsFragmentFloorMz = (int)Math.Floor(CommonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
+                    int obsFragmentCeilingMz = (int)Math.Ceiling(CommonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
+                    for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
+                        if (fragmentIndex[fragmentBin] != null)
+                            binsToSearch.Add(fragmentBin);
 
-                    // assume charge state 1 to calculate mz tolerance
-            /*                int obsFragmentFloorMz = (int)Math.Floor((massDiffAcceptor.GetAllowedPrecursorMassIntervals.Minimum(scan.PrecursorMass) * fragmentBinsPerDalton);
-                            if (obsFragmentFloorMz < obsPreviousFragmentCeilingMz)
-                                obsFragmentFloorMz = obsPreviousFragmentCeilingMz;
-                            int obsFragmentCeilingMz = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(peak.Mz)) * fragmentBinsPerDalton);
-                            obsPreviousFragmentCeilingMz = obsFragmentCeilingMz + 1;
-                            for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
-                                if (fragmentIndex[fragmentBin] != null)
-                                    binsToSearch.Add(fragmentBin);
-
-    */
-
+                    for (int j = 0; j < binsToSearch.Count; j++)
+                        fragmentIndex[binsToSearch[j]].ForEach(id=> idsOfPeptidesPossiblyObserved.Add(id));
 
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id])+1;
+                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
                         while (maxInitialScore != intScoreCutoff)
                         {
                             maxInitialScore--;
