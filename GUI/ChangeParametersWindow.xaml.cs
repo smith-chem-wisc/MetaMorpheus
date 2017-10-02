@@ -414,13 +414,6 @@ namespace MetaMorpheusGUI
         {
             ParameterGrid.Items.Refresh();
             Array.Copy(tempParamList, paramList, 20);
-            //foreach (Parameter param in paramList)
-            // {
-            //  if (param.Value == null)
-            //  {
-            //     param.HasChanged = false;
-            // }
-            //}
 
             for (int i = 0; i < FileSpecificSettingsList.Count(); i++)
             {
