@@ -250,6 +250,18 @@
                     </StackPanel>
                 </Expander>
             </GroupBox>
+            <GroupBox Header="Output Choose" DockPanel.Dock="Top">
+                    <Expander x:Name="OutputExpander">
+                        <StackPanel Orientation="Vertical">
+                            <CheckBox x:Name="ckbPercolator" Content="Output for Percolator" />
+                            <CheckBox x:Name="ckbCLMSVault" Content="Output for CLMSVault" />
+                            <CheckBox x:Name="ckbPepXML" Content="Output for pepXML" />
+                            <CheckBox x:Name="ckbCrosslink" Content="Output for Crosslink" />
+                            <CheckBox x:Name="ckbAllResults" Content="Output for AllResults include Normal, Loop, Deadend" />
+                        </StackPanel>
+                    </Expander>
+                            
+                </GroupBox>
         </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="5">
