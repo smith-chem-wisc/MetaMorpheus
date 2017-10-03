@@ -114,7 +114,7 @@ namespace TaskLayer
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                         ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                     if (doPrecursorDeconvolution)
-                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
+                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndChargesOld(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
                 }
 
                 if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
