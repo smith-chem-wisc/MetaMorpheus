@@ -111,7 +111,7 @@ namespace TaskLayer
             #endregion Load modifications
 
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -351,7 +351,7 @@ namespace TaskLayer
             return false;
         }
 
-        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
+        //Calculate the FDR of crosslinked peptide FP/TP
         private static List<PsmCross> CrosslinkDoFalseDiscoveryRateAnalysis(List<PsmCross> items)
         {
             var ids = new List<PsmCross>();
@@ -373,7 +373,7 @@ namespace TaskLayer
                 else
                     cumulative_target++;
 
-                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
+                double temp_q_value = (double)cumulative_decoy / cumulative_target;
                 item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
                 //item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
             }

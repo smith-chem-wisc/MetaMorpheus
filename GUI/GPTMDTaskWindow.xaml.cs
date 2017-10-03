@@ -78,8 +78,8 @@ namespace MetaMorpheusGUI
 
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            precursorMassToleranceTextBox.Text = task.GptmdParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = task.GptmdParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
 
             maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
             bCheckBox.IsChecked = task.CommonParameters.BIons;
@@ -193,9 +193,9 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
             productMassToleranceComboBox.Items.Add("Absolute");
-            productMassToleranceComboBox.Items.Add("Ppm");
+            productMassToleranceComboBox.Items.Add("ppm");
             precursorMassToleranceComboBox.Items.Add("Absolute");
-            precursorMassToleranceComboBox.Items.Add("Ppm");
+            precursorMassToleranceComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
@@ -252,9 +252,9 @@ namespace MetaMorpheusGUI
                 TheTask.CommonParameters.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
-                TheTask.GptmdParameters.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                TheTask.CommonParameters.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             else
-                TheTask.GptmdParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
             TheTask.CommonParameters.BIons = bCheckBox.IsChecked.Value;
             TheTask.CommonParameters.YIons = yCheckBox.IsChecked.Value;
