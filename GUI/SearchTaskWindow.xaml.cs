@@ -165,7 +165,7 @@ namespace MetaMorpheusGUI
             checkBoxTarget.IsChecked = task.SearchParameters.SearchTarget;
             checkBoxDecoy.IsChecked = task.SearchParameters.DecoyType != DecoyType.None;
             radioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
-            radioButtonShuffleDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Shuffle;
+            radioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -377,8 +377,8 @@ namespace MetaMorpheusGUI
             {
                 if (radioButtonReverseDecoy.IsChecked.Value)
                     TheTask.SearchParameters.DecoyType = DecoyType.Reverse;
-                else //if (radioButtonShuffleDecoy.IsChecked.Value)
-                    TheTask.SearchParameters.DecoyType = DecoyType.Shuffle;
+                else //if (radioButtonSlideDecoy.IsChecked.Value)
+                    TheTask.SearchParameters.DecoyType = DecoyType.Slide;
             }
             else //radioButtonNoneDecoy
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
