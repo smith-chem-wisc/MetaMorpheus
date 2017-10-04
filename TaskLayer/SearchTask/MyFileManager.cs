@@ -45,11 +45,7 @@ namespace TaskLayer
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
                 else
-                {
-                    if (trimMs1Peaks || trimMsMsPeaks)
-                        Warn("Thermo files do not have peak trimming implemented yet");
-                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile);
-                }
+                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
 
             return myMsDataFiles[origDataFile];
         }
