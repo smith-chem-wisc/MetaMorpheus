@@ -41,41 +41,40 @@
                 CleaveMassLong = 103.9932;
                 CrosslinkerModSite = 'K';
                 /*Residue.TryGetResidue("K", out CrosslinkerModSite)*/
-                ;
             }
-            //if (name == CrosslinkerType.BuUrBu)
-            //{
-            //    CrosslinkerName = "BuUrBu";
-            //    Cleavable = true;
-            //    TotalMass = 197.0926;
-            //    CleaveMassShort = 111.0320;
-            //    CleaveMassLong = 85.05276;
-            //    Residue.TryGetResidue("K", out CrosslinkerModSite);
-            //}
-            //if (name == CrosslinkerType.DisulfideBond)
-            //{
-            //    CrosslinkerName = "DisulfideBond";
-            //    Cleavable = true;
-            //    TotalMass = -2.01565;
-            //    CleaveMassShort = -33.98772;
-            //    CleaveMassLong = 31.97207;
-            //    Residue.TryGetResidue("K", out CrosslinkerModSite);
-            //}
+            if (name == CrosslinkerType.BuUrBu)
+            {
+                CrosslinkerName = "BuUrBu";
+                Cleavable = true;
+                TotalMass = 197.0926;
+                CleaveMassShort = 111.0320;
+                CleaveMassLong = 85.05276;
+                CrosslinkerModSite = 'K';
+            }
+            if (name == CrosslinkerType.DisulfideBond)
+            {
+                CrosslinkerName = "DisulfideBond";
+                Cleavable = true;
+                TotalMass = -2.01565;
+                CleaveMassShort = -33.98772;
+                CleaveMassLong = 31.97207;
+                CrosslinkerModSite = 'K';
+            }
             if (name == CrosslinkerType.DSS)
             {
                 CrosslinkerName = "DSS";
                 Cleavable = false;
                 TotalMass = 138.06808;
                 CrosslinkerModSite = 'K';
-                //Residue.TryGetResidue("K", out CrosslinkerModSite);
+                
             }
-            //if (name == CrosslinkerType.DTSSP)
-            //{
-            //    CrosslinkerName = "DTSSP";
-            //    Cleavable = false;
-            //    TotalMass = 138.06808;
-            //    Residue.TryGetResidue("K", out CrosslinkerModSite);
-            //}
+            if (name == CrosslinkerType.DTSSP)
+            {
+                CrosslinkerName = "DTSSP";
+                Cleavable = false;
+                TotalMass = 138.06808;
+                CrosslinkerModSite = 'K';
+            }
 
             return this;
         }
