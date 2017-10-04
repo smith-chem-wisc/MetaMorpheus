@@ -304,7 +304,7 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
+                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, generateDecoys ? DecoyType.Reverse : DecoyType.None, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
         protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
