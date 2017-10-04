@@ -1,6 +1,8 @@
 ﻿using Chemistry;
 using EngineLayer;
+
 using MassSpectrometry;
+
 using MzLibUtil;
 using Nett;
 using Proteomics;
@@ -10,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -29,6 +32,7 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
+
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -44,6 +48,7 @@ namespace TaskLayer
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
+
 
         #endregion Public Fields
 
