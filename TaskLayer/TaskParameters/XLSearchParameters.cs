@@ -11,7 +11,7 @@ namespace EngineLayer
         {
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSS;
-            CrosslinkSearchTopNum = 50;
+            CrosslinkSearchTopNum = 300;
             CrosslinkSearchWithAllBeta = false;
             UdXLkerName = null;
             UdXLkerCleavable = false;
@@ -21,6 +21,12 @@ namespace EngineLayer
             UdXLkerResidue = 'K';
             XlPrecusorMsTl = new PpmTolerance(10);
             XlBetaPrecusorMsTl = new PpmTolerance(10);
+
+            XlOutAll = true;
+            XlOutCrosslink = true;
+            XlOutCLMSVault = false;
+            XlOutPercolator = false;
+            XlOutPepXML = false;
         }
 
         #endregion Public Constructors
@@ -43,6 +49,11 @@ namespace EngineLayer
         public Tolerance XlBetaPrecusorMsTl { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }
 
+        public bool XlOutPercolator { get; set; }
+        public bool XlOutCLMSVault { get; set; }
+        public bool XlOutAll { get; set; }
+        public bool XlOutPepXML { get; set; }
+        public bool XlOutCrosslink { get; set; }
         #endregion Public Properties
     }
 }

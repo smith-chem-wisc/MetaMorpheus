@@ -42,8 +42,8 @@
     <Reference Include="Chemistry, Version=1.0.239.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.239\lib\Chemistry.dll</HintPath>
     </Reference>
-    <Reference Include="FlashLFQ, Version=1.0.101.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\FlashLFQ.0.1.92\lib\net451\FlashLFQ.dll</HintPath>
+    <Reference Include="FlashLFQ, Version=1.0.107.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\FlashLFQ.0.1.93\lib\net451\FlashLFQ.dll</HintPath>
     </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.239.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.239\lib\ManagedThermoHelperLayer.dll</HintPath>
@@ -67,8 +67,8 @@
       <HintPath>..\packages\NetSerializer.4.1.0\lib\net45\NetSerializer.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Nett, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nett.0.7.0\lib\Net40\Nett.dll</HintPath>
+    <Reference Include="Nett, Version=0.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Nett.0.8.0\lib\Net40\Nett.dll</HintPath>
     </Reference>
     <Reference Include="pepXML, Version=1.0.239.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.239\lib\pepXML.dll</HintPath>

@@ -48,8 +48,8 @@
     <Reference Include="Chemistry, Version=1.0.239.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.239\lib\Chemistry.dll</HintPath>
     </Reference>
-    <Reference Include="FlashLFQ, Version=1.0.101.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\FlashLFQ.0.1.92\lib\net451\FlashLFQ.dll</HintPath>
+    <Reference Include="FlashLFQ, Version=1.0.107.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\FlashLFQ.0.1.93\lib\net451\FlashLFQ.dll</HintPath>
     </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.239.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.239\lib\ManagedThermoHelperLayer.dll</HintPath>
@@ -69,8 +69,8 @@
     <Reference Include="MzML, Version=1.0.239.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.239\lib\MzML.dll</HintPath>
     </Reference>
-    <Reference Include="Nett, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nett.0.7.0\lib\Net40\Nett.dll</HintPath>
+    <Reference Include="Nett, Version=0.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Nett.0.8.0\lib\Net40\Nett.dll</HintPath>
     </Reference>
     <Reference Include="pepXML, Version=1.0.239.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.239\lib\pepXML.dll</HintPath>
@@ -107,6 +107,9 @@
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ChangeParametersWindow.xaml.cs">
+      <DependentUpon>ChangeParametersWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CollectionForTreeView.cs" />
     <Compile Include="DialogWindow.xaml.cs">
       <DependentUpon>DialogWindow.xaml</DependentUpon>
@@ -128,15 +131,21 @@
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\PreRunTask.cs" />
+    <Compile Include="Parameter.cs" />
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Compile Include="InRunTask.cs" />
+    <Compile Include="TheTemplateSelector.cs" />
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="CalibrateTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ChangeParametersWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

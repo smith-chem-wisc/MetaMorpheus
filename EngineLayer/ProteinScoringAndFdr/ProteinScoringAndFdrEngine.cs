@@ -145,7 +145,7 @@ namespace EngineLayer
 
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
-                proteinGroup.QValue = ((double)cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
+                proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
             }
 
             return sortedProteinGroups;
