@@ -1001,7 +1001,7 @@ namespace TaskLayer
                     FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupNames[psm]);
 
                 // run FlashLFQ
-                FlashLfqEngine.ConstructBinsFromIdentifications();
+                FlashLfqEngine.ConstructIndexTemplateFromIdentifications();
 
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
