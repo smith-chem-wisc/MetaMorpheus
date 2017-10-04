@@ -1,4 +1,5 @@
 ﻿using MzLibUtil;
+using UsefulProteomicsDatabases;
 
 namespace EngineLayer
 {
@@ -8,7 +9,7 @@ namespace EngineLayer
 
         public XlSearchParameters()
         {
-            SearchDecoy = true;
+            DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSS;
             CrosslinkSearchTopNum = 50;
             CrosslinkSearchWithAllBeta = false;
@@ -26,7 +27,7 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public bool SearchDecoy { get; set; }
+        public DecoyType DecoyType { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
 
         public CrosslinkerType CrosslinkerType { get; set; }

@@ -301,7 +301,7 @@ namespace Test
             #region Generate and write the mzml
 
             {
-                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
@@ -394,7 +394,7 @@ namespace Test
             #region Generate and write the mzml
 
             {
-                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
@@ -490,7 +490,7 @@ namespace Test
             #region MZML File
 
             //now write MZML file
-            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
@@ -518,7 +518,7 @@ namespace Test
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
             //string[] files = Directory.GetFiles(fileAtPath);
             //string file = fileAtPath;
-            var proteins = ProteinDbLoader.LoadProteinXML(final, true, true, new List<Modification>(), false, new List<string>(), out ok);
+            var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
             //check location (key)
@@ -599,7 +599,7 @@ namespace Test
             #region MZML setup
 
             //now write MZML file
-            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(testUnique.CommonParameters.DigestionParams, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
