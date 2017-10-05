@@ -23,7 +23,7 @@ namespace EngineLayer.ModernSearch
         protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
-        protected static readonly int fragmentBinsPerDalton = 1000;
+        protected const int fragmentBinsPerDalton = 1000;
 
         #endregion Protected Fields
 
@@ -53,8 +53,7 @@ namespace EngineLayer.ModernSearch
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing modern search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
 
-            int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
-            byte byteScoreCutoff = Convert.ToByte(intScoreCutoff);
+            byte byteScoreCutoff = Convert.ToByte((int)CommonParameters.ScoreCutoff);
 
             List<int> mostCommonBins = IdentifyMostCommonBinsAll(fragmentIndex);
 
@@ -71,11 +70,9 @@ namespace EngineLayer.ModernSearch
                     var scan = listOfSortedms2Scans[i];
 
                     // filter ms2 fragment peaks by intensity
-                    int numFragmentsToUse = 0;
+                    int numFragmentsToUse = scan.NumPeaks;
                     if (CommonParameters.TopNpeaks != null)
                         numFragmentsToUse = (int)CommonParameters.TopNpeaks;
-                    else
-                        numFragmentsToUse = scan.NumPeaks;
 
                     var peaks = scan.TheScan.MassSpectrum.FilterByNumberOfMostIntense(numFragmentsToUse).ToList();
                     double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
@@ -91,11 +88,11 @@ namespace EngineLayer.ModernSearch
                     double[] lowestMassPeptideToLookForArray = new double[notches.Count()];
                     double[] highestMassPeptideToLookForArray = new double[notches.Count()];
                     for (int notch = 0; notch < notches.Length; notch++)
+
                     {
                         lowestMassPeptideToLookForArray[notch] = notches[notch].allowedInterval.Minimum;
                         highestMassPeptideToLookForArray[notch] = notches[notch].allowedInterval.Maximum;
                     }
-
                     //First pass scoring commonly viewed fragments but not searching for candidates
                     IndexedScoringCommon(commonBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookForArray, highestMassPeptideToLookForArray);
                     //Second pass scoring all other peaks and collecting theoretical peptides with high enough scores
@@ -251,7 +248,7 @@ namespace EngineLayer.ModernSearch
                     double highestMassPeptideToLookFor = highestMassPeptideToLookForArray[notch];
                     //get index for minimum monoisotopic allowed
                     int m = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : FindLowestMassIndexAllowed(peptideIndex, peptideIdsInThisBin, lowestMassPeptideToLookFor);
-
+                    
                     // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
                     if (!Double.IsInfinity(highestMassPeptideToLookFor))
                     {
