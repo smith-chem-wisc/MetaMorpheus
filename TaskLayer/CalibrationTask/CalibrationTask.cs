@@ -3,7 +3,14 @@ using EngineLayer.Analysis;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using IO.MzML;
+
+#if ONLYNETSTANDARD
+#else
+
 using IO.Thermo;
+
+#endif
+
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -165,7 +172,14 @@ namespace TaskLayer
                     if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
+#if ONLYNETSTANDARD
+                    {
+                        Warn("No capability for reading " + origDataFile);
+                        return;
+                    }
+#else
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
+#endif
                 }
 
                 StringBuilder sbForThisFile = new StringBuilder();
@@ -226,7 +240,7 @@ namespace TaskLayer
                     if (calibrationResult == null)
                     {
                         sbForThisFile.AppendLine(theResult.ToString());
-                        Warn(theResult.ToString(), new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                        Warn(theResult.ToString());
                         Status("Errored", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                         return;
                     }
@@ -285,7 +299,7 @@ namespace TaskLayer
                     if (calibrationResult == null)
                     {
                         sbForThisFile.AppendLine(theResult.ToString());
-                        Warn(theResult.ToString(), new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                        Warn(theResult.ToString());
                         Status("Errored", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                         return;
                     }
