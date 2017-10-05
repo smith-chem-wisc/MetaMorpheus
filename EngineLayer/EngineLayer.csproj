@@ -75,10 +75,6 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\packages\System.ValueTuple.4.4.0\lib\net461\System.ValueTuple.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Thermo, Version=1.0.241.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.241\lib\net461\Thermo.dll</HintPath>
     </Reference>
