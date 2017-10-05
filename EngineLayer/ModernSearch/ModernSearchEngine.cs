@@ -79,20 +79,20 @@ namespace EngineLayer.ModernSearch
 
                     //get bins to add points to
                     List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
-                    
+
                     //separate bins by common and uncommon fragments to improve search speed
-                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
-                    
+                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, byteScoreCutoff, addCompIons);
+
                     // get allowed precursor masses
                     AllowedIntervalWithNotch[] notches = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass).ToArray();
                     double[] lowestMassPeptideToLookForArray = new double[notches.Count()];
                     double[] highestMassPeptideToLookForArray = new double[notches.Count()];
                     for (int notch = 0; notch < notches.Length; notch++)
-
                     {
                         lowestMassPeptideToLookForArray[notch] = notches[notch].allowedInterval.Minimum;
                         highestMassPeptideToLookForArray[notch] = notches[notch].allowedInterval.Maximum;
                     }
+
                     //First pass scoring commonly viewed fragments but not searching for candidates
                     IndexedScoringCommon(commonBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookForArray, highestMassPeptideToLookForArray);
                     //Second pass scoring all other peaks and collecting theoretical peptides with high enough scores
@@ -248,7 +248,7 @@ namespace EngineLayer.ModernSearch
                     double highestMassPeptideToLookFor = highestMassPeptideToLookForArray[notch];
                     //get index for minimum monoisotopic allowed
                     int m = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : FindLowestMassIndexAllowed(peptideIndex, peptideIdsInThisBin, lowestMassPeptideToLookFor);
-                    
+
                     // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
                     if (!Double.IsInfinity(highestMassPeptideToLookFor))
                     {
@@ -296,7 +296,7 @@ namespace EngineLayer.ModernSearch
 
                             // add possible search results to the hashset of id's, should be only difference between IndexedScoringUncommon and IndexedScoringCommon
                             if (scoringTable[id] == byteScoreCutoff)
-                                    idsOfPeptidesPossiblyObserved.Add(id);
+                                idsOfPeptidesPossiblyObserved.Add(id);
 
                             if (peptideIndex[id].MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)
                                 break;

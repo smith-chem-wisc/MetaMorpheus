@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace MetaMorpheusGUI
 {
@@ -106,10 +107,10 @@ namespace MetaMorpheusGUI
                 cbCrosslinker.Items.Add(crosslinkerName);
 
             cbbXLprecusorMsTl.Items.Add("Absolute");
-            cbbXLprecusorMsTl.Items.Add("Ppm");
+            cbbXLprecusorMsTl.Items.Add("ppm");
 
             cbbXLBetaprecusorMsTl.Items.Add("Absolute");
-            cbbXLBetaprecusorMsTl.Items.Add("Ppm");
+            cbbXLBetaprecusorMsTl.Items.Add("ppm");
 
             foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
@@ -119,7 +120,7 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
             productMassToleranceComboBox.Items.Add("Absolute");
-            productMassToleranceComboBox.Items.Add("Ppm");
+            productMassToleranceComboBox.Items.Add("ppm");
 
             //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
             //    productMassToleranceComboBox.Items.Add(toleranceUnit);
@@ -167,7 +168,7 @@ namespace MetaMorpheusGUI
             cbbXLBetaprecusorMsTl.SelectedIndex = task.XlSearchParameters.XlPrecusorMsTl is AbsoluteTolerance ? 0 : 1;
             txtXLBetaPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
-            checkBoxDecoy.IsChecked = task.XlSearchParameters.SearchDecoy;
+            checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType!=DecoyType.None;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -180,6 +181,12 @@ namespace MetaMorpheusGUI
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
+
+            ckbAllResults.IsChecked = task.XlSearchParameters.XlOutAll;
+            ckbCLMSVault.IsChecked = task.XlSearchParameters.XlOutCLMSVault;
+            ckbPercolator.IsChecked = task.XlSearchParameters.XlOutPercolator;
+            ckbCrosslink.IsChecked = task.XlSearchParameters.XlOutCrosslink;
+            ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -283,7 +290,7 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.UdXLkerTotalMass = double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
             }
 
-            TheTask.XlSearchParameters.SearchDecoy = checkBoxDecoy.IsChecked.Value;
+            TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
             TheTask.CommonParameters.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
@@ -299,6 +306,11 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.CIons = cCheckBox.IsChecked.Value;
             TheTask.CommonParameters.ZdotIons = zdotCheckBox.IsChecked.Value;
 
+            TheTask.XlSearchParameters.XlOutPercolator = ckbPercolator.IsChecked.Value;
+            TheTask.XlSearchParameters.XlOutPepXML = ckbPepXML.IsChecked.Value;
+            TheTask.XlSearchParameters.XlOutAll = ckbAllResults.IsChecked.Value;
+            TheTask.XlSearchParameters.XlOutCLMSVault = ckbCLMSVault.IsChecked.Value;
+            TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
             TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();

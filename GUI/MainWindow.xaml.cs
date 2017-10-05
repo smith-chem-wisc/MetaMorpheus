@@ -2,6 +2,7 @@ using EngineLayer;
 using Nett;
 using Proteomics;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -19,12 +20,11 @@ namespace MetaMorpheusGUI
     public partial class MainWindow : Window
     {
         #region Private Fields
-
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
+        private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -36,7 +36,6 @@ namespace MetaMorpheusGUI
             Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
-
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
 
@@ -74,6 +73,9 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
 
+            MyFileManager.WarnHandler += EverythingRunnerEngine_warnHandler;
+
+            UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
         }
 
@@ -116,8 +118,9 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
+                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.s));
                 huh.SetInProgress(false);
+
                 dataGridDatafiles.Items.Refresh();
             }
         }
@@ -130,7 +133,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
+                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.s));
                 huh.SetInProgress(true);
                 dataGridDatafiles.Items.Refresh();
             }
@@ -160,7 +163,9 @@ namespace MetaMorpheusGUI
             else
             {
                 foreach (var uu in rawDataObservableCollection)
+                {
                     uu.Use = false;
+                }
                 foreach (var newRawData in e.StringList)
                     rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
             }
@@ -268,10 +273,12 @@ namespace MetaMorpheusGUI
             var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
             switch (theExtension)
             {
+
                 case ".raw":
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
+                    UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     break;
 
                 case ".xml":
@@ -347,7 +354,7 @@ namespace MetaMorpheusGUI
                 dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
             var t = new Thread(() => a.Run())
             {
                 IsBackground = true
@@ -388,6 +395,22 @@ namespace MetaMorpheusGUI
                 RemoveLastTaskButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
             }
+
+        }
+
+        private void UpdateRawFileGuiStuff()
+        {
+
+            if (SelectedRawFiles.Count == 0)
+            {
+                ChangeFileParameters.IsEnabled = false;
+            }
+            else
+            {
+                ChangeFileParameters.IsEnabled = true;
+
+            }
+
         }
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
@@ -689,6 +712,58 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
         }
 
+        //run if fileSpecificParams are changed from GUI
+        private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
+        {
+            string[] fullPathofTomls = tomlLocations;
+
+            foreach (var file in SelectedRawFiles)
+            {
+                for (int j = 0; j < fullPathofTomls.Count(); j++)
+                {
+                    if (Path.GetFileNameWithoutExtension(file.FileName) == Path.GetFileNameWithoutExtension(fullPathofTomls[j]))
+                    {
+                        file.Parameters = File.ReadAllText(fullPathofTomls[j] + ".toml");
+                    }
+                }
+
+            }
+            UpdateRawFileGuiStuff();
+            dataGridDatafiles.Items.Refresh();
+        }
+
+        //run if data file has just been added with and checks for Existing fileSpecficParams
+        private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocations)
+        {
+            string fullPathofTomls = tomlLocations;
+            for (int i = 0; i < rawDataObservableCollection.Count(); i++)
+            {
+                if (File.Exists(fullPathofTomls) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(fullPathofTomls))
+                    rawDataObservableCollection[i].Parameters = File.ReadAllText(fullPathofTomls);
+            }
+            UpdateRawFileGuiStuff();
+            dataGridDatafiles.Items.Refresh();
+        }
+
+        private void AddSelectedRaw(object sender, RoutedEventArgs e)
+        {
+            DataGridRow obj = (DataGridRow)sender;
+
+            RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
+            SelectedRawFiles.Add(ok);
+            UpdateRawFileGuiStuff();
+
+        }
+
+        private void RemoveSelectedRaw(object sender, RoutedEventArgs e)
+        {
+            DataGridRow obj = (DataGridRow)sender;
+            RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
+            SelectedRawFiles.Remove(ok);
+            UpdateRawFileGuiStuff();
+        }
+
+
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
@@ -715,5 +790,38 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+        private void ChangeFileParameters_Click(object sender, RoutedEventArgs e)
+        {
+
+
+            var dialog = new ChangeParametersWindow(SelectedRawFiles);
+            if (dialog.ShowDialog() == true)
+            {
+                string[] fullPathofToml = new string[dialog.FileSpecificSettingsList.Count()];
+                for (int i = 0; i < dialog.FileSpecificSettingsList.Count(); i++)
+                {
+                    string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
+                    string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
+                    fullPathofToml[i] = Path.Combine(directory, fileName);
+                    //REMOVE DEFAULT INIT METHONINE:
+
+
+                    string badLine = "InitiatorMethionineBehavior = \"Undefined\"";
+
+                    Toml.WriteFile(dialog.FileSpecificSettingsList[i], fullPathofToml[i] + ".toml", MetaMorpheusTask.tomlConfig);
+                    string[] lineArray = File.ReadAllLines(fullPathofToml[i] + ".toml");
+                    List<string> lines = lineArray.ToList();
+                    foreach (string line in lineArray)
+                    {
+                        if (line.Equals(badLine))
+                            lines.Remove(line);
+                    }
+                    File.WriteAllLines(fullPathofToml[i] + ".toml", lines);
+                }
+                UpdateFileSpecificParamsDisplay(fullPathofToml);
+
+            }
+
+        }
     }
 }
