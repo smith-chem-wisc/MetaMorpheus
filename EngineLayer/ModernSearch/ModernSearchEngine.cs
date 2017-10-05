@@ -88,11 +88,11 @@ namespace EngineLayer.ModernSearch
                     double[] lowestMassPeptideToLookForArray = new double[notches.Count()];
                     double[] highestMassPeptideToLookForArray = new double[notches.Count()];
                     for (int notch = 0; notch < notches.Length; notch++)
-
                     {
                         lowestMassPeptideToLookForArray[notch] = notches[notch].allowedInterval.Minimum;
                         highestMassPeptideToLookForArray[notch] = notches[notch].allowedInterval.Maximum;
                     }
+
                     //First pass scoring commonly viewed fragments but not searching for candidates
                     IndexedScoringCommon(commonBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookForArray, highestMassPeptideToLookForArray);
                     //Second pass scoring all other peaks and collecting theoretical peptides with high enough scores
@@ -295,7 +295,7 @@ namespace EngineLayer.ModernSearch
                             scoringTable[id]++;
 
                             // add possible search results to the hashset of id's, should be only difference between IndexedScoringUncommon and IndexedScoringCommon
-                            if (scoringTable[id] == byteScoreCutoff)
+                            if (scoringTable[id] == byteScoreCutoff && notch > 0)
                                     idsOfPeptidesPossiblyObserved.Add(id);
 
                             if (peptideIndex[id].MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)
@@ -310,7 +310,7 @@ namespace EngineLayer.ModernSearch
                             scoringTable[id]++;
 
                             // add possible search results to the hashset of id's, should be only difference between IndexedScoringUncommon and IndexedScoringCommon
-                            if (scoringTable[id] == byteScoreCutoff)
+                            if (scoringTable[id] == byteScoreCutoff && notch > 0)
                                 idsOfPeptidesPossiblyObserved.Add(id);
                         }
                     }
