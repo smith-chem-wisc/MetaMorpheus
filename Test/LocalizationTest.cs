@@ -79,7 +79,6 @@ namespace Test
             Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
         }
 
-
         [Test]
         public static void TestSeparateIonsByTerminus()
         {
@@ -105,6 +104,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

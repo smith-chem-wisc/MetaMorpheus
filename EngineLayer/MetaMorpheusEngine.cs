@@ -38,8 +38,6 @@ namespace EngineLayer
 
         public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
 
-        public static event EventHandler<StringEventArgs> WarnHandler;
-
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
         #endregion Public Events
@@ -389,11 +387,6 @@ namespace EngineLayer
                 dissociationTypes.Add(DissociationType.ETD);
 
             return dissociationTypes;
-        }
-
-        protected void Warn(string v, List<string> nestedIds)
-        {
-            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
         protected void Status(string v, List<string> nestedIds)

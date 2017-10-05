@@ -10,6 +10,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -94,14 +95,13 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var searchModes = new SinglePpmAroundZeroSearchMode(5);
-
             SearchParameters SearchParameters = new SearchParameters
             {
-                MassDiffAcceptor = searchModes
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact
             };
             CommonParameters CommonParameters = new CommonParameters
             {
+                PrecursorMassTolerance = new PpmTolerance(5),
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
@@ -110,7 +110,7 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -122,12 +122,14 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
             Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, new List<string>()).Run();
 
             Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
             SearchParameters.AddCompIons = true;
-            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);

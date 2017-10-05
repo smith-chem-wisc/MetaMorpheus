@@ -1,16 +1,18 @@
 ﻿using Chemistry;
 using EngineLayer;
+
 using MassSpectrometry;
+
 using MzLibUtil;
 using Nett;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -30,32 +32,12 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
+
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())))
                         .ConfigureType<AbsoluteTolerance>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())))
-                        .ConfigureType<MassDiffAcceptor>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .FromToml(tmlString => ParseSearchMode(tmlString.Value))))
-                        .ConfigureType<DotMassDiffAcceptor>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())))
-                        .ConfigureType<IntervalMassDiffAcceptor>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())))
-                        .ConfigureType<OpenSearchMode>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())))
-                        .ConfigureType<OpenLowTheoSearchMode>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())))
-                        .ConfigureType<SingleAbsoluteAroundZeroSearchMode>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())))
-                        .ConfigureType<SinglePpmAroundZeroSearchMode>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())))
                         .ConfigureType<Protease>(type => type
@@ -66,6 +48,7 @@ namespace TaskLayer
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
+
 
         #endregion Public Fields
 
@@ -135,7 +118,7 @@ namespace TaskLayer
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                         ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                     if (doPrecursorDeconvolution)
-                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
+                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndChargesOld(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
                 }
 
                 if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
@@ -158,48 +141,6 @@ namespace TaskLayer
                 foreach (var heh in isolatedStuff)
                     yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, fullFilePath);
             }
-        }
-
-        public static MassDiffAcceptor ParseSearchMode(string text)
-        {
-            MassDiffAcceptor ye = null;
-
-            var split = text.Split(' ');
-
-            switch (split[1])
-            {
-                case "dot":
-
-                    var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
-                    var newString = split[2].Replace("±", "");
-                    var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
-                    if (split[3].ToUpperInvariant().Equals("PPM"))
-                        ye = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
-                    else if (split[3].ToUpperInvariant().Equals("DA"))
-                        ye = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
-                    break;
-
-                case "interval":
-                    IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
-                    ye = new IntervalMassDiffAcceptor(split[0], doubleRanges);
-                    break;
-
-                case "OpenSearch":
-                    ye = new OpenSearchMode();
-                    break;
-
-                case "daltonsAroundZero":
-                    ye = new SingleAbsoluteAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
-                    break;
-
-                case "ppmAroundZero":
-                    ye = new SinglePpmAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
-                    break;
-
-                default:
-                    throw new MetaMorpheusException("Could not parse search mode string");
-            }
-            return ye;
         }
 
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
@@ -354,15 +295,15 @@ namespace TaskLayer
             }
         }
 
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateDecoys, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
+        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
         {
             if (Path.GetExtension(fileName).Equals(".fasta"))
             {
                 um = null;
-                return ProteinDbLoader.LoadProteinFasta(fileName, true, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
+                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, true, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
+                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
         protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)

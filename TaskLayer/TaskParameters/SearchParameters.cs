@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace EngineLayer
 {
@@ -16,12 +17,12 @@ namespace EngineLayer
             DoQuantification = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
-            SearchDecoy = true;
+            DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
-            MassDiffAcceptor = GlobalEngineLevelSettings.SearchModesKnown.First();
+            MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
         }
 
         #endregion Public Constructors
@@ -37,13 +38,14 @@ namespace EngineLayer
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
-        public bool SearchDecoy { get; set; }
-        public MassDiffAcceptor MassDiffAcceptor { get; set; }
+        public DecoyType DecoyType { get; set; }
+        public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
+        public string CustomMdac { get; set; }
 
         #endregion Public Properties
     }
