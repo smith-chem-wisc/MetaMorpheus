@@ -1,4 +1,4 @@
-﻿namespace EngineLayer
+﻿namespace TaskLayer
 {
     public enum SearchType
     {

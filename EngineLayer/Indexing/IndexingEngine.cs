@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UsefulProteomicsDatabases;
 
 namespace EngineLayer.Indexing
 {
@@ -19,7 +20,7 @@ namespace EngineLayer.Indexing
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ProductType> lp;
         private readonly int currentPartition;
-        private readonly bool searchDecoys;
+        private readonly DecoyType decoyType;
         private readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         private readonly int totalPartitions;
         private readonly int threadsToUse;
@@ -28,14 +29,14 @@ namespace EngineLayer.Indexing
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchDecoys, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.lp = lp;
             this.currentPartition = currentPartition + 1;
-            this.searchDecoys = searchDecoys;
+            this.decoyType = decoyType;
             this.CollectionOfDigestionParams = CollectionOfDigestionParams;
             this.totalPartitions = totalPartitions;
 
@@ -51,8 +52,8 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Index partitions: " + currentPartition + "/" + totalPartitions);
-            sb.AppendLine("Search Decoys: " + searchDecoys);
+            sb.AppendLine("Partitions: " + currentPartition + "/" + totalPartitions);
+            sb.AppendLine("Search Decoys: " + decoyType);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);

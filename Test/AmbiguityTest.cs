@@ -12,6 +12,8 @@ namespace Test
     [TestFixture]
     internal static class AmbiguityTest
     {
+        #region Public Methods
+
         [Test]
         public static void TestResolveAmbiguities()
         {
@@ -65,5 +67,7 @@ namespace Test
             Assert.IsTrue(allPsmsArrayt[0].OneBasedStartResidueInProtein == null);
             Assert.IsTrue(allPsmsArrayf[0].OneBasedStartResidueInProtein == 6);
         }
+
+        #endregion Public Methods
     }
 }
