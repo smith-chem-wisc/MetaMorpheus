@@ -330,7 +330,7 @@ namespace Test
 
             FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, new List<string> { "P34223" });
 
-            FlashLfqEngine.ConstructBinsFromIdentifications();
+            FlashLfqEngine.ConstructIndexTemplateFromIdentifications();
 
             FlashLfqEngine.Quantify(null, mzmlFilePath);
 

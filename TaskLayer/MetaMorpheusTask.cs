@@ -118,7 +118,7 @@ namespace TaskLayer
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                         ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                     if (doPrecursorDeconvolution)
-                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
+                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndChargesOld(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
                 }
 
                 if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
@@ -303,7 +303,7 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
+                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, generateDecoys ? DecoyType.Reverse : DecoyType.None, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
         protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
