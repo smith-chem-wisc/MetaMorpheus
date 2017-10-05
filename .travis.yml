@@ -3,6 +3,7 @@ mono: none
 dotnet: 1.0.3
 dist: trusty
 install:
+- nuget restore MetaMorpheus.sln
 - dotnet restore MetaMorpheus.sln
 - nuget install NUnit.Console -OutputDirectory testrunner
 script:
