@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
@@ -808,7 +808,7 @@ namespace TaskLayer
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
-                        Dictionary<float, List<int>> fragmentIndexDict = new Dictionary<float, List<int>>();
+                        List<int>[] fragmentIndex = new List<int>[1];
                         lock (indexLock)
                             GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
 
@@ -1389,49 +1389,6 @@ namespace TaskLayer
             if (oneIsNterminus == peptideWithSetModifications.Length + 2)
                 return peptideWithSetModifications.OneBasedEndResidueInProtein;
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
-        }
-
-        private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref Dictionary<float, List<int>> fragmentIndexDict, string taskId)
-        {
-            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-
-            if (pathToFolderWithIndices == null)
-            {
-                var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
-                Status("Writing params...", new List<string> { taskId });
-                var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
-                WriteIndexEngineParams(indexEngine, paramsFile);
-                SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
-
-                Status("Running Index Engine...", new List<string> { taskId });
-                var indexResults = (IndexingResults)indexEngine.Run();
-                peptideIndex = indexResults.PeptideIndex;
-                fragmentIndexDict = indexResults.FragmentIndexDict;
-
-                Status("Writing peptide index...", new List<string> { taskId });
-                var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
-                WritePeptideIndex(peptideIndex, peptideIndexFile);
-                SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
-
-                Status("Writing fragment index...", new List<string> { taskId });
-                var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
-                WriteFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
-                SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
-            }
-            else
-            {
-                Status("Reading peptide index...", new List<string> { taskId });
-                var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-                var ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                    peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
-
-                Status("Reading fragment index...", new List<string> { taskId });
-                messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-                ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                    fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
-            }
         }
 
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)

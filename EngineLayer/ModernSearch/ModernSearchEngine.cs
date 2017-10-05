@@ -81,7 +81,7 @@ namespace EngineLayer.ModernSearch
                     List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
                     
                     //separate bins by common and uncommon fragments to improve search speed
-                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
+                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, byteScoreCutoff, addCompIons);
                     
                     // get allowed precursor masses
                     AllowedIntervalWithNotch[] notches = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass).ToArray();
