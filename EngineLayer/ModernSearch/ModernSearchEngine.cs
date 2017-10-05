@@ -79,10 +79,10 @@ namespace EngineLayer.ModernSearch
 
                     //get bins to add points to
                     List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
-                    
+
                     //separate bins by common and uncommon fragments to improve search speed
                     List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, byteScoreCutoff, addCompIons);
-                    
+
                     // get allowed precursor masses
                     AllowedIntervalWithNotch[] notches = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass).ToArray();
                     double[] lowestMassPeptideToLookForArray = new double[notches.Count()];
@@ -248,7 +248,7 @@ namespace EngineLayer.ModernSearch
                     double highestMassPeptideToLookFor = highestMassPeptideToLookForArray[notch];
                     //get index for minimum monoisotopic allowed
                     int m = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : FindLowestMassIndexAllowed(peptideIndex, peptideIdsInThisBin, lowestMassPeptideToLookFor);
-                    
+
                     // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
                     if (!Double.IsInfinity(highestMassPeptideToLookFor))
                     {
@@ -295,8 +295,8 @@ namespace EngineLayer.ModernSearch
                             scoringTable[id]++;
 
                             // add possible search results to the hashset of id's, should be only difference between IndexedScoringUncommon and IndexedScoringCommon
-                            if (scoringTable[id] == byteScoreCutoff && notch > 0)
-                                    idsOfPeptidesPossiblyObserved.Add(id);
+                            if (scoringTable[id] == byteScoreCutoff)
+                                idsOfPeptidesPossiblyObserved.Add(id);
 
                             if (peptideIndex[id].MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)
                                 break;
@@ -310,7 +310,7 @@ namespace EngineLayer.ModernSearch
                             scoringTable[id]++;
 
                             // add possible search results to the hashset of id's, should be only difference between IndexedScoringUncommon and IndexedScoringCommon
-                            if (scoringTable[id] == byteScoreCutoff && notch > 0)
+                            if (scoringTable[id] == byteScoreCutoff)
                                 idsOfPeptidesPossiblyObserved.Add(id);
                         }
                     }
