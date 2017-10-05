@@ -380,7 +380,7 @@ namespace MetaMorpheusGUI
                 else //if (radioButtonSlideDecoy.IsChecked.Value)
                     TheTask.SearchParameters.DecoyType = DecoyType.Slide;
             }
-            else //radioButtonNoneDecoy
+            else 
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
