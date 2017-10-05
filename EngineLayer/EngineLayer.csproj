@@ -126,7 +126,6 @@
     <Compile Include="Localization\LocalizationEngineResults.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisEngine.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisResults.cs" />
-    <Compile Include="PrecursorSearchModes\HighTheoreticalDiffAcceptor.cs" />
     <Compile Include="PrecursorSearchModes\LowTheoreticalDiffAcceptor.cs" />
     <Compile Include="ProteinParsimony\ProteinGroup.cs" />
     <Compile Include="ProteinParsimony\ProteinParsimonyEngine.cs" />
