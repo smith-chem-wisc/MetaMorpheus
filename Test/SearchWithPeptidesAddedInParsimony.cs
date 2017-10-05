@@ -24,7 +24,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
-                    SearchDecoy = false,
+                    DecoyType = DecoyType.None,
                     ModPeptidesAreUnique = false
                 },
                 CommonParameters = new CommonParameters

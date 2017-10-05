@@ -34,7 +34,7 @@ namespace Test
                 {
                     DoHistogramAnalysis = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
-                    SearchDecoy = false,
+                    DecoyType = DecoyType.None,
                     DoParsimony = true,
                     DoQuantification = true
                 },
