@@ -111,10 +111,13 @@ namespace EngineLayer.ClassicSearch
 
                                 if (score > CommonParameters.ScoreCutoff)
                                 {
-                                    if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
-                                        psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, CommonParameters.ExcelCompatible);
-                                    else
-                                        psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, CommonParameters.ReportAllAmbiguity);
+                                    if (searchModes.Accepts(scanWithIndexAndNotchInfo.theScan.PrecursorMass, correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
+                                    {
+                                        if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
+                                            psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, CommonParameters.ExcelCompatible);
+                                        else
+                                            psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, CommonParameters.ReportAllAmbiguity);
+                                    }
                                 }
                             }
                         }
