@@ -78,7 +78,6 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CommonParameters.CIons;
 
             conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
-            nonLinearCalibCheckBox.IsChecked = task.CalibrationParameters.NonLinearCalibration;
 
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -250,8 +249,6 @@ namespace MetaMorpheusGUI
 
             if (int.TryParse(maxParallelFiles.Text, out int jsakdf))
                 TheTask.CommonParameters.MaxParallelFilesToAnalyze = jsakdf;
-
-            TheTask.CalibrationParameters.NonLinearCalibration = nonLinearCalibCheckBox.IsChecked.Value;
 
             DialogResult = true;
         }
