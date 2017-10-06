@@ -351,9 +351,9 @@ namespace TaskLayer
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
-        protected void Warn(string v, List<string> nestedIds)
+        protected void Warn(string v)
         {
-            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+            WarnHandler?.Invoke(this, new StringEventArgs(v, null));
         }
 
         protected void NewCollection(string v, List<string> nestedIds)
