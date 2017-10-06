@@ -1,5 +1,6 @@
 using EngineLayer;
 using MzLibUtil;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {

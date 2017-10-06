@@ -3,7 +3,14 @@ using EngineLayer.Analysis;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using IO.MzML;
+
+#if ONLYNETSTANDARD
+#else
+
 using IO.Thermo;
+
+#endif
+
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -133,7 +140,14 @@ namespace TaskLayer
                         if (Path.GetExtension(currentDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                             myMsDataFile = Mzml.LoadAllStaticData(currentDataFile);
                         else
-                            myMsDataFile = ThermoStaticData.LoadAllStaticData(currentDataFile);
+#if ONLYNETSTANDARD
+                        {
+                            Warn("No capability for reading " + currentDataFile);
+                            return;
+                        }
+#else
+                        myMsDataFile = ThermoStaticData.LoadAllStaticData(currentDataFile);
+#endif
                     }
 
                     var initLearners = new List<ILearner<double>>

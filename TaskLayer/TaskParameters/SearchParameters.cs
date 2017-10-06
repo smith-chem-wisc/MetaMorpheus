@@ -1,3 +1,5 @@
+using UsefulProteomicsDatabases;
+
 namespace TaskLayer
 {
     public class SearchParameters
