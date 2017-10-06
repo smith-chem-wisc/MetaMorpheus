@@ -78,6 +78,46 @@
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.244\lib\net461\Proteomics.dll</HintPath>
     </Reference>
+    <Reference Include="SharpLearning.AdaBoost">
+      <HintPath>..\packages\SharpLearning.AdaBoost.0.26.0\lib\netstandard2.0\SharpLearning.AdaBoost.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.Common.Interfaces">
+      <HintPath>..\packages\SharpLearning.Common.Interfaces.0.26.0\lib\netstandard2.0\SharpLearning.Common.Interfaces.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.Containers">
+      <HintPath>..\packages\SharpLearning.Containers.0.26.0\lib\netstandard2.0\SharpLearning.Containers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.CrossValidation">
+      <HintPath>..\packages\SharpLearning.CrossValidation.0.26.0\lib\netstandard2.0\SharpLearning.CrossValidation.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.DecisionTrees">
+      <HintPath>..\packages\SharpLearning.DecisionTrees.0.26.0\lib\netstandard2.0\SharpLearning.DecisionTrees.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.Ensemble">
+      <HintPath>..\packages\SharpLearning.Ensemble.0.26.0\lib\netstandard2.0\SharpLearning.Ensemble.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.GradientBoost">
+      <HintPath>..\packages\SharpLearning.GradientBoost.0.26.0\lib\netstandard2.0\SharpLearning.GradientBoost.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.InputOutput">
+      <HintPath>..\packages\SharpLearning.InputOutput.0.26.0\lib\netstandard2.0\SharpLearning.InputOutput.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.Metrics">
+      <HintPath>..\packages\SharpLearning.Metrics.0.26.0\lib\netstandard2.0\SharpLearning.Metrics.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="SharpLearning.RandomForest">
+      <HintPath>..\packages\SharpLearning.RandomForest.0.26.0\lib\netstandard2.0\SharpLearning.RandomForest.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Spectra, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.244\lib\net461\Spectra.dll</HintPath>
     </Reference>
@@ -106,7 +146,6 @@
     <Compile Include="MyPeptideTest.cs" />
     <Compile Include="MyTaskTest.cs" />
     <Compile Include="RobTest.cs" />
-    <Compile Include="CalibrationEngineTest.cs" />
     <Compile Include="ModFitsTest.cs" />
     <Compile Include="CoIsolationTests.cs" />
     <Compile Include="SearchModesTest.cs" />
@@ -162,6 +201,7 @@
     <Error Condition="!Exists('..\packages\NUnit3TestAdapter.3.8.0\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit3TestAdapter.3.8.0\build\net35\NUnit3TestAdapter.props'))" />
     <Error Condition="!Exists('..\packages\mzLib.1.0.244\build\net461\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.244\build\net461\mzLib.targets'))" />
   </Target>
+  <Import Project="..\packages\mzLib.1.0.244\build\net461\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.244\build\net461\mzLib.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
@@ -172,6 +212,5 @@
   <PropertyGroup>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-  </PropertyGroup>
-  <Import Project="..\packages\mzLib.1.0.244\build\net461\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.244\build\net461\mzLib.targets')" />
+</PropertyGroup>
 </Project>
