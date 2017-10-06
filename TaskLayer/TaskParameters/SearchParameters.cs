@@ -1,4 +1,4 @@
-﻿namespace TaskLayer
+namespace TaskLayer
 {
     public class SearchParameters
     {
@@ -14,7 +14,7 @@
             DoQuantification = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
-            SearchDecoy = true;
+            DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
@@ -35,7 +35,7 @@
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
-        public bool SearchDecoy { get; set; }
+        public DecoyType DecoyType { get; set; }
         public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }

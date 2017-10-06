@@ -229,7 +229,7 @@ namespace TaskLayer
             foreach (var x in CommonParameters.ListOfModsFixed) { modsFixed += x.Item2 + "."; }
             foreach (var x in CommonParameters.ListOfModsVariable) { modsVar += x.Item2 + "."; }
 
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             uint proteinTot = Convert.ToUInt32(proteinList.Count);
 
@@ -292,7 +292,7 @@ namespace TaskLayer
                              new pepXML.Generated.nameValueType{ name = "Cross-linker cleavable short mass", value = crosslinker.CleaveMassShort.ToString() },
                              new pepXML.Generated.nameValueType{ name = "Cross-linker xl site", value = crosslinker.CrosslinkerModSite.ToString() },
 
-                             new pepXML.Generated.nameValueType{ name = "Generate decoy proteins", value = XlSearchParameters.SearchDecoy.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Generate decoy proteins", value = XlSearchParameters.DecoyType.ToString() },
                              new pepXML.Generated.nameValueType{ name = "MaxMissed Cleavages", value = CommonParameters.DigestionParams.MaxMissedCleavages.ToString() },
                              new pepXML.Generated.nameValueType{ name = "Protease", value = CommonParameters.DigestionParams.Protease.Name },
                              new pepXML.Generated.nameValueType{ name = "Initiator Methionine", value = CommonParameters.DigestionParams.InitiatorMethionineBehavior.ToString() },

@@ -113,6 +113,8 @@
                                     <StackPanel>
                                         <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" />
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" />
+                                        <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
+                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}"/>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
@@ -121,10 +123,7 @@
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" />
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
-                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" />
-                                        </StackPanel>
+
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
@@ -140,6 +139,10 @@
                                             <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                             <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
+                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>

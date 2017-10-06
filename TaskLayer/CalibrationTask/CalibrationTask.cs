@@ -95,7 +95,7 @@ namespace TaskLayer
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, true, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, UsefulProteomicsDatabases.DecoyType.Reverse, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();
 
             proseCreatedWhileRunning.Append("The following calibration settings were used: ");
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");

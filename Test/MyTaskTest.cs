@@ -284,7 +284,7 @@ namespace Test
                 },
                 SearchParameters = new SearchParameters
                 {
-                    SearchDecoy = false,
+                    DecoyType = DecoyType.None,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                 }
             };

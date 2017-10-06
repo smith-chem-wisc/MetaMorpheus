@@ -7,7 +7,7 @@ using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
-
+using UsefulProteomicsDatabases;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -212,7 +212,7 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 0
             };
-            var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
+            var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
