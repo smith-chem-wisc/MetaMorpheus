@@ -16,6 +16,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly int bBinShift = (int)Math.Round((waterMonoisotopicMass - hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+        private static readonly int yBinShift = (int)Math.Round(-1 * hydrogenAtomMonoisotopicMass * fragmentBinsPerDalton);
+        private static readonly int cBinShift = (int)Math.Round((nitrogenAtomMonoisotopicMass + 2 * hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+        private static readonly int zdotBinShift = (int)Math.Round((oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass - hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
         private readonly List<int>[] fragmentIndexPrecursor;
 
 
@@ -23,7 +27,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex,  List<int>[] fragmentIndex, List<int>[] fragmentIndexPrecursor, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
+        public NonSpecificEnzymeSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<int>[] fragmentIndexPrecursor, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
         {
             this.fragmentIndexPrecursor = fragmentIndexPrecursor;
         }
@@ -72,14 +76,44 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                     //populate ids of possibly observed with those containing allowed precursor masses
                     List<int> binsToSearch = new List<int>();
-                    int obsFragmentFloorMz = (int)Math.Floor(CommonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
-                    int obsFragmentCeilingMz = (int)Math.Ceiling(CommonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
-                    for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
-                        if (fragmentIndex[fragmentBin] != null)
-                            binsToSearch.Add(fragmentBin);
+                    int obsPrecursorFloorMz = (int)Math.Floor(CommonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
+                    int obsPrecursorCeilingMz = (int)Math.Ceiling(CommonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
+                    for (int fragmentBin = obsPrecursorFloorMz; fragmentBin <= obsPrecursorCeilingMz; fragmentBin++)
+                        binsToSearch.Add(fragmentBin);
+
+
+                    foreach (ProductType pt in lp)
+                    {
+                        int binShift;
+                        switch (pt)
+                        {
+                            case ProductType.B:
+                                binShift = bBinShift;
+                                break;
+                            case ProductType.Y:
+                                binShift = yBinShift;
+                                break;
+                            case ProductType.C:
+                                binShift = cBinShift;
+                                break;
+                            case ProductType.Zdot:
+                                binShift = zdotBinShift;
+                                break;
+                            default:
+                                throw new NotImplementedException();
+                        }
+                        for (int j = 0; j < binsToSearch.Count; j++)
+                        {
+                            if (fragmentIndex[binsToSearch[j] - binShift] != null)
+                                fragmentIndex[binsToSearch[j] - binShift].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                        }
+                    }
 
                     for (int j = 0; j < binsToSearch.Count; j++)
-                        fragmentIndex[binsToSearch[j]].ForEach(id=> idsOfPeptidesPossiblyObserved.Add(id));
+                    {
+                        if (fragmentIndexPrecursor[binsToSearch[j]] != null)
+                            fragmentIndexPrecursor[binsToSearch[j]].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                    }
 
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())

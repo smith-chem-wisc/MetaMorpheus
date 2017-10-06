@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UsefulProteomicsDatabases;
 
 namespace EngineLayer.Indexing
 {
@@ -12,7 +13,7 @@ namespace EngineLayer.Indexing
     {
         #region Public Constructors
 
-        public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchDecoys, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, searchDecoys, CollectionOfDigestionParams, totalPartitions, nestedIds)
+        public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, decoyType, CollectionOfDigestionParams, totalPartitions, nestedIds)
         {
         }
 
@@ -25,7 +26,7 @@ namespace EngineLayer.Indexing
             var sb = new StringBuilder();
             sb.Append("Precursor Mass Only");
             sb.AppendLine("Index partitions: " + currentPartition + "/" + totalPartitions);
-            sb.AppendLine("Search Decoys: " + searchDecoys);
+            sb.AppendLine("Search Decoys: " + decoyType);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
@@ -106,7 +107,7 @@ namespace EngineLayer.Indexing
             {
                 if (!Double.IsNaN(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods))
                 {
-                    maxFragmentMass = (int)Math.Ceiling(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods);
+                    maxFragmentMass = (int)Math.Ceiling(Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods, 1));
                     break;
                 }
             }

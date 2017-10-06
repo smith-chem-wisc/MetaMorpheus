@@ -20,7 +20,7 @@ namespace EngineLayer.Indexing
         protected readonly List<ModificationWithMass> variableModifications;
         protected readonly List<ProductType> lp;
         protected readonly int currentPartition;
-        protected readonly bool searchDecoys;
+        protected readonly DecoyType decoyType;
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         protected readonly int totalPartitions;
         protected readonly int threadsToUse;
