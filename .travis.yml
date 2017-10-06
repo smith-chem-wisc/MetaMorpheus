@@ -9,7 +9,7 @@ install:
 script:
 - dotnet build /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln
 - tar -zcvf MonoCommandLine.tar.gz -C CMD/bin/Release .
-- dotnet CMD/bin/Release/MetaMorpheusCommandLine.exe -t Examples/Task1SearchExample.toml Examples/Task2CalibrationExample.toml Examples/Task3SearchExample.toml Examples/Task4GptmdExample.toml Examples/Task5SearchExample.toml -s Examples/example.mzML -d Examples/mouse-10.xml
+- dotnet CMD/bin/Release/netcoreapp2.0/CMD.dll -t Examples/Task1SearchExample.toml Examples/Task2CalibrationExample.toml Examples/Task3SearchExample.toml Examples/Task4GptmdExample.toml Examples/Task5SearchExample.toml -s Examples/example.mzML -d Examples/mouse-10.xml
 - dotnet ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll
 deploy:
   provider: releases
