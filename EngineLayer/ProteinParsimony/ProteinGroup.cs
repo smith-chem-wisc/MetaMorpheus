@@ -404,10 +404,7 @@ namespace EngineLayer
                 DisplayModsOnPeptides = this.DisplayModsOnPeptides
             };
 
-            if (IntensitiesByFile != null)
-                subsetPg.IntensitiesByFile = new double[] { IntensitiesByFile[System.Array.IndexOf(FilesForQuantification, fullFilePath)] };
-            else
-                subsetPg.IntensitiesByFile = new double[1];
+            subsetPg.IntensitiesByFile = IntensitiesByFile != null ? new[] { IntensitiesByFile[System.Array.IndexOf(FilesForQuantification, fullFilePath)] } : new double[1];
 
             return subsetPg;
         }

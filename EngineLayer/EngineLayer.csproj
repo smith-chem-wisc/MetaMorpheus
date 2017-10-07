@@ -1,254 +1,60 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EngineLayer</RootNamespace>
-    <AssemblyName>EngineLayer</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x64</PlatformTarget>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <LangVersion>default</LangVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x64</PlatformTarget>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <LangVersion>default</LangVersion>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Chemistry, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\Chemistry.dll</HintPath>
-    </Reference>
-    <Reference Include="FlashLFQ, Version=1.0.107.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\FlashLFQ.0.1.93\lib\net451\FlashLFQ.dll</HintPath>
-    </Reference>
-    <Reference Include="ManagedThermoHelperLayer, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\ManagedThermoHelperLayer.dll</HintPath>
-    </Reference>
-    <Reference Include="MassSpectrometry, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\MassSpectrometry.dll</HintPath>
-    </Reference>
-    <Reference Include="MathNet.Numerics, Version=3.20.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Numerics.3.20.0\lib\net40\MathNet.Numerics.dll</HintPath>
-    </Reference>
-    <Reference Include="mzIdentML, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\mzIdentML.dll</HintPath>
-    </Reference>
-    <Reference Include="MzLibUtil, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\MzLibUtil.dll</HintPath>
-    </Reference>
-    <Reference Include="MzML, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\MzML.dll</HintPath>
-    </Reference>
-    <Reference Include="pepXML, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\pepXML.dll</HintPath>
-    </Reference>
-    <Reference Include="Proteomics, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\Proteomics.dll</HintPath>
-    </Reference>
-    <Reference Include="Spectra, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\Spectra.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
-    <Reference Include="Thermo, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\Thermo.dll</HintPath>
-    </Reference>
-    <Reference Include="UsefulProteomicsDatabases, Version=1.0.240.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.240\lib\UsefulProteomicsDatabases.dll</HintPath>
-    </Reference>
-    <Reference Include="Zlib.Portable, Version=1.11.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Zlib.Portable.1.11.0\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch+MonoAndroid\Zlib.Portable.dll</HintPath>
-    </Reference>
+    <PackageReference Include="FlashLFQ" Version="0.1.95" />
+    <PackageReference Include="mzLib" Version="1.0.244" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.0" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.0" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Analysis\FdrAnalysisEngine.cs" />
-    <Compile Include="Analysis\FdrAnalysisResults.cs" />
-    <Compile Include="Analysis\Bin.cs" />
-    <Compile Include="Analysis\BinTreeStructure.cs" />
-    <Compile Include="CalibrationEngine\CalibrationFunctions\CalibrationFunction.cs" />
-    <Compile Include="CalibrationEngine\CalibrationFunctions\ConstantCalibrationFunction.cs" />
-    <Compile Include="CalibrationEngine\CalibrationFunctions\IdentityCalibrationFunction.cs" />
-    <Compile Include="CalibrationEngine\CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
-    <Compile Include="CalibrationEngine\DataPointAquisitionResults.cs" />
-    <Compile Include="CalibrationEngine\IHasInputsAndOutputs.cs" />
-    <Compile Include="CalibrationEngine\LabeledMs2DataPoint.cs" />
-    <Compile Include="CalibrationEngine\LabeledMs1DataPoint.cs" />
-    <Compile Include="CalibrationEngine\CalibrationFunctions\RandomForestCalibrationFunction.cs" />
-    <Compile Include="CalibrationEngine\CalibrationFunctions\RegressionTree.cs" />
-    <Compile Include="CalibrationEngine\TransformFunction.cs" />
-    <Compile Include="CalibrationEngine\CalibrationResults.cs" />
-    <Compile Include="CommonParameters.cs" />
-    <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
-    <Compile Include="CrosslinkSearch\PsmCrossType.cs" />
-    <Compile Include="Indexing\PrecursorIndexingEngine.cs" />
-    <Compile Include="IScan.cs" />
-    <Compile Include="MetaMorpheusException.cs" />
-    <Compile Include="DigestionParams.cs" />
-    <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSearchEngine.cs" />
-    <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSequencesToActualPeptides.cs" />
-    <Compile Include="PrecursorSearchModes\AllowedIntervalWithNotch.cs" />
-    <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />
-    <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisResults.cs" />
-    <Compile Include="CrosslinkSearch\CrosslinkerType.cs" />
-    <Compile Include="CrosslinkSearch\BestPeptideScoreNotch.cs" />
-    <Compile Include="CrosslinkSearch\CrosslinkSearchEngine.cs" />
-    <Compile Include="CrosslinkSearch\CrosslinkSearchEngine2.cs" />
-    <Compile Include="CrosslinkSearch\CrosslinkSearchResults.cs" />
-    <Compile Include="CrosslinkSearch\MatchedIonInfo.cs" />
-    <Compile Include="CrosslinkSearch\PsmCross.cs" />
-    <Compile Include="FdrInfo.cs" />
-    <Compile Include="Localization\LocalizationEngineResults.cs" />
-    <Compile Include="ModificationAnalysis\ModificationAnalysisEngine.cs" />
-    <Compile Include="ModificationAnalysis\ModificationAnalysisResults.cs" />
-    <Compile Include="PrecursorSearchModes\LowTheoreticalDiffAcceptor.cs" />
-    <Compile Include="ProteinParsimony\ProteinGroup.cs" />
-    <Compile Include="ProteinParsimony\ProteinParsimonyEngine.cs" />
-    <Compile Include="ProteinParsimony\ProteinParsimonyResults.cs" />
-    <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrEngine.cs" />
-    <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrResults.cs" />
-    <Compile Include="Proteomics\CompactPeptideBase.cs" />
-    <Compile Include="Proteomics\CompactPeptideWithModifiedMass.cs" />
-    <Compile Include="Localization\LocalizationEngine.cs" />
-    <Compile Include="ProteinLevelInfo.cs" />
-    <Compile Include="ClassicSearch\ScanWithIndexAndNotchInfo.cs" />
-    <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />
-    <Compile Include="GlobalEngineLevelSettings.cs" />
-    <Compile Include="MyErroredResults.cs" />
-    <Compile Include="ClassicSearch\ClassicSearchEngine.cs" />
-    <Compile Include="Proteomics\CleavageSpecificity.cs" />
-    <Compile Include="Proteomics\CompactPeptide.cs" />
-    <Compile Include="Proteomics\InitiatorMethionineBehavior.cs" />
-    <Compile Include="Proteomics\ModificationType.cs" />
-    <Compile Include="Proteomics\TerminusType.cs" />
-    <Compile Include="Proteomics\Peptide.cs" />
-    <Compile Include="Proteomics\PeptideWithPossibleModifications.cs" />
-    <Compile Include="Proteomics\PeptideWithSetModifications.cs" />
-    <Compile Include="Proteomics\ProductType.cs" />
-    <Compile Include="Proteomics\Protease.cs" />
-    <Compile Include="Proteomics\ProteinExtensions.cs" />
-    <Compile Include="PrecursorSearchModes\DotMassDiffAcceptor.cs" />
-    <Compile Include="Gptmd\GptmdEngine.cs" />
-    <Compile Include="Gptmd\GptmdResults.cs" />
-    <Compile Include="Indexing\IndexingEngine.cs" />
-    <Compile Include="Indexing\IndexingResults.cs" />
-    <Compile Include="PrecursorSearchModes\IntervalMassDiffAcceptor.cs" />
-    <Compile Include="Ms2ScanWithSpecificMass.cs" />
-    <Compile Include="ModernSearch\ModernSearchEngine.cs" />
-    <Compile Include="MetaMorpheusEngine.cs" />
-    <Compile Include="Analysis\MyInfo.cs" />
-    <Compile Include="MetaMorpheusEngineResults.cs" />
-    <Compile Include="Analysis\OkBin.cs" />
-    <Compile Include="Psm.cs" />
-    <Compile Include="EventArgs\ProgressEventArgs.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs">
-      <SonarQubeExclude>true</SonarQubeExclude>
-    </Compile>
-    <Compile Include="PrecursorSearchModes\OpenMassDiffAcceptor.cs" />
-    <Compile Include="PrecursorSearchModes\MassDiffAcceptor.cs" />
-    <Compile Include="PrecursorSearchModes\SingleAbsoluteAroundZeroMassDiffAcceptor.cs" />
-    <Compile Include="PrecursorSearchModes\SinglePpmAroundZeroMassDiffAcceptor.cs" />
-    <Compile Include="EventArgs\SingleEngineEventArgs.cs" />
-    <Compile Include="EventArgs\SingleEngineFinishedEventArgs.cs" />
-    <Compile Include="EventArgs\SingleFileEventArgs.cs" />
-    <Compile Include="CalibrationEngine\CalibrationEngine.cs" />
-    <Compile Include="EventArgs\StringEventArgs.cs" />
-    <Compile Include="EventArgs\StringListEventArgs.cs" />
-    <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngine.cs" />
-    <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngineResults.cs" />
-    <Compile Include="CrosslinkSearch\XLSearchResults.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Data\elements.dat">
+    <None Update="Data\combos.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
     </None>
-    <Content Include="Data\proteases.tsv">
+    <None Update="Data\elements.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
+    <None Update="Data\proteases.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\PSI-MOD.obo.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\ptmlist.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\unimod.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\aListOfmods.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\detachers.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\glyco.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\missing.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\Mods.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\substitutions.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\surfactants.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\tmt.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Data\combos.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\PSI-MOD.obo.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <SonarQubeExclude>true</SonarQubeExclude>
-    </Content>
-    <Content Include="Data\ptmlist.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\unimod.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <SonarQubeExclude>true</SonarQubeExclude>
-    </Content>
-    <Content Include="Mods\aListOfmods.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Mods\detachers.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Mods\surfactants.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Mods\glyco.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Mods\missing.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Mods\Mods.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Mods\substitutions.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Mods\tmt.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\mzLib.1.0.240\build\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.240\build\mzLib.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\mzLib.1.0.240\build\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.240\build\mzLib.targets'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

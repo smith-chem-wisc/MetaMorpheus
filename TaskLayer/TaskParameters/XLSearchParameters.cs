@@ -1,7 +1,8 @@
-﻿using MzLibUtil;
+using EngineLayer;
+using MzLibUtil;
 using UsefulProteomicsDatabases;
 
-namespace EngineLayer
+namespace TaskLayer
 {
     public class XlSearchParameters
     {

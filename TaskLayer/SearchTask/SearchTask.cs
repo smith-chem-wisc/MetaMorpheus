@@ -808,13 +808,15 @@ namespace TaskLayer
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
-                        List<int>[] fragmentIndex = new List<int>[1];
+                        List<int>[] fragmentIndex = null;
                         lock (indexLock)
                             GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
 
                         #endregion Generate indices for modern search
 
                         Status("Searching files...", taskId);
+
+                        //File.WriteAllLines(@"C:\Users\rmillikin\Documents\Data\Yeast\temp.tsv", arrayOfMs2ScansSortedByMass.Select(p => "" + p.OneBasedScanNumber + "\t" + p.PrecursorMass));
 
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, massDiffAcceptor, thisId).Run();
 
