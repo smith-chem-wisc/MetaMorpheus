@@ -126,7 +126,7 @@ namespace EngineLayer.Indexing
             peptideToId = null;
 
             // create fragment index
-            List<int>[] fragmentIndex = new List<int>[0];
+            List<int>[] fragmentIndex;
 
             try
             {
@@ -134,7 +134,7 @@ namespace EngineLayer.Indexing
             }
             catch (OutOfMemoryException)
             {
-                throw new MetaMorpheusException("Max fragment mass too large for fragment indexing engine; try \"Classic Search\" mode, or make the maximum peptide mass smaller");
+                throw new MetaMorpheusException("Max fragment mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
             }
 
             // populate fragment index
