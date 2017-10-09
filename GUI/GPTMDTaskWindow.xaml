@@ -13,6 +13,10 @@
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
+                <StackPanel Orientation="Horizontal" Margin="5" DockPanel.Dock="Bottom">
+                    <Label Content="Output File Name" Margin="5"/>
+                    <TextBox x:Name="OutputFileName" Text="GPTMDtask"  Width="127" TextChanged="OutputFileName_TextChanged" HorizontalContentAlignment="Center" HorizontalAlignment="Center" Height="27" TextAlignment="Left" VerticalContentAlignment="Center"/>
+                </StackPanel>
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">
                         <StackPanel>

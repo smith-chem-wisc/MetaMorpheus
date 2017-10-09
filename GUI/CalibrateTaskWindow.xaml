@@ -12,173 +12,177 @@
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel>
-            <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
-                <Expander x:Name="SearchModeExpander">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
-                            <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
-                            <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" Margin="5" DockPanel.Dock="Bottom">
+                    <Label Content="Output File Name" Margin="5"/>
+                    <TextBox x:Name="OutputFileName" Text="GPTMDtask"  Width="127" TextChanged="OutputFileName_TextChanged" HorizontalContentAlignment="Center" HorizontalAlignment="Center" Height="27" TextAlignment="Left" VerticalContentAlignment="Center"/>
+                </StackPanel>
+                <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
+                    <Expander x:Name="SearchModeExpander">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
+                                <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
+                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="label1" Content="Max Missed Cleavages" />
+                                        <TextBox x:Name="missedCleavagesTextBox"  Width="45" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="label_Copy" Content="Protease" />
+                                        <ComboBox x:Name="proteaseComboBox" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
+                                        <TextBox x:Name="maxModificationIsoformsTextBox" Width="45" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
+                                        <TextBox x:Name="txtMinPeptideLength"  Width="45" />
+                                        <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                        <TextBox x:Name="txtMaxPeptideLength"  Width="45" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="label1_Copy" Content="Initiator Methionine" />
+                                        <ComboBox x:Name="initiatorMethionineBehaviorComboBox" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
+                                        <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                        <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="label4" Content="Ions to search" />
+                                        <CheckBox x:Name="bCheckBox" Content="b ions" />
+                                        <CheckBox x:Name="yCheckBox" Content="y ions" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
+                                        <CheckBox x:Name="cCheckBox" Content="c ions" />
+                                        <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                            <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
+                                <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
+                                <TextBox x:Name="minScoreAllowed" Width="45" />
+                            </StackPanel>
                         </StackPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="1*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="label1" Content="Max Missed Cleavages" />
-                                    <TextBox x:Name="missedCleavagesTextBox"  Width="45" />
+                    </Expander>
+                </GroupBox>
+                <GroupBox Header="Modifications" DockPanel.Dock="Top">
+                    <Expander x:Name="ModExpander">
+                        <Expander.Style>
+                            <Style TargetType="Expander">
+                                <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsExpanded" Value="True">
+                                        <Setter Property="Header" Value="Hide" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Expander.Style>
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <Label Content="Fixed" />
+                                    <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" Height="400">
+                                        <TreeView.Resources>
+                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </HierarchicalDataTemplate>
+                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </TreeView.Resources>
+                                    </TreeView>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="label_Copy" Content="Protease" />
-                                    <ComboBox x:Name="proteaseComboBox" />
+                                <StackPanel Grid.Column="1">
+                                    <Label Content="Variable" />
+                                    <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" Height="400">
+                                        <TreeView.Resources>
+                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </HierarchicalDataTemplate>
+                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </TreeView.Resources>
+                                    </TreeView>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                    <TextBox x:Name="maxModificationIsoformsTextBox" Width="45" />
+                                <StackPanel Grid.Column="2">
+                                    <Label Content="Database Localized" />
+                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
+                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
+                                        <TreeView.Style>
+                                            <Style TargetType="{x:Type TreeView}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
+                                                        <Setter Property="Visibility" Value="Hidden" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TreeView.Style>
+                                        <TreeView.Resources>
+                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </HierarchicalDataTemplate>
+                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </TreeView.Resources>
+                                    </TreeView>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                    <TextBox x:Name="txtMinPeptideLength"  Width="45" />
-                                    <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                    <TextBox x:Name="txtMaxPeptideLength"  Width="45" />
-                                </StackPanel>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1">
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="label1_Copy" Content="Initiator Methionine" />
-                                    <ComboBox x:Name="initiatorMethionineBehaviorComboBox" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
-                                    <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
-                                    <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="label4" Content="Ions to search" />
-                                    <CheckBox x:Name="bCheckBox" Content="b ions" />
-                                    <CheckBox x:Name="yCheckBox" Content="y ions" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
-                                    <CheckBox x:Name="cCheckBox" Content="c ions" />
-                                    <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Grid>
-                        <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
-                            <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
+                            </Grid>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
-                            <TextBox x:Name="minScoreAllowed" Width="45" />
+                    </Expander>
+                </GroupBox>
+                <GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
+                    <Expander x:Name="CalibrationExpander">
+                        <StackPanel>
+                            <CheckBox x:Name="nonLinearCalibCheckBox" Content="Non-Linear Calibration" />
+                            <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write Intermediate Files" />
                         </StackPanel>
-                        </StackPanel>
-                </Expander>
-            </GroupBox>
-            <GroupBox Header="Modifications" DockPanel.Dock="Top">
-                <Expander x:Name="ModExpander">
-                    <Expander.Style>
-                        <Style TargetType="Expander">
-                            <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
-                            <Style.Triggers>
-                                <Trigger Property="IsExpanded" Value="True">
-                                    <Setter Property="Header" Value="Hide" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Expander.Style>
-                    <StackPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="1*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <Label Content="Fixed" />
-                                <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" Height="400">
-                                    <TreeView.Resources>
-                                        <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                <TextBlock Text="{Binding DisplayName}" />
-                                            </StackPanel>
-                                        </HierarchicalDataTemplate>
-                                        <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                <TextBlock Text="{Binding DisplayName}" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </TreeView.Resources>
-                                </TreeView>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1">
-                                <Label Content="Variable" />
-                                <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" Height="400">
-                                    <TreeView.Resources>
-                                        <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                <TextBlock Text="{Binding DisplayName}" />
-                                            </StackPanel>
-                                        </HierarchicalDataTemplate>
-                                        <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                <TextBlock Text="{Binding DisplayName}" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </TreeView.Resources>
-                                </TreeView>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <Label Content="Database Localized" />
-                                <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
-                                <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                                    <TreeView.Style>
-                                        <Style TargetType="{x:Type TreeView}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TreeView.Style>
-                                    <TreeView.Resources>
-                                        <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                <TextBlock Text="{Binding DisplayName}" />
-                                            </StackPanel>
-                                        </HierarchicalDataTemplate>
-                                        <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
-                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                <TextBlock Text="{Binding DisplayName}" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </TreeView.Resources>
-                                </TreeView>
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
-                </Expander>
-            </GroupBox>
-            <GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
-                <Expander x:Name="CalibrationExpander">
-                    <StackPanel>
-                        <CheckBox x:Name="nonLinearCalibCheckBox" Content="Non-Linear Calibration" />
-                        <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write Intermediate Files" />
-                    </StackPanel>
-                </Expander>
-            </GroupBox>
-        </StackPanel>
+                    </Expander>
+                </GroupBox>
+            </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />

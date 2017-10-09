@@ -53,7 +53,8 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal GptmdTask TheTask { get; private set; }
-
+        internal bool customFolderNameChanged;
+        internal string folderName;
         #endregion Internal Properties
 
         #region Private Methods
@@ -88,6 +89,11 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+
+            if (task.CommonParameters.taskID != null)
+                OutputFileName.Text = task.CommonParameters.taskID;
+            else
+                OutputFileName.Text = "GPTMDTask";
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -246,6 +252,9 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
 
+            if (folderName != null)
+                TheTask.CommonParameters.taskID = folderName;
+
             if (productMassToleranceComboBox.SelectedIndex == 0)
                 TheTask.CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             else
@@ -289,6 +298,14 @@ namespace MetaMorpheusGUI
                 TheTask.CommonParameters.MaxDegreeOfParallelism = jsakdf;
 
             DialogResult = true;
+        }
+
+        private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            customFolderNameChanged = true;
+            var a = sender as TextBox;
+            folderName = a.Text;
+
         }
 
         #endregion Private Methods

@@ -86,7 +86,8 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal XLSearchTask TheTask { get; private set; }
-
+        internal bool customFolderNameChanged;
+        internal string folderName;
         #endregion Internal Properties
 
         #region Private Methods
@@ -180,6 +181,11 @@ namespace MetaMorpheusGUI
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
+
+            if (task.CommonParameters.taskID != null)
+                OutputFileName.Text = task.CommonParameters.taskID;
+            else
+                OutputFileName.Text = "XLSearchTask";
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -283,6 +289,9 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.UdXLkerTotalMass = double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
             }
 
+            if (folderName != null)
+                TheTask.CommonParameters.taskID = folderName;
+
             TheTask.XlSearchParameters.SearchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
@@ -353,6 +362,14 @@ namespace MetaMorpheusGUI
         {
             //if (!TheTask.WritePrunedDatabase)
             //    modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
+        }
+
+        private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            customFolderNameChanged = true;
+            var a = sender as TextBox;
+            folderName = a.Text;
+
         }
 
         #endregion Private Methods

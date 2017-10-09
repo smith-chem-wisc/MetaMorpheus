@@ -23,11 +23,11 @@ namespace MetaMorpheusGUI
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
 
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
-
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-
+        internal bool customFolderNameChanged;
+        internal string folderName;
         #endregion Private Fields
 
         #region Public Constructors
@@ -196,6 +196,10 @@ namespace MetaMorpheusGUI
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
             MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
+            if (task.CommonParameters.taskID != null)
+                OutputFileName.Text = task.CommonParameters.taskID;
+            else
+                OutputFileName.Text = "SearchTask";
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -346,6 +350,8 @@ namespace MetaMorpheusGUI
             #endregion Check Task Validity
 
             #region Save Parameters
+            if (folderName != null)
+                TheTask.CommonParameters.taskID = folderName;
 
             TheTask.CommonParameters.TrimMs1Peaks = trimMs1.IsChecked.Value;
             TheTask.CommonParameters.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
@@ -477,6 +483,14 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            customFolderNameChanged = true;
+            var a = sender as TextBox;
+            folderName = a.Text;
+
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

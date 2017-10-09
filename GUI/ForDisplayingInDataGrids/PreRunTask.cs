@@ -20,15 +20,18 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Public Properties
-
+        private string _displayName;
         public string DisplayName
         {
             get
             {
-                return metaMorpheusTask.GetType().Name;
+                return _displayName;
+            }
+            set
+            {
+                _displayName = value; 
             }
         }
-
         #endregion Public Properties
     }
 }

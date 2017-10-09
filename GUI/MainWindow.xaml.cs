@@ -350,8 +350,17 @@ namespace MetaMorpheusGUI
         {
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
 
+
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
+            {
                 dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
+                if (staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != null)
+                {
+                    dynamicTasksObservableCollection[i].DisplayName = staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID;
+                    dynamicTasksObservableCollection[i].Id = staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID;
+
+                }
+            }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
@@ -418,7 +427,10 @@ namespace MetaMorpheusGUI
             var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                if (dialog.TheTask.CommonParameters.taskID != null)
+                    task.DisplayName = dialog.TheTask.CommonParameters.taskID;
+                staticTasksObservableCollection.Add(task);
                 UpdateTaskGuiStuff();
             }
         }
@@ -428,7 +440,10 @@ namespace MetaMorpheusGUI
             var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                if (dialog.TheTask.CommonParameters.taskID != null)
+                    task.DisplayName = dialog.TheTask.CommonParameters.taskID;
+                staticTasksObservableCollection.Add(task);
                 UpdateTaskGuiStuff();
             }
         }
@@ -438,7 +453,10 @@ namespace MetaMorpheusGUI
             var dialog = new GptmdTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                if (dialog.TheTask.CommonParameters.taskID != null)
+                    task.DisplayName = dialog.TheTask.CommonParameters.taskID;
+                staticTasksObservableCollection.Add(task);
                 UpdateTaskGuiStuff();
             }
         }
@@ -448,7 +466,10 @@ namespace MetaMorpheusGUI
             var dialog = new XLSearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                if (dialog.TheTask.CommonParameters.taskID != null)
+                    task.DisplayName = dialog.TheTask.CommonParameters.taskID;
+                staticTasksObservableCollection.Add(task);
                 UpdateTaskGuiStuff();
             }
         }
@@ -669,23 +690,48 @@ namespace MetaMorpheusGUI
                 switch (preRunTask.metaMorpheusTask.TaskType)
                 {
                     case MyTask.Search:
+                       
                         var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
+                        
                         searchDialog.ShowDialog();
+
+                        if (searchDialog.TheTask.CommonParameters.taskID != null)
+                        {
+                            preRunTask.DisplayName = searchDialog.TheTask.CommonParameters.taskID;
+                            tasksTreeView.Items.Refresh();
+                        }
+
                         return;
 
                     case MyTask.Gptmd:
                         var gptmddialog = new GptmdTaskWindow(preRunTask.metaMorpheusTask as GptmdTask);
                         gptmddialog.ShowDialog();
+                        if (gptmddialog.TheTask.CommonParameters.taskID != null)
+                        {
+                            preRunTask.DisplayName = gptmddialog.TheTask.CommonParameters.taskID;
+                            tasksTreeView.Items.Refresh();
+                        }
+
                         return;
 
                     case MyTask.Calibrate:
                         var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
+                        if (calibratedialog.TheTask.CommonParameters.taskID != null)
+                        {
+                            preRunTask.DisplayName = calibratedialog.TheTask.CommonParameters.taskID;
+                            tasksTreeView.Items.Refresh();
+                        }
                         return;
 
                     case MyTask.XLSearch:
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
+                        if (XLSearchdialog.TheTask.CommonParameters.taskID != null)
+                        {
+                            preRunTask.DisplayName = XLSearchdialog.TheTask.CommonParameters.taskID;
+                            tasksTreeView.Items.Refresh();
+                        }
                         return;
                 }
 

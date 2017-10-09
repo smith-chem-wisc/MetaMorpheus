@@ -39,7 +39,7 @@ namespace MetaMorpheusGUI
         #region Public Properties
 
         public ObservableCollection<ForTreeView> Children { get; private set; }
-        public string Id { get; protected set; }
+        public string Id { get;  set; }
 
         public string Status
         {
@@ -81,7 +81,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        public string DisplayName { get; private set; }
+        public string DisplayName { get; set; }
 
         #endregion Public Properties
 
