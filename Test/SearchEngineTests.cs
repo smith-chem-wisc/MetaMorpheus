@@ -159,7 +159,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             bool DoPrecursorDeconvolution = true;
@@ -232,7 +232,7 @@ namespace Test
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             bool DoPrecursorDeconvolution = true;
@@ -281,7 +281,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             bool DoPrecursorDeconvolution = true;
@@ -352,7 +352,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
             CommonParameters.DigestionParams.MinPeptideLength = null;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -432,7 +432,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
             CommonParameters.DigestionParams.MinPeptideLength = null;
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -580,7 +580,7 @@ namespace Test
                 TerminusTypeSemiProtease = TerminusType.N
             };
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, DecoyType.Reverse, digestParams, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, DecoyType.Reverse, digestParams, CommonParameters, 30000, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -659,7 +659,7 @@ namespace Test
                 TerminusTypeSemiProtease = TerminusType.C
             };
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, DecoyType.Reverse, digestParams, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, DecoyType.Reverse, digestParams, CommonParameters, 30000, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;

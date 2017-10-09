@@ -157,6 +157,10 @@
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da)" />
+                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=modernSearchRadioButton}" />
+                                        </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
