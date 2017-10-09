@@ -6,10 +6,10 @@
 
   <ItemGroup>
     <PackageReference Include="FlashLFQ" Version="0.1.95" />
-    <PackageReference Include="mzLib" Version="1.0.244" />
-    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.0" />
-    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.0" />
-    <PackageReference Include="SharpLearning.Metrics" Version="0.26.0" />
+    <PackageReference Include="mzLib" Version="1.0.245" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.2" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.2" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.2" />
   </ItemGroup>
 
   <ItemGroup>
