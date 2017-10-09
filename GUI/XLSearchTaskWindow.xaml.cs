@@ -87,7 +87,6 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal XLSearchTask TheTask { get; private set; }
-        internal bool customFolderNameChanged;
         internal string folderName;
         #endregion Internal Properties
 
@@ -190,9 +189,9 @@ namespace MetaMorpheusGUI
             ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
 
             if (task.CommonParameters.taskID != null)
-                OutputFileName.Text = task.CommonParameters.taskID;
+                OutputFileNameTextBox.Text = task.CommonParameters.taskID;
             else
-                OutputFileName.Text = "XLSearchTask";
+                OutputFileNameTextBox.Text = "XLSearchTask";
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -379,7 +378,6 @@ namespace MetaMorpheusGUI
 
         private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
         {
-            customFolderNameChanged = true;
             var a = sender as TextBox;
             folderName = a.Text;
 

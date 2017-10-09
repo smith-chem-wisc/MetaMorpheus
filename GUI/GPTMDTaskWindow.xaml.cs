@@ -53,7 +53,6 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal GptmdTask TheTask { get; private set; }
-        internal bool customFolderNameChanged;
         internal string folderName;
         #endregion Internal Properties
 
@@ -91,9 +90,9 @@ namespace MetaMorpheusGUI
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             if (task.CommonParameters.taskID != null)
-                OutputFileName.Text = task.CommonParameters.taskID;
+                OutputFileNameTextBox.Text = task.CommonParameters.taskID;
             else
-                OutputFileName.Text = "GPTMDTask";
+                OutputFileNameTextBox.Text = "GPTMDTask";
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -302,7 +301,6 @@ namespace MetaMorpheusGUI
 
         private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
         {
-            customFolderNameChanged = true;
             var a = sender as TextBox;
             folderName = a.Text;
 

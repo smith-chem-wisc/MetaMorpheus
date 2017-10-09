@@ -355,7 +355,11 @@ namespace MetaMorpheusGUI
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
             {
                 dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
-                if (staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != null)
+                if (staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != null 
+                    && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != "SearchTask"
+                    && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != "GPTMDTask"
+                    && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != "CalibrateTask"
+                    && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != "XLSearchTask")
                 {
                     dynamicTasksObservableCollection[i].DisplayName = staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID;
                     dynamicTasksObservableCollection[i].Id = staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID;
@@ -691,9 +695,9 @@ namespace MetaMorpheusGUI
                 switch (preRunTask.metaMorpheusTask.TaskType)
                 {
                     case MyTask.Search:
-                       
+
                         var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
-                        
+
                         searchDialog.ShowDialog();
 
                         if (searchDialog.TheTask.CommonParameters.taskID != null)

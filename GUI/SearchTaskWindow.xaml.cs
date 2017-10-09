@@ -27,7 +27,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        internal bool customFolderNameChanged;
         internal string folderName;
         #endregion Private Fields
 
@@ -200,9 +199,9 @@ namespace MetaMorpheusGUI
             TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
             MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
             if (task.CommonParameters.taskID != null)
-                OutputFileName.Text = task.CommonParameters.taskID;
+                OutputFileNameTextBox.Text = task.CommonParameters.taskID;
             else
-                OutputFileName.Text = "SearchTask";
+                OutputFileNameTextBox.Text = "SearchTask";
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -497,7 +496,6 @@ namespace MetaMorpheusGUI
 
         private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
         {
-            customFolderNameChanged = true;
             var a = sender as TextBox;
             folderName = a.Text;
 
