@@ -139,7 +139,16 @@ namespace EngineLayer.Indexing
                 }
             }
 
-            var fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton];
+            List<int>[] fragmentIndex = new List<int>[0];
+
+            try
+            {
+                fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton];
+            }
+            catch (OutOfMemoryException)
+            {
+                throw new MetaMorpheusException("Fragment mass too large for fragment indexing engine; try \"Classic Search\" mode and report this error to the MetaMorpheus developers");
+            }
 
             // populate fragment index
             progress = 0;
@@ -150,19 +159,14 @@ namespace EngineLayer.Indexing
 
                 foreach (var theoreticalFragmentMass in validFragments)
                 {
-                    if (theoreticalFragmentMass > 0 && theoreticalFragmentMass < maxFragmentMass)
-                    {
-                        double mz = Chemistry.ClassExtensions.ToMz(theoreticalFragmentMass, 1);
-                        int fragmentBin = (int)Math.Round(mz * fragmentBinsPerDalton);
+                    //double mz = Chemistry.ClassExtensions.ToMz(theoreticalFragmentMass, 1);
+                    //int fragmentBin = (int)Math.Round(mz * fragmentBinsPerDalton);
+                    int fragmentBin = (int)Math.Round(theoreticalFragmentMass * fragmentBinsPerDalton);
 
-                        if (fragmentBin < maxFragmentMass * fragmentBinsPerDalton)
-                        {
-                            if (fragmentIndex[fragmentBin] == null)
-                                fragmentIndex[fragmentBin] = new List<int> { i };
-                            else
-                                fragmentIndex[fragmentBin].Add(i);
-                        }
-                    }
+                    if (fragmentIndex[fragmentBin] == null)
+                        fragmentIndex[fragmentBin] = new List<int> { i };
+                    else
+                        fragmentIndex[fragmentBin].Add(i);
                 }
 
                 progress++;

@@ -55,7 +55,7 @@ namespace EngineLayer.ModernSearch
 
             byte byteScoreCutoff = Convert.ToByte((int)CommonParameters.ScoreCutoff);
 
-            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
+            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
             {
                 byte[] scoringTable = new byte[peptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
@@ -67,19 +67,13 @@ namespace EngineLayer.ModernSearch
                     idsOfPeptidesPossiblyObserved.Clear();
                     var scan = listOfSortedms2Scans[i];
 
-                    // filter ms2 fragment peaks by intensity
-                    int numFragmentsToUse = scan.NumPeaks;
-                    if (CommonParameters.TopNpeaks != null)
-                        numFragmentsToUse = CommonParameters.TopNpeaks.Value;
-
-                    var peaks = scan.TheScan.MassSpectrum.FilterByNumberOfMostIntense(numFragmentsToUse).ToList();
-                    double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
-
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan);
 
                     // get allowed theoretical masses from the known experimental mass
                     // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)
+                    // this is just PRELIMINARY precursor-mass filtering
+                    // additional checks are made later to ensure that the theoretical precursor mass is acceptable
                     var notches = massDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
 
                     double lowestMassPeptideToLookFor = Double.NegativeInfinity;
@@ -163,36 +157,36 @@ namespace EngineLayer.ModernSearch
             return mostCommonBins.ToList().Select(s => s.Item1).ToList();
         }
 
-        protected List<int> GetBinsToSearch(List<IMzPeak> peaks, double largestIntensity, double precursorMass)
+        protected List<int> GetBinsToSearch(Ms2ScanWithSpecificMass scan)
         {
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
-            foreach (IMzPeak peak in peaks)
+            foreach (var peakMz in scan.TheScan.MassSpectrum.XArray)
             {
-                if (CommonParameters.MinRatio == null || (peak.Intensity / largestIntensity) >= CommonParameters.MinRatio)
-                {
-                    // assume charge state 1 to calculate mz tolerance
-                    int obsFragmentFloorMz = (int)Math.Floor((CommonParameters.ProductMassTolerance.GetMinimumValue(peak.Mz)) * fragmentBinsPerDalton);
-                    if (obsFragmentFloorMz < obsPreviousFragmentCeilingMz)
-                        obsFragmentFloorMz = obsPreviousFragmentCeilingMz;
-                    int obsFragmentCeilingMz = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(peak.Mz)) * fragmentBinsPerDalton);
-                    obsPreviousFragmentCeilingMz = obsFragmentCeilingMz + 1;
-                    for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
-                        if (fragmentIndex[fragmentBin] != null)
-                            binsToSearch.Add(fragmentBin);
+                // assume charge state 1 to calculate mz tolerance
+                double experimentalFragmentMass = ClassExtensions.ToMass(peakMz, 1);
 
-                    if (addCompIons)
+                // get theoretical fragment bins within mass tolerance
+                int obsFragmentFloorMz = (int)Math.Floor((CommonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
+                if (obsFragmentFloorMz < obsPreviousFragmentCeilingMz)
+                    obsFragmentFloorMz = obsPreviousFragmentCeilingMz;
+                int obsFragmentCeilingMz = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
+                obsPreviousFragmentCeilingMz = obsFragmentCeilingMz + 1;
+                for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
+                    if (fragmentIndex[fragmentBin] != null)
+                        binsToSearch.Add(fragmentBin);
+
+                if (addCompIons)
+                {
+                    //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
+                    for (int j = 0; j < dissociationTypes.Count; j++)
                     {
-                        //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
-                        for (int j = 0; j < dissociationTypes.Count; j++)
-                        {
-                            int compPrecursor = (int)((precursorMass + complementaryIonConversionDictionary[dissociationTypes[j]] + Constants.protonMass) * fragmentBinsPerDalton);
-                            int compFragmentFloorMz = compPrecursor - obsFragmentCeilingMz;
-                            int compFragmentCeilingMz = compPrecursor - obsFragmentFloorMz;
-                            for (int fragmentBin = compFragmentFloorMz; fragmentBin <= compFragmentCeilingMz; fragmentBin++)
-                                if (fragmentIndex[fragmentBin] != null)
-                                    binsToSearch.Add(fragmentBin);
-                        }
+                        int compPrecursor = (int)((scan.PrecursorMass + complementaryIonConversionDictionary[dissociationTypes[j]] + Constants.protonMass) * fragmentBinsPerDalton);
+                        int compFragmentFloorMz = compPrecursor - obsFragmentCeilingMz;
+                        int compFragmentCeilingMz = compPrecursor - obsFragmentFloorMz;
+                        for (int fragmentBin = compFragmentFloorMz; fragmentBin <= compFragmentCeilingMz; fragmentBin++)
+                            if (fragmentIndex[fragmentBin] != null)
+                                binsToSearch.Add(fragmentBin);
                     }
                 }
             }

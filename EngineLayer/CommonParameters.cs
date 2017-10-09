@@ -30,9 +30,9 @@ namespace EngineLayer
             ConserveMemory = true;
             MaxParallelFilesToAnalyze = 1;
 
-            MaxThreadsToUse = Environment.ProcessorCount;
-            if (MaxThreadsToUse > 1)
-                MaxThreadsToUse--;
+            MaxThreadsToUsePerFile = Environment.ProcessorCount;
+            if (MaxThreadsToUsePerFile > 1)
+                MaxThreadsToUsePerFile--;
 
             ScoreCutoff = 5;
 
@@ -56,7 +56,7 @@ namespace EngineLayer
         #region Public Properties
 
         public int? MaxParallelFilesToAnalyze { get; set; }
-        public int MaxThreadsToUse { get; set; }
+        public int MaxThreadsToUsePerFile { get; set; }
         public bool LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
         public List<Tuple<string, string>> ListOfModsVariable { get; set; }
