@@ -815,9 +815,7 @@ namespace TaskLayer
                         #endregion Generate indices for modern search
 
                         Status("Searching files...", taskId);
-
-                        //File.WriteAllLines(@"C:\Users\rmillikin\Documents\Data\Yeast\temp.tsv", arrayOfMs2ScansSortedByMass.Select(p => "" + p.OneBasedScanNumber + "\t" + p.PrecursorMass));
-
+                        
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, massDiffAcceptor, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
