@@ -299,7 +299,7 @@ namespace MetaMorpheusGUI
             if (folderName != null)
                 TheTask.CommonParameters.taskID = folderName;
 
-            TheTask.XlSearchParameters.SearchDecoy = checkBoxDecoy.IsChecked.Value;
+            
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
