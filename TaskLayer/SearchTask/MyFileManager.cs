@@ -1,6 +1,13 @@
 ﻿using EngineLayer;
 using IO.MzML;
+
+#if ONLYNETSTANDARD
+#else
+
 using IO.Thermo;
+
+#endif
+
 using MassSpectrometry;
 using System;
 using System.Collections.Generic;
@@ -45,7 +52,12 @@ namespace TaskLayer
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
                 else
+
+#if ONLYNETSTANDARD
+                    Warn("No capability for reading " + origDataFile);
+#else
                     myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
+#endif
 
             return myMsDataFiles[origDataFile];
         }
