@@ -23,6 +23,7 @@ namespace EngineLayer.Indexing
         private readonly DecoyType decoyType;
         private readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         private readonly CommonParameters commonParams;
+        private readonly double maxFragmentSize;
 
         #endregion Private Fields
 
@@ -38,6 +39,7 @@ namespace EngineLayer.Indexing
             this.decoyType = decoyType;
             this.CollectionOfDigestionParams = CollectionOfDigestionParams;
             this.commonParams = commonParams;
+            this.maxFragmentSize = maxFragmentSize;
         }
 
         #endregion Public Constructors
@@ -123,28 +125,16 @@ namespace EngineLayer.Indexing
             var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParams.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
             peptideToId = null;
 
-            // create fragment index 
-            int maxFragmentMass = 30000;
-            for (int i = peptidesSortedByMass.Count - 1; i >= 0; i--)
-            {
-                if (!Double.IsNaN(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods))
-                {
-                    int fragmentMassCheck = (int)Math.Ceiling(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods);
-                    if (fragmentMassCheck > maxFragmentMass)
-                        maxFragmentMass = fragmentMassCheck;
-                    break;
-                }
-            }
-
+            // create fragment index
             List<int>[] fragmentIndex = new List<int>[0];
 
             try
             {
-                fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton];
+                fragmentIndex = new List<int>[(int)Math.Ceiling(maxFragmentSize) * fragmentBinsPerDalton];
             }
             catch (OutOfMemoryException)
             {
-                throw new MetaMorpheusException("Fragment mass too large for fragment indexing engine; try \"Classic Search\" mode, or make the maximum peptide mass lower. Please report this error to the MetaMorpheus developers");
+                throw new MetaMorpheusException("Max fragment mass too large for fragment indexing engine; try \"Classic Search\" mode, or make the maximum peptide mass smaller");
             }
 
             // populate fragment index
@@ -156,12 +146,15 @@ namespace EngineLayer.Indexing
 
                 foreach (var theoreticalFragmentMass in validFragments)
                 {
-                    int fragmentBin = (int)Math.Round(theoreticalFragmentMass * fragmentBinsPerDalton);
+                    if (theoreticalFragmentMass < maxFragmentSize)
+                    {
+                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * fragmentBinsPerDalton);
 
-                    if (fragmentIndex[fragmentBin] == null)
-                        fragmentIndex[fragmentBin] = new List<int> { peptideId };
-                    else
-                        fragmentIndex[fragmentBin].Add(peptideId);
+                        if (fragmentIndex[fragmentBin] == null)
+                            fragmentIndex[fragmentBin] = new List<int> { peptideId };
+                        else
+                            fragmentIndex[fragmentBin].Add(peptideId);
+                    }
                 }
 
                 progress++;
