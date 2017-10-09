@@ -154,7 +154,7 @@ namespace MetaMorpheusGUI
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
             nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific;
-
+            txtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
@@ -398,6 +398,7 @@ namespace MetaMorpheusGUI
             else
                 TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
+            TheTask.SearchParameters.MaxFragmentSize = Double.Parse(txtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.AddCompIons = addCompIonCheckBox.IsChecked.Value;
             TheTask.CommonParameters.BIons = bCheckBox.IsChecked.Value;
             TheTask.CommonParameters.YIons = yCheckBox.IsChecked.Value;
