@@ -45,7 +45,8 @@ namespace Test
                 },
                 CalibrationParameters = new CalibrationParameters
                 {
-                    WriteIntermediateFiles = true
+                    WriteIntermediateFiles = true,
+                    NumFragmentsNeededForEveryIdentification = 6,
                 }
             };
             GptmdTask task2 = new GptmdTask
@@ -90,8 +91,7 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            Console.WriteLine("Size of variable Modificaitaons: " + variableModifications.Capacity);
-            Console.WriteLine("Size of fixed Modificaitaons: " + fixedModifications.Capacity);
+
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
@@ -164,6 +164,10 @@ namespace Test
                     ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
+                CalibrationParameters = new CalibrationParameters
+                {
+                    NumFragmentsNeededForEveryIdentification = 6,
+                }
             };
             GptmdTask task2 = new GptmdTask
             {
@@ -280,7 +284,7 @@ namespace Test
                 },
                 SearchParameters = new SearchParameters
                 {
-                    SearchDecoy = false,
+                    DecoyType = DecoyType.None,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                 }
             };
@@ -301,7 +305,7 @@ namespace Test
             #region Generate and write the mzml
 
             {
-                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
@@ -394,7 +398,7 @@ namespace Test
             #region Generate and write the mzml
 
             {
-                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
@@ -471,7 +475,6 @@ namespace Test
 
             #region XML File
 
-            Console.WriteLine("hi");
             //First Write XML Database
 
             string xmlName = "okkk.xml";
@@ -490,7 +493,7 @@ namespace Test
             #region MZML File
 
             //now write MZML file
-            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
@@ -518,7 +521,7 @@ namespace Test
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
             //string[] files = Directory.GetFiles(fileAtPath);
             //string file = fileAtPath;
-            var proteins = ProteinDbLoader.LoadProteinXML(final, true, true, new List<Modification>(), false, new List<string>(), out ok);
+            var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
             //check location (key)
@@ -599,7 +602,7 @@ namespace Test
             #region MZML setup
 
             //now write MZML file
-            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(testUnique.CommonParameters.DigestionParams, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 

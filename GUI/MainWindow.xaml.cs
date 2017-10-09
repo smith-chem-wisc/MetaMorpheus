@@ -57,7 +57,7 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
             EverythingRunnerEngine.StartingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
-            EverythingRunnerEngine.WarnHandler += EverythingRunnerEngine_warnHandler;
+            EverythingRunnerEngine.WarnHandler += GuiWarnHandler;
             EverythingRunnerEngine.FinishedWritingAllResultsFileHandler += EverythingRunnerEngine_FinishedWritingAllResultsFileHandler;
 
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
@@ -68,12 +68,13 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusTask.NewCollectionHandler += NewCollectionHandler;
             MetaMorpheusTask.OutProgressHandler += NewoutProgressBar;
-            MetaMorpheusTask.WarnHandler += EverythingRunnerEngine_warnHandler;
+            MetaMorpheusTask.WarnHandler += GuiWarnHandler;
 
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
+            MetaMorpheusEngine.WarnHandler += GuiWarnHandler;
 
-            MyFileManager.WarnHandler += EverythingRunnerEngine_warnHandler;
+            MyFileManager.WarnHandler += GuiWarnHandler;
 
             UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
@@ -97,11 +98,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void EverythingRunnerEngine_warnHandler(object sender, StringEventArgs e)
+        private void GuiWarnHandler(object sender, StringEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => EverythingRunnerEngine_warnHandler(sender, e)));
+                Dispatcher.BeginInvoke(new Action(() => GuiWarnHandler(sender, e)));
             }
             else
             {

@@ -39,8 +39,10 @@ namespace Test
             //MyEngine.unimodDeserialized = Loaders.LoadUnimod(Path.Combine(TestContext.CurrentContext.TestDirectory, unimodLocation));
             //MyEngine.uniprotDeseralized = Loaders.LoadUniprot(Path.Combine(TestContext.CurrentContext.TestDirectory, uniprotLocation));
 
-            MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
-            MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_FinishedSingleEngineHandler;
+            //MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+            MetaMorpheusEngine.WarnHandler += WarnStatusHandler;
+            MetaMorpheusTask.WarnHandler += WarnStatusHandler;
+            //MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_FinishedSingleEngineHandler;
 
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
         }
@@ -59,9 +61,9 @@ namespace Test
             //Console.WriteLine(e.ToString());
         }
 
-        private static void MyEngine_outLabelStatusHandler(object sender, StringEventArgs e)
+        private static void WarnStatusHandler(object sender, StringEventArgs e)
         {
-            // Console.WriteLine(e.s);
+            Console.WriteLine(e.s);
         }
 
         #endregion Private Methods

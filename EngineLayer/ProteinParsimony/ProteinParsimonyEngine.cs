@@ -31,9 +31,9 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             ProteinParsimonyResults myAnalysisResults = new ProteinParsimonyResults(this);
-            Status("Running protein analysis engine!", nestedIds);
+            Status("Running protein analysis engine!");
 
-            Status("Applying protein parsimony...", nestedIds);
+            Status("Applying protein parsimony...");
             myAnalysisResults.ProteinGroups = ApplyProteinParsimony();
             return myAnalysisResults;
         }
@@ -245,7 +245,7 @@ namespace EngineLayer
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
                 kvp.Value.RemoveWhere(p => !parsimonyProteinList.ContainsKey(p.Protein));
 
-            Status("Finished Parsimony", nestedIds);
+            Status("Finished Parsimony");
 
             return ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(proteinsWithUniquePeptides.Values.SelectMany(p => p)), new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p)));
         }

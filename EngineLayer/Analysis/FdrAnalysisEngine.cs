@@ -28,7 +28,7 @@ namespace EngineLayer.Analysis
         {
             FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
 
-            Status("Running FDR analysis...", nestedIds);
+            Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(newPsms, searchModes);
 
             myAnalysisResults.PsmsWithin1PercentFdr = newPsms.Count(b => b.FdrInfo.QValue < 0.01);
@@ -67,8 +67,8 @@ namespace EngineLayer.Analysis
                 else
                     cumulative_target_per_notch[notch]++;
 
-                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / (cumulative_target_per_notch[notch] + cumulative_decoy_per_notch[notch]);
+                double temp_q_value = (double)cumulative_decoy / cumulative_target;
+                double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / cumulative_target_per_notch[notch];
                 item.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch);
             }
 

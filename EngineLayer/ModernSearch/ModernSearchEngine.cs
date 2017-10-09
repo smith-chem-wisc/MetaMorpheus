@@ -54,7 +54,7 @@ namespace EngineLayer.ModernSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine..." + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds);
+            Status("In modern search engine..." + currentPartition + "/" + CommonParameters.TotalPartitions);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 

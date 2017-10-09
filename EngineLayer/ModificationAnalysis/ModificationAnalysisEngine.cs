@@ -25,7 +25,7 @@ namespace EngineLayer
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("Running modification analysis...", nestedIds);
+            Status("Running modification analysis...");
 
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 

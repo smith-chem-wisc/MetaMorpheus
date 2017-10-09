@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace MetaMorpheusGUI
 {
@@ -162,7 +163,9 @@ namespace MetaMorpheusGUI
             modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreUnique;
             checkBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
             checkBoxTarget.IsChecked = task.SearchParameters.SearchTarget;
-            checkBoxDecoy.IsChecked = task.SearchParameters.SearchDecoy;
+            checkBoxDecoy.IsChecked = task.SearchParameters.DecoyType != DecoyType.None;
+            radioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
+            radioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -376,7 +379,15 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.ModPeptidesAreUnique = modPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
-            TheTask.SearchParameters.SearchDecoy = checkBoxDecoy.IsChecked.Value;
+            if (checkBoxDecoy.IsChecked.Value)
+            {
+                if (radioButtonReverseDecoy.IsChecked.Value)
+                    TheTask.SearchParameters.DecoyType = DecoyType.Reverse;
+                else //if (radioButtonSlideDecoy.IsChecked.Value)
+                    TheTask.SearchParameters.DecoyType = DecoyType.Slide;
+            }
+            else 
+                TheTask.SearchParameters.DecoyType = DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
             TheTask.CommonParameters.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;

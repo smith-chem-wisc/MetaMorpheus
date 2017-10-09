@@ -192,7 +192,6 @@ namespace Test
             foreach (var kvp in initialDictionary)
             {
                 proteinList = new List<Protein>();
-                System.Console.Write(string.Join("", kvp.Value.First().BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
                 foreach (var peptide in kvp.Value)
                 {
                     if (!proteinList.Contains(peptide.Protein))
@@ -211,7 +210,6 @@ namespace Test
                 {
                     if (!proteinList.Contains(peptide.Protein))
                     {
-                        System.Console.Write(peptide.Protein.BaseSequence + " ;; ");
                         proteinList.Add(peptide.Protein);
                     }
                 }
@@ -330,7 +328,7 @@ namespace Test
 
             FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, new List<string> { "P34223" });
 
-            FlashLfqEngine.ConstructBinsFromIdentifications();
+            FlashLfqEngine.ConstructIndexTemplateFromIdentifications();
 
             FlashLfqEngine.Quantify(null, mzmlFilePath);
 

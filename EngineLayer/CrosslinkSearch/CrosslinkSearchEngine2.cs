@@ -88,7 +88,7 @@ namespace EngineLayer.CrosslinkSearch
                 XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLprecusorMsTl.Value);
             }
 
-            Status("In crosslink search engine...", nestedIds);
+            Status("In crosslink search engine...");
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
@@ -192,7 +192,7 @@ namespace EngineLayer.CrosslinkSearch
                         }
                         for (int itop = 0; itop < currentScanPsmParent.Count; itop++)
                         {
-                            currentScanPsmParent[itop].topPosition = new int[] { itop, 0 };
+                            currentScanPsmParent[itop].XlRank = new int[] { itop, 0 };
                         }
                         newPsmsTop[i] = currentScanPsmParent;
                     }
@@ -248,7 +248,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 selectedMS2Scans.Add(listOfSortedms2Scans[allAlphaPsms[i].ScanIndex]);
             }
-            var xlPsmCross = ClassSearchTheBetaPeptide(selectedMS2Scans.ToArray(), allAlphaPsms.ToArray(), true);
+            var xlPsmCross = ClassSearchTheBetaPeptide(selectedMS2Scans.ToArray(), allAlphaPsms.ToArray(), CommonParameters.ConserveMemory);
             AllCrossPsms.AddRange(xlPsmCross);
             var AllCrossPsmsGroupOrder = (from c in AllCrossPsms
                                           group c by c.ScanNumber into grp
@@ -257,14 +257,14 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (item.Count > 1)
                 {
-                    item[0].dScore = item[0].XLTotalScore - item[1].XLTotalScore;
+                    item[0].DScore = item[0].XLTotalScore - item[1].XLTotalScore;
                 }
-                else { item[0].dScore = item[0].XLTotalScore; }
+                else { item[0].DScore = item[0].XLTotalScore; }
             }
             var AllCrossPsmsRe = AllCrossPsmsGroupOrder.Select(p => p.First()).ToList();
 
             psmCross.AddRange(AllCrossPsmsRe);
-            return new CrosslinkSearchResults(AllCrossPsmsRe, this);
+            return new CrosslinkSearchResults(psmCross, this);
         }
 
         #endregion Protected Methods
@@ -319,7 +319,7 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        private List<PsmCross> ClassSearchTheBetaPeptide(Ms2ScanWithSpecificMass[] selectedScan, PsmCross[] selectedPsmParent, bool conserveMemory = false)
+        private List<PsmCross> ClassSearchTheBetaPeptide(Ms2ScanWithSpecificMass[] selectedScan, PsmCross[] selectedPsmParent, bool conserveMemory)
         {
             double[] selectedScanPrecusor = selectedScan.Select(p => p.PrecursorMass).ToArray();
             double[] AlphaPeptidePrecusor = selectedPsmParent.Select(p => p.CompactPeptide.MonoisotopicMassIncludingFixedMods).ToArray();
@@ -328,13 +328,13 @@ namespace EngineLayer.CrosslinkSearch
             Array.Sort(BetaPeptidePrecusor.ToArray(), selectedPsmParent);
             Array.Sort(BetaPeptidePrecusor, selectedScan);
 
-            Status("In xlclassic search engine!", nestedIds);
+            Status("In xlclassic search engine!");
 
             int totalProteins = proteinList.Count;
 
             var observed_sequences = new HashSet<CompactPeptide>();
 
-            Status("Getting ms2 scans...", nestedIds);
+            Status("Getting ms2 scans...");
 
             var outerPsms = new PsmCross[selectedScan.Length];
 
@@ -342,9 +342,11 @@ namespace EngineLayer.CrosslinkSearch
             int proteinsSeen = 0;
             int old_progress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-            Status("Starting xlclassic search loop...", nestedIds);
+            Status("Starting xlclassic search loop...");
             //Parallel.ForEach(Partitioner.Create(0, 1), partitionRange =>
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
+            //Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
+            Parallel.ForEach(Partitioner.Create(0, totalProteins),
+                new ParallelOptions { MaxDegreeOfParallelism = 1 }, partitionRange =>
             {
                 var psms = new PsmCross[selectedScan.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
@@ -372,12 +374,11 @@ namespace EngineLayer.CrosslinkSearch
                             }
 
                             var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                            //var productNames = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).ProductName;
                             Array.Sort(productMasses);
 
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                             {
-                                var score = CalculateClassicScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, 0.0, new List<DissociationType>(), false);
+                                var score = CalculateClassicScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false);
 
                                 if (score > 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
                                 {
@@ -440,6 +441,7 @@ namespace EngineLayer.CrosslinkSearch
                     PsmCross.XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i], crosslinker, lp, CommonParameters.ProductMassTolerance);
                     selectedPsmParent[i].XLTotalScore = selectedPsmParent[i].XLBestScore + outerPsms[i].XLBestScore;
                     selectedPsmParent[i].BetaPsmCross = outerPsms[i];
+                    selectedPsmParent[i].CrossType = PsmCrossType.Cross;
                     newPsmsTop.Add(selectedPsmParent[i]);
                 }
             }

@@ -161,6 +161,112 @@
                                 </Grid>
                             </GroupBox>
                         </StackPanel>
+                </Expander>
+            </GroupBox>
+            <GroupBox Header="Modifications" DockPanel.Dock="Top">
+                <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded">
+                    <Expander.Style>
+                        <Style TargetType="Expander">
+                            <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsExpanded" Value="True">
+                                    <Setter Property="Header" Value="Hide" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Expander.Style>
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <Label Content="Fixed" />
+                                <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" Height="400">
+                                    <TreeView.Resources>
+                                        <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </HierarchicalDataTemplate>
+                                        <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </TreeView.Resources>
+                                </TreeView>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <Label Content="Variable" />
+                                <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" Height="400">
+                                    <TreeView.Resources>
+                                        <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </HierarchicalDataTemplate>
+                                        <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </TreeView.Resources>
+                                </TreeView>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <Label Content="Database Localized" />
+                                <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
+                                <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
+                                    <TreeView.Style>
+                                        <Style TargetType="{x:Type TreeView}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
+                                                    <Setter Property="Visibility" Value="Hidden" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TreeView.Style>
+                                    <TreeView.Resources>
+                                        <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </HierarchicalDataTemplate>
+                                        <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                            <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
+                                                <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </TreeView.Resources>
+                                </TreeView>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Expander>
+            </GroupBox>
+            <GroupBox Header="Output Choose" DockPanel.Dock="Top">
+                    <Expander x:Name="OutputExpander">
+                        <StackPanel Orientation="Vertical">
+                            <CheckBox x:Name="ckbPercolator" Content="Output for Percolator" />
+                            <CheckBox x:Name="ckbCLMSVault" Content="Output for CLMSVault" />
+                            <CheckBox x:Name="ckbPepXML" Content="Output for pepXML" />
+                            <CheckBox x:Name="ckbCrosslink" Content="Output for Crosslink" />
+                            <CheckBox x:Name="ckbAllResults" Content="Output for AllResults include Normal, Loop, Deadend" />
+                        </StackPanel>
+                    </Expander>
+                            
+                </GroupBox>
+        </DockPanel>
                     </Expander>
                 </GroupBox>
                 <GroupBox Header="Modifications" DockPanel.Dock="Top">

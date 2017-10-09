@@ -33,7 +33,7 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
-            Status("Running protein scoring and FDR engine!", nestedIds);
+            Status("Running protein scoring and FDR engine!");
 
             ScoreProteinGroups(proteinGroups, newPsms);
             myAnalysisResults.sortedAndScoredProteinGroups = DoProteinFdr(proteinGroups);
@@ -47,7 +47,7 @@ namespace EngineLayer
 
         private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<Psm> psmList)
         {
-            Status("Scoring protein groups...", nestedIds);
+            Status("Scoring protein groups...");
 
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<Psm>>();
@@ -120,7 +120,7 @@ namespace EngineLayer
 
         private List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
         {
-            Status("Calculating protein FDR...", nestedIds);
+            Status("Calculating protein FDR...");
 
             if (noOneHitWonders)
             {
@@ -145,7 +145,7 @@ namespace EngineLayer
 
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
-                proteinGroup.QValue = ((double)cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
+                proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
             }
 
             return sortedProteinGroups;

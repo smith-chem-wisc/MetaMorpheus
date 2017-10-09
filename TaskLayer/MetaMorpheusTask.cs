@@ -1,6 +1,8 @@
 ﻿using Chemistry;
 using EngineLayer;
+
 using MassSpectrometry;
+
 using MzLibUtil;
 using Nett;
 using Proteomics;
@@ -10,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -29,6 +32,7 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
+
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -44,6 +48,7 @@ namespace TaskLayer
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
+
 
         #endregion Public Fields
 
@@ -96,7 +101,8 @@ namespace TaskLayer
         #region Public Methods
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(
-         IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string fullFilePath,
+         IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile,
+         string fullFilePath,
          bool doPrecursorDeconvolution,
          bool useProvidedPrecursorInfo,
          double deconvolutionIntensityRatio,
@@ -113,7 +119,7 @@ namespace TaskLayer
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                         ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                     if (doPrecursorDeconvolution)
-                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
+                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndChargesOld(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
                 }
 
                 if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
@@ -290,15 +296,15 @@ namespace TaskLayer
             }
         }
 
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, bool generateDecoys, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
+        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
         {
             if (Path.GetExtension(fileName).Equals(".fasta"))
             {
                 um = null;
-                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
+                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
+                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
         protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
@@ -346,9 +352,9 @@ namespace TaskLayer
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
-        protected void Warn(string v, List<string> nestedIds)
+        protected void Warn(string v)
         {
-            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+            WarnHandler?.Invoke(this, new StringEventArgs(v, null));
         }
 
         protected void NewCollection(string v, List<string> nestedIds)
