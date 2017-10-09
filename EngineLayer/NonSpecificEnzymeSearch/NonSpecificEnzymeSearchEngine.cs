@@ -16,13 +16,20 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly int bBinShift = (int)Math.Round((waterMonoisotopicMass - hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+        private static readonly int yBinShift = (int)Math.Round(-1 * hydrogenAtomMonoisotopicMass * fragmentBinsPerDalton);
+        private static readonly int cBinShift = (int)Math.Round((nitrogenAtomMonoisotopicMass + 2 * hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+        private static readonly int zdotBinShift = (int)Math.Round((oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass - hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+        private readonly List<int>[] fragmentIndexPrecursor;
+
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
+        public NonSpecificEnzymeSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<int>[] fragmentIndexPrecursor, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
         {
+            this.fragmentIndexPrecursor = fragmentIndexPrecursor;
         }
 
         #endregion Public Constructors
@@ -38,8 +45,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
             int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
             byte byteScoreCutoff = Convert.ToByte(intScoreCutoff);
-
-            List<int> mostCommonBins = IdentifyMostCommonBinsAll(fragmentIndex);
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUse }, range =>
             {
@@ -66,24 +71,54 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //get bins to add points to
                     List<int> allBinsToSearch = GetBinsToSearch(peaks, largestIntensity, scan.PrecursorMass);
 
-                    //separate bins by common and uncommon fragments to improve search speed
-                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
-
-                    for (int j = 0; j < commonBinsToSearch.Count; j++)
-                        fragmentIndex[commonBinsToSearch[j]].ForEach(id => scoringTable[id]++);
-
                     for (int j = 0; j < allBinsToSearch.Count; j++)
-                        foreach (int id in fragmentIndex[allBinsToSearch[j]])
+                        fragmentIndex[allBinsToSearch[j]].ForEach(id => scoringTable[id]++);
+
+                    //populate ids of possibly observed with those containing allowed precursor masses
+                    List<int> binsToSearch = new List<int>();
+                    int obsPrecursorFloorMz = (int)Math.Floor(CommonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
+                    int obsPrecursorCeilingMz = (int)Math.Ceiling(CommonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
+                    for (int fragmentBin = obsPrecursorFloorMz; fragmentBin <= obsPrecursorCeilingMz; fragmentBin++)
+                        binsToSearch.Add(fragmentBin);
+
+
+                    foreach (ProductType pt in lp)
+                    {
+                        int binShift;
+                        switch (pt)
                         {
-                            scoringTable[id]++;
-                            if (scoringTable[id] == byteScoreCutoff)
-                                idsOfPeptidesPossiblyObserved.Add(id);
+                            case ProductType.B:
+                                binShift = bBinShift;
+                                break;
+                            case ProductType.Y:
+                                binShift = yBinShift;
+                                break;
+                            case ProductType.C:
+                                binShift = cBinShift;
+                                break;
+                            case ProductType.Zdot:
+                                binShift = zdotBinShift;
+                                break;
+                            default:
+                                throw new NotImplementedException();
                         }
+                        for (int j = 0; j < binsToSearch.Count; j++)
+                        {
+                            if (fragmentIndex[binsToSearch[j] - binShift] != null)
+                                fragmentIndex[binsToSearch[j] - binShift].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                        }
+                    }
+
+                    for (int j = 0; j < binsToSearch.Count; j++)
+                    {
+                        if (fragmentIndexPrecursor[binsToSearch[j]] != null)
+                            fragmentIndexPrecursor[binsToSearch[j]].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                    }
 
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id])+1;
+                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
                         while (maxInitialScore != intScoreCutoff)
                         {
                             maxInitialScore--;

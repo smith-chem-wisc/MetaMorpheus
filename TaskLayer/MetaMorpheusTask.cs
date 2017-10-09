@@ -132,9 +132,9 @@ namespace TaskLayer
                     }
                     else
                     {
-                        var PrecursorMZ = ms2scan.SelectedIonMZ;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(PrecursorMZ.ToMass(precursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
-                            isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonIntensity ?? double.NaN) }, precursorCharge));
+                        var precursorMZ = ms2scan.SelectedIonMZ;
+                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
+                            isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(precursorMZ, ms2scan.SelectedIonIntensity ?? double.NaN) }, precursorCharge));
                     }
                 }
 
