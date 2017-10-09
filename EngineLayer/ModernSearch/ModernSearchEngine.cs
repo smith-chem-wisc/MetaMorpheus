@@ -163,16 +163,16 @@ namespace EngineLayer.ModernSearch
             List<int> binsToSearch = new List<int>();
             foreach (var peakMz in scan.TheScan.MassSpectrum.XArray)
             {
-                // assume charge state 1 to calculate mz tolerance
+                // assume charge state 1 to calculate mass tolerance
                 double experimentalFragmentMass = ClassExtensions.ToMass(peakMz, 1);
 
                 // get theoretical fragment bins within mass tolerance
-                int obsFragmentFloorMz = (int)Math.Floor((CommonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
-                if (obsFragmentFloorMz < obsPreviousFragmentCeilingMz)
-                    obsFragmentFloorMz = obsPreviousFragmentCeilingMz;
-                int obsFragmentCeilingMz = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
-                obsPreviousFragmentCeilingMz = obsFragmentCeilingMz + 1;
-                for (int fragmentBin = obsFragmentFloorMz; fragmentBin <= obsFragmentCeilingMz; fragmentBin++)
+                int obsFragmentFloorMass = (int)Math.Floor((CommonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
+                if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
+                    obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
+                int obsFragmentCeilingMass = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
+                obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
+                for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
                     if (fragmentIndex[fragmentBin] != null)
                         binsToSearch.Add(fragmentBin);
 
@@ -181,10 +181,9 @@ namespace EngineLayer.ModernSearch
                     //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
                     for (int j = 0; j < dissociationTypes.Count; j++)
                     {
-                        int compPrecursor = (int)((scan.PrecursorMass + complementaryIonConversionDictionary[dissociationTypes[j]] + Constants.protonMass) * fragmentBinsPerDalton);
-                        int compFragmentFloorMz = compPrecursor - obsFragmentCeilingMz;
-                        int compFragmentCeilingMz = compPrecursor - obsFragmentFloorMz;
-                        for (int fragmentBin = compFragmentFloorMz; fragmentBin <= compFragmentCeilingMz; fragmentBin++)
+                        int compFragmentFloorMass = (int) Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
+                        int compFragmentCeilingMass = (int) Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentFloorMass;
+                        for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
                             if (fragmentIndex[fragmentBin] != null)
                                 binsToSearch.Add(fragmentBin);
                     }

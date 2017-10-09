@@ -67,10 +67,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     List<int> allBinsToSearch = GetBinsToSearch(scan);
 
                     //separate bins by common and uncommon fragments to improve search speed
-                    List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
+                    //List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
 
-                    for (int j = 0; j < commonBinsToSearch.Count; j++)
-                        fragmentIndex[commonBinsToSearch[j]].ForEach(id => scoringTable[id]++);
+                    //for (int j = 0; j < commonBinsToSearch.Count; j++)
+                    //    fragmentIndex[commonBinsToSearch[j]].ForEach(id => scoringTable[id]++);
 
                     for (int j = 0; j < allBinsToSearch.Count; j++)
                         foreach (int id in fragmentIndex[allBinsToSearch[j]])

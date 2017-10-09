@@ -22,14 +22,13 @@ namespace EngineLayer.Indexing
         private readonly int currentPartition;
         private readonly DecoyType decoyType;
         private readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
-        private readonly int totalPartitions;
-        private readonly int threadsToUse;
+        private readonly CommonParameters commonParams;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -38,11 +37,7 @@ namespace EngineLayer.Indexing
             this.currentPartition = currentPartition + 1;
             this.decoyType = decoyType;
             this.CollectionOfDigestionParams = CollectionOfDigestionParams;
-            this.totalPartitions = totalPartitions;
-
-            this.threadsToUse = Environment.ProcessorCount;
-            if (threadsToUse > 1)
-                threadsToUse--;
+            this.commonParams = commonParams;
         }
 
         #endregion Public Constructors
@@ -52,7 +47,7 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Partitions: " + currentPartition + "/" + totalPartitions);
+            sb.AppendLine("Partitions: " + currentPartition + "/" + commonParams.TotalPartitions);
             sb.AppendLine("Search Decoys: " + decoyType);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
@@ -84,7 +79,7 @@ namespace EngineLayer.Indexing
             // digest database
             HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
 
-            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = threadsToUse }, range =>
+            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParams.MaxThreadsToUsePerFile }, range =>
             {
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
@@ -125,16 +120,18 @@ namespace EngineLayer.Indexing
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(threadsToUse).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
+            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParams.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
             peptideToId = null;
 
             // create fragment index 
-            int maxFragmentMass = 0;
+            int maxFragmentMass = 30000;
             for (int i = peptidesSortedByMass.Count - 1; i >= 0; i--)
             {
                 if (!Double.IsNaN(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods))
                 {
-                    maxFragmentMass = (int)Math.Ceiling(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods);
+                    int fragmentMassCheck = (int)Math.Ceiling(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods);
+                    if (fragmentMassCheck > maxFragmentMass)
+                        maxFragmentMass = fragmentMassCheck;
                     break;
                 }
             }
@@ -147,26 +144,24 @@ namespace EngineLayer.Indexing
             }
             catch (OutOfMemoryException)
             {
-                throw new MetaMorpheusException("Fragment mass too large for fragment indexing engine; try \"Classic Search\" mode and report this error to the MetaMorpheus developers");
+                throw new MetaMorpheusException("Fragment mass too large for fragment indexing engine; try \"Classic Search\" mode, or make the maximum peptide mass lower. Please report this error to the MetaMorpheus developers");
             }
 
             // populate fragment index
             progress = 0;
             oldPercentProgress = 0;
-            for (int i = 0; i < peptidesSortedByMass.Count; i++)
+            for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
-                var validFragments = peptidesSortedByMass[i].ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p));
+                var validFragments = peptidesSortedByMass[peptideId].ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p));
 
                 foreach (var theoreticalFragmentMass in validFragments)
                 {
-                    //double mz = Chemistry.ClassExtensions.ToMz(theoreticalFragmentMass, 1);
-                    //int fragmentBin = (int)Math.Round(mz * fragmentBinsPerDalton);
                     int fragmentBin = (int)Math.Round(theoreticalFragmentMass * fragmentBinsPerDalton);
 
                     if (fragmentIndex[fragmentBin] == null)
-                        fragmentIndex[fragmentBin] = new List<int> { i };
+                        fragmentIndex[fragmentBin] = new List<int> { peptideId };
                     else
-                        fragmentIndex[fragmentBin].Add(i);
+                        fragmentIndex[fragmentBin].Add(peptideId);
                 }
 
                 progress++;
