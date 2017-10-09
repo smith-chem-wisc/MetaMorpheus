@@ -53,7 +53,6 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal GptmdTask TheTask { get; private set; }
-        internal string folderName;
         #endregion Internal Properties
 
         #region Private Methods
@@ -89,10 +88,8 @@ namespace MetaMorpheusGUI
             conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
-            if (task.CommonParameters.taskID != null)
-                OutputFileNameTextBox.Text = task.CommonParameters.taskID;
-            else
-                OutputFileNameTextBox.Text = "GPTMDTask";
+            OutputFileNameTextBox.Text = task.CommonParameters.taskID;
+
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -251,8 +248,10 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
 
-            if (folderName != null)
-                TheTask.CommonParameters.taskID = folderName;
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.taskID = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.taskID = "GPTMDTask";
 
             if (productMassToleranceComboBox.SelectedIndex == 0)
                 TheTask.CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
@@ -299,12 +298,6 @@ namespace MetaMorpheusGUI
             DialogResult = true;
         }
 
-        private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            var a = sender as TextBox;
-            folderName = a.Text;
-
-        }
 
         #endregion Private Methods
     }

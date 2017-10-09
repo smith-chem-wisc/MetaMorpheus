@@ -53,8 +53,6 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal CalibrationTask TheTask { get; private set; }
-        internal string folderName;
-
 
         #endregion Internal Properties
 
@@ -85,10 +83,9 @@ namespace MetaMorpheusGUI
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
-            if (task.CommonParameters.taskID != null)
-                OutputFileNameTextBox.Text = task.CommonParameters.taskID;
-            else
-                OutputFileNameTextBox.Text = "CalibrateTask";
+
+            OutputFileNameTextBox.Text = task.CommonParameters.taskID;
+
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -225,10 +222,10 @@ namespace MetaMorpheusGUI
             TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
 
             TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();
-
-            if (folderName != null)
-                TheTask.CommonParameters.taskID = folderName;
-
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.taskID = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.taskID = "CalibrateTask";
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
                 TheTask.CommonParameters.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             TheTask.CommonParameters.ListOfModsFixed = new List<Tuple<string, string>>();
@@ -270,14 +267,6 @@ namespace MetaMorpheusGUI
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
-        }
-
-
-        private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            var a = sender as TextBox;
-            folderName = a.Text;
-
         }
 
         #endregion Private Methods

@@ -87,7 +87,6 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal XLSearchTask TheTask { get; private set; }
-        internal string folderName;
         #endregion Internal Properties
 
         #region Private Methods
@@ -188,10 +187,10 @@ namespace MetaMorpheusGUI
             ckbCrosslink.IsChecked = task.XlSearchParameters.XlOutCrosslink;
             ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
 
-            if (task.CommonParameters.taskID != null)
-                OutputFileNameTextBox.Text = task.CommonParameters.taskID;
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.taskID = OutputFileNameTextBox.Text;
             else
-                OutputFileNameTextBox.Text = "XLSearchTask";
+                TheTask.CommonParameters.taskID = "XLSearchTask";
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -295,8 +294,6 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.UdXLkerTotalMass = double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
             }
 
-            if (folderName != null)
-                TheTask.CommonParameters.taskID = folderName;
 
             
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
@@ -374,13 +371,6 @@ namespace MetaMorpheusGUI
         {
             //if (!TheTask.WritePrunedDatabase)
             //    modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
-        }
-
-        private void OutputFileName_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            var a = sender as TextBox;
-            folderName = a.Text;
-
         }
 
         #endregion Private Methods
