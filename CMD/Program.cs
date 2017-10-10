@@ -96,7 +96,16 @@ namespace MetaMorpheusCommandLine
                 }
                 List<string> startingRawFilenameList = p.Object.Spectra.Select(b => Path.GetFullPath(b)).ToList();
                 List<DbForTask> startingXmlDbFilenameList = p.Object.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
-                EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, null);
+
+                var MatchingChars =
+                    from len in Enumerable.Range(0, startingRawFilenameList.Min(s => s.Length)).Reverse()
+                    let possibleMatch = startingRawFilenameList.First().Substring(0, len)
+                    where startingRawFilenameList.All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
+                    select possibleMatch;
+
+                string outputFolder = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
+
+                EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, outputFolder);
                 a.Run();
             }
             Console.WriteLine("Error Text:" + result.ErrorText);
