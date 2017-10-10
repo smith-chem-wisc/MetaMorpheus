@@ -186,16 +186,16 @@ namespace TaskLayer
             return returnParams;
         }
 
-        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string taskId)
+        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
-            StartingSingleTask(taskId);
+            StartingSingleTask(displayName);
 
             #region write TOML
 
             {
                 var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
                 Toml.WriteFile(this, tomlFileName, tomlConfig);
-                SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId });
+                SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
             }
 
             #endregion write TOML
@@ -222,7 +222,7 @@ namespace TaskLayer
                 }
             }
 
-            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, taskId, fileSettingsList);
+            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
             stopWatch.Stop();
             myTaskResults.Time = stopWatch.Elapsed;
             var resultsFileName = Path.Combine(output_folder, "results.txt");
@@ -231,8 +231,8 @@ namespace TaskLayer
                 file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
                 file.Write(myTaskResults.ToString());
             }
-            SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
-            FinishedSingleTask(taskId);
+            SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
+            FinishedSingleTask(displayName);
 #if !DEBUG
             }
             catch (Exception e)
@@ -273,7 +273,7 @@ namespace TaskLayer
                     file.WriteLine("Databases:");
                     file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
                 }
-                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
+                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { displayName });
             }
 
             #endregion Write prose
@@ -376,14 +376,14 @@ namespace TaskLayer
             myTaskResults.AddResultText(e.ToString());
         }
 
-        private void FinishedSingleTask(string taskId)
+        private void FinishedSingleTask(string displayName)
         {
-            FinishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(taskId));
+            FinishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(displayName));
         }
 
-        private void StartingSingleTask(string taskId)
+        private void StartingSingleTask(string displayName)
         {
-            StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(taskId));
+            StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(displayName));
         }
 
         #endregion Private Methods

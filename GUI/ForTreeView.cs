@@ -17,17 +17,12 @@ namespace MetaMorpheusGUI
 
         #region Public Constructors
 
-        public ForTreeView(string id, string displayName)
+        public ForTreeView(string displayName)
         {
-            Id = id;
             DisplayName = displayName;
             Children = new ObservableCollection<ForTreeView>();
         }
-
-        public ForTreeView(string id) : this(id, id)
-        {
-        }
-
+        
         #endregion Public Constructors
 
         #region Public Events
@@ -39,7 +34,6 @@ namespace MetaMorpheusGUI
         #region Public Properties
 
         public ObservableCollection<ForTreeView> Children { get; private set; }
-        public string Id { get;  set; }
 
         public string Status
         {

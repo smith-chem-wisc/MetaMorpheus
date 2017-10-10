@@ -187,10 +187,7 @@ namespace MetaMorpheusGUI
             ckbCrosslink.IsChecked = task.XlSearchParameters.XlOutCrosslink;
             ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
 
-            if (OutputFileNameTextBox.Text != "")
-                TheTask.CommonParameters.TaskID = OutputFileNameTextBox.Text;
-            else
-                TheTask.CommonParameters.TaskID = "XLSearchTask";
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -318,6 +315,12 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.XlOutCLMSVault = ckbCLMSVault.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+
+
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.TaskDescriptor = "XLSearchTask";
 
             TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)

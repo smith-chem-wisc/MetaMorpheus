@@ -94,7 +94,7 @@ namespace MetaMorpheusGUI
             {
                 dynamicTasksObservableCollection.Add(new InRunTask("All Task Results", null));
                 dynamicTasksObservableCollection.Last().Progress = 100;
-                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e.s));
+                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e.s, Path.GetFileNameWithoutExtension(e.s)));
             }
         }
 
@@ -180,7 +180,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var theTask = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.TaskId));
+                var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
                 theTask.InProgress = true;
                 theTask.IsIndeterminate = true;
                 theTask.Status = "Starting...";
@@ -198,7 +198,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var theTask = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.TaskId));
+                var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
                 theTask.InProgress = false;
                 theTask.IsIndeterminate = false;
                 theTask.Progress = 100;
@@ -313,28 +313,28 @@ namespace MetaMorpheusGUI
                             var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             PreRunTask te1 = new PreRunTask(ye1);
                             staticTasksObservableCollection.Add(te1);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te1) + 1) + "-" + ye1.CommonParameters.TaskID;
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te1) + 1) + "-" + ye1.CommonParameters.TaskDescriptor;
                             break;
 
                         case "Calibrate":
                             var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             PreRunTask te2 = new PreRunTask(ye2);
                             staticTasksObservableCollection.Add(te2);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te2) + 1) + "-" + ye2.CommonParameters.TaskID;
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te2) + 1) + "-" + ye2.CommonParameters.TaskDescriptor;
                             break;
 
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             PreRunTask te3 = new PreRunTask(ye3);
                             staticTasksObservableCollection.Add(te3);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te3) + 1) + "-" + ye3.CommonParameters.TaskID;
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te3) + 1) + "-" + ye3.CommonParameters.TaskDescriptor;
                             break;
 
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             PreRunTask te4 = new PreRunTask(ye4);
                             staticTasksObservableCollection.Add(te4);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te4) + 1) + "-" + ye4.CommonParameters.TaskID;
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te4) + 1) + "-" + ye4.CommonParameters.TaskDescriptor;
                             break;
                     }
                     break;
@@ -362,21 +362,11 @@ namespace MetaMorpheusGUI
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
             {
-                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
-                if (staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskID != null 
-                    && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskID != "SearchTask"
-                    && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskID != "GPTMDTask"
-                    && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskID != "CalibrateTask"
-                    && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskID != "XLSearchTask")
-                {
-                    dynamicTasksObservableCollection[i].DisplayName = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskID;
-                    dynamicTasksObservableCollection[i].Id = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskID;
-
-                }
+                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor, staticTasksObservableCollection[i].metaMorpheusTask));
             }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
             var t = new Thread(() => a.Run())
             {
                 IsBackground = true
@@ -441,10 +431,8 @@ namespace MetaMorpheusGUI
             if (dialog.ShowDialog() == true)
             {
                 PreRunTask task = new PreRunTask(dialog.TheTask);
-                if (dialog.TheTask.CommonParameters.TaskID != null)
-                    task.DisplayName = dialog.TheTask.CommonParameters.TaskID;
                 staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskID;
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
                 UpdateTaskGuiStuff();
             }
         }
@@ -455,10 +443,8 @@ namespace MetaMorpheusGUI
             if (dialog.ShowDialog() == true)
             {
                 PreRunTask task = new PreRunTask(dialog.TheTask);
-                if (dialog.TheTask.CommonParameters.TaskID != null)
-                    task.DisplayName = dialog.TheTask.CommonParameters.TaskID;
                 staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskID;
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
                 UpdateTaskGuiStuff();
             }
         }
@@ -469,10 +455,8 @@ namespace MetaMorpheusGUI
             if (dialog.ShowDialog() == true)
             {
                 PreRunTask task = new PreRunTask(dialog.TheTask);
-                if (dialog.TheTask.CommonParameters.TaskID != null)
-                    task.DisplayName = dialog.TheTask.CommonParameters.TaskID;
                 staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskID;
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
                 UpdateTaskGuiStuff();
             }
         }
@@ -483,10 +467,8 @@ namespace MetaMorpheusGUI
             if (dialog.ShowDialog() == true)
             {
                 PreRunTask task = new PreRunTask(dialog.TheTask);
-                if (dialog.TheTask.CommonParameters.TaskID != null)
-                    task.DisplayName = dialog.TheTask.CommonParameters.TaskID;
                 staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskID;
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
                 UpdateTaskGuiStuff();
             }
         }
@@ -507,23 +489,23 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
 
                 for (int i = 1; i < s.nestedIDs.Count - 1; i++)
                 {
                     var hm = s.nestedIDs[i];
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                 }
 
-                theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.nestedIDs.Last(), s.s));
+                theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.s));
             }
         }
 
@@ -537,18 +519,18 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
 
                 foreach (var hm in s.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                 }
 
@@ -567,18 +549,18 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
 
                 foreach (var hm in s.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                 }
 
@@ -656,17 +638,17 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(v.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(v.nestedIDs[0]));
 
                 foreach (var hm in v.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                     catch { }
                 }
-                theEntityOnWhichToUpdateLabel.Children.Add(new OutputFileForTreeView(v.writtenFile));
+                theEntityOnWhichToUpdateLabel.Children.Add(new OutputFileForTreeView(v.writtenFile, Path.GetFileName(v.writtenFile)));
             }
         }
 
@@ -712,49 +694,37 @@ namespace MetaMorpheusGUI
 
                         searchDialog.ShowDialog();
 
-                        if (searchDialog.TheTask.CommonParameters.TaskID != null)
-                        {
-                            preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParameters.TaskID;
-                            tasksTreeView.Items.Refresh();
-                        }
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
 
                         return;
 
                     case MyTask.Gptmd:
                         var gptmddialog = new GptmdTaskWindow(preRunTask.metaMorpheusTask as GptmdTask);
                         gptmddialog.ShowDialog();
-                        if (gptmddialog.TheTask.CommonParameters.TaskID != null)
-                        {
-                            preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + gptmddialog.TheTask.CommonParameters.TaskID;
-                            tasksTreeView.Items.Refresh();
-                        }
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + gptmddialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
 
                         return;
 
                     case MyTask.Calibrate:
                         var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
-                        if (calibratedialog.TheTask.CommonParameters.TaskID != null)
-                        {
-                            preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + calibratedialog.TheTask.CommonParameters.TaskID;
-                            tasksTreeView.Items.Refresh();
-                        }
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + calibratedialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
                         return;
 
                     case MyTask.XLSearch:
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
-                        if (XLSearchdialog.TheTask.CommonParameters.TaskID != null)
-                        {
-                            preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskID;
-                            tasksTreeView.Items.Refresh();
-                        }
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
                         return;
                 }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
-                System.Diagnostics.Process.Start(fileThing.Id);
+                System.Diagnostics.Process.Start(fileThing.fullPath);
             }
         }
 
