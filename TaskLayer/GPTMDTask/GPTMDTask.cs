@@ -4,11 +4,11 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Gptmd;
 using IO.MzML;
 
-#if ONLYNETSTANDARD
-#else
+#if NET461
 
 using IO.Thermo;
 
+#else
 #endif
 
 using MassSpectrometry;
@@ -135,13 +135,13 @@ namespace TaskLayer
                     if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
-#if ONLYNETSTANDARD
+#if NET461
+                        myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
+#else
                     {
                         Warn("No capability for reading " + origDataFile);
                         return;
                     }
-#else
-                        myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
 #endif
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
