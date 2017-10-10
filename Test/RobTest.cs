@@ -320,7 +320,7 @@ namespace Test
 
             if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm 5",
-                        "--sil true",
+                        "--sil false",
                         "--pau false",
                         "--mbr true" }
                 ))
