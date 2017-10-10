@@ -6,16 +6,16 @@ namespace TaskLayer
     {
         #region Public Constructors
 
-        public SingleTaskEventArgs(string theTask)
+        public SingleTaskEventArgs(string displayName)
         {
-            this.TaskId = theTask;
+            this.DisplayName = displayName;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public string TaskId { get; private set; }
+        public string DisplayName { get; private set; }
 
         #endregion Public Properties
     }
