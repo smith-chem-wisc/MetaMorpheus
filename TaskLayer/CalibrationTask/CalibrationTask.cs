@@ -4,11 +4,11 @@ using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using IO.MzML;
 
-#if ONLYNETSTANDARD
-#else
+#if NET461
 
 using IO.Thermo;
 
+#else
 #endif
 
 using MassSpectrometry;
@@ -140,13 +140,13 @@ namespace TaskLayer
                         if (Path.GetExtension(currentDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                             myMsDataFile = Mzml.LoadAllStaticData(currentDataFile);
                         else
-#if ONLYNETSTANDARD
+#if NET461
+                            myMsDataFile = ThermoStaticData.LoadAllStaticData(currentDataFile);
+#else
                         {
                             Warn("No capability for reading " + currentDataFile);
                             return;
                         }
-#else
-                            myMsDataFile = ThermoStaticData.LoadAllStaticData(currentDataFile);
 #endif
                     }
 
