@@ -87,7 +87,6 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal XLSearchTask TheTask { get; private set; }
-
         #endregion Internal Properties
 
         #region Private Methods
@@ -187,6 +186,8 @@ namespace MetaMorpheusGUI
             ckbPercolator.IsChecked = task.XlSearchParameters.XlOutPercolator;
             ckbCrosslink.IsChecked = task.XlSearchParameters.XlOutCrosslink;
             ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
+
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -290,6 +291,8 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.UdXLkerTotalMass = double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
             }
 
+
+            
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
@@ -312,6 +315,12 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.XlOutCLMSVault = ckbCLMSVault.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+
+
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.TaskDescriptor = "XLSearchTask";
 
             TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)

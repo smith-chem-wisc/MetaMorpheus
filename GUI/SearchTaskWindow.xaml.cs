@@ -24,11 +24,9 @@ namespace MetaMorpheusGUI
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
 
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
-
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -200,6 +198,8 @@ namespace MetaMorpheusGUI
             TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
             MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
 
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
+
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -347,8 +347,11 @@ namespace MetaMorpheusGUI
             }
 
             #endregion Check Task Validity
-
             #region Save Parameters
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.TaskDescriptor = "SearchTask";
 
             TheTask.CommonParameters.TrimMs1Peaks = trimMs1.IsChecked.Value;
             TheTask.CommonParameters.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
@@ -488,6 +491,7 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

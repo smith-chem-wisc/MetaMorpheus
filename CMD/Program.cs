@@ -123,8 +123,7 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Starting task:");
-            Console.WriteLine(e.TaskId);
+            Console.WriteLine("Starting task: " + e.DisplayName);
         }
 
         private static void MyTaskEngine_finishedWritingFileHandler(object sender, SingleFileEventArgs e)
@@ -140,7 +139,7 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Finished task: " + e.TaskId.GetType().Name);
+            Console.WriteLine("Finished task: " + e.DisplayName);
         }
 
         private static void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
