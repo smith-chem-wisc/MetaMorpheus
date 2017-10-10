@@ -53,6 +53,7 @@ namespace MetaMorpheusGUI
         #region Internal Properties
 
         internal GptmdTask TheTask { get; private set; }
+
         #endregion Internal Properties
 
         #region Private Methods
@@ -89,7 +90,6 @@ namespace MetaMorpheusGUI
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
-
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -297,7 +297,6 @@ namespace MetaMorpheusGUI
 
             DialogResult = true;
         }
-
 
         #endregion Private Methods
     }

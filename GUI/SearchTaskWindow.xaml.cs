@@ -27,6 +27,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -347,7 +348,9 @@ namespace MetaMorpheusGUI
             }
 
             #endregion Check Task Validity
+
             #region Save Parameters
+
             if (OutputFileNameTextBox.Text != "")
                 TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
             else
@@ -383,7 +386,7 @@ namespace MetaMorpheusGUI
                 else //if (radioButtonSlideDecoy.IsChecked.Value)
                     TheTask.SearchParameters.DecoyType = DecoyType.Slide;
             }
-            else 
+            else
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
@@ -491,7 +494,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
