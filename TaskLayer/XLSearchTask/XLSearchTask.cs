@@ -265,11 +265,11 @@ namespace TaskLayer
             if (XlSearchParameters.XlOutAll)
             {
                 WriteAllToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
-
             }
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).ToList();
 
             #region Inter Crosslink
+
             //Write Inter Psms FDR
             var interPsmsXL = allPsmsXL.Where(p => !p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) &&
             !p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLTotalScore).ToList();
@@ -298,9 +298,11 @@ namespace TaskLayer
                 var interPsmsXLPercolator = interPsmsXL.Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).OrderBy(p => p.ScanNumber).ToList();
                 WriteCrosslinkToTxtForPercolator(interPsmsXLPercolator, OutputFolder, "xl_inter_perc", crosslinker, new List<string> { taskId });
             }
-            #endregion
+
+            #endregion Inter Crosslink
 
             #region Intra Cross-link
+
             //Write Intra Psms FDR
             var intraPsmsXL = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() ||
             p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) ||
@@ -330,7 +332,9 @@ namespace TaskLayer
                 var intraPsmsXLPercolator = intraPsmsXL.Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).OrderBy(p => p.ScanNumber).ToList();
                 WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
             }
-            #endregion
+
+            #endregion Intra Cross-link
+
             return myTaskResults;
         }
 
@@ -419,9 +423,9 @@ namespace TaskLayer
                     cumulative_decoy_decoy++;
                 }
 
-                double temp_q_value = (double)(cumulative_decoy - 2*cumulative_decoy_decoy) / (cumulative_target + cumulative_decoy);
+                double temp_q_value = (double)(cumulative_decoy - 2 * cumulative_decoy_decoy) / (cumulative_target + cumulative_decoy);
                 item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-// item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                // item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
             }
 
             double min_q_value = double.PositiveInfinity;
@@ -439,7 +443,7 @@ namespace TaskLayer
                 }
                 else if (id.FdrInfo.QValue < min_q_value)
                 {
-                    min_q_value = id.FdrInfo.QValue;                   
+                    min_q_value = id.FdrInfo.QValue;
                 }
             }
             return ids;

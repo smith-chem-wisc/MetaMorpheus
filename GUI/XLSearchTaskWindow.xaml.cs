@@ -168,7 +168,7 @@ namespace MetaMorpheusGUI
             cbbXLBetaprecusorMsTl.SelectedIndex = task.XlSearchParameters.XlPrecusorMsTl is AbsoluteTolerance ? 0 : 1;
             txtXLBetaPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
-            checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType!=DecoyType.None;
+            checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -187,6 +187,8 @@ namespace MetaMorpheusGUI
             ckbPercolator.IsChecked = task.XlSearchParameters.XlOutPercolator;
             ckbCrosslink.IsChecked = task.XlSearchParameters.XlOutCrosslink;
             ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
+
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -312,6 +314,11 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.XlOutCLMSVault = ckbCLMSVault.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.TaskDescriptor = "XLSearchTask";
 
             TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)

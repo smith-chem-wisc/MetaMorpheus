@@ -24,7 +24,6 @@ namespace MetaMorpheusGUI
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
 
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
-
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
@@ -200,6 +199,8 @@ namespace MetaMorpheusGUI
             TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
             MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
 
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
+
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -350,6 +351,11 @@ namespace MetaMorpheusGUI
 
             #region Save Parameters
 
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.TaskDescriptor = "SearchTask";
+
             TheTask.CommonParameters.TrimMs1Peaks = trimMs1.IsChecked.Value;
             TheTask.CommonParameters.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             TheTask.CommonParameters.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
@@ -380,7 +386,7 @@ namespace MetaMorpheusGUI
                 else //if (radioButtonSlideDecoy.IsChecked.Value)
                     TheTask.SearchParameters.DecoyType = DecoyType.Slide;
             }
-            else 
+            else
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
