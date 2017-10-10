@@ -23,7 +23,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -83,9 +82,7 @@ namespace MetaMorpheusGUI
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
-
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
-
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {

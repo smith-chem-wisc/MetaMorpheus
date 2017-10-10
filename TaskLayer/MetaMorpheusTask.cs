@@ -49,7 +49,6 @@ namespace TaskLayer
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
 
-
         #endregion Public Fields
 
         #region Protected Fields
