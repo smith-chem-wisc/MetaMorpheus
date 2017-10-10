@@ -20,7 +20,7 @@ namespace Test
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
-            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, null);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Environment.CurrentDirectory);
 
             a.Run();
 
