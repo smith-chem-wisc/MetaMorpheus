@@ -15,15 +15,15 @@
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top">
                     <Grid>
-                        <Label Content="Output File Name" Margin="0,0,0,0"/>
-                        <TextBox x:Name="OutputFileNameTextBox" Margin="100,0,0,0" Width="150" HorizontalContentAlignment="Center" VerticalAlignment="Center"  HorizontalAlignment="Left" Height="27" TextAlignment="Left" VerticalContentAlignment="Center"/>
+                        <Label Content="Output File Name" Margin="0,0,0,0" />
+                        <TextBox x:Name="OutputFileNameTextBox" Margin="100,0,0,0" Width="150" HorizontalContentAlignment="Center" VerticalAlignment="Center"  HorizontalAlignment="Left" Height="27" TextAlignment="Left" VerticalContentAlignment="Center" />
                         <TextBlock Text="SearchTask" Margin="115,0,0,0" IsHitTestVisible="False" VerticalAlignment="Center"  HorizontalAlignment="Left"  Foreground="DarkGray">
                             <TextBlock.Style>
                                 <Style TargetType="{x:Type TextBlock}">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Text, ElementName=OutputFileNameTextBox}" Value="">
-                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Setter Property="Visibility" Value="Visible" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -132,7 +132,7 @@
                                         <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" />
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" />
                                         <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
-                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}"/>
+                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
@@ -141,7 +141,6 @@
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" />
                                         </StackPanel>
-
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">

@@ -146,7 +146,7 @@ namespace TaskLayer
                             return;
                         }
 #else
-                        myMsDataFile = ThermoStaticData.LoadAllStaticData(currentDataFile);
+                            myMsDataFile = ThermoStaticData.LoadAllStaticData(currentDataFile);
 #endif
                     }
 

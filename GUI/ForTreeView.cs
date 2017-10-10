@@ -22,7 +22,7 @@ namespace MetaMorpheusGUI
             DisplayName = displayName;
             Children = new ObservableCollection<ForTreeView>();
         }
-        
+
         #endregion Public Constructors
 
         #region Public Events
