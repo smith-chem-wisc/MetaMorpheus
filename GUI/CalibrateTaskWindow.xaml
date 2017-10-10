@@ -13,11 +13,11 @@
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Bottom">
+                <StackPanel DockPanel.Dock="Top">
                     <Grid>
                         <Label Content="Output File Name" Margin="0,0,0,0"/>
                         <TextBox x:Name="OutputFileNameTextBox" Margin="100,0,0,0" Width="150" HorizontalContentAlignment="Center" VerticalAlignment="Center"  HorizontalAlignment="Left" Height="27" TextAlignment="Left" VerticalContentAlignment="Center"/>
-                        <TextBlock Text="Enter Task Name" Margin="115,0,0,0" IsHitTestVisible="False" VerticalAlignment="Center"  HorizontalAlignment="Left"  Foreground="DarkGray">
+                        <TextBlock Text="CalibrateTask" Margin="115,0,0,0" IsHitTestVisible="False" VerticalAlignment="Center"  HorizontalAlignment="Left"  Foreground="DarkGray">
                             <TextBlock.Style>
                                 <Style TargetType="{x:Type TextBlock}">
                                     <Setter Property="Visibility" Value="Collapsed"/>

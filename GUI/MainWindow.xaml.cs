@@ -311,22 +311,30 @@ namespace MetaMorpheusGUI
                     {
                         case "Search":
                             var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye1));
+                            PreRunTask te1 = new PreRunTask(ye1);
+                            staticTasksObservableCollection.Add(te1);
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te1) + 1) + "-" + ye1.CommonParameters.taskID;
                             break;
 
                         case "Calibrate":
                             var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye2));
+                            PreRunTask te2 = new PreRunTask(ye2);
+                            staticTasksObservableCollection.Add(te2);
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te2) + 1) + "-" + ye2.CommonParameters.taskID;
                             break;
 
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye3));
+                            PreRunTask te3 = new PreRunTask(ye3);
+                            staticTasksObservableCollection.Add(te3);
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te3) + 1) + "-" + ye3.CommonParameters.taskID;
                             break;
 
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye4));
+                            PreRunTask te4 = new PreRunTask(ye4);
+                            staticTasksObservableCollection.Add(te4);
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te4) + 1) + "-" + ye4.CommonParameters.taskID;
                             break;
                     }
                     break;
@@ -354,15 +362,15 @@ namespace MetaMorpheusGUI
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
             {
-                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
+                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
                 if (staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != null 
                     && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != "SearchTask"
                     && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != "GPTMDTask"
                     && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != "CalibrateTask"
                     && staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID != "XLSearchTask")
                 {
-                    dynamicTasksObservableCollection[i].DisplayName = staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID;
-                    dynamicTasksObservableCollection[i].Id = staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID;
+                    dynamicTasksObservableCollection[i].DisplayName = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID;
+                    dynamicTasksObservableCollection[i].Id = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.taskID;
 
                 }
             }
@@ -436,6 +444,7 @@ namespace MetaMorpheusGUI
                 if (dialog.TheTask.CommonParameters.taskID != null)
                     task.DisplayName = dialog.TheTask.CommonParameters.taskID;
                 staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.taskID;
                 UpdateTaskGuiStuff();
             }
         }
@@ -449,6 +458,7 @@ namespace MetaMorpheusGUI
                 if (dialog.TheTask.CommonParameters.taskID != null)
                     task.DisplayName = dialog.TheTask.CommonParameters.taskID;
                 staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.taskID;
                 UpdateTaskGuiStuff();
             }
         }
@@ -462,6 +472,7 @@ namespace MetaMorpheusGUI
                 if (dialog.TheTask.CommonParameters.taskID != null)
                     task.DisplayName = dialog.TheTask.CommonParameters.taskID;
                 staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.taskID;
                 UpdateTaskGuiStuff();
             }
         }
@@ -475,6 +486,7 @@ namespace MetaMorpheusGUI
                 if (dialog.TheTask.CommonParameters.taskID != null)
                     task.DisplayName = dialog.TheTask.CommonParameters.taskID;
                 staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.taskID;
                 UpdateTaskGuiStuff();
             }
         }
@@ -702,7 +714,7 @@ namespace MetaMorpheusGUI
 
                         if (searchDialog.TheTask.CommonParameters.taskID != null)
                         {
-                            preRunTask.DisplayName = searchDialog.TheTask.CommonParameters.taskID;
+                            preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParameters.taskID;
                             tasksTreeView.Items.Refresh();
                         }
 
@@ -713,7 +725,7 @@ namespace MetaMorpheusGUI
                         gptmddialog.ShowDialog();
                         if (gptmddialog.TheTask.CommonParameters.taskID != null)
                         {
-                            preRunTask.DisplayName = gptmddialog.TheTask.CommonParameters.taskID;
+                            preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + gptmddialog.TheTask.CommonParameters.taskID;
                             tasksTreeView.Items.Refresh();
                         }
 
@@ -724,7 +736,7 @@ namespace MetaMorpheusGUI
                         calibratedialog.ShowDialog();
                         if (calibratedialog.TheTask.CommonParameters.taskID != null)
                         {
-                            preRunTask.DisplayName = calibratedialog.TheTask.CommonParameters.taskID;
+                            preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + calibratedialog.TheTask.CommonParameters.taskID;
                             tasksTreeView.Items.Refresh();
                         }
                         return;
@@ -734,7 +746,7 @@ namespace MetaMorpheusGUI
                         XLSearchdialog.ShowDialog();
                         if (XLSearchdialog.TheTask.CommonParameters.taskID != null)
                         {
-                            preRunTask.DisplayName = XLSearchdialog.TheTask.CommonParameters.taskID;
+                            preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.taskID;
                             tasksTreeView.Items.Refresh();
                         }
                         return;

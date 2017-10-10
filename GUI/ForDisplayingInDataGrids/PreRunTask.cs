@@ -20,18 +20,7 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Public Properties
-        private string _displayName;
-        public string DisplayName
-        {
-            get
-            {
-                return _displayName;
-            }
-            set
-            {
-                _displayName = value; 
-            }
-        }
+        public string DisplayName { get; set; }
         #endregion Public Properties
     }
 }
