@@ -88,7 +88,7 @@ namespace MetaMorpheusGUI
             conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
-            OutputFileNameTextBox.Text = task.CommonParameters.taskID;
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskID;
 
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -249,9 +249,9 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
 
             if (OutputFileNameTextBox.Text != "")
-                TheTask.CommonParameters.taskID = OutputFileNameTextBox.Text;
+                TheTask.CommonParameters.TaskID = OutputFileNameTextBox.Text;
             else
-                TheTask.CommonParameters.taskID = "GPTMDTask";
+                TheTask.CommonParameters.TaskID = "GPTMDTask";
 
             if (productMassToleranceComboBox.SelectedIndex == 0)
                 TheTask.CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));

@@ -84,7 +84,7 @@ namespace MetaMorpheusGUI
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
 
-            OutputFileNameTextBox.Text = task.CommonParameters.taskID;
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskID;
 
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -223,9 +223,9 @@ namespace MetaMorpheusGUI
 
             TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();
             if (OutputFileNameTextBox.Text != "")
-                TheTask.CommonParameters.taskID = OutputFileNameTextBox.Text;
+                TheTask.CommonParameters.TaskID = OutputFileNameTextBox.Text;
             else
-                TheTask.CommonParameters.taskID = "CalibrateTask";
+                TheTask.CommonParameters.TaskID = "CalibrateTask";
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
                 TheTask.CommonParameters.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             TheTask.CommonParameters.ListOfModsFixed = new List<Tuple<string, string>>();

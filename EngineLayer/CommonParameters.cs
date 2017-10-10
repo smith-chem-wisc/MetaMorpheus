@@ -88,7 +88,7 @@ namespace EngineLayer
         public double? MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }
         public bool TrimMsMsPeaks { get; set; }
-        public string taskID { get; set; }
+        public string TaskID { get; set; }
         #endregion Public Properties
     }
 }

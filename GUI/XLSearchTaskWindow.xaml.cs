@@ -188,9 +188,9 @@ namespace MetaMorpheusGUI
             ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
 
             if (OutputFileNameTextBox.Text != "")
-                TheTask.CommonParameters.taskID = OutputFileNameTextBox.Text;
+                TheTask.CommonParameters.TaskID = OutputFileNameTextBox.Text;
             else
-                TheTask.CommonParameters.taskID = "XLSearchTask";
+                TheTask.CommonParameters.TaskID = "XLSearchTask";
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {

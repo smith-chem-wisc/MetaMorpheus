@@ -198,7 +198,7 @@ namespace MetaMorpheusGUI
             TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
             MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
 
-            OutputFileNameTextBox.Text = task.CommonParameters.taskID;
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskID;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -349,9 +349,9 @@ namespace MetaMorpheusGUI
             #endregion Check Task Validity
             #region Save Parameters
             if (OutputFileNameTextBox.Text != "")
-                TheTask.CommonParameters.taskID = OutputFileNameTextBox.Text;
+                TheTask.CommonParameters.TaskID = OutputFileNameTextBox.Text;
             else
-                TheTask.CommonParameters.taskID = "SearchTask";
+                TheTask.CommonParameters.TaskID = "SearchTask";
 
             TheTask.CommonParameters.TrimMs1Peaks = trimMs1.IsChecked.Value;
             TheTask.CommonParameters.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
