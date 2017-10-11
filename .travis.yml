@@ -8,8 +8,8 @@ script:
 - dotnet CMD/bin/Release/netcoreapp2.0/CMD.dll -t Examples/Task1SearchExample.toml Examples/Task2CalibrationExample.toml Examples/Task3SearchExample.toml Examples/Task4GptmdExample.toml Examples/Task5SearchExample.toml -s Examples/example.mzML -d Examples/mouse-10.xml
 - dotnet test Test/Test.csproj
 - ls CMD/bin/Release/netcoreapp2.0
-- dotnet publish
-- dotnet publish CMD/CMD.csproj
+- dotnet publish -f netcoreapp2.0
+- dotnet publish CMD/CMD.csproj -f netcoreapp2.0
 deploy:
   provider: releases
   api_key:
