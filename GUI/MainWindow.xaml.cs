@@ -80,6 +80,7 @@ namespace MetaMorpheusGUI
 
             UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
+            UpdateOutputFolderTextbox();
         }
 
         #endregion Public Constructors
@@ -186,9 +187,13 @@ namespace MetaMorpheusGUI
                     select possibleMatch;
 
                 OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
+                OutputFolderTextBox.IsEnabled = true;
             }
             else
+            {
                 OutputFolderTextBox.Clear();
+                OutputFolderTextBox.IsEnabled = false;
+            }
         }
 
         private void Po_startingSingleTaskHander(object sender, SingleTaskEventArgs s)
