@@ -46,9 +46,7 @@ namespace Test
         [Test]
         public static void TestTomlForSpecficFiles()
         {
-            var dir = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).ToString()).ToString();
-            var file = Directory.GetFiles(dir, Path.GetFileNameWithoutExtension("testFileSpecfic") + ".to*");
-            var fileSpecificToml = Toml.ReadFile(file[0], MetaMorpheusTask.tomlConfig);
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
             Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "Asp-N");
             Assert.IsFalse(tomlSettingsList.ContainsKey("MaxMissedCleavages"));
