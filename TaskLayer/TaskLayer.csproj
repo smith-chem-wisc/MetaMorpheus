@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp2.0</TargetFrameworks>
+    <DebugType>full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
