@@ -172,8 +172,8 @@ namespace MetaMorpheusGUI
                 }
                 foreach (var newRawData in e.StringList)
                     rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
+                UpdateOutputFolderTextbox();
             }
-            UpdateOutputFolderTextbox();
         }
 
         private void UpdateOutputFolderTextbox()
