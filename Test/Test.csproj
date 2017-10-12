@@ -45,8 +45,9 @@
     <Reference Include="Chemistry, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.246\lib\net45\Chemistry.dll</HintPath>
     </Reference>
-    <Reference Include="FlashLFQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\FlashLFQ.0.1.95\lib\net461\FlashLFQ.dll</HintPath>
+    <Reference Include="FlashLFQ">
+      <HintPath>..\packages\FlashLFQ.0.1.98\lib\net461\FlashLFQ.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.246.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.246\lib\net45\ManagedThermoHelperLayer.dll</HintPath>
