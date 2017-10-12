@@ -447,7 +447,7 @@ namespace TaskLayer
             return ids;
         }
 
-        private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)
+        private void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)
         {
             var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
             var ser = new NetSerializer.Serializer(messageTypes);
