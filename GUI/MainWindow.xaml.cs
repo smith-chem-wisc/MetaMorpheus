@@ -275,23 +275,26 @@ namespace MetaMorpheusGUI
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files != null)
-                foreach (var draggedFilePath in files)
-                {
-                    if (Directory.Exists(draggedFilePath))
-                        foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
-                        {
-                            AddAFile(file);
-                        }
-                    else
+            if (LoadTaskButton.IsEnabled)
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files != null)
+                    foreach (var draggedFilePath in files)
                     {
-                        AddAFile(draggedFilePath);
+                        if (Directory.Exists(draggedFilePath))
+                            foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
+                            {
+                                AddAFile(file);
+                            }
+                        else
+                        {
+                            AddAFile(draggedFilePath);
+                        }
+                        dataGridDatafiles.Items.Refresh();
+                        dataGridXMLs.Items.Refresh();
                     }
-                    dataGridDatafiles.Items.Refresh();
-                    dataGridXMLs.Items.Refresh();
-                }
-            UpdateTaskGuiStuff();
+                UpdateTaskGuiStuff();
+            }
         }
 
         private void AddAFile(string draggedFilePath)
@@ -587,9 +590,6 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                //statusLabel.Content = "Starting all tasks...";
-                //outProgressBar.IsIndeterminate = true;
-
                 dataGridDatafiles.Items.Refresh();
 
                 ClearTasksButton.IsEnabled = false;
@@ -623,7 +623,6 @@ namespace MetaMorpheusGUI
             else
             {
                 ResetTasksButton.IsEnabled = true;
-                OutputFolderTextBox.IsEnabled = true;
 
                 dataGridDatafiles.Items.Refresh();
             }
@@ -667,6 +666,7 @@ namespace MetaMorpheusGUI
             addSearchTaskButton.IsEnabled = true;
             btnAddCrosslinkSearch.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
+            OutputFolderTextBox.IsEnabled = true;
 
             proteinDatabasesGroupBox.IsEnabled = true;
             datafilesGroupBox.IsEnabled = true;
