@@ -50,6 +50,7 @@ namespace MetaMorpheusCommandLine
 
                 MetaMorpheusTask.WarnHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+                MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
                 foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))

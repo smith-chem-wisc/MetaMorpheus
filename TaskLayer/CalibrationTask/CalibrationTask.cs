@@ -176,62 +176,6 @@ namespace TaskLayer
 
                     mzSepLearners = mzSepLearners.Select(b => new SeparateMzLearner(b) as ILearner<double>).ToList();
 
-                    var learners = new List<ILearner<double>>
-                    {
-                        new LinearCalibrationFunctionMathNet(new int[] { }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 4 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 2 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 2 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 3, 4 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 2, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 2, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 3, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 2, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 2, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 3, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2, 3, 4 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 3, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 2, 3, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 2, 3, 4 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2, 3, 4 }),
-
-                        new RegressionAbsoluteLossGradientBoostLearner(iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
-                    };
-
-                    var intLearners = new List<ILearner<double>>
-                    {
-                        new LinearCalibrationFunctionMathNet(new int[] { }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0 }),
-
-                        new RegressionAbsoluteLossGradientBoostLearner(iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
-                    };
-
                     (int count, DataPointAquisitionResults datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
                     if (datapointAcquisitionResult == null)

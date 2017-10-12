@@ -30,19 +30,11 @@ namespace Test
         [OneTimeSetUp]
         public static void Setup()
         {
-            //Console.WriteLine("Setting up tests...");
-            //Console.WriteLine("Environment.CurrentDirectory is " + Environment.CurrentDirectory);
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
-            //Console.WriteLine("Now Environment.CurrentDirectory is " + Environment.CurrentDirectory);
             Loaders.LoadElements(Path.Combine(TestContext.CurrentContext.TestDirectory, elementsLocation));
 
-            //MyEngine.unimodDeserialized = Loaders.LoadUnimod(Path.Combine(TestContext.CurrentContext.TestDirectory, unimodLocation));
-            //MyEngine.uniprotDeseralized = Loaders.LoadUniprot(Path.Combine(TestContext.CurrentContext.TestDirectory, uniprotLocation));
-
-            //MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
             MetaMorpheusEngine.WarnHandler += WarnStatusHandler;
             MetaMorpheusTask.WarnHandler += WarnStatusHandler;
-            //MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_FinishedSingleEngineHandler;
 
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
         }
@@ -54,11 +46,6 @@ namespace Test
         private static void SuccessfullyFinishedAllTasks(object sender, StringEventArgs rootOutputFolderPath)
         {
             outputFolder = rootOutputFolderPath.s;
-        }
-
-        private static void MyEngine_FinishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
-        {
-            //Console.WriteLine(e.ToString());
         }
 
         private static void WarnStatusHandler(object sender, StringEventArgs e)

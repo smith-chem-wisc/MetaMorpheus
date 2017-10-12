@@ -418,14 +418,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateRawFileGuiStuff()
         {
-            if (SelectedRawFiles.Count == 0)
-            {
-                ChangeFileParameters.IsEnabled = false;
-            }
-            else
-            {
-                ChangeFileParameters.IsEnabled = true;
-            }
+            ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0;
         }
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
