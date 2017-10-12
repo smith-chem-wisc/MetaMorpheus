@@ -28,7 +28,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -38,7 +38,7 @@ namespace EngineLayer.ModernSearch
             this.currentPartition = currentPartition + 1;
             this.CommonParameters = CommonParameters;
             this.addCompIons = addCompIons;
-            this.massDiffAcceptor = massDiffAcceptors;
+            this.massDiffAcceptor = massDiffAcceptor;
             this.dissociationTypes = DetermineDissociationType(lp);
         }
 
@@ -46,29 +46,13 @@ namespace EngineLayer.ModernSearch
 
         #region Protected Methods
 
-        protected static List<int> IdentifyMostCommonBinsAll(List<int>[] fragmentIndex)
-        {
-            Tuple<int, int>[] mostCommonBins = new Tuple<int, int>[500];
-            for (int i = 0; i < mostCommonBins.Length; i++)
-                mostCommonBins[i] = new Tuple<int, int>(0, 0);
-            for (int i = 0; i < fragmentIndex.Length; i++)
-            {
-                if (fragmentIndex[i] != null && mostCommonBins[499].Item2 < fragmentIndex[i].Count)
-                {
-                    mostCommonBins[499] = new Tuple<int, int>(i, fragmentIndex[i].Count);
-                    mostCommonBins = mostCommonBins.OrderByDescending(s => s.Item2).ToArray();
-                }
-            }
-            return mostCommonBins.ToList().Select(s => s.Item1).ToList();
-        }
-
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             double progress = 0;
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing modern search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
 
-            byte byteScoreCutoff = Convert.ToByte((int)CommonParameters.ScoreCutoff);
+            byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
             {
