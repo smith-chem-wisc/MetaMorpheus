@@ -13,7 +13,7 @@ namespace EngineLayer.Indexing
     {
         #region Private Fields
 
-        private const int decimalDigitsForFragmentMassRounding = 3;
+        private const int fragmentBinsPerDalton = 1000;
         private readonly List<Protein> proteinList;
 
         private readonly List<ModificationWithMass> fixedModifications;
@@ -22,13 +22,14 @@ namespace EngineLayer.Indexing
         private readonly int currentPartition;
         private readonly DecoyType decoyType;
         private readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
-        private readonly int totalPartitions;
+        private readonly CommonParameters commonParams;
+        private readonly double maxFragmentSize;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -37,7 +38,8 @@ namespace EngineLayer.Indexing
             this.currentPartition = currentPartition + 1;
             this.decoyType = decoyType;
             this.CollectionOfDigestionParams = CollectionOfDigestionParams;
-            this.totalPartitions = totalPartitions;
+            this.commonParams = commonParams;
+            this.maxFragmentSize = maxFragmentSize;
         }
 
         #endregion Public Constructors
@@ -47,7 +49,7 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Partitions: " + currentPartition + "/" + totalPartitions);
+            sb.AppendLine("Partitions: " + currentPartition + "/" + commonParams.TotalPartitions);
             sb.AppendLine("Search Decoys: " + decoyType);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
@@ -72,87 +74,100 @@ namespace EngineLayer.Indexing
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            var myDictionary = new List<CompactPeptide>();
-            var myFragmentDictionary = new Dictionary<float, List<int>>(100000);
-            int totalProteins = proteinList.Count;
-            var observed_sequences = new HashSet<CompactPeptide>();
-            int proteinsSeen = 0;
-            int old_progress = 0;
+            double progress = 0;
+            int oldPercentProgress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+
+            // digest database
+            HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
+
+            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParams.MaxThreadsToUsePerFile }, range =>
             {
-                var myInnerDictionary = new Dictionary<float, List<int>>(100000);
-                for (int i = fff.Item1; i < fff.Item2; i++)
+                for (int i = range.Item1; i < range.Item2; i++)
                 {
-                    var protein = proteinList[i];
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        var digestedList = protein.Digest(digestionParams, fixedModifications).ToList();
+                        var digestedList = proteinList[i].Digest(digestionParams, fixedModifications);
                         foreach (var peptide in digestedList)
                         {
-                            var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
-                            foreach (var yyy in ListOfModifiedPeptides)
+                            var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(digestionParams, variableModifications);
+
+                            foreach (PeptideWithSetModifications pepWithSetMods in ListOfModifiedPeptides)
                             {
-                                var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
-                                var observed = observed_sequences.Contains(correspondingCompactPeptide);
+                                CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
+
+                                var observed = peptideToId.Contains(compactPeptide);
                                 if (observed)
                                     continue;
-                                lock (observed_sequences)
+                                lock (peptideToId)
                                 {
-                                    observed = observed_sequences.Contains(correspondingCompactPeptide);
+                                    observed = peptideToId.Contains(compactPeptide);
                                     if (observed)
                                         continue;
-                                    observed_sequences.Add(correspondingCompactPeptide);
-                                }
-
-                                int index;
-                                lock (myDictionary)
-                                {
-                                    index = myDictionary.Count;
-                                    myDictionary.Add(correspondingCompactPeptide);
-                                }
-
-                                foreach (var huhu in correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp))
-                                {
-                                    if (!double.IsNaN(huhu))
-                                    {
-                                        var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
-                                        if (myInnerDictionary.TryGetValue(rounded, out List<int> value))
-                                        {
-                                            if (!value.Contains(index))
-                                                value.Add(index);
-                                        }
-                                        else
-                                            myInnerDictionary.Add(rounded, new List<int> { index });
-                                    }
+                                    peptideToId.Add(compactPeptide);
                                 }
                             }
                         }
                     }
-                }
-                lock (myFragmentDictionary)
-                {
-                    foreach (var huhu in myInnerDictionary)
+
+                    progress++;
+                    var percentProgress = (int)((progress / proteinList.Count) * 100);
+
+                    if (percentProgress > oldPercentProgress)
                     {
-                        foreach (var hhhh in huhu.Value)
-                        {
-                            if (myFragmentDictionary.TryGetValue(huhu.Key, out List<int> value))
-                                value.Add(hhhh);
-                            else
-                                myFragmentDictionary.Add(huhu.Key, new List<int> { hhhh });
-                        }
-                    }
-                    proteinsSeen += fff.Item2 - fff.Item1;
-                    var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
-                    if (new_progress > old_progress)
-                    {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In indexing loop", nestedIds));
-                        old_progress = new_progress;
+                        oldPercentProgress = percentProgress;
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins...", nestedIds));
                     }
                 }
             });
 
-            return new IndexingResults(myDictionary, myFragmentDictionary, this);
+            // sort peptides by mass
+            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParams.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
+            peptideToId = null;
+
+            // create fragment index
+            List<int>[] fragmentIndex;
+
+            try
+            {
+                fragmentIndex = new List<int>[(int)Math.Ceiling(maxFragmentSize) * fragmentBinsPerDalton];
+            }
+            catch (OutOfMemoryException)
+            {
+                throw new MetaMorpheusException("Max fragment mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
+            }
+
+            // populate fragment index
+            progress = 0;
+            oldPercentProgress = 0;
+            for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
+            {
+                var validFragments = peptidesSortedByMass[peptideId].ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p));
+
+                foreach (var theoreticalFragmentMass in validFragments)
+                {
+                    if (theoreticalFragmentMass < maxFragmentSize)
+                    {
+                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * fragmentBinsPerDalton);
+
+                        if (fragmentIndex[fragmentBin] == null)
+                            fragmentIndex[fragmentBin] = new List<int> { peptideId };
+                        else
+                            fragmentIndex[fragmentBin].Add(peptideId);
+                    }
+                }
+
+                progress++;
+                var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
+
+                if (percentProgress > oldPercentProgress)
+                {
+                    oldPercentProgress = percentProgress;
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index...", nestedIds));
+                }
+            }
+
+            return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
         }
 
         #endregion Protected Methods

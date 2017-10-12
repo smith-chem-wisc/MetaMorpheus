@@ -26,9 +26,11 @@ namespace TaskLayer
 
         public XLSearchTask() : base(MyTask.XLSearch)
         {
-            CommonParameters = new CommonParameters();
-            CommonParameters.DoPrecursorDeconvolution = false;
-            CommonParameters.ConserveMemory = false;
+            CommonParameters = new CommonParameters
+            {
+                DoPrecursorDeconvolution = false,
+                ConserveMemory = false
+            };
             XlSearchParameters = new XlSearchParameters();
         }
 
@@ -136,8 +138,8 @@ namespace TaskLayer
                 crosslinker.CrosslinkerModSite = XlSearchParameters.UdXLkerResidue;
             }
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
+            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             MyFileManager myFileManager = new MyFileManager(XlSearchParameters.DisposeOfFileWhenDone);
 
             int completedFiles = 0;
@@ -195,9 +197,8 @@ namespace TaskLayer
                     #region Generate indices for modern search
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.DecoyType, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.DecoyType, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string> { taskId });
 
-                    Dictionary<float, List<int>> fragmentIndexDict;
                     lock (indexLock)
                     {
                         string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -211,12 +212,11 @@ namespace TaskLayer
                             Status("Running Index Engine...", new List<string> { taskId });
                             var indexResults = (IndexingResults)indexEngine.Run();
                             peptideIndex = indexResults.PeptideIndex;
-                            fragmentIndexDict = indexResults.FragmentIndexDict;
 
                             Status("Writing peptide index...", new List<string> { taskId });
                             WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
                             Status("Writing fragment index...", new List<string> { taskId });
-                            WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
+                            WriteFragmentIndexNetSerializer(fragmentIndex, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
                         }
                         else
                         {
@@ -230,11 +230,9 @@ namespace TaskLayer
                             messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
                             ser = new NetSerializer.Serializer(messageTypes);
                             using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                                fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                                fragmentIndex = (List<int>[])ser.Deserialize(file);
                         }
                     }
-                    keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-                    fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
                     #endregion Generate indices for modern search
 
@@ -488,7 +486,7 @@ namespace TaskLayer
             return null;
         }
 
-        private void WriteFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile, string taskId)
+        private void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)
         {
             var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
             var ser = new NetSerializer.Serializer(messageTypes);
