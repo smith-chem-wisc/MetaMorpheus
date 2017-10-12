@@ -30,9 +30,7 @@ namespace EngineLayer
             ConserveMemory = true;
             MaxParallelFilesToAnalyze = 1;
 
-            MaxThreadsToUsePerFile = Environment.ProcessorCount;
-            if (MaxThreadsToUsePerFile > 1)
-                MaxThreadsToUsePerFile--;
+            MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;
 
             ScoreCutoff = 5;
 
