@@ -191,26 +191,6 @@ namespace EngineLayer.ModernSearch
             return binsToSearch;
         }
 
-        protected List<int> MostCommonBinsFound(List<int> binsToSearch, List<int> mostCommonBins, int intScoreCutoff, bool addCompIons)
-        {
-            int numChecksSkipped = 1;
-            List<int> commonBinsFound = new List<int>();
-            for (int commonBin = 0; commonBin < mostCommonBins.Count; commonBin++)
-            {
-                if (numChecksSkipped == intScoreCutoff)
-                    break;
-                if (binsToSearch.Contains(mostCommonBins[commonBin]))
-                {
-                    numChecksSkipped++;
-                    binsToSearch.Remove(mostCommonBins[commonBin]);
-                    commonBinsFound.Add(mostCommonBins[commonBin]);
-                    if (addCompIons)
-                        commonBin--;
-                }
-            }
-            return commonBinsFound;
-        }
-
         #endregion Protected Methods
 
         #region Private Methods
@@ -236,39 +216,6 @@ namespace EngineLayer.ModernSearch
             if (m > 0)
                 m--;
             return m;
-        }
-
-        private void IndexedScoringForFrequentFragments(List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor, double highestMassPeptideToLookFor)
-        {
-            // get all theoretical fragments this experimental fragment could be
-            for (int i = 0; i < binsToSearch.Count; i++)
-            {
-                List<int> peptideIdsInThisBin = fragmentIndex[binsToSearch[i]];
-
-                //get index for minimum monoisotopic allowed
-                int m = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, lowestMassPeptideToLookFor);
-
-                // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
-                if (!Double.IsInfinity(highestMassPeptideToLookFor))
-                {
-                    for (int h = m; h < peptideIdsInThisBin.Count; h++)
-                    {
-                        int id = peptideIdsInThisBin[h];
-                        scoringTable[id]++;
-
-                        if (peptideIndex[id].MonoisotopicMassIncludingFixedMods > highestMassPeptideToLookFor)
-                            break;
-                    }
-                }
-                else
-                {
-                    for (int h = m; h < peptideIdsInThisBin.Count; h++)
-                    {
-                        int id = peptideIdsInThisBin[h];
-                        scoringTable[id]++;
-                    }
-                }
-            }
         }
 
         private void IndexedScoring(List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor, double highestMassPeptideToLookFor)
