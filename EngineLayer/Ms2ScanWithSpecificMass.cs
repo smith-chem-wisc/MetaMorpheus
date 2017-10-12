@@ -1,5 +1,4 @@
-﻿using System;
-using Chemistry;
+﻿using Chemistry;
 using MassSpectrometry;
 
 namespace EngineLayer

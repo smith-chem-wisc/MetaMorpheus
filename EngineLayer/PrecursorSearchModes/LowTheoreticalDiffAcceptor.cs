@@ -1,6 +1,6 @@
 ﻿using MzLibUtil;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 
 namespace EngineLayer
 {
@@ -42,4 +42,3 @@ namespace EngineLayer
         #endregion Public Methods
     }
 }
-

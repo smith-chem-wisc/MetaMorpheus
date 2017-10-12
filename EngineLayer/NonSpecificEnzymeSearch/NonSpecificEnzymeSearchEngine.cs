@@ -1,5 +1,4 @@
 ﻿using Chemistry;
-using MassSpectrometry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -83,7 +82,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id])+1;
+                        int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
                         while (maxInitialScore != intScoreCutoff)
                         {
                             maxInitialScore--;
@@ -186,6 +185,5 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         }
 
         #endregion Private Methods
-
     }
 }

@@ -10,9 +10,9 @@ namespace EngineLayer.ModernSearch
 {
     public class ModernSearchEngine : MetaMorpheusEngine
     {
-
         #region Protected Fields
 
+        protected const int fragmentBinsPerDalton = 1000;
         protected readonly List<int>[] fragmentIndex;
         protected readonly Psm[] globalPsms;
         protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
@@ -23,7 +23,6 @@ namespace EngineLayer.ModernSearch
         protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
-        protected const int fragmentBinsPerDalton = 1000;
 
         #endregion Protected Fields
 
@@ -181,8 +180,8 @@ namespace EngineLayer.ModernSearch
                     //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
                     for (int j = 0; j < dissociationTypes.Count; j++)
                     {
-                        int compFragmentFloorMass = (int) Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
-                        int compFragmentCeilingMass = (int) Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentFloorMass;
+                        int compFragmentFloorMass = (int)Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
+                        int compFragmentCeilingMass = (int)Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentFloorMass;
                         for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
                             if (fragmentIndex[fragmentBin] != null)
                                 binsToSearch.Add(fragmentBin);
@@ -315,6 +314,5 @@ namespace EngineLayer.ModernSearch
         }
 
         #endregion Private Methods
-
     }
 }
