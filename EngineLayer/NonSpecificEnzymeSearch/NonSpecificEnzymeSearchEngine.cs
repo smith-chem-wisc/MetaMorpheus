@@ -38,8 +38,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             int intScoreCutoff = (int)CommonParameters.ScoreCutoff;
             byte byteScoreCutoff = Convert.ToByte(intScoreCutoff);
 
-            List<int> mostCommonBins = IdentifyMostCommonBinsAll(fragmentIndex);
-
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
             {
                 byte[] scoringTable = new byte[peptideIndex.Count];
@@ -59,17 +57,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     else
                         numFragmentsToUse = scan.NumPeaks;
 
-                    var peaks = scan.TheScan.MassSpectrum.FilterByNumberOfMostIntense(numFragmentsToUse).ToList();
-                    double largestIntensity = scan.TheScan.MassSpectrum.YofPeakWithHighestY;
-
                     //get bins to add points to
                     List<int> allBinsToSearch = GetBinsToSearch(scan);
-
-                    //separate bins by common and uncommon fragments to improve search speed
-                    //List<int> commonBinsToSearch = MostCommonBinsFound(allBinsToSearch, mostCommonBins, intScoreCutoff, addCompIons);
-
-                    //for (int j = 0; j < commonBinsToSearch.Count; j++)
-                    //    fragmentIndex[commonBinsToSearch[j]].ForEach(id => scoringTable[id]++);
 
                     for (int j = 0; j < allBinsToSearch.Count; j++)
                         foreach (int id in fragmentIndex[allBinsToSearch[j]])
@@ -125,7 +114,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Private Methods
 
-        private Tuple<int, double> Accepts(double scanPrecursorMass, CompactPeptide peptide, TerminusType terminusType, MassDiffAcceptor searchMode)
+        private static Tuple<int, double> Accepts(double scanPrecursorMass, CompactPeptide peptide, TerminusType terminusType, MassDiffAcceptor searchMode)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
             int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength ?? 0;

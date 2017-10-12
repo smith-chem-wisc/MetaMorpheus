@@ -46,6 +46,22 @@ namespace EngineLayer.ModernSearch
 
         #region Protected Methods
 
+        protected static List<int> IdentifyMostCommonBinsAll(List<int>[] fragmentIndex)
+        {
+            Tuple<int, int>[] mostCommonBins = new Tuple<int, int>[500];
+            for (int i = 0; i < mostCommonBins.Length; i++)
+                mostCommonBins[i] = new Tuple<int, int>(0, 0);
+            for (int i = 0; i < fragmentIndex.Length; i++)
+            {
+                if (fragmentIndex[i] != null && mostCommonBins[499].Item2 < fragmentIndex[i].Count)
+                {
+                    mostCommonBins[499] = new Tuple<int, int>(i, fragmentIndex[i].Count);
+                    mostCommonBins = mostCommonBins.OrderByDescending(s => s.Item2).ToArray();
+                }
+            }
+            return mostCommonBins.ToList().Select(s => s.Item1).ToList();
+        }
+
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             double progress = 0;
@@ -135,25 +151,6 @@ namespace EngineLayer.ModernSearch
             });
 
             return new MetaMorpheusEngineResults(this);
-        }
-
-        protected List<int> IdentifyMostCommonBinsAll(List<int>[] fragmentIndex)
-        {
-            Tuple<int, int>[] mostCommonBins = new Tuple<int, int>[500];
-            for (int i = 0; i < mostCommonBins.Length; i++)
-                mostCommonBins[i] = new Tuple<int, int>(0, 0);
-            for (int i = 0; i < fragmentIndex.Length; i++)
-            {
-                if (fragmentIndex[i] != null)
-                {
-                    if (mostCommonBins[499].Item2 < fragmentIndex[i].Count)
-                    {
-                        mostCommonBins[499] = new Tuple<int, int>(i, fragmentIndex[i].Count);
-                        mostCommonBins = mostCommonBins.OrderByDescending(s => s.Item2).ToArray();
-                    }
-                }
-            }
-            return mostCommonBins.ToList().Select(s => s.Item1).ToList();
         }
 
         protected List<int> GetBinsToSearch(Ms2ScanWithSpecificMass scan)
@@ -253,9 +250,8 @@ namespace EngineLayer.ModernSearch
                     scoringTable[id]++;
 
                     // add possible search results to the hashset of id's
-                    if (scoringTable[id] == byteScoreCutoff)
-                        if (massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
-                            idsOfPeptidesPossiblyObserved.Add(id);
+                    if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
+                        idsOfPeptidesPossiblyObserved.Add(id);
                 }
             }
         }

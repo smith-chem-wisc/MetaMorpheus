@@ -211,7 +211,6 @@ namespace TaskLayer
                             Status("Running Index Engine...", new List<string> { taskId });
                             var indexResults = (IndexingResults)indexEngine.Run();
                             peptideIndex = indexResults.PeptideIndex;
-                            //fragmentIndexDict = indexResults.FragmentIndex;
 
                             Status("Writing peptide index...", new List<string> { taskId });
                             WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
@@ -233,8 +232,6 @@ namespace TaskLayer
                                 fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
                         }
                     }
-                    //keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-                    //fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
                     #endregion Generate indices for modern search
 

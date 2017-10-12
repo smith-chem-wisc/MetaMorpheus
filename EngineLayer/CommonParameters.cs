@@ -28,6 +28,7 @@ namespace EngineLayer
             ListOfModsLocalize = null;
 
             ConserveMemory = true;
+
             MaxParallelFilesToAnalyze = 1;
 
             MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;

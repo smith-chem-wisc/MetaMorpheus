@@ -18,10 +18,7 @@ namespace EngineLayer
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            if (scanPrecursorMass > peptideMass - 1)
-                return 0;
-            else
-                return -1;
+            return scanPrecursorMass > peptideMass - 1 ? 0 : -1;
         }
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
