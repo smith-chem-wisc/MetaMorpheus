@@ -193,16 +193,7 @@
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>
-                            </StackPanel>
-                        </Grid>
-                        <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
-                            <TextBox x:Name="maxParallelFiles" Width="45" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
-                            <TextBox x:Name="minScoreAllowed" Width="45" />
+                            </Grid>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
