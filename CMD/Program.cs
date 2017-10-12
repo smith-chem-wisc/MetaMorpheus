@@ -44,13 +44,13 @@ namespace MetaMorpheusCommandLine
             if (result.HasErrors == false)
             {
                 MetaMorpheusEngine.WarnHandler += MyEngine_outLabelStatusHandler;
-                //MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
                 MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
                 MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
                 MetaMorpheusTask.WarnHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+                MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
                 foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))

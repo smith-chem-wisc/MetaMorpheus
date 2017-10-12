@@ -447,6 +447,16 @@ namespace TaskLayer
             return ids;
         }
 
+        private void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.Create(fragmentIndexFile))
+                ser.Serialize(file, fragmentIndex);
+            SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+        }
+
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
             var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
@@ -484,16 +494,6 @@ namespace TaskLayer
                 }
             }
             return null;
-        }
-
-        private void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(fragmentIndexFile))
-                ser.Serialize(file, fragmentIndex);
-            SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
         }
 
         private void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile, string taskId)

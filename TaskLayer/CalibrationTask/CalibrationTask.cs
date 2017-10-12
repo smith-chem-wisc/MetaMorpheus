@@ -33,6 +33,7 @@ namespace TaskLayer
             CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(30),
+                PrecursorMassTolerance = new PpmTolerance(10),
                 TrimMs1Peaks = false,
                 TrimMsMsPeaks = false,
                 DoPrecursorDeconvolution = false,
@@ -176,62 +177,6 @@ namespace TaskLayer
 
                     mzSepLearners = mzSepLearners.Select(b => new SeparateMzLearner(b) as ILearner<double>).ToList();
 
-                    var learners = new List<ILearner<double>>
-                    {
-                        new LinearCalibrationFunctionMathNet(new int[] { }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 4 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 2 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 2 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 3, 4 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 2, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 2, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 3, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 2, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 2, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 3, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2, 3, 4 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2, 3 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 3, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 2, 3, 4 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1, 2, 3, 4 }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0, 1, 2, 3, 4 }),
-
-                        new RegressionAbsoluteLossGradientBoostLearner(iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
-                    };
-
-                    var intLearners = new List<ILearner<double>>
-                    {
-                        new LinearCalibrationFunctionMathNet(new int[] { }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0 }),
-
-                        new RegressionAbsoluteLossGradientBoostLearner(iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:6, iterations:1000),
-                        new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth:9, iterations:1000),
-                    };
-
                     (int count, DataPointAquisitionResults datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
                     if (datapointAcquisitionResult == null)
@@ -328,49 +273,6 @@ namespace TaskLayer
                         SucessfullyFinishedWritingFile(bestFilePath, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                         round++;
                     } while (true);
-
-                    //CommonParameters.PrecursorMassTolerance = prevPrecTol;
-                    //CommonParameters.ProductMassTolerance = prevProdTol;
-
-                    //myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
-
-                    //do
-                    //{
-                    //    new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, intLearners, "Int", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-
-                    //    prevCount = count;
-                    //    prevPrecTol = CommonParameters.PrecursorMassTolerance;
-                    //    prevProdTol = CommonParameters.ProductMassTolerance;
-
-                    //    (count, datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
-
-                    //    if (datapointAcquisitionResult == null)
-                    //    {
-                    //        Warn("datapointAcquisitionResult is null");
-                    //        return;
-                    //    }
-                    //    if (datapointAcquisitionResult.Ms1List.Count < 4 || datapointAcquisitionResult.Ms2List.Count < 4)
-                    //    {
-                    //        Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
-                    //        Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
-                    //        return;
-                    //    }
-
-                    //    if (!ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count))
-                    //        break;
-
-                    //    WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                    //    WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-
-                    //    bestFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final.mzml");
-
-                    //    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, bestFilePath, false);
-                    //    SucessfullyFinishedWritingFile(bestFilePath, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                    //    round++;
-                    //} while (true);
-
-                    //CommonParameters.PrecursorMassTolerance = prevPrecTol;
-                    //CommonParameters.ProductMassTolerance = prevProdTol;
 
                     myTaskResults.newSpectra.Add(bestFilePath);
                 }
