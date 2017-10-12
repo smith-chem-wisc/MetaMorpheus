@@ -16,10 +16,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-                private static readonly int bBinShift = (int)Math.Round((waterMonoisotopicMass - hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
-         private static readonly int yBinShift = (int)Math.Round(-1 * hydrogenAtomMonoisotopicMass * fragmentBinsPerDalton);
-         private static readonly int cBinShift = (int)Math.Round((nitrogenAtomMonoisotopicMass + 2 * hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
-         private static readonly int zdotBinShift = (int)Math.Round((oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass - hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+                private static readonly int bBinShift = (int)Math.Round((waterMonoisotopicMass) * fragmentBinsPerDalton);
+         private static readonly int cBinShift = (int)Math.Round((nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+         private static readonly int zdotBinShift = (int)Math.Round((oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
          private readonly List<int>[] fragmentIndexPrecursor;
        #endregion Private Fields
 
@@ -68,7 +67,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     for (int fragmentBin = obsPrecursorFloorMz; fragmentBin <= obsPrecursorCeilingMz; fragmentBin++)
                         binsToSearch.Add(fragmentBin);
 
-
                     foreach (ProductType pt in lp)
                     {
                         int binShift;
@@ -78,7 +76,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 binShift = bBinShift;
                                 break;
                             case ProductType.Y:
-                                binShift = yBinShift;
+                                binShift = 0;
                                 break;
                             case ProductType.C:
                                 binShift = cBinShift;
