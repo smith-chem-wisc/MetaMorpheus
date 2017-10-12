@@ -9,7 +9,7 @@ namespace EngineLayer
     {
         #region Public Methods
 
-        public static IEnumerable<PeptideWithPossibleModifications> Digest(this Protein protein, DigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications)
+        public static IEnumerable<PeptideWithSetModifications> Digest(this Protein protein, DigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications)
         {
             var protease = digestionParams.Protease;
             var maximumMissedCleavages = digestionParams.MaxMissedCleavages;
@@ -31,13 +31,15 @@ namespace EngineLayer
                     if ((i != 0 || initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
                         && (!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength)
                         && (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
-                        yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i], "semi", allKnownFixedModifications);
+                        foreach (PeptideWithSetModifications p in GetThePeptides(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i], "semi", allKnownFixedModifications))
+                            yield return p;
 
                     // Cleave!
                     if ((i == 0 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
                         && (!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 >= minPeptidesLength)
                         && (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 <= maxPeptidesLength))
-                        yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1, "semi:M cleaved", allKnownFixedModifications);
+                        foreach (PeptideWithSetModifications p in GetThePeptides(2, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1, "semi:M cleaved", allKnownFixedModifications))
+                            yield return p;
                 }
 
                 int lastIndex = oneBasedIndicesToCleaveAfter.Count - 1;
@@ -49,7 +51,8 @@ namespace EngineLayer
                         if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i] >= minPeptidesLength) &&
                             (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i] <= maxPeptidesLength))
                         {
-                            yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[lastIndex - i] + 1, oneBasedIndicesToCleaveAfter[lastIndex], protein, oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i], "semi", allKnownFixedModifications);
+                            foreach (PeptideWithSetModifications p in GetThePeptides(oneBasedIndicesToCleaveAfter[lastIndex - i] + 1, oneBasedIndicesToCleaveAfter[lastIndex], protein, oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i], "semi", allKnownFixedModifications))
+                                yield return p;
                         }
                     }
                 }
@@ -60,7 +63,8 @@ namespace EngineLayer
                         if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0] >= minPeptidesLength) &&
                             (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0] <= maxPeptidesLength))
                         {
-                            yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[0] + 1, oneBasedIndicesToCleaveAfter[i], protein, oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0], "semi", allKnownFixedModifications);
+                            foreach (PeptideWithSetModifications p in GetThePeptides(oneBasedIndicesToCleaveAfter[0] + 1, oneBasedIndicesToCleaveAfter[i], protein, oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0], "semi", allKnownFixedModifications))
+                                yield return p;
                         }
                     }
                 }
@@ -68,7 +72,8 @@ namespace EngineLayer
                 foreach (var proteolysisProduct in protein.ProteolysisProducts)
                     if (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length)
                     {
-                        yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type + " start", allKnownFixedModifications);
+                        foreach (PeptideWithSetModifications p in GetThePeptides(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type + " start", allKnownFixedModifications))
+                            yield return p;
                     }
             }
             else
@@ -92,7 +97,8 @@ namespace EngineLayer
                                     if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength) &&
                                         (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
                                     {
-                                        yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full", allKnownFixedModifications);
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full", allKnownFixedModifications))
+                                            yield return p;
                                     }
                                 }
                                 // Cleave!
@@ -101,7 +107,8 @@ namespace EngineLayer
                                     if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - 1 >= minPeptidesLength) &&
                                         (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - 1 <= maxPeptidesLength))
                                     {
-                                        yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full:M cleaved", allKnownFixedModifications);
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full:M cleaved", allKnownFixedModifications))
+                                            yield return p;
                                     }
                                 }
                             }
@@ -119,7 +126,8 @@ namespace EngineLayer
                                         if ((!minPeptidesLength.HasValue || (oneBasedIndicesToCleaveAfter[i + missed_cleavages] - proteolysisProduct.OneBasedBeginPosition.Value + 1) >= minPeptidesLength) &&
                                             (!maxPeptidesLength.HasValue || (oneBasedIndicesToCleaveAfter[i + missed_cleavages] - proteolysisProduct.OneBasedBeginPosition.Value + 1) <= maxPeptidesLength))
                                         {
-                                            yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, oneBasedIndicesToCleaveAfter[i + missed_cleavages], protein, missed_cleavages, proteolysisProduct.Type + " start", allKnownFixedModifications);
+                                            foreach (PeptideWithSetModifications p in GetThePeptides(proteolysisProduct.OneBasedBeginPosition.Value, oneBasedIndicesToCleaveAfter[i + missed_cleavages], protein, missed_cleavages, proteolysisProduct.Type + " start", allKnownFixedModifications))
+                                                yield return p;
                                         }
                                     }
                                     while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition)
@@ -130,7 +138,8 @@ namespace EngineLayer
                                         if ((!minPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1]) >= minPeptidesLength) &&
                                             (!maxPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1]) <= maxPeptidesLength))
                                         {
-                                            yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, proteolysisProduct.OneBasedEndPosition.Value, protein, missed_cleavages, proteolysisProduct.Type + " end", allKnownFixedModifications);
+                                            foreach (PeptideWithSetModifications p in GetThePeptides(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, proteolysisProduct.OneBasedEndPosition.Value, protein, missed_cleavages, proteolysisProduct.Type + " end", allKnownFixedModifications))
+                                                yield return p;
                                         }
                                     }
                                 }
@@ -143,7 +152,8 @@ namespace EngineLayer
                         {
                             if ((!minPeptidesLength.HasValue || (protein.Length - index + 1) >= minPeptidesLength)) //&&
                             {
-                                yield return new PeptideWithPossibleModifications(index, Math.Min(protein.Length, index + (maxPeptidesLength ?? 50)), protein, 0, "SingleN", allKnownFixedModifications);
+                                foreach (PeptideWithSetModifications p in GetThePeptides(index, Math.Min(protein.Length, index + (maxPeptidesLength ?? 50)), protein, 0, "SingleN", allKnownFixedModifications))
+                                    yield return p;
                             }
                         }
                         break;
@@ -154,7 +164,8 @@ namespace EngineLayer
                         {
                             if ((!minPeptidesLength.HasValue || (index) >= minPeptidesLength))//&&
                             {
-                                yield return new PeptideWithPossibleModifications(Math.Max(1, index - (maxPeptidesLength ?? 50)), index, protein, 0, "SingleC", allKnownFixedModifications);
+                                foreach (PeptideWithSetModifications p in GetThePeptides(Math.Max(1, index - (maxPeptidesLength ?? 50)), index, protein, 0, "SingleC", allKnownFixedModifications))
+                                    yield return p;
                             }
                         }
                         break;
@@ -178,7 +189,8 @@ namespace EngineLayer
                                 if ((!minPeptidesLength.HasValue || cTermIndexofProtein - nTermIndexofProtein >= minPeptidesLength) &&
                                     (!maxPeptidesLength.HasValue || cTermIndexofProtein - nTermIndexofProtein <= maxPeptidesLength))
                                 {
-                                    yield return new PeptideWithPossibleModifications(nTermIndexofProtein + 1, cTermIndexofProtein, protein, cTermIndexofProtein - nTermIndexofProtein, "semi", allKnownFixedModifications);
+                                    foreach (PeptideWithSetModifications p in GetThePeptides(nTermIndexofProtein + 1, cTermIndexofProtein, protein, cTermIndexofProtein - nTermIndexofProtein, "semi", allKnownFixedModifications))
+                                        yield return p;
                                 }
                                 //fixedC
                                 for (int j = nTermIndexofProtein + 1; j < cTermIndexofProtein; j++)
@@ -186,7 +198,8 @@ namespace EngineLayer
                                     if ((!minPeptidesLength.HasValue || cTermIndexofProtein - j >= minPeptidesLength) &&
                                         (!maxPeptidesLength.HasValue || cTermIndexofProtein - j <= maxPeptidesLength))
                                     {
-                                        yield return new PeptideWithPossibleModifications(j + 1, cTermIndexofProtein, protein, cTermIndexofProtein - j, "semiC", allKnownFixedModifications);
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(j + 1, cTermIndexofProtein, protein, cTermIndexofProtein - j, "semiC", allKnownFixedModifications))
+                                            yield return p;
                                     }
                                 }
                                 //fixedN
@@ -195,7 +208,8 @@ namespace EngineLayer
                                     if ((!minPeptidesLength.HasValue || j - nTermIndexofProtein >= minPeptidesLength) &&
                                         (!maxPeptidesLength.HasValue || j - nTermIndexofProtein <= maxPeptidesLength))
                                     {
-                                        yield return new PeptideWithPossibleModifications(nTermIndexofProtein + 1, j, protein, j - nTermIndexofProtein, "semiN", allKnownFixedModifications);
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(nTermIndexofProtein + 1, j, protein, j - nTermIndexofProtein, "semiN", allKnownFixedModifications))
+                                            yield return p;
                                     }
                                 }
                             }
@@ -207,7 +221,8 @@ namespace EngineLayer
                                 if ((!minPeptidesLength.HasValue || cTermIndexOfProtein - nTermIndexOfProtein >= minPeptidesLength) &&
                                     (!maxPeptidesLength.HasValue || cTermIndexOfProtein - nTermIndexOfProtein <= maxPeptidesLength))
                                 {
-                                    yield return new PeptideWithPossibleModifications(nTermIndexOfProtein + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - nTermIndexOfProtein, "semi:M cleaved", allKnownFixedModifications);
+                                    foreach (PeptideWithSetModifications p in GetThePeptides(nTermIndexOfProtein + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - nTermIndexOfProtein, "semi:M cleaved", allKnownFixedModifications))
+                                        yield return p;
                                 }
                                 //fixedC
                                 for (int j = nTermIndexOfProtein + 1; j < cTermIndexOfProtein; j++)
@@ -215,7 +230,8 @@ namespace EngineLayer
                                     if ((!minPeptidesLength.HasValue || cTermIndexOfProtein - j >= minPeptidesLength) &&
                                         (!maxPeptidesLength.HasValue || cTermIndexOfProtein - j <= maxPeptidesLength))
                                     {
-                                        yield return new PeptideWithPossibleModifications(j + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - j, "semiC", allKnownFixedModifications);
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(j + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - j, "semiC", allKnownFixedModifications))
+                                            yield return p;
                                     }
                                 }
                                 //fixedN
@@ -224,7 +240,8 @@ namespace EngineLayer
                                     if ((!minPeptidesLength.HasValue || j - nTermIndexOfProtein >= minPeptidesLength) &&
                                         (!maxPeptidesLength.HasValue || j - nTermIndexOfProtein <= maxPeptidesLength))
                                     {
-                                        yield return new PeptideWithPossibleModifications(nTermIndexOfProtein + 1, j, protein, j - nTermIndexOfProtein, "semiN", allKnownFixedModifications);
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(nTermIndexOfProtein + 1, j, protein, j - nTermIndexOfProtein, "semiN", allKnownFixedModifications))
+                                            yield return p;
                                     }
                                 }
                             }
@@ -242,7 +259,8 @@ namespace EngineLayer
                                 if ((!minPeptidesLength.HasValue || j - nTermIndexOfProtein >= minPeptidesLength) &&
                                     (!maxPeptidesLength.HasValue || j - nTermIndexOfProtein <= maxPeptidesLength))
                                 {
-                                    yield return new PeptideWithPossibleModifications(nTermIndexOfProtein + 1, j, protein, j - nTermIndexOfProtein, "semiN", allKnownFixedModifications);
+                                    foreach (PeptideWithSetModifications p in GetThePeptides(nTermIndexOfProtein + 1, j, protein, j - nTermIndexOfProtein, "semiN", allKnownFixedModifications))
+                                        yield return p;
                                 }
                             }
                         }
@@ -257,7 +275,8 @@ namespace EngineLayer
                                 if ((!minPeptidesLength.HasValue || cTermIndexOfProtein - j >= minPeptidesLength) &&
                                     (!maxPeptidesLength.HasValue || cTermIndexOfProtein - j <= maxPeptidesLength))
                                 {
-                                    yield return new PeptideWithPossibleModifications(j + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - j, "semiC", allKnownFixedModifications);
+                                    foreach (PeptideWithSetModifications p in GetThePeptides(j + 1, cTermIndexOfProtein, protein, cTermIndexOfProtein - j, "semiC", allKnownFixedModifications))
+                                        yield return p;
                                 }
                             }
                         }
@@ -275,7 +294,8 @@ namespace EngineLayer
                                     if ((!minPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 >= minPeptidesLength) &&
                                         (!maxPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 <= maxPeptidesLength))
                                     {
-                                        yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, j, protein, j - proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.Type + " start", allKnownFixedModifications);
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(proteolysisProduct.OneBasedBeginPosition.Value, j, protein, j - proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.Type + " start", allKnownFixedModifications))
+                                            yield return p;
                                     }
                                 }
                                 while (oneBasedIndicesToCleaveAfter[i] <= proteolysisProduct.OneBasedEndPosition) //"<=" to prevent additions if same index as residues, since i-- is below
@@ -287,7 +307,8 @@ namespace EngineLayer
                                     if ((!minPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 >= minPeptidesLength) &&
                                         (!maxPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 <= maxPeptidesLength))
                                     {
-                                        yield return new PeptideWithPossibleModifications(j, proteolysisProduct.OneBasedEndPosition.Value, protein, proteolysisProduct.OneBasedEndPosition.Value - j, proteolysisProduct.Type + " end", allKnownFixedModifications);
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(j, proteolysisProduct.OneBasedEndPosition.Value, protein, proteolysisProduct.OneBasedEndPosition.Value - j, proteolysisProduct.Type + " end", allKnownFixedModifications))
+                                            yield return p;
                                     }
                                 }
                             }
@@ -299,7 +320,8 @@ namespace EngineLayer
                             if ((!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength) &&
                                             (!maxPeptidesLength.HasValue || protein.Length <= maxPeptidesLength))
                             {
-                                yield return new PeptideWithPossibleModifications(1, protein.Length, protein, 0, "full", allKnownFixedModifications);
+                                foreach (PeptideWithSetModifications p in GetThePeptides(1, protein.Length, protein, 0, "full", allKnownFixedModifications))
+                                    yield return p;
                             }
                         }
                         if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
@@ -307,7 +329,8 @@ namespace EngineLayer
                             if ((!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength) &&
                                             (!maxPeptidesLength.HasValue || protein.Length - 1 <= maxPeptidesLength))
                             {
-                                yield return new PeptideWithPossibleModifications(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications);
+                                foreach (PeptideWithSetModifications p in GetThePeptides(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications))
+                                    yield return p;
                             }
                         }
 
@@ -318,7 +341,8 @@ namespace EngineLayer
                                 if ((!minPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1) >= minPeptidesLength) &&
                                                (!maxPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1) <= maxPeptidesLength))
                                 {
-                                    yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type, allKnownFixedModifications);
+                                    foreach (PeptideWithSetModifications p in GetThePeptides(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type, allKnownFixedModifications))
+                                        yield return p;
                                 }
                             }
                         break;
@@ -327,6 +351,11 @@ namespace EngineLayer
                         throw new NotImplementedException();
                 }
             }
+        }
+
+        private static IEnumerable<PeptideWithSetModifications> GetThePeptides(int v1, int v2, Protein protein, int v3, string v4, IEnumerable<ModificationWithMass> allKnownFixedModifications)
+        {
+            throw new NotImplementedException();
         }
 
         public static string TabSeparatedString(this Protein protein)
