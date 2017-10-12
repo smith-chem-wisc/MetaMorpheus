@@ -181,7 +181,7 @@ namespace EngineLayer.CrosslinkSearch
                         ReportProgress(new ProgressEventArgs(new_progress, "In Crosslink search loop", nestedIds));
                         old_progress = new_progress;
                     }
-                }                
+                }
             });
             psmCross.AddRange(newPsmsCross);
             return new CrosslinkSearchResults(newPsmsCross, this);

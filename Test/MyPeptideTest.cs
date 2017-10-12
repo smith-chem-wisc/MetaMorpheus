@@ -7,11 +7,11 @@ using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
-using UsefulProteomicsDatabases;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UsefulProteomicsDatabases;
 using static Chemistry.PeriodicTable;
 
 namespace Test

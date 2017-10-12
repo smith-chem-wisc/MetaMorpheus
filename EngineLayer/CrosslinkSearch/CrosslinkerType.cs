@@ -66,7 +66,6 @@
                 Cleavable = false;
                 TotalMass = 138.06808;
                 CrosslinkerModSite = 'K';
-                
             }
             if (name == CrosslinkerType.DTSSP)
             {

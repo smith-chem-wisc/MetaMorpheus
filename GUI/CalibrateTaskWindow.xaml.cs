@@ -82,6 +82,8 @@ namespace MetaMorpheusGUI
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
+
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -208,17 +210,19 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.DigestionParams.Protease = (Protease)proteaseComboBox.SelectedItem;
             TheTask.CommonParameters.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
-
             TheTask.CommonParameters.BIons = bCheckBox.IsChecked.Value;
             TheTask.CommonParameters.YIons = yCheckBox.IsChecked.Value;
             TheTask.CommonParameters.CIons = cCheckBox.IsChecked.Value;
             TheTask.CommonParameters.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.CommonParameters.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
             TheTask.CommonParameters.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
-
             TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
 
             TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.TaskDescriptor = "CalibrateTask";
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
                 TheTask.CommonParameters.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             TheTask.CommonParameters.ListOfModsFixed = new List<Tuple<string, string>>();
