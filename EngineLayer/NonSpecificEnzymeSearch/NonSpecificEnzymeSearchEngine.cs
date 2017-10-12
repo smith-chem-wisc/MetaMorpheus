@@ -16,11 +16,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-                private static readonly int bBinShift = (int)Math.Round((waterMonoisotopicMass) * fragmentBinsPerDalton);
-         private static readonly int cBinShift = (int)Math.Round((nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
-         private static readonly int zdotBinShift = (int)Math.Round((oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
-         private readonly List<int>[] fragmentIndexPrecursor;
-       #endregion Private Fields
+        private static readonly int bBinShift = (int)Math.Round((waterMonoisotopicMass) * fragmentBinsPerDalton);
+        private static readonly int cBinShift = (int)Math.Round((nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+        private static readonly int zdotBinShift = (int)Math.Round((oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
+        private readonly List<int>[] fragmentIndexPrecursor;
+        #endregion Private Fields
 
         #region Public Constructors
 
