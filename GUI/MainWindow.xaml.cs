@@ -723,7 +723,7 @@ namespace MetaMorpheusGUI
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
-                System.Diagnostics.Process.Start(fileThing.fullPath);
+                System.Diagnostics.Process.Start(fileThing.FullPath);
             }
         }
 

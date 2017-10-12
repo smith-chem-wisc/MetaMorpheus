@@ -273,49 +273,6 @@ namespace TaskLayer
                         round++;
                     } while (true);
 
-                    //CommonParameters.PrecursorMassTolerance = prevPrecTol;
-                    //CommonParameters.ProductMassTolerance = prevProdTol;
-
-                    //myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
-
-                    //do
-                    //{
-                    //    new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, intLearners, "Int", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-
-                    //    prevCount = count;
-                    //    prevPrecTol = CommonParameters.PrecursorMassTolerance;
-                    //    prevProdTol = CommonParameters.ProductMassTolerance;
-
-                    //    (count, datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
-
-                    //    if (datapointAcquisitionResult == null)
-                    //    {
-                    //        Warn("datapointAcquisitionResult is null");
-                    //        return;
-                    //    }
-                    //    if (datapointAcquisitionResult.Ms1List.Count < 4 || datapointAcquisitionResult.Ms2List.Count < 4)
-                    //    {
-                    //        Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
-                    //        Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
-                    //        return;
-                    //    }
-
-                    //    if (!ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count))
-                    //        break;
-
-                    //    WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                    //    WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-
-                    //    bestFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final.mzml");
-
-                    //    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, bestFilePath, false);
-                    //    SucessfullyFinishedWritingFile(bestFilePath, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                    //    round++;
-                    //} while (true);
-
-                    //CommonParameters.PrecursorMassTolerance = prevPrecTol;
-                    //CommonParameters.ProductMassTolerance = prevProdTol;
-
                     myTaskResults.newSpectra.Add(bestFilePath);
                 }
 
