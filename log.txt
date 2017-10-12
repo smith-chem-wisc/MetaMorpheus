@@ -1,0 +1,1901 @@
+[00:00:00] Build started
+[00:00:00] if ($env:APPVEYOR_REPO_TAG -eq "true")
+[00:00:00] {
+[00:00:00]         Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_TAG_NAME"
+[00:00:00] }
+[00:00:00] else
+[00:00:00] {
+[00:00:00]         Update-AppveyorBuild -Version "$env:APPVEYOR_BUILD_NUMBER"
+[00:00:00] }
+[00:00:01] git clone -q https://github.com/smith-chem-wisc/MetaMorpheus.git C:\projects\metamorpheus
+[00:00:05] git fetch -q origin +refs/pull/699/merge:
+[00:00:06] git checkout -qf FETCH_HEAD
+[00:00:06] Patching AssemblyInfo
+[00:00:06] Patching GUI\Properties\AssemblyInfo.cs...OK
+[00:00:06] nuget restore MetaMorpheus.sln
+[00:00:06] dotnet restore MetaMorpheus.sln
+[00:00:06] 
+[00:00:06] $buildArgs = @(
+[00:00:06] 	"MetaMorpheus.sln"
+[00:00:06] 	"/p:Configuration=TestAndRelease"
+[00:00:06]         "/verbosity:minimal"
+[00:00:06]         "/p:UseSharedCompilation=false"
+[00:00:06]         "/logger:C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+[00:00:06] );
+[00:00:06] 
+[00:00:06] 
+[00:00:06] if(($env:APPVEYOR_REPO_BRANCH -eq "master") -and (!$env:APPVEYOR_PULL_REQUEST_NUMBER))
+[00:00:06] {
+[00:00:06] choco install "msbuild-sonarqube-runner" -y
+[00:00:06] MSBuild.SonarQube.Runner.exe begin /k:"MetaMorpheus" /n:"MetaMorpheus" /v:$env:APPVEYOR_BUILD_NUMBER /d:sonar.host.url=https://sonarqube.com /d:sonar.login=e237b2412b39383e272e48b094de1b8d27a76369
+[00:00:06] 
+[00:00:06] 
+[00:00:06] & cov-build --dir cov-int msbuild $buildArgs
+[00:00:06] 
+[00:00:06] }
+[00:00:06] else
+[00:00:06] {
+[00:00:06] & msbuild $buildArgs
+[00:00:06] }
+[00:00:06] 
+[00:00:06] 
+[00:00:06] if(($env:APPVEYOR_REPO_BRANCH -eq "release") -and (!$env:APPVEYOR_PULL_REQUEST_NUMBER) -and($env:APPVEYOR_REPO_TAG -eq "true"))
+[00:00:06] {
+[00:00:06] 7z a MetaMorpheusDotNetFrameworkAppveyor.zip $env:APPVEYOR_BUILD_FOLDER\CMD\bin\Release\net461\*  "-x!*.xml"
+[00:00:06] 7z a MetaMorpheusDotNetCoreAppveyor.zip $env:APPVEYOR_BUILD_FOLDER\CMD\bin\Release\netcoreapp2.0\*  "-x!*.xml"
+[00:00:06] 7z a MetaMorpheusGuiDotNetFrameworkAppveyor.zip $env:APPVEYOR_BUILD_FOLDER\GUI\bin\Release\* "-x!*.xml"
+[00:00:06] Push-AppveyorArtifact MetaMorpheusDotNetFrameworkAppveyor.zip 
+[00:00:06] Push-AppveyorArtifact MetaMorpheusDotNetCoreAppveyor.zip 
+[00:00:06] Push-AppveyorArtifact MetaMorpheusGuiDotNetFrameworkAppveyor.zip
+[00:00:06] }
+[00:00:07] MSBuild auto-detection: using msbuild version '15.3.409.57025' from 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\bin'.
+[00:00:12] Restoring NuGet package mzLib.1.0.246.
+[00:00:12] Restoring NuGet package Nett.0.8.0.
+[00:00:12] Restoring NuGet package FlashLFQ.0.1.98.
+[00:00:12] Restoring NuGet package MathNet.Numerics.3.20.0.
+[00:00:12] Restoring NuGet package SharpLearning.AdaBoost.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.Common.Interfaces.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.Containers.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.CrossValidation.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.DecisionTrees.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.Ensemble.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.GradientBoost.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.InputOutput.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.Metrics.0.26.2.
+[00:00:12] Restoring NuGet package SharpLearning.RandomForest.0.26.2.
+[00:00:12] Restoring NuGet package System.ValueTuple.4.4.0.
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.Common.Interfaces',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='MathNet.Numerics',Version='3.20.0')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='mzLib',Version='1.0.246')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='FlashLFQ',Version='0.1.98')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.AdaBoost',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.Containers',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.CrossValidation',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.DecisionTrees',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.Ensemble',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.GradientBoost',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.InputOutput',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.Metrics',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='SharpLearning.RandomForest',Version='0.26.2')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='System.ValueTuple',Version='4.4.0')
+[00:00:12]   GET https://www.nuget.org/api/v2/Packages(Id='Nett',Version='0.8.0')
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='FlashLFQ',Version='0.1.98') 58ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/FlashLFQ/0.1.98
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.DecisionTrees',Version='0.26.2') 141ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/SharpLearning.DecisionTrees/0.26.2
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='Nett',Version='0.8.0') 160ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/Nett/0.8.0
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='MathNet.Numerics',Version='3.20.0') 168ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/MathNet.Numerics/3.20.0
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.InputOutput',Version='0.26.2') 163ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/SharpLearning.InputOutput/0.26.2
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='mzLib',Version='1.0.246') 169ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/mzLib/1.0.246
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.AdaBoost',Version='0.26.2') 174ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/SharpLearning.AdaBoost/0.26.2
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.Ensemble',Version='0.26.2') 168ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/SharpLearning.Ensemble/0.26.2
+[00:00:12]   OK https://www.nuget.org/api/v2/package/FlashLFQ/0.1.98 68ms
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.Containers',Version='0.26.2') 176ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/SharpLearning.Containers/0.26.2
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='System.ValueTuple',Version='4.4.0') 181ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/System.ValueTuple/4.4.0
+[00:00:12] Installing FlashLFQ 0.1.98.
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.RandomForest',Version='0.26.2') 195ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/SharpLearning.RandomForest/0.26.2
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.Common.Interfaces',Version='0.26.2') 206ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/SharpLearning.Common.Interfaces/0.26.2
+[00:00:12]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.GradientBoost',Version='0.26.2') 202ms
+[00:00:12]   GET https://www.nuget.org/api/v2/package/SharpLearning.GradientBoost/0.26.2
+[00:00:12]   OK https://www.nuget.org/api/v2/package/mzLib/1.0.246 41ms
+[00:00:12] Installing mzLib 1.0.246.
+[00:00:12]   OK https://www.nuget.org/api/v2/package/SharpLearning.DecisionTrees/0.26.2 65ms
+[00:00:12] Installing SharpLearning.DecisionTrees 0.26.2.
+[00:00:13]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.Metrics',Version='0.26.2') 1083ms
+[00:00:13]   GET https://www.nuget.org/api/v2/package/SharpLearning.Metrics/0.26.2
+[00:00:13]   OK https://www.nuget.org/api/v2/Packages(Id='SharpLearning.CrossValidation',Version='0.26.2') 1085ms
+[00:00:13]   GET https://www.nuget.org/api/v2/package/SharpLearning.CrossValidation/0.26.2
+[00:00:13]   OK https://www.nuget.org/api/v2/package/SharpLearning.Ensemble/0.26.2 923ms
+[00:00:13] Installing SharpLearning.Ensemble 0.26.2.
+[00:00:13]   OK https://www.nuget.org/api/v2/package/SharpLearning.InputOutput/0.26.2 942ms
+[00:00:13] Installing SharpLearning.InputOutput 0.26.2.
+[00:00:13]   OK https://www.nuget.org/api/v2/package/Nett/0.8.0 945ms
+[00:00:13] Installing Nett 0.8.0.
+[00:00:13]   OK https://www.nuget.org/api/v2/package/SharpLearning.AdaBoost/0.26.2 941ms
+[00:00:13] Installing SharpLearning.AdaBoost 0.26.2.
+[00:00:14]   OK https://www.nuget.org/api/v2/package/MathNet.Numerics/3.20.0 1420ms
+[00:00:14] Installing MathNet.Numerics 3.20.0.
+[00:00:14] Adding package 'FlashLFQ.0.1.98' to folder 'C:\projects\metamorpheus\packages'
+[00:00:14] Adding package 'SharpLearning.DecisionTrees.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:14] Added package 'FlashLFQ.0.1.98' to folder 'C:\projects\metamorpheus\packages'
+[00:00:14] Added package 'SharpLearning.DecisionTrees.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:14]   OK https://www.nuget.org/api/v2/package/SharpLearning.RandomForest/0.26.2 1421ms
+[00:00:14] Installing SharpLearning.RandomForest 0.26.2.
+[00:00:14]   OK https://www.nuget.org/api/v2/package/SharpLearning.CrossValidation/0.26.2 532ms
+[00:00:14]   OK https://www.nuget.org/api/v2/package/SharpLearning.Metrics/0.26.2 534ms
+[00:00:14] Installing SharpLearning.CrossValidation 0.26.2.
+[00:00:14]   OK https://www.nuget.org/api/v2/package/System.ValueTuple/4.4.0 1436ms
+[00:00:14] Installing SharpLearning.Metrics 0.26.2.
+[00:00:14] Installing System.ValueTuple 4.4.0.
+[00:00:14]   OK https://www.nuget.org/api/v2/package/SharpLearning.Common.Interfaces/0.26.2 1419ms
+[00:00:14] Installing SharpLearning.Common.Interfaces 0.26.2.
+[00:00:14]   OK https://www.nuget.org/api/v2/package/SharpLearning.GradientBoost/0.26.2 1418ms
+[00:00:14] Installing SharpLearning.GradientBoost 0.26.2.
+[00:00:14]   OK https://www.nuget.org/api/v2/package/SharpLearning.Containers/0.26.2 1440ms
+[00:00:14] Installing SharpLearning.Containers 0.26.2.
+[00:00:15] Adding package 'SharpLearning.Ensemble.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'SharpLearning.AdaBoost.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.Ensemble.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.AdaBoost.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'SharpLearning.InputOutput.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.InputOutput.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'SharpLearning.RandomForest.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'SharpLearning.Common.Interfaces.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.RandomForest.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.Common.Interfaces.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'SharpLearning.Containers.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'SharpLearning.CrossValidation.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'SharpLearning.GradientBoost.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'SharpLearning.Metrics.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.Containers.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.GradientBoost.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.CrossValidation.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Added package 'SharpLearning.Metrics.0.26.2' to folder 'C:\projects\metamorpheus\packages'
+[00:00:15] Adding package 'System.ValueTuple.4.4.0' to folder 'C:\projects\metamorpheus\packages'
+[00:00:16] Adding package 'mzLib.1.0.246' to folder 'C:\projects\metamorpheus\packages'
+[00:00:16] Added package 'mzLib.1.0.246' to folder 'C:\projects\metamorpheus\packages'
+[00:00:16] Added package 'System.ValueTuple.4.4.0' to folder 'C:\projects\metamorpheus\packages'
+[00:00:16] Adding package 'Nett.0.8.0' to folder 'C:\projects\metamorpheus\packages'
+[00:00:16] Added package 'Nett.0.8.0' to folder 'C:\projects\metamorpheus\packages'
+[00:00:16] Adding package 'MathNet.Numerics.3.20.0' to folder 'C:\projects\metamorpheus\packages'
+[00:00:16] Added package 'MathNet.Numerics.3.20.0' to folder 'C:\projects\metamorpheus\packages'
+[00:00:16] Restoring packages for C:\projects\metamorpheus\CMD\CMD.csproj...
+[00:00:16] Restoring packages for C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj...
+[00:00:16]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.App'
+[00:00:16]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='FluentCommandLineParser'
+[00:00:16]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='NETStandard.Library'
+[00:00:16]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='NetSerializer'
+[00:00:16]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.App' 139ms
+[00:00:16]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='FluentCommandLineParser' 170ms
+[00:00:17]   GET https://www.nuget.org/api/v2/package/Microsoft.NETCore.App/2.0.0
+[00:00:17]   GET https://www.nuget.org/api/v2/package/FluentCommandLineParser/1.4.3
+[00:00:17]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='NETStandard.Library' 211ms
+[00:00:17]   OK https://www.nuget.org/api/v2/package/Microsoft.NETCore.App/2.0.0 61ms
+[00:00:17]   OK https://www.nuget.org/api/v2/package/FluentCommandLineParser/1.4.3 58ms
+[00:00:17]   GET https://www.nuget.org/api/v2/package/NETStandard.Library/2.0.0
+[00:00:17]   OK https://www.nuget.org/api/v2/package/NETStandard.Library/2.0.0 54ms
+[00:00:17]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='NetSerializer' 462ms
+[00:00:17]   GET https://www.nuget.org/api/v2/package/NetSerializer/4.1.0
+[00:00:17]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.DotNetHostPolicy'
+[00:00:17]   OK https://www.nuget.org/api/v2/package/NetSerializer/4.1.0 45ms
+[00:00:17]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.Platforms'
+[00:00:17]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.DotNetHostPolicy' 68ms
+[00:00:17]   GET https://www.nuget.org/api/v2/package/Microsoft.NETCore.DotNetHostPolicy/2.0.0
+[00:00:17]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.Platforms' 36ms
+[00:00:17]   GET https://www.nuget.org/api/v2/package/Microsoft.NETCore.Platforms/2.0.0
+[00:00:17]   OK https://www.nuget.org/api/v2/package/Microsoft.NETCore.DotNetHostPolicy/2.0.0 43ms
+[00:00:17]   OK https://www.nuget.org/api/v2/package/Microsoft.NETCore.Platforms/2.0.0 51ms
+[00:00:17]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.DotNetHostResolver'
+[00:00:17]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.DotNetHostResolver' 35ms
+[00:00:17]   GET https://www.nuget.org/api/v2/package/Microsoft.NETCore.DotNetHostResolver/2.0.0
+[00:00:17]   OK https://www.nuget.org/api/v2/package/Microsoft.NETCore.DotNetHostResolver/2.0.0 44ms
+[00:00:17]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.DotNetAppHost'
+[00:00:17]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NETCore.DotNetAppHost' 92ms
+[00:00:17]   GET https://www.nuget.org/api/v2/package/Microsoft.NETCore.DotNetAppHost/2.0.0
+[00:00:17]   OK https://www.nuget.org/api/v2/package/Microsoft.NETCore.DotNetAppHost/2.0.0 43ms
+[00:00:17] Installing Microsoft.NETCore.DotNetAppHost 2.0.0.
+[00:00:17] Installing Microsoft.NETCore.DotNetHostResolver 2.0.0.
+[00:00:17] Installing Microsoft.NETCore.DotNetHostPolicy 2.0.0.
+[00:00:17] Installing Microsoft.NETCore.App 2.0.0.
+[00:00:17] Installing Microsoft.NETCore.Platforms 2.0.0.
+[00:00:17] Installing NETStandard.Library 2.0.0.
+[00:00:17] Installing NetSerializer 4.1.0.
+[00:00:17] Installing FluentCommandLineParser 1.4.3.
+[00:00:18]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='runtime.win-x64.Microsoft.NETCore.App'
+[00:00:18]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='runtime.win-x64.Microsoft.NETCore.DotNetHostPolicy'
+[00:00:18]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='runtime.win-x64.Microsoft.NETCore.DotNetHostResolver'
+[00:00:18]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='runtime.win-x64.Microsoft.NETCore.DotNetAppHost'
+[00:00:18]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='runtime.win-x64.Microsoft.NETCore.App' 58ms
+[00:00:18]   GET https://www.nuget.org/api/v2/package/runtime.win-x64.Microsoft.NETCore.App/2.0.0
+[00:00:18]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='runtime.win-x64.Microsoft.NETCore.DotNetAppHost' 60ms
+[00:00:18]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='runtime.win-x64.Microsoft.NETCore.DotNetHostPolicy' 63ms
+[00:00:18]   GET https://www.nuget.org/api/v2/package/runtime.win-x64.Microsoft.NETCore.DotNetAppHost/2.0.0
+[00:00:18]   GET https://www.nuget.org/api/v2/package/runtime.win-x64.Microsoft.NETCore.DotNetHostPolicy/2.0.0
+[00:00:18]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='runtime.win-x64.Microsoft.NETCore.DotNetHostResolver' 72ms
+[00:00:18]   GET https://www.nuget.org/api/v2/package/runtime.win-x64.Microsoft.NETCore.DotNetHostResolver/2.0.0
+[00:00:18]   OK https://www.nuget.org/api/v2/package/runtime.win-x64.Microsoft.NETCore.App/2.0.0 51ms
+[00:00:18]   OK https://www.nuget.org/api/v2/package/runtime.win-x64.Microsoft.NETCore.DotNetHostPolicy/2.0.0 43ms
+[00:00:18]   OK https://www.nuget.org/api/v2/package/runtime.win-x64.Microsoft.NETCore.DotNetAppHost/2.0.0 78ms
+[00:00:18]   OK https://www.nuget.org/api/v2/package/runtime.win-x64.Microsoft.NETCore.DotNetHostResolver/2.0.0 80ms
+[00:00:18] Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FlashLFQ 0.1.98 supports:
+[00:00:18]   - net461 (.NETFramework,Version=v4.6.1)
+[00:00:18]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package mzLib 1.0.246 supports:
+[00:00:18]   - net45 (.NETFramework,Version=v4.5)
+[00:00:18]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] One or more packages are incompatible with .NETCoreApp,Version=v2.0.
+[00:00:18] Package MathNet.Numerics 3.20.0 is not compatible with netstandard2.0 (.NETStandard,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:18]   - net35 (.NETFramework,Version=v3.5)
+[00:00:18]   - net40 (.NETFramework,Version=v4.0)
+[00:00:18]   - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:18]   - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:18]   - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:18]   - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:18]   - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:18] One or more packages are incompatible with .NETStandard,Version=v2.0.
+[00:00:18] Committing restore...
+[00:00:18] Generating MSBuild file C:\projects\metamorpheus\EngineLayer\obj\EngineLayer.csproj.nuget.g.props.
+[00:00:18] Generating MSBuild file C:\projects\metamorpheus\EngineLayer\obj\EngineLayer.csproj.nuget.g.targets.
+[00:00:18] Writing lock file to disk. Path: C:\projects\metamorpheus\EngineLayer\obj\project.assets.json
+[00:00:18] Restore failed in 2.11 sec for C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj.
+[00:00:18] Restoring packages for C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj...
+[00:00:18] Package SharpLearning.GradientBoost 0.26.2 is not compatible with net461 (.NETFramework,Version=v4.6.1). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Project EngineLayer is not compatible with net461 (.NETFramework,Version=v4.6.1). Project EngineLayer supports:
+[00:00:18]   - netcoreapp2.0 (.NETCoreApp,Version=v2.0)
+[00:00:18]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] One or more projects are incompatible with .NETFramework,Version=v4.6.1.
+[00:00:18] One or more packages are incompatible with .NETFramework,Version=v4.6.1.
+[00:00:18] Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FlashLFQ 0.1.98 supports:
+[00:00:18]   - net461 (.NETFramework,Version=v4.6.1)
+[00:00:18]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package MathNet.Numerics 3.20.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:18]   - net35 (.NETFramework,Version=v3.5)
+[00:00:18]   - net40 (.NETFramework,Version=v4.0)
+[00:00:18]   - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:18]   - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:18]   - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:18]   - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:18]   - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:18] Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package mzLib 1.0.246 supports:
+[00:00:18]   - net45 (.NETFramework,Version=v4.5)
+[00:00:18]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package NetSerializer 4.1.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:18] Package Nett 0.8.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package Nett 0.8.0 supports:
+[00:00:18]   - net40 (.NETFramework,Version=v4.0)
+[00:00:18]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package SharpLearning.GradientBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:18] One or more packages are incompatible with .NETCoreApp,Version=v2.0.
+[00:00:18] Package MathNet.Numerics 3.20.0 is not compatible with netstandard2.0 (.NETStandard,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:18]   - net35 (.NETFramework,Version=v3.5)
+[00:00:18]   - net40 (.NETFramework,Version=v4.0)
+[00:00:18]   - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:18]   - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:18]   - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:18]   - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:18]   - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:18] Package NetSerializer 4.1.0 is not compatible with netstandard2.0 (.NETStandard,Version=v2.0). Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:18] One or more packages are incompatible with .NETStandard,Version=v2.0.
+[00:00:18] Committing restore...
+[00:00:18] Generating MSBuild file C:\projects\metamorpheus\TaskLayer\obj\TaskLayer.csproj.nuget.g.props.
+[00:00:18] Generating MSBuild file C:\projects\metamorpheus\TaskLayer\obj\TaskLayer.csproj.nuget.g.targets.
+[00:00:18] Writing lock file to disk. Path: C:\projects\metamorpheus\TaskLayer\obj\project.assets.json
+[00:00:18] Restore failed in 112.13 ms for C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj.
+[00:00:18] Restoring packages for C:\projects\metamorpheus\Test\Test.csproj...
+[00:00:18]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NET.Test.Sdk'
+[00:00:18]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='NUnit'
+[00:00:18]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='NUnit3TestAdapter'
+[00:00:18]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.NET.Test.Sdk' 36ms
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='NUnit' 42ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/Microsoft.NET.Test.Sdk/15.3.0
+[00:00:19]   GET https://www.nuget.org/api/v2/package/NUnit/3.8.1
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='NUnit3TestAdapter' 66ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/NUnit3TestAdapter/3.8.0
+[00:00:19]   OK https://www.nuget.org/api/v2/package/NUnit/3.8.1 45ms
+[00:00:19]   OK https://www.nuget.org/api/v2/package/Microsoft.NET.Test.Sdk/15.3.0 54ms
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.TestPlatform.TestHost'
+[00:00:19]   OK https://www.nuget.org/api/v2/package/NUnit3TestAdapter/3.8.0 44ms
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.TestPlatform.TestHost' 45ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/Microsoft.TestPlatform.TestHost/15.3.0
+[00:00:19]   OK https://www.nuget.org/api/v2/package/Microsoft.TestPlatform.TestHost/15.3.0 58ms
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='System.ComponentModel.EventBasedAsync'
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.TestPlatform.ObjectModel'
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.Extensions.DependencyModel'
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='System.Xml.XPath.XmlDocument'
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.Extensions.DependencyModel' 36ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/Microsoft.Extensions.DependencyModel/1.0.3
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='System.ComponentModel.EventBasedAsync' 116ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/System.ComponentModel.EventBasedAsync/4.3.0
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='System.Xml.XPath.XmlDocument' 64ms
+[00:00:19]   OK https://www.nuget.org/api/v2/package/Microsoft.Extensions.DependencyModel/1.0.3 42ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/System.Xml.XPath.XmlDocument/4.3.0
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.DotNet.PlatformAbstractions'
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.TestPlatform.ObjectModel' 180ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/Microsoft.TestPlatform.ObjectModel/15.3.0
+[00:00:19]   OK https://www.nuget.org/api/v2/package/System.ComponentModel.EventBasedAsync/4.3.0 94ms
+[00:00:19]   OK https://www.nuget.org/api/v2/package/System.Xml.XPath.XmlDocument/4.3.0 59ms
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='System.Xml.XPath'
+[00:00:19]   OK https://www.nuget.org/api/v2/package/Microsoft.TestPlatform.ObjectModel/15.3.0 47ms
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='Microsoft.DotNet.PlatformAbstractions' 108ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/Microsoft.DotNet.PlatformAbstractions/1.0.3
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='System.Xml.XPath' 67ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/System.Xml.XPath/4.3.0
+[00:00:19]   OK https://www.nuget.org/api/v2/package/Microsoft.DotNet.PlatformAbstractions/1.0.3 41ms
+[00:00:19]   OK https://www.nuget.org/api/v2/package/System.Xml.XPath/4.3.0 44ms
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='System.Runtime.Serialization.Json'
+[00:00:19]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='System.Diagnostics.TextWriterTraceListener'
+[00:00:19] Installing runtime.win-x64.Microsoft.NETCore.DotNetAppHost 2.0.0.
+[00:00:19] Installing runtime.win-x64.Microsoft.NETCore.DotNetHostResolver 2.0.0.
+[00:00:19] Installing runtime.win-x64.Microsoft.NETCore.DotNetHostPolicy 2.0.0.
+[00:00:19] Installing runtime.win-x64.Microsoft.NETCore.App 2.0.0.
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='System.Runtime.Serialization.Json' 69ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/System.Runtime.Serialization.Json/4.3.0
+[00:00:19]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='System.Diagnostics.TextWriterTraceListener' 69ms
+[00:00:19]   GET https://www.nuget.org/api/v2/package/System.Diagnostics.TextWriterTraceListener/4.3.0
+[00:00:19]   OK https://www.nuget.org/api/v2/package/System.Runtime.Serialization.Json/4.3.0 43ms
+[00:00:19]   OK https://www.nuget.org/api/v2/package/System.Diagnostics.TextWriterTraceListener/4.3.0 41ms
+[00:00:19] Installing System.Xml.XmlSerializer 4.3.0.
+[00:00:19] Installing System.Private.DataContractSerialization 4.3.0.
+[00:00:19] Installing System.Runtime.Serialization.Json 4.3.0.
+[00:00:19] Installing System.Diagnostics.TextWriterTraceListener 4.3.0.
+[00:00:19] Installing System.Diagnostics.TraceSource 4.3.0.
+[00:00:19] Installing System.Xml.XPath.XmlDocument 4.0.1.
+[00:00:19] Installing Microsoft.DotNet.PlatformAbstractions 1.0.3.
+[00:00:19] Installing Microsoft.TestPlatform.ObjectModel 15.3.0.
+[00:00:19] Installing Microsoft.Extensions.DependencyModel 1.0.3.
+[00:00:19] Installing System.Xml.XPath 4.3.0.
+[00:00:19] Installing Microsoft.TestPlatform.TestHost 15.3.0.
+[00:00:19] Installing System.Xml.XPath.XmlDocument 4.3.0.
+[00:00:19] Installing System.ComponentModel.EventBasedAsync 4.3.0.
+[00:00:19] Installing System.Xml.XmlDocument 4.3.0.
+[00:00:19] Installing Microsoft.NET.Test.Sdk 15.3.0.
+[00:00:19] Installing NUnit3TestAdapter 3.8.0.
+[00:00:19] Installing NUnit 3.8.1.
+[00:00:23] Project EngineLayer is not compatible with net461 (.NETFramework,Version=v4.6.1). Project EngineLayer supports:
+[00:00:23]   - netcoreapp2.0 (.NETCoreApp,Version=v2.0)
+[00:00:23]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package SharpLearning.GradientBoost 0.26.2 is not compatible with net461 (.NETFramework,Version=v4.6.1). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] One or more projects are incompatible with .NETFramework,Version=v4.6.1.
+[00:00:23] One or more packages are incompatible with .NETFramework,Version=v4.6.1.
+[00:00:23] Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FlashLFQ 0.1.98 supports:
+[00:00:23]   - net461 (.NETFramework,Version=v4.6.1)
+[00:00:23]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package mzLib 1.0.246 supports:
+[00:00:23]   - net45 (.NETFramework,Version=v4.5)
+[00:00:23]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package Nett 0.8.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package Nett 0.8.0 supports:
+[00:00:23]   - net40 (.NETFramework,Version=v4.0)
+[00:00:23]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package FluentCommandLineParser 1.4.3 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FluentCommandLineParser 1.4.3 supports:
+[00:00:23]   - net35 (.NETFramework,Version=v3.5)
+[00:00:23]   - net35-client (.NETFramework,Version=v3.5,Profile=Client)
+[00:00:23] Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package MathNet.Numerics 3.20.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:23]   - net35 (.NETFramework,Version=v3.5)
+[00:00:23]   - net40 (.NETFramework,Version=v4.0)
+[00:00:23]   - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:23]   - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:23]   - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:23]   - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:23]   - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:23] Package SharpLearning.GradientBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package NetSerializer 4.1.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:23] One or more packages are incompatible with .NETCoreApp,Version=v2.0.
+[00:00:23] Project EngineLayer is not compatible with net461 (.NETFramework,Version=v4.6.1) / win7-x64. Project EngineLayer supports:
+[00:00:23]   - netcoreapp2.0 (.NETCoreApp,Version=v2.0)
+[00:00:23]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package SharpLearning.GradientBoost 0.26.2 is not compatible with net461 (.NETFramework,Version=v4.6.1) / win7-x64. Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] One or more projects are incompatible with .NETFramework,Version=v4.6.1 (win7-x64).
+[00:00:23] One or more packages are incompatible with .NETFramework,Version=v4.6.1 (win7-x64).
+[00:00:23] Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package FlashLFQ 0.1.98 supports:
+[00:00:23]   - net461 (.NETFramework,Version=v4.6.1)
+[00:00:23]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package FluentCommandLineParser 1.4.3 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package FluentCommandLineParser 1.4.3 supports:
+[00:00:23]   - net35 (.NETFramework,Version=v3.5)
+[00:00:23]   - net35-client (.NETFramework,Version=v3.5,Profile=Client)
+[00:00:23] Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package mzLib 1.0.246 supports:
+[00:00:23]   - net45 (.NETFramework,Version=v4.5)
+[00:00:23]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package Nett 0.8.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package Nett 0.8.0 supports:
+[00:00:23]   - net40 (.NETFramework,Version=v4.0)
+[00:00:23]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] Package MathNet.Numerics 3.20.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package MathNet.Numerics 3.20.0 supports:
+[00:00:23]   - net35 (.NETFramework,Version=v3.5)
+[00:00:23]   - net40 (.NETFramework,Version=v4.0)
+[00:00:23]   - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:23]   - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:23]   - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:23]   - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:23]   - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:23] Package NetSerializer 4.1.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:23] Package SharpLearning.GradientBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:23] One or more packages are incompatible with .NETCoreApp,Version=v2.0 (win7-x64).
+[00:00:23] Committing restore...
+[00:00:23] Generating MSBuild file C:\projects\metamorpheus\CMD\obj\CMD.csproj.nuget.g.props.
+[00:00:23] Generating MSBuild file C:\projects\metamorpheus\CMD\obj\CMD.csproj.nuget.g.targets.
+[00:00:23] Writing lock file to disk. Path: C:\projects\metamorpheus\CMD\obj\project.assets.json
+[00:00:23] Restore failed in 6.68 sec for C:\projects\metamorpheus\CMD\CMD.csproj.
+[00:00:24] Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FlashLFQ 0.1.98 supports:
+[00:00:24]   - net461 (.NETFramework,Version=v4.6.1)
+[00:00:24]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package mzLib 1.0.246 supports:
+[00:00:24]   - net45 (.NETFramework,Version=v4.5)
+[00:00:24]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] Package SharpLearning.AdaBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.AdaBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] Package SharpLearning.RandomForest 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.RandomForest 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] Package MathNet.Numerics 3.20.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:24]   - net35 (.NETFramework,Version=v3.5)
+[00:00:24]   - net40 (.NETFramework,Version=v4.0)
+[00:00:24]   - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:24]   - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:24]   - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:24]   - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:24]   - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:24] Package NetSerializer 4.1.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:24] Package Nett 0.8.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package Nett 0.8.0 supports:
+[00:00:24]   - net40 (.NETFramework,Version=v4.0)
+[00:00:24]   - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] Package SharpLearning.GradientBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] One or more packages are incompatible with .NETCoreApp,Version=v2.0.
+[00:00:24] Committing restore...
+[00:00:24] Generating MSBuild file C:\projects\metamorpheus\Test\obj\Test.csproj.nuget.g.props.
+[00:00:24] Generating MSBuild file C:\projects\metamorpheus\Test\obj\Test.csproj.nuget.g.targets.
+[00:00:24] Writing lock file to disk. Path: C:\projects\metamorpheus\Test\obj\project.assets.json
+[00:00:24] Restore failed in 5.38 sec for C:\projects\metamorpheus\Test\Test.csproj.
+[00:00:24] nuget : 
+[00:00:24] At line:1 char:1
+[00:00:24] + nuget restore MetaMorpheus.sln
+[00:00:24] + ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[00:00:24]     + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+[00:00:24]     + FullyQualifiedErrorId : NativeCommandError
+[00:00:24]  
+[00:00:24] Errors in C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj
+[00:00:24] 
+[00:00:24]     Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FlashLFQ 0.1.98 supports:
+[00:00:24] 
+[00:00:24]       - net461 (.NETFramework,Version=v4.6.1)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package mzLib 1.0.246 supports:
+[00:00:24] 
+[00:00:24]       - net45 (.NETFramework,Version=v4.5)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETCoreApp,Version=v2.0.
+[00:00:24] 
+[00:00:24]     Package MathNet.Numerics 3.20.0 is not compatible with netstandard2.0 (.NETStandard,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:24] 
+[00:00:24]       - net35 (.NETFramework,Version=v3.5)
+[00:00:24] 
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24] 
+[00:00:24]       - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:24] 
+[00:00:24]       - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETStandard,Version=v2.0.
+[00:00:24] 
+[00:00:24] 
+[00:00:24] 
+[00:00:24] Errors in C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj
+[00:00:24] 
+[00:00:24]     Package SharpLearning.GradientBoost 0.26.2 is not compatible with net461 (.NETFramework,Version=v4.6.1). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Project EngineLayer is not compatible with net461 (.NETFramework,Version=v4.6.1). Project EngineLayer supports:
+[00:00:24] 
+[00:00:24]       - netcoreapp2.0 (.NETCoreApp,Version=v2.0)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     One or more projects are incompatible with .NETFramework,Version=v4.6.1.
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETFramework,Version=v4.6.1.
+[00:00:24] 
+[00:00:24]     Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FlashLFQ 0.1.98 supports:
+[00:00:24] 
+[00:00:24]       - net461 (.NETFramework,Version=v4.6.1)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package MathNet.Numerics 3.20.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:24] 
+[00:00:24]       - net35 (.NETFramework,Version=v3.5)
+[00:00:24] 
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24] 
+[00:00:24]       - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:24] 
+[00:00:24]       - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:24] 
+[00:00:24]     Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package mzLib 1.0.246 supports:
+[00:00:24] 
+[00:00:24]       - net45 (.NETFramework,Version=v4.5)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package NetSerializer 4.1.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:24] 
+[00:00:24]     Package Nett 0.8.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package Nett 0.8.0 supports:
+[00:00:24] 
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.GradientBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETCoreApp,Version=v2.0.
+[00:00:24] 
+[00:00:24]     Package MathNet.Numerics 3.20.0 is not compatible with netstandard2.0 (.NETStandard,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:24] 
+[00:00:24]       - net35 (.NETFramework,Version=v3.5)
+[00:00:24] 
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24] 
+[00:00:24]       - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:24] 
+[00:00:24]       - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:24] 
+[00:00:24]     Package NetSerializer 4.1.0 is not compatible with netstandard2.0 (.NETStandard,Version=v2.0). Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETStandard,Version=v2.0.
+[00:00:24] 
+[00:00:24] 
+[00:00:24] 
+[00:00:24] Errors in C:\projects\metamorpheus\CMD\CMD.csproj
+[00:00:24] 
+[00:00:24]     Project EngineLayer is not compatible with net461 (.NETFramework,Version=v4.6.1). Project EngineLayer supports:
+[00:00:24] 
+[00:00:24]       - netcoreapp2.0 (.NETCoreApp,Version=v2.0)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.GradientBoost 0.26.2 is not compatible with net461 (.NETFramework,Version=v4.6.1). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     One or more projects are incompatible with .NETFramework,Version=v4.6.1.
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETFramework,Version=v4.6.1.
+[00:00:24] 
+[00:00:24]     Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FlashLFQ 0.1.98 supports:
+[00:00:24] 
+[00:00:24]       - net461 (.NETFramework,Version=v4.6.1)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package mzLib 1.0.246 supports:
+[00:00:24] 
+[00:00:24]       - net45 (.NETFramework,Version=v4.5)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package Nett 0.8.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package Nett 0.8.0 supports:
+[00:00:24] 
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package FluentCommandLineParser 1.4.3 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FluentCommandLineParser 1.4.3 supports:
+[00:00:24] 
+[00:00:24]       - net35 (.NETFramework,Version=v3.5)
+[00:00:24] 
+[00:00:24]       - net35-client (.NETFramework,Version=v3.5,Profile=Client)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package MathNet.Numerics 3.20.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:24] 
+[00:00:24]       - net35 (.NETFramework,Version=v3.5)
+[00:00:24] 
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24] 
+[00:00:24]       - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:24] 
+[00:00:24]       - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.GradientBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package NetSerializer 4.1.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETCoreApp,Version=v2.0.
+[00:00:24] 
+[00:00:24]     Project EngineLayer is not compatible with net461 (.NETFramework,Version=v4.6.1) / win7-x64. Project EngineLayer supports:
+[00:00:24] 
+[00:00:24]       - netcoreapp2.0 (.NETCoreApp,Version=v2.0)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.GradientBoost 0.26.2 is not compatible with net461 (.NETFramework,Version=v4.6.1) / win7-x64. Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     One or more projects are incompatible with .NETFramework,Version=v4.6.1 (win7-x64).
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETFramework,Version=v4.6.1 (win7-x64).
+[00:00:24] 
+[00:00:24]     Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package FlashLFQ 0.1.98 supports:
+[00:00:24] 
+[00:00:24]       - net461 (.NETFramework,Version=v4.6.1)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package FluentCommandLineParser 1.4.3 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package FluentCommandLineParser 1.4.3 supports:
+[00:00:24] 
+[00:00:24]       - net35 (.NETFramework,Version=v3.5)
+[00:00:24] 
+[00:00:24]       - net35-client (.NETFramework,Version=v3.5,Profile=Client)
+[00:00:24] 
+[00:00:24]     Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package mzLib 1.0.246 supports:
+[00:00:24] 
+[00:00:24]       - net45 (.NETFramework,Version=v4.5)
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package Nett 0.8.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package Nett 0.8.0 supports:
+[00:00:24] 
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     Package MathNet.Numerics 3.20.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package MathNet.Numerics 3.20.0 supports:
+[00:00:24] 
+[00:00:24]       - net35 (.NETFramework,Version=v3.5)
+[00:00:24] 
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24] 
+[00:00:24]       - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:24] 
+[00:00:24]       - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:24] 
+[00:00:24]       - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:24] 
+[00:00:24]     Package NetSerializer 4.1.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:24] 
+[00:00:24]     Package SharpLearning.GradientBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0) / win7-x64. Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24] 
+[00:00:24]     One or more packages are incompatible with .NETCoreApp,Version=v2.0 (win7-x64).
+[00:00:24] 
+[00:00:24] 
+[00:00:24] 
+[00:00:24] Errors in C:\projects\metamorpheus\Test\Test.csproj
+[00:00:24] 
+[00:00:24]     Package FlashLFQ 0.1.98 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package FlashLFQ 0.1.98 supports:
+[00:00:24] 
+[00:00:24]       - net461 (.NETFramework,Version=v4.6.1)
+[00:00:24] 
+[00:00:24] 
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package mzLib 1.0.246 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package mzLib 1.0.246 supports:
+[00:00:24]       - net45 (.NETFramework,Version=v4.5)
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package SharpLearning.AdaBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.AdaBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package SharpLearning.RandomForest 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.RandomForest 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package SharpLearning.CrossValidation 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.CrossValidation 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package SharpLearning.DecisionTrees 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.DecisionTrees 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package SharpLearning.Metrics 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.Metrics 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package MathNet.Numerics 3.20.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package MathNet.Numerics 3.20.0 supports:
+[00:00:24]       - net35 (.NETFramework,Version=v3.5)
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24]       - portable-net40+sl5+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile328)
+[00:00:24]       - portable-net45+sl5+win8 (.NETPortable,Version=v0.0,Profile=Profile47)
+[00:00:24]       - portable-net45+win8 (.NETPortable,Version=v0.0,Profile=Profile7)
+[00:00:24]       - portable-net45+win8+wp8 (.NETPortable,Version=v0.0,Profile=Profile78)
+[00:00:24]       - portable-net45+win8+wp8+wpa81 (.NETPortable,Version=v0.0,Profile=Profile259)
+[00:00:24]     Package NetSerializer 4.1.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package NetSerializer 4.1.0 supports: net45 (.NETFramework,Version=v4.5)
+[00:00:24]     Package Nett 0.8.0 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package Nett 0.8.0 supports:
+[00:00:24]       - net40 (.NETFramework,Version=v4.0)
+[00:00:24]       - netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     Package SharpLearning.GradientBoost 0.26.2 is not compatible with netcoreapp2.0 (.NETCoreApp,Version=v2.0). Package SharpLearning.GradientBoost 0.26.2 supports: netstandard2.0 (.NETStandard,Version=v2.0)
+[00:00:24]     One or more packages are incompatible with .NETCoreApp,Version=v2.0.
+[00:00:24] 
+[00:00:24] NuGet Config files used:
+[00:00:24]     C:\Users\appveyor\AppData\Roaming\NuGet\NuGet.Config
+[00:00:24]     C:\Program Files (x86)\NuGet\Config\Microsoft.VisualStudio.Offline.config
+[00:00:24] 
+[00:00:24] Feeds used:
+[00:00:24]     C:\Users\appveyor\.nuget\packages\
+[00:00:24]     https://www.nuget.org/api/v2
+[00:00:24]     C:\Program Files (x86)\Microsoft SDKs\NuGetPackages\
+[00:00:24] 
+[00:00:24] Installed:
+[00:00:24]     15 package(s) to packages.config projects
+[00:00:24]     6 package(s) to C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj
+[00:00:24]     7 package(s) to C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj
+[00:00:24]     12 package(s) to C:\projects\metamorpheus\CMD\CMD.csproj
+[00:00:24]     24 package(s) to C:\projects\metamorpheus\Test\Test.csproj
+[00:00:30]   Restoring packages for C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj...
+[00:00:30]   Restoring packages for C:\projects\metamorpheus\CMD\CMD.csproj...
+[00:00:30] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'FluentCommandLineParser 1.4.3' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\MetaMorpheus.sln]
+[00:00:30] C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\MetaMorpheus.sln]
+[00:00:30] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\MetaMorpheus.sln]
+[00:00:30] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\MetaMorpheus.sln]
+[00:00:30]   Generating MSBuild file C:\projects\metamorpheus\EngineLayer\obj\EngineLayer.csproj.nuget.g.props.
+[00:00:30]   Generating MSBuild file C:\projects\metamorpheus\CMD\obj\CMD.csproj.nuget.g.props.
+[00:00:30]   Generating MSBuild file C:\projects\metamorpheus\EngineLayer\obj\EngineLayer.csproj.nuget.g.targets.
+[00:00:30]   Generating MSBuild file C:\projects\metamorpheus\CMD\obj\CMD.csproj.nuget.g.targets.
+[00:00:30]   Restore completed in 330.17 ms for C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj.
+[00:00:30]   Restore completed in 332.86 ms for C:\projects\metamorpheus\CMD\CMD.csproj.
+[00:00:30]   Restoring packages for C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj...
+[00:00:30]   Restoring packages for C:\projects\metamorpheus\Test\Test.csproj...
+[00:00:30] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\MetaMorpheus.sln]
+[00:00:30] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\MetaMorpheus.sln]
+[00:00:30]   Generating MSBuild file C:\projects\metamorpheus\TaskLayer\obj\TaskLayer.csproj.nuget.g.props.
+[00:00:30]   Generating MSBuild file C:\projects\metamorpheus\TaskLayer\obj\TaskLayer.csproj.nuget.g.targets.
+[00:00:30]   Restore completed in 55.41 ms for C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj.
+[00:00:30] C:\projects\metamorpheus\Test\Test.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\MetaMorpheus.sln]
+[00:00:31] C:\projects\metamorpheus\Test\Test.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\MetaMorpheus.sln]
+[00:00:31]   Generating MSBuild file C:\projects\metamorpheus\Test\obj\Test.csproj.nuget.g.props.
+[00:00:31]   Generating MSBuild file C:\projects\metamorpheus\Test\obj\Test.csproj.nuget.g.targets.
+[00:00:31]   Restore completed in 619.42 ms for C:\projects\metamorpheus\Test\Test.csproj.
+[00:00:31] Microsoft (R) Build Engine version 15.3.409.57025 for .NET Framework
+[00:00:31] Copyright (C) Microsoft Corporation. All rights reserved.
+[00:00:31] 
+[00:00:33] C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:37]   EngineLayer -> C:\projects\metamorpheus\EngineLayer\bin\Release\netstandard2.0\EngineLayer.dll
+[00:00:37] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:37] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:41]   TaskLayer -> C:\projects\metamorpheus\TaskLayer\bin\Release\net461\TaskLayer.dll
+[00:00:48]   GUI -> C:\projects\metamorpheus\GUI\bin\Release\MetaMorpheusGUI.exe
+[00:00:49] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'FluentCommandLineParser 1.4.3' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:49] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:49] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:51]   CMD -> C:\projects\metamorpheus\CMD\bin\Release\net461\CMD.exe
+[00:00:51] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'FluentCommandLineParser 1.4.3' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:51] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:51] C:\projects\metamorpheus\CMD\CMD.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:52] C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:54]   EngineLayer -> C:\projects\metamorpheus\EngineLayer\bin\Release\netcoreapp2.0\EngineLayer.dll
+[00:00:54] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:54] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:56]   TaskLayer -> C:\projects\metamorpheus\TaskLayer\bin\Release\netcoreapp2.0\TaskLayer.dll
+[00:00:59]   CMD -> C:\projects\metamorpheus\CMD\bin\Release\netcoreapp2.0\CMD.dll
+[00:00:59] C:\projects\metamorpheus\Test\Test.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:00:59] C:\projects\metamorpheus\Test\Test.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:01]   Test -> C:\projects\metamorpheus\Test\bin\Release\netcoreapp2.0\Test.dll
+[00:01:02] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:02] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:04]   TaskLayer -> C:\projects\metamorpheus\TaskLayer\bin\Release\netstandard2.0\TaskLayer.dll
+[00:01:04] & $env:APPVEYOR_BUILD_FOLDER\CMD\bin\Release\net461\CMD.exe -t Examples\Task1SearchExample.toml Examples\Task2CalibrationExample.toml Examples\Task3SearchExample.toml Examples\Task4GptmdExample.toml Examples\Task5SearchExample.toml -s Examples\example.mzML -d Examples\mouse-10.xml
+[00:01:04] 
+[00:01:04] if($LastExitCode -ne 0) {  $host.SetShouldExit($LastExitCode)}
+[00:01:04] 
+[00:01:04] & dotnet $env:APPVEYOR_BUILD_FOLDER\CMD\bin\Release\netcoreapp2.0\CMD.dll -t Examples\Task1SearchExample.toml Examples\Task2CalibrationExample.toml Examples\Task3SearchExample.toml Examples\Task4GptmdExample.toml Examples\Task5SearchExample.toml -s Examples\example.mzML -d Examples\mouse-10.xml
+[00:01:04] 
+[00:01:04] if($LastExitCode -ne 0) {  $host.SetShouldExit($LastExitCode)}
+[00:01:04] 
+[00:01:04] nuget install OpenCover
+[00:01:04] 
+[00:01:04] $opencover= (Resolve-Path "OpenCover.*/tools/OpenCover.Console.exe").ToString()
+[00:01:04] 
+[00:01:04] # dotnet test Test\Test.csproj
+[00:01:04] 
+[00:01:04] & $opencover -register:user -returntargetcode -target:"C:\Program Files\dotnet\dotnet.exe" -targetargs:"test Test\Test.csproj" -output:opencoverCoverage.xml -filter:"+[*]* -[Test*]*" -excludebyfile:"*\Nett\*" -oldStyle
+[00:01:04] 
+[00:01:04] if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }   
+[00:01:04]  
+[00:01:04] choco install codecov
+[00:01:04] 
+[00:01:04] codecov -f opencoverCoverage.xml -t b9c71288-9f05-4fb4-aeb8-dafd7ad3ab00
+[00:01:04] 
+[00:01:04] if(($env:APPVEYOR_REPO_BRANCH -eq "master") -and (!$env:APPVEYOR_PULL_REQUEST_NUMBER))
+[00:01:04] {
+[00:01:04] nuget install PublishCoverity
+[00:01:04] 
+[00:01:04] $publishCoverityExe = (Resolve-Path "PublishCoverity.*/tools/PublishCoverity.exe").ToString()
+[00:01:04] 
+[00:01:04] & $publishCoverityExe compress -o myproject.zip -i cov-int;
+[00:01:04] 
+[00:01:04] & $publishCoverityExe publish -z myproject.zip  -r MetaMorpheus -t PJdaVO--UD8oA07oNV5GEg -e solntsev@gmail.com -d "AppVeyor scheduled build." --codeVersion $env:APPVEYOR_BUILD_VERSION;
+[00:01:04] 
+[00:01:04] MSBuild.SonarQube.Runner.exe end /d:sonar.login=e237b2412b39383e272e48b094de1b8d27a76369
+[00:01:04] 
+[00:01:04] }
+[00:01:05] Not a release version
+[00:01:05] -t , Examples\Task1SearchExample.toml , Examples\Task2CalibrationExample.toml , Examples\Task3SearchExample.toml , Examples\Task4GptmdExample.toml , Examples\Task5SearchExample.toml , -s , Examples\example.mzML , -d , Examples\mouse-10.xml
+[00:01:06] Starting task: Task1SearchTask
+[00:01:06] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task1SearchTask\SearchTaskconfig.toml
+[00:01:07] Starting engine: ClassicSearchEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:07] 15 30 45 60 70 85 100 
+[00:01:07] Finished engine: ClassicSearchEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:07] Time to run: 00:00:00.1934456
+[00:01:07] Starting engine: SequencesToActualProteinPeptidesEngine Task1SearchTask
+[00:01:07] Finished engine: SequencesToActualProteinPeptidesEngine Task1SearchTask
+[00:01:07] Time to run: 00:00:00.0432276
+[00:01:07] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:07] Starting engine: ProteinParsimonyEngine Task1SearchTask
+[00:01:07] Finished engine: ProteinParsimonyEngine Task1SearchTask
+[00:01:07] Time to run: 00:00:00.0464332
+[00:01:07] All proteins within 1% FDR: -1
+[00:01:07] Starting engine: FdrAnalysisEngine Task1SearchTask
+[00:01:07] Finished engine: FdrAnalysisEngine Task1SearchTask
+[00:01:07] Time to run: 00:00:00.0032453
+[00:01:07] PSMs within 1% fdr: 25
+[00:01:07] Starting engine: ProteinScoringAndFdrEngine Task1SearchTask
+[00:01:07] Finished engine: ProteinScoringAndFdrEngine Task1SearchTask
+[00:01:07] Time to run: 00:00:00.0404189
+[00:01:07] Starting engine: LocalizationEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:07] Finished engine: LocalizationEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:07] Time to run: 00:00:00.0148466
+[00:01:07] Starting engine: ModificationAnalysisEngine Task1SearchTask
+[00:01:07] Finished engine: ModificationAnalysisEngine Task1SearchTask
+[00:01:07] Time to run: 00:00:00.0474972
+[00:01:07] Localized mods seen below q-value 0.01:
+[00:01:07] 	Phosphoserine	2
+[00:01:07] 	Oxidation of M	1
+[00:01:07] (Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:
+[00:01:07] 
+[00:01:07] (Approx) Additional unlocalized mods seen below q-value 0.01:
+[00:01:07] 	Phosphoserine	1
+[00:01:07] (Approx) Additional unlocalized modification formulas seen below q-value 0.01:
+[00:01:07] 
+[00:01:07] 
+[00:01:07] All mods in database limited to peptides observed in the results:
+[00:01:07] 	Phosphoserine	4
+[00:01:07] 
+[00:01:07] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task1SearchTask\example_PSMs_1mm.psmtsv
+[00:01:07] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task1SearchTask\example_UniquePeptides_1mm.psmtsv
+[00:01:07] Starting engine: ProteinScoringAndFdrEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:07] Finished engine: ProteinScoringAndFdrEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:07] Time to run: 00:00:00.0001291
+[00:01:07] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task1SearchTask\example_1mm_ProteinGroups.tsv
+[00:01:07] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task1SearchTask\example_1mm.mzid
+[00:01:07] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task1SearchTask\results.txt
+[00:01:07] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task1SearchTask\prose.txt
+[00:01:07] Starting task: Task2CalibrationTask
+[00:01:07] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\CalibrationTaskconfig.toml
+[00:01:08] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] 15 30 45 60 70 85 100 
+[00:01:08] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0553005
+[00:01:08] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0422806
+[00:01:08] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:08] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0000101
+[00:01:08] PSMs within 1% fdr: 25
+[00:01:08] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0640822
+[00:01:08] Ms1List.Count: 345 Ms2List.Count: 174
+[00:01:08] Ms1ppm mean: 0.088272132706291 Ms1ppm sd: 0.420492441991365
+[00:01:08] Ms1th mean: 8.46532690036219E-05 Ms1th sd: 0.000341746751297936
+[00:01:08] Ms2ppm mean: -0.419942564453381 Ms2ppm sd: 2.57404036152865
+[00:01:08] Ms2th mean: -0.000228341133703127 Ms2th sd: 0.00182647942529525
+[00:01:08] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0269187
+[00:01:08] Ms1List.Count: 340 Ms2List.Count: 183
+[00:01:08] Ms1ppm mean: 0.0360846407790888 Ms1ppm sd: 0.328623720426333
+[00:01:08] Ms1th mean: 3.38176635949594E-05 Ms1th sd: 0.000258004254512973
+[00:01:08] Ms2ppm mean: -0.408290017881458 Ms2ppm sd: 2.9334948648399
+[00:01:08] Ms2th mean: -0.000290879323785642 Ms2th sd: 0.00275630300615855
+[00:01:08] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0337551
+[00:01:08] Ms1List.Count: 325 Ms2List.Count: 185
+[00:01:08] Ms1ppm mean: 0.0317401844929196 Ms1ppm sd: 0.256138068189067
+[00:01:08] Ms1th mean: 2.93748605451163E-05 Ms1th sd: 0.000202760226744063
+[00:01:08] Ms2ppm mean: -0.554495111933964 Ms2ppm sd: 3.1471480448086
+[00:01:08] Ms2th mean: -0.000431763646667599 Ms2th sd: 0.00301334470239882
+[00:01:08] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0212706
+[00:01:08] Ms1List.Count: 282 Ms2List.Count: 185
+[00:01:08] Ms1ppm mean: 0.0263099876988683 Ms1ppm sd: 0.240988291725227
+[00:01:08] Ms1th mean: 2.613329318214E-05 Ms1th sd: 0.000189580623816753
+[00:01:08] Ms2ppm mean: -0.554495111933964 Ms2ppm sd: 3.1471480448086
+[00:01:08] Ms2th mean: -0.000431763646667599 Ms2th sd: 0.00301334470239882
+[00:01:08] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleinit.ms1dptsv
+[00:01:08] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleinit.ms2dptsv
+[00:01:08] Starting engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.2792043
+[00:01:08] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] 15 30 45 60 70 85 100 
+[00:01:08] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0457856
+[00:01:08] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0408397
+[00:01:08] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:08] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0000047
+[00:01:08] PSMs within 1% fdr: 25
+[00:01:08] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0191489
+[00:01:08] Ms1List.Count: 325 Ms2List.Count: 185
+[00:01:08] Ms1ppm mean: 0.0317401844929196 Ms1ppm sd: 0.256138068189067
+[00:01:08] Ms1th mean: 2.93748605451163E-05 Ms1th sd: 0.000202760226744063
+[00:01:08] Ms2ppm mean: -0.112267892355052 Ms2ppm sd: 3.14714943656809
+[00:01:08] Ms2th mean: -9.33120300853286E-05 Ms2th sd: 0.00299933030050578
+[00:01:08] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:08] Time to run: 00:00:00.0232346
+[00:01:08] Ms1List.Count: 282 Ms2List.Count: 185
+[00:01:08] Ms1ppm mean: 0.0263099876988683 Ms1ppm sd: 0.240988291725227
+[00:01:08] Ms1th mean: 2.613329318214E-05 Ms1th sd: 0.000189580623816753
+[00:01:08] Ms2ppm mean: -0.112267892355052 Ms2ppm sd: 3.14714943656809
+[00:01:08] Ms2th mean: -9.33120300853286E-05 Ms2th sd: 0.00299933030050578
+[00:01:08] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround1alignment.ms1dptsv
+[00:01:08] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround1alignment.ms2dptsv
+[00:01:09] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround1alignment.mzml
+[00:01:09] Starting engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0412911
+[00:01:09] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] 15 30 45 60 70 85 100 
+[00:01:09] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0526232
+[00:01:09] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0435388
+[00:01:09] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:09] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0000041
+[00:01:09] PSMs within 1% fdr: 25
+[00:01:09] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0229937
+[00:01:09] Ms1List.Count: 327 Ms2List.Count: 185
+[00:01:09] Ms1ppm mean: 0.00704145781991904 Ms1ppm sd: 0.266921931766275
+[00:01:09] Ms1th mean: 9.91233989172448E-06 Ms1th sd: 0.000213017876902446
+[00:01:09] Ms2ppm mean: -0.112267892355052 Ms2ppm sd: 3.14714943656809
+[00:01:09] Ms2th mean: -9.33120300853286E-05 Ms2th sd: 0.00299933030050578
+[00:01:09] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0200980
+[00:01:09] Ms1List.Count: 285 Ms2List.Count: 185
+[00:01:09] Ms1ppm mean: 0.00169483405487053 Ms1ppm sd: 0.244456346681638
+[00:01:09] Ms1th mean: 5.27714093506577E-06 Ms1th sd: 0.000191293358749507
+[00:01:09] Ms2ppm mean: -0.112267892355052 Ms2ppm sd: 3.14714943656809
+[00:01:09] Ms2th mean: -9.33120300853286E-05 Ms2th sd: 0.00299933030050578
+[00:01:09] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.ms1dptsv
+[00:01:09] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.ms2dptsv
+[00:01:09] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:09] Starting engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0340238
+[00:01:09] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] 15 30 45 60 70 85 100 
+[00:01:09] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0506682
+[00:01:09] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0439478
+[00:01:09] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:09] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0000041
+[00:01:09] PSMs within 1% fdr: 25
+[00:01:09] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0201191
+[00:01:09] Ms1List.Count: 327 Ms2List.Count: 185
+[00:01:09] Ms1ppm mean: 0.00704145781991904 Ms1ppm sd: 0.266921931766275
+[00:01:09] Ms1th mean: 9.91233989172448E-06 Ms1th sd: 0.000213017876902446
+[00:01:09] Ms2ppm mean: 0.132321698585208 Ms2ppm sd: 3.14715020633309
+[00:01:09] Ms2th mean: 9.38807495222013E-05 Ms2th sd: 0.00299395406935498
+[00:01:09] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:09] Time to run: 00:00:00.0245794
+[00:01:09] Ms1List.Count: 285 Ms2List.Count: 185
+[00:01:09] Ms1ppm mean: 0.00169483405487052 Ms1ppm sd: 0.244456346681638
+[00:01:09] Ms1th mean: 5.27714093506578E-06 Ms1th sd: 0.000191293358749507
+[00:01:09] Ms2ppm mean: 0.132321698585209 Ms2ppm sd: 3.14715020633309
+[00:01:09] Ms2th mean: 9.38807495222014E-05 Ms2th sd: 0.00299395406935498
+[00:01:10] Starting engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Finished engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Time to run: 00:00:01.5914662
+[00:01:11] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] 15 30 45 60 75 90 100 
+[00:01:11] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Time to run: 00:00:00.0455902
+[00:01:11] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Time to run: 00:00:00.0322931
+[00:01:11] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:11] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Time to run: 00:00:00.0000043
+[00:01:11] PSMs within 1% fdr: 25
+[00:01:11] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Time to run: 00:00:00.0305772
+[00:01:11] Ms1List.Count: 328 Ms2List.Count: 185
+[00:01:11] Ms1ppm mean: -0.00989263024455182 Ms1ppm sd: 0.268682314597085
+[00:01:11] Ms1th mean: -3.11923845772775E-06 Ms1th sd: 0.000214731095554763
+[00:01:11] Ms2ppm mean: -0.112267892355052 Ms2ppm sd: 3.14714943656809
+[00:01:11] Ms2th mean: -9.33120300853286E-05 Ms2th sd: 0.00299933030050578
+[00:01:11] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:11] Time to run: 00:00:00.0226786
+[00:01:11] Ms1List.Count: 285 Ms2List.Count: 185
+[00:01:11] Ms1ppm mean: -0.019060245933061 Ms1ppm sd: 0.244796345267552
+[00:01:11] Ms1th mean: -1.12408191811435E-05 Ms1th sd: 0.000191550569229162
+[00:01:11] Ms2ppm mean: -0.112267892355052 Ms2ppm sd: 3.14714943656809
+[00:01:11] Ms2th mean: -9.33120300853286E-05 Ms2th sd: 0.00299933030050578
+[00:01:11] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\results.txt
+[00:01:11] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\prose.txt
+[00:01:11] Starting task: Task3SearchTask
+[00:01:11] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task3SearchTask\SearchTaskconfig.toml
+[00:01:12] Starting engine: ClassicSearchEngine Task3SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:12] 15 30 45 60 75 90 100 
+[00:01:12] Finished engine: ClassicSearchEngine Task3SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:12] Time to run: 00:00:00.0526333
+[00:01:12] Starting engine: SequencesToActualProteinPeptidesEngine Task3SearchTask
+[00:01:12] Finished engine: SequencesToActualProteinPeptidesEngine Task3SearchTask
+[00:01:12] Time to run: 00:00:00.0427667
+[00:01:12] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:12] Starting engine: FdrAnalysisEngine Task3SearchTask
+[00:01:12] Finished engine: FdrAnalysisEngine Task3SearchTask
+[00:01:12] Time to run: 00:00:00.0000038
+[00:01:12] PSMs within 1% fdr: 25
+[00:01:12] Starting engine: LocalizationEngine Task3SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:12] Finished engine: LocalizationEngine Task3SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:12] Time to run: 00:00:00.0030242
+[00:01:12] Starting engine: ModificationAnalysisEngine Task3SearchTask
+[00:01:12] Finished engine: ModificationAnalysisEngine Task3SearchTask
+[00:01:12] Time to run: 00:00:00.0001260
+[00:01:12] Localized mods seen below q-value 0.01:
+[00:01:12] 	Phosphoserine	2
+[00:01:12] 	Oxidation of M	1
+[00:01:12] (Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:
+[00:01:12] 
+[00:01:12] (Approx) Additional unlocalized mods seen below q-value 0.01:
+[00:01:12] 	Phosphoserine	1
+[00:01:12] (Approx) Additional unlocalized modification formulas seen below q-value 0.01:
+[00:01:12] 
+[00:01:12] 
+[00:01:12] All mods in database limited to peptides observed in the results:
+[00:01:12] 	Phosphoserine	4
+[00:01:12] 
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task3SearchTask\exampleround2alignment_PSMs_1mm.psmtsv
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task3SearchTask\exampleround2alignment_UniquePeptides_1mm.psmtsv
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task3SearchTask\results.txt
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task3SearchTask\prose.txt
+[00:01:12] Starting task: Task4GptmdTask
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task4GptmdTask\GptmdTaskconfig.toml
+[00:01:12] Starting engine: ClassicSearchEngine Task4GptmdTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:12] 15 30 45 60 75 90 100 
+[00:01:12] Finished engine: ClassicSearchEngine Task4GptmdTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:12] Time to run: 00:00:00.1013170
+[00:01:12] Starting engine: SequencesToActualProteinPeptidesEngine Task4GptmdTask
+[00:01:12] Finished engine: SequencesToActualProteinPeptidesEngine Task4GptmdTask
+[00:01:12] Time to run: 00:00:00.0357520
+[00:01:12] CompactPeptideToProteinPeptideMatching.Count: 15
+[00:01:12] Starting engine: FdrAnalysisEngine Task4GptmdTask
+[00:01:12] Finished engine: FdrAnalysisEngine Task4GptmdTask
+[00:01:12] Time to run: 00:00:00.0000058
+[00:01:12] PSMs within 1% fdr: 41
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task4GptmdTask\PSMs.psmtsv
+[00:01:12] Starting engine: GptmdEngine Task4GptmdTask
+[00:01:12] Finished engine: GptmdEngine Task4GptmdTask
+[00:01:12] Time to run: 00:00:00.0082142
+[00:01:12] Modifications trying to add: 53
+[00:01:12] Proteins trying to expand: 7
+[00:01:12] Mods types and counts:
+[00:01:12] 	Sodium on D	15
+[00:01:12] 	Sodium on E	13
+[00:01:12] 	Oxidation on D	3
+[00:01:12] 	Phospho on S	3
+[00:01:12] 	Sulfonation on S	3
+[00:01:12] 	Calcium on D	3
+[00:01:12] 	Water loss	3
+[00:01:12] 	Phospho on T	2
+[00:01:12] 	Sulfonation on T	2
+[00:01:12] 	Oxidation on F	1
+[00:01:12] 	Oxidation on E	1
+[00:01:12] 	Oxidation on H	1
+[00:01:12] 	Calcium on E	1
+[00:01:12] 	Carbon Adduct	1
+[00:01:12] 	Oxidation and then loss of oxidized M side chain	1
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task4GptmdTask\mouse-10GPTMD.xml
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task4GptmdTask\results.txt
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task4GptmdTask\prose.txt
+[00:01:12] Starting task: Task5SearchTask
+[00:01:12] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\SearchTaskconfig.toml
+[00:01:12] Starting engine: ClassicSearchEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:14] 15 30 45 55 70 85 100 
+[00:01:14] Finished engine: ClassicSearchEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:14] Time to run: 00:00:01.2400511
+[00:01:14] Starting engine: SequencesToActualProteinPeptidesEngine Task5SearchTask
+[00:01:14] Finished engine: SequencesToActualProteinPeptidesEngine Task5SearchTask
+[00:01:14] Time to run: 00:00:00.6590991
+[00:01:14] CompactPeptideToProteinPeptideMatching.Count: 26
+[00:01:14] Starting engine: ProteinParsimonyEngine Task5SearchTask
+[00:01:14] Finished engine: ProteinParsimonyEngine Task5SearchTask
+[00:01:14] Time to run: 00:00:00.0002862
+[00:01:14] All proteins within 1% FDR: -1
+[00:01:14] Starting engine: FdrAnalysisEngine Task5SearchTask
+[00:01:14] Finished engine: FdrAnalysisEngine Task5SearchTask
+[00:01:14] Time to run: 00:00:00.0000059
+[00:01:14] PSMs within 1% fdr: 41
+[00:01:14] Starting engine: ProteinScoringAndFdrEngine Task5SearchTask
+[00:01:14] Finished engine: ProteinScoringAndFdrEngine Task5SearchTask
+[00:01:14] Time to run: 00:00:00.0015116
+[00:01:14] Starting engine: LocalizationEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:14] Finished engine: LocalizationEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:14] Time to run: 00:00:00.0048432
+[00:01:14] Starting engine: ModificationAnalysisEngine Task5SearchTask
+[00:01:14] Finished engine: ModificationAnalysisEngine Task5SearchTask
+[00:01:14] Time to run: 00:00:00.0016981
+[00:01:14] Localized mods seen below q-value 0.01:
+[00:01:14] 	Water loss	2
+[00:01:14] 	Phospho on S	2
+[00:01:14] 	Carbon Adduct	1
+[00:01:14] 	Oxidation of M	1
+[00:01:14] 	Sodium on E	1
+[00:01:14] 	Calcium on E	1
+[00:01:14] 	Sodium on D	1
+[00:01:14] 	Oxidation and then loss of oxidized M side chain	1
+[00:01:14] 	Oxidation on D	1
+[00:01:14] (Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:
+[00:01:14] 
+[00:01:14] (Approx) Additional unlocalized mods seen below q-value 0.01:
+[00:01:14] 	Phospho on S	1
+[00:01:14] 	Sodium on E	1
+[00:01:14] (Approx) Additional unlocalized modification formulas seen below q-value 0.01:
+[00:01:14] 	O	1
+[00:01:14] 	H-2Ca	1
+[00:01:14] 
+[00:01:14] All mods in database limited to peptides observed in the results:
+[00:01:14] 	Phosphoserine	4
+[00:01:14] 	Oxidation on D	3
+[00:01:14] 	Sodium on D	3
+[00:01:14] 	Calcium on D	3
+[00:01:14] 	Water loss	3
+[00:01:14] 	Phospho on S	3
+[00:01:14] 	Sulfonation on S	3
+[00:01:14] 	Phospho on T	2
+[00:01:14] 	Sulfonation on T	2
+[00:01:14] 	Oxidation on H	1
+[00:01:14] 	Carbon Adduct	1
+[00:01:14] 	Oxidation on F	1
+[00:01:14] 	Oxidation on E	1
+[00:01:14] 	Sodium on E	1
+[00:01:14] 	Calcium on E	1
+[00:01:14] 	Oxidation and then loss of oxidized M side chain	1
+[00:01:14] 
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\exampleround2alignment_PSMs_1mm.psmtsv
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\exampleround2alignment_UniquePeptides_1mm.psmtsv
+[00:01:15] Starting engine: ProteinScoringAndFdrEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:15] Finished engine: ProteinScoringAndFdrEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:15] Time to run: 00:00:00.0001935
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\exampleround2alignment_1mm_ProteinGroups.tsv
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\exampleround2alignment_1mm.mzid
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\exampleround2alignment_1mm_QuantifiedPeaks.tsv
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\aggregateQuantifiedPeptidesByBaseSeq_1mm.tsv
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\aggregateQuantifiedPeptidesByFullSeq_1mm.tsv
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\mouse-10GPTMDpruned.xml
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\mouse-10GPTMDproteinPruned.xml
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\results.txt
+[00:01:15] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-28\Task5SearchTask\prose.txt
+[00:01:15] Error Text:
+[00:01:15] Version: 4.0.30319.42000
+[00:01:15] OSVersion: Microsoft Windows NT 6.2.9200.0
+[00:01:15] EmptyArgs:False
+[00:01:15] EmptyArgs:
+[00:01:15] Usage:
+[00:01:15] 	-t --tasks     List of task poml files
+[00:01:15] 	-s --spectra   List of spectra files
+[00:01:15] 	-d --databases List of database files
+[00:01:16] Not a release version
+[00:01:16] -t , Examples\Task1SearchExample.toml , Examples\Task2CalibrationExample.toml , Examples\Task3SearchExample.toml , Examples\Task4GptmdExample.toml , Examples\Task5SearchExample.toml , -s , Examples\example.mzML , -d , Examples\mouse-10.xml
+[00:01:17] Starting task: Task1SearchTask
+[00:01:17] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task1SearchTask\SearchTaskconfig.toml
+[00:01:18] Starting engine: ClassicSearchEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:18] 15 30 45 60 75 85 100 
+[00:01:18] Finished engine: ClassicSearchEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:18] Time to run: 00:00:00.1589347
+[00:01:18] Starting engine: SequencesToActualProteinPeptidesEngine Task1SearchTask
+[00:01:18] Finished engine: SequencesToActualProteinPeptidesEngine Task1SearchTask
+[00:01:18] Time to run: 00:00:00.0476384
+[00:01:18] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:18] Starting engine: ProteinParsimonyEngine Task1SearchTask
+[00:01:18] Finished engine: ProteinParsimonyEngine Task1SearchTask
+[00:01:18] Time to run: 00:00:00.0455214
+[00:01:18] All proteins within 1% FDR: -1
+[00:01:18] Starting engine: FdrAnalysisEngine Task1SearchTask
+[00:01:18] Finished engine: FdrAnalysisEngine Task1SearchTask
+[00:01:18] Time to run: 00:00:00.0027152
+[00:01:18] PSMs within 1% fdr: 25
+[00:01:18] Starting engine: ProteinScoringAndFdrEngine Task1SearchTask
+[00:01:18] Finished engine: ProteinScoringAndFdrEngine Task1SearchTask
+[00:01:18] Time to run: 00:00:00.0402356
+[00:01:18] Starting engine: LocalizationEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:18] Finished engine: LocalizationEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:18] Time to run: 00:00:00.0128480
+[00:01:18] Starting engine: ModificationAnalysisEngine Task1SearchTask
+[00:01:18] Finished engine: ModificationAnalysisEngine Task1SearchTask
+[00:01:18] Time to run: 00:00:00.0622594
+[00:01:18] Localized mods seen below q-value 0.01:
+[00:01:18] 	Phosphoserine	2
+[00:01:18] 	Oxidation of M	1
+[00:01:18] (Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:
+[00:01:18] 
+[00:01:18] (Approx) Additional unlocalized mods seen below q-value 0.01:
+[00:01:18] 	Phosphoserine	1
+[00:01:18] (Approx) Additional unlocalized modification formulas seen below q-value 0.01:
+[00:01:18] 
+[00:01:18] 
+[00:01:18] All mods in database limited to peptides observed in the results:
+[00:01:18] 	Phosphoserine	4
+[00:01:18] 
+[00:01:18] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task1SearchTask\example_PSMs_1mm.psmtsv
+[00:01:18] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task1SearchTask\example_UniquePeptides_1mm.psmtsv
+[00:01:18] Starting engine: ProteinScoringAndFdrEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:18] Finished engine: ProteinScoringAndFdrEngine Task1SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:18] Time to run: 00:00:00.0002529
+[00:01:18] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task1SearchTask\example_1mm_ProteinGroups.tsv
+[00:01:19] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task1SearchTask\example_1mm.mzid
+[00:01:19] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task1SearchTask\results.txt
+[00:01:19] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task1SearchTask\prose.txt
+[00:01:19] Starting task: Task2CalibrationTask
+[00:01:19] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\CalibrationTaskconfig.toml
+[00:01:19] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] 15 30 45 60 75 85 100 
+[00:01:19] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0488421
+[00:01:19] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0350028
+[00:01:19] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:19] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0000072
+[00:01:19] PSMs within 1% fdr: 25
+[00:01:19] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0564976
+[00:01:19] Ms1List.Count: 345 Ms2List.Count: 174
+[00:01:19] Ms1ppm mean: 0.0882721327062909 Ms1ppm sd: 0.420492441991365
+[00:01:19] Ms1th mean: 8.46532690036218E-05 Ms1th sd: 0.000341746751297935
+[00:01:19] Ms2ppm mean: -0.419942564453381 Ms2ppm sd: 2.57404036152864
+[00:01:19] Ms2th mean: -0.000228341133703127 Ms2th sd: 0.00182647942529525
+[00:01:19] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0196788
+[00:01:19] Ms1List.Count: 340 Ms2List.Count: 183
+[00:01:19] Ms1ppm mean: 0.0360846407790888 Ms1ppm sd: 0.328623720426333
+[00:01:19] Ms1th mean: 3.38176635949594E-05 Ms1th sd: 0.000258004254512974
+[00:01:19] Ms2ppm mean: -0.408290017881457 Ms2ppm sd: 2.9334948648399
+[00:01:19] Ms2th mean: -0.000290879323785642 Ms2th sd: 0.00275630300615855
+[00:01:19] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0192068
+[00:01:19] Ms1List.Count: 325 Ms2List.Count: 185
+[00:01:19] Ms1ppm mean: 0.0317401844929196 Ms1ppm sd: 0.256138068189067
+[00:01:19] Ms1th mean: 2.93748605451163E-05 Ms1th sd: 0.000202760226744063
+[00:01:19] Ms2ppm mean: -0.554495111933964 Ms2ppm sd: 3.1471480448086
+[00:01:19] Ms2th mean: -0.000431763646667599 Ms2th sd: 0.00301334470239882
+[00:01:19] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0184558
+[00:01:19] Ms1List.Count: 282 Ms2List.Count: 185
+[00:01:19] Ms1ppm mean: 0.0263099876988683 Ms1ppm sd: 0.240988291725227
+[00:01:19] Ms1th mean: 2.613329318214E-05 Ms1th sd: 0.000189580623816753
+[00:01:19] Ms2ppm mean: -0.554495111933964 Ms2ppm sd: 3.1471480448086
+[00:01:19] Ms2th mean: -0.000431763646667599 Ms2th sd: 0.00301334470239882
+[00:01:19] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleinit.ms1dptsv
+[00:01:19] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleinit.ms2dptsv
+[00:01:19] Starting engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.1264192
+[00:01:19] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] 15 30 45 60 75 85 100 
+[00:01:19] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0788780
+[00:01:19] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0610308
+[00:01:19] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:19] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0000066
+[00:01:19] PSMs within 1% fdr: 25
+[00:01:19] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:19] Time to run: 00:00:00.0321135
+[00:01:19] Ms1List.Count: 325 Ms2List.Count: 185
+[00:01:19] Ms1ppm mean: 0.0317401844929196 Ms1ppm sd: 0.256138068189067
+[00:01:19] Ms1th mean: 2.93748605451163E-05 Ms1th sd: 0.000202760226744063
+[00:01:19] Ms2ppm mean: 0.245367157994425 Ms2ppm sd: 3.14715056209104
+[00:01:19] Ms2th mean: 0.000180398306085832 Ms2th sd: 0.00299204453965514
+[00:01:19] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0331004
+[00:01:20] Ms1List.Count: 282 Ms2List.Count: 185
+[00:01:20] Ms1ppm mean: 0.0263099876988683 Ms1ppm sd: 0.240988291725227
+[00:01:20] Ms1th mean: 2.613329318214E-05 Ms1th sd: 0.000189580623816753
+[00:01:20] Ms2ppm mean: 0.245367157994424 Ms2ppm sd: 3.14715056209104
+[00:01:20] Ms2th mean: 0.000180398306085832 Ms2th sd: 0.00299204453965514
+[00:01:20] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround1alignment.ms1dptsv
+[00:01:20] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround1alignment.ms2dptsv
+[00:01:20] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround1alignment.mzml
+[00:01:20] Starting engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0315255
+[00:01:20] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] 15 30 45 60 75 85 100 
+[00:01:20] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0475491
+[00:01:20] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0395886
+[00:01:20] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:20] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0000088
+[00:01:20] PSMs within 1% fdr: 25
+[00:01:20] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0201379
+[00:01:20] Ms1List.Count: 325 Ms2List.Count: 185
+[00:01:20] Ms1ppm mean: 0.0317401844929196 Ms1ppm sd: 0.256138068189067
+[00:01:20] Ms1th mean: 2.93748605451163E-05 Ms1th sd: 0.000202760226744063
+[00:01:20] Ms2ppm mean: 0.210634370879613 Ms2ppm sd: 3.14715045279179
+[00:01:20] Ms2th mean: 0.000153816116147709 Ms2th sd: 0.00299259245240428
+[00:01:20] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0184010
+[00:01:20] Ms1List.Count: 282 Ms2List.Count: 185
+[00:01:20] Ms1ppm mean: 0.0263099876988683 Ms1ppm sd: 0.240988291725227
+[00:01:20] Ms1th mean: 2.613329318214E-05 Ms1th sd: 0.000189580623816753
+[00:01:20] Ms2ppm mean: 0.210634370879613 Ms2ppm sd: 3.14715045279179
+[00:01:20] Ms2th mean: 0.000153816116147709 Ms2th sd: 0.00299259245240428
+[00:01:20] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.ms1dptsv
+[00:01:20] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.ms2dptsv
+[00:01:20] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:20] Starting engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0334284
+[00:01:20] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] 15 30 45 60 75 85 100 
+[00:01:20] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0459854
+[00:01:20] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0333335
+[00:01:20] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:20] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0000065
+[00:01:20] PSMs within 1% fdr: 25
+[00:01:20] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:20] Time to run: 00:00:00.0196289
+[00:01:20] Ms1List.Count: 327 Ms2List.Count: 185
+[00:01:20] Ms1ppm mean: 0.00419964969957096 Ms1ppm sd: 0.266921931013001
+[00:01:20] Ms1th mean: 7.62483979881914E-06 Ms1th sd: 0.000212966893923478
+[00:01:20] Ms2ppm mean: 0.210634370879613 Ms2ppm sd: 3.14715045279179
+[00:01:20] Ms2th mean: 0.000153816116147709 Ms2th sd: 0.00299259245240428
+[00:01:20] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:21] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:21] Time to run: 00:00:00.0183401
+[00:01:21] Ms1List.Count: 285 Ms2List.Count: 185
+[00:01:21] Ms1ppm mean: -0.00114697404533129 Ms1ppm sd: 0.244456345995823
+[00:01:21] Ms1th mean: 2.94829622226531E-06 Ms1th sd: 0.00019124338570637
+[00:01:21] Ms2ppm mean: 0.210634370879613 Ms2ppm sd: 3.14715045279179
+[00:01:21] Ms2th mean: 0.000153816116147709 Ms2th sd: 0.00299259245240428
+[00:01:21] Starting engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Finished engine: CalibrationEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Time to run: 00:00:03.3809275
+[00:01:24] Starting engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] 15 30 45 60 75 85 100 
+[00:01:24] Finished engine: ClassicSearchEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Time to run: 00:00:00.0502399
+[00:01:24] Starting engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Finished engine: SequencesToActualProteinPeptidesEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Time to run: 00:00:00.0385783
+[00:01:24] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:24] Starting engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Finished engine: FdrAnalysisEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Time to run: 00:00:00.0000066
+[00:01:24] PSMs within 1% fdr: 25
+[00:01:24] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Time to run: 00:00:00.0191183
+[00:01:24] Ms1List.Count: 327 Ms2List.Count: 185
+[00:01:24] Ms1ppm mean: 0.0154364068194143 Ms1ppm sd: 0.260816845979411
+[00:01:24] Ms1th mean: 1.72681501125008E-05 Ms1th sd: 0.000202274120802618
+[00:01:24] Ms2ppm mean: 0.210634370879613 Ms2ppm sd: 3.14715045279179
+[00:01:24] Ms2th mean: 0.000153816116147709 Ms2th sd: 0.00299259245240428
+[00:01:24] Starting engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Finished engine: DataPointAcquisitionEngine Task2CalibrationTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\example.mzML
+[00:01:24] Time to run: 00:00:00.0186076
+[00:01:24] Ms1List.Count: 287 Ms2List.Count: 185
+[00:01:24] Ms1ppm mean: 0.000470982597336022 Ms1ppm sd: 0.235243585962364
+[00:01:24] Ms1th mean: 4.3675172353288E-06 Ms1th sd: 0.000177407258463916
+[00:01:24] Ms2ppm mean: 0.210634370879612 Ms2ppm sd: 3.14715045279179
+[00:01:24] Ms2th mean: 0.000153816116147709 Ms2th sd: 0.00299259245240428
+[00:01:24] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\results.txt
+[00:01:24] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\prose.txt
+[00:01:24] Starting task: Task3SearchTask
+[00:01:24] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task3SearchTask\SearchTaskconfig.toml
+[00:01:24] Starting engine: ClassicSearchEngine Task3SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:24] 15 30 40 55 70 85 100 
+[00:01:24] Finished engine: ClassicSearchEngine Task3SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:24] Time to run: 00:00:00.0632782
+[00:01:24] Starting engine: SequencesToActualProteinPeptidesEngine Task3SearchTask
+[00:01:24] Finished engine: SequencesToActualProteinPeptidesEngine Task3SearchTask
+[00:01:24] Time to run: 00:00:00.0710587
+[00:01:24] CompactPeptideToProteinPeptideMatching.Count: 11
+[00:01:24] Starting engine: FdrAnalysisEngine Task3SearchTask
+[00:01:24] Finished engine: FdrAnalysisEngine Task3SearchTask
+[00:01:24] Time to run: 00:00:00.0000062
+[00:01:24] PSMs within 1% fdr: 25
+[00:01:24] Starting engine: LocalizationEngine Task3SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:24] Finished engine: LocalizationEngine Task3SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:24] Time to run: 00:00:00.0029976
+[00:01:24] Starting engine: ModificationAnalysisEngine Task3SearchTask
+[00:01:24] Finished engine: ModificationAnalysisEngine Task3SearchTask
+[00:01:24] Time to run: 00:00:00.0001169
+[00:01:24] Localized mods seen below q-value 0.01:
+[00:01:24] 	Phosphoserine	2
+[00:01:24] 	Oxidation of M	1
+[00:01:24] (Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:
+[00:01:24] 
+[00:01:24] (Approx) Additional unlocalized mods seen below q-value 0.01:
+[00:01:24] 	Phosphoserine	1
+[00:01:24] (Approx) Additional unlocalized modification formulas seen below q-value 0.01:
+[00:01:24] 
+[00:01:24] 
+[00:01:24] All mods in database limited to peptides observed in the results:
+[00:01:24] 	Phosphoserine	4
+[00:01:24] 
+[00:01:24] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task3SearchTask\exampleround2alignment_PSMs_1mm.psmtsv
+[00:01:24] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task3SearchTask\exampleround2alignment_UniquePeptides_1mm.psmtsv
+[00:01:24] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task3SearchTask\results.txt
+[00:01:24] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task3SearchTask\prose.txt
+[00:01:24] Starting task: Task4GptmdTask
+[00:01:24] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task4GptmdTask\GptmdTaskconfig.toml
+[00:01:25] Starting engine: ClassicSearchEngine Task4GptmdTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:25] 15 30 45 60 70 85 100 
+[00:01:25] Finished engine: ClassicSearchEngine Task4GptmdTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:25] Time to run: 00:00:00.1078156
+[00:01:25] Starting engine: SequencesToActualProteinPeptidesEngine Task4GptmdTask
+[00:01:25] Finished engine: SequencesToActualProteinPeptidesEngine Task4GptmdTask
+[00:01:25] Time to run: 00:00:00.0353428
+[00:01:25] CompactPeptideToProteinPeptideMatching.Count: 15
+[00:01:25] Starting engine: FdrAnalysisEngine Task4GptmdTask
+[00:01:25] Finished engine: FdrAnalysisEngine Task4GptmdTask
+[00:01:25] Time to run: 00:00:00.0000088
+[00:01:25] PSMs within 1% fdr: 41
+[00:01:25] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task4GptmdTask\PSMs.psmtsv
+[00:01:25] Starting engine: GptmdEngine Task4GptmdTask
+[00:01:25] Finished engine: GptmdEngine Task4GptmdTask
+[00:01:25] Time to run: 00:00:00.0085203
+[00:01:25] Modifications trying to add: 53
+[00:01:25] Proteins trying to expand: 7
+[00:01:25] Mods types and counts:
+[00:01:25] 	Sodium on D	15
+[00:01:25] 	Sodium on E	13
+[00:01:25] 	Oxidation on D	3
+[00:01:25] 	Phospho on S	3
+[00:01:25] 	Sulfonation on S	3
+[00:01:25] 	Calcium on D	3
+[00:01:25] 	Water loss	3
+[00:01:25] 	Phospho on T	2
+[00:01:25] 	Sulfonation on T	2
+[00:01:25] 	Oxidation on F	1
+[00:01:25] 	Oxidation on E	1
+[00:01:25] 	Oxidation on H	1
+[00:01:25] 	Calcium on E	1
+[00:01:25] 	Carbon Adduct	1
+[00:01:25] 	Oxidation and then loss of oxidized M side chain	1
+[00:01:25] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task4GptmdTask\mouse-10GPTMD.xml
+[00:01:25] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task4GptmdTask\results.txt
+[00:01:25] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task4GptmdTask\prose.txt
+[00:01:25] Starting task: Task5SearchTask
+[00:01:25] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\SearchTaskconfig.toml
+[00:01:25] Starting engine: ClassicSearchEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:26] 15 25 40 55 70 85 100 
+[00:01:26] Finished engine: ClassicSearchEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:26] Time to run: 00:00:01.3298547
+[00:01:26] Starting engine: SequencesToActualProteinPeptidesEngine Task5SearchTask
+[00:01:27] Finished engine: SequencesToActualProteinPeptidesEngine Task5SearchTask
+[00:01:27] Time to run: 00:00:00.6457101
+[00:01:27] CompactPeptideToProteinPeptideMatching.Count: 26
+[00:01:27] Starting engine: ProteinParsimonyEngine Task5SearchTask
+[00:01:27] Finished engine: ProteinParsimonyEngine Task5SearchTask
+[00:01:27] Time to run: 00:00:00.0004388
+[00:01:27] All proteins within 1% FDR: -1
+[00:01:27] Starting engine: FdrAnalysisEngine Task5SearchTask
+[00:01:27] Finished engine: FdrAnalysisEngine Task5SearchTask
+[00:01:27] Time to run: 00:00:00.0000052
+[00:01:27] PSMs within 1% fdr: 41
+[00:01:27] Starting engine: ProteinScoringAndFdrEngine Task5SearchTask
+[00:01:27] Finished engine: ProteinScoringAndFdrEngine Task5SearchTask
+[00:01:27] Time to run: 00:00:00.0011632
+[00:01:27] Starting engine: LocalizationEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:27] Finished engine: LocalizationEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:27] Time to run: 00:00:00.0050379
+[00:01:27] Starting engine: ModificationAnalysisEngine Task5SearchTask
+[00:01:27] Finished engine: ModificationAnalysisEngine Task5SearchTask
+[00:01:27] Time to run: 00:00:00.0010519
+[00:01:27] Localized mods seen below q-value 0.01:
+[00:01:27] 	Water loss	2
+[00:01:27] 	Phospho on S	2
+[00:01:27] 	Carbon Adduct	1
+[00:01:27] 	Oxidation of M	1
+[00:01:27] 	Sodium on E	1
+[00:01:27] 	Calcium on E	1
+[00:01:27] 	Sodium on D	1
+[00:01:27] 	Oxidation and then loss of oxidized M side chain	1
+[00:01:27] 	Oxidation on D	1
+[00:01:27] (Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:
+[00:01:27] 
+[00:01:27] (Approx) Additional unlocalized mods seen below q-value 0.01:
+[00:01:27] 	Phospho on S	1
+[00:01:27] 	Sodium on E	1
+[00:01:27] (Approx) Additional unlocalized modification formulas seen below q-value 0.01:
+[00:01:27] 	O	1
+[00:01:27] 	H-2Ca	1
+[00:01:27] 
+[00:01:27] All mods in database limited to peptides observed in the results:
+[00:01:27] 	Phosphoserine	4
+[00:01:27] 	Oxidation on D	3
+[00:01:27] 	Sodium on D	3
+[00:01:27] 	Calcium on D	3
+[00:01:27] 	Water loss	3
+[00:01:27] 	Phospho on S	3
+[00:01:27] 	Sulfonation on S	3
+[00:01:27] 	Phospho on T	2
+[00:01:27] 	Sulfonation on T	2
+[00:01:27] 	Oxidation on H	1
+[00:01:27] 	Carbon Adduct	1
+[00:01:27] 	Oxidation on F	1
+[00:01:27] 	Oxidation on E	1
+[00:01:27] 	Sodium on E	1
+[00:01:27] 	Calcium on E	1
+[00:01:27] 	Oxidation and then loss of oxidized M side chain	1
+[00:01:27] 
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\exampleround2alignment_PSMs_1mm.psmtsv
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\exampleround2alignment_UniquePeptides_1mm.psmtsv
+[00:01:27] Starting engine: ProteinScoringAndFdrEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:27] Finished engine: ProteinScoringAndFdrEngine Task5SearchTask,Individual Spectra Files,C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task2CalibrationTask\exampleround2alignment.mzml
+[00:01:27] Time to run: 00:00:00.0002060
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\exampleround2alignment_1mm_ProteinGroups.tsv
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\exampleround2alignment_1mm.mzid
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\exampleround2alignment_1mm_QuantifiedPeaks.tsv
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\aggregateQuantifiedPeptidesByBaseSeq_1mm.tsv
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\aggregateQuantifiedPeptidesByFullSeq_1mm.tsv
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\mouse-10GPTMDpruned.xml
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\mouse-10GPTMDproteinPruned.xml
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\results.txt
+[00:01:27] Finished writing file: C:\projects\metamorpheus\Examples\2017-10-12-10-17-39\Task5SearchTask\prose.txt
+[00:01:27] Error Text:
+[00:01:27] Version: 4.0.30319.42000
+[00:01:27] OSVersion: Microsoft Windows NT 6.2.9200.0
+[00:01:27] EmptyArgs:False
+[00:01:27] EmptyArgs:
+[00:01:27] Usage:
+[00:01:27] 	-t --tasks     List of task poml files
+[00:01:27] 	-s --spectra   List of spectra files
+[00:01:27] 	-d --databases List of database files
+[00:01:28] Feeds used:
+[00:01:28]   https://www.nuget.org/api/v2
+[00:01:28]   C:\Program Files (x86)\Microsoft SDKs\NuGetPackages\
+[00:01:28] 
+[00:01:28]   GET https://www.nuget.org/api/v2/FindPackagesById()?id='OpenCover'
+[00:01:28]   OK https://www.nuget.org/api/v2/FindPackagesById()?id='OpenCover' 106ms
+[00:01:28] 
+[00:01:28] 
+[00:01:28] Attempting to gather dependency information for package 'OpenCover.4.6.519' with respect to project 'C:\projects\metamorpheus', targeting 'Any,Version=v0.0'
+[00:01:28] Gathering dependency information took 28.69 ms
+[00:01:28] Attempting to resolve dependencies for package 'OpenCover.4.6.519' with DependencyBehavior 'Lowest'
+[00:01:28] Resolving dependency information took 0 ms
+[00:01:28] Resolving actions to install package 'OpenCover.4.6.519'
+[00:01:28] Resolved actions to install package 'OpenCover.4.6.519'
+[00:01:29] Retrieving package 'OpenCover 4.6.519' from 'nuget.org'.
+[00:01:29]   GET https://www.nuget.org/api/v2/package/OpenCover/4.6.519
+[00:01:29]   OK https://www.nuget.org/api/v2/package/OpenCover/4.6.519 63ms
+[00:01:29] Installing OpenCover 4.6.519.
+[00:01:29] Adding package 'OpenCover.4.6.519' to folder 'C:\projects\metamorpheus'
+[00:01:29] Added package 'OpenCover.4.6.519' to folder 'C:\projects\metamorpheus'
+[00:01:29] Successfully installed 'OpenCover 4.6.519' to C:\projects\metamorpheus
+[00:01:29] Executing nuget actions took 331.65 ms
+[00:01:30] Executing: C:\Program Files\dotnet\dotnet.exe
+[00:01:35] C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\Test\Test.csproj]
+[00:01:35] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\Test\Test.csproj]
+[00:01:35] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project. [C:\projects\metamorpheus\Test\Test.csproj]
+[00:01:35] C:\projects\metamorpheus\Test\Test.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:35] C:\projects\metamorpheus\Test\Test.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:36] Build started, please wait...
+[00:01:37] C:\projects\metamorpheus\Test\Test.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:37] C:\projects\metamorpheus\Test\Test.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:38] C:\projects\metamorpheus\EngineLayer\EngineLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:42] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'MathNet.Numerics 3.20.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:42] C:\projects\metamorpheus\TaskLayer\TaskLayer.csproj : warning NU1701: Package 'NetSerializer 4.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.0'. This package may not be fully compatible with your project.
+[00:01:50] Build completed.
+[00:01:50] 
+[00:01:51] Test run for C:\projects\metamorpheus\Test\bin\Debug\netcoreapp2.0\Test.dll(.NETCoreApp,Version=v2.0)
+[00:01:51] Microsoft (R) Test Execution Command Line Tool Version 15.3.0-preview-20170628-02
+[00:01:51] Copyright (c) Microsoft Corporation.  All rights reserved.
+[00:01:51] 
+[00:01:51] Starting test execution, please wait...
+[00:01:55] NUnit Adapter 3.8.0.0: Test execution started
+[00:01:55] Running all tests in C:\projects\metamorpheus\Test\bin\Debug\netcoreapp2.0\Test.dll
+[00:01:56] NUnit3TestExecutor converted 74 of 74 NUnit test cases
+[00:02:18] NUnit Adapter 3.8.0.0: Test execution complete
+[00:02:18] 
+[00:02:18] Total tests: 74. Passed: 74. Failed: 0. Skipped: 0.
+[00:02:18] Test Run Successful.
+[00:02:18] Test execution time: 26.9706 Seconds
+[00:02:18] Committing...
+[00:02:20] Visited Classes 168 of 211 (79.62)
+[00:02:20] Visited Methods 1102 of 1411 (78.1)
+[00:02:20] Visited Points 6748 of 9393 (71.84)
+[00:02:20] Visited Branches 2275 of 3535 (64.36)
+[00:02:20] 
+[00:02:20] ==== Alternative Results (includes all methods including those without corresponding source) ====
+[00:02:20] Alternative Visited Classes 173 of 214 (80.84)
+[00:02:20] Alternative Visited Methods 1314 of 1760 (74.66)
+[00:02:23] Chocolatey v0.10.7
+[00:02:23] Installing the following packages:
+[00:02:23] codecov
+[00:02:23] By installing you accept licenses for the packages.
+[00:02:25] 
+[00:02:25] Progress: Downloading codecov 1.0.1... 21%
+[00:02:25] Progress: Downloading codecov 1.0.1... 61%
+[00:02:25] Progress: Downloading codecov 1.0.1... 100%
+[00:02:25] 
+[00:02:25] codecov v1.0.1 [Approved]
+[00:02:25] codecov package files install completed. Performing other installation steps.
+[00:02:27] Downloading codecov 
+[00:02:27]   from 'https://github.com/codecov/codecov-exe/releases/download/1.0.1/Codecov.zip'
+[00:02:27] 
+[00:02:27] Progress: 0% - Saving 84.58 KB of 19.6 MB
+[00:02:27] Progress: 0% - Saving 169.58 KB of 19.6 MB
+[00:02:27] Progress: 1% - Saving 254.58 KB of 19.6 MB
+[00:02:27] Progress: 1% - Saving 339.58 KB of 19.6 MB
+[00:02:27] Progress: 2% - Saving 424.58 KB of 19.6 MB
+[00:02:27] Progress: 2% - Saving 509.58 KB of 19.6 MB
+[00:02:27] Progress: 2% - Saving 594.58 KB of 19.6 MB
+[00:02:27] Progress: 3% - Saving 679.58 KB of 19.6 MB
+[00:02:27] Progress: 3% - Saving 764.58 KB of 19.6 MB
+[00:02:27] Progress: 4% - Saving 849.58 KB of 19.6 MB
+[00:02:27] Progress: 4% - Saving 934.58 KB of 19.6 MB
+[00:02:27] Progress: 5% - Saving 1019.58 KB of 19.6 MB
+[00:02:27] Progress: 5% - Saving 1.08 MB of 19.6 MB
+[00:02:27] Progress: 5% - Saving 1.16 MB of 19.6 MB
+[00:02:27] Progress: 6% - Saving 1.24 MB of 19.6 MB
+[00:02:27] Progress: 6% - Saving 1.33 MB of 19.6 MB
+[00:02:27] Progress: 7% - Saving 1.41 MB of 19.6 MB
+[00:02:27] Progress: 7% - Saving 1.49 MB of 19.6 MB
+[00:02:27] Progress: 8% - Saving 1.58 MB of 19.6 MB
+[00:02:27] Progress: 8% - Saving 1.66 MB of 19.6 MB
+[00:02:27] Progress: 8% - Saving 1.74 MB of 19.6 MB
+[00:02:27] Progress: 9% - Saving 1.83 MB of 19.6 MB
+[00:02:27] Progress: 9% - Saving 1.91 MB of 19.6 MB
+[00:02:27] Progress: 10% - Saving 1.99 MB of 19.6 MB
+[00:02:27] Progress: 10% - Saving 2.13 MB of 19.6 MB
+[00:02:27] Progress: 11% - Saving 2.27 MB of 19.6 MB
+[00:02:27] Progress: 12% - Saving 2.43 MB of 19.6 MB
+[00:02:27] Progress: 13% - Saving 2.57 MB of 19.6 MB
+[00:02:27] Progress: 13% - Saving 2.73 MB of 19.6 MB
+[00:02:27] Progress: 14% - Saving 2.87 MB of 19.6 MB
+[00:02:27] Progress: 15% - Saving 3.01 MB of 19.6 MB
+[00:02:27] Progress: 16% - Saving 3.16 MB of 19.6 MB
+[00:02:27] Progress: 16% - Saving 3.31 MB of 19.6 MB
+[00:02:27] Progress: 17% - Saving 3.46 MB of 19.6 MB
+[00:02:28] Progress: 18% - Saving 3.6 MB of 19.6 MB
+[00:02:28] Progress: 19% - Saving 3.76 MB of 19.6 MB
+[00:02:28] Progress: 19% - Saving 3.9 MB of 19.6 MB
+[00:02:28] Progress: 20% - Saving 4.04 MB of 19.6 MB
+[00:02:28] Progress: 21% - Saving 4.2 MB of 19.6 MB
+[00:02:28] Progress: 22% - Saving 4.34 MB of 19.6 MB
+[00:02:28] Progress: 22% - Saving 4.49 MB of 19.6 MB
+[00:02:28] Progress: 23% - Saving 4.63 MB of 19.6 MB
+[00:02:28] Progress: 24% - Saving 4.77 MB of 19.6 MB
+[00:02:28] Progress: 25% - Saving 4.93 MB of 19.6 MB
+[00:02:28] Progress: 25% - Saving 5.07 MB of 19.6 MB
+[00:02:28] Progress: 26% - Saving 5.23 MB of 19.6 MB
+[00:02:28] Progress: 27% - Saving 5.37 MB of 19.6 MB
+[00:02:28] Progress: 28% - Saving 5.51 MB of 19.6 MB
+[00:02:28] Progress: 28% - Saving 5.66 MB of 19.6 MB
+[00:02:28] Progress: 29% - Saving 5.81 MB of 19.6 MB
+[00:02:28] Progress: 30% - Saving 5.96 MB of 19.6 MB
+[00:02:28] Progress: 31% - Saving 6.1 MB of 19.6 MB
+[00:02:28] Progress: 31% - Saving 6.26 MB of 19.6 MB
+[00:02:28] Progress: 32% - Saving 6.4 MB of 19.6 MB
+[00:02:28] Progress: 33% - Saving 6.54 MB of 19.6 MB
+[00:02:28] Progress: 34% - Saving 6.7 MB of 19.6 MB
+[00:02:28] Progress: 34% - Saving 6.84 MB of 19.6 MB
+[00:02:28] Progress: 35% - Saving 6.99 MB of 19.6 MB
+[00:02:28] Progress: 36% - Saving 7.13 MB of 19.6 MB
+[00:02:28] Progress: 37% - Saving 7.27 MB of 19.6 MB
+[00:02:28] Progress: 37% - Saving 7.43 MB of 19.6 MB
+[00:02:28] Progress: 38% - Saving 7.57 MB of 19.6 MB
+[00:02:28] Progress: 39% - Saving 7.73 MB of 19.6 MB
+[00:02:28] Progress: 40% - Saving 7.87 MB of 19.6 MB
+[00:02:28] Progress: 40% - Saving 8.01 MB of 19.6 MB
+[00:02:28] Progress: 41% - Saving 8.16 MB of 19.6 MB
+[00:02:28] Progress: 42% - Saving 8.31 MB of 19.6 MB
+[00:02:28] Progress: 43% - Saving 8.46 MB of 19.6 MB
+[00:02:28] Progress: 43% - Saving 8.6 MB of 19.6 MB
+[00:02:28] Progress: 44% - Saving 8.76 MB of 19.6 MB
+[00:02:28] Progress: 45% - Saving 8.9 MB of 19.6 MB
+[00:02:28] Progress: 46% - Saving 9.04 MB of 19.6 MB
+[00:02:28] Progress: 46% - Saving 9.2 MB of 19.6 MB
+[00:02:28] Progress: 47% - Saving 9.34 MB of 19.6 MB
+[00:02:28] Progress: 48% - Saving 9.49 MB of 19.6 MB
+[00:02:28] Progress: 49% - Saving 9.63 MB of 19.6 MB
+[00:02:28] Progress: 49% - Saving 9.77 MB of 19.6 MB
+[00:02:28] Progress: 50% - Saving 9.93 MB of 19.6 MB
+[00:02:28] Progress: 51% - Saving 10.07 MB of 19.6 MB
+[00:02:28] Progress: 52% - Saving 10.23 MB of 19.6 MB
+[00:02:28] Progress: 52% - Saving 10.37 MB of 19.6 MB
+[00:02:28] Progress: 53% - Saving 10.51 MB of 19.6 MB
+[00:02:28] Progress: 54% - Saving 10.66 MB of 19.6 MB
+[00:02:28] Progress: 55% - Saving 10.81 MB of 19.6 MB
+[00:02:28] Progress: 55% - Saving 10.96 MB of 19.6 MB
+[00:02:28] Progress: 56% - Saving 11.1 MB of 19.6 MB
+[00:02:29] Progress: 57% - Saving 11.26 MB of 19.6 MB
+[00:02:29] Progress: 58% - Saving 11.4 MB of 19.6 MB
+[00:02:29] Progress: 58% - Saving 11.54 MB of 19.6 MB
+[00:02:29] Progress: 59% - Saving 11.7 MB of 19.6 MB
+[00:02:29] Progress: 60% - Saving 11.84 MB of 19.6 MB
+[00:02:29] Progress: 61% - Saving 11.99 MB of 19.6 MB
+[00:02:29] Progress: 61% - Saving 12.13 MB of 19.6 MB
+[00:02:29] Progress: 62% - Saving 12.27 MB of 19.6 MB
+[00:02:29] Progress: 63% - Saving 12.43 MB of 19.6 MB
+[00:02:29] Progress: 64% - Saving 12.57 MB of 19.6 MB
+[00:02:29] Progress: 64% - Saving 12.73 MB of 19.6 MB
+[00:02:29] Progress: 65% - Saving 12.87 MB of 19.6 MB
+[00:02:29] Progress: 66% - Saving 13.01 MB of 19.6 MB
+[00:02:29] Progress: 67% - Saving 13.16 MB of 19.6 MB
+[00:02:29] Progress: 67% - Saving 13.31 MB of 19.6 MB
+[00:02:29] Progress: 68% - Saving 13.46 MB of 19.6 MB
+[00:02:29] Progress: 69% - Saving 13.6 MB of 19.6 MB
+[00:02:29] Progress: 70% - Saving 13.76 MB of 19.6 MB
+[00:02:29] Progress: 70% - Saving 13.9 MB of 19.6 MB
+[00:02:29] Progress: 71% - Saving 14.04 MB of 19.6 MB
+[00:02:29] Progress: 72% - Saving 14.2 MB of 19.6 MB
+[00:02:29] Progress: 73% - Saving 14.34 MB of 19.6 MB
+[00:02:29] Progress: 73% - Saving 14.49 MB of 19.6 MB
+[00:02:29] Progress: 74% - Saving 14.63 MB of 19.6 MB
+[00:02:29] Progress: 75% - Saving 14.77 MB of 19.6 MB
+[00:02:29] Progress: 76% - Saving 14.93 MB of 19.6 MB
+[00:02:29] Progress: 76% - Saving 15.07 MB of 19.6 MB
+[00:02:29] Progress: 77% - Saving 15.23 MB of 19.6 MB
+[00:02:29] Progress: 78% - Saving 15.37 MB of 19.6 MB
+[00:02:29] Progress: 79% - Saving 15.51 MB of 19.6 MB
+[00:02:29] Progress: 79% - Saving 15.66 MB of 19.6 MB
+[00:02:29] Progress: 80% - Saving 15.81 MB of 19.6 MB
+[00:02:29] Progress: 81% - Saving 15.96 MB of 19.6 MB
+[00:02:29] Progress: 82% - Saving 16.1 MB of 19.6 MB
+[00:02:29] Progress: 82% - Saving 16.26 MB of 19.6 MB
+[00:02:30] Progress: 83% - Saving 16.4 MB of 19.6 MB
+[00:02:30] Progress: 84% - Saving 16.54 MB of 19.6 MB
+[00:02:30] Progress: 85% - Saving 16.7 MB of 19.6 MB
+[00:02:30] Progress: 85% - Saving 16.84 MB of 19.6 MB
+[00:02:30] Progress: 86% - Saving 16.99 MB of 19.6 MB
+[00:02:30] Progress: 87% - Saving 17.13 MB of 19.6 MB
+[00:02:30] Progress: 88% - Saving 17.27 MB of 19.6 MB
+[00:02:30] Progress: 88% - Saving 17.43 MB of 19.6 MB
+[00:02:30] Progress: 89% - Saving 17.57 MB of 19.6 MB
+[00:02:30] Progress: 90% - Saving 17.73 MB of 19.6 MB
+[00:02:30] Progress: 91% - Saving 17.87 MB of 19.6 MB
+[00:02:30] Progress: 91% - Saving 18.01 MB of 19.6 MB
+[00:02:30] Progress: 92% - Saving 18.16 MB of 19.6 MB
+[00:02:30] Progress: 93% - Saving 18.31 MB of 19.6 MB
+[00:02:30] Progress: 94% - Saving 18.46 MB of 19.6 MB
+[00:02:30] Progress: 94% - Saving 18.6 MB of 19.6 MB
+[00:02:30] Progress: 95% - Saving 18.76 MB of 19.6 MB
+[00:02:30] Progress: 96% - Saving 18.9 MB of 19.6 MB
+[00:02:30] Progress: 97% - Saving 19.04 MB of 19.6 MB
+[00:02:30] Progress: 97% - Saving 19.2 MB of 19.6 MB
+[00:02:30] Progress: 98% - Saving 19.34 MB of 19.6 MB
+[00:02:30] Progress: 99% - Saving 19.49 MB of 19.6 MB
+[00:02:30] Progress: 100% - Completed download of C:\ProgramData\chocolatey\lib\codecov\tools\Codecov.zip (19.6 MB).
+[00:02:30] Download of Codecov.zip (19.6 MB) completed.
+[00:02:33] C:\ProgramData\chocolatey\lib\codecov\tools\Codecov.zip
+[00:02:33] Extracting C:\ProgramData\chocolatey\lib\codecov\tools\Codecov.zip to C:\ProgramData\chocolatey\lib\codecov\tools...
+[00:02:34] C:\ProgramData\chocolatey\lib\codecov\tools
+[00:02:35]  ShimGen has successfully created a shim for codecov.exe
+[00:02:35]  The install of codecov was successful.
+[00:02:35]   Software installed to 'C:\ProgramData\chocolatey\lib\codecov\tools'
+[00:02:35] 
+[00:02:35] Chocolatey installed 1/1 packages. 
+[00:02:35]  See the log for details (C:\ProgramData\chocolatey\logs\chocolatey.log).
+[00:02:36] 
+[00:02:36]               _____          _
+[00:02:36]              / ____|        | |
+[00:02:36]             | |     ___   __| | ___  ___ _____   __
+[00:02:36]             | |    / _ \ / _  |/ _ \/ __/ _ \ \ / /
+[00:02:36]             | |___| (_) | (_| |  __/ (_| (_) \ V /
+[00:02:36]              \_____\___/ \____|\___|\___\___/ \_/
+[00:02:36]                                          exe-1.0.1
+[00:02:36]             
+[00:02:36] 2017-10-12 10:18:58 [Information] AppVeyor detected.
+[00:02:36] 2017-10-12 10:18:58 [Information] Git detected.
+[00:02:36] 2017-10-12 10:18:58 [Information] Project root: C:\projects\metamorpheus
+[00:02:36] 2017-10-12 10:18:59 [Information] Yaml not found, that's ok! Learn more at http://docs.codecov.io/docs/codecov-yaml
+[00:02:36] 2017-10-12 10:18:59 [Information] Reading reports.
+[00:02:37] 2017-10-12 10:18:59 [Information] opencoverCoverage.xml
+[00:02:37] 2017-10-12 10:18:59 [Information] Uploading Reports.
+[00:02:37] 2017-10-12 10:18:59 [Information] url: https://codecov.io
+[00:02:37] 2017-10-12 10:18:59 [Information] query: https://codecov.io/upload/v4?branch=release&commit=06b2903430bf8d53d16350619105981bf29ed504&build=se5pup61pu92iyqr&tag=&pr=699&name=&flags=&slug=smith-chem-wisc%2FMetaMorpheus&package=exe-1.0.1&build_url=&yaml=&job=stefanks%2Fmetamorpheus%2F3645&service=appveyor
+[00:02:37] 2017-10-12 10:18:59 [Information] Pinging Codecov
+[00:02:39] 2017-10-12 10:19:02 [Information] Uploading to S3 https://codecov.s3.amazonaws.com
+[00:02:39] 2017-10-12 10:19:02 [Information] View reports at: https://codecov.io/github/smith-chem-wisc/MetaMorpheus/commit/7c3134bcf77d1732966e3ca59e46763f36fdb80e
+[00:02:39] Collecting artifacts...
+[00:02:40] No artifacts found matching 'MetaMorpheusDotNetFrameworkAppveyor.zip' path
+[00:02:40] No artifacts found matching 'MetaMorpheusDotNetCoreAppveyor.zip' path
+[00:02:40] No artifacts found matching 'MetaMorpheusGuiDotNetFrameworkAppveyor.zip' path
+[00:02:40] Build success
