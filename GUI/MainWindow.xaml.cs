@@ -187,12 +187,10 @@ namespace MetaMorpheusGUI
                     select possibleMatch;
 
                 OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
-                OutputFolderTextBox.IsEnabled = true;
             }
             else
             {
                 OutputFolderTextBox.Clear();
-                OutputFolderTextBox.IsEnabled = false;
             }
         }
 
