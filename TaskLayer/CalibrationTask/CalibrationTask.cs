@@ -3,14 +3,6 @@ using EngineLayer.Analysis;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using IO.MzML;
-
-#if NET461
-
-using IO.Thermo;
-
-#else
-#endif
-
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -21,6 +13,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
+#if NET461
+
+using IO.Thermo;
+
+#else
+#endif
 
 namespace TaskLayer
 {
