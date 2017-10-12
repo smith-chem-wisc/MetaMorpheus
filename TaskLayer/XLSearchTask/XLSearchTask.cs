@@ -26,9 +26,11 @@ namespace TaskLayer
 
         public XLSearchTask() : base(MyTask.XLSearch)
         {
-            CommonParameters = new CommonParameters();
-            CommonParameters.DoPrecursorDeconvolution = false;
-            CommonParameters.ConserveMemory = false;
+            CommonParameters = new CommonParameters
+            {
+                DoPrecursorDeconvolution = false,
+                ConserveMemory = false
+            };
             XlSearchParameters = new XlSearchParameters();
         }
 
@@ -197,7 +199,6 @@ namespace TaskLayer
                     Status("Getting fragment dictionary...", new List<string> { taskId });
                     var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.DecoyType, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string> { taskId });
 
-                    Dictionary<float, List<int>> fragmentIndexDict = null;
                     lock (indexLock)
                     {
                         string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -215,7 +216,7 @@ namespace TaskLayer
                             Status("Writing peptide index...", new List<string> { taskId });
                             WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
                             Status("Writing fragment index...", new List<string> { taskId });
-                            WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
+                            WriteFragmentIndexNetSerializer(fragmentIndex, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
                         }
                         else
                         {
@@ -229,7 +230,7 @@ namespace TaskLayer
                             messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
                             ser = new NetSerializer.Serializer(messageTypes);
                             using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                                fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                                fragmentIndex = (List<int>[])ser.Deserialize(file);
                         }
                     }
 
@@ -485,7 +486,7 @@ namespace TaskLayer
             return null;
         }
 
-        private void WriteFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile, string taskId)
+        private void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)
         {
             var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
             var ser = new NetSerializer.Serializer(messageTypes);

@@ -114,7 +114,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Private Methods
 
-        private static Tuple<int, double> Accepts(double scanPrecursorMass, CompactPeptide peptide, TerminusType terminusType, MassDiffAcceptor searchMode)
+        private Tuple<int, double> Accepts(double scanPrecursorMass, CompactPeptide peptide, TerminusType terminusType, MassDiffAcceptor searchMode)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
             int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength ?? 0;

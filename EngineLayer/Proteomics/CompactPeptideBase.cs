@@ -72,12 +72,7 @@ namespace EngineLayer
                 for (int j = 0; j < NTerminalMasses.Length; j++)
                 {
                     var hm = NTerminalMasses[j];
-                    if (containsBnoB1 && j > 0)
-                    {
-                        massesToReturn[i] = hm;
-                        i++;
-                    }
-                    else if (containsB)
+                    if (containsB || (containsBnoB1 && j > 0))
                     {
                         massesToReturn[i] = hm;
                         i++;
