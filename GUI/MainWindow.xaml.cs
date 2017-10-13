@@ -97,7 +97,7 @@ namespace MetaMorpheusGUI
             {
                 dynamicTasksObservableCollection.Add(new InRunTask("All Task Results", null));
                 dynamicTasksObservableCollection.Last().Progress = 100;
-                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e.s, Path.GetFileNameWithoutExtension(e.s)));
+                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e.S, Path.GetFileNameWithoutExtension(e.S)));
             }
         }
 
@@ -109,7 +109,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                outRichTextBox.AppendText(e.s);
+                outRichTextBox.AppendText(e.S);
                 outRichTextBox.AppendText(Environment.NewLine);
             }
         }
@@ -122,7 +122,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.s));
+                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.S));
                 huh.SetInProgress(false);
 
                 dataGridDatafiles.Items.Refresh();
@@ -137,7 +137,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.s));
+                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.S));
                 huh.SetInProgress(true);
                 dataGridDatafiles.Items.Refresh();
             }
@@ -484,23 +484,23 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
 
                 for (int i = 1; i < s.nestedIDs.Count - 1; i++)
                 {
                     var hm = s.nestedIDs[i];
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
                 }
 
-                theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.s));
+                theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.S, s.nestedIDs.Last()));
             }
         }
 
@@ -514,22 +514,22 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
 
                 foreach (var hm in s.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
                 }
 
-                theEntityOnWhichToUpdateLabel.Status = s.s;
+                theEntityOnWhichToUpdateLabel.Status = s.S;
             }
         }
 
@@ -543,18 +543,18 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
 
                 foreach (var hm in s.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
                     }
                 }
 
@@ -630,17 +630,19 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(v.nestedIDs[0]));
+                ForTreeView AddWrittenFileToThisOne = dynamicTasksObservableCollection.First(b => b.Id.Equals(v.nestedIDs[0]));
 
                 foreach (var hm in v.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
+                        AddWrittenFileToThisOne = AddWrittenFileToThisOne.Children.First(b => b.Id.Equals(hm));
                     }
-                    catch { }
+                    catch
+                    {
+                    }
                 }
-                theEntityOnWhichToUpdateLabel.Children.Add(new OutputFileForTreeView(v.writtenFile, Path.GetFileName(v.writtenFile)));
+                AddWrittenFileToThisOne.Children.Add(new OutputFileForTreeView(v.writtenFile, Path.GetFileName(v.writtenFile)));
             }
         }
 
