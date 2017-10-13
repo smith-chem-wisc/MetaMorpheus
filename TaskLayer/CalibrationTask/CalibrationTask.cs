@@ -137,7 +137,7 @@ namespace TaskLayer
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                     lock (lock1) // Lock because reading is sequential
                     {
-                        if (Path.GetExtension(currentDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
+                        if (Path.GetExtension(currentDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
                             myMsDataFile = Mzml.LoadAllStaticData(currentDataFile);
                         else
 #if NET461
