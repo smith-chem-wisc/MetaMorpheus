@@ -345,25 +345,25 @@ namespace Test
                 MinPeptideLength = null,
                 MaxMissedCleavages = 0
             };
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(digestionParams, fixedModifications).Last();
-            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
+            var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();
+            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep };
             CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), TerminusType.None);
             Assert.AreEqual("QQQ", value.First().Sequence);
 
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(digestionParams, fixedModifications).First();
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
+            var modPep2 = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).First();
+            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2};
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
             Assert.AreEqual("MNNNSK", value2.First().Sequence);
-            HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(digestionParams, variableModifications).Last() };
+            HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { modPep2};
 
             CompactPeptide compactPeptide2mod = new CompactPeptide(value2mod.Last(), TerminusType.None);
             Assert.AreEqual("MNNNS[HaHa:resMod]K", value2mod.Last().Sequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(digestionParams, fixedModifications).ToList()[1];
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
+            var modPep3 = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).ToList()[1];
+            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3};
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNSK", value3.First().Sequence);
-            HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(digestionParams, variableModifications).Last() };
+            HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { modPep3};
 
             CompactPeptide compactPeptide3mod = new CompactPeptide(value3mod.Last(), TerminusType.None);
             Assert.AreEqual("NNNS[HaHa:resMod]K", value3mod.Last().Sequence);
@@ -371,14 +371,9 @@ namespace Test
             var peptideList = new HashSet<PeptideWithSetModifications>();
             foreach (var protein in proteinList)
             {
-                var temp = protein.Digest(digestionParams, new List<ModificationWithMass>());
-                foreach (var dbPeptide in temp)
+                foreach (var peptide in protein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications))
                 {
-                    var pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
-                    foreach (var peptide in pepWithSetMods)
-                    {
-                        peptideList.Add(peptide);
-                    }
+                    peptideList.Add(peptide);
                 }
             }
 
