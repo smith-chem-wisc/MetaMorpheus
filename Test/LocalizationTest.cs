@@ -46,12 +46,12 @@ namespace Test
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
-            Assert.AreEqual(2, allPeptidesWithSetModifications.Count());
+            Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
             List<ProductType> lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
 
-            PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications.Last();
+            PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 

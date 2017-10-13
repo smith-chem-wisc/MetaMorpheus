@@ -368,8 +368,9 @@ namespace Test
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 MaxMissedCleavages = 0,
             };
-            var ok1 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            var ok2 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Last();
+            var digestList = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
+            var ok1 = digestList[1];
+            var ok2 = digestList[3];
 
             Assert.AreEqual(1, ok1.NumMods);
             Assert.IsTrue(ok1.allModsOneIsNterminus.ContainsKey(3));
@@ -395,8 +396,10 @@ namespace Test
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 MaxMissedCleavages = 0,
             };
-            var ok1 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            var ok2 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Last();
+
+            var digestedList = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
+            var ok1 = digestedList[1];
+            var ok2 = digestedList[3];
 
             Assert.AreEqual(1, ok1.NumMods);
             Assert.IsTrue(ok1.allModsOneIsNterminus.ContainsKey(3));
