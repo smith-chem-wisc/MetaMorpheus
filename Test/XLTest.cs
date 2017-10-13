@@ -24,11 +24,11 @@ namespace Test
                 Protease = protease,
                 MinPeptideLength = 1
             };
-            var ye = prot.Digest(digestionParams, new List<ModificationWithMass>()).ToList();
-
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
-            var pep = ye[0].GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
+            var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+
+            var pep = ye[0];
             Assert.AreEqual(pep.BaseSequence, "MNNNK");
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
             crosslinker.SelectCrosslinker(CrosslinkerType.DSS);
@@ -42,7 +42,7 @@ namespace Test
             var x = PsmCross.xlPosCal(pep.CompactPeptide(TerminusType.None), crosslinker).ToArray();
             Assert.AreEqual(x[0], 4);
 
-            var pep2 = ye[2].GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
+            var pep2 = ye[2];
             Assert.AreEqual("MNNNKQQQQ", pep2.BaseSequence);
             var n2 = pep2.CompactPeptide(TerminusType.None).NTerminalMasses;
             var c2 = pep2.CompactPeptide(TerminusType.None).CTerminalMasses;

@@ -1,5 +1,4 @@
 ﻿using Chemistry;
-using MassSpectrometry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -20,6 +19,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly int cBinShift = (int)Math.Round((nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
         private static readonly int zdotBinShift = (int)Math.Round((oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
         private readonly List<int>[] fragmentIndexPrecursor;
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -75,15 +75,19 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             case ProductType.B:
                                 binShift = bBinShift;
                                 break;
+
                             case ProductType.Y:
                                 binShift = 0;
                                 break;
+
                             case ProductType.C:
                                 binShift = cBinShift;
                                 break;
+
                             case ProductType.Zdot:
                                 binShift = zdotBinShift;
                                 break;
+
                             default:
                                 throw new NotImplementedException();
                         }

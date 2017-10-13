@@ -52,17 +52,12 @@ namespace Test
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>()).ToList();
+            var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
 
             Assert.AreEqual(5, digestedList.Count);
             foreach (var fdfd in digestedList)
             {
-                var dfdfse = fdfd.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).ToList();
-                Assert.AreEqual(1, dfdfse.Count);
-                foreach (var kjdfk in dfdfse)
-                {
-                    Assert.Contains(kjdfk.CompactPeptide(TerminusType.None), results.PeptideIndex);
-                }
+                Assert.Contains(fdfd.CompactPeptide(TerminusType.None), results.PeptideIndex);
             }
         }
 

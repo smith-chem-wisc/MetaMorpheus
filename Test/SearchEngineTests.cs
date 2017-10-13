@@ -454,7 +454,7 @@ namespace Test
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
 
-            // Single ms2 scan
+            //Single ms2 scan
             Assert.AreEqual(1, allPsmsArray.Length);
 
             Assert.IsTrue(allPsmsArray[0].Score > 4);
@@ -476,64 +476,32 @@ namespace Test
         public static void TestNonSpecificEnzymeVariableModificationHandlingNTerm()
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
-            var protease = new Protease("singleN", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
+            var protease = new Protease("singleN", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915) };
-            DigestionParams digestionParams = new DigestionParams();
-            var digestedList = protein.Digest(digestionParams, variableModifications);
-            foreach (var peptide in digestedList)
-            {
-                var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
-                var PWSM = ListOfModifiedPeptides[0];
-                PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein + 3, PWSM.OneBasedEndResidueInProtein - 2);
-                string PWSMSequence = PWSM.Sequence;
-                string PWSMNewSequence = PWSMNew.Sequence;
-                char[] PWSMNewSequenceArray = PWSMNewSequence.ToCharArray();
-                for (int i = 0; i < PWSMNewSequenceArray.Count(); i++)
-                {
-                    if (PWSMNewSequenceArray[i] == 'M')
-                    {
-                        Assert.IsTrue(i != PWSMNewSequenceArray.Count() - 1);
-                        Assert.IsTrue(PWSMNewSequenceArray[i + 1] == '[');
-                    }
-                    else if (PWSMNewSequenceArray[i] == '[')
-                    {
-                        Assert.IsTrue(i != 0);
-                    }
-                }
-            }
+            DigestionParams digestionParams = new DigestionParams() { Protease = protease };
+            var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+            Assert.AreEqual(ListOfModifiedPeptides.Count, 192);
+
+            var protein2 = new Protein(new string("MGGGGGMNNNKQQQMGGGGMGM".ToCharArray().Reverse().ToArray()), "TestProtein");
+            var ListOfModifiedPeptides2 = protein2.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+            Assert.AreEqual(ListOfModifiedPeptides2.Count, 132);
         }
 
         [Test]
         public static void TestNonSpecificEnzymeVariableModificationHandlingCTerm()
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
-            var protease = new Protease("singleC", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
+            var protease = new Protease("singleC", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleC, null, null, null);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915, null) };
-            DigestionParams digestionParams = new DigestionParams();
-            var digestedList = protein.Digest(digestionParams, variableModifications);
-            foreach (var peptide in digestedList)
-            {
-                var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
-                var PWSM = ListOfModifiedPeptides[0];
-                PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein + 2, PWSM.OneBasedEndResidueInProtein - 3);
-                string PWSMSequence = PWSM.Sequence;
-                string PWSMNewSequence = PWSMNew.Sequence;
-                char[] PWSMNewSequenceArray = PWSMNewSequence.ToCharArray();
-                for (int i = 0; i < PWSMNewSequenceArray.Count(); i++)
-                {
-                    if (PWSMNewSequenceArray[i] == 'M')
-                    {
-                        Assert.IsTrue(i != PWSMNewSequenceArray.Count() - 1);
-                        Assert.IsTrue(PWSMNewSequenceArray[i + 1] == '[');
-                    }
-                    else if (PWSMNewSequenceArray[i] == '[')
-                    {
-                        Assert.IsTrue(i != 0);
-                    }
-                }
-            }
+            DigestionParams digestionParams = new DigestionParams() { Protease = protease };
+            var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+            Assert.AreEqual(ListOfModifiedPeptides.Count, 132);
+
+            var protein2 = new Protein(new string("MGGGGGMNNNKQQQMGGGGMGM".ToCharArray().Reverse().ToArray()), "TestProtein");
+            var ListOfModifiedPeptides2 = protein2.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+            Assert.AreEqual(ListOfModifiedPeptides2.Count, 192);
         }
 
         [Test]
@@ -800,6 +768,8 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].BaseSequence, allPsmsArray2[0].BaseSequence);
         }
 
+        #endregion Public Methods
+
         [Test]
         public static void TestClassicSemiProteolysis()
         {
@@ -843,8 +813,8 @@ namespace Test
                 {"LK", false},
                 {"KLK", false}
             };
-            IEnumerable<PeptideWithPossibleModifications> PWSMs = proteinList[0].Digest(digestParams, modsDictionary.Keys);
-            foreach (PeptideWithPossibleModifications PWSM in PWSMs)
+            IEnumerable<PeptideWithSetModifications> PWSMs = proteinList[0].Digest(digestParams, new List<ModificationWithMass>(), modsDictionary.Keys.ToList());
+            foreach (PeptideWithSetModifications PWSM in PWSMs)
             {
                 if (found.TryGetValue(PWSM.BaseSequence, out bool b))
                     found[PWSM.BaseSequence] = true;
@@ -852,7 +822,5 @@ namespace Test
             foreach (KeyValuePair<string, bool> kvp in found)
                 Assert.IsTrue(kvp.Value);
         }
-
-        #endregion Public Methods
     }
 }

@@ -17,7 +17,7 @@ namespace Test
         public static void TestPsmHeader()
         {
             DigestionParams digestionParams = new DigestionParams();
-            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", "accession1").Digest(digestionParams, new List<ModificationWithMass>()).First().GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", "accession1").Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
             IMzPeak peak = new MzPeak(4, 4);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scann = myMsDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
