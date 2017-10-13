@@ -28,7 +28,6 @@ namespace Test
 
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
 
-
             var pep = ye[0];
             Assert.AreEqual(pep.BaseSequence, "MNNNK");
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();

@@ -98,9 +98,9 @@ namespace Test
             var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
             Assert.AreEqual(3, digestedList.Count);
-                        
+
             PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
-            
+
             PeptideWithSetModifications pepWithSetMods2 = digestedList[2];
 
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -207,9 +207,9 @@ namespace Test
             var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
             Assert.AreEqual(3, digestedList.Count);
-            
+
             PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
-            
+
             PeptideWithSetModifications pepWithSetMods2 = digestedList[2];
 
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -467,7 +467,7 @@ namespace Test
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
-            
+
             //Set Peptide with 1 mod at position 3
             PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
 
@@ -571,7 +571,7 @@ namespace Test
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var setList1 = protein[0].Digest(testUnique.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
-            
+
             //Finally Write MZML file
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
