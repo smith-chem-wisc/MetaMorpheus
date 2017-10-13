@@ -72,10 +72,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key as CompactPeptideBase, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                         foreach (var digestionParam in collectionOfDigestionParams)
-                            foreach (var peptideWithPossibleModifications in proteinList[i].Digest(digestionParam, fixedModifications))
-                                foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(digestionParam, variableModifications))
-                                    if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
-                                        v.Add(peptideWithSetModifications);
+                            foreach (var peptideWithSetModifications in proteinList[i].Digest(digestionParam, fixedModifications, variableModifications))
+                                if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+                                    v.Add(peptideWithSetModifications);
 
                     //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
                     //CP==CompactPeptide
@@ -171,10 +170,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                         foreach (var digestionParam in collectionOfDigestionParams)
-                            foreach (var peptideWithPossibleModifications in proteinList[i].Digest(digestionParam, fixedModifications))
-                                foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(digestionParam, variableModifications))
-                                    if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
-                                        v.Add(peptideWithSetModifications);
+                            foreach (var peptideWithSetModifications in proteinList[i].Digest(digestionParam, fixedModifications, variableModifications))
+                                if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+                                    v.Add(peptideWithSetModifications);
 
                     //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
                     //CP==CompactPeptide

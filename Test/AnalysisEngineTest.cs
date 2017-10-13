@@ -55,19 +55,19 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).Last();
-            HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
+            var modPep = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).Last();
+            HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep };
             CompactPeptide compactPeptide1 = new CompactPeptide(value1.First(), TerminusType.None);
 
             Assert.AreEqual("QQQ", value1.First().BaseSequence);
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).First();
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
+            var modPep2 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).First();
+            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2 };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).ToList()[1];
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
+            var modPep3 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[1];
+            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3 };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 

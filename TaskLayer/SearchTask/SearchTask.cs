@@ -840,8 +840,7 @@ namespace TaskLayer
                             lock (indexLock)
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
 
-                            #endregion Generate indices for nonspecific search
-
+                            #endregion Generate indices for nonspecifc search
 
                             #region Generate indices for nonspecific search
 
