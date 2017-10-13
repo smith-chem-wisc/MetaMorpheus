@@ -87,25 +87,20 @@ namespace EngineLayer.Indexing
                 {
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        var digestedList = proteinList[i].Digest(digestionParams, fixedModifications);
-                        foreach (var peptide in digestedList)
+                        var digestedList = proteinList[i].Digest(digestionParams, fixedModifications, variableModifications).ToList();
+                        foreach (var pepWithSetMods in digestedList)
                         {
-                            var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(digestionParams, variableModifications);
+                            CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
 
-                            foreach (PeptideWithSetModifications pepWithSetMods in ListOfModifiedPeptides)
+                            var observed = peptideToId.Contains(compactPeptide);
+                            if (observed)
+                                continue;
+                            lock (peptideToId)
                             {
-                                CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
-
-                                var observed = peptideToId.Contains(compactPeptide);
+                                observed = peptideToId.Contains(compactPeptide);
                                 if (observed)
                                     continue;
-                                lock (peptideToId)
-                                {
-                                    observed = peptideToId.Contains(compactPeptide);
-                                    if (observed)
-                                        continue;
-                                    peptideToId.Add(compactPeptide);
-                                }
+                                peptideToId.Add(compactPeptide);
                             }
                         }
                     }

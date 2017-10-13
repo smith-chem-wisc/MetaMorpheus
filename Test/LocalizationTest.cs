@@ -29,7 +29,7 @@ namespace Test
                 Protease = p
             };
 
-            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<ModificationWithMass>()).Count());
+            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Count());
         }
 
         [Test]
@@ -42,17 +42,16 @@ namespace Test
             {
                 MinPeptideLength = 1,
             };
-            PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(digestionParams, new List<ModificationWithMass>()).First();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) };
 
-            List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
-            Assert.AreEqual(2, allPeptidesWithSetModifications.Count());
+            List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+            Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
             List<ProductType> lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
 
-            PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications.Last();
+            PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 

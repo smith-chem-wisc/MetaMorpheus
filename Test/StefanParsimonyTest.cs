@@ -129,14 +129,10 @@ namespace Test
 
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
             DigestionParams digestionParams = new DigestionParams();
-            var from1 = protein1.Digest(digestionParams, allKnownFixedModifications).First();
-            var from2 = protein2.Digest(digestionParams, allKnownFixedModifications).First();
-            var from3 = protein3.Digest(digestionParams, allKnownFixedModifications).First();
-
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            PeptideWithSetModifications pep1 = from1.GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
-            PeptideWithSetModifications pep2 = from2.GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
-            PeptideWithSetModifications pep3 = from3.GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
+            var pep1 = protein1.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
+            var pep2 = protein2.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
+            var pep3 = protein3.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
 
             CompactPeptide compactPeptide1 = pep1.CompactPeptide(TerminusType.None);
             CompactPeptide compactPeptide2 = pep2.CompactPeptide(TerminusType.None);
@@ -212,20 +208,11 @@ namespace Test
                 protein3 = new Protein("MA", "protein3");
             }
 
-            var prot1List = protein1.Digest(CommonParameters.DigestionParams, allKnownFixedModifications);
-            PeptideWithPossibleModifications pepWithPossibleModifications1 = prot1List.First();
-            var pep1list = pepWithPossibleModifications1.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications);
-            PeptideWithSetModifications pepWithSetModifications1 = pep1list.First();
+            var pepWithSetModifications1 = protein1.Digest(CommonParameters.DigestionParams, allKnownFixedModifications, variableModifications).First();
 
-            var prot2List = protein2.Digest(CommonParameters.DigestionParams, allKnownFixedModifications);
-            PeptideWithPossibleModifications pepWithPossibleModifications2 = prot2List.First();
-            var pep2list = pepWithPossibleModifications2.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications);
-            PeptideWithSetModifications pepWithSetModifications2 = pep2list.First();
+            var pepWithSetModifications2 = protein2.Digest(CommonParameters.DigestionParams, allKnownFixedModifications, variableModifications).First();
 
-            var prot3List = protein3.Digest(CommonParameters.DigestionParams, allKnownFixedModifications);
-            PeptideWithPossibleModifications pepWithPossibleModifications3 = prot3List.First();
-            var pep3list = pepWithPossibleModifications3.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).ToList();
-            PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
+            var pepWithSetModifications3 = protein3.Digest(CommonParameters.DigestionParams, allKnownFixedModifications, variableModifications).Last();
 
             CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1, TerminusType.None);
             CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2, TerminusType.None);
