@@ -23,7 +23,6 @@ namespace MetaMorpheusCommandLine
         private static void Main(string[] args)
         {
             Console.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion);
-
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
             Console.WriteLine(string.Join(" , ", args));
@@ -44,14 +43,15 @@ namespace MetaMorpheusCommandLine
 
             if (result.HasErrors == false)
             {
-                MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
-                MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusEngine.WarnHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
                 MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
+                MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
+                MetaMorpheusTask.WarnHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
                 MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
-                MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
 
                 foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
                     GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
@@ -96,7 +96,16 @@ namespace MetaMorpheusCommandLine
                 }
                 List<string> startingRawFilenameList = p.Object.Spectra.Select(b => Path.GetFullPath(b)).ToList();
                 List<DbForTask> startingXmlDbFilenameList = p.Object.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
-                EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, null);
+
+                var MatchingChars =
+                    from len in Enumerable.Range(0, startingRawFilenameList.Min(s => s.Length)).Reverse()
+                    let possibleMatch = startingRawFilenameList.First().Substring(0, len)
+                    where startingRawFilenameList.All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
+                    select possibleMatch;
+
+                string outputFolder = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
+
+                EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, outputFolder);
                 a.Run();
             }
             Console.WriteLine("Error Text:" + result.ErrorText);
@@ -123,8 +132,7 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Starting task:");
-            Console.WriteLine(e.TaskId);
+            Console.WriteLine("Starting task: " + e.DisplayName);
         }
 
         private static void MyTaskEngine_finishedWritingFileHandler(object sender, SingleFileEventArgs e)
@@ -140,7 +148,7 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Finished task: " + e.TaskId.GetType().Name);
+            Console.WriteLine("Finished task: " + e.DisplayName);
         }
 
         private static void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
@@ -148,7 +156,15 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Starting engine:" + e.myEngine.GetType().Name);
+            Console.WriteLine("Starting engine: " + e.myEngine.GetType().Name + " " + e.myEngine.GetId());
+        }
+
+        private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
+        {
+            if (inProgress)
+                Console.WriteLine();
+            inProgress = false;
+            Console.WriteLine("Finished engine: " + e);
         }
 
         private static void MyEngine_outProgressHandler(object sender, ProgressEventArgs e)
@@ -163,15 +179,7 @@ namespace MetaMorpheusCommandLine
                 Console.WriteLine();
             inProgress = false;
             Console.WriteLine("Status: " + e.s);
-        }
-
-        private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
-        {
-            if (inProgress)
-                Console.WriteLine();
-            inProgress = false;
-            Console.WriteLine("Finished engine: ");
-            Console.WriteLine(e);
+            Console.WriteLine(e.s);
         }
 
         #endregion Private Methods

@@ -14,20 +14,21 @@ namespace TaskLayer
         #region Private Fields
 
         private readonly List<Tuple<string, MetaMorpheusTask>> taskList;
+        private string outputFolder;
         private List<string> currentRawDataFilenameList;
         private List<DbForTask> currentXmlDbFilenameList;
-        private string metaMorpheusTaskSuffix;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<Tuple<string, MetaMorpheusTask>> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string folderSuffix)
+        public EverythingRunnerEngine(List<Tuple<string, MetaMorpheusTask>> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
             this.taskList = taskList;
+            this.outputFolder = outputFolder;
+
             currentRawDataFilenameList = startingRawFilenameList;
             currentXmlDbFilenameList = startingXmlDbFilenameList;
-            metaMorpheusTaskSuffix = folderSuffix;
         }
 
         #endregion Public Constructors
@@ -64,17 +65,9 @@ namespace TaskLayer
                 return;
             }
 
-            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture) + metaMorpheusTaskSuffix;
+            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
-            var MatchingChars =
-                from len in Enumerable.Range(0, currentRawDataFilenameList.Min(s => s.Length)).Reverse()
-                let possibleMatch = currentRawDataFilenameList.First().Substring(0, len)
-                where currentRawDataFilenameList.All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
-                select possibleMatch;
-
-            var longestDir = Path.GetDirectoryName(MatchingChars.First());
-
-            string rootOutputDir = Path.Combine(longestDir, startTimeForAllFilenames);
+            outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
 
             StringBuilder allResultsText = new StringBuilder();
 
@@ -83,18 +76,18 @@ namespace TaskLayer
                 if (!currentRawDataFilenameList.Any())
                 {
                     Warn("Cannot proceed. No data files selected.");
-                    FinishedAllTasks(rootOutputDir);
+                    FinishedAllTasks(outputFolder);
                     return;
                 }
                 if (!currentXmlDbFilenameList.Any())
                 {
                     Warn("Cannot proceed. No xml files selected.");
-                    FinishedAllTasks(rootOutputDir);
+                    FinishedAllTasks(outputFolder);
                     return;
                 }
                 var ok = taskList[i];
 
-                var outputFolderForThisTask = Path.Combine(rootOutputDir, ok.Item1);
+                var outputFolderForThisTask = Path.Combine(outputFolder, ok.Item1);
 
                 if (!Directory.Exists(outputFolderForThisTask))
                     Directory.CreateDirectory(outputFolderForThisTask);
@@ -114,7 +107,7 @@ namespace TaskLayer
             }
             stopWatch.Stop();
 
-            var resultsFileName = Path.Combine(rootOutputDir, "allResults.txt");
+            var resultsFileName = Path.Combine(outputFolder, "allResults.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
                 file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
@@ -123,7 +116,7 @@ namespace TaskLayer
             }
             FinishedWritingAllResultsFileHandler?.Invoke(this, new StringEventArgs(resultsFileName, null));
 
-            FinishedAllTasks(rootOutputDir);
+            FinishedAllTasks(outputFolder);
         }
 
         #endregion Public Methods

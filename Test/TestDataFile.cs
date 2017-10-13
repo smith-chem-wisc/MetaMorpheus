@@ -82,8 +82,8 @@ namespace Test
             for (int i = 0; i < pepWithSetModss.Count; i++)
             {
                 var pepWithSetMods = pepWithSetModss[i];
-                var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(2) };
-                var intensities1 = new double[] { 1, 1, 1 };
+                var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(3), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(3), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(3), pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(2) };
+                var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
                 var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
 
                 ScansHere.Add(new MzmlScan(2 * i + 1, MassSpectrum1, 1, true, Polarity.Positive, 2 * i, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 1000, 1, "scan=1"));
@@ -147,9 +147,6 @@ namespace Test
                     var t1 = aok.ToMz(1);
                     var c = 0.0000001;
                     mz2.Add(t1 + c * Math.Pow(t1, 2));
-
-                    Console.WriteLine("orig: " + aok.ToMz(1) + " new: " + (t1 + c * Math.Pow(t1, 2)));
-
                     var t2 = (aok + 1.003).ToMz(1);
                     mz2.Add(t2 + c * Math.Pow(t2, 2));
                     intensities2.Add(1);

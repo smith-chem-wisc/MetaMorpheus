@@ -1,6 +1,6 @@
-﻿using TaskLayer;
+using UsefulProteomicsDatabases;
 
-namespace EngineLayer
+namespace TaskLayer
 {
     public class SearchParameters
     {
@@ -16,12 +16,13 @@ namespace EngineLayer
             DoQuantification = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
-            SearchDecoy = true;
+            DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
+            MaxFragmentSize = 30000.0;
         }
 
         #endregion Public Constructors
@@ -37,7 +38,7 @@ namespace EngineLayer
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
-        public bool SearchDecoy { get; set; }
+        public DecoyType DecoyType { get; set; }
         public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
@@ -45,6 +46,7 @@ namespace EngineLayer
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
         public string CustomMdac { get; set; }
+        public double MaxFragmentSize { get; set; }
 
         #endregion Public Properties
     }

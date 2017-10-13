@@ -13,38 +13,65 @@
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                    <Label Content="Task Name" />
+                    <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                        <VisualBrush.Visual>
+                                            <Label Content="SearchTask" Foreground="Gray" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
                 <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
                         <StackPanel>
-                        <GroupBox Header="Deisotoping">
-                        <StackPanel>
-                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
-                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label Content="Deconvolution Intensity Ratio " />
-                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label Content="Deconvolution Max Assumed Charge State" />
-                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label Content="Deconvolution Mass Tolerance in PPM" />
-                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
-                            </StackPanel>
-                            </StackPanel>
+                            <GroupBox Header="Deisotoping">
+                                <StackPanel>
+                                    <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
+                                    <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Deconvolution Intensity Ratio " />
+                                        <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Deconvolution Max Assumed Charge State" />
+                                        <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Deconvolution Mass Tolerance in PPM" />
+                                        <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
+                                    </StackPanel>
+                                </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
                                     <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" />
                                     <CheckBox x:Name="trimMsMs" Content="Trim MS/MS Peaks" IsChecked="True" />
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label Content="Top N peaks" />
-                                    <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label Content="Minimum ratio" />
-                                    <TextBox x:Name="MinRatioCheckBox" Width="45" />
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Top N peaks" />
+                                        <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Minimum ratio" />
+                                        <TextBox x:Name="MinRatioCheckBox" Width="45" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -113,6 +140,8 @@
                                     <StackPanel>
                                         <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" />
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" />
+                                        <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
+                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
@@ -120,10 +149,6 @@
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
-                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -141,6 +166,10 @@
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                             <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
+                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
@@ -153,6 +182,10 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da)" />
+                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=modernSearchRadioButton}" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">

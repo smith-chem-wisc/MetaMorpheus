@@ -99,7 +99,7 @@ namespace TaskLayer
         }
 
         #endregion Public Constructors
-    
+
         #region Public Properties
 
         public Protease Protease { get; set; }
@@ -118,11 +118,10 @@ namespace TaskLayer
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
         public Tolerance DeconvolutionMassTolerance { get; set; }
         public int? DeconvolutionMaxAssumedChargeState { get; set; }
-        public bool? TrimMsMsPeaks { get; set;}
-        public bool? TrimMs1Peaks { get; set;}
-        public double? MinRatio { get; set;}
-        public int? TopNpeaks { get; set;}
-
+        public bool? TrimMsMsPeaks { get; set; }
+        public bool? TrimMs1Peaks { get; set; }
+        public double? MinRatio { get; set; }
+        public int? TopNpeaks { get; set; }
 
         #endregion Public Properties
     }

@@ -1,6 +1,8 @@
-﻿using MzLibUtil;
+using EngineLayer;
+using MzLibUtil;
+using UsefulProteomicsDatabases;
 
-namespace EngineLayer
+namespace TaskLayer
 {
     public class XlSearchParameters
     {
@@ -8,7 +10,7 @@ namespace EngineLayer
 
         public XlSearchParameters()
         {
-            SearchDecoy = true;
+            DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSS;
             CrosslinkSearchTopNum = 300;
             CrosslinkSearchWithAllBeta = false;
@@ -32,7 +34,7 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public bool SearchDecoy { get; set; }
+        public DecoyType DecoyType { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
 
         public CrosslinkerType CrosslinkerType { get; set; }
@@ -53,6 +55,7 @@ namespace EngineLayer
         public bool XlOutAll { get; set; }
         public bool XlOutPepXML { get; set; }
         public bool XlOutCrosslink { get; set; }
+
         #endregion Public Properties
     }
 }

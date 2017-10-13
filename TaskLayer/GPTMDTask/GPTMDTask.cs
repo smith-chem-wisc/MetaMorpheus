@@ -3,7 +3,14 @@ using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Gptmd;
 using IO.MzML;
+
+#if NET461
+
 using IO.Thermo;
+
+#else
+#endif
+
 using MassSpectrometry;
 using Proteomics;
 using System;
@@ -79,7 +86,7 @@ namespace TaskLayer
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um = null;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, true, localizeableModifications, b.IsContaminant, out um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.Reverse, localizeableModifications, b.IsContaminant, out um)).ToList();
 
             var numRawFiles = currentRawFileList.Count;
 
@@ -111,8 +118,8 @@ namespace TaskLayer
             object lock1 = new object();
             object lock2 = new object();
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
+            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -128,7 +135,14 @@ namespace TaskLayer
                     if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
+#if NET461
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
+#else
+                    {
+                        Warn("No capability for reading " + origDataFile);
+                        return;
+                    }
+#endif
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();

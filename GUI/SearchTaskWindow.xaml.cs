@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace MetaMorpheusGUI
 {
@@ -23,7 +24,6 @@ namespace MetaMorpheusGUI
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
 
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
-
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
@@ -153,7 +153,7 @@ namespace MetaMorpheusGUI
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
             nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific;
-
+            txtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
@@ -162,7 +162,9 @@ namespace MetaMorpheusGUI
             modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreUnique;
             checkBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
             checkBoxTarget.IsChecked = task.SearchParameters.SearchTarget;
-            checkBoxDecoy.IsChecked = task.SearchParameters.SearchDecoy;
+            checkBoxDecoy.IsChecked = task.SearchParameters.DecoyType != DecoyType.None;
+            radioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
+            radioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -183,7 +185,7 @@ namespace MetaMorpheusGUI
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
+            maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
             disposeOfFilesWhenDone.IsChecked = task.SearchParameters.DisposeOfFileWhenDone;
             allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             excelCompatible.IsChecked = task.CommonParameters.ExcelCompatible;
@@ -196,6 +198,8 @@ namespace MetaMorpheusGUI
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
             MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
+
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -337,15 +341,20 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 0)
+            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 1)
             {
-                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive number.");
+                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
 
             #endregion Check Task Validity
 
             #region Save Parameters
+
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.TaskDescriptor = "SearchTask";
 
             TheTask.CommonParameters.TrimMs1Peaks = trimMs1.IsChecked.Value;
             TheTask.CommonParameters.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
@@ -370,7 +379,15 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.ModPeptidesAreUnique = modPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
-            TheTask.SearchParameters.SearchDecoy = checkBoxDecoy.IsChecked.Value;
+            if (checkBoxDecoy.IsChecked.Value)
+            {
+                if (radioButtonReverseDecoy.IsChecked.Value)
+                    TheTask.SearchParameters.DecoyType = DecoyType.Reverse;
+                else //if (radioButtonSlideDecoy.IsChecked.Value)
+                    TheTask.SearchParameters.DecoyType = DecoyType.Slide;
+            }
+            else
+                TheTask.SearchParameters.DecoyType = DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
             TheTask.CommonParameters.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
@@ -387,6 +404,7 @@ namespace MetaMorpheusGUI
             else
                 TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
+            TheTask.SearchParameters.MaxFragmentSize = Double.Parse(txtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.AddCompIons = addCompIonCheckBox.IsChecked.Value;
             TheTask.CommonParameters.BIons = bCheckBox.IsChecked.Value;
             TheTask.CommonParameters.YIons = yCheckBox.IsChecked.Value;
@@ -450,7 +468,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
             TheTask.SearchParameters.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                TheTask.CommonParameters.MaxDegreeOfParallelism = jsakdf;
+                TheTask.CommonParameters.MaxParallelFilesToAnalyze = jsakdf;
 
             #endregion Save Parameters
 

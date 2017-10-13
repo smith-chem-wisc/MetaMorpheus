@@ -20,11 +20,13 @@ namespace MetaMorpheusGUI
     public partial class MainWindow : Window
     {
         #region Private Fields
+
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -57,7 +59,7 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
             EverythingRunnerEngine.StartingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
-            EverythingRunnerEngine.WarnHandler += EverythingRunnerEngine_warnHandler;
+            EverythingRunnerEngine.WarnHandler += GuiWarnHandler;
             EverythingRunnerEngine.FinishedWritingAllResultsFileHandler += EverythingRunnerEngine_FinishedWritingAllResultsFileHandler;
 
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
@@ -68,15 +70,17 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusTask.NewCollectionHandler += NewCollectionHandler;
             MetaMorpheusTask.OutProgressHandler += NewoutProgressBar;
-            MetaMorpheusTask.WarnHandler += EverythingRunnerEngine_warnHandler;
+            MetaMorpheusTask.WarnHandler += GuiWarnHandler;
 
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
+            MetaMorpheusEngine.WarnHandler += GuiWarnHandler;
 
-            MyFileManager.WarnHandler += EverythingRunnerEngine_warnHandler;
+            MyFileManager.WarnHandler += GuiWarnHandler;
 
             UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
+            UpdateOutputFolderTextbox();
         }
 
         #endregion Public Constructors
@@ -93,15 +97,15 @@ namespace MetaMorpheusGUI
             {
                 dynamicTasksObservableCollection.Add(new InRunTask("All Task Results", null));
                 dynamicTasksObservableCollection.Last().Progress = 100;
-                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e.s));
+                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e.s, Path.GetFileNameWithoutExtension(e.s)));
             }
         }
 
-        private void EverythingRunnerEngine_warnHandler(object sender, StringEventArgs e)
+        private void GuiWarnHandler(object sender, StringEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => EverythingRunnerEngine_warnHandler(sender, e)));
+                Dispatcher.BeginInvoke(new Action(() => GuiWarnHandler(sender, e)));
             }
             else
             {
@@ -168,6 +172,25 @@ namespace MetaMorpheusGUI
                 }
                 foreach (var newRawData in e.StringList)
                     rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
+                UpdateOutputFolderTextbox();
+            }
+        }
+
+        private void UpdateOutputFolderTextbox()
+        {
+            if (rawDataObservableCollection.Any())
+            {
+                var MatchingChars =
+                    from len in Enumerable.Range(0, rawDataObservableCollection.Select(b => b.FilePath).Min(s => s.Length)).Reverse()
+                    let possibleMatch = rawDataObservableCollection.Select(b => b.FilePath).First().Substring(0, len)
+                    where rawDataObservableCollection.Select(b => b.FilePath).All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
+                    select possibleMatch;
+
+                OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
+            }
+            else
+            {
+                OutputFolderTextBox.Clear();
             }
         }
 
@@ -179,7 +202,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var theTask = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.TaskId));
+                var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
                 theTask.InProgress = true;
                 theTask.IsIndeterminate = true;
                 theTask.Status = "Starting...";
@@ -197,7 +220,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var theTask = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.TaskId));
+                var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
                 theTask.InProgress = false;
                 theTask.IsIndeterminate = false;
                 theTask.Progress = 100;
@@ -211,6 +234,7 @@ namespace MetaMorpheusGUI
         private void ClearRaw_Click(object sender, RoutedEventArgs e)
         {
             rawDataObservableCollection.Clear();
+            UpdateOutputFolderTextbox();
         }
 
         private void AddXML_Click(object sender, RoutedEventArgs e)
@@ -249,23 +273,26 @@ namespace MetaMorpheusGUI
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files != null)
-                foreach (var draggedFilePath in files)
-                {
-                    if (Directory.Exists(draggedFilePath))
-                        foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
-                        {
-                            AddAFile(file);
-                        }
-                    else
+            if (LoadTaskButton.IsEnabled)
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files != null)
+                    foreach (var draggedFilePath in files)
                     {
-                        AddAFile(draggedFilePath);
+                        if (Directory.Exists(draggedFilePath))
+                            foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
+                            {
+                                AddAFile(file);
+                            }
+                        else
+                        {
+                            AddAFile(draggedFilePath);
+                        }
+                        dataGridDatafiles.Items.Refresh();
+                        dataGridXMLs.Items.Refresh();
                     }
-                    dataGridDatafiles.Items.Refresh();
-                    dataGridXMLs.Items.Refresh();
-                }
-            UpdateTaskGuiStuff();
+                UpdateTaskGuiStuff();
+            }
         }
 
         private void AddAFile(string draggedFilePath)
@@ -273,12 +300,12 @@ namespace MetaMorpheusGUI
             var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
             switch (theExtension)
             {
-
                 case ".raw":
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
+                    UpdateOutputFolderTextbox();
                     break;
 
                 case ".xml":
@@ -310,22 +337,30 @@ namespace MetaMorpheusGUI
                     {
                         case "Search":
                             var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye1));
+                            PreRunTask te1 = new PreRunTask(ye1);
+                            staticTasksObservableCollection.Add(te1);
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te1) + 1) + "-" + ye1.CommonParameters.TaskDescriptor;
                             break;
 
                         case "Calibrate":
                             var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye2));
+                            PreRunTask te2 = new PreRunTask(ye2);
+                            staticTasksObservableCollection.Add(te2);
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te2) + 1) + "-" + ye2.CommonParameters.TaskDescriptor;
                             break;
 
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye3));
+                            PreRunTask te3 = new PreRunTask(ye3);
+                            staticTasksObservableCollection.Add(te3);
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te3) + 1) + "-" + ye3.CommonParameters.TaskDescriptor;
                             break;
 
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye4));
+                            PreRunTask te4 = new PreRunTask(ye4);
+                            staticTasksObservableCollection.Add(te4);
+                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te4) + 1) + "-" + ye4.CommonParameters.TaskDescriptor;
                             break;
                     }
                     break;
@@ -343,35 +378,20 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            RunAllTasks("");
-        }
-
-        private void RunAllTasks(string v)
-        {
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
-                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
+            {
+                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor, staticTasksObservableCollection[i].metaMorpheusTask));
+            }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
             var t = new Thread(() => a.Run())
             {
                 IsBackground = true
             };
             t.Start();
-        }
-
-        private void AddMetaMorpheusTaskFolderSuffix_Click(object sender, RoutedEventArgs e)
-        {
-            var myDialog = new DialogWindow
-            {
-                SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            myDialog.ShowDialog();
-
-            RunAllTasks(myDialog.stringSuffix);
         }
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
@@ -395,22 +415,11 @@ namespace MetaMorpheusGUI
                 RemoveLastTaskButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
             }
-
         }
 
         private void UpdateRawFileGuiStuff()
         {
-
-            if (SelectedRawFiles.Count == 0)
-            {
-                ChangeFileParameters.IsEnabled = false;
-            }
-            else
-            {
-                ChangeFileParameters.IsEnabled = true;
-
-            }
-
+            ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0;
         }
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
@@ -418,7 +427,9 @@ namespace MetaMorpheusGUI
             var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
                 UpdateTaskGuiStuff();
             }
         }
@@ -428,7 +439,9 @@ namespace MetaMorpheusGUI
             var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
                 UpdateTaskGuiStuff();
             }
         }
@@ -438,7 +451,9 @@ namespace MetaMorpheusGUI
             var dialog = new GptmdTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
                 UpdateTaskGuiStuff();
             }
         }
@@ -448,7 +463,9 @@ namespace MetaMorpheusGUI
             var dialog = new XLSearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
                 UpdateTaskGuiStuff();
             }
         }
@@ -469,23 +486,23 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
 
                 for (int i = 1; i < s.nestedIDs.Count - 1; i++)
                 {
                     var hm = s.nestedIDs[i];
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                 }
 
-                theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.nestedIDs.Last(), s.s));
+                theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.s));
             }
         }
 
@@ -499,18 +516,18 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
 
                 foreach (var hm in s.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                 }
 
@@ -529,18 +546,18 @@ namespace MetaMorpheusGUI
             {
                 // Find the task or the collection!!!
 
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.nestedIDs[0]));
 
                 foreach (var hm in s.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                     catch
                     {
-                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                 }
 
@@ -571,9 +588,6 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                //statusLabel.Content = "Starting all tasks...";
-                //outProgressBar.IsIndeterminate = true;
-
                 dataGridDatafiles.Items.Refresh();
 
                 ClearTasksButton.IsEnabled = false;
@@ -590,6 +604,8 @@ namespace MetaMorpheusGUI
                 ClearXML.IsEnabled = false;
                 AddRaw.IsEnabled = false;
                 ClearRaw.IsEnabled = false;
+
+                OutputFolderTextBox.IsEnabled = false;
 
                 proteinDatabasesGroupBox.IsEnabled = false;
                 datafilesGroupBox.IsEnabled = false;
@@ -618,17 +634,17 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(v.nestedIDs[0]));
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(v.nestedIDs[0]));
 
                 foreach (var hm in v.nestedIDs.Skip(1))
                 {
                     try
                     {
-                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.DisplayName.Equals(hm));
                     }
                     catch { }
                 }
-                theEntityOnWhichToUpdateLabel.Children.Add(new OutputFileForTreeView(v.writtenFile));
+                theEntityOnWhichToUpdateLabel.Children.Add(new OutputFileForTreeView(v.writtenFile, Path.GetFileName(v.writtenFile)));
             }
         }
 
@@ -648,6 +664,7 @@ namespace MetaMorpheusGUI
             addSearchTaskButton.IsEnabled = true;
             btnAddCrosslinkSearch.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
+            OutputFolderTextBox.IsEnabled = true;
 
             proteinDatabasesGroupBox.IsEnabled = true;
             datafilesGroupBox.IsEnabled = true;
@@ -669,29 +686,42 @@ namespace MetaMorpheusGUI
                 switch (preRunTask.metaMorpheusTask.TaskType)
                 {
                     case MyTask.Search:
+
                         var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
+
                         searchDialog.ShowDialog();
+
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
+
                         return;
 
                     case MyTask.Gptmd:
                         var gptmddialog = new GptmdTaskWindow(preRunTask.metaMorpheusTask as GptmdTask);
                         gptmddialog.ShowDialog();
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + gptmddialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
+
                         return;
 
                     case MyTask.Calibrate:
                         var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + calibratedialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
                         return;
 
                     case MyTask.XLSearch:
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
                         return;
                 }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
-                System.Diagnostics.Process.Start(fileThing.Id);
+                System.Diagnostics.Process.Start(fileThing.FullPath);
             }
         }
 
@@ -726,7 +756,6 @@ namespace MetaMorpheusGUI
                         file.Parameters = File.ReadAllText(fullPathofTomls[j] + ".toml");
                     }
                 }
-
             }
             UpdateRawFileGuiStuff();
             dataGridDatafiles.Items.Refresh();
@@ -752,7 +781,6 @@ namespace MetaMorpheusGUI
             RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
             SelectedRawFiles.Add(ok);
             UpdateRawFileGuiStuff();
-
         }
 
         private void RemoveSelectedRaw(object sender, RoutedEventArgs e)
@@ -762,7 +790,6 @@ namespace MetaMorpheusGUI
             SelectedRawFiles.Remove(ok);
             UpdateRawFileGuiStuff();
         }
-
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -789,11 +816,8 @@ namespace MetaMorpheusGUI
             return false;
         }
 
-        #endregion Private Methods
         private void ChangeFileParameters_Click(object sender, RoutedEventArgs e)
         {
-
-
             var dialog = new ChangeParametersWindow(SelectedRawFiles);
             if (dialog.ShowDialog() == true)
             {
@@ -804,7 +828,6 @@ namespace MetaMorpheusGUI
                     string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
                     fullPathofToml[i] = Path.Combine(directory, fileName);
                     //REMOVE DEFAULT INIT METHONINE:
-
 
                     string badLine = "InitiatorMethionineBehavior = \"Undefined\"";
 
@@ -819,9 +842,9 @@ namespace MetaMorpheusGUI
                     File.WriteAllLines(fullPathofToml[i] + ".toml", lines);
                 }
                 UpdateFileSpecificParamsDisplay(fullPathofToml);
-
             }
-
         }
+
+        #endregion Private Methods
     }
 }

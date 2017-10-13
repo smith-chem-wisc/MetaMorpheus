@@ -88,7 +88,7 @@ namespace EngineLayer.CrosslinkSearch
                 XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLprecusorMsTl.Value);
             }
 
-            Status("In crosslink search engine...", nestedIds);
+            Status("In crosslink search engine...");
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
@@ -328,13 +328,13 @@ namespace EngineLayer.CrosslinkSearch
             Array.Sort(BetaPeptidePrecusor.ToArray(), selectedPsmParent);
             Array.Sort(BetaPeptidePrecusor, selectedScan);
 
-            Status("In xlclassic search engine!", nestedIds);
+            Status("In xlclassic search engine!");
 
             int totalProteins = proteinList.Count;
 
             var observed_sequences = new HashSet<CompactPeptide>();
 
-            Status("Getting ms2 scans...", nestedIds);
+            Status("Getting ms2 scans...");
 
             var outerPsms = new PsmCross[selectedScan.Length];
 
@@ -342,7 +342,7 @@ namespace EngineLayer.CrosslinkSearch
             int proteinsSeen = 0;
             int old_progress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-            Status("Starting xlclassic search loop...", nestedIds);
+            Status("Starting xlclassic search loop...");
             //Parallel.ForEach(Partitioner.Create(0, 1), partitionRange =>
             //Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             Parallel.ForEach(Partitioner.Create(0, totalProteins),
@@ -378,7 +378,7 @@ namespace EngineLayer.CrosslinkSearch
 
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                             {
-                                var score = CalculateClassicScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false);
+                                var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false);
 
                                 if (score > 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
                                 {

@@ -72,7 +72,7 @@ namespace EngineLayer.CrosslinkSearch
                 XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLprecusorMsTl.Value);
             }
 
-            Status("In crosslink search engine...", nestedIds);
+            Status("In crosslink search engine...");
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
@@ -181,7 +181,7 @@ namespace EngineLayer.CrosslinkSearch
                         ReportProgress(new ProgressEventArgs(new_progress, "In Crosslink search loop", nestedIds));
                         old_progress = new_progress;
                     }
-                }                
+                }
             });
             psmCross.AddRange(newPsmsCross);
             return new CrosslinkSearchResults(newPsmsCross, this);

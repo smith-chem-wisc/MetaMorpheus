@@ -45,7 +45,8 @@ namespace Test
                 },
                 CalibrationParameters = new CalibrationParameters
                 {
-                    WriteIntermediateFiles = true
+                    WriteIntermediateFiles = true,
+                    NumFragmentsNeededForEveryIdentification = 6,
                 }
             };
             GptmdTask task2 = new GptmdTask
@@ -90,8 +91,7 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            Console.WriteLine("Size of variable Modificaitaons: " + variableModifications.Capacity);
-            Console.WriteLine("Size of fixed Modificaitaons: " + fixedModifications.Capacity);
+
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
@@ -137,7 +137,7 @@ namespace Test
             #endregion Write the files
 
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
         }
 
@@ -164,6 +164,10 @@ namespace Test
                     ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
+                CalibrationParameters = new CalibrationParameters
+                {
+                    NumFragmentsNeededForEveryIdentification = 6,
+                }
             };
             GptmdTask task2 = new GptmdTask
             {
@@ -259,7 +263,7 @@ namespace Test
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain1, proteinWithChain2 }, xmlName);
 
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
         }
 
@@ -280,7 +284,7 @@ namespace Test
                 },
                 SearchParameters = new SearchParameters
                 {
-                    SearchDecoy = false,
+                    DecoyType = DecoyType.None,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                 }
             };
@@ -471,7 +475,6 @@ namespace Test
 
             #region XML File
 
-            Console.WriteLine("hi");
             //First Write XML Database
 
             string xmlName = "okkk.xml";
@@ -511,7 +514,7 @@ namespace Test
             #endregion MZML File
 
             //run!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
@@ -618,7 +621,7 @@ namespace Test
             #region run
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
 
             string line;

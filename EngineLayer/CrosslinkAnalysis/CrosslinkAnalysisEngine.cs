@@ -59,13 +59,13 @@ namespace EngineLayer.CrosslinkAnalysis
             MassDiffAcceptor XLsearchMode = new OpenSearchMode();
 
             CrosslinkAnalysisResults myAnalysisResults = new CrosslinkAnalysisResults(this);
-            Status("Running analysis engine!", nestedIds);
+            Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
 
             #region Match Seqeunces to PeptideWithSetModifications
 
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            Status("Adding observed peptides to dictionary...", nestedIds);
+            Status("Adding observed peptides to dictionary...");
             foreach (var psmpair in newPsms)
             {
                 if (psmpair != null)
@@ -87,7 +87,7 @@ namespace EngineLayer.CrosslinkAnalysis
             int proteinsSeen = 0;
             int old_progress = 0;
             var obj = new object();
-            Status("Adding possible sources to peptide dictionary...", nestedIds);
+            Status("Adding possible sources to peptide dictionary...");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
@@ -127,7 +127,7 @@ namespace EngineLayer.CrosslinkAnalysis
             List<PsmCross> allResultingIdentifications = new List<PsmCross>();
             List<Tuple<PsmCross, PsmCross>> allResultingIdentificationsfdr = new List<Tuple<PsmCross, PsmCross>>();
 
-            Status("Computing info about actual peptides with modifications...", nestedIds);
+            Status("Computing info about actual peptides with modifications...");
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
                 var huh = newPsms[myScanWithMassIndex];

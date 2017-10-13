@@ -38,6 +38,8 @@ namespace EngineLayer
 
         public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
 
+        public static event EventHandler<StringEventArgs> WarnHandler;
+
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
         #endregion Public Events
@@ -200,7 +202,7 @@ namespace EngineLayer
             }
         }
 
-        public static double CalculateClassicScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static double CalculatePeptideScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -363,16 +365,12 @@ namespace EngineLayer
             return myResults;
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal string GetId()
+        public string GetId()
         {
             return string.Join(",", nestedIds);
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
 
         #region Protected Methods
 
@@ -389,7 +387,12 @@ namespace EngineLayer
             return dissociationTypes;
         }
 
-        protected void Status(string v, List<string> nestedIds)
+        protected void Warn(string v)
+        {
+            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+        }
+
+        protected void Status(string v)
         {
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }

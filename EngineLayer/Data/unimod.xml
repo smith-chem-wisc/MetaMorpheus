@@ -47,6 +47,7 @@
       <umod:elem title="Mn" full_name="Manganese" avge_mass="54.938045" mono_mass="54.9380471"/>
       <umod:elem title="Mg" full_name="Magnesium" avge_mass="24.305" mono_mass="23.9850423"/>
       <umod:elem title="Pd" full_name="Palladium" avge_mass="106.42" mono_mass="105.903478"/>
+      <umod:elem title="Al" full_name="Aluminium" avge_mass="26.9815386" mono_mass="26.9815386"/>
    </umod:elements>
    <umod:modifications>
       <umod:mod title="Acetyl" full_name="Acetylation" username_of_poster="unimod"
@@ -6867,26 +6868,27 @@ corrected by subtraction of a further -O at 8.6.2010</umod:misc_notes>
          </umod:xref>
          <umod:misc_notes>N-terminal sulfonation of diglycine to detect ubiquitination sites</umod:misc_notes>
       </umod:mod>
-      <umod:mod title="Xlink:SSD"
-                full_name="covalent modification of lysine by cross-linking reagent"
-                username_of_poster="tom"
-                group_of_poster="users"
-                date_time_posted="2004-11-16 20:20:17"
-                date_time_modified="2006-10-17 11:43:47"
-                approved="1"
-                record_id="273">
+      <umod:mod title="Xlink:BS2G[96]" full_name="Intact BS2-G crosslinker"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-09-05 16:22:19"
+                date_time_modified="2017-09-05 16:22:37"
+                approved="0"
+                record_id="1905">
+         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
+                           classification="Chemical derivative"
+                           spec_group="2"/>
          <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
                            spec_group="1"/>
-         <umod:delta mono_mass="253.095023" avge_mass="253.2512" composition="H(15) C(12) N O(5)">
-            <umod:element symbol="H" number="15"/>
-            <umod:element symbol="C" number="12"/>
-            <umod:element symbol="N" number="1"/>
-            <umod:element symbol="O" number="5"/>
+         <umod:delta mono_mass="96.021129" avge_mass="96.0841" composition="H(4) C(5) O(2)">
+            <umod:element symbol="H" number="4"/>
+            <umod:element symbol="C" number="5"/>
+            <umod:element symbol="O" number="2"/>
          </umod:delta>
          <umod:xref>
-            <umod:text>Partis MD et al. 1983 J Prot Chem 2 263-277</umod:text>
-            <umod:source>Journal</umod:source>
-            <umod:url/>
+            <umod:text>Thermo datasheet</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>https://assets.thermofisher.com/TFS-Assets/LSG/manuals/MAN0011542_BS3_d0d4_BS2G_d0d3_UG.pdf</umod:url>
          </umod:xref>
       </umod:mod>
       <umod:mod title="Nitrosyl" full_name="S-nitrosylation" username_of_poster="dengh"
@@ -8133,11 +8135,12 @@ corrected by subtraction of a further -O at 8.6.2010</umod:misc_notes>
             <umod:element symbol="O" number="1"/>
          </umod:delta>
       </umod:mod>
-      <umod:mod title="Xlink:B10621" full_name="bis-N-I-sulfonerahodamine"
+      <umod:mod title="Xlink:B10621"
+                full_name="bis-((N-iodoacetyl)piperazinyl)sulfonerhodamine"
                 username_of_poster="dengh"
                 group_of_poster="users"
                 date_time_posted="2005-05-17 22:56:12"
-                date_time_modified="2006-10-16 17:12:41"
+                date_time_modified="2017-09-05 15:32:46"
                 approved="1"
                 record_id="323">
          <umod:specificity hidden="1" site="C" position="Anywhere" classification="Chemical derivative"
@@ -8151,7 +8154,18 @@ corrected by subtraction of a further -O at 8.6.2010</umod:misc_notes>
             <umod:element symbol="S" number="1"/>
             <umod:element symbol="I" number="1"/>
          </umod:delta>
-         <umod:misc_notes>Invitrogen X-link reagent</umod:misc_notes>
+         <umod:alt_name>BSR monolink</umod:alt_name>
+         <umod:xref>
+            <umod:text>The Molecular Probes Handbook</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>https://www.thermofisher.com/us/en/home/references/molecular-probes-the-handbook/crosslinking-and-photoactivatable-reagents/chemical-crosslinking-reagents.html#head2</umod:url>
+         </umod:xref>
+         <umod:xref>
+            <umod:text>Biophys J (2001) 81:2851-2863</umod:text>
+            <umod:source>Journal</umod:source>
+            <umod:url>http://www.cell.com/biophysj/fulltext/S0006-3495(01)75926-7</umod:url>
+         </umod:xref>
+         <umod:misc_notes>Discontinued Invitrogen X-link reagent</umod:misc_notes>
       </umod:mod>
       <umod:mod title="Xlink:DTBP[87]" full_name="Cleaved and reduced DTBP crosslinker"
                 username_of_poster="takesin"
@@ -10698,44 +10712,6 @@ corrected by subtraction of a further -O at 8.6.2010</umod:misc_notes>
             <umod:text>Imidoester Cross-linkers</umod:text>
             <umod:source>Misc. URL</umod:source>
             <umod:url>http://tools.thermofisher.com/content/sfs/manuals/MAN0011314_ImidoesterCrsLnk_DMA_DMP_DMS_DTBP_UG.pdf</umod:url>
-         </umod:xref>
-      </umod:mod>
-      <umod:mod title="Xlink:DMP" full_name="Dimethyl pimelimidate"
-                username_of_poster="mariana"
-                group_of_poster="users"
-                date_time_posted="2005-11-08 20:15:20"
-                date_time_modified="2017-08-18 16:56:07"
-                approved="0"
-                record_id="456">
-         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
-                           classification="Chemical derivative"
-                           spec_group="2">
-            <umod:misc_notes>Dimethyl pimelimidate, reaction with both ends</umod:misc_notes>
-         </umod:specificity>
-         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
-                           spec_group="1">
-            <umod:misc_notes>Dimethyl pimelimidate, reaction with both ends</umod:misc_notes>
-         </umod:specificity>
-         <umod:delta mono_mass="122.084398" avge_mass="122.1677" composition="H(10) C(7) N(2)">
-            <umod:element symbol="H" number="10"/>
-            <umod:element symbol="C" number="7"/>
-            <umod:element symbol="N" number="2"/>
-         </umod:delta>
-         <umod:alt_name>Intact crosslink, both ends attached</umod:alt_name>
-         <umod:xref>
-            <umod:text>Imidoester Cross-linkers</umod:text>
-            <umod:source>Misc. URL</umod:source>
-            <umod:url>https://assets.thermofisher.com/TFS-Assets/LSG/manuals/MAN0011314_ImidoesterCrsLnk_DMA_DMP_DMS_DTBP_UG.pdf</umod:url>
-         </umod:xref>
-         <umod:xref>
-            <umod:text>Hand, E.S., and Jencks, W.P. (1962). Mechanism of the reaction of imidoesters with amines. J. Am. Chem. Soc. 84, 3505-3514.</umod:text>
-            <umod:source>Journal</umod:source>
-            <umod:url/>
-         </umod:xref>
-         <umod:xref>
-            <umod:text>Packman, L.C. and Perhan, R.N. (1982). Quaternary Structures the Pyruvate Dehydrogenase Multienzyme Complex of Bacillus StearothermophilusStudies by a New Reversible Crosslinking Procedure with Bis(imidoesters). Biochem. 21, 5171-5175.</umod:text>
-            <umod:source>Journal</umod:source>
-            <umod:url/>
          </umod:xref>
       </umod:mod>
       <umod:mod title="NDA" full_name="naphthalene-2,3-dicarboxaldehyde"
@@ -16777,12 +16753,12 @@ Efficient incorporation of unsaturated methionine analogues into proteins in viv
             <umod:url>http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&amp;cmd=Retrieve&amp;dopt=AbstractPlus&amp;list_uids=18083862&amp;itool=pubmed_docsum</umod:url>
          </umod:xref>
       </umod:mod>
-      <umod:mod title="xlink:SMCC[321]"
+      <umod:mod title="Xlink:SMCC[321]"
                 full_name="Monolink of SMCC terminated with 3-(dimethylamino)-1-propylamine"
                 username_of_poster="anikolakakis"
                 group_of_poster=""
                 date_time_posted="2009-04-23 19:39:42"
-                date_time_modified="2017-08-18 16:18:21"
+                date_time_modified="2017-09-01 14:46:50"
                 approved="0"
                 record_id="908">
          <umod:specificity hidden="1" site="C" position="Anywhere" classification="Chemical derivative"
@@ -18621,22 +18597,31 @@ cross-linking conditions</umod:text>
             <umod:url>http://www.ncbi.nlm.nih.gov/pubmed/322714</umod:url>
          </umod:xref>
       </umod:mod>
-      <umod:mod title="Xlink:SMCC[237]"
-                full_name="Water quenched monolink of SMCC linked to sulfhydryl"
+      <umod:mod title="Xlink:SMCC[237]" full_name="Water quenched monolink of SMCC"
                 username_of_poster="Kramerh"
                 group_of_poster=""
                 date_time_posted="2011-02-07 19:33:39"
-                date_time_modified="2017-08-18 16:07:56"
+                date_time_modified="2017-09-05 15:09:18"
                 approved="0"
                 record_id="1024">
          <umod:specificity hidden="1" site="C" position="Anywhere" classification="Chemical derivative"
                            spec_group="1"/>
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
+                           classification="Chemical derivative"
+                           spec_group="3"/>
          <umod:delta mono_mass="237.100108" avge_mass="237.2518" composition="H(15) C(12) N O(4)">
             <umod:element symbol="H" number="15"/>
             <umod:element symbol="C" number="12"/>
             <umod:element symbol="N" number="1"/>
             <umod:element symbol="O" number="4"/>
          </umod:delta>
+         <umod:xref>
+            <umod:text>6490581</umod:text>
+            <umod:source>PubMed PMID</umod:source>
+            <umod:url>http://www.ncbi.nlm.nih.gov/pubmed?term=6490581</umod:url>
+         </umod:xref>
          <umod:xref>
             <umod:text>1931231</umod:text>
             <umod:source>PubMed PMID</umod:source>
@@ -18646,11 +18631,6 @@ cross-linking conditions</umod:text>
             <umod:text>ThermoFisher data sheet</umod:text>
             <umod:source>Misc. URL</umod:source>
             <umod:url>https://assets.thermofisher.com/TFS-Assets/LSG/manuals/MAN0011295_SMCC_SulfoSMCC_UG.pdf</umod:url>
-         </umod:xref>
-         <umod:xref>
-            <umod:text>6490581</umod:text>
-            <umod:source>PubMed PMID</umod:source>
-            <umod:url>http://www.ncbi.nlm.nih.gov/pubmed?term=6490581</umod:url>
          </umod:xref>
       </umod:mod>
       <umod:mod title="2-nitrobenzyl" full_name="Tyrosine caged with 2-nitrobenzyl (ONB)"
@@ -23931,12 +23911,12 @@ M. Zimnicka, et al.  "Tunable Charge Tags for Electron-Based Methods of Peptide 
          </umod:xref>
          <umod:misc_notes>Different channels have the same nominal mass but slightly different exact masses.</umod:misc_notes>
       </umod:mod>
-      <umod:mod title="xlink:BuUrBu[213]"
+      <umod:mod title="Xlink:BuUrBu[213]"
                 full_name="Ammonia quenched monolink of BuUrBu crosslinker"
                 username_of_poster="unimod"
                 group_of_poster=""
                 date_time_posted="2017-08-18 09:38:52"
-                date_time_modified="2017-08-18 09:42:23"
+                date_time_modified="2017-09-01 14:46:01"
                 approved="0"
                 record_id="1887">
          <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
@@ -23951,14 +23931,14 @@ M. Zimnicka, et al.  "Tunable Charge Tags for Electron-Based Methods of Peptide 
             <umod:element symbol="O" number="3"/>
          </umod:delta>
          <umod:xref>
-            <umod:text>Anal. Chem. 2016, 88, 7930−7937, Integrated Workflow for Structural Proteomics Studies</umod:text>
-            <umod:source>Journal</umod:source>
-            <umod:url>http://dx.doi.org/10.1021/acs.analchem.5b04853</umod:url>
-         </umod:xref>
-         <umod:xref>
             <umod:text>Thermo Fisher data sheet</umod:text>
             <umod:source>Misc. URL</umod:source>
             <umod:url>https://www.thermofisher.com/order/catalog/product/A35459</umod:url>
+         </umod:xref>
+         <umod:xref>
+            <umod:text>Anal. Chem. 2016, 88, 7930−7937, Integrated Workflow for Structural Proteomics Studies</umod:text>
+            <umod:source>Journal</umod:source>
+            <umod:url>http://dx.doi.org/10.1021/acs.analchem.5b04853</umod:url>
          </umod:xref>
       </umod:mod>
       <umod:mod title="bisANS-sulfonates" full_name="BisANS with loss of both sulfonates"
@@ -38622,18 +38602,18 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:url>http://dx.doi.org/10.1074/mcp.M110.002212</umod:url>
          </umod:xref>
       </umod:mod>
-      <umod:mod title="xlink:BuUrBu[111]" full_name="BuUr fragment of BuUrBu crosslinker"
+      <umod:mod title="Xlink:BuUrBu[111]" full_name="BuUr fragment of BuUrBu crosslinker"
                 username_of_poster="unimod"
                 group_of_poster=""
                 date_time_posted="2017-08-18 09:34:59"
-                date_time_modified="2017-08-18 09:41:34"
+                date_time_modified="2017-09-01 14:44:50"
                 approved="0"
                 record_id="1885">
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
          <umod:specificity hidden="1" site="N-term" position="Protein N-term"
                            classification="Chemical derivative"
                            spec_group="2"/>
-         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
-                           spec_group="1"/>
          <umod:delta mono_mass="111.032028" avge_mass="111.0987" composition="H(5) C(5) N O(2)">
             <umod:element symbol="H" number="5"/>
             <umod:element symbol="C" number="5"/>
@@ -38641,28 +38621,28 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:element symbol="O" number="2"/>
          </umod:delta>
          <umod:xref>
-            <umod:text>Thermo Fisher data sheet</umod:text>
-            <umod:source>Misc. URL</umod:source>
-            <umod:url>https://www.thermofisher.com/order/catalog/product/A35459</umod:url>
-         </umod:xref>
-         <umod:xref>
             <umod:text>Anal. Chem. 2016, 88, 7930−7937, Integrated Workflow for Structural Proteomics Studies</umod:text>
             <umod:source>Journal</umod:source>
             <umod:url>http://dx.doi.org/10.1021/acs.analchem.5b04853</umod:url>
          </umod:xref>
+         <umod:xref>
+            <umod:text>Thermo Fisher data sheet</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>https://www.thermofisher.com/order/catalog/product/A35459</umod:url>
+         </umod:xref>
       </umod:mod>
-      <umod:mod title="xlink:BuUrBu[85]" full_name="Bu fragment of BuUrBu crosslinker"
+      <umod:mod title="Xlink:BuUrBu[85]" full_name="Bu fragment of BuUrBu crosslinker"
                 username_of_poster="unimod"
                 group_of_poster=""
                 date_time_posted="2017-08-18 09:36:27"
-                date_time_modified="2017-08-18 09:41:47"
+                date_time_modified="2017-09-01 14:44:37"
                 approved="0"
                 record_id="1886">
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
          <umod:specificity hidden="1" site="N-term" position="Protein N-term"
                            classification="Chemical derivative"
                            spec_group="2"/>
-         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
-                           spec_group="1"/>
          <umod:delta mono_mass="85.052764" avge_mass="85.1045" composition="H(7) C(4) N O">
             <umod:element symbol="H" number="7"/>
             <umod:element symbol="C" number="4"/>
@@ -38670,29 +38650,29 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:element symbol="O" number="1"/>
          </umod:delta>
          <umod:xref>
-            <umod:text>Thermo Fisher data sheet</umod:text>
-            <umod:source>Misc. URL</umod:source>
-            <umod:url>https://www.thermofisher.com/order/catalog/product/A35459</umod:url>
-         </umod:xref>
-         <umod:xref>
             <umod:text>Anal. Chem. 2016, 88, 7930−7937, Integrated Workflow for Structural Proteomics Studies</umod:text>
             <umod:source>Journal</umod:source>
             <umod:url>http://dx.doi.org/10.1021/acs.analchem.5b04853</umod:url>
          </umod:xref>
+         <umod:xref>
+            <umod:text>Thermo Fisher data sheet</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>https://www.thermofisher.com/order/catalog/product/A35459</umod:url>
+         </umod:xref>
       </umod:mod>
-      <umod:mod title="xlink:BuUrBu[214]"
+      <umod:mod title="Xlink:BuUrBu[214]"
                 full_name="Water quenched monolink of BuUrBu crosslinker"
                 username_of_poster="unimod"
                 group_of_poster=""
                 date_time_posted="2017-08-18 09:43:05"
-                date_time_modified="2017-08-18 09:43:05"
+                date_time_modified="2017-09-01 14:46:10"
                 approved="0"
                 record_id="1888">
-         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
-                           spec_group="1"/>
          <umod:specificity hidden="1" site="N-term" position="Protein N-term"
                            classification="Chemical derivative"
                            spec_group="2"/>
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
          <umod:delta mono_mass="214.095357" avge_mass="214.2185" composition="H(14) C(9) N(2) O(4)">
             <umod:element symbol="H" number="14"/>
             <umod:element symbol="C" number="9"/>
@@ -38700,29 +38680,29 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:element symbol="O" number="4"/>
          </umod:delta>
          <umod:xref>
-            <umod:text>Anal. Chem. 2016, 88, 7930−7937, Integrated Workflow for Structural Proteomics Studies</umod:text>
-            <umod:source>Journal</umod:source>
-            <umod:url>http://dx.doi.org/10.1021/acs.analchem.5b04853</umod:url>
-         </umod:xref>
-         <umod:xref>
             <umod:text>Thermo Fisher data sheet</umod:text>
             <umod:source>Misc. URL</umod:source>
             <umod:url>https://www.thermofisher.com/order/catalog/product/A35459</umod:url>
          </umod:xref>
+         <umod:xref>
+            <umod:text>Anal. Chem. 2016, 88, 7930−7937, Integrated Workflow for Structural Proteomics Studies</umod:text>
+            <umod:source>Journal</umod:source>
+            <umod:url>http://dx.doi.org/10.1021/acs.analchem.5b04853</umod:url>
+         </umod:xref>
       </umod:mod>
-      <umod:mod title="xlink:BuUrBu[317]"
+      <umod:mod title="Xlink:BuUrBu[317]"
                 full_name="Tris quenched monolink of BuUrBu crosslinker"
                 username_of_poster="unimod"
                 group_of_poster=""
                 date_time_posted="2017-08-18 09:44:40"
-                date_time_modified="2017-08-18 09:44:40"
+                date_time_modified="2017-09-01 14:46:40"
                 approved="0"
                 record_id="1889">
-         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
-                           spec_group="1"/>
          <umod:specificity hidden="1" site="N-term" position="Protein N-term"
                            classification="Chemical derivative"
                            spec_group="2"/>
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
          <umod:delta mono_mass="317.158686" avge_mass="317.3382" composition="H(23) C(13) N(3) O(6)">
             <umod:element symbol="H" number="23"/>
             <umod:element symbol="C" number="13"/>
@@ -38730,14 +38710,14 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:element symbol="O" number="6"/>
          </umod:delta>
          <umod:xref>
-            <umod:text>Anal. Chem. 2016, 88, 7930−7937, Integrated Workflow for Structural Proteomics Studies</umod:text>
-            <umod:source>Journal</umod:source>
-            <umod:url>http://dx.doi.org/10.1021/acs.analchem.5b04853</umod:url>
-         </umod:xref>
-         <umod:xref>
             <umod:text>Thermo Fisher data sheet</umod:text>
             <umod:source>Misc. URL</umod:source>
             <umod:url>https://www.thermofisher.com/order/catalog/product/A35459</umod:url>
+         </umod:xref>
+         <umod:xref>
+            <umod:text>Anal. Chem. 2016, 88, 7930−7937, Integrated Workflow for Structural Proteomics Studies</umod:text>
+            <umod:source>Journal</umod:source>
+            <umod:url>http://dx.doi.org/10.1021/acs.analchem.5b04853</umod:url>
          </umod:xref>
       </umod:mod>
       <umod:mod title="Xlink:DSSO[158]" full_name="Intact DSSO crosslinker"
@@ -38792,18 +38772,18 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:url>http://www.ncbi.nlm.nih.gov/pubmed?term=8326953</umod:url>
          </umod:xref>
       </umod:mod>
-      <umod:mod title="xlink:BuUrBu[196]" full_name="Intact BuUrBu crosslinker"
+      <umod:mod title="Xlink:BuUrBu[196]" full_name="Intact BuUrBu crosslinker"
                 username_of_poster="unimod"
                 group_of_poster=""
                 date_time_posted="2017-08-31 14:57:02"
-                date_time_modified="2017-08-31 14:57:02"
+                date_time_modified="2017-09-01 14:45:52"
                 approved="0"
                 record_id="1899">
-         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
-                           spec_group="1"/>
          <umod:specificity hidden="1" site="N-term" position="Protein N-term"
                            classification="Chemical derivative"
                            spec_group="2"/>
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
          <umod:delta mono_mass="196.084792" avge_mass="196.2032" composition="H(12) C(9) N(2) O(3)">
             <umod:element symbol="H" number="12"/>
             <umod:element symbol="C" number="9"/>
@@ -38925,15 +38905,20 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:url>http://www.ncbi.nlm.nih.gov/pubmed/322714</umod:url>
          </umod:xref>
       </umod:mod>
-      <umod:mod title="xlink:SMCC[219]" full_name="Intact SMCC cross-link"
+      <umod:mod title="Xlink:SMCC[219]" full_name="Intact SMCC cross-link"
                 username_of_poster="unimod"
                 group_of_poster=""
                 date_time_posted="2017-08-31 15:02:14"
-                date_time_modified="2017-08-31 15:02:14"
+                date_time_modified="2017-09-05 15:00:41"
                 approved="0"
                 record_id="1903">
          <umod:specificity hidden="1" site="C" position="Anywhere" classification="Chemical derivative"
                            spec_group="1"/>
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
+                           classification="Chemical derivative"
+                           spec_group="3"/>
          <umod:delta mono_mass="219.089543" avge_mass="219.2365" composition="H(13) C(12) N O(3)">
             <umod:element symbol="H" number="13"/>
             <umod:element symbol="C" number="12"/>
@@ -38944,6 +38929,160 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:text>ThermoFisher data sheet</umod:text>
             <umod:source>Misc. URL</umod:source>
             <umod:url>https://assets.thermofisher.com/TFS-Assets/LSG/manuals/MAN0011295_SMCC_SulfoSMCC_UG.pdf</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Cation:Al[III]" full_name="Replacement of 3 protons by aluminium"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-09-05 17:13:59"
+                date_time_modified="2017-09-05 17:13:59"
+                approved="0"
+                record_id="1910">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:delta mono_mass="23.958063" avge_mass="23.9577" composition="H(-3) Al">
+            <umod:element symbol="H" number="-3"/>
+            <umod:element symbol="Al" number="1"/>
+         </umod:delta>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Xlink:BS2G[113]"
+                full_name="Ammonium-quenched monolink of BS2-G crosslinker"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-09-05 16:26:19"
+                date_time_modified="2017-09-05 16:26:36"
+                approved="0"
+                record_id="1906">
+         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
+                           classification="Chemical derivative"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
+         <umod:delta mono_mass="113.047679" avge_mass="113.1146" composition="H(7) C(5) N O(2)">
+            <umod:element symbol="H" number="7"/>
+            <umod:element symbol="C" number="5"/>
+            <umod:element symbol="N" number="1"/>
+            <umod:element symbol="O" number="2"/>
+         </umod:delta>
+         <umod:xref>
+            <umod:text>Thermo datasheet</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>https://assets.thermofisher.com/TFS-Assets/LSG/manuals/MAN0011542_BS3_d0d4_BS2G_d0d3_UG.pdf</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Xlink:BS2G[114]"
+                full_name="Water-quenched monolink of BS2-G crosslinker"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-09-05 16:27:03"
+                date_time_modified="2017-09-05 16:27:17"
+                approved="0"
+                record_id="1907">
+         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
+                           classification="Chemical derivative"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
+         <umod:delta mono_mass="114.031694" avge_mass="114.0993" composition="H(6) C(5) O(3)">
+            <umod:element symbol="H" number="6"/>
+            <umod:element symbol="C" number="5"/>
+            <umod:element symbol="O" number="3"/>
+         </umod:delta>
+         <umod:xref>
+            <umod:text>Thermo datasheet</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>https://assets.thermofisher.com/TFS-Assets/LSG/manuals/MAN0011542_BS3_d0d4_BS2G_d0d3_UG.pdf</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Xlink:BS2G[217]" full_name="Tris-quenched monolink of BS2-G crosslinker"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-09-05 16:28:28"
+                date_time_modified="2017-09-05 16:28:43"
+                approved="0"
+                record_id="1908">
+         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
+                           classification="Chemical derivative"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
+         <umod:delta mono_mass="217.095023" avge_mass="217.2191" composition="H(15) C(9) N O(5)">
+            <umod:element symbol="H" number="15"/>
+            <umod:element symbol="C" number="9"/>
+            <umod:element symbol="N" number="1"/>
+            <umod:element symbol="O" number="5"/>
+         </umod:delta>
+         <umod:xref>
+            <umod:text>Thermo datasheet</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>https://assets.thermofisher.com/TFS-Assets/LSG/manuals/MAN0011542_BS3_d0d4_BS2G_d0d3_UG.pdf</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Xlink:DMP[139]" full_name="Ammonia quenched monolink of DMP crosslinker"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-09-06 10:03:30"
+                date_time_modified="2017-09-06 10:03:30"
+                approved="0"
+                record_id="1911">
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
+                           classification="Chemical derivative"
+                           spec_group="2"/>
+         <umod:delta mono_mass="139.110947" avge_mass="139.1982" composition="H(13) C(7) N(3)">
+            <umod:element symbol="H" number="13"/>
+            <umod:element symbol="C" number="7"/>
+            <umod:element symbol="N" number="3"/>
+         </umod:delta>
+         <umod:alt_name>Dimethyl pimelimidate dead-end crosslink</umod:alt_name>
+         <umod:xref>
+            <umod:text>2144419</umod:text>
+            <umod:source>PubMed PMID</umod:source>
+            <umod:url>http://www.ncbi.nlm.nih.gov/pubmed?term=Macromolecular%20association%20of%20ADP-ribosyltransferase%20and%20its%20correlation%20with%20enzymic%20activity</umod:url>
+         </umod:xref>
+         <umod:xref>
+            <umod:text>14696200</umod:text>
+            <umod:source>PubMed PMID</umod:source>
+            <umod:url>http://www.ncbi.nlm.nih.gov/pubmed?term=Chemical%20cross-linking%20and%20mass%20spectrometry%20for%20mapping%20three-dimensional%20structures%20of%20proteins%20and%20protein%20complexes</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Xlink:DMP[122]" full_name="Intact DMP crosslinker"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-09-06 10:04:39"
+                date_time_modified="2017-09-06 10:04:39"
+                approved="0"
+                record_id="1912">
+         <umod:specificity hidden="1" site="K" position="Anywhere" classification="Chemical derivative"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="N-term" position="Protein N-term"
+                           classification="Chemical derivative"
+                           spec_group="2"/>
+         <umod:delta mono_mass="122.084398" avge_mass="122.1677" composition="H(10) C(7) N(2)">
+            <umod:element symbol="H" number="10"/>
+            <umod:element symbol="C" number="7"/>
+            <umod:element symbol="N" number="2"/>
+         </umod:delta>
+         <umod:alt_name>Dimethyl pimelimidate</umod:alt_name>
+         <umod:xref>
+            <umod:text>2144419</umod:text>
+            <umod:source>PubMed PMID</umod:source>
+            <umod:url>http://www.ncbi.nlm.nih.gov/pubmed?term=Macromolecular%20association%20of%20ADP-ribosyltransferase%20and%20its%20correlation%20with%20enzymic%20activity</umod:url>
+         </umod:xref>
+         <umod:xref>
+            <umod:text>14696200</umod:text>
+            <umod:source>PubMed PMID</umod:source>
+            <umod:url>http://www.ncbi.nlm.nih.gov/pubmed?term=Chemical%20cross-linking%20and%20mass%20spectrometry%20for%20mapping%20three-dimensional%20structures%20of%20proteins%20and%20protein%20complexes</umod:url>
          </umod:xref>
       </umod:mod>
    </umod:modifications>
@@ -39312,6 +39451,9 @@ antiserum and mass spectrometric analysis</umod:text>
          <umod:element symbol="C" number="6"/>
          <umod:element symbol="O" number="4"/>
          <umod:element symbol="N" number="1"/>
+      </umod:brick>
+      <umod:brick title="Al" full_name="Aluminium" mono_mass="26.9815386" avge_mass="26.9815386">
+         <umod:element symbol="Al" number="1"/>
       </umod:brick>
    </umod:mod_bricks>
 </umod:unimod>
