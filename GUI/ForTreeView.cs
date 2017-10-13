@@ -11,7 +11,6 @@ namespace MetaMorpheusGUI
         private string status;
         private int progress;
         private bool inProgress;
-        private bool isIndeterminate;
 
         #endregion Private Fields
 
@@ -51,16 +50,6 @@ namespace MetaMorpheusGUI
             set
             {
                 progress = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public bool IsIndeterminate
-        {
-            get { return isIndeterminate; }
-            set
-            {
-                isIndeterminate = value;
                 OnPropertyChanged();
             }
         }

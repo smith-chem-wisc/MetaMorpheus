@@ -204,7 +204,6 @@ namespace MetaMorpheusGUI
             {
                 var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
                 theTask.InProgress = true;
-                theTask.IsIndeterminate = true;
                 theTask.Status = "Starting...";
 
                 dataGridDatafiles.Items.Refresh();
@@ -222,7 +221,6 @@ namespace MetaMorpheusGUI
             {
                 var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
                 theTask.InProgress = false;
-                theTask.IsIndeterminate = false;
                 theTask.Progress = 100;
                 theTask.Status = "Done!";
 
@@ -532,7 +530,6 @@ namespace MetaMorpheusGUI
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.s;
-                theEntityOnWhichToUpdateLabel.IsIndeterminate = true;
             }
         }
 
@@ -562,7 +559,6 @@ namespace MetaMorpheusGUI
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.v;
-                theEntityOnWhichToUpdateLabel.IsIndeterminate = false;
                 theEntityOnWhichToUpdateLabel.Progress = s.new_progress;
             }
         }
