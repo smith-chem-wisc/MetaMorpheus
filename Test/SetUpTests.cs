@@ -45,12 +45,12 @@ namespace Test
 
         private static void SuccessfullyFinishedAllTasks(object sender, StringEventArgs rootOutputFolderPath)
         {
-            outputFolder = rootOutputFolderPath.s;
+            outputFolder = rootOutputFolderPath.S;
         }
 
         private static void WarnStatusHandler(object sender, StringEventArgs e)
         {
-            Console.WriteLine(e.s);
+            Console.WriteLine(e.S);
         }
 
         #endregion Private Methods

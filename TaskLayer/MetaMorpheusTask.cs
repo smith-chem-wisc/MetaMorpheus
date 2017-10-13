@@ -355,9 +355,9 @@ namespace TaskLayer
             WarnHandler?.Invoke(this, new StringEventArgs(v, null));
         }
 
-        protected void NewCollection(string v, List<string> nestedIds)
+        protected void NewCollection(string displayName, List<string> nestedIds)
         {
-            NewCollectionHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+            NewCollectionHandler?.Invoke(this, new StringEventArgs(displayName, nestedIds));
         }
 
         #endregion Protected Methods
