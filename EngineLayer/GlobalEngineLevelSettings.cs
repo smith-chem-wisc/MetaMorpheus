@@ -40,8 +40,8 @@ namespace EngineLayer
             }
 
             MetaMorpheusVersion = typeof(GlobalEngineLevelSettings).Assembly.GetName().Version.ToString();
-            //if (MetaMorpheusVersion.Equals("1.0.0.0"))
-            //    MetaMorpheusVersion = "Not a release version";
+            if (MetaMorpheusVersion.Equals("1.0.0.0"))
+                MetaMorpheusVersion = "Not a release version";
 
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
