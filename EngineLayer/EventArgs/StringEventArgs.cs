@@ -9,14 +9,14 @@ namespace EngineLayer
         public StringEventArgs(string s, List<string> nestedIDs)
             : base(nestedIDs)
         {
-            this.s = s;
+            this.S = s;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public string s { get; }
+        public string S { get; }
 
         #endregion Public Properties
     }

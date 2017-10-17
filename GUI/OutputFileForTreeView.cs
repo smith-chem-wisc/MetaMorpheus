@@ -4,7 +4,7 @@
     {
         #region Public Constructors
 
-        public OutputFileForTreeView(string fullPath, string displayName) : base(displayName)
+        public OutputFileForTreeView(string fullPath, string displayName) : base(displayName, fullPath)
         {
             FullPath = fullPath;
         }
