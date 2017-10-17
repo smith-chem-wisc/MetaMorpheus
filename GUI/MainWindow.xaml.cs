@@ -844,5 +844,13 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void dataGridDatafiles_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource is ScrollViewer)
+            {
+                ((DataGrid)sender).UnselectAll();
+            }
+        }
     }
 }

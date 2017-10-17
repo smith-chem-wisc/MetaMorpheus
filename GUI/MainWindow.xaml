@@ -60,7 +60,7 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
                         </Grid.RowDefinitions>
-                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top">
+                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top" MouseUp="dataGridDatafiles_MouseUp">
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
