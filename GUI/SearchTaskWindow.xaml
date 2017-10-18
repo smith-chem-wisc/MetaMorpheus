@@ -210,7 +210,7 @@
                                     <RadioButton x:Name="mdac187" Content="-187 and Up" />
                                     <RadioButton x:Name="mdacOpen" Content="Accept all" />
                                     <RadioButton x:Name="mdacCustom" Content="Custom:" />
-                                    <TextBox x:Name="customkMdacTextBox"  IsEnabled="{Binding IsChecked, ElementName=mdacCustom}" />
+                                    <TextBox x:Name="customkMdacTextBox"  ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass difference in pre-specified dalton intervals, use a custom name, followed by &quote;interval&quote;, followed by a, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" IsEnabled="{Binding IsChecked, ElementName=mdacCustom}" />
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Ambiguity Parameters">
