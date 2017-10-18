@@ -13,23 +13,32 @@
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top">
-                    <Grid>
-                        <Label Content="Output File Name" Margin="0,0,0,0"/>
-                        <TextBox x:Name="OutputFileNameTextBox" Margin="100,0,0,0" Width="150" HorizontalContentAlignment="Center" VerticalAlignment="Center"  HorizontalAlignment="Left" Height="27" TextAlignment="Left" VerticalContentAlignment="Center"/>
-                        <TextBlock Text="CalibrateTask" Margin="115,0,0,0" IsHitTestVisible="False" VerticalAlignment="Center"  HorizontalAlignment="Left"  Foreground="DarkGray">
-                            <TextBlock.Style>
-                                <Style TargetType="{x:Type TextBlock}">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text, ElementName=OutputFileNameTextBox}" Value="">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                    <Label Content="Task Name" />
+                    <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                        <VisualBrush.Visual>
+                                            <Label Content="CalibrateTask" Foreground="Gray" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
                 </StackPanel>
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">

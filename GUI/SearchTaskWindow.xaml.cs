@@ -152,7 +152,7 @@ namespace MetaMorpheusGUI
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
             nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific;
-
+            txtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
@@ -184,7 +184,7 @@ namespace MetaMorpheusGUI
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
+            maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
             disposeOfFilesWhenDone.IsChecked = task.SearchParameters.DisposeOfFileWhenDone;
             allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             excelCompatible.IsChecked = task.CommonParameters.ExcelCompatible;
@@ -340,14 +340,19 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 0)
+            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 1)
             {
-                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive number.");
+                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
 
             #endregion Check Task Validity
             #region Save Parameters
+            if (OutputFileNameTextBox.Text != "")
+                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                TheTask.CommonParameters.TaskDescriptor = "SearchTask";
+
             if (OutputFileNameTextBox.Text != "")
                 TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
             else
@@ -383,7 +388,7 @@ namespace MetaMorpheusGUI
                 else //if (radioButtonSlideDecoy.IsChecked.Value)
                     TheTask.SearchParameters.DecoyType = DecoyType.Slide;
             }
-            else 
+            else
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
@@ -401,6 +406,7 @@ namespace MetaMorpheusGUI
             else
                 TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
+            TheTask.SearchParameters.MaxFragmentSize = Double.Parse(txtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.AddCompIons = addCompIonCheckBox.IsChecked.Value;
             TheTask.CommonParameters.BIons = bCheckBox.IsChecked.Value;
             TheTask.CommonParameters.YIons = yCheckBox.IsChecked.Value;
@@ -464,7 +470,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
             TheTask.SearchParameters.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                TheTask.CommonParameters.MaxDegreeOfParallelism = jsakdf;
+                TheTask.CommonParameters.MaxParallelFilesToAnalyze = jsakdf;
 
             #endregion Save Parameters
 

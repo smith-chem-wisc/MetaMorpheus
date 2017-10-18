@@ -2,7 +2,7 @@
 
 namespace MetaMorpheusGUI
 {
-      public class RawDataForDataGrid
+    public class RawDataForDataGrid
     {
         #region Public Constructors
 
@@ -22,6 +22,7 @@ namespace MetaMorpheusGUI
         public string Parameters { get; set; }
         public bool InProgress { get; private set; }
         public string FilePath { get; set; }
+
         #endregion Public Properties
 
         #region Public Methods

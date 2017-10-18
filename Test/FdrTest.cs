@@ -23,12 +23,12 @@ namespace Test
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
             DigestionParams digestionParams = new DigestionParams();
-            var digested = p.Digest(digestionParams, new List<ModificationWithMass>()).ToList();
+            var digested = p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
-            PeptideWithSetModifications pep2 = digested[1].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
-            PeptideWithSetModifications pep3 = digested[2].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
-            PeptideWithSetModifications pep4 = digested[3].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pep1 = digested[0];
+            PeptideWithSetModifications pep2 = digested[1];
+            PeptideWithSetModifications pep3 = digested[2];
+            PeptideWithSetModifications pep4 = digested[3];
 
             TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
 

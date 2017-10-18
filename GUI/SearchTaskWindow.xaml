@@ -13,23 +13,32 @@
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top">
-                    <Grid>
-                        <Label Content="Output File Name" Margin="0,0,0,0"/>
-                        <TextBox x:Name="OutputFileNameTextBox" Margin="100,0,0,0" Width="150" HorizontalContentAlignment="Center" VerticalAlignment="Center"  HorizontalAlignment="Left" Height="27" TextAlignment="Left" VerticalContentAlignment="Center"/>
-                        <TextBlock Text="SearchTask" Margin="115,0,0,0" IsHitTestVisible="False" VerticalAlignment="Center"  HorizontalAlignment="Left"  Foreground="DarkGray">
-                            <TextBlock.Style>
-                                <Style TargetType="{x:Type TextBlock}">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text, ElementName=OutputFileNameTextBox}" Value="">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                    <Label Content="Task Name" />
+                    <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                        <VisualBrush.Visual>
+                                            <Label Content="SearchTask" Foreground="Gray" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
                 </StackPanel>
                 <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
@@ -132,7 +141,7 @@
                                         <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" />
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" />
                                         <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
-                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}"/>
+                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
@@ -141,7 +150,6 @@
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" />
                                         </StackPanel>
-
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
@@ -175,6 +183,10 @@
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da)" />
+                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=modernSearchRadioButton}" />
+                                        </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
@@ -198,7 +210,7 @@
                                     <RadioButton x:Name="mdac187" Content="-187 and Up" />
                                     <RadioButton x:Name="mdacOpen" Content="Accept all" />
                                     <RadioButton x:Name="mdacCustom" Content="Custom:" />
-                                    <TextBox x:Name="customkMdacTextBox"  IsEnabled="{Binding IsChecked, ElementName=mdacCustom}" />
+                                    <TextBox x:Name="customkMdacTextBox"  ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass difference in pre-specified dalton intervals, use a custom name, followed by &quote;interval&quote;, followed by a, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" IsEnabled="{Binding IsChecked, ElementName=mdacCustom}" />
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Ambiguity Parameters">

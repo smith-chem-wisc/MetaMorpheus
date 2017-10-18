@@ -22,6 +22,7 @@ namespace TaskLayer
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
+            MaxFragmentSize = 30000.0;
         }
 
         #endregion Public Constructors
@@ -45,6 +46,7 @@ namespace TaskLayer
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
         public string CustomMdac { get; set; }
+        public double MaxFragmentSize { get; set; }
 
         #endregion Public Properties
     }

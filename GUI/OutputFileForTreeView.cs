@@ -1,17 +1,20 @@
-﻿using System.IO;
-
-namespace MetaMorpheusGUI
+﻿namespace MetaMorpheusGUI
 {
     public class OutputFileForTreeView : ForTreeView
     {
-        public readonly string fullPath;
         #region Public Constructors
 
-        public OutputFileForTreeView(string fullPath, string displayName) : base(displayName)
+        public OutputFileForTreeView(string fullPath, string displayName) : base(displayName, fullPath)
         {
-            this.fullPath = fullPath;
+            FullPath = fullPath;
         }
 
         #endregion Public Constructors
+
+        #region Public Properties
+
+        public string FullPath { get; }
+
+        #endregion Public Properties
     }
 }

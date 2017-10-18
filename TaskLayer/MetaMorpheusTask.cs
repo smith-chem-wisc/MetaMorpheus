@@ -32,7 +32,6 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
-
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -48,7 +47,6 @@ namespace TaskLayer
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
-
 
         #endregion Public Fields
 
@@ -133,9 +131,9 @@ namespace TaskLayer
                     }
                     else
                     {
-                        var PrecursorMZ = ms2scan.SelectedIonMZ;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(PrecursorMZ.ToMass(precursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
-                            isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonIntensity ?? double.NaN) }, precursorCharge));
+                        var precursorMZ = ms2scan.SelectedIonMZ;
+                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
+                            isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(precursorMZ, ms2scan.SelectedIonIntensity ?? double.NaN) }, precursorCharge));
                     }
                 }
 
@@ -357,9 +355,9 @@ namespace TaskLayer
             WarnHandler?.Invoke(this, new StringEventArgs(v, null));
         }
 
-        protected void NewCollection(string v, List<string> nestedIds)
+        protected void NewCollection(string displayName, List<string> nestedIds)
         {
-            NewCollectionHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+            NewCollectionHandler?.Invoke(this, new StringEventArgs(displayName, nestedIds));
         }
 
         #endregion Protected Methods

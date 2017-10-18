@@ -23,7 +23,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -74,7 +73,7 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
-            maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
+            maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
 
@@ -83,9 +82,7 @@ namespace MetaMorpheusGUI
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
-
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
-
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -255,7 +252,7 @@ namespace MetaMorpheusGUI
                 TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                TheTask.CommonParameters.MaxDegreeOfParallelism = jsakdf;
+                TheTask.CommonParameters.MaxParallelFilesToAnalyze = jsakdf;
 
             DialogResult = true;
         }

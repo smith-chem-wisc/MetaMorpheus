@@ -55,6 +55,7 @@ namespace TaskLayer
         public bool XlOutAll { get; set; }
         public bool XlOutPepXML { get; set; }
         public bool XlOutCrosslink { get; set; }
+
         #endregion Public Properties
     }
 }

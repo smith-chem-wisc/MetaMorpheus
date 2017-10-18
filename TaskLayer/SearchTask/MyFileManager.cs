@@ -1,11 +1,11 @@
 ﻿using EngineLayer;
 using IO.MzML;
 
-#if ONLYNETSTANDARD
-#else
+#if NET461
 
 using IO.Thermo;
 
+#else
 #endif
 
 using MassSpectrometry;
@@ -49,14 +49,14 @@ namespace TaskLayer
 
             // By now know that need to load this file!!!
             lock (fileLoadingLock) // Lock because reading is sequential
-                if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
+                if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
                 else
 
-#if ONLYNETSTANDARD
-                    Warn("No capability for reading " + origDataFile);
-#else
+#if NET461
                     myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
+#else
+                    Warn("No capability for reading " + origDataFile);
 #endif
 
             return myMsDataFiles[origDataFile];
