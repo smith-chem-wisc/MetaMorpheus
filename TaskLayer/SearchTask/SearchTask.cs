@@ -653,10 +653,10 @@ namespace TaskLayer
                     return new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029 }, precursorMassTolerance);
 
                 case MassDiffAcceptorType.TwoMM:
-                    return new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029, 2.0052 }, precursorMassTolerance);
+                    return new DotMassDiffAcceptor("2mm", new List<double> { 0, 1.0029, 2.0052 }, precursorMassTolerance);
 
                 case MassDiffAcceptorType.ThreeMM:
-                    return new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029, 2.0052, 3.0077 }, precursorMassTolerance);
+                    return new DotMassDiffAcceptor("3mm", new List<double> { 0, 1.0029, 2.0052, 3.0077 }, precursorMassTolerance);
 
                 case MassDiffAcceptorType.ModOpen:
                     return new IntervalMassDiffAcceptor("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
