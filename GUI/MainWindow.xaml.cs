@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using AutoUpdaterDotNET;
 
 namespace MetaMorpheusGUI
 {
@@ -33,6 +34,7 @@ namespace MetaMorpheusGUI
 
         public MainWindow()
         {
+            AutoUpdater.Start("https://xrsheeran.github.io/release.xml");
             InitializeComponent();
 
             Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
@@ -844,13 +846,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
-        private void dataGridDatafiles_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (e.OriginalSource is ScrollViewer)
-            {
-                ((DataGrid)sender).UnselectAll();
-            }
-        }
     }
 }
