@@ -26,8 +26,6 @@ namespace TaskLayer
     {
         #region Private Fields
 
-        private const double binTolInDaltons = 0.003;
-
         private FlashLFQEngine FlashLfqEngine;
 
         #endregion Private Fields
@@ -1053,7 +1051,7 @@ namespace TaskLayer
                 {
                     Status("Running histogram analysis...", new List<string> { taskId });
                     var myTreeStructure = new BinTreeStructure();
-                    myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTolInDaltons);
+                    myTreeStructure.GenerateBins(limitedpsms_with_fdr, SearchParameters.HistogramBinTolInDaltons);
                     var writtenFile = Path.Combine(OutputFolder, "aggregate_" + massDiffAcceptor.FileNameAddition + ".mytsv");
                     WriteTree(myTreeStructure, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
