@@ -30,10 +30,10 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein, modPep.PeptideDescription)
+        public PeptideWithSetModifications(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription, int missedCleavages, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
+            : base(protein, oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, peptideDescription)
         {
-            this.missedCleavages = modPep.MissedCleavages;
+            this.missedCleavages = missedCleavages;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
             this.numFixedMods = numFixedMods;
         }

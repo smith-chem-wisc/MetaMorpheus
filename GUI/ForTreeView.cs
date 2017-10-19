@@ -11,15 +11,15 @@ namespace MetaMorpheusGUI
         private string status;
         private int progress;
         private bool inProgress;
-        private bool isIndeterminate;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ForTreeView(string displayName)
+        public ForTreeView(string displayName, string id)
         {
             DisplayName = displayName;
+            Id = id;
             Children = new ObservableCollection<ForTreeView>();
         }
 
@@ -55,16 +55,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        public bool IsIndeterminate
-        {
-            get { return isIndeterminate; }
-            set
-            {
-                isIndeterminate = value;
-                OnPropertyChanged();
-            }
-        }
-
         public bool InProgress
         {
             get { return inProgress; }
@@ -75,7 +65,8 @@ namespace MetaMorpheusGUI
             }
         }
 
-        public string DisplayName { get; set; }
+        public string DisplayName { get; }
+        public string Id { get; }
 
         #endregion Public Properties
 

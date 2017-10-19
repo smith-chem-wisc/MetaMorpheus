@@ -178,8 +178,8 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Status: " + e.s);
-            Console.WriteLine(e.s);
+            Console.WriteLine("Status: " + e.S);
+            Console.WriteLine(e.S);
         }
 
         #endregion Private Methods
