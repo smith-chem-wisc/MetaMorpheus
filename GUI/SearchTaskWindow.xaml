@@ -210,7 +210,7 @@
                                     <RadioButton x:Name="mdac187" Content="-187 and Up" />
                                     <RadioButton x:Name="mdacOpen" Content="Accept all" />
                                     <RadioButton x:Name="mdacCustom" Content="Custom:" />
-                                    <TextBox x:Name="customkMdacTextBox" ToolTipService.ShowDuration="999999" ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]"/>
+                                    <TextBox x:Name="customkMdacTextBox" ToolTipService.ShowDuration="999999" ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" />
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Ambiguity Parameters">
@@ -267,13 +267,13 @@
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </DataTemplate>
@@ -286,13 +286,13 @@
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </DataTemplate>
@@ -316,13 +316,13 @@
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </DataTemplate>
@@ -393,7 +393,11 @@
                                 </Grid>
                             </GroupBox>
                             <GroupBox Header="Mass Shift Histogram Analysis">
-                                <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
+                                    <Label Content="Histogram bin width (Da):" />
+                                    <TextBox x:Name="histogramBinWidthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Pruned Database Writing">
                                 <StackPanel Orientation="Horizontal">
