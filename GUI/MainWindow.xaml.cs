@@ -11,8 +11,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using AutoUpdaterDotNET;
-
+using System.Net;
+using System.Text.RegularExpressions;
+using System.Diagnostics;
 namespace MetaMorpheusGUI
 {
     /// <summary>
@@ -34,11 +35,74 @@ namespace MetaMorpheusGUI
 
         public MainWindow()
         {
-            AutoUpdater.Start("https://xrsheeran.github.io/release.xml");
+            
+
             InitializeComponent();
 
-            Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
+            Title = "MetaMorpheus: version 0.0.200 " + GlobalEngineLevelSettings.MetaMorpheusVersion;
+            
+            try
+            {
+                //get current version link
+                HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
+                HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse();
+                //match version number
+                Regex versionReg = new Regex(@"\d+\.\d+\.\d+");
+                String versionNum = "" + versionLink.ResponseUri;
+                versionNum = "" + versionReg.Matches(versionNum)[0];
+                //versionNum contains the version number
+                String currVersionNum = "" + versionReg.Matches(this.Title)[0];
+                if (!currVersionNum.Equals(versionNum))
+                {
+                    MessageBoxResult result = MessageBox.Show("A newer version of Metamorpheus is available, wanna update?", "Metamorpheus Auto Update", MessageBoxButton.YesNoCancel);
+                    if (result.Equals(MessageBoxResult.Yes))
+                    {
+                        
 
+                        using (var client = new WebClient())
+                        {
+
+                            var uri = new Uri("https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + versionNum + "/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
+
+                            client.DownloadFileCompleted += (sender, e) =>
+                            {
+                                MessageBox.Show("DownLode Complete");
+                                Process p = new Process();
+                                //p.StartInfo.FileName = @"E:\XRSheeranQ\0.0.201\MetaMorpheus-master\installer\Debug\installer.msi"; //installer version
+                                p.StartInfo.FileName = @"E:\XRSheeranQ\MetaMorpheusGuiDotNetFrameworkAppveyor.zip"; //zip version
+
+                                //Get user feedback on installation
+                                MessageBoxResult result1 = MessageBox.Show("Program will be terminated, are you sure to exit and install?", "Metamorpheus Auto Update", MessageBoxButton.YesNoCancel);
+                                if (result1.Equals(MessageBoxResult.Yes))
+                                {
+                                    System.Windows.Application.Current.Shutdown();
+                                    //auto remove or choose to remove for zip<-
+                                    //Or installer will take care of the rest
+                                    p.Start();
+                                }
+                                else
+                                {
+                               
+                                }
+
+
+                            };
+                            client.DownloadFileAsync(uri, @"E:\XRSheeranQ\MetaMorpheusGuiDotNetFrameworkAppveyor.zip");//downloaded succeed!
+
+
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Here is a link to releases, feel free to check it out if you want!");
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+            
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;

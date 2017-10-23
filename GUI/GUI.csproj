@@ -100,6 +100,9 @@
     <Reference Include="Nett, Version=0.8.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Nett.0.8.0\lib\Net40\Nett.dll</HintPath>
     </Reference>
+    <Reference Include="Octokit, Version=0.27.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Octokit.0.27.0\lib\net45\Octokit.dll</HintPath>
+    </Reference>
     <Reference Include="pepXML, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.246\lib\net45\pepXML.dll</HintPath>
     </Reference>
