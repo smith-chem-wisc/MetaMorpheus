@@ -18,6 +18,7 @@ namespace TaskLayer
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
+            HistogramBinTolInDaltons = 0.003;
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
@@ -47,6 +48,7 @@ namespace TaskLayer
         public SearchType SearchType { get; set; }
         public string CustomMdac { get; set; }
         public double MaxFragmentSize { get; set; }
+        public double HistogramBinTolInDaltons { get; set; }
 
         #endregion Public Properties
     }
