@@ -19,6 +19,8 @@ namespace MetaMorpheusGUI
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    
+    
     public partial class MainWindow : Window
     {
         #region Private Fields
@@ -30,79 +32,38 @@ namespace MetaMorpheusGUI
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
 
         #endregion Private Fields
-
+        public static string VersionCheck;
         #region Public Constructors
 
         public MainWindow()
         {
-            
-
             InitializeComponent();
-
             Title = "MetaMorpheus: version 0.0.200 " + GlobalEngineLevelSettings.MetaMorpheusVersion;
-            
-            try
+
+            /*Version Check*/
+            //get current version link
+            HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
+            HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse(); //get final version link
+            String versionNum = "" + versionLink.ResponseUri; //convert version link to string
+            //match version number
+            Regex versionReg = new Regex(@"\d+\.\d+\.\d+");
+            VersionCheck = "" + versionReg.Matches(versionNum)[0];//version check will be shared with all the forms
+
+            //get current version number
+            String currVersionNum = "" + versionReg.Matches(this.Title)[0];
+            //update file, if user choose not to update (unchecked checkbox), false; otherwise is true; default value is also true
+            String LogPath = @"E:\XRSheeranQ\update.txt";
+            //get string
+            string text = System.IO.File.ReadAllText(LogPath);
+            //check the version and whether to update or not
+            if (!currVersionNum.Equals(VersionCheck) && text.Equals("true"))
             {
-                //get current version link
-                HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
-                HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse();
-                //match version number
-                Regex versionReg = new Regex(@"\d+\.\d+\.\d+");
-                String versionNum = "" + versionLink.ResponseUri;
-                versionNum = "" + versionReg.Matches(versionNum)[0];
-                //versionNum contains the version number
-                String currVersionNum = "" + versionReg.Matches(this.Title)[0];
-                if (!currVersionNum.Equals(versionNum))
-                {
-                    MessageBoxResult result = MessageBox.Show("A newer version of Metamorpheus is available, wanna update?", "Metamorpheus Auto Update", MessageBoxButton.YesNoCancel);
-                    if (result.Equals(MessageBoxResult.Yes))
-                    {
-                        
+                Window1 answercus = new Window1();
+                answercus.Topmost = true;
+                answercus.Show();
 
-                        using (var client = new WebClient())
-                        {
-
-                            var uri = new Uri("https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + versionNum + "/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
-
-                            client.DownloadFileCompleted += (sender, e) =>
-                            {
-                                MessageBox.Show("DownLode Complete");
-                                Process p = new Process();
-                                //p.StartInfo.FileName = @"E:\XRSheeranQ\0.0.201\MetaMorpheus-master\installer\Debug\installer.msi"; //installer version
-                                p.StartInfo.FileName = @"E:\XRSheeranQ\MetaMorpheusGuiDotNetFrameworkAppveyor.zip"; //zip version
-
-                                //Get user feedback on installation
-                                MessageBoxResult result1 = MessageBox.Show("Program will be terminated, are you sure to exit and install?", "Metamorpheus Auto Update", MessageBoxButton.YesNoCancel);
-                                if (result1.Equals(MessageBoxResult.Yes))
-                                {
-                                    System.Windows.Application.Current.Shutdown();
-                                    //auto remove or choose to remove for zip<-
-                                    //Or installer will take care of the rest
-                                    p.Start();
-                                }
-                                else
-                                {
-                               
-                                }
-
-
-                            };
-                            client.DownloadFileAsync(uri, @"E:\XRSheeranQ\MetaMorpheusGuiDotNetFrameworkAppveyor.zip");//downloaded succeed!
-
-
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show("Here is a link to releases, feel free to check it out if you want!");
-                    }
-                }
             }
-            catch(Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
-            
+
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;

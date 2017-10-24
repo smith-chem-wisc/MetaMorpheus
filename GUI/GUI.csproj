@@ -196,6 +196,12 @@
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Compile Include="InRunTask.cs" />
     <Compile Include="TheTemplateSelector.cs" />
+    <Compile Include="AutoUpdate.xaml.cs">
+      <DependentUpon>AutoUpdate.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AutoUpdateNo.xaml.cs">
+      <DependentUpon>AutoUpdateNo.xaml</DependentUpon>
+    </Compile>
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
@@ -232,6 +238,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="SearchTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AutoUpdate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AutoUpdateNo.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

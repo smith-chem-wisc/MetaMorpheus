@@ -1,0 +1,17 @@
+﻿<Window x:Class="MetaMorpheusGUI.Window1"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Title="Auto Update" Height="218.75" Width="384.821" MaxHeight="218.75" MinHeight="218.75" MaxWidth="384.821" MinWidth="384.821 ">
+    <Grid>
+        <CheckBox Name="ckb" Content="Do not remind me for any updates." HorizontalAlignment="Left" Margin="34,148,0,0" VerticalAlignment="Top" Checked="ckb_Checked" Unchecked="ckb_Unchecked"/>
+        <Button Content="Yes" HorizontalAlignment="Left" Margin="34,96,0,0" VerticalAlignment="Top" Width="75" Click="Yes_Click"/>
+        <Button Content="Remind me later" HorizontalAlignment="Left" Margin="170,96,0,0" VerticalAlignment="Top" Width="95" Click="No_Click"/>
+        <Label Name="lbl" Content="There is a newer version available, wanna have a try?" HorizontalAlignment="Left" Margin="10,38,0,0" VerticalAlignment="Top" Width="332" Height="39"/>
+        <Label Content="Label" HorizontalAlignment="Left" Margin="545,86,-268,0" VerticalAlignment="Top" Width="100"/>
+
+    </Grid>
+</Window>
