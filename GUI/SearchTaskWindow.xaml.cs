@@ -353,11 +353,6 @@ namespace MetaMorpheusGUI
             else
                 TheTask.CommonParameters.TaskDescriptor = "SearchTask";
 
-            if (OutputFileNameTextBox.Text != "")
-                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
-            else
-                TheTask.CommonParameters.TaskDescriptor = "SearchTask";
-
             TheTask.CommonParameters.TrimMs1Peaks = trimMs1.IsChecked.Value;
             TheTask.CommonParameters.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             TheTask.CommonParameters.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
