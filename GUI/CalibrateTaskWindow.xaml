@@ -200,7 +200,6 @@
                 <GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="CalibrationExpander">
                         <StackPanel>
-                            <CheckBox x:Name="nonLinearCalibCheckBox" Content="Non-Linear Calibration" />
                             <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write Intermediate Files" />
                         </StackPanel>
                     </Expander>
