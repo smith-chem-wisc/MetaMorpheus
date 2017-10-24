@@ -247,7 +247,13 @@ namespace MetaMorpheusGUI
             if (openPicker.ShowDialog() == true)
                 foreach (var filepath in openPicker.FileNames)
                 {
-                    AddAFile(filepath);
+                    FileInfo info = new FileInfo(filepath);
+                    if (info.Length <= 0)
+                    {
+                        var win2 = MessageBox.Show("Please choose a database with data", "Database is Empty", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    else
+                        AddAFile(filepath);
                 }
             dataGridXMLs.Items.Refresh();
         }

@@ -27,7 +27,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -348,9 +347,7 @@ namespace MetaMorpheusGUI
             }
 
             #endregion Check Task Validity
-
             #region Save Parameters
-
             if (OutputFileNameTextBox.Text != "")
                 TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
             else
@@ -496,6 +493,7 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
