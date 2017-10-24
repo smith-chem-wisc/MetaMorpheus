@@ -115,6 +115,11 @@ namespace EngineLayer.Calibration
             throw new System.NotImplementedException();
         }
 
+        public double[] Predict(F64Matrix observations)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion Public Methods
     }
 
@@ -150,6 +155,11 @@ namespace EngineLayer.Calibration
         public double Predict(double[] observation)
         {
             return predictMzCoeff.Predict(observation.Skip(1).ToArray()) * observation[0];
+        }
+
+        public double[] Predict(F64Matrix observations)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion Public Methods

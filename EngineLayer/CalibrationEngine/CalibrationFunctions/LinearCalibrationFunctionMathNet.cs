@@ -94,6 +94,11 @@ namespace EngineLayer.Calibration
             return f(observation);
         }
 
+        public double[] Predict(F64Matrix observations)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion Public Methods
     }
 }
