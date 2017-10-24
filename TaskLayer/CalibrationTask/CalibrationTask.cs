@@ -284,6 +284,8 @@ namespace TaskLayer
                         round++;
                     } while (true);
 
+                    SucessfullyFinishedWritingFile(bestFilePath, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+
                     myTaskResults.newSpectra.Add(bestFilePath);
                 });
 
