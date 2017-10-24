@@ -320,7 +320,7 @@ namespace EngineLayer.Analysis
                         new MyInfo(-105.02484, "Methionine loss then acetaldehyde"),
                         new MyInfo(52.911464, "Fe[III]"),
                         new MyInfo(71.000729, "H C2 N O2"),
-                        new MyInfo(50.000395, "H2 O3")
+                        new MyInfo(50.000394, "H2 O3")
                     };
             foreach (Bin bin in FinalBins)
             {
