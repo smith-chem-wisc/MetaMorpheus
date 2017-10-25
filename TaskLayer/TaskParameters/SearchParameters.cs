@@ -10,7 +10,7 @@ namespace TaskLayer
         {
             DisposeOfFileWhenDone = true;
             AddCompIons = false;
-            DoParsimony = false;
+            DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreUnique = true;
             DoQuantification = false;
