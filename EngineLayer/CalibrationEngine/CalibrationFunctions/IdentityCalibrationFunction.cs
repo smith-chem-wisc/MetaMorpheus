@@ -35,6 +35,11 @@ namespace EngineLayer
             return 0;
         }
 
+        public double[] Predict(F64Matrix observations)
+        {
+            throw new System.NotImplementedException();
+        }
+
         #endregion Public Methods
     }
 }
