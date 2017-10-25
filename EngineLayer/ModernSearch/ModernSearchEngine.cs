@@ -163,9 +163,10 @@ namespace EngineLayer.ModernSearch
                     {
                         int compFragmentFloorMass = (int)Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
                         int compFragmentCeilingMass = (int)Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentFloorMass;
-                        for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
-                            if (fragmentIndex[fragmentBin] != null)
-                                binsToSearch.Add(fragmentBin);
+                        if (compFragmentFloorMass > 0)
+                            for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                                if (fragmentIndex[fragmentBin] != null)
+                                    binsToSearch.Add(fragmentBin);
                     }
                 }
             }
