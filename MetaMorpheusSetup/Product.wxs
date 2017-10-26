@@ -3,57 +3,66 @@
 
   <!--Shorthand way of getting the install directory-->
   <?define GUI_TargetDir=$(var.GUI.TargetDir)?>
-	
+
   <!--Product compiles into an msi file. Only one can be present.-->
   <!--Version needs to be replaced automatically-->
   <Product Id="*" Name="MetaMorpheus" Language="1033" Version="1.0.0.0" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5">
-		
+
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
 
-		<MajorUpgrade DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
-    
-		<MediaTemplate EmbedCab="yes"/>
+    <MajorUpgrade DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
+
+    <MediaTemplate EmbedCab="yes"/>
 
     <!--A feature for the Feature table. Features are the smallest installable unit.-->
-		<Feature Id="ProductFeature" Level="1">
+    <Feature Id="ProductFeature" Level="1">
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
-      <ComponentGroupRef Id="ProductComponents" />
-			<ComponentGroupRef Id="src_Mods_files" />
-			<ComponentGroupRef Id="src_Data_files" />
+      <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
+      <ComponentGroupRef Id="src_Mods_files" />
+      <ComponentGroupRef Id="src_Data_files" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="AppShortCut"/>
-		</Feature>
-    
-	</Product>
+    </Feature>
 
-	<Fragment>
-		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFiles64Folder">
-				<Directory Id="INSTALLFOLDER" Name="MetaMorpheus">
-				  <Directory Id="src_Data" Name="Data" />
-				  <Directory Id="src_Mods" Name="Mods" />
-				</Directory>
-			</Directory>
-      <Directory Id="ProgramMenuFolder">
-        <Directory Id="ApplicationProgramFolder" Name="MetaMorpheus"/>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
+          <Directory Id="DataFolder" Name="Data" />
+          <Directory Id="ModsFolder" Name="Mods" />
+        </Directory>
       </Directory>
-		</Directory>
-	</Fragment>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus"/>
+      </Directory>
+    </Directory>
 
-	<Fragment>
-    
-		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-      
+    <Component Id="AppShortCut" Directory="MetaMorpheusProgramMenuFolder" >
+      <Shortcut Id="AppStartMenuSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
+      <Shortcut Id="UninstallProduct"
+                Name="Uninstall Metamorpheus"
+                Description="Uninstalls My Application"
+                Target="[System64Folder]msiexec.exe"
+                Arguments="/x [ProductCode]"/>
+      <RemoveFolder Id="MetaMorpheusProgramMenuFolder" On="uninstall"/>
+      <RegistryValue Root="HKCU" Key="Software\Microsoft\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+    </Component>
+
+  </Product>
+
+  <!--Executables and libraries-->
+  <Fragment>
+    <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup" Directory="MetaMorpheusInstallFolder">
+
       <Component Id="MetaMorpheusGUI.exe" Guid="63370d96-1880-40ab-8525-685ccf64326f">
         <File Id="MetaMorpheusGUI.exe" Name="MetaMorpheusGUI.exe" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe" />
       </Component>
-      
+
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
       </Component>
-      
+
       <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="18bed74c-eedb-4efa-a6e3-1592ac7022e3">
         <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)UnmanagedThermoHelperLayer.dll" />
       </Component>
@@ -435,25 +444,12 @@
       <Component Id="src_System.Resources.ResourceManager.dll" Guid="33f622e2-5024-4e99-bcce-839a51fa7166">
         <File Id="src_System.Resources.ResourceManager.dll" Name="System.Resources.ResourceManager.dll" Source="$(var.GUI_TargetDir)System.Resources.ResourceManager.dll" />
       </Component>
-		</ComponentGroup>
-  
-    <DirectoryRef Id="ApplicationProgramFolder">
-      <Component Id="AppShortCut" Guid="b4a458e0-06ce-452d-bfaf-0f413007abc3">
-        <Shortcut Id="AppStartMenuSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="INSTALLFOLDER" />
-        <Shortcut Id="UninstallProduct"             
-                          Name="Uninstall Metamorpheus"
-                          Description="Uninstalls My Application"
-                          Target="[System64Folder]msiexec.exe"
-                          Arguments="/x [ProductCode]"/>
-        <RemoveFolder Id="ApplicationProgramFolder" On="uninstall"/>
-        <RegistryValue Root="HKCU" Key="Software\Microsoft\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-      </Component>
-    </DirectoryRef>
-	</Fragment>
-  
+    </ComponentGroup>
+  </Fragment>
+
   <!--Build the Mods folder-->
   <Fragment>
-    <ComponentGroup Id="src_Mods_files" Directory="src_Mods">
+    <ComponentGroup Id="src_Mods_files" Directory="ModsFolder">
       <Component Id="src_Mods_aListOfmods.txt" Guid="2e7f8d26-aa92-48bd-b48c-e4992907f643">
         <File Id="src_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
       </Component>
@@ -481,10 +477,9 @@
     </ComponentGroup>
   </Fragment>
 
-
   <!--Builds the Data folder-->
   <Fragment>
-    <ComponentGroup Id="src_Data_files" Directory="src_Data">
+    <ComponentGroup Id="src_Data_files" Directory="DataFolder">
       <Component Id="src_Data_combos.txt" Guid="286f4e79-a9f9-4a32-acef-3837a7e773c2">
         <File Id="src_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
       </Component>
@@ -505,4 +500,9 @@
       </Component>
     </ComponentGroup>
   </Fragment>
+
+  <Fragment>
+  </Fragment>
+  
+
 </Wix>
