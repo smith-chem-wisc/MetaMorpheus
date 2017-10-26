@@ -14,6 +14,14 @@
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
 
+    <Condition Message="This application is only supported on Windows 7 or higher.">
+      <![CDATA[Installed OR (VersionNT >= 601)]]>
+    </Condition>
+
+    <Condition Message="This application requires 64-bit windows">
+      <![CDATA[Installed OR VersionNT64]]>
+    </Condition>
+
     <MediaTemplate EmbedCab="yes"/>
 
     <!--A feature for the Feature table. Features are the smallest installable unit.-->
