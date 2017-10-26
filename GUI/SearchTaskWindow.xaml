@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.SearchTaskWindow"
+<Window x:Class="MetaMorpheusGUI.SearchTaskWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,6 +6,9 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <local:BooleanInverter x:Key="InvertedBooleanConverter" />
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -185,7 +188,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da)" />
-                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=modernSearchRadioButton}" />
+                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
