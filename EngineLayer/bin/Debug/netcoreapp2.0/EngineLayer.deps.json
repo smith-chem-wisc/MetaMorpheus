@@ -1,26 +1,26 @@
 {
   "runtimeTarget": {
     "name": ".NETCoreApp,Version=v2.0",
-    "signature": "5f540d6cf2db8a63039f5eee1997abf34db379a7"
+    "signature": "a81c2f85c81d12531e2411f25633f97067640f17"
   },
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v2.0": {
       "EngineLayer/1.0.0.0": {
         "dependencies": {
-          "FlashLFQ": "0.1.98",
-          "SharpLearning.CrossValidation": "0.26.2",
-          "SharpLearning.DecisionTrees": "0.26.2",
-          "SharpLearning.Metrics": "0.26.2",
-          "mzLib": "1.0.246"
+          "FlashLFQ": "0.1.99",
+          "SharpLearning.CrossValidation": "0.26.5",
+          "SharpLearning.DecisionTrees": "0.26.5",
+          "SharpLearning.Metrics": "0.26.5",
+          "mzLib": "1.0.256"
         },
         "runtime": {
           "EngineLayer.dll": {}
         }
       },
-      "FlashLFQ/0.1.98": {
+      "FlashLFQ/0.1.99": {
         "dependencies": {
-          "mzLib": "1.0.246"
+          "mzLib": "1.0.256"
         },
         "runtime": {
           "lib/netstandard2.0/FlashLFQ.dll": {}
@@ -31,7 +31,7 @@
           "lib/net40/MathNet.Numerics.dll": {}
         }
       },
-      "mzLib/1.0.246": {
+      "mzLib/1.0.256": {
         "dependencies": {
           "MathNet.Numerics": "3.20.0"
         },
@@ -47,51 +47,51 @@
           "lib/netstandard2.0/pepXML.dll": {}
         }
       },
-      "SharpLearning.Common.Interfaces/0.26.2": {
+      "SharpLearning.Common.Interfaces/0.26.5": {
         "dependencies": {
-          "SharpLearning.Containers": "0.26.2"
+          "SharpLearning.Containers": "0.26.5"
         },
         "runtime": {
           "lib/netstandard2.0/SharpLearning.Common.Interfaces.dll": {}
         }
       },
-      "SharpLearning.Containers/0.26.2": {
+      "SharpLearning.Containers/0.26.5": {
         "runtime": {
           "lib/netstandard2.0/SharpLearning.Containers.dll": {}
         }
       },
-      "SharpLearning.CrossValidation/0.26.2": {
+      "SharpLearning.CrossValidation/0.26.5": {
         "dependencies": {
-          "SharpLearning.Common.Interfaces": "0.26.2",
-          "SharpLearning.Containers": "0.26.2",
-          "SharpLearning.InputOutput": "0.26.2"
+          "SharpLearning.Common.Interfaces": "0.26.5",
+          "SharpLearning.Containers": "0.26.5",
+          "SharpLearning.InputOutput": "0.26.5"
         },
         "runtime": {
           "lib/netstandard2.0/SharpLearning.CrossValidation.dll": {}
         }
       },
-      "SharpLearning.DecisionTrees/0.26.2": {
+      "SharpLearning.DecisionTrees/0.26.5": {
         "dependencies": {
-          "SharpLearning.Common.Interfaces": "0.26.2",
-          "SharpLearning.Containers": "0.26.2",
-          "SharpLearning.InputOutput": "0.26.2"
+          "SharpLearning.Common.Interfaces": "0.26.5",
+          "SharpLearning.Containers": "0.26.5",
+          "SharpLearning.InputOutput": "0.26.5"
         },
         "runtime": {
           "lib/netstandard2.0/SharpLearning.DecisionTrees.dll": {}
         }
       },
-      "SharpLearning.InputOutput/0.26.2": {
+      "SharpLearning.InputOutput/0.26.5": {
         "dependencies": {
-          "SharpLearning.Containers": "0.26.2"
+          "SharpLearning.Containers": "0.26.5"
         },
         "runtime": {
           "lib/netstandard2.0/SharpLearning.InputOutput.dll": {}
         }
       },
-      "SharpLearning.Metrics/0.26.2": {
+      "SharpLearning.Metrics/0.26.5": {
         "dependencies": {
-          "SharpLearning.Common.Interfaces": "0.26.2",
-          "SharpLearning.Containers": "0.26.2"
+          "SharpLearning.Common.Interfaces": "0.26.5",
+          "SharpLearning.Containers": "0.26.5"
         },
         "runtime": {
           "lib/netstandard2.0/SharpLearning.Metrics.dll": {}
@@ -105,12 +105,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "FlashLFQ/0.1.98": {
+    "FlashLFQ/0.1.99": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-GADZqGCp100EYtn0PBvQmDwOv09Yx8bH5mHRv4VE/7ZgJUeQ5SF6FsycsCv8+i+fA0EGgDfiS8MwRNro4Q+uCQ==",
-      "path": "flashlfq/0.1.98",
-      "hashPath": "flashlfq.0.1.98.nupkg.sha512"
+      "sha512": "sha512-8ub8E5+IyYAotAwnRZJ3bnaZMWwjYpbuqFwkd8veTprJOL1Ea2LNd6j7ykNfnUWZXSOOfysk1cx4kb2DpghUVQ==",
+      "path": "flashlfq/0.1.99",
+      "hashPath": "flashlfq.0.1.99.nupkg.sha512"
     },
     "MathNet.Numerics/3.20.0": {
       "type": "package",
@@ -119,54 +119,54 @@
       "path": "mathnet.numerics/3.20.0",
       "hashPath": "mathnet.numerics.3.20.0.nupkg.sha512"
     },
-    "mzLib/1.0.246": {
+    "mzLib/1.0.256": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-2j6cyB5MnhUUABohSyvCCsMWfAtlvPQvslUTvvcgHhTQZGTiw8ihAC2AiV8hso2/l22ADpKGihX0aXWQ6UNJmg==",
-      "path": "mzlib/1.0.246",
-      "hashPath": "mzlib.1.0.246.nupkg.sha512"
+      "sha512": "sha512-nkD47qgbA2sfJlNiejOI1xs/nu45bQc/jKiPlaDi0DvYhpU0X+uLjGlJqe+T1c+/FuJoVmKrcZhz0Z6VeESHOQ==",
+      "path": "mzlib/1.0.256",
+      "hashPath": "mzlib.1.0.256.nupkg.sha512"
     },
-    "SharpLearning.Common.Interfaces/0.26.2": {
+    "SharpLearning.Common.Interfaces/0.26.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-R29MEGH0VJST8/GgvZspED+roL+/zg1joVOj+AxmpxwPmhZdtMLMtZu+/ObvDsSAgy4x1I415l0pRlhI6EkxDw==",
-      "path": "sharplearning.common.interfaces/0.26.2",
-      "hashPath": "sharplearning.common.interfaces.0.26.2.nupkg.sha512"
+      "sha512": "sha512-YmIb0feVDsM8SYolrqATJfqH8rIWTe1z/Rn1tvtgtQKKwrz3qaNLvyevEANTF13g9YxCU93kZ1VgoRsTN/YyVw==",
+      "path": "sharplearning.common.interfaces/0.26.5",
+      "hashPath": "sharplearning.common.interfaces.0.26.5.nupkg.sha512"
     },
-    "SharpLearning.Containers/0.26.2": {
+    "SharpLearning.Containers/0.26.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-SZNOAN/9swjPU8FuyPAnpXXKQC6nLogaiJKCvKSKiLQZOp0m68XoBQrVl3alrxn2jHJqrKoMoHrfAQ4+BrrnmQ==",
-      "path": "sharplearning.containers/0.26.2",
-      "hashPath": "sharplearning.containers.0.26.2.nupkg.sha512"
+      "sha512": "sha512-rsYxImWQHVcFjYHAMhXRYHtt8zWWe8tOTlcHaKsv89Tf/SsNOEzt6Hg3cNEY7TTXy/VC5mBqczNsDMjfjpdr/g==",
+      "path": "sharplearning.containers/0.26.5",
+      "hashPath": "sharplearning.containers.0.26.5.nupkg.sha512"
     },
-    "SharpLearning.CrossValidation/0.26.2": {
+    "SharpLearning.CrossValidation/0.26.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-RTnu05CAtPeb+rRnG/LzER6gG8IYz5sl8fpvaNxnzliM8DICecTIW9+bsXtPm6eyW01O0eHGJEF5b7Zn1Ci0QA==",
-      "path": "sharplearning.crossvalidation/0.26.2",
-      "hashPath": "sharplearning.crossvalidation.0.26.2.nupkg.sha512"
+      "sha512": "sha512-NqvTsugHBYeCMiLKrEYmzKL4MVp7fkd6kPYrRqjhsa41tZQ7rMfIi6ugFSrE5H74BDvyQOeFT28wFGhQm9aJSw==",
+      "path": "sharplearning.crossvalidation/0.26.5",
+      "hashPath": "sharplearning.crossvalidation.0.26.5.nupkg.sha512"
     },
-    "SharpLearning.DecisionTrees/0.26.2": {
+    "SharpLearning.DecisionTrees/0.26.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-bq6Iuikk3+M53iYbZhKEYqGfNY8xJ1+segvwAqSyh/T8mKQqoz3la7UHnxX2Kz9m36B2TMHUMo5JtZj3Q6SpIQ==",
-      "path": "sharplearning.decisiontrees/0.26.2",
-      "hashPath": "sharplearning.decisiontrees.0.26.2.nupkg.sha512"
+      "sha512": "sha512-LJsS14yWcVrGc0ID8r9aqAy78HElhZVlIIOMGGqI9+bWr0BSkGR8V9bjutQnW2450HS/6ZYvKIi2LtpuUx1QBA==",
+      "path": "sharplearning.decisiontrees/0.26.5",
+      "hashPath": "sharplearning.decisiontrees.0.26.5.nupkg.sha512"
     },
-    "SharpLearning.InputOutput/0.26.2": {
+    "SharpLearning.InputOutput/0.26.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-7aPIMBvG4aV/GoGBE0Z9aJui24tvM4v54XxwBtlPudimi9wzmzUjOseo9qXXixLpavsjQZnIjDUBE/EY4mSHCg==",
-      "path": "sharplearning.inputoutput/0.26.2",
-      "hashPath": "sharplearning.inputoutput.0.26.2.nupkg.sha512"
+      "sha512": "sha512-9cFa2C7BujNfOvfC8GhpYPhYogrf5nSx6NAJrCEmHNW/vguVhwVYIOcuZinIgCTkt2J4uf+1fTtfcs3+gG/Ohw==",
+      "path": "sharplearning.inputoutput/0.26.5",
+      "hashPath": "sharplearning.inputoutput.0.26.5.nupkg.sha512"
     },
-    "SharpLearning.Metrics/0.26.2": {
+    "SharpLearning.Metrics/0.26.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-haKF3/Jdj+7ZdIz/Wosuj27FW+vobpfjetrF+/WbhRqNlg4vvSy9cXDoOUi6Kwp4NoWKWq87bNcoUp0ncRY8wg==",
-      "path": "sharplearning.metrics/0.26.2",
-      "hashPath": "sharplearning.metrics.0.26.2.nupkg.sha512"
+      "sha512": "sha512-Ce5sS88Jn5go3Vvbi6fmDvyQ8L8+emnW2fF7nmK//T7AQj1LYV+bZ0330OBbmipaZSbw6dn4E+0ljDOfFdhw1g==",
+      "path": "sharplearning.metrics/0.26.5",
+      "hashPath": "sharplearning.metrics.0.26.5.nupkg.sha512"
     }
   }
 }

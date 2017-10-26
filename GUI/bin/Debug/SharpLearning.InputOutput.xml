@@ -90,6 +90,17 @@
             Extension methods for CsvRow
             </summary>
         </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.KeyCombine(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.String,System.String,System.Boolean)">
+            <summary>
+            Combines two IEnumerables based on column header names. Matching rows are combined and parsed on. 
+            </summary>
+            <param name="thisRows"></param>
+            <param name="otherRows"></param>
+            <param name="key1"></param>
+            <param name="key2"></param>
+            <param name="removeRepeatedColumns">Should repeated columns be removed</param>
+            <returns></returns>
+        </member>
         <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.KeyCombine(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.Func{SharpLearning.InputOutput.Csv.CsvRow,SharpLearning.InputOutput.Csv.CsvRow,System.Boolean},System.Boolean)">
             <summary>
             Combines two IEnumerables based on a row matcher function. Matching rows are combined and parsed on. 

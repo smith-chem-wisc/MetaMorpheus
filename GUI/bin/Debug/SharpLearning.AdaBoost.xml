@@ -193,6 +193,13 @@
             <param name="observation"></param>
             <returns></returns>
         </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.SharpLearning#Common#Interfaces#IPredictor{SharpLearning#Containers#ProbabilityPrediction}#Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Private explicit interface implementation for probability predictions
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
         <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.PredictProbability(SharpLearning.Containers.Matrices.F64Matrix)">
             <summary>
             Predicts a set of obervations using the ensembled probabilities

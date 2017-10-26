@@ -75,9 +75,16 @@
         </member>
         <member name="M:SharpLearning.Common.Interfaces.IPredictor`1.Predict(System.Double[])">
             <summary>
-            
+            Predicts a single observation
             </summary>
             <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Common.Interfaces.IPredictor`1.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of observations
+            </summary>
+            <param name="observations"></param>
             <returns></returns>
         </member>
         <member name="T:SharpLearning.Common.Interfaces.IPredictorModel`1">

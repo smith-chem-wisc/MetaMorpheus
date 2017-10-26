@@ -4,16 +4,16 @@
 winexe
 C#
 .cs
-E:\XRSheeranQ\MetaMorpheus-master\GUI\obj\Debug\
+E:\XRSheeranQ\MetaMorpheus-master(1)\MetaMorpheus-master\GUI\obj\Debug\
 MetaMorpheusGUI
 none
 false
 DEBUG;TRACE
-E:\XRSheeranQ\MetaMorpheus-master\GUI\App.xaml
+E:\XRSheeranQ\MetaMorpheus-master(1)\MetaMorpheus-master\GUI\App.xaml
 81768689042
-144-283565380
-28-64412258
-140-1930159392
+
+29-403200212
+140-293248371
 CalibrateTaskWindow.xaml;ChangeParametersWindow.xaml;DialogWindow.xaml;GlobalSettingsWindow.xaml;GptmdTaskWindow.xaml;MainWindow.xaml;SearchTaskWindow.xaml;XLSearchTaskWindow.xaml;
 
 False

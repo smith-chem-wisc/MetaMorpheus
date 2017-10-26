@@ -8,11 +8,11 @@ script:
 - cat EngineLayer/EngineLayer.csproj 
 - if [ -n "${TRAVIS_TAG}" ]; then sed -i -- 's/1.0.0.0/'$TRAVIS_TAG'/g' EngineLayer/EngineLayer.csproj; fi
 - cat EngineLayer/EngineLayer.csproj 
-- dotnet build /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln  -f netcoreapp2.0 
+- dotnet publish /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln  -f netcoreapp2.0 
 - dotnet CMD/bin/Release/netcoreapp2.0/CMD.dll -t Examples/Task1SearchExample.toml Examples/Task2CalibrationExample.toml Examples/Task3SearchExample.toml Examples/Task4GptmdExample.toml Examples/Task5SearchExample.toml -s Examples/example.mzML -d Examples/mouse-10.xml
 - dotnet test Test/Test.csproj
 - ls CMD/bin/Release/netcoreapp2.0
-- tar -zcvf MetaMorpheusDotNetCoreTravis.tar.gz -C CMD/bin/Release/netcoreapp2.0/ .
+- tar -zcvf MetaMorpheusDotNetCoreTravis.tar.gz -C CMD/bin/Release/netcoreapp2.0/publish/ .
 deploy:
   provider: releases
   api_key:

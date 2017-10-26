@@ -745,6 +745,13 @@
             <param name="observation"></param>
             <returns></returns>
         </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.SharpLearning#Common#Interfaces#IPredictor{SharpLearning#Containers#ProbabilityPrediction}#Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Private explicit interface implementation for probability predictions
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
         <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.PredictProbability(System.Double[])">
             <summary>
             Predicts a single observation with probabilities
