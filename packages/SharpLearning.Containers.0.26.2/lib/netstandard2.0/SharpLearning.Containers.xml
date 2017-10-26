@@ -1,0 +1,1534 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.Containers</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.Containers.Arithmetic.MatrixAdd">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixAdd.AddF64(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Adds a matrix and vector and stores the result in output
+            </summary>
+            <param name="m"></param>
+            <param name="v"></param>
+            <param name="output"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixAdd.AddF64(System.Double[],System.Double[])">
+            <summary>
+            Adds two vectos of equal lengths
+            </summary>
+            <param name="v1"></param>
+            <param name="v2"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixAdd.Add(System.Double[],System.Double[])">
+            <summary>
+            Adds two vectors of equal length
+            </summary>
+            <param name="v1"></param>
+            <param name="v2"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Arithmetic.MatrixMultiplication">
+            <summary>
+            Contains methods for matrix multiplication
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixMultiplication.MultiplyVectorF64(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Multiply vector v with matrix a
+            </summary>
+            <param name="a"></param>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixMultiplication.MultiplyVectorF64(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Double[])">
+            <summary>
+            Multiply vector v with matrix a. 
+            Copies output to provided array.
+            </summary>
+            <param name="a"></param>
+            <param name="v"></param>
+            <param name="output"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixMultiplication.MultiplyScalarF64(System.Double[],System.Double)">
+            <summary>
+            Multiply vector v with scalar a
+            </summary>
+            <param name="v"></param>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixMultiplication.Multiply(System.Double[],System.Double)">
+            <summary>
+            Multiply vector v with scalar a
+            </summary>
+            <param name="v"></param>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixMultiplication.Multiply(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Multiply vector v with matrix a
+            </summary>
+            <param name="a"></param>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixMultiplication.MultiplyF64(SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Multiply matrix a with matrix b
+            </summary>
+            <param name="a"></param>
+            <param name="b"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixMultiplication.MultiplyF64(SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Multiply matrix a with matrix b
+            Copies output to provided matrix.
+            </summary>
+            <param name="a"></param>
+            <param name="b"></param>
+            <param name="output"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixMultiplication.Multiply(SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Multiply matrix a with matrix b
+            </summary>
+            <param name="a"></param>
+            <param name="b"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Arithmetic.MatrixSubtraction">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixSubtraction.SubtractF64(System.Double[],System.Double[])">
+            <summary>
+            Subtracts vectors v1 and v2
+            </summary>
+            <param name="v1"></param>
+            <param name="v2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixSubtraction.SubtractF64(SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Subtracts matrix m2 from m1. Result is stored in m1.
+            </summary>
+            <param name="m1"></param>
+            <param name="m2"></param>
+            <param name="output"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixSubtraction.Subtract(System.Double[],System.Double[])">
+            <summary>
+            Subtracts vectors v1 and v2
+            </summary>
+            <param name="v1"></param>
+            <param name="v2"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Arithmetic.MatrixTranspose">
+            <summary>
+            Contains methods for matrix transpose
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixTranspose.TransposeF64(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Transposes matrix
+            </summary>
+            <param name="matrix"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixTranspose.TransposeF64(SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Transposes matrix. 
+            Output is saved in the provided matrix transposed.
+            </summary>
+            <param name="matrix"></param>
+            <param name="transposed"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Arithmetic.MatrixTranspose.Transpose(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Transposes matrix
+            </summary>
+            <param name="matrix"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.CertaintyPrediction">
+            <summary>
+            Certainty prediction for regression learners with certainty estimate
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.CertaintyPrediction.Prediction">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.CertaintyPrediction.Variance">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.CertaintyPrediction.#ctor(System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="prediction"></param>
+            <param name="variance"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.CertaintyPrediction.Equals(SharpLearning.Containers.CertaintyPrediction)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.CertaintyPrediction.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.CertaintyPrediction.op_Equality(SharpLearning.Containers.CertaintyPrediction,SharpLearning.Containers.CertaintyPrediction)">
+            <summary>
+            
+            </summary>
+            <param name="p1"></param>
+            <param name="p2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.CertaintyPrediction.op_Inequality(SharpLearning.Containers.CertaintyPrediction,SharpLearning.Containers.CertaintyPrediction)">
+            <summary>
+            
+            </summary>
+            <param name="p1"></param>
+            <param name="p2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.CertaintyPrediction.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Checks">
+            <summary>
+            Class containing common argument checks for the learners.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyObservationsAndTargets(SharpLearning.Containers.Views.F64MatrixView,System.Double[])">
+            <summary>
+            Verify that observations and targets are valid.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyObservationsAndTargets(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Verify that observations and targets are valid.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyObservationsAndTargets(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Verify that observations and targets are valid.
+            </summary>
+            <param name="observationsRowCount"></param>
+            <param name="observationsColumnCount"></param>
+            <param name="targetLength"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyObservations(System.Int32,System.Int32)">
+            <summary>
+            Verify that the observation matrix is valid.
+            </summary>
+            <param name="rowCount"></param>
+            <param name="columnCount"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyTargets(System.Int32)">
+            <summary>
+            Verify that the target vector is valid.
+            </summary>
+            <param name="targetLength"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyObservationsAndTargetsDimensions(System.Int32,System.Int32)">
+            <summary>
+            Verify that observations and targets dimensions match.
+            </summary>
+            <param name="observationRowCount"></param>
+            <param name="targetLength"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyIndices(System.Int32[],SharpLearning.Containers.Views.F64MatrixView,System.Double[])">
+            <summary>
+            Verify that indices are valid and match observations and targets.
+            </summary>
+            <param name="indices"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyIndices(System.Int32[],SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Verify that indices are valid and match observations and targets.
+            </summary>
+            <param name="indices"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Checks.VerifyIndices(System.Int32[],System.Int32,System.Int32)">
+            <summary>
+            Verify that indices are valid and match observations and targets.
+            </summary>
+            <param name="indices"></param>
+            <param name="observationRowCount"></param>
+            <param name="targetLength"></param>
+        </member>
+        <member name="T:SharpLearning.Containers.Extensions.ArrayExtensions">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.Clear``1(``0[])">
+            <summary>
+            Clears array.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="array"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.ForEach``1(``0[],System.Action{``0})">
+            <summary>
+            Iterates over an array and perform the action at each element
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="array"></param>
+            <param name="a"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.Map``1(``0[],System.Func{``0})">
+            <summary>
+            Iterates over an array and applies the function a to the elements.
+            The values are updated directly in the array.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="array"></param>
+            <param name="a"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.Map``1(``0[],System.Func{``0,``0})">
+            <summary>
+            Iterates over an array and applies the function a to the elements.
+            The values are updated directly in the array.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="array"></param>
+            <param name="a"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.NanToNum(System.Double)">
+            <summary>
+            Converts Nan to 0.0, NegativeInfinity to double.MinValue and PositiveInfinity to double.MaxValue
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.GetIndices``1(``0[],System.Int32[])">
+            <summary>
+            Gets the values from v based on indices
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="v"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.AsF64(System.String[])">
+            <summary>
+            Converts am array of string to an array of floats
+            </summary>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.AsString(System.Double[])">
+            <summary>
+            Converts an array of doubles to an array of strings
+            </summary>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.AsInt32(System.Double[])">
+            <summary>
+            Converts an array of doubles to an array of ints
+            </summary>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.GetPinnedPointer(System.Double[])">
+            <summary>
+            Gets a pinned pointer to the double array
+            </summary>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.SortWith``2(``0[],``1[])">
+            <summary>
+            Sorts the keys and values based on the keys
+            </summary>
+            <typeparam name="TKey"></typeparam>
+            <typeparam name="TValues"></typeparam>
+            <param name="keys"></param>
+            <param name="values"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.SortWith``2(``0[],SharpLearning.Containers.Views.Interval1D,``1[])">
+            <summary>
+            Sorts the keys and values based on the keys within the provided interval 
+            </summary>
+            <typeparam name="TKey"></typeparam>
+            <typeparam name="TValues"></typeparam>
+            <param name="keys"></param>
+            <param name="interval"></param>
+            <param name="values"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.CopyTo``1(``0[],SharpLearning.Containers.Views.Interval1D,``0[])">
+            <summary>
+            Copies the source to the distination within the provided interval
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="source"></param>
+            <param name="interval"></param>
+            <param name="distination"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.IndexedCopy``1(System.Int32[],``0[],SharpLearning.Containers.Views.Interval1D,``0[])">
+            <summary>
+            Copies the provided indices from source to destination within the provided interval
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="indices"></param>
+            <param name="source"></param>
+            <param name="interval"></param>
+            <param name="destination"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.IndexedCopy(System.Int32[],SharpLearning.Containers.Views.F64MatrixColumnView,SharpLearning.Containers.Views.Interval1D,System.Double[])">
+            <summary>
+            Copies the provided indices from source to destination within the provided interval
+            </summary>
+            <param name="indices"></param>
+            <param name="source"></param>
+            <param name="interval"></param>
+            <param name="destination"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.IndexedCopy``1(System.Int32[],``0[],``0[])">
+            <summary>
+            Copies the provided indices from source to destination
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="indices"></param>
+            <param name="source"></param>
+            <param name="destination"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.Sum(System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Sums the values within the provided interval
+            </summary>
+            <param name="array"></param>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.Sum(System.Double[],System.Int32[])">
+            <summary>
+            Sums the values given by the indices
+            </summary>
+            <param name="array"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.WeightedMedian(System.Double[],System.Double[])">
+            <summary>
+            Calculates the weighted median. Expects values and weights to be sorted according to values
+            http://stackoverflow.com/questions/9794558/weighted-median-computation
+            </summary>
+            <param name="values"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.Median(System.Double[])">
+            <summary>
+            Calculates the median
+            </summary>
+            <param name="values"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.ScoreAtPercentile(System.Double[],System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="values"></param>
+            <param name="percentile"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.ToF64Matrix(System.Collections.Generic.List{System.Double[]})">
+            <summary>
+            Converts a list of arrays to an F64Matrix
+            </summary>
+            <param name="m"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.WeightedMean(System.Double[],System.Double[],System.Int32[])">
+            <summary>
+            Calculates the weighted mean from the indices
+            </summary>
+            <param name="array"></param>
+            <param name="weights"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.Shuffle``1(System.Collections.Generic.IList{``0},System.Random)">
+            <summary>
+            Shuffles the array in random order
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="list"></param>
+            <param name="random"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.StratifiedIndexSampling``1(``0[],System.Int32,System.Random)">
+            <summary>
+            Takes a stratified sample of size sampleSize with distributions equal to the input data.
+            http://en.wikipedia.org/wiki/Stratified_sampling
+            Returns a set of indices corresponding to the samples chosen. 
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <param name="random"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Extensions.ArrayExtensions.StratifiedIndexSampling``1(``0[],System.Int32,System.Int32[],System.Random)">
+            <summary>
+            Takes a stratified sample of size sampleSize with distributions equal to the input data.
+            http://en.wikipedia.org/wiki/Stratified_sampling
+            Returns a set of indices corresponding to the samples chosen. 
+            Only samples within the indies provided in dataIndices
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <param name="dataIndices"></param>
+            <param name="random"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.FloatingPointConversion">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.FloatingPointConversion.DefaultFormat">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.FloatingPointConversion.nfi">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.FloatingPointConversion.NumberStyle">
+            <summary>
+            Default NumberStyle is Any.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.FloatingPointConversion.ToString(System.Double)">
+            <summary>
+            Default format for outputting double values to string.
+            </summary> 
+        </member>
+        <member name="M:SharpLearning.Containers.FloatingPointConversion.ToF64(System.String)">
+            <summary>
+            Default format for converting string values to double
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Matrices.F64Matrix">
+            <summary>
+            Matrix of doubles
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Creates a zero-matrix with the specified number of rows and cols
+            </summary>
+            <param name="rows"></param>
+            <param name="cols"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.#ctor(System.Double[],System.Int32,System.Int32)">
+            <summary>
+            Creates a matrix from the provided values with the specified rows and cols 
+            </summary>
+            <param name="values"></param>
+            <param name="rows"></param>
+            <param name="cols"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.At(System.Int32,System.Int32)">
+            <summary>
+            Gets the item at the specified position
+            </summary>
+            <param name="row"></param>
+            <param name="col"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.At(System.Int32,System.Int32,System.Double)">
+            <summary>
+            Sets the item at the specified posistion
+            </summary>
+            <param name="row"></param>
+            <param name="col"></param>
+            <param name="item"></param>
+        </member>
+        <member name="P:SharpLearning.Containers.Matrices.F64Matrix.Item(System.Int32,System.Int32)">
+            <summary>
+            Access the matrix like a 2D array
+            </summary>
+            <param name="col"></param>
+            <param name="row"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Row(System.Int32)">
+            <summary>
+            Gets the specified row
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Row(System.Int32,System.Double[])">
+            <summary>
+            gets the specified row. 
+            The values are copied to the provided row array.
+            </summary>
+            <param name="index"></param>
+            <param name="row"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Column(System.Int32)">
+            <summary>
+            Gets the specified column
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Column(System.Int32,System.Double[])">
+            <summary>
+            Gets the specified column.
+            The values are copied to the provided column array.
+            </summary>
+            <param name="index"></param>
+            <param name="col"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Rows(System.Int32[])">
+            <summary>
+            Gets the specified rows as a matrix
+            </summary>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Rows(System.Int32[],SharpLearning.Containers.Matrices.IMatrix{System.Double})">
+            <summary>
+            Gets the specified rows as a matrix. 
+            Output is copied to the provided matrix
+            </summary>
+            <param name="indices"></param>
+            <param name="output"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Columns(System.Int32[])">
+            <summary>
+            Gets the specified columns as a matrix
+            </summary>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Columns(System.Int32[],SharpLearning.Containers.Matrices.IMatrix{System.Double})">
+            <summary>
+            Gets the specified rows as a matrix. 
+            Output is copied to the provided matrix
+            </summary>
+            <param name="indices"></param>
+            <param name="output"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Data">
+            <summary>
+            Gets the 1-d array containing all the values of the matrix
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Matrices.F64Matrix.ColumnCount">
+            <summary>
+            Gets the number of columns
+            </summary>
+            <value></value>
+        </member>
+        <member name="P:SharpLearning.Containers.Matrices.F64Matrix.RowCount">
+            <summary>
+            Gets the number of rows
+            </summary>
+            <value></value>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.GetPinnedPointer">
+            <summary>
+            Gets a pinned pointer to the F64Matrix
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Equals(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64Matrix.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Matrices.F64MatrixExtensions">
+            <summary>
+            Extensions for F64Matrix
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.Clear(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Clears the matrix by setting all elements to 0.0
+            </summary>
+            <param name="matrix"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.Map(SharpLearning.Containers.Matrices.F64Matrix,System.Func{System.Double})">
+            <summary>
+            Iterates over all elements in the matrix and applies the function to the elements.
+            The values are updated directly in the Matrix.
+            </summary>
+            <param name="matrix"></param>
+            <param name="func"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.Map(SharpLearning.Containers.Matrices.F64Matrix,System.Func{System.Double,System.Double})">
+            <summary>
+            Iterates over all elements in the matrix and applies the function to the elements.
+            The values are updated directly in the Matrix.
+            </summary>
+            <param name="matrix"></param>
+            <param name="func"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.ToStringMatrix(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Converts F64Matrix to StringMatrix
+            </summary>
+            <param name="matrix"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.CombineCols(System.Double[],System.Double[])">
+            <summary>
+            Combines vector1 and vector2 columnwise. Vector2 is added to the end of vector1 
+            </summary>
+            <param name="v1"></param>
+            <param name="v2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.CombineCols(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Combines matrix and vector columnwise. Vector is added to the end of the matrix 
+            </summary>
+            <param name="m"></param>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.CombineCols(System.Double[],SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Combines vector and matrix columnwise. Matrix is added to the left of the vector 
+            </summary>
+            <param name="m"></param>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.CombineCols(SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Combines matrix1 and matrix2 columnwise. Matrix2 is added to the end of matrix1
+            </summary>
+            <param name="m1"></param>
+            <param name="m2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.CombineRows(System.Double[],System.Double[])">
+            <summary>
+            Combines vector1 and vector2 row wise. Vector2 is added to the bottom of vector1 
+            </summary>
+            <param name="v1"></param>
+            <param name="v2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.CombineRows(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Combines matrix and vector row wise. Vector is added to the bottom of the matrix 
+            </summary>
+            <param name="m"></param>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.CombineRows(System.Double[],SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Combines vecor and matrix row wise. Matrix is added to the bottom of the vector
+            </summary>
+            <param name="m"></param>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.F64MatrixExtensions.CombineRows(SharpLearning.Containers.Matrices.F64Matrix,SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Combines matrix1 and matrix2 row wise. Matrix2 is added to the bottom of matrix1
+            </summary>
+            <param name="m1"></param>
+            <param name="m2"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Matrices.IMatrix`1">
+            <summary>
+            Matrix interface
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.At(System.Int32,System.Int32)">
+            <summary>
+            Gets item at location (row, col)
+            </summary>
+            <param name="row"></param>
+            <param name="col"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.At(System.Int32,System.Int32,`0)">
+            <summary>
+            Sets item at location(row, col)
+            </summary>
+            <param name="row"></param>
+            <param name="col"></param>
+            <param name="item"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Row(System.Int32)">
+            <summary>
+            Gets row at index
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Column(System.Int32)">
+            <summary>
+            Gets column at index
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Row(System.Int32,`0[])">
+            <summary>
+            Gets row at index 
+            </summary>
+            <param name="index"></param>
+            <param name="row"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Column(System.Int32,`0[])">
+            <summary>
+            Gets column at index
+            </summary>
+            <param name="index"></param>
+            <param name="col"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Rows(System.Int32[])">
+            <summary>
+            Gets rows
+            </summary>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Rows(System.Int32[],SharpLearning.Containers.Matrices.IMatrix{`0})">
+            <summary>
+            Gets the specified rows as a matrix. 
+            Output is copied to the provided matrix
+            </summary>
+            <param name="indices"></param>
+            <param name="output"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Columns(System.Int32[])">
+            <summary>
+            Gets columns
+            </summary>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Columns(System.Int32[],SharpLearning.Containers.Matrices.IMatrix{`0})">
+            <summary>
+            Gets the specified cols as a matrix. 
+            Output is copied to the provided matrix
+            </summary>
+            <param name="indices"></param>
+            <param name="output"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.IMatrix`1.Data">
+            <summary>
+            Gets the array which stores all matrix values. values are storred row-wise.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Matrices.IMatrix`1.ColumnCount">
+            <summary>
+            Gets the number of columns
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Matrices.IMatrix`1.RowCount">
+            <summary>
+            Gets the numver of rows
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Matrices.StringMatrix">
+            <summary>
+            Matrix of strings
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Creates a empty string matrix with the specified number of rows and cols
+            </summary>
+            <param name="rows"></param>
+            <param name="cols"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.#ctor(System.String[],System.Int32,System.Int32)">
+            <summary>
+            Creates a matrix from the provided values with the specified rows and cols 
+            </summary>
+            <param name="values"></param>
+            <param name="rows"></param>
+            <param name="cols"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.At(System.Int32,System.Int32)">
+            <summary>
+            Gets the item at the specified position
+            </summary>
+            <param name="row"></param>
+            <param name="col"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.At(System.Int32,System.Int32,System.String)">
+            <summary>
+            Sets the item at the specified posistion
+            </summary>
+            <param name="row"></param>
+            <param name="col"></param>
+            <param name="item"></param>
+        </member>
+        <member name="P:SharpLearning.Containers.Matrices.StringMatrix.Item(System.Int32,System.Int32)">
+            <summary>
+            Access the matrix like a 2D array
+            </summary>
+            <param name="col"></param>
+            <param name="row"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Row(System.Int32)">
+            <summary>
+            Gets the specified row
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Row(System.Int32,System.String[])">
+            <summary>
+            gets the specified row. 
+            The values are copied to the provided row array.
+            </summary>
+            <param name="index"></param>
+            <param name="row"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Column(System.Int32)">
+            <summary>
+            Gets the specified column
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Column(System.Int32,System.String[])">
+            <summary>
+            Gets the specified column.
+            The values are copied to the provided column array.
+            </summary>
+            <param name="index"></param>
+            <param name="col"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Rows(System.Int32[])">
+            <summary>
+            Gets the specified rows as a matrix
+            </summary>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Rows(System.Int32[],SharpLearning.Containers.Matrices.IMatrix{System.String})">
+            <summary>
+            Gets the specified rows as a matrix. 
+            Output is copied to the provided matrix
+            </summary>
+            <param name="indices"></param>
+            <param name="output"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Columns(System.Int32[])">
+            <summary>
+            Gets the specified columns as a matrix
+            </summary>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Columns(System.Int32[],SharpLearning.Containers.Matrices.IMatrix{System.String})">
+            <summary>
+            Gets the specified columns as a matrix
+            Output is copied to the provided matrix
+            </summary>
+            <param name="indices"></param>
+            <param name="output"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Data">
+            <summary>
+            Gets the 1-d array containing all the values of the matrix
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Matrices.StringMatrix.ColumnCount">
+            <summary>
+            Gets the number of columns
+            </summary>
+            <value></value>
+        </member>
+        <member name="P:SharpLearning.Containers.Matrices.StringMatrix.RowCount">
+            <summary>
+            Gets the number of rows
+            </summary>
+            <value></value>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Equals(SharpLearning.Containers.Matrices.StringMatrix)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrix.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Matrices.StringMatrixExtensions">
+            <summary>
+            Extension methods for StringMatrix
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrixExtensions.ToF64Matrix(SharpLearning.Containers.Matrices.StringMatrix)">
+            <summary>
+            Converts StringMatrix to F64Matrix. This will fail if there are values not parsable as a double
+            </summary>
+            <param name="stringMatrix"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrixExtensions.Map(SharpLearning.Containers.Matrices.StringMatrix,System.Func{System.String})">
+            <summary>
+            Iterates over all elements in the matrix and applies the function to the elements.
+            The values are updated directly in the Matrix.
+            </summary>
+            <param name="matrix"></param>
+            <param name="func"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrixExtensions.Map(SharpLearning.Containers.Matrices.StringMatrix,System.Func{System.String,System.String})">
+            <summary>
+            Iterates over all elements in the matrix and applies the function to the elements.
+            The values are updated directly in the Matrix.
+            </summary>
+            <param name="matrix"></param>
+            <param name="func"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrixExtensions.CombineCols(System.String[],System.String[])">
+            <summary>
+            Combines vector1 and vector2 columnwise. Vector2 is added to the end of vector1 
+            </summary>
+            <param name="v1"></param>
+            <param name="v2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrixExtensions.CombineCols(SharpLearning.Containers.Matrices.StringMatrix,System.String[])">
+            <summary>
+            Combines matrix and vector columnwise. Vector is added to the end of the matrix 
+            </summary>
+            <param name="m"></param>
+            <param name="v"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrixExtensions.CombineCols(System.String[],SharpLearning.Containers.Matrices.StringMatrix)">
+            <summary>
+            Combines vector and and matrix  columnwise. Vector is added to the front of the matrix 
+            </summary>
+            <param name="v"></param>
+            <param name="m"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrixExtensions.CombineCols(SharpLearning.Containers.Matrices.StringMatrix,SharpLearning.Containers.Matrices.StringMatrix)">
+            <summary>
+            Combines matrix1 and matrix2 columnwise. Matrix2 is added to the end of matrix1 
+            </summary>
+            <param name="m1"></param>
+            <param name="m2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Matrices.StringMatrixExtensions.CombineRows(SharpLearning.Containers.Matrices.StringMatrix,SharpLearning.Containers.Matrices.StringMatrix)">
+            <summary>
+            Combines matrix1 and matrix2 rowwise. Matrix2 is added to the end of matrix1 
+            </summary>
+            <param name="m1"></param>
+            <param name="m2"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.ObservationTargetSet">
+            <summary>
+            Container for storing an observations and targets pair.
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.ObservationTargetSet.Observations">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.ObservationTargetSet.Targets">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.ObservationTargetSet.#ctor(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Container for storing an observations and targets pair.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.ObservationTargetSet.Equals(SharpLearning.Containers.ObservationTargetSet)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.ObservationTargetSet.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.ObservationTargetSet.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.ProbabilityPrediction">
+            <summary>
+            Probability prediction for classification learners with probability estimates
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.ProbabilityPrediction.Prediction">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.ProbabilityPrediction.Probabilities">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.ProbabilityPrediction.#ctor(System.Double,System.Collections.Generic.Dictionary{System.Double,System.Double})">
+            <summary>
+            
+            </summary>
+            <param name="prediction"></param>
+            <param name="probabilities">Dictionary containing the class name to class probability</param>
+        </member>
+        <member name="M:SharpLearning.Containers.ProbabilityPrediction.Equals(SharpLearning.Containers.ProbabilityPrediction)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.ProbabilityPrediction.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.ProbabilityPrediction.op_Equality(SharpLearning.Containers.ProbabilityPrediction,SharpLearning.Containers.ProbabilityPrediction)">
+            <summary>
+            
+            </summary>
+            <param name="p1"></param>
+            <param name="p2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.ProbabilityPrediction.op_Inequality(SharpLearning.Containers.ProbabilityPrediction,SharpLearning.Containers.ProbabilityPrediction)">
+            <summary>
+            
+            </summary>
+            <param name="p1"></param>
+            <param name="p2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.ProbabilityPrediction.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Views.F64MatrixColumnView">
+            <summary>
+            F64Matrix column view using pointers
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixColumnView.#ctor(System.Double*,System.Int32,System.Int32)">
+            <summary>
+            Creates a column view from the provided data ptr, number of rows and stride
+            </summary>
+            <param name="dataPtr"></param>
+            <param name="rows"></param>
+            <param name="strideInBytes"></param>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64MatrixColumnView.Item(System.Int32)">
+            <summary>
+            Gets the row item from the specified position
+            </summary>
+            <param name="row"></param>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64MatrixColumnView.Rows">
+            <summary>
+            Gets the number of rows
+            </summary>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64MatrixColumnView.Interval">
+            <summary>
+            Gets the interval of the column view
+            </summary>
+        </member>
+        <member name="T:SharpLearning.Containers.Views.F64MatrixPinnedPtr">
+            <summary>
+            Pinned pointer to F64Matrix. Proper disposal required. Preferably use this in a Using statement
+            
+            Using(var pinned = matrix.GetPinnedPointer())
+            {
+                var view = pinned.View();
+            }
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixPinnedPtr.#ctor(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Pinnes the provided F64Matrix
+            </summary>
+            <param name="matrix"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixPinnedPtr.View">
+            <summary>
+            Creates a view over the pinned F64Matrix
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixPinnedPtr.Dispose">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:SharpLearning.Containers.Views.F64MatrixView">
+            <summary>
+            View over an F64Matrix
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixView.#ctor(System.Double*,System.Int32,System.Int32)">
+            <summary>
+            Creates a view over an F64Matrix
+            </summary>
+            <param name="dataPtr"></param>
+            <param name="rows"></param>
+            <param name="cols"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixView.#ctor(System.Double*,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Creates a view over an F64Matrix
+            </summary>
+            <param name="dataPtr"></param>
+            <param name="rows"></param>
+            <param name="cols"></param>
+            <param name="strideInBytes"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixView.At(System.Int32,System.Int32)">
+            <summary>
+            Gets the item at the specified position
+            </summary>
+            <param name="row"></param>
+            <param name="col"></param>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64MatrixView.Item(System.Int32)">
+            <summary>
+            Gets a pointer to the specified position
+            </summary>
+            <param name="row"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixView.ColumnView(System.Int32)">
+            <summary>
+            Gets a column view of the specified column
+            </summary>
+            <param name="col"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64MatrixView.View(SharpLearning.Containers.Views.Interval2D)">
+            <summary>
+            Gets a subview over the specified interval
+            </summary>
+            <param name="subView"></param>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64MatrixView.ColumnCount">
+            <summary>
+            Gets the number of columns
+            </summary>
+            <value></value>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64MatrixView.RowCount">
+            <summary>
+            Gets the number of rows
+            </summary>
+            <value></value>
+        </member>
+        <member name="T:SharpLearning.Containers.Views.F64VectorPinnedPtr">
+            <summary>
+            Pinned pointer to F64Vector. Proper disposal required. Preferably use this in a Using statement
+            
+            Using(var pinned = vector.GetPinnedPointer())
+            {
+                var view = pinned.View();
+            }
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64VectorPinnedPtr.#ctor(System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="v"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64VectorPinnedPtr.View">
+            <summary>
+            Creates a view over the pinned F64Vector
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64VectorPinnedPtr.Dispose">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:SharpLearning.Containers.Views.F64VectorView">
+            <summary>
+            View over F64Vector
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64VectorView.#ctor(System.Double*,System.Int32)">
+            <summary>
+            Creates a view over an F64Vector
+            </summary>
+            <param name="dataPtr"></param>
+            <param name="length"></param>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64VectorView.Item(System.Int32)">
+            <summary>
+            Gets the item from the specified position
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64VectorView.Length">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.F64VectorView.View(SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Gets a subview over the specified interval
+            </summary>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.Containers.Views.F64VectorView.Interval">
+            <summary>
+            Gets the interval of the F64View
+            </summary>
+        </member>
+        <member name="T:SharpLearning.Containers.Views.Interval1D">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.Views.Interval1D.FromInclusive">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.Views.Interval1D.ToExclusive">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.Views.Interval1D.Length">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval1D.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Creates a 1D interval as specified from inclusive to exclusive
+            </summary>
+            <param name="fromInclusive"></param>
+            <param name="toExclusive"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval1D.Create(System.Int32,System.Int32)">
+            <summary>
+            Creates a 1D interval as specified from inclusive to exclusive
+            </summary>
+            <param name="fromInclusive"></param>
+            <param name="toExclusive"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval1D.op_Inequality(SharpLearning.Containers.Views.Interval1D,SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval1D.op_Equality(SharpLearning.Containers.Views.Interval1D,SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval1D.Equals(SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval1D.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval1D.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Containers.Views.Interval2D">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.Views.Interval2D.Rows">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.Containers.Views.Interval2D.Cols">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval2D.#ctor(SharpLearning.Containers.Views.Interval1D,SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Creates a 2D interval based on the provided row and column intervals
+            </summary>
+            <param name="rowInterval"></param>
+            <param name="colInterval"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval2D.Create(SharpLearning.Containers.Views.Interval1D,SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Creates a 2D interval based on the provided row and column intervals
+            </summary>
+            <param name="rowInterval"></param>
+            <param name="colInterval"></param>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval2D.Equals(SharpLearning.Containers.Views.Interval2D)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval2D.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval2D.op_Inequality(SharpLearning.Containers.Views.Interval2D,SharpLearning.Containers.Views.Interval2D)">
+            <summary>
+            
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval2D.op_Equality(SharpLearning.Containers.Views.Interval2D,SharpLearning.Containers.Views.Interval2D)">
+            <summary>
+            
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Containers.Views.Interval2D.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

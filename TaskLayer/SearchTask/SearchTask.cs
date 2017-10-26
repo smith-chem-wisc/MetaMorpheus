@@ -26,6 +26,8 @@ namespace TaskLayer
     {
         #region Private Fields
 
+        private const double binTolInDaltons = 0.003;
+
         private FlashLFQEngine FlashLfqEngine;
 
         #endregion Private Fields
@@ -651,10 +653,10 @@ namespace TaskLayer
                     return new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029 }, precursorMassTolerance);
 
                 case MassDiffAcceptorType.TwoMM:
-                    return new DotMassDiffAcceptor("2mm", new List<double> { 0, 1.0029, 2.0052 }, precursorMassTolerance);
+                    return new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029, 2.0052 }, precursorMassTolerance);
 
                 case MassDiffAcceptorType.ThreeMM:
-                    return new DotMassDiffAcceptor("3mm", new List<double> { 0, 1.0029, 2.0052, 3.0077 }, precursorMassTolerance);
+                    return new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029, 2.0052, 3.0077 }, precursorMassTolerance);
 
                 case MassDiffAcceptorType.ModOpen:
                     return new IntervalMassDiffAcceptor("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
@@ -1051,7 +1053,7 @@ namespace TaskLayer
                 {
                     Status("Running histogram analysis...", new List<string> { taskId });
                     var myTreeStructure = new BinTreeStructure();
-                    myTreeStructure.GenerateBins(limitedpsms_with_fdr, SearchParameters.HistogramBinTolInDaltons);
+                    myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTolInDaltons);
                     var writtenFile = Path.Combine(OutputFolder, "aggregate_" + massDiffAcceptor.FileNameAddition + ".mytsv");
                     WriteTree(myTreeStructure, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });

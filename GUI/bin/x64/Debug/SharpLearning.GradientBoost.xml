@@ -1,0 +1,1328 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.GradientBoost</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.GradientBoost.GBMDecisionTree.GBMDecisionTreeLearner">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMDecisionTreeLearner.#ctor(System.Int32,System.Int32,System.Double,System.Int32,SharpLearning.GradientBoost.Loss.IGradientBoostLoss,System.Boolean)">
+            <summary>
+            Fites a regression decision tree using a set presorted indices for each feature.
+            </summary>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="minimumSplitSize">The minimum size </param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param>
+            <param name="loss">loss function used</param>
+            <param name="runParallel">Use multi threading to speed up execution</param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMDecisionTreeLearner.#ctor(System.Int32,System.Int32,System.Double,System.Int32)">
+            <summary>
+            Fites a regression decision tree using a set presorted indices for each feature.
+            </summary>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="minimumSplitSize">The minimum size </param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Double[],System.Double[],System.Int32[][],System.Boolean[])">
+            <summary>
+            Fites a regression decision tree using a set presorted indices for each feature.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets">the original targets</param>
+            <param name="residuals">the residuals for each boosting iteration</param>
+            <param name="predictions">the current predictions</param>
+            <param name="orderedElements">jagged array of sorted indices corresponding to each features</param>
+            <param name="inSample">bool array containing the samples to use</param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode">
+            <summary>
+            Decision tree node for Gradient boost decision tree
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.FeatureIndex">
+            <summary>
+            Index of the feature that the node splits on
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.SplitValue">
+            <summary>
+            Value of the feature that the node splits on
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.LeftError">
+            <summary>
+            The error on the left side of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.RightError">
+            <summary>
+            The error on the right side of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.LeftConstant">
+            <summary>
+            Left constant (fitted value) of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.RightConstant">
+            <summary>
+            Right constant (fitted value) of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.Depth">
+            <summary>
+            Depth of the node in the decision tree
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.LeftIndex">
+            <summary>
+            Index of the left child node the node in the decision tree array
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.RightIndex">
+            <summary>
+            Index of the left child node the node in the decision tree array
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMNode.SampleCount">
+            <summary>
+            The number of observations in the node
+            </summary>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit">
+            <summary>
+            Represents the a split when learning a gradient boost decision tree
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.FeatureIndex">
+            <summary>
+            Index of the feature that the node splits on
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.SplitIndex">
+            <summary>
+            Index of the split value
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.SplitValue">
+            <summary>
+            Value of the feature that the node splits on
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.LeftError">
+            <summary>
+            The error on the left side of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.RightError">
+            <summary>
+            The error on the right side of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.LeftConstant">
+            <summary>
+            Left constant (fitted value) of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.RightConstant">
+            <summary>
+            Right constant (fitted value) of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.Depth">
+            <summary>
+            Depth of the node in the decision tree
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.SampleCount">
+            <summary>
+            The number of observations in the node
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.Cost">
+            <summary>
+            Cost of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.CostImprovement">
+            <summary>
+            Cost improvement of the split compared to parent split
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplit.GetNode">
+            <summary>
+            Creates a GBMNode from the split
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo">
+            <summary>
+            Contains information about the current split values
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.Samples">
+            <summary>
+            Number of samples in the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.Sum">
+            <summary>
+            Current sum of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.SumOfSquares">
+            <summary>
+            Current sum of squares of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.Cost">
+            <summary>
+            Current cost of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.BestConstant">
+            <summary>
+            Current best constant (fitted value) of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.BinomialSum">
+            <summary>
+            Binomial sum of the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.Position">
+            <summary>
+            The node position of the split
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.NewEmpty">
+            <summary>
+            Creates a new empty split info with initial default values
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.Copy">
+            <summary>
+            Creates a copy of the split info
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo.Copy(SharpLearning.DecisionTrees.Nodes.NodePositionType)">
+            <summary>
+            Creates a copy of the split info
+            </summary>
+            <param name="Position"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitResult">
+            <summary>
+            Split Results. Contains the best split 
+            and the left and right split information
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitResult.BestSplit">
+            <summary>
+            Best split found
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitResult.Left">
+            <summary>
+            Left values corresponding to best split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitResult.Right">
+            <summary>
+            Right values corresponding to best split
+            </summary>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree">
+            <summary>
+            Binary decision tree based on GBMNodes.
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree.Nodes">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree.#ctor(System.Collections.Generic.List{SharpLearning.GradientBoost.GBMDecisionTree.GBMNode})">
+            <summary>
+            Creates a GBMTree from the provided nodes
+            </summary>
+            <param name="nodes"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a series of observations
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree.Predict(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Predicts a series of observations.
+            can reuse predictions array if several predictions are made.
+            </summary>
+            <param name="observations"></param>
+            <param name="predictions"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree.Predict(System.Double[])">
+            <summary>
+            Predicts a single observation
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree.AddRawVariableImportances(System.Double[])">
+            <summary>
+            Variable importances are based on the work each variable does (error reduction).
+            the scores at each split are scaled by the amount of data the node splits
+            if a node splits on 30% of the total data it will add
+            errorReduction * 0.3 to its importance score.
+            Based on this explanation:
+            http://www.salford-systems.com/videos/tutorials/how-to/variable-importance-in-cart
+            </summary>
+            <param name="rawVariableImportances"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree.TraceNodesIndexed">
+            <summary>
+            Traces the nodes in indexed order
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.GBMDecisionTree.GBMTree.TraceNodesDepth">
+            <summary>
+            Traces the nodes sorted by depth
+            </summary>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.GBMDecisionTree.GBMTreeCreationItem">
+            <summary>
+            Tree creation item for learning GradientBoost regression tree
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMTreeCreationItem.Values">
+            <summary>
+            Information about current split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMTreeCreationItem.InSample">
+            <summary>
+            Current observations in the sample
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMTreeCreationItem.Depth">
+            <summary>
+            Current depth
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.GBMDecisionTree.GBMTreeCreationItem.Parent">
+            <summary>
+            Parent node of the split
+            </summary>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Learners.ClassificationBinomialGradientBoostLearner">
+            <summary>
+            Classificaion gradient boost learner based on 
+            http://statweb.stanford.edu/~jhf/ftp/trebst.pdf
+            A series of regression trees are fitted stage wise on the residuals of the previous stage.
+            The resulting models are ensembled together using addition. Implementation based on:
+            http://gradientboostedmodels.googlecode.com/files/report.pdf
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationBinomialGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Boolean)">
+            <summary>
+             Binomial deviance classification gradient boost learner. 
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+             If multiclass problem, then one-vs-all method is used.
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param>
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner">
+            <summary>
+            Classificaion gradient boost learner based on 
+            http://statweb.stanford.edu/~jhf/ftp/trebst.pdf
+            A series of regression trees are fitted stage wise on the residuals of the previous stage.
+            The resulting models are ensembled together using addition. Implementation based on:
+            http://gradientboostedmodels.googlecode.com/files/report.pdf
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32,SharpLearning.GradientBoost.Loss.IGradientBoostLoss,System.Boolean)">
+            <summary>
+             Base classification gradient boost learner. 
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param>
+            <param name="loss">loss function used</param>
+            <param name="runParallel">Use multi threading to speed up execution</param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32)">
+            <summary>
+             Base classification gradient boost learner. 
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.LearnWithEarlyStopping(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],SharpLearning.Containers.Matrices.F64Matrix,System.Double[],SharpLearning.Common.Interfaces.IMetric{System.Double,System.Double},System.Int32)">
+            <summary>
+            Learns a ClassificationGradientBoostModel with early stopping.
+            The parameter earlyStoppingRounds controls how often the validation error is measured.
+            If the validation error has increased, the learning is stopped and the model with the best number of iterations (trees) is returned.
+            The number of iterations used is equal to the number of trees in the resulting model.
+            The method used for early stopping is based on the article:
+            http://page.mi.fu-berlin.de/prechelt/Biblio/stop_tricks1997.pdf
+            </summary>
+            <param name="trainingObservations"></param>
+            <param name="trainingTargets"></param>
+            <param name="validationObservations"></param>
+            <param name="validationTargets"></param>
+            <param name="metric">The metric to use for early stopping</param>
+            <param name="earlyStoppingRounds">This controls how often the validation error is checked to estimate the best number of iterations.</param>
+            <returns>ClassificationGradientBoostModel with early stopping. The number of iterations will equal the number of trees in the model</returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.LearnWithEarlyStopping(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],SharpLearning.Containers.Matrices.F64Matrix,System.Double[],SharpLearning.Common.Interfaces.IMetric{System.Double,SharpLearning.Containers.ProbabilityPrediction},System.Int32)">
+            <summary>
+            Learns a ClassificationGradientBoostModel with early stopping.
+            The parameter earlyStoppingRounds controls how often the validation error is measured.
+            If the validation error has increased, the learning is stopped and the model with the best number of iterations (trees) is returned.
+            The number of iterations used is equal to the number of trees in the resulting model.
+            The method used for early stopping is based on the article:
+            http://page.mi.fu-berlin.de/prechelt/Biblio/stop_tricks1997.pdf
+            </summary>
+            <param name="trainingObservations"></param>
+            <param name="trainingTargets"></param>
+            <param name="validationObservations"></param>
+            <param name="validationTargets"></param>
+            <param name="metric">The metric to use for early stopping</param>
+            <param name="earlyStoppingRounds">This controls how often the validation error is checked to estimate the best number of iterations</param>
+            <returns>ClassificationGradientBoostModel with early stopping. The number of iterations will equal the number of trees in the model</returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.SharpLearning#Common#Interfaces#IIndexedLearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.SharpLearning#Common#Interfaces#ILearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.CreateOrderedElements(SharpLearning.Containers.Matrices.F64Matrix,System.Int32)">
+            <summary>
+            Creates a matrix of ordered indices. Each row is ordered after the corresponding feature column.
+            </summary>
+            <param name="observations"></param>
+            <param name="rows"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.ClassificationGradientBoostLearner.Sample(System.Int32,System.Int32[],System.Int32)">
+            <summary>
+            Creates a bool array with the selected samples (true)
+            </summary>
+            <param name="sampleSize"></param>
+            <param name="indices"></param>
+            <param name="allObservationCount"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Learners.RegressionAbsoluteLossGradientBoostLearner">
+            <summary>
+            <summary>
+            Regression gradient boost learner based on 
+            http://statweb.stanford.edu/~jhf/ftp/trebst.pdf
+            A series of regression trees are fitted stage wise on the residuals of the previous stage.
+            The resulting models are ensembled together using addition. Implementation based on:
+            http://gradientboostedmodels.googlecode.com/files/report.pdf
+            </summary>
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionAbsoluteLossGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Boolean)">
+            <summary>
+             Least absolute deviation (LAD) regression gradient boost learner.
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param> 
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner">
+            <summary>
+            <summary>
+            Regression gradient boost learner based on 
+            http://statweb.stanford.edu/~jhf/ftp/trebst.pdf
+            A series of regression trees are fitted stage wise on the residuals of the previous stage.
+            The resulting models are ensembled together using addition. Implementation based on:
+            http://gradientboostedmodels.googlecode.com/files/report.pdf
+            </summary>
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32,SharpLearning.GradientBoost.Loss.IGradientBoostLoss,System.Boolean)">
+            <summary>
+             Base regression gradient boost learner. 
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param>
+            <param name="loss">loss function used</param>
+            <param name="runParallel">Use multi threading to speed up execution</param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32)">
+            <summary>
+             Base regression gradient boost learner. 
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+             A series of regression trees are fitted stage wise on the residuals of the previous tree
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+             A series of regression trees are fitted stage wise on the residuals of the previous tree
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.LearnWithEarlyStopping(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],SharpLearning.Containers.Matrices.F64Matrix,System.Double[],SharpLearning.Common.Interfaces.IMetric{System.Double,System.Double},System.Int32)">
+            <summary>
+            Learns a RegressionGradientBoostModel with early stopping.
+            The parameter earlyStoppingRounds controls how often the validation error is measured.
+            If the validation error has increased, the learning is stopped and the model with the best number of iterations (trees) is returned.
+            The number of iterations used is equal to the number of trees in the resulting model.
+            The method used for early stopping is based on the article:
+            http://page.mi.fu-berlin.de/prechelt/Biblio/stop_tricks1997.pdf
+            </summary>
+            <param name="trainingObservations"></param>
+            <param name="trainingTargets"></param>
+            <param name="validationObservations"></param>
+            <param name="validationTargets"></param>
+            <param name="metric">The metric to use for early stopping</param>
+            <param name="earlyStoppingRounds">This controls how often the validation error is checked to estimate the best number of iterations.</param>
+            <returns>RegressionGradientBoostModel with early stopping. The number of iterations will equal the number of trees in the model</returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.CreateOrderedElements(SharpLearning.Containers.Matrices.F64Matrix,System.Int32)">
+            <summary>
+            Creates a matrix of ordered indices. Each row is ordered after the corresponding feature column.
+            </summary>
+            <param name="observations"></param>
+            <param name="rows"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionGradientBoostLearner.Sample(System.Int32,System.Int32[],System.Int32)">
+            <summary>
+            Creates a bool array with the selected samples (true)
+            </summary>
+            <param name="sampleSize"></param>
+            <param name="indices"></param>
+            <param name="allObservationCount"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Learners.RegressionHuberLossGradientBoostLearner">
+            <summary>
+            <summary>
+            Regression gradient boost learner based on 
+            http://statweb.stanford.edu/~jhf/ftp/trebst.pdf
+            A series of regression trees are fitted stage wise on the residuals of the previous stage.
+            The resulting models are ensembled together using addition. Implementation based on:
+            http://gradientboostedmodels.googlecode.com/files/report.pdf
+            </summary>
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionHuberLossGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Double,System.Boolean)">
+            <summary>
+             Huber loss regression gradient boost learner.
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param> 
+            <param name="huberQuantile">The quantile used for deciding when to switch between square and absolute loss</param>
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Learners.RegressionQuantileLossGradientBoostLearner">
+            <summary>
+            <summary>
+            Regression gradient boost learner based on 
+            http://statweb.stanford.edu/~jhf/ftp/trebst.pdf
+            A series of regression trees are fitted stage wise on the residuals of the previous stage.
+            The resulting models are ensembled together using addition. Implementation based on:
+            http://gradientboostedmodels.googlecode.com/files/report.pdf
+            </summary>
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionQuantileLossGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Double,System.Boolean)">
+            <summary>
+             Quantile regression gradient boost learner.
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param> 
+            <param name="quantile">The quantile used in quantile regression. 
+            0.5 is the median and corresponds to absolute loss or LAD regression</param>
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Learners.RegressionSquareLossGradientBoostLearner">
+            <summary>
+            <summary>
+            Regression gradient boost learner based on 
+            http://statweb.stanford.edu/~jhf/ftp/trebst.pdf
+            A series of regression trees are fitted stage wise on the residuals of the previous stage.
+            The resulting models are ensembled together using addition. Implementation based on:
+            http://gradientboostedmodels.googlecode.com/files/report.pdf
+            </summary>
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Learners.RegressionSquareLossGradientBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Boolean)">
+            <summary>
+             Square loss/Least squares (LS) regression gradient boost learner. 
+             A series of regression trees are fitted stage wise on the residuals of the previous stage
+            </summary>
+            <param name="iterations">The number of iterations or stages</param>
+            <param name="learningRate">How much each iteration should contribute with</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">ratio of observations sampled at each iteration. Default is 1.0. 
+            If below 1.0 the algorithm changes to stochastic gradient boosting. 
+            This reduces variance in the ensemble and can help ounter overfitting</param>
+            <param name="featuresPrSplit">Number of features used at each split in the tree. 0 means all will be used</param> 
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss">
+            <summary>
+            Least absolute deviation (LAD) loss function. LAD gives equal equal emphasis to all observations. 
+            This makes LAD robust against outliers.
+            http://en.wikipedia.org/wiki/Least_absolute_deviations
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss.#ctor">
+            <summary>
+            Least absolute deviation (LAD) loss function. LAD gives equal equal emphasis to all observations. 
+            This makes LAD robust against outliers. LAD regression is also sometimes known as robust regression. 
+            http://en.wikipedia.org/wiki/Least_absolute_deviations
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss.InitialLoss(System.Double[],System.Boolean[])">
+            <summary>
+            Initial loss is the median
+            </summary>
+            <param name="targets"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss.InitSplit(System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss.NegativeGradient(System.Double,System.Double)">
+            <summary>
+            Negative gradient is either 1 or -1 depending on the sign of target minus prediction
+            </summary>
+            <param name="target"></param>
+            <param name="prediction"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss.UpdateResiduals(System.Double[],System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss.UpdateSplitConstants(SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="left"></param>
+            <param name="right"></param>
+            <param name="target"></param>
+            <param name="residual"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss.UpdatedLeafValue(System.Double,System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            Leaf values are updated using the median of the difference between target and prediction
+            </summary>
+            <param name="currentLeafValue"></param>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostAbsoluteLoss.UpdateLeafValues">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss">
+            <summary>
+            Binomial deviation is used for binary classification. It penalizes a misclassification more heavily than a correct classification
+            which makes it possible to reduce the misclassification rate during a learning process.
+            Its penalty increases linearly with f which makes it more robust to outliers
+            than other loss functions for which the penalty increases at a higher rate
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss.#ctor">
+            Binomial deviation is used for binary classification. It penalizes a misclassification more heavily than a correct classification
+            which makes it possible to reduce the misclassification rate during a learning process.
+            Its penalty increases linearly with f which makes it more robust to outliers
+            than other loss functions for which the penalty increases at a higher rate
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss.InitialLoss(System.Double[],System.Boolean[])">
+            <summary>
+            initial loss is the class prior probability
+            </summary>
+            <param name="targets"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss.InitSplit(System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss.NegativeGradient(System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="target"></param>
+            <param name="prediction"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss.UpdateResiduals(System.Double[],System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss.UpdateSplitConstants(SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="left"></param>
+            <param name="right"></param>
+            <param name="target"></param>
+            <param name="residual"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss.UpdatedLeafValue(System.Double,System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            Binomial loss does not require leaf value updates
+            </summary>
+            <param name="currentLeafValue"></param>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostBinomialLoss.UpdateLeafValues">
+            <summary>
+            Binomial loss does not require leaf value updates
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss">
+            <summary>
+            Huber loss is a combination of Squared loss and least absolute deviation (LAD). 
+            For small residuals (below quantile defined by alpha) squared loss is used. 
+            For large residuals (above quantile defined by alpha) LAD loss is used. 
+            This makes Huber loss robust against outliers while still having much of the sensitivity of squared loss.
+            http://en.wikipedia.org/wiki/Huber_loss
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss.#ctor(System.Double)">
+            Huber loss is a combination of Squared loss and least absolute deviation (LAD). 
+            For small residuals (below quantile defined by alpha) squared loss is used. 
+            For large residuals (above quantile defined by alpha) LAD loss is used. 
+            This makes Huber loss robust against outliers while still having much of the sensitivity of squared loss.
+            http://en.wikipedia.org/wiki/Huber_loss
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss.InitialLoss(System.Double[],System.Boolean[])">
+            <summary>
+            Initial loss is the median
+            </summary>
+            <param name="targets"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss.InitSplit(System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss.NegativeGradient(System.Double,System.Double)">
+            <summary>
+            Undefined for Huber
+            </summary>
+            <param name="target"></param>
+            <param name="prediction"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss.UpdateResiduals(System.Double[],System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss.UpdateSplitConstants(SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="left"></param>
+            <param name="right"></param>
+            <param name="target"></param>
+            <param name="residual"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss.UpdateLeafValues">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostHuberLoss.UpdatedLeafValue(System.Double,System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="currentLeafValue"></param>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss">
+            <summary>
+            Quantile loss. Whereas the method of least squares results in estimates that approximate the conditional mean of the response variable 
+            given certain values of the predictor variables, quantile regression aims at estimating either the conditional median 
+            or other quantiles of the response variable. Using the median results in Least absolute deviation or LAD loss.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss.#ctor(System.Double)">
+            <summary>
+            Quantile loss. Whereas the method of least squares results in estimates that approximate the conditional mean of the response variable 
+            given certain values of the predictor variables, quantile regression aims at estimating either the conditional median 
+            or other quantiles of the response variable. Using the median results in Least absolute deviation or LAD loss.
+            </summary>
+            <param name="alpha"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss.InitialLoss(System.Double[],System.Boolean[])">
+            <summary>
+            The specified quantile of the targets.
+            </summary>
+            <param name="targets"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss.InitSplit(System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss.NegativeGradient(System.Double,System.Double)">
+            <summary>
+            Negative gradient is the quantile or -(1.0 - quantile) depending on which is larger. Prediction or target.
+            </summary>
+            <param name="target"></param>
+            <param name="prediction"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss.UpdateResiduals(System.Double[],System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss.UpdateSplitConstants(SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="left"></param>
+            <param name="right"></param>
+            <param name="target"></param>
+            <param name="residual"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss.UpdateLeafValues">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostQuantileLoss.UpdatedLeafValue(System.Double,System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            Updates the leaf values based on the quantile of the difference between target and prediction
+            </summary>
+            <param name="currentLeafValue"></param>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss">
+            <summary>
+            The square loss function is the standard method of fitting regression models.
+            The square loss is however sensitive to outliers since it weighs larger errors more heavily than small ones.
+            In case of many outliers Least absolute deviation (LAD) is a better alternative.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss.#ctor">
+            <summary>
+            The square loss function is the standard method of fitting regression models.
+            The square loss is however sensitive to outliers since it weighs larger errors more heavily than small ones.
+            In case of many outliers Least absolute deviation (LAD) is a better alternative.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss.InitialLoss(System.Double[],System.Boolean[])">
+            <summary>
+            Initial loss is the mean of the targets 
+            </summary>
+            <param name="targets"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss.InitSplit(System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss.NegativeGradient(System.Double,System.Double)">
+            <summary>
+            Negative gradient is the difference between target and prediction
+            </summary>
+            <param name="target"></param>
+            <param name="prediction"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss.UpdateResiduals(System.Double[],System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss.UpdateSplitConstants(SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="left"></param>
+            <param name="right"></param>
+            <param name="target"></param>
+            <param name="residual"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss.UpdatedLeafValue(System.Double,System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            Squared loss does not require to update the leaf values
+            </summary>
+            <param name="currentLeafValue"></param>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.GradientBoostSquaredLoss.UpdateLeafValues">
+            <summary>
+            Squared loss does not require to update the leaf values
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Loss.IGradientBoostLoss">
+            <summary>
+            Interface for gradient boost loss functions
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.IGradientBoostLoss.InitialLoss(System.Double[],System.Boolean[])">
+            <summary>
+            Calculate the initial, constant, loss based on the targets and the samples used 
+            </summary>
+            <param name="targets"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.IGradientBoostLoss.InitSplit(System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            Initialize the split search based on targets, residuals and the samples used
+            </summary>
+            <param name="targets"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.IGradientBoostLoss.NegativeGradient(System.Double,System.Double)">
+            <summary>
+            Calculate the negative gradient
+            </summary>
+            <param name="target"></param>
+            <param name="prediction"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.IGradientBoostLoss.UpdateResiduals(System.Double[],System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            Update the residuals using the negative gradient
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="residuals"></param>
+            <param name="inSample"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.IGradientBoostLoss.UpdateSplitConstants(SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,SharpLearning.GradientBoost.GBMDecisionTree.GBMSplitInfo@,System.Double,System.Double)">
+            <summary>
+            Update left and right split values based on the target and residual
+            </summary>
+            <param name="left"></param>
+            <param name="right"></param>
+            <param name="target"></param>
+            <param name="residual"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.IGradientBoostLoss.UpdateLeafValues">
+            <summary>
+            Does the loss function need to update leaf values after the split has been found
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Loss.IGradientBoostLoss.UpdatedLeafValue(System.Double,System.Double[],System.Double[],System.Boolean[])">
+            <summary>
+            Provides an updated leaf value based on the tagets and predictions and the samples used
+            </summary>
+            <param name="currentLeafValue"></param>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="inSample"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.Trees">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.LearningRate">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.InitialLoss">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.TargetNames">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.FeatureCount">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.#ctor(SharpLearning.GradientBoost.GBMDecisionTree.GBMTree[][],System.Double[],System.Double,System.Double,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="trees"></param>
+            <param name="targetNames"></param>
+            <param name="learningRate"></param>
+            <param name="initialLoss"></param>
+            <param name="featureCount"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.Predict(System.Double[])">
+            <summary>
+            Predicts a single observations using the combination of all predictors
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.SharpLearning#Common#Interfaces#IPredictor{SharpLearning#Containers#ProbabilityPrediction}#Predict(System.Double[])">
+            <summary>
+            Private explicit interface implementation for probability predictions
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.PredictProbability(System.Double[])">
+            <summary>
+            Predicts a single observation with probabilities
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations using the combination of all predictors
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.PredictProbability(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of observations with probabilities
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.Load(System.Func{System.IO.TextReader})">
+            <summary>
+            Loads a GBMGradientBoostClassificationModel.
+            </summary>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.ClassificationGradientBoostModel.Save(System.Func{System.IO.TextWriter})">
+            <summary>
+            Saves the GBMGradientBoostClassificationModel.
+            </summary>
+            <param name="writer"></param>
+        </member>
+        <member name="T:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.Trees">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.LearningRate">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.InitialLoss">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.FeatureCount">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.#ctor(SharpLearning.GradientBoost.GBMDecisionTree.GBMTree[],System.Double,System.Double,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="trees"></param>
+            <param name="learningRate"></param>
+            <param name="initialLoss"></param>
+            <param name="featureCount"></param>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.Predict(System.Double[])">
+            <summary>
+            Predicts a single observations using the combination of all predictors
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations using the combination of all predictors
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.Load(System.Func{System.IO.TextReader})">
+            <summary>
+            Loads a GBMGradientBoostRegressorModel.
+            </summary>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.GradientBoost.Models.RegressionGradientBoostModel.Save(System.Func{System.IO.TextWriter})">
+            <summary>
+            Saves the GBMGradientBoostRegressorModel.
+            </summary>
+            <param name="writer"></param>
+        </member>
+    </members>
+</doc>

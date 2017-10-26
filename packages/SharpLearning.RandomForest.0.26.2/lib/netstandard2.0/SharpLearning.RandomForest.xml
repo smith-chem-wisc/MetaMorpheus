@@ -1,0 +1,409 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.RandomForest</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.RandomForest.Learners.ClassificationExtremelyRandomizedTreesLearner">
+            <summary>
+            Learns a classification version of Extremely randomized trees
+            http://www.montefiore.ulg.ac.be/~ernst/uploads/news/id63/extremely-randomized-trees.pdf
+            </summary>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationExtremelyRandomizedTreesLearner.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Boolean)">
+            <summary>
+            The extremely randomized trees learner is an ensemble learner consisting of a series of randomized decision trees. 
+            It takes the randomization a step futher than random forest and also select the splits randomly
+            </summary>
+            <param name="trees">Number of trees to use in the ensemble</param>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="featuresPrSplit">Number of features used at each split in each tree</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">The ratio of observations sampled with replacement for each tree. 
+            Default is 1.0 sampling the same count as the number of observations in the input. 
+            If below 1.0 the algorithm changes to random patches</param>
+            <param name="seed">Seed for the random number generator</param>
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationExtremelyRandomizedTreesLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Learns a classification Extremely randomized trees model
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationExtremelyRandomizedTreesLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learns a classification Extremely randomized trees model
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationExtremelyRandomizedTreesLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationExtremelyRandomizedTreesLearner.SharpLearning#Common#Interfaces#IIndexedLearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationExtremelyRandomizedTreesLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationExtremelyRandomizedTreesLearner.SharpLearning#Common#Interfaces#ILearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.RandomForest.Learners.ClassificationRandomForestLearner">
+            <summary>
+            Trains a classification random forest
+            http://en.wikipedia.org/wiki/Random_forest
+            http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm
+            </summary>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationRandomForestLearner.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Boolean)">
+            <summary>
+            The random forest is an ensemble learner consisting of a series of randomized decision trees
+            </summary>
+            <param name="trees">Number of trees to use in the ensemble</param>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="featuresPrSplit">Number of features used at each split in each tree</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">The ratio of observations sampled with replacement for each tree. 
+            Default is 1.0 sampling the same count as the number of observations in the input. 
+            If below 1.0 the algorithm changes to random patches</param>
+            <param name="seed">Seed for the random number generator</param>
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationRandomForestLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Learns a classification random forest
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationRandomForestLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learns a classification random forest
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationRandomForestLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationRandomForestLearner.SharpLearning#Common#Interfaces#IIndexedLearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationRandomForestLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.ClassificationRandomForestLearner.SharpLearning#Common#Interfaces#ILearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.RandomForest.Learners.RegressionExtremelyRandomizedTreesLearner">
+            <summary>
+            Learns a regression version of Extremely randomized trees
+            http://www.montefiore.ulg.ac.be/~ernst/uploads/news/id63/extremely-randomized-trees.pdf
+            </summary>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionExtremelyRandomizedTreesLearner.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Boolean)">
+            <summary>
+            The extremely randomized trees learner is an ensemble learner consisting of a series of randomized decision trees. 
+            It takes the randomization a step futher than random forest and also select the splits randomly
+            </summary>
+            <param name="trees">Number of trees to use in the ensemble</param>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="featuresPrSplit">Number of features used at each split in each tree</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">The ratio of observations sampled with replacement for each tree. 
+            Default is 1.0 sampling the same count as the number of observations in the input. 
+            If below 1.0 the algorithm changes to random patches</param>
+            <param name="seed">Seed for the random number generator</param>
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionExtremelyRandomizedTreesLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Learns a regression Extremely randomized trees model
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionExtremelyRandomizedTreesLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learns a regression extremely randomized trees model
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionExtremelyRandomizedTreesLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionExtremelyRandomizedTreesLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.RandomForest.Learners.RegressionRandomForestLearner">
+            <summary>
+            Trains a regression random forest
+            http://en.wikipedia.org/wiki/Random_forest
+            http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm
+            </summary>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionRandomForestLearner.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Boolean)">
+            <summary>
+            The random forest is an ensemble learner consisting of a series of randomized decision trees
+            </summary>
+            <param name="trees">Number of trees to use in the ensemble</param>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="featuresPrSplit">Number of features used at each split in each tree</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="subSampleRatio">The ratio of observations sampled with replacement for each tree. 
+            Default is 1.0 sampling the same count as the number of observations in the input. 
+            If below 1.0 the algorithm changes to random patches</param>
+            <param name="seed">Seed for the random number generator</param>
+            <param name="runParallel">Use multi threading to speed up execution (default is true)</param>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionRandomForestLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Learns a classification random forest
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionRandomForestLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learns a classification random forest
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionRandomForestLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Learners.RegressionRandomForestLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.RandomForest.Models.ClassificationForestModel">
+            <summary>
+            Classification forest model consiting of a series of decision trees
+            </summary>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.#ctor(SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel[],System.Double[])">
+            <summary>
+            Classification forest model consiting of a series of decision trees
+            </summary>
+            <param name="models">The decision tree models</param>
+            <param name="rawVariableImportance">The summed variable importance from all decision trees</param>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.Predict(System.Double[])">
+            <summary>
+            Predicts a single observations using majority vote
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.SharpLearning#Common#Interfaces#IPredictor{SharpLearning#Containers#ProbabilityPrediction}#Predict(System.Double[])">
+            <summary>
+            Private explicit interface implementation for probability predictions
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations using majority vote
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.PredictProbability(System.Double[])">
+            <summary>
+            Predicts a single observation using the ensembled probabilities
+            Note this can yield a different result than using regular predict
+            Usally this will be a more accurate predictions
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.PredictProbability(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations using the ensembled probabilities
+            Note this can yield a different result than using regular predict
+            Usally this will be a more accurate predictions
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.Load(System.Func{System.IO.TextReader})">
+            <summary>
+            Loads a ClassificationForestModel.
+            </summary>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.ClassificationForestModel.Save(System.Func{System.IO.TextWriter})">
+            <summary>
+            Saves the ClassificationForestModel.
+            </summary>
+            <param name="writer"></param>
+        </member>
+        <member name="T:SharpLearning.RandomForest.Models.RegressionForestModel">
+            <summary>
+            Regression forest model consiting of a series of decision trees
+            </summary>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.#ctor(SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel[],System.Double[])">
+            <summary>
+            Classification forest model consiting of a series of decision trees
+            </summary>
+            <param name="models">The decision tree models</param>
+            <param name="rawVariableImportance">The summed variable importance from all decision trees</param>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.Predict(System.Double[])">
+            <summary>
+            Predicts a single observations using the mean of all predictors
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations using the mean of all predictors
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.PredictCertainty(System.Double[])">
+            <summary>
+            Predicts a single observation and provides a certainty measure on the prediction
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.PredictCertainty(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations with certainty predictions
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.Load(System.Func{System.IO.TextReader})">
+            <summary>
+            Loads a RegressionForestModel.
+            </summary>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.RandomForest.Models.RegressionForestModel.Save(System.Func{System.IO.TextWriter})">
+            <summary>
+            Saves the RegressionForestModel.
+            </summary>
+            <param name="writer"></param>
+        </member>
+    </members>
+</doc>

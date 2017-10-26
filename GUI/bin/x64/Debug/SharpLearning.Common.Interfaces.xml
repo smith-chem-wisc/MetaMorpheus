@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.Common.Interfaces</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.Common.Interfaces.IIndexedLearner`1">
+            <summary>
+            Interface for indexed learner. 
+            Only the observations from the provided indices in the index array will be used fortraining
+            </summary>
+            <typeparam name="TPrediction">The prediction type of the resulting model.</typeparam>
+        </member>
+        <member name="M:SharpLearning.Common.Interfaces.IIndexedLearner`1.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Only the observations from the provided indices in the index array will be used fortraining
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Common.Interfaces.ILearner`1">
+            <summary>
+            General interface for learner. 
+            </summary>
+            <typeparam name="TPrediction"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Common.Interfaces.ILearner`1.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Common.Interfaces.IMetric`2">
+            <summary>
+            Generel metric interface
+            </summary>
+            <typeparam name="TTarget"></typeparam>
+            <typeparam name="TPrediction"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Common.Interfaces.IMetric`2.Error(`0[],`1[])">
+            <summary>
+            Returns an error metric based on the targets and predictions
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Common.Interfaces.IModelVariableImportance">
+            <summary>
+            Interface for variable importance
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Common.Interfaces.IModelVariableImportance.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Common.Interfaces.IModelVariableImportance.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Common.Interfaces.IPredictor`1">
+            <summary>
+            General interface for predictor. 
+            </summary>
+            <typeparam name="TPrediction">The prediction type of the resulting model.</typeparam>
+        </member>
+        <member name="M:SharpLearning.Common.Interfaces.IPredictor`1.Predict(System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Common.Interfaces.IPredictorModel`1">
+            <summary>
+            Interface for predictor models. Supports prediction and variable importance.
+            </summary>
+            <typeparam name="TPrediction"></typeparam>
+        </member>
+    </members>
+</doc>

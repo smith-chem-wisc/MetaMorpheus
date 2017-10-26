@@ -1,0 +1,7 @@
+E:\XRSheeranQ\MetaMorpheus-master\MySetup\bin\Debug\cab1.cab
+E:\XRSheeranQ\MetaMorpheus-master\MySetup\bin\Debug\MySetup.msi
+E:\XRSheeranQ\MetaMorpheus-master\MySetup\bin\Debug\MySetup.wixpdb
+obj\Debug\Product.wixobj
+obj\Debug\MySetup.wixproj.BindContentsFileListnull.txt
+obj\Debug\MySetup.wixproj.BindOutputsFileListnull.txt
+obj\Debug\MySetup.wixproj.BindBuiltOutputsFileListnull.txt

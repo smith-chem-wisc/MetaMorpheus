@@ -1,0 +1,703 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.Metrics</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.Metrics.Classification.ClassificationMatrix">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.ClassificationMatrix.ConfusionMatrix``1(System.Collections.Generic.List{``0},``0[],``0[])">
+            <summary>
+            Creates a confusion matrix from the provided targets and predicitons
+            </summary>
+            <param name="uniqueTargets"></param>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.ClassificationMatrix.ErrorMatrix``1(System.Collections.Generic.List{``0},System.Int32[][])">
+            <summary>
+            Creates an error matrix based on the provided confusion matrix
+            </summary>
+            <param name="uniqueTargets"></param>
+            <param name="confusionMatrix"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.ClassificationMatrixStringConverter">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.ClassificationMatrixStringConverter.Convert``1(System.Collections.Generic.List{``0},System.Collections.Generic.Dictionary{``0,System.String},System.Int32[][],System.Double[][],System.Double)">
+            <summary>
+            Creates a string representation of the classification matrix consisting of the provided confusion matrix and error matrix.
+            Using the target naming provided in targetStringMapping.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="uniqueTargets"></param>
+            <param name="targetStringMapping"></param>
+            <param name="confusionMatrix"></param>
+            <param name="errorMatrix"></param>
+            <param name="error"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.ClassificationMatrixStringConverter.Convert``1(System.Collections.Generic.List{``0},System.Int32[][],System.Double[][],System.Double)">
+            <summary>
+            Creates a string representation of the classification matrix consisting of the provided confusion matrix and error matrix
+            </summary>
+            <param name="uniqueTargets"></param>
+            <param name="confusionMatrix"></param>
+            <param name="errorMatrix"></param>
+            <param name="error"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.F1ScoreMetric`1">
+            <summary>
+            Calculates the F1Score metric 2 * precision * recall / (precision + recall) on a binary classification problem
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.F1ScoreMetric`1.#ctor(`0)">
+            <summary>
+            Calculates the F1Score metric 2 * precision * recall / (precision + recall) on a binary classification problem
+            </summary>
+            <param name="positiveTarget"></param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.F1ScoreMetric`1.Error(`0[],`0[])">
+            <summary>
+            Calculates the F1Score metric 2 * precision * recall / (precision + recall) on a binary classification problem
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.F1ScoreMetric`1.ErrorString(`0[],`0[])">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.F1ScoreMetric`1.ErrorString(`0[],`0[],System.Collections.Generic.Dictionary{`0,System.String})">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            Using the target names provided in the targetStringMapping
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="targetStringMapping"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.IClassificationMetric`1">
+            <summary>
+            Classification metric interface
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.IClassificationMetric`1.Error(`0[],`0[])">
+            <summary>
+            Calculates the classification error
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.IClassificationMetric`1.ErrorString(`0[],`0[])">
+            <summary>
+            Gives a string representation of the classification matrix
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.IClassificationMetric`1.ErrorString(`0[],`0[],System.Collections.Generic.Dictionary{`0,System.String})">
+            <summary>
+            Gives a string representation of the classification matrix.
+            Using the target names provided in the targetStringMapping
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="targetStringMapping"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.IClassificationProbabilityMetric">
+            <summary>
+            Classification probability metric interface
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.IClassificationProbabilityMetric.Error(System.Double[],SharpLearning.Containers.ProbabilityPrediction[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.IClassificationProbabilityMetric.ErrorString(System.Double[],SharpLearning.Containers.ProbabilityPrediction[])">
+            <summary>
+            Gives a string representation of the classification matrix
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.IClassificationProbabilityMetric.ErrorString(System.Double[],SharpLearning.Containers.ProbabilityPrediction[],System.Collections.Generic.Dictionary{System.Double,System.String})">
+            <summary>
+            Gives a string representation of the classification matrix.
+            Using the target names provided in the targetStringMapping
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="targetStringMapping"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.LogLossClassificationProbabilityMetric">
+            <summary>
+            The logarithm of the likelihood function for a Bernoulli random distribution.
+            In plain English, this error metric is typically used where you have to predict that something is true or false 
+            with a probability (likelihood) ranging from definitely true (1) to equally true (0.5) to definitely false(0).
+            The use of log on the error provides extreme punishments for being both confident and wrong. 
+            In the worst possible case, a single prediction that something is definitely true (1) 
+            when it is actually false will add infinite to your error score and make every other entry pointless.
+            https://www.kaggle.com/wiki/MultiClassLogLoss
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.LogLossClassificationProbabilityMetric.#ctor(System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="epsilon"></param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.LogLossClassificationProbabilityMetric.Error(System.Double[],SharpLearning.Containers.ProbabilityPrediction[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.LogLossClassificationProbabilityMetric.ErrorString(System.Double[],SharpLearning.Containers.ProbabilityPrediction[])">
+            <summary>
+            Creates an error matrix based on the provided confusion matrix
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.LogLossClassificationProbabilityMetric.ErrorString(System.Double[],SharpLearning.Containers.ProbabilityPrediction[],System.Collections.Generic.Dictionary{System.Double,System.String})">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            Using the target names provided in the targetStringMapping
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="targetStringMapping"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.PrecisionMetric`1">
+            <summary>
+            Calculates the precision metric (TP/(TP + FP)) on a binary classification problem
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.PrecisionMetric`1.#ctor(`0)">
+            <summary>
+            Calculates the precision metric (TP/(TP + FP)) on a binary classification problem
+            </summary>
+            <param name="positiveTarget"></param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.PrecisionMetric`1.Error(`0[],`0[])">
+            <summary>
+            Calculates the precision metric (TP/(TP + FP)) on a binary classification problem
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.PrecisionMetric`1.ErrorString(`0[],`0[])">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.PrecisionMetric`1.ErrorString(`0[],`0[],System.Collections.Generic.Dictionary{`0,System.String})">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            Using the target names provided in the targetStringMapping
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="targetStringMapping"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.RecallMetric`1">
+            <summary>
+            Calculates the recall metric (TP/(TP + FN)) on a binary classification problem
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RecallMetric`1.#ctor(`0)">
+            <summary>
+            Calculates the recall metric (TP/(TP + FN)) on a binary classification problem
+            </summary>
+            <param name="positiveTarget"></param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RecallMetric`1.Error(`0[],`0[])">
+            <summary>
+            Calculates the recall metric (TP/(TP + FN)) on a binary classification problem
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RecallMetric`1.ErrorString(`0[],`0[])">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RecallMetric`1.ErrorString(`0[],`0[],System.Collections.Generic.Dictionary{`0,System.String})">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            Using the target names provided in the targetStringMapping
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="targetStringMapping"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.RocAucClassificationProbabilityMetric">
+            <summary>
+            Calculates the roc auc metric
+            http://en.wikipedia.org/wiki/Receiver_operating_characteristic
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RocAucClassificationProbabilityMetric.#ctor(System.Double)">
+            <summary>
+            The metric needs to know which target value is considered the positive
+            </summary>
+            <param name="positiveTarget"></param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RocAucClassificationProbabilityMetric.Error(System.Double[],SharpLearning.Containers.ProbabilityPrediction[])">
+            <summary>
+            Calculates the roc auc error.That is 1.0 - Auc.
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions">probability predictions</param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RocAucClassificationProbabilityMetric.trapezoidArea(System.Double,System.Double,System.Double,System.Double)">
+            <summary>
+            Caculate the trapezoidal area bound by the quad (X1,X2,Y1,Y2) 
+            </summary>
+            <param name="X1"></param>
+            <param name="X2"></param>
+            <param name="Y1"></param>
+            <param name="Y2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RocAucClassificationProbabilityMetric.ErrorString(System.Double[],SharpLearning.Containers.ProbabilityPrediction[])">
+            <summary>
+            Creates an error matrix based on the provided confusion matrix
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.RocAucClassificationProbabilityMetric.ErrorString(System.Double[],SharpLearning.Containers.ProbabilityPrediction[],System.Collections.Generic.Dictionary{System.Double,System.String})">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            Using the target names provided in the targetStringMapping
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="targetStringMapping"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Classification.TotalErrorClassificationMetric`1">
+            <summary>
+            Calculates the total error metric on a multi label or binary classification problem
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.TotalErrorClassificationMetric`1.Error(`0[],`0[])">
+            <summary>
+            Calculates the total error metric on a multi label or binary classification problem
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.TotalErrorClassificationMetric`1.ErrorString(`0[],`0[])">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Classification.TotalErrorClassificationMetric`1.ErrorString(`0[],`0[],System.Collections.Generic.Dictionary{`0,System.String})">
+            <summary>
+            Gets a string representation of the classification matrix with counts and percentages
+            Using the target names provided in the targetStringMapping
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <param name="targetStringMapping"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Impurity.GiniImpurityMetric">
+            <summary>
+            Calculates the Gini impurity of a sample. Main use is for decision tree classification
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.GiniImpurityMetric.Impurity(System.Double[])">
+            <summary>
+            Calculates the Gini impurity of a sample. Main use is for decision tree classification
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+            <param name="values"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.GiniImpurityMetric.Impurity(System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Calculates the Gini impurity of a sample. Main use is for decision tree classification
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+            <param name="values"></param>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.GiniImpurityMetric.Impurity(System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Calculates the weighted Gini impurity of a sample. Main use is for decision tree classification
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+            <param name="values"></param>
+            <param name="weights"></param>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Impurity.IImpurityMetric">
+            <summary>
+            Interface for impurity metrics
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.IImpurityMetric.Impurity(System.Double[])">
+            <summary>
+            Calculates the entropy of a sample
+            </summary>
+            <param name="values"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.IImpurityMetric.Impurity(System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Calculates the entropy of a sample within the provided interval
+            </summary>
+            <param name="values"></param>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.IImpurityMetric.Impurity(System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Calculates the weighted entropy within the provided interval
+            </summary>
+            <param name="values"></param>
+            <param name="weights"></param>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Impurity.NaiveSinglePassVarianceImpurityMetric">
+            <summary>
+            Calculates the variance of a sample. Main use is for decision tree regression
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.NaiveSinglePassVarianceImpurityMetric.Impurity(System.Double[])">
+            <summary>
+            Calculates the variance of a sample. Main use is for decision tree regression
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+            <param name="values"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.NaiveSinglePassVarianceImpurityMetric.Impurity(System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Calculates the variance of a sample over the provided interval. Main use is for decision tree regression
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+            <param name="values"></param>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Impurity.NaiveSinglePassVarianceImpurityMetric.Impurity(System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Calculates the weighted variance of a sample over the provided interval. Main use is for decision tree regression
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+            <param name="values"></param>
+            <param name="weights"></param>
+            <param name="interval"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.McNemarModelComparison">
+            <summary>
+            McNemar test for comparin two models. 
+            The important part of the comparison is the number of times model1 is right where model2 is wrong and vice-versa.
+            A clear improvement between two models would be if this number is, say 1 to 10.
+            https://en.wikipedia.org/wiki/McNemar%27s_test
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.McNemarModelComparison.Compare(System.Double[],System.Double[],System.Double[])">
+            <summary>
+            Compares two model using the McNemar test.
+            The important part of the comparison is the number of times model1 is right where model2 is wrong and vice-versa.
+            A clear improvement between two models would be if this number is, say 1 to 10. The resulting matrix is of format
+                        Model1Wrong Model1Right
+            Model2Wrong     x            y
+            Model2Right     z            j
+            </summary>
+            This is also visible if outputting the CompareString.
+            <param name="model1Predictions"></param>
+            <param name="model2Predictions"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.McNemarModelComparison.CompareString(System.Double[],System.Double[],System.Double[])">
+            <summary>
+            Outputs a string representation of a McNemar test.
+            The important part of the comparison is the number of times model1 is right where model2 is wrong and vice-versa.
+            A clear improvement between two models would be if this number is, say 1 to 10. The resulting matrix is of format
+                        Model1Wrong Model1Right
+            Model2Wrong     x            y
+            Model2Right     z            j
+            </summary>
+            <param name="model1Predictions"></param>
+            <param name="model2Predictions"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Ranking.AveragePrecisionRankingMetric`1">
+            <summary>
+            Calculates the average precision ranking metric
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Metrics.Ranking.AveragePrecisionRankingMetric`1.#ctor(System.Int32)">
+            <summary>
+            Takes the top k predictions to consider
+            </summary>
+            <param name="k"></param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Ranking.AveragePrecisionRankingMetric`1.Error(`0[],`0[])">
+            <summary>
+            Calculates the average precision error 1 - average precision
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Ranking.IRankingMetric`1">
+            <summary>
+            Ranking metric interface
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.Metrics.Ranking.IRankingMetric`1.Error(`0[],`0[])">
+            <summary>
+            Calculates the ranking error
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.DiscreteTargetMeanErrorRegressionMetric">
+            <summary>
+            Zips the targets and predictions and groups by the values availible in targets.
+            The resuling error is the mean error of each group. The internal metric used for each group
+            Is provided as a constructor parameter.
+            This metric only makes sence if the target values have a descrete nature. That is, not too many unique values.
+            An example could be targets with the values: 0, 1, 2, 3, 4, 5.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.DiscreteTargetMeanErrorRegressionMetric.#ctor(SharpLearning.Metrics.Regression.IRegressionMetric)">
+            <summary>
+            Zips the targets and predictions and groups by the values availible in targets.
+            The resuling error is the mean error of each group. The internal metric used for each group
+            Is provided as a constructor parameter.
+            This metric only makes sence if the target values have a descrete nature. That is, not too many unique values.
+            An example could be targets with the values: 0, 1, 2, 3, 4, 5.
+            </summary>
+            <param name="regressionMetric">Default is MeanSquaredError</param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.DiscreteTargetMeanErrorRegressionMetric.#ctor">
+            <summary>
+            Zips the targets and predictions and groups by the values availible in targets.
+            The resuling error is the mean error of each group. The internal metric used for each group
+            Is provided as a constructor parameter.
+            This metric only makes sence if the target values have a descrete nature. That is, not too many unique values.
+            An example could be targets with the values: 0, 1, 2, 3, 4, 5.
+            
+            Default internal metric is MeanSquaredErrorRegressionMetric.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.DiscreteTargetMeanErrorRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            The resuling error is the mean error of each group. The internal metric used for each group
+            Is provided as a constructor parameter.
+            This metric only makes sence if the target values have a descrete nature. That is, not too many unique values.
+            An example could be targets with the values: 0, 1, 2, 3, 4, 5.
+            </summary>
+            <param name="target"></param>
+            <param name="predicted"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.IRegressionMetric">
+            <summary>
+            Metrics for calculating the error on continously valued predictions
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.IRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            Metrics for calculating the error on continously valued predictions
+            </summary>
+            <param name="target"></param>
+            <param name="predicted"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.MeanAbsolutErrorRegressionMetric">
+            <summary>
+            Calculates the mean absolute error between the targets and predictions e = Sum(abs(t - p))/length(t) 
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.MeanAbsolutErrorRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            Calculates the mean absolute error between the targets and predictions e = Sum(abs(t - p))/length(t) 
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.MeanSquaredErrorRegressionMetric">
+            <summary>
+            Calculates the meansquared error between the targets and predictions e = sum((t - p)^2)/length(t) 
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.MeanSquaredErrorRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            Calculates the meansquared error between the targets and predictions e = sum((t - p)^2)/length(t) 
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.NormalizedGiniCoefficientRegressionMetric">
+            <summary>
+            Calculaes the normalized gini coefficient
+            https://en.wikipedia.org/wiki/Gini_coefficient
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.NormalizedGiniCoefficientRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            Calculaes the normalized gini coefficient
+            https://en.wikipedia.org/wiki/Gini_coefficient
+            </summary>
+            <param name="target"></param>
+            <param name="predicted"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.NormalizedGiniCoefficientRegressionMetric.GiniCoefficient(System.Double[],System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="target"></param>
+            <param name="predicted"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.RocAucRegressionMetric">
+            <summary>
+            The metric needs to know which target value is considered the positive
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.RocAucRegressionMetric.#ctor(System.Double)">
+            <summary>
+            The metric needs to know which target value is considered the positive
+            </summary>
+            <param name="positiveTarget"></param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.RocAucRegressionMetric.#ctor(System.Double,System.Collections.Generic.Dictionary{System.Double,System.Double})">
+            <summary>
+            The metric needs to know which target value is considered the positive.
+            If targets are not already binary a mapping must be provided.
+            </summary>
+            <param name="positiveTarget"></param>
+            <param name="targetsToBinaryMapping"></param>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.RocAucRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            Calculates the roc auc error. That is 1.0 - Auc.
+            </summary>
+            <param name="targets">Target values</param>
+            <param name="positiveTargetProbabilities">Probability estimates for the positive target value</param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.RocAucRegressionMetric.trapezoidArea(System.Double,System.Double,System.Double,System.Double)">
+            <summary>
+            Caculate the trapezoidal area bound by the quad (X1,X2,Y1,Y2) 
+            </summary>
+            <param name="X1"></param>
+            <param name="X2"></param>
+            <param name="Y1"></param>
+            <param name="Y2"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.RootMeanLogRegressionMetric">
+            <summary>
+            Calculates the root mean logarithmic error between the targets and predictions e = Sum(Log(t +1) - log(p +1)))/length(t) 
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.RootMeanLogRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            Calculates the root mean logarithmic error between the targets and predictions e = Sum(Log(t +1) - log(p +1)))/length(t) 
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.RootMeanSquarePercentageRegressionMetric">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.RootMeanSquarePercentageRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            Calculates the root mean square percentage error between the targets and predictions e = Sqrt(sum((t - p / t)^2)/length(t))  
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.Metrics.Regression.RootMeanSquareRegressionMetric">
+            <summary>
+            Calculates the root mean square error between the targets and predictions e = Sqrt(sum((t - p)^2)/length(t))  
+            </summary>
+        </member>
+        <member name="M:SharpLearning.Metrics.Regression.RootMeanSquareRegressionMetric.Error(System.Double[],System.Double[])">
+            <summary>
+            Calculates the root mean square error between the targets and predictions e = Sqrt(sum((t - p)^2)/length(t))  
+            </summary>
+            <param name="targets"></param>
+            <param name="predictions"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

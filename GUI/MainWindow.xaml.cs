@@ -11,16 +11,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using System.Net;
-using System.Text.RegularExpressions;
-using System.Diagnostics;
+
 namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    
-    
     public partial class MainWindow : Window
     {
         #region Private Fields
@@ -32,37 +28,14 @@ namespace MetaMorpheusGUI
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
 
         #endregion Private Fields
-        public static string VersionCheck;
+
         #region Public Constructors
 
         public MainWindow()
         {
             InitializeComponent();
-            Title = "MetaMorpheus: version 0.0.200 " + GlobalEngineLevelSettings.MetaMorpheusVersion;
 
-            /*Version Check*/
-            //get current version link
-            HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
-            HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse(); //get final version link
-            String versionNum = "" + versionLink.ResponseUri; //convert version link to string
-            //match version number
-            Regex versionReg = new Regex(@"\d+\.\d+\.\d+");
-            VersionCheck = "" + versionReg.Matches(versionNum)[0];//version check will be shared with all the forms
-
-            //get current version number
-            String currVersionNum = "" + versionReg.Matches(this.Title)[0];
-            //update file, if user choose not to update (unchecked checkbox), false; otherwise is true; default value is also true
-            String LogPath = @"E:\XRSheeranQ\update.txt";
-            //get string
-            string text = System.IO.File.ReadAllText(LogPath);
-            //check the version and whether to update or not
-            if (!currVersionNum.Equals(VersionCheck) && text.Equals("true"))
-            {
-                Window1 answercus = new Window1();
-                answercus.Topmost = true;
-                answercus.Show();
-
-            }
+            Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;

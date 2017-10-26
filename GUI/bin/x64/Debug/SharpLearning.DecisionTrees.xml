@@ -1,0 +1,1343 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.DecisionTrees</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities">
+            <summary>
+            Struct for containing left and right child impurities
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities.Left">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities.Right">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities.#ctor(System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="left"></param>
+            <param name="right"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities.Equals(SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities.op_Equality(SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities,SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities)">
+            <summary>
+            
+            </summary>
+            <param name="p1"></param>
+            <param name="p2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities.op_Inequality(SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities,SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities)">
+            <summary>
+            
+            </summary>
+            <param name="p1"></param>
+            <param name="p2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ChildImpurities.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator">
+            <summary>
+            Base class for classifiction impurity calculators
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_interval">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_currentPosition">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_weightedTotal">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_weightedLeft">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_weightedRight">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_targets">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_weights">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_targetNames">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_maxTargetNameIndex">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.m_targetIndexOffSet">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.WeightedLeft">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.WeightedRight">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.#ctor">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.Init(System.Double[],System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Initialize the calculator with targets, weights and work interval
+            </summary>
+            <param name="targetNames"></param>
+            <param name="targets"></param>
+            <param name="weights"></param>
+            <param name="interval"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.Reset">
+            <summary>
+            Resets impurity calculator
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.UpdateInterval(SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Updates impurities according to the new interval
+            </summary>
+            <param name="newInterval"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.UpdateIndex(System.Int32)">
+            <summary>
+            Updates impurity calculator with new split index
+            </summary>
+            <param name="newPosition"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.ChildImpurities">
+            <summary>
+            Calculates child impurities with current split index
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.NodeImpurity">
+            <summary>
+            Calculate the node impurity
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.ImpurityImprovement(System.Double)">
+            <summary>
+            Calculates the impurity improvement at the current split index
+            </summary>
+            <param name="impurity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.LeafValue">
+            <summary>
+            Calculates the weighted leaf value
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.ClassificationImpurityCalculator.LeafProbabilities">
+            <summary>
+            Calculates the weighted leaf value
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.ImpurityCalculators.GiniClassificationImpurityCalculator">
+            <summary>
+            Classifiction impurity calculator using the gini impurity.
+            </summary>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.GiniClassificationImpurityCalculator.TargetNames">
+            <summary>
+            Gets the unique target names
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.GiniClassificationImpurityCalculator.#ctor">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.GiniClassificationImpurityCalculator.ChildImpurities">
+            <summary>
+            Calculates child impurities with current split index
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.GiniClassificationImpurityCalculator.NodeImpurity">
+            <summary>
+            Calculate the node impurity
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.GiniClassificationImpurityCalculator.ImpurityImprovement(System.Double)">
+            <summary>
+            Calculates the impurity improvement at the current split index
+            </summary>
+            <param name="impurity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.GiniClassificationImpurityCalculator.LeafValue">
+            <summary>
+            Calculates the weighted leaf value
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.GiniClassificationImpurityCalculator.LeafProbabilities">
+            <summary>
+            Laplace adjusted probabilities. Same order as m_uniqueTargetNames
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator">
+            <summary>
+            Interface for impurity calculators
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.Init(System.Double[],System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Initialize the calculator with targets, weights and work interval
+            </summary>
+            <param name="uniqueTargets">The availbile target values</param>
+            <param name="targets"></param>
+            <param name="weights"></param>
+            <param name="interval"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.UpdateInterval(SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Update the work interval.
+            </summary>
+            <param name="newInterval"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.UpdateIndex(System.Int32)">
+            <summary>
+            Update the split index
+            </summary>
+            <param name="newPosition"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.Reset">
+            <summary>
+            Reset the calculation within the current work interval
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.ImpurityImprovement(System.Double)">
+            <summary>
+            Resturn the impurity improvement
+            </summary>
+            <param name="impurity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.NodeImpurity">
+            <summary>
+            Returns the current node impurity
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.ChildImpurities">
+            <summary>
+            Returns the current child impurities
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.WeightedLeft">
+            <summary>
+            Returns the weighted size of the current left split
+            </summary>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.WeightedRight">
+            <summary>
+            Returns the weighted size of the current right split
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.LeafValue">
+            <summary>
+            Calculates the leaf value based on the current work interval
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.TargetNames">
+            <summary>
+            Gets the unique target names
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator.LeafProbabilities">
+            <summary>
+            Calculates the probabilities based in the current work interval. 
+            Note that LeafProbabilities are only valid for classification impurity calculators.
+            Regression impurity calculators will return and empy result. The orders of the probabilities 
+            is the same as TargetNames.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator">
+            <summary>
+            Regression impurity calculator using variance and friedmans
+            calculation for impurity improvement.
+            </summary>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.WeightedLeft">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.WeightedRight">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.#ctor">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.Init(System.Double[],System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Initialize the calculator with targets, weights and work interval 
+            </summary>
+            <param name="uniqueTargets"></param>
+            <param name="targets"></param>
+            <param name="weights"></param>
+            <param name="interval"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.Reset">
+            <summary>
+            Resets impurity calculator
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.UpdateInterval(SharpLearning.Containers.Views.Interval1D)">
+            <summary>
+            Updates impurities according to the new interval
+            </summary>
+            <param name="newInterval"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.UpdateIndex(System.Int32)">
+            <summary>
+            Updates impurity calculator with new split index
+            </summary>
+            <param name="newPosition"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.NodeImpurity">
+            <summary>
+            Calculate the node impurity
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.ChildImpurities">
+            <summary>
+            Calculates child impurities with current split index
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.ImpurityImprovement(System.Double)">
+            <summary>
+            Calculates the impurity improvement at the current split index
+            </summary>
+            <param name="impurity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.LeafValue">
+            <summary>
+            Calculates the weighted leaf value
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.TargetNames">
+            <summary>
+            Unique target names are not availible for regression
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.RegressionImpurityCalculator.LeafProbabilities">
+            <summary>
+            Probabilities are not availible for regression
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.ImpurityCalculators.TargetCounts">
+            <summary>
+            Maintains weighted target counts. 
+            Offset is used for cases with negative target names like -1.
+            This is alot faster than mapping using a dictionary since this solution simply indexes into an array
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.TargetCounts.Clear">
+            <summary>
+            Clears the counts
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.TargetCounts.Reset(System.Int32,System.Int32)">
+            <summary>
+            Resets the size and off sets and clears 
+            the counts  
+            </summary>
+            <param name="size"></param>
+            <param name="offset"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.ImpurityCalculators.TargetCounts.SetCounts(SharpLearning.DecisionTrees.ImpurityCalculators.TargetCounts)">
+            <summary>
+            Sets the counts equal to the prvided counts.
+            </summary>
+            <param name="newCounts"></param>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner">
+            <summary>
+            Trains a Classification Decision tree
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.#ctor(System.Int32,System.Int32,System.Int32,System.Double,System.Int32)">
+            <summary>
+            Trains a Classification Decision tree
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="minimumSplitSize">The minimum size </param>
+            <param name="featuresPrSplit">The number of features to be selected between at each split</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="seed">Seed for feature selection if number of features pr split is not equal 
+            to the total amount of features in observations. The features will be selected at random for each split</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Double[])">
+            <summary>
+            Learns a classification tree from the provided observations and targets. 
+            Weights can be provided in order to weight each sample individually
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learns a classification tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            Learns a classification tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times. Weights can be provided in order to weight each sample individually.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.Learn(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[])">
+            <summary>
+            Learns a classification tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.Learn(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            Learns a classification tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.SharpLearning#Common#Interfaces#IIndexedLearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.ClassificationDecisionTreeLearner.SharpLearning#Common#Interfaces#ILearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Learners.DecisionTreeLearner">
+            <summary>
+            Learns a Decision tree
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.DecisionTreeLearner.#ctor(SharpLearning.DecisionTrees.TreeBuilders.ITreeBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="treeBuilder"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.DecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Learns a decision tree from the provided observations and targets
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.DecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Double[])">
+            <summary>
+            Learns a decision tree from the provided observations and targets.
+            Weights can be provided in order to weight each sample individually
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.DecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learns a decision tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.DecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            Learns a decision tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times. Weights can be provided in order to weight each sample individually
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights">Provide weights inorder to weigh each sample separetely</param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.DecisionTreeLearner.Learn(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[])">
+            <summary>
+            Learns a decision tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.DecisionTreeLearner.Learn(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            Learns a decision tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times. Weights can be provided in order to weight each sample individually
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights">Provide weights inorder to weigh each sample separetely</param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner">
+            <summary>
+            Trains a Regression Decision tree
+            http://en.wikipedia.org/wiki/Decision_tree_learning
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.#ctor(System.Int32,System.Int32,System.Int32,System.Double,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="minimumSplitSize">The minimum size </param>
+            <param name="featuresPrSplit">The number of features to be selected between at each split</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="seed">Seed for feature selection if number of features pr split is not equal 
+            to the total amount of features in observations. The features will be selected at random for each split</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Learns a regression tree from the provided observations and targets
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Double[])">
+            <summary>
+            Learns a regression tree from the provided observations and targets
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learns a regression tree from the provided observations and targets
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            Learns a regression tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.Learn(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[])">
+            <summary>
+            Learns a regression tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Learners.RegressionDecisionTreeLearner.Learn(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            Learns a regression tree from the provided observations and targets but limited to the observation indices provided by indices.
+            Indices can contain the same index multiple times.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel">
+            <summary>
+            Classification Decision tree model
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.Tree">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.#ctor(SharpLearning.DecisionTrees.Nodes.BinaryTree)">
+            <summary>
+            
+            </summary>
+            <param name="tree"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.Predict(System.Double[])">
+            <summary>
+            Predicts a single observation
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of observations 
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.Predict(SharpLearning.Containers.Matrices.F64Matrix,System.Int32[])">
+            <summary>
+            Predicts the observation subset provided by indices
+            </summary>
+            <param name="observations"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.SharpLearning#Common#Interfaces#IPredictor{SharpLearning#Containers#ProbabilityPrediction}#Predict(System.Double[])">
+            <summary>
+            Private explicit interface implementation for probability predictions
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.PredictProbability(System.Double[])">
+            <summary>
+            Predicts a single observation with probabilities
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.PredictProbability(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of observations with probabilities
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.PredictProbability(SharpLearning.Containers.Matrices.F64Matrix,System.Int32[])">
+            <summary>
+            Predicts the observation subset provided by indices with probabilities
+            </summary>
+            <param name="observations"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.Load(System.Func{System.IO.TextReader})">
+            <summary>
+            Loads a ClassificationDecisionTreeModel.
+            </summary>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel.Save(System.Func{System.IO.TextWriter})">
+            <summary>
+            Saves the ClassificationDecisionTreeModel.
+            </summary>
+            <param name="writer"></param>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel">
+            <summary>
+            Regression Decision tree model
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.Tree">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.#ctor(SharpLearning.DecisionTrees.Nodes.BinaryTree)">
+            <summary>
+            
+            </summary>
+            <param name="tree"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.Predict(System.Double[])">
+            <summary>
+            Predicts a single observation
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of observations 
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.Predict(SharpLearning.Containers.Matrices.F64Matrix,System.Int32[])">
+            <summary>
+            Predicts the observation subset provided by indices
+            </summary>
+            <param name="observations"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.Load(System.Func{System.IO.TextReader})">
+            <summary>
+            Loads a RegressionDecisionTreeModel.
+            </summary>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel.Save(System.Func{System.IO.TextWriter})">
+            <summary>
+            Saves the RegressionDecisionTreeModel.
+            </summary>
+            <param name="writer"></param>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Nodes.BinaryTree">
+            <summary>
+            Binary tree 
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.BinaryTree.Nodes">
+            <summary>
+            Tree Nodes
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.BinaryTree.Probabilities">
+            <summary>
+            Leaf node probabilities
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.BinaryTree.TargetNames">
+            <summary>
+            Target names
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.BinaryTree.VariableImportance">
+            <summary>
+            Raw variable importance
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.BinaryTree.#ctor(System.Collections.Generic.List{SharpLearning.DecisionTrees.Nodes.Node},System.Collections.Generic.List{System.Double[]},System.Double[],System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="nodes"></param>
+            <param name="probabilities"></param>
+            <param name="targetNames"></param>
+            <param name="variableImportance"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.BinaryTree.Predict(System.Double[])">
+            <summary>
+            Predicts using a continous node strategy
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.BinaryTree.PredictProbability(System.Double[])">
+            <summary>
+            Predict probabilities using a continous node strategy
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.BinaryTree.Predict(SharpLearning.DecisionTrees.Nodes.Node,System.Double[])">
+            <summary>
+            Predicts using a continous node strategy
+            </summary>
+            <param name="node"></param>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.BinaryTree.PredictNode(SharpLearning.DecisionTrees.Nodes.Node,System.Double[])">
+            <summary>
+            Returns the prediction node using a continous node strategy
+            </summary>
+            <param name="node"></param>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.BinaryTree.PredictProbability(SharpLearning.DecisionTrees.Nodes.Node,System.Double[])">
+            <summary>
+            Predict probabilities using a continous node strategy
+            </summary>
+            <param name="node"></param>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Nodes.DecisionNodeCreationItem">
+            <summary>
+            Structure used for decision tree learning
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.DecisionNodeCreationItem.ParentIndex">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.DecisionNodeCreationItem.NodeType">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.DecisionNodeCreationItem.Interval">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.DecisionNodeCreationItem.Impurity">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.DecisionNodeCreationItem.NodeDepth">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.DecisionNodeCreationItem.#ctor(System.Int32,SharpLearning.DecisionTrees.Nodes.NodePositionType,SharpLearning.Containers.Views.Interval1D,System.Double,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="parentIndex"></param>
+            <param name="nodeType"></param>
+            <param name="interval"></param>
+            <param name="impurity"></param>
+            <param name="nodeDepth"></param>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Nodes.Node">
+            <summary>
+            Split node for binary decision tree
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.Node.FeatureIndex">
+            <summary>
+            Feature index used for split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.Node.Value">
+            <summary>
+            Feature value used for split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.Node.RightIndex">
+            <summary>
+            Right child tree index
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.Node.LeftIndex">
+            <summary>
+            Left child tree index
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.Node.NodeIndex">
+            <summary>
+            Node tree index
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.Node.LeafProbabilityIndex">
+            <summary>
+            Probability tree index
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.Node.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="featureIndex"></param>
+            <param name="value"></param>
+            <param name="leftIndex"></param>
+            <param name="rightIndex"></param>
+            <param name="nodeIndex"></param>
+            <param name="leafProbabilityIndex"></param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.Node.Default">
+            <summary>
+            Creates a default split node
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Nodes.NodeExtensions">
+            <summary>
+            Extension methods for node
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.Nodes.NodeExtensions.UpdateParent(System.Collections.Generic.List{SharpLearning.DecisionTrees.Nodes.Node},SharpLearning.DecisionTrees.Nodes.Node,SharpLearning.DecisionTrees.Nodes.Node,SharpLearning.DecisionTrees.Nodes.NodePositionType)">
+            <summary>
+            Updates the parent node with the new child
+            </summary>
+            <param name="nodes"></param>
+            <param name="parent"></param>
+            <param name="child"></param>
+            <param name="type"></param>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.Nodes.NodePositionType">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.NodePositionType.Root">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.NodePositionType.Left">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.Nodes.NodePositionType.Right">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.SplitSearchers.ISplitSearcher">
+            <summary>
+            A SplitSearcher seeks to find the most optimal split for the given feature and targets
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.ISplitSearcher.FindBestSplit(SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator,System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="impurityCalculator"></param>
+            <param name="feature"></param>
+            <param name="targets"></param>
+            <param name="parentInterval"></param>
+            <param name="parentImpurity"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.SplitSearchers.LinearSplitSearcher">
+            <summary>
+            Searches for the best split using a brute force approach. The searcher only considers splits 
+            when both the threshold value and the target value has changed.  
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.LinearSplitSearcher.#ctor(System.Int32)">
+            <summary>
+            Searches for the best split using a brute force approach. The searcher only considers splits 
+            when both the threshold value and the target value has changed.  
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.LinearSplitSearcher.#ctor(System.Int32,System.Double)">
+            <summary>
+            Searches for the best split using a brute force approach. The searcher only considers splits 
+            when both the threshold value and the target value has changed.  
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+            <param name="minimumLeafWeight">Minimum leaf weight when splitting</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.LinearSplitSearcher.FindBestSplit(SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator,System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D,System.Double)">
+            <summary>
+            Searches for the best split using a brute force approach. The searcher only considers splits 
+            when both the threshold value and the target value has changed.
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+            <param name="impurityCalculator"></param>
+            <param name="feature"></param>
+            <param name="targets"></param>
+            <param name="parentInterval"></param>
+            <param name="parentImpurity"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.SplitSearchers.OnlyUniqueThresholdsSplitSearcher">
+            <summary>
+            Searches for the best split using a brute force approach on all unique threshold values. 
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.OnlyUniqueThresholdsSplitSearcher.#ctor(System.Int32)">
+            <summary>
+            Searches for the best split using a brute force approach on all unique threshold values. 
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.OnlyUniqueThresholdsSplitSearcher.#ctor(System.Int32,System.Double)">
+            <summary>
+            Searches for the best split using a brute force approach on all unique threshold values. 
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+            <param name="minimumLeafWeight">Minimum leaf weight when splitting</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.OnlyUniqueThresholdsSplitSearcher.FindBestSplit(SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator,System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D,System.Double)">
+            <summary>
+            Searches for the best split using a brute force approach on all unique threshold values. 
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+            <param name="impurityCalculator"></param>
+            <param name="feature"></param>
+            <param name="targets"></param>
+            <param name="parentInterval"></param>
+            <param name="parentImpurity"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.SplitSearchers.RandomSplitSearcher">
+            <summary>
+            Select a random split between the min and max range of the feature within the parent interval.
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.RandomSplitSearcher.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Select a random split between the min and max range of the feature within the parent interval.
+            The implementation assumes that the features and targets have been sorted
+            together using the features as sort criteria
+            </summary>
+            <param name="minimumSplitSize">The minimum size for a node to be split</param>
+            <param name="seed">The minimum size for a node to be split</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.RandomSplitSearcher.FindBestSplit(SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator,System.Double[],System.Double[],SharpLearning.Containers.Views.Interval1D,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="impurityCalculator"></param>
+            <param name="feature"></param>
+            <param name="targets"></param>
+            <param name="parentInterval"></param>
+            <param name="parentImpurity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.RandomSplitSearcher.RandomThreshold(System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="min"></param>
+            <param name="max"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.SplitSearchers.SplitResult">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.SplitIndex">
+            <summary>
+            Split index within the feature used for split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.Threshold">
+            <summary>
+            Threshold used for splitting
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.ImpurityImprovement">
+            <summary>
+            Impurity imporvement obtained by making the split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.ImpurityLeft">
+            <summary>
+            Impurity of the left side of the split 
+            </summary>
+        </member>
+        <member name="F:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.ImpurityRight">
+            <summary>
+            Impurity of the right side of the split 
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.#ctor(System.Int32,System.Double,System.Double,System.Double,System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="splitIndex">Split index within the feature used for split</param>
+            <param name="threshold">Threshold used for splitting</param>
+            <param name="impurityImprovement">Impurity imporvement obtained by making the split</param>
+            <param name="impurityLeft">Impurity of the left side of the split </param>
+            <param name="impurityRight">Impurity of the right side of the split</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.Initial">
+            <summary>
+            Returns an initial SplitResult with start values
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.Equals(SharpLearning.DecisionTrees.SplitSearchers.SplitResult)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.op_Equality(SharpLearning.DecisionTrees.SplitSearchers.SplitResult,SharpLearning.DecisionTrees.SplitSearchers.SplitResult)">
+            <summary>
+            
+            </summary>
+            <param name="p1"></param>
+            <param name="p2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.op_Inequality(SharpLearning.DecisionTrees.SplitSearchers.SplitResult,SharpLearning.DecisionTrees.SplitSearchers.SplitResult)">
+            <summary>
+            
+            </summary>
+            <param name="p1"></param>
+            <param name="p2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.SplitSearchers.SplitResult.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.TreeBuilders.BestFirstTreeBuilder">
+            <summary>
+            Builds a decision tree in a best first manner. 
+            This method enables maximum leaf nodes to be set. 
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.TreeBuilders.BestFirstTreeBuilder.#ctor(System.Int32,System.Int32,System.Int32,System.Double,System.Int32,SharpLearning.DecisionTrees.SplitSearchers.ISplitSearcher,SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator)">
+            <summary>
+            
+            </summary>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="maximumLeafCount">The maximal allowed leaf nodes in the tree</param>
+            <param name="featuresPrSplit">The number of features to be selected between at each split. 
+            0 means use all availible features</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="seed">Seed for feature selection if number of features pr split is not equal 
+            to the total amount of features in observations. The features will be selected at random for each split</param>
+            <param name="splitSearcher">The type of searcher used for finding the best features splits when learning the tree</param>
+            <param name="impurityCalculator">Impurity calculator used to decide which split is optimal</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.TreeBuilders.BestFirstTreeBuilder.Build(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.TreeBuilders.DepthFirstTreeBuilder">
+            <summary>
+            Builds a decision tree in a depth first manner
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.TreeBuilders.DepthFirstTreeBuilder.#ctor(System.Int32,System.Int32,System.Double,System.Int32,SharpLearning.DecisionTrees.SplitSearchers.ISplitSearcher,SharpLearning.DecisionTrees.ImpurityCalculators.IImpurityCalculator)">
+            <summary>
+            
+            </summary>
+            <param name="maximumTreeDepth">The maximal tree depth before a leaf is generated</param>
+            <param name="featuresPrSplit">The number of features to be selected between at each split. 
+            0 means use all availible features</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="seed">Seed for feature selection if number of features pr split is not equal 
+            to the total amount of features in observations. The features will be selected at random for each split</param>
+            <param name="splitSearcher">The type of searcher used for finding the best features splits when learning the tree</param>
+            <param name="impurityCalculator">Impurity calculator used to decide which split is optimal</param>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.TreeBuilders.DepthFirstTreeBuilder.Build(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.DecisionTrees.TreeBuilders.ITreeBuilder">
+            <summary>
+            Tree builder interface
+            </summary>
+        </member>
+        <member name="M:SharpLearning.DecisionTrees.TreeBuilders.ITreeBuilder.Build(SharpLearning.Containers.Views.F64MatrixView,System.Double[],System.Int32[],System.Double[])">
+            <summary>
+            
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <param name="weights"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

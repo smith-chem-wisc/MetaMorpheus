@@ -1,0 +1,760 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.CrossValidation</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.CrossValidation.Augmentators.ContinuousMungeAugmentator">
+            <summary>
+            Augmentates continuous data according to the MUNGE method:
+            https://www.cs.cornell.edu/~caruana/compression.kdd06.pdf
+            The method seeks to keep the original distribution of data. This is done by traversing each observation in the dataset
+            finding its nearest neighbour (euclidean distance) and modifiyng each feature in the observation according to a probability. 
+            The features are modified using the value from the nearest neighbour as the mean when sampling a new value from a uniform distribution.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Augmentators.ContinuousMungeAugmentator.#ctor(System.Double,System.Double,System.Int32)">
+            <summary>
+            Augmentates continuous data according to the MUNGE method:
+            https://www.cs.cornell.edu/~caruana/compression.kdd06.pdf
+            The method seeks to keep the original distribution of data. This is done by traversing each observation in the dataset
+            finding its nearest neighbour (euclidean distance) and modifiyng each feature in the observation according to a probability. 
+            The features are modified using the value from the nearest neighbour as the mean when sampling a new value from a uniform distribution.
+            </summary>
+            <param name="probabilityParameter">The probability that a feature will be altered with its nearest neighbour. 
+            Must be between 0.0 and 1.0. (Default is 0.2)</param>
+            <param name="localVariance">Variance when sampling a new value for an augmentated sample. (Default is 1.0)</param>
+            <param name="seed">Seed for random augmentation</param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Augmentators.ContinuousMungeAugmentator.Agument(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Returns the agumented version of the data. Excluding the original.
+            The each feature in the dataset must be scaled/normnalized between 0.0 and 1.0
+            before the method works.
+            </summary>
+            <param name="dataset"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.Augmentators.NominalMungeAugmentator">
+            <summary>
+            Augmentates nominal data according to the MUNGE method:
+            https://www.cs.cornell.edu/~caruana/compression.kdd06.pdf
+            The method seeks to keep the original distribution of data. This is done by traversing each observation in the dataset
+            finding its nearest neighbour (euclidean distance) and modifiyng each feature in the observation according to a probability. 
+            The features are modified using the value from the nearest neighbour as the mean when sampling a new value from a uniform distribution.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Augmentators.NominalMungeAugmentator.#ctor(System.Double,System.Int32)">
+            <summary>
+            Augmentates nominal data according to the MUNGE method:
+            https://www.cs.cornell.edu/~caruana/compression.kdd06.pdf
+            The method seeks to keep the original distribution of data. This is done by traversing each observation in the dataset
+            finding its nearest neighbour (euclidean distance) and modifiyng each feature in the observation according to a probability. 
+            The features are modified using the value from the nearest neighbour as the mean when sampling a new value from a uniform distribution.
+            </summary>
+            <param name="probabilityParameter">The probability that a feature will be altered with its nearest neighbour. 
+            Must be between 0.0 and 1.0. (Default is 0.2)</param>
+            <param name="seed">Seed for random augmentation</param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Augmentators.NominalMungeAugmentator.Agument(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Returns the agumented version of the data. Excluding the original.
+            The each feature in the dataset must be scaled/normnalized between 0.0 and 1.0
+            before the method works.
+            </summary>
+            <param name="dataset"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.CrossValidators.CrossValidation`1">
+            <summary>
+            Cross validation for evaluating how learning algorithms perform on unseen observations
+            </summary>
+            <typeparam name="TPrediction"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.CrossValidation`1.#ctor(SharpLearning.CrossValidation.Samplers.IIndexSampler{System.Double},System.Int32)">
+            <summary>
+            Cross validation for evaluating how learning algorithms perform on unseen observations
+            </summary>
+            <param name="sampler">Sampling strategy for the provided indices 
+            before they are divided into the provided folds</param>
+            <param name="crossValidationFolds">Number of folds that should be used for cross validation</param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.CrossValidation`1.CrossValidate(SharpLearning.Common.Interfaces.IIndexedLearner{`0},SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Returns an array of cross validated predictions
+            </summary>
+            <param name="learner"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.CrossValidation`1.CrossValidate(SharpLearning.Common.Interfaces.IIndexedLearner{`0},SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[],`0[])">
+            <summary>
+            Cross validated predictions. 
+            Only crossValidates within the provided indices.
+            The predictions are returned in the predictions array.
+            </summary>
+            <param name="learner"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="crossValidationIndices"></param>
+            <param name="crossValidatedPredictions"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.CrossValidators.ICrossValidation`1">
+            <summary>
+            Cross validation interface for evaluating how learning algorithms perform on unseen observations
+            </summary>
+            <typeparam name="TPrediction"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.ICrossValidation`1.CrossValidate(SharpLearning.Common.Interfaces.IIndexedLearner{`0},SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Returns an array of cross validated predictions
+            </summary>
+            <param name="learner"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.ICrossValidation`1.CrossValidate(SharpLearning.Common.Interfaces.IIndexedLearner{`0},SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[],`0[])">
+            <summary>
+            Cross validated predictions. 
+            Only crossValidates within the provided indices.
+            The predictions are returned in the predictions array.
+            </summary>
+            <param name="learner"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="crossValidationIndices"></param>
+            <param name="crossValidatedPredictions"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.CrossValidators.NoShuffleCrossValidation`1">
+            <summary>
+            No shuffle cross validation does not shuffle the the observation indices and keeps the original order.
+            </summary>
+            <typeparam name="TPrediction"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.NoShuffleCrossValidation`1.#ctor(System.Int32)">
+            <summary>
+            Cross validation for evaluating how learning algorithms generalise on new data
+            </summary>
+            <param name="crossValidationFolds">Number of folds that should be used for cross validation</param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.CrossValidators.RandomCrossValidation`1">
+            <summary>
+            Random cross validation uses a random shuffle of the observation indices to avoid any ordering issues.
+            </summary>
+            <typeparam name="TPrediction"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.RandomCrossValidation`1.#ctor(System.Int32)">
+            <summary>
+            Cross validation for evaluating how learning algorithms generalise on new data
+            </summary>
+            <param name="crossValidationFolds">Number of folds that should be used for cross validation</param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.RandomCrossValidation`1.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Cross validation for evaluating how learning algorithms generalise on new data
+            </summary>
+            <param name="crossValidationFolds">Number of folds that should be used for cross validation</param>
+            <param name="seed"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.CrossValidators.StratifiedCrossValidation`1">
+            <summary>
+            Uses stratified sampling to shuffle the indices for cross validation
+            http://en.wikipedia.org/wiki/Stratified_sampling
+            </summary>
+            <typeparam name="TPrediction"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.CrossValidators.StratifiedCrossValidation`1.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Cross validation for evaluating how learning algorithms generalise on new data
+            </summary>
+            <param name="crossValidationFolds">Number of folds that should be used for cross validation</param>
+            <param name="seed"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.LearningCurves.ILearningCurvesCalculator`1">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            
+            Solutions for model with high bias:
+             - Add more features.
+             - Use a more sophisticated model
+             - Decrease regularization.
+            Solutions for model with high variance
+             - Use fewer features.
+             - Use more training samples.
+             - Increase Regularization.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.ILearningCurvesCalculator`1.Calculate(SharpLearning.Common.Interfaces.IIndexedLearner{`0},SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Returns a list of BiasVarianceLearningCurvePoints for constructing learning curves.
+            The points contain sample size, training score and validation score. 
+            </summary>
+            <param name="learnerFactory"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint">
+            <summary>
+            Container for learning curve data point
+            </summary>
+        </member>
+        <member name="F:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.SampleSize">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.TrainingScore">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.ValidationScore">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.#ctor(System.Int32,System.Double,System.Double)">
+            <summary>
+            Container for learning curve data point
+            </summary>
+            <param name="sampleSize"></param>
+            <param name="trainingScore"></param>
+            <param name="validationScore"></param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.Equals(SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.op_Inequality(SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint,SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint)">
+            <summary>
+            
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.op_Equality(SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint,SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint)">
+            <summary>
+            
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.LearningCurves.LearningCurvePointExtensions">
+            <summary>
+            Extension methods for LearningCurvePoint
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePointExtensions.ToF64Matrix(System.Collections.Generic.List{SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint})">
+            <summary>
+            Converts a list of n LearningCurvePoint to a n by 3 matrix
+            with columns SampleSize, TrainingScore and ValidationScore.
+            </summary>
+            <param name="points"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePointExtensions.Write(System.Collections.Generic.List{SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint},System.Func{System.IO.TextWriter},System.Char)">
+            <summary>
+            Writes the list of BiasVarianceLearningCurvePoint as csv to the provided writer
+            </summary>
+            <param name="points"></param>
+            <param name="writer"></param>
+            <param name="separator"></param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvePointExtensions.WriteFile(System.Collections.Generic.List{SharpLearning.CrossValidation.LearningCurves.LearningCurvePoint},System.String,System.Char)">
+            <summary>
+            Writes the list of BiasVarianceLearningCurvePoint as csv to file path
+            </summary>
+            <param name="points"></param>
+            <param name="filePath"></param>
+            <param name="separator"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.LearningCurves.LearningCurvesCalculator`1">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            
+            Solutions for model with high bias:
+             - Add more features.
+             - Use a more sophisticated model
+             - Decrease regularization.
+            Solutions for model with high variance
+             - Use fewer features.
+             - Use more training samples.
+             - Increase Regularization.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvesCalculator`1.#ctor(SharpLearning.CrossValidation.TrainingTestSplitters.ITrainingTestIndexSplitter{System.Double},SharpLearning.CrossValidation.Samplers.IIndexSampler{System.Double},SharpLearning.Common.Interfaces.IMetric{System.Double,`0},System.Double[],System.Int32)">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            </summary>
+            <param name="trainingValidationIndexSplitter"></param>
+            <param name="shuffler">Type of shuffler to use when splitting data</param>
+            <param name="metric">The error metric used</param>
+            <param name="samplePercentages">A list of sample percentages determining the 
+            training data used in each point of the learning curve</param>
+            <param name="numberOfShufflesPrSample">How many times should the data be shuffled pr. calculated point</param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvesCalculator`1.Calculate(SharpLearning.Common.Interfaces.IIndexedLearner{`0},SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Returns a list of BiasVarianceLearningCurvePoints for constructing learning curves.
+            The points contain sample size, training score and validation score. 
+            </summary>
+            <param name="learnerFactory"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.LearningCurvesCalculator`1.Calculate(SharpLearning.Common.Interfaces.IIndexedLearner{`0},SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[],System.Int32[])">
+            <summary>
+            Returns a list of BiasVarianceLearningCurvePoints for constructing learning curves.
+            The points contain sample size, training score and validation score. 
+            </summary>
+            <param name="learner"></param>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="trainingIndices">Indices that should be used for training</param>
+            <param name="validationIndices">Indices that should be used for validation</param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.LearningCurves.NoShuffleLearningCurvesCalculator`1">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            
+            The order of the data is kept when splitting the data.
+            
+            Solutions for model with high bias:
+             - Add more features.
+             - Use a more sophisticated model
+             - Decrease regularization.
+            Solutions for model with high variance
+             - Use fewer features.
+             - Use more training samples.
+             - Increase Regularization.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.NoShuffleLearningCurvesCalculator`1.#ctor(SharpLearning.Common.Interfaces.IMetric{System.Double,`0},System.Double[],System.Double)">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            
+            The order of the data is kept when splitting the data.
+            </summary>
+            <param name="metric">The error metric used</param>
+            <param name="samplePercentages">A list of sample percentages determining the 
+            training data used in each point of the learning curve</param>
+            <param name="trainingPercentage">Total percentage of data used for training</param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.LearningCurves.RandomShuffleLearningCurvesCalculator`1">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            
+            The order of the data is randomized.
+            
+            Solutions for model with high bias:
+             - Add more features.
+             - Use a more sophisticated model
+             - Decrease regularization.
+            Solutions for model with high variance
+             - Use fewer features.
+             - Use more training samples.
+             - Increase Regularization.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.RandomShuffleLearningCurvesCalculator`1.#ctor(SharpLearning.Common.Interfaces.IMetric{System.Double,`0},System.Double[],System.Double,System.Int32)">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            
+            The order of the data is randomized.
+            </summary>
+            <param name="metric">The error metric used</param>
+            <param name="samplePercentages">A list of sample percentages determining the 
+            training data used in each point of the learning curve</param>
+            <param name="numberOfShufflesPrSample">Number of shuffles done at each sampling point</param>
+            <param name="trainingPercentage">Total percentage of data used for training</param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.RandomShuffleLearningCurvesCalculator`1.#ctor(SharpLearning.Common.Interfaces.IMetric{System.Double,`0},System.Double[],System.Double,System.Int32,System.Int32)">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            The order of the data is randomized.
+            </summary>
+            <param name="metric">The error metric used</param>
+            <param name="samplePercentages">A list of sample percentages determining the 
+            training data used in each point of the learning curve</param>
+            <param name="trainingPercentage"></param>
+            <param name="seed"></param>
+            <param name="numberOfShufflesPrSample">Number of shuffles done at each sampling point</param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.LearningCurves.StratifiedLearningCurvesCalculator`1">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            
+            The order of the data is stratified to have similar destributions in training and validation set.
+            
+            Solutions for model with high bias:
+             - Add more features.
+             - Use a more sophisticated model
+             - Decrease regularization.
+            Solutions for model with high variance
+             - Use fewer features.
+             - Use more training samples.
+             - Increase Regularization.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.LearningCurves.StratifiedLearningCurvesCalculator`1.#ctor(SharpLearning.Common.Interfaces.IMetric{System.Double,`0},System.Double[],System.Double,System.Int32,System.Int32)">
+            <summary>
+            Bias variance analysis calculator for constructing learning curves.
+            Learning curves can be used to determine if a model has high bias or high variance.
+            
+            The order of the data is stratified to have similar destributions in training and validation set.
+            </summary>
+            <param name="metric">The error metric used</param>
+            <param name="samplePercentages">A list of sample percentages determining the 
+            training data used in each point of the learning curve</param>
+            <param name="trainingPercentage">Total percentage of data used for training</param>
+            <param name="numberOfShufflesPrSample">Number of shuffles done at each sampling point</param>
+            <param name="seed"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.Samplers.IIndexSampler`1">
+            <summary>
+            Interface for index sampler.
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.IIndexSampler`1.Sample(`0[],System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.IIndexSampler`1.Sample(`0[],System.Int32,System.Int32[])">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <param name="dataIndices"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.Samplers.NoShuffleIndexSampler`1">
+            <summary>
+            No shuffle index sampler. 
+            Simply takes the amount of samples specified by sample size from the start of the data
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.NoShuffleIndexSampler`1.Sample(`0[],System.Int32)">
+            <summary>
+            Simply takes the amount of samples specified by sample size from the start of the data
+            </summary>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.NoShuffleIndexSampler`1.Sample(`0[],System.Int32,System.Int32[])">
+            <summary>
+            Simply takes the amount of samples specified by sample size from the provided dataIndices
+            </summary>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <param name="dataIndices"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.Samplers.RandomIndexSampler`1">
+            <summary>
+            Random index sampler. Takes at random a sample of size sample size
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.RandomIndexSampler`1.#ctor(System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="seed"></param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.RandomIndexSampler`1.#ctor">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.RandomIndexSampler`1.Sample(`0[],System.Int32)">
+            <summary>
+            Random index sampler. Takes at random a sample of size sample size
+            </summary>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.RandomIndexSampler`1.Sample(`0[],System.Int32,System.Int32[])">
+            <summary>
+            Random index sampler. Takes at random a sample of size sample size. 
+            Only samples within the indices provided in dataIndices
+            </summary>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <param name="dataIndices"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.Samplers.StratifiedIndexSampler`1">
+            <summary>
+            Stratified index sampler. Samples. 
+            Takes a stratified sample of size sampleSize with distributions equal to the input data.
+            http://en.wikipedia.org/wiki/Stratified_sampling
+            Returns a set of indices corresponding to the samples chosen. 
+            </summary>
+            <typeparam name="T">Returns a set of indices corresponding to the samples chosen. </typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.StratifiedIndexSampler`1.#ctor(System.Int32)">
+            <summary>
+            Stratified index sampler. Samples. 
+            Takes a stratified sample of size sampleSize with distributions equal to the input data.
+            http://en.wikipedia.org/wiki/Stratified_sampling
+            Returns a set of indices corresponding to the samples chosen. 
+            </summary>
+            <param name="seed"></param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.StratifiedIndexSampler`1.Sample(`0[],System.Int32)">
+            <summary>
+            Takes a stratified sample of size sampleSize with distributions equal to the input data.
+            Returns a set of indices corresponding to the samples chosen. 
+            </summary>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.Samplers.StratifiedIndexSampler`1.Sample(`0[],System.Int32,System.Int32[])">
+            <summary>
+            Takes a stratified sample of size sampleSize with distributions equal to the input data.
+            http://en.wikipedia.org/wiki/Stratified_sampling
+            Returns a set of indices corresponding to the samples chosen. 
+            Only samples within the indices provided in dataIndices
+            </summary>
+            <param name="data"></param>
+            <param name="sampleSize"></param>
+            <param name="dataIndices"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.TrainingTestSplitters.ITrainingTestIndexSplitter`1">
+            <summary>
+            Interface for training test index splitters
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.ITrainingTestIndexSplitter`1.Split(`0[])">
+            <summary>
+            
+            </summary>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.TrainingTestSplitters.NoShuffleTrainingTestIndexSplitter`1">
+            <summary>
+            Creates a set of training and test indices based on the provided targets.
+            The indices are not shuffled before the split keeping the order of the data.
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.NoShuffleTrainingTestIndexSplitter`1.#ctor(System.Double)">
+            <summary>
+            Creates a set of training and test indices based on the provided targets.
+            The indices are not shuffled before the split keeping the order of the data.
+            </summary>
+            <param name="trainingPercentage"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.TrainingTestSplitters.RandomTrainingTestIndexSplitter`1">
+            <summary>
+            Creates a set of training and test indices based on the provided targets.
+            The indices are randomly shuffled before the split.
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.RandomTrainingTestIndexSplitter`1.#ctor(System.Double)">
+            <summary>
+            Creates a set of training and test indices based on the provided targets.
+            The indices are randomly shuffled before the split.
+            </summary>
+            <param name="trainingPercentage"></param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.RandomTrainingTestIndexSplitter`1.#ctor(System.Double,System.Int32)">
+            <summary>
+            Creates a set of training and test indices based on the provided targets.
+            The indices are randomly shuffled before the split.
+            </summary>
+            <param name="trainingPercentage"></param>
+            <param name="seed"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.TrainingTestSplitters.StratifiedTrainingTestIndexSplitter`1">
+            <summary>
+            Creates a set of training and test indices based on the provided targets.
+            The indices are stratified before the split. This ensure that the distributions of training set and 
+            test set are equal or at least very similar. 
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.StratifiedTrainingTestIndexSplitter`1.#ctor(System.Double,System.Int32)">
+            <summary>
+            The indices are stratified before the split. This ensure that the distributions of training set and 
+            test set are equal or at least very similar. 
+            </summary>
+            <param name="trainingPercentage"></param>
+            <param name="seed"></param>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplit">
+            <summary>
+            Container for training and test indices
+            </summary>
+        </member>
+        <member name="F:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplit.TrainingIndices">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplit.TestIndices">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplit.#ctor(System.Int32[],System.Int32[])">
+            <summary>
+            
+            </summary>
+            <param name="trainingIndices"></param>
+            <param name="testIndices"></param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplit.Equals(SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplit)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplit.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplit.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplitter`1">
+            <summary>
+            Creates a set of training and test indices based on the provided targets.
+            The return values are two arrays of indices which can be used with IIndexedLearners.
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplitter`1.#ctor(SharpLearning.CrossValidation.Samplers.IIndexSampler{`0},System.Double)">
+            <summary>
+            
+            </summary>
+            <param name="shuffler">the type of shuffler provided</param>
+            <param name="trainingPercentage">What percentage of the indices should go to the training set</param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplitter`1.Split(`0[])">
+            <summary>
+            Creates a set of training and test indices based on the provided targets
+            </summary>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplitterExtensions">
+            <summary>
+            Extension methods for ITrainingTestIndexSplitters
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestIndexSplitterExtensions.SplitSet(SharpLearning.CrossValidation.TrainingTestSplitters.ITrainingTestIndexSplitter{System.Double},SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Splits the observations and targets into a training and a test set.
+            </summary>
+            <param name="splitter">The type of splitter used for dertermining the distribution of observations</param>
+            <param name="observations">The observations for the problem</param>
+            <param name="targets">The targets for the problem</param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit">
+            <summary>
+            Container for storing training set/test set split
+            </summary>
+        </member>
+        <member name="F:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit.TrainingSet">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit.TestSet">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit.#ctor(SharpLearning.Containers.ObservationTargetSet,SharpLearning.Containers.ObservationTargetSet)">
+            <summary>
+            Container for storing training set/test set split.
+            </summary>
+            <param name="trainingSet"></param>
+            <param name="testSet"></param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit.#ctor(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Container for storing training set/test set split.
+            </summary>
+            <param name="trainingObservations"></param>
+            <param name="trainingTargets"></param>
+            <param name="testObservations"></param>
+            <param name="testTargets"></param>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit.Equals(SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.CrossValidation.TrainingTestSplitters.TrainingTestSetSplit.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

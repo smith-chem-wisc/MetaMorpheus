@@ -1,0 +1,317 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.AdaBoost</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.AdaBoost.Learners.AdaBoostRegressionLoss">
+            <summary>
+            Loss type for adaboost regressor
+            </summary>
+        </member>
+        <member name="F:SharpLearning.AdaBoost.Learners.AdaBoostRegressionLoss.Linear">
+            <summary>
+            Linear loss
+            </summary>
+        </member>
+        <member name="F:SharpLearning.AdaBoost.Learners.AdaBoostRegressionLoss.Squared">
+            <summary>
+            Squared loss
+            </summary>
+        </member>
+        <member name="F:SharpLearning.AdaBoost.Learners.AdaBoostRegressionLoss.Exponential">
+            <summary>
+            Exponential loss
+            </summary>
+        </member>
+        <member name="T:SharpLearning.AdaBoost.Learners.ClassificationAdaBoostLearner">
+            <summary>
+            Classification AdaBoost learner using the SAMME algorithm for multi-class support:
+            http://web.stanford.edu/~hastie/Papers/samme.pdf
+            </summary>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.ClassificationAdaBoostLearner.#ctor(System.Int32,System.Double,System.Int32,System.Int32,System.Double)">
+            <summary>
+            Classification AdaBoost learner using the SAMME algorithm for multi-class support:
+            http://web.stanford.edu/~hastie/Papers/samme.pdf
+            </summary>
+            <param name="iterations">Number of iterations (models) to boost</param>
+            <param name="learningRate">How much each boost iteration should add (between 1.0 and 0.0)</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models. 
+            for 2 class problem 1 is usually enough. For more classes or larger problems between 3 to 8 is recommended. 
+            0 will set the depth equal to the number of classes in the problem</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.ClassificationAdaBoostLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Learn an adaboost classification model
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.ClassificationAdaBoostLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learn an adaboost classification model
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.ClassificationAdaBoostLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.ClassificationAdaBoostLearner.SharpLearning#Common#Interfaces#IIndexedLearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.ClassificationAdaBoostLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.ClassificationAdaBoostLearner.SharpLearning#Common#Interfaces#ILearner{SharpLearning#Containers#ProbabilityPrediction}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for probability learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.AdaBoost.Learners.RegressionAdaBoostLearner">
+            <summary>
+            Regression AdaBoost learner using the R2 algorithm 
+            using weighted sampling to target the observations with largest error and
+            weighted median to ensemble the models.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.RegressionAdaBoostLearner.#ctor(System.Int32,System.Double,System.Int32,SharpLearning.AdaBoost.Learners.AdaBoostRegressionLoss,System.Int32,System.Double,System.Int32)">
+            <summary>
+            Regression AdaBoost learner using the R2 algorithm 
+            using weighted sampling to target the observations with largest error and
+            weighted median to ensemble the models.
+            </summary>
+            <param name="iterations">Number of iterations (models) to boost</param>
+            <param name="learningRate">How much each boost iteration should add (between 1.0 and 0.0)</param>
+            <param name="maximumTreeDepth">The maximum depth of the tree models. 
+            0 will set the depth to default 3</param>
+            <param name="loss">Type of loss used when boosting weights. Linear is default</param>
+            <param name="minimumSplitSize">minimum node split size in the trees 1 is default</param>
+            <param name="minimumInformationGain">The minimum improvement in information gain before a split is made</param>
+            <param name="seed">Seed for the random sampling</param>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.RegressionAdaBoostLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Learns an adaboost regression model
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.RegressionAdaBoostLearner.Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Learns an adaboost regression model
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.RegressionAdaBoostLearner.SharpLearning#Common#Interfaces#IIndexedLearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[],System.Int32[])">
+            <summary>
+            Private explicit interface implementation for indexed learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <param name="indices"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Learners.RegressionAdaBoostLearner.SharpLearning#Common#Interfaces#ILearner{System#Double}#Learn(SharpLearning.Containers.Matrices.F64Matrix,System.Double[])">
+            <summary>
+            Private explicit interface implementation for learning.
+            </summary>
+            <param name="observations"></param>
+            <param name="targets"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel">
+            <summary>
+            AdaBoost classification model. Consist of a series of tree model and corresponding weights
+            </summary>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.#ctor(SharpLearning.DecisionTrees.Models.ClassificationDecisionTreeModel[],System.Double[],System.Double[])">
+            <summary>
+            AdaBoost classification model. Consist of a series of tree model and corresponding weights
+            </summary>
+            <param name="models"></param>
+            <param name="modelWeights"></param>
+            <param name="rawVariableImportance"></param>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.Predict(System.Double[])">
+            <summary>
+            Predicts a single observations using weighted majority vote
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations using weighted majority vote
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.PredictProbability(System.Double[])">
+            <summary>
+            Predicts a single observation using the ensembled probabilities
+            Note this can yield a different result than using regular predict
+            Usally this will be a more accurate predictions
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.SharpLearning#Common#Interfaces#IPredictor{SharpLearning#Containers#ProbabilityPrediction}#Predict(System.Double[])">
+            <summary>
+            Private explicit interface implementation for probability predictions
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.PredictProbability(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations using the ensembled probabilities
+            Note this can yield a different result than using regular predict
+            Usally this will be a more accurate predictions
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.Load(System.Func{System.IO.TextReader})">
+            <summary>
+            Loads a ClassificationAdaBoostModel.
+            </summary>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.ClassificationAdaBoostModel.Save(System.Func{System.IO.TextWriter})">
+            <summary>
+            Saves the ClassificationAdaBoostModel.
+            </summary>
+            <param name="writer"></param>
+        </member>
+        <member name="T:SharpLearning.AdaBoost.Models.RegressionAdaBoostModel">
+            <summary>
+            AdaBoost regression model. Consist of a series of tree model and corresponding weights
+            </summary>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.RegressionAdaBoostModel.#ctor(SharpLearning.DecisionTrees.Models.RegressionDecisionTreeModel[],System.Double[],System.Double[])">
+            <summary>
+            AdaBoost regression model. Consist of a series of tree model and corresponding weights
+            </summary>
+            <param name="models"></param>
+            <param name="modelWeights"></param>
+            <param name="rawVariableImportance"></param>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.RegressionAdaBoostModel.Predict(System.Double[])">
+            <summary>
+            Predicts a single observations using weighted median
+            </summary>
+            <param name="observation"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.RegressionAdaBoostModel.Predict(SharpLearning.Containers.Matrices.F64Matrix)">
+            <summary>
+            Predicts a set of obervations using weighted median
+            </summary>
+            <param name="observations"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.RegressionAdaBoostModel.GetVariableImportance(System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Returns the rescaled (0-100) and sorted variable importance scores with corresponding name
+            </summary>
+            <param name="featureNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.RegressionAdaBoostModel.GetRawVariableImportance">
+            <summary>
+            Gets the raw unsorted vatiable importance scores
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.RegressionAdaBoostModel.Load(System.Func{System.IO.TextReader})">
+            <summary>
+            Loads a RegressionAdaBoostModel.
+            </summary>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.Models.RegressionAdaBoostModel.Save(System.Func{System.IO.TextWriter})">
+            <summary>
+            Saves the RegressionAdaBoostModel.
+            </summary>
+            <param name="writer"></param>
+        </member>
+        <member name="T:SharpLearning.AdaBoost.WeightedRandomSampler">
+            <summary>
+            Weighted sampling with replacement based on:
+            http://stackoverflow.com/questions/2140787/select-random-k-elements-from-a-list-whose-elements-have-weights/2149533#2149533
+            The algorithm should be O(n+m) where m are the number of items and n is the number of samples.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.WeightedRandomSampler.#ctor">
+            <summary>
+            Weighted sampling with replacement based on:
+            http://stackoverflow.com/questions/2140787/select-random-k-elements-from-a-list-whose-elements-have-weights/2149533#2149533
+            The algorithm should be O(n+m) where m are the number of items and n is the number of samples.
+            </summary>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.WeightedRandomSampler.#ctor(System.Int32)">
+            <summary>
+            Weighted sampling with replacement based on:
+            http://stackoverflow.com/questions/2140787/select-random-k-elements-from-a-list-whose-elements-have-weights/2149533#2149533
+            The algorithm should be O(n+m) where m are the number of items and n is the number of samples.
+            </summary>
+            <param name="seed"></param>
+        </member>
+        <member name="M:SharpLearning.AdaBoost.WeightedRandomSampler.Sample(System.Int32[],System.Double[],System.Int32[])">
+            <summary>
+            Weighted sampling with replacement based on:
+            http://stackoverflow.com/questions/2140787/select-random-k-elements-from-a-list-whose-elements-have-weights/2149533#2149533
+            The algorithm should be O(n+m) where m are the number of items and n is the number of samples.
+            </summary>
+            <param name="indices"></param>
+            <param name="weights"></param>
+            <param name="outIndices"></param>
+        </member>
+    </members>
+</doc>

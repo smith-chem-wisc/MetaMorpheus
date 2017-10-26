@@ -138,7 +138,7 @@ namespace EngineLayer.Calibration
                       {
                           var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber.Value);
 
-                          if (!theScan.SelectedIonMonoisotopicGuessIntensity.HasValue && theScan.SelectedIonMonoisotopicGuessMz.HasValue)
+                          if (!theScan.SelectedIonMonoisotopicGuessIntensity.HasValue)
                               theScan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
 
                           Func<IPeak, double> theFunc = x => x.X - ms2predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN, Math.Log(x.Y));

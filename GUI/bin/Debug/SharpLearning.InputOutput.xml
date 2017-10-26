@@ -1,0 +1,313 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpLearning.InputOutput</name>
+    </assembly>
+    <members>
+        <member name="T:SharpLearning.InputOutput.Csv.CsvParser">
+            <summary>
+            CsvParser 
+            </summary>
+        </member>
+        <member name="F:SharpLearning.InputOutput.Csv.CsvParser.DefaultDelimiter">
+            <summary>
+            Default delimiter
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvParser.#ctor(System.Func{System.IO.TextReader},System.Char,System.Boolean,System.Boolean)">
+            <summary>
+            Creates an instance of the CsvParser
+            </summary>
+            <param name="reader"></param>
+            <param name="separator"></param>
+            <param name="quoteInclosedColumns"></param>
+            <param name="hasHeader"></param>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvParser.EnumerateRows(System.Func{System.String,System.Boolean})">
+            <summary>
+            Enumerates rows with column names fulfilling the selection func 
+            </summary>
+            <param name="selectColumnNames"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvParser.EnumerateRows(System.String[])">
+            <summary>
+            Enumerates rows with the specified column names
+            </summary>
+            <param name="columnNames"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvParser.EnumerateRows">
+            <summary>
+            Enumerates the row of all columns in the csv file 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.InputOutput.Csv.CsvRow">
+            <summary>
+            CsvRow holding the row values and column name to index
+            </summary>
+        </member>
+        <member name="F:SharpLearning.InputOutput.Csv.CsvRow.Values">
+            <summary>
+            Values
+            </summary>
+        </member>
+        <member name="F:SharpLearning.InputOutput.Csv.CsvRow.ColumnNameToIndex">
+            <summary>
+            Column name to index
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRow.#ctor(System.Collections.Generic.Dictionary{System.String,System.Int32},System.String[])">
+            <summary>
+            
+            </summary>
+            <param name="columnNameToIndex"></param>
+            <param name="data"></param>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRow.Equals(SharpLearning.InputOutput.Csv.CsvRow)">
+            <summary>
+            
+            </summary>
+            <param name="other"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRow.Equals(System.Object)">
+            <summary>
+            
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRow.GetHashCode">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.InputOutput.Csv.CsvRowExtensions">
+            <summary>
+            Extension methods for CsvRow
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.KeyCombine(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.Func{SharpLearning.InputOutput.Csv.CsvRow,SharpLearning.InputOutput.Csv.CsvRow,System.Boolean},System.Boolean)">
+            <summary>
+            Combines two IEnumerables based on a row matcher function. Matching rows are combined and parsed on. 
+            </summary>
+            <param name="thisRows"></param>
+            <param name="otherRows"></param>
+            <param name="rowMatcher"></param>
+            <param name="removeRepeatedColumns">Should repeated columns be removed</param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.GetValue(SharpLearning.InputOutput.Csv.CsvRow,System.String)">
+            <summary>
+            Gets the CsvRow value based on the supplied column name
+            </summary>
+            <param name="row"></param>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.SetValue(SharpLearning.InputOutput.Csv.CsvRow,System.String,System.String)">
+            <summary>
+            Sets the CsvRow value based on the supplied column name
+            </summary>
+            <param name="row"></param>
+            <param name="columnName"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.GetValues(SharpLearning.InputOutput.Csv.CsvRow,System.String[])">
+            <summary>
+            Gets the CsvRow values based on the supplied column names
+            </summary>
+            <param name="row"></param>
+            <param name="columnNames"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.Keep(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.String[])">
+            <summary>
+            Keeps only the csv columns provided in columnNames
+            </summary>
+            <param name="dataRows"></param>
+            <param name="columnNames"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.Remove(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.String[])">
+            <summary>
+            Removes the csv columns provided in columnNames
+            </summary>
+            <param name="dataRows"></param>
+            <param name="columnNames"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.ToF64Vector(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow})">
+            <summary>
+            Parses the CsvRows to a double array. Only CsvRows with a single column can be used
+            </summary>
+            <param name="dataRows"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.ToStringVector(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow})">
+            <summary>
+            Parses the CsvRows to a string array. Only CsvRows with a single column can be used
+            </summary>
+            <param name="dataRows"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.ToF64Matrix(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow})">
+            <summary>
+            Parses the CsvRows to a F64Matrix
+            </summary>
+            <param name="dataRows"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.ToStringMatrix(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow})">
+            <summary>
+            Parses the CsvRows to a StringMatrix
+            </summary>
+            <param name="dataRows"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.EnumerateCsvRows``1(SharpLearning.Containers.Matrices.IMatrix{``0},System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Enumerates a Matrix to CsvRows. 
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="matrix"></param>
+            <param name="columnNameToIndex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.Write(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.Func{System.IO.TextWriter},System.Char,System.Boolean)">
+            <summary>
+            Writes the CsvRows to the provided stream
+            </summary>
+            <param name="dataRows"></param>
+            <param name="writer"></param>
+            <param name="separator"></param>
+            <param name="writeHeader">True and a header is added to the stream, false and the header is omittet</param>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvRowExtensions.WriteFile(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.String,System.Char,System.Boolean)">
+            <summary>
+            Writes the CsvRows to file path
+            </summary>
+            <param name="dataRows"></param>
+            <param name="filePath"></param>
+            <param name="separator"></param>
+            <param name="writeHeader">True and a header is added to the stream, false and the header is omittet</param>
+        </member>
+        <member name="T:SharpLearning.InputOutput.Csv.CsvWriter">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvWriter.#ctor(System.Func{System.IO.TextWriter},System.Char)">
+            <summary>
+            Creates a CsvWriter
+            </summary>
+            <param name="writer"></param>
+            <param name="separator"></param>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.CsvWriter.Write(System.Collections.Generic.IEnumerable{SharpLearning.InputOutput.Csv.CsvRow},System.Boolean)">
+            <summary>
+            Writes the CsvRows to stream
+            </summary>
+            <param name="rows">the rows to write</param>
+            <param name="writeHeader">True and a header is added to the stream, false and the header is omittet</param>
+        </member>
+        <member name="T:SharpLearning.InputOutput.Csv.DictionaryExtensions">
+            <summary>
+            Extension methods for dictionary
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Csv.DictionaryExtensions.GetValues``2(System.Collections.Generic.Dictionary{``0,``1},``0[])">
+            <summary>
+            Gets the set of values corresponding to the set of keys
+            </summary>
+            <typeparam name="T1"></typeparam>
+            <typeparam name="T2"></typeparam>
+            <param name="dictionary"></param>
+            <param name="keys"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.InputOutput.Serialization.GenericBinarySerializer">
+            <summary>
+            Generic xml serializer using BinaryFormatter
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Serialization.GenericBinarySerializer.Deserialize``1(System.Func{System.IO.TextReader})">
+            <summary>
+            Deserialize data from the provided reader
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Serialization.GenericBinarySerializer.Serialize``1(``0,System.Func{System.IO.TextWriter})">
+            <summary>
+            Serialize data to the provided writer
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="data"></param>
+            <param name="writer"></param>
+        </member>
+        <member name="T:SharpLearning.InputOutput.Serialization.GenericXmlDataContractSerializer">
+            <summary>
+            Generic xml serializer using DataContractSerializer
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Serialization.GenericXmlDataContractSerializer.#ctor(System.Type[])">
+            <summary>
+            
+            </summary>
+            <param name="knownTypes"></param>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Serialization.GenericXmlDataContractSerializer.#ctor">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Serialization.GenericXmlDataContractSerializer.Serialize``1(``0,System.Func{System.IO.TextWriter})">
+            <summary>
+            Serialize data to the provided writer
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="data"></param>
+            <param name="writer"></param>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Serialization.GenericXmlDataContractSerializer.Deserialize``1(System.Func{System.IO.TextReader})">
+            <summary>
+            Deserialize data from the provided reader
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+        <member name="T:SharpLearning.InputOutput.Serialization.GenericXmlDataContractSerializer.GenericResolver">
+            <summary>
+            Internal class for generic object type resolving
+            </summary>
+        </member>
+        <member name="T:SharpLearning.InputOutput.Serialization.IGenericSerializer">
+            <summary>
+            Generic serializer interface
+            </summary>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Serialization.IGenericSerializer.Serialize``1(``0,System.Func{System.IO.TextWriter})">
+            <summary>
+            Serialize data to the provided writer
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="data"></param>
+            <param name="writer"></param>
+        </member>
+        <member name="M:SharpLearning.InputOutput.Serialization.IGenericSerializer.Deserialize``1(System.Func{System.IO.TextReader})">
+            <summary>
+            Deserialize data from the provided reader
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="reader"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>
