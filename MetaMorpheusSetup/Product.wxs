@@ -38,389 +38,389 @@
       </Component>
       
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
-        <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)src\TaskLayer.pdb" />
+        <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
       </Component>
       
       <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="18bed74c-eedb-4efa-a6e3-1592ac7022e3">
-        <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)src\UnmanagedThermoHelperLayer.dll" />
+        <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)UnmanagedThermoHelperLayer.dll" />
       </Component>
       <Component Id="src_UsefulProteomicsDatabases.dll" Guid="e7f76fbf-d21c-4e57-bed4-33f71822ee18">
-        <File Id="src_UsefulProteomicsDatabases.dll" Name="UsefulProteomicsDatabases.dll" Source="$(var.GUI_TargetDir)src\UsefulProteomicsDatabases.dll" />
+        <File Id="src_UsefulProteomicsDatabases.dll" Name="UsefulProteomicsDatabases.dll" Source="$(var.GUI_TargetDir)UsefulProteomicsDatabases.dll" />
       </Component>
       <Component Id="src_System.Security.Cryptography.X509Certificates.dll" Guid="5c6f74c5-2a2e-4508-be0e-adc1595b38f7">
-        <File Id="src_System.Security.Cryptography.X509Certificates.dll" Name="System.Security.Cryptography.X509Certificates.dll" Source="$(var.GUI_TargetDir)src\System.Security.Cryptography.X509Certificates.dll" />
+        <File Id="src_System.Security.Cryptography.X509Certificates.dll" Name="System.Security.Cryptography.X509Certificates.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.X509Certificates.dll" />
       </Component>
       <Component Id="src_System.Security.SecureString.dll" Guid="58b65b98-6752-4030-badc-ff30f2d160e3">
-        <File Id="src_System.Security.SecureString.dll" Name="System.Security.SecureString.dll" Source="$(var.GUI_TargetDir)src\System.Security.SecureString.dll" />
+        <File Id="src_System.Security.SecureString.dll" Name="System.Security.SecureString.dll" Source="$(var.GUI_TargetDir)System.Security.SecureString.dll" />
       </Component>
       <Component Id="src_System.Text.Encoding.dll" Guid="37d3e958-7c39-4802-b20d-98dacf6acf6f">
-        <File Id="src_System.Text.Encoding.dll" Name="System.Text.Encoding.dll" Source="$(var.GUI_TargetDir)src\System.Text.Encoding.dll" />
+        <File Id="src_System.Text.Encoding.dll" Name="System.Text.Encoding.dll" Source="$(var.GUI_TargetDir)System.Text.Encoding.dll" />
       </Component>
       <Component Id="src_System.Text.Encoding.Extensions.dll" Guid="2530dc88-4465-4889-9385-85cd5fef1b7f">
-        <File Id="src_System.Text.Encoding.Extensions.dll" Name="System.Text.Encoding.Extensions.dll" Source="$(var.GUI_TargetDir)src\System.Text.Encoding.Extensions.dll" />
+        <File Id="src_System.Text.Encoding.Extensions.dll" Name="System.Text.Encoding.Extensions.dll" Source="$(var.GUI_TargetDir)System.Text.Encoding.Extensions.dll" />
       </Component>
       <Component Id="src_System.Threading.dll" Guid="182a21f3-557c-4f31-9da2-6119ceb96887">
-        <File Id="src_System.Threading.dll" Name="System.Threading.dll" Source="$(var.GUI_TargetDir)src\System.Threading.dll" />
+        <File Id="src_System.Threading.dll" Name="System.Threading.dll" Source="$(var.GUI_TargetDir)System.Threading.dll" />
       </Component>
       <Component Id="src_System.Text.RegularExpressions.dll" Guid="f6cb3506-8b55-4601-a11e-1d463c9a962a">
-        <File Id="src_System.Text.RegularExpressions.dll" Name="System.Text.RegularExpressions.dll" Source="$(var.GUI_TargetDir)src\System.Text.RegularExpressions.dll" />
+        <File Id="src_System.Text.RegularExpressions.dll" Name="System.Text.RegularExpressions.dll" Source="$(var.GUI_TargetDir)System.Text.RegularExpressions.dll" />
       </Component>
       <Component Id="src_System.Threading.Overlapped.dll" Guid="252a5ba3-10e0-41ac-8fb3-af9a955ea71a">
-        <File Id="src_System.Threading.Overlapped.dll" Name="System.Threading.Overlapped.dll" Source="$(var.GUI_TargetDir)src\System.Threading.Overlapped.dll" />
+        <File Id="src_System.Threading.Overlapped.dll" Name="System.Threading.Overlapped.dll" Source="$(var.GUI_TargetDir)System.Threading.Overlapped.dll" />
       </Component>
       <Component Id="src_System.Threading.Tasks.dll" Guid="e73550cd-281a-4245-9b95-6b3e475268b1">
-        <File Id="src_System.Threading.Tasks.dll" Name="System.Threading.Tasks.dll" Source="$(var.GUI_TargetDir)src\System.Threading.Tasks.dll" />
+        <File Id="src_System.Threading.Tasks.dll" Name="System.Threading.Tasks.dll" Source="$(var.GUI_TargetDir)System.Threading.Tasks.dll" />
       </Component>
       <Component Id="src_System.Threading.Tasks.Parallel.dll" Guid="2861cdc9-d6e7-4274-a60a-158d6c893726">
-        <File Id="src_System.Threading.Tasks.Parallel.dll" Name="System.Threading.Tasks.Parallel.dll" Source="$(var.GUI_TargetDir)src\System.Threading.Tasks.Parallel.dll" />
+        <File Id="src_System.Threading.Tasks.Parallel.dll" Name="System.Threading.Tasks.Parallel.dll" Source="$(var.GUI_TargetDir)System.Threading.Tasks.Parallel.dll" />
       </Component>
       <Component Id="src_System.Threading.Thread.dll" Guid="06c19a25-4b46-4289-8517-fdeffbc46751">
-        <File Id="src_System.Threading.Thread.dll" Name="System.Threading.Thread.dll" Source="$(var.GUI_TargetDir)src\System.Threading.Thread.dll" />
+        <File Id="src_System.Threading.Thread.dll" Name="System.Threading.Thread.dll" Source="$(var.GUI_TargetDir)System.Threading.Thread.dll" />
       </Component>
       <Component Id="src_System.Threading.ThreadPool.dll" Guid="d84226fe-ac44-4fca-891f-5891b00c2f92">
-        <File Id="src_System.Threading.ThreadPool.dll" Name="System.Threading.ThreadPool.dll" Source="$(var.GUI_TargetDir)src\System.Threading.ThreadPool.dll" />
+        <File Id="src_System.Threading.ThreadPool.dll" Name="System.Threading.ThreadPool.dll" Source="$(var.GUI_TargetDir)System.Threading.ThreadPool.dll" />
       </Component>
       <Component Id="src_System.Threading.Timer.dll" Guid="f2c5758a-a09a-425f-b2a5-94eb96baf87c">
-        <File Id="src_System.Threading.Timer.dll" Name="System.Threading.Timer.dll" Source="$(var.GUI_TargetDir)src\System.Threading.Timer.dll" />
+        <File Id="src_System.Threading.Timer.dll" Name="System.Threading.Timer.dll" Source="$(var.GUI_TargetDir)System.Threading.Timer.dll" />
       </Component>
       <Component Id="src_System.ValueTuple.dll" Guid="37724ecd-3a07-484b-89dc-3a84a6f0b511">
-        <File Id="src_System.ValueTuple.dll" Name="System.ValueTuple.dll" Source="$(var.GUI_TargetDir)src\System.ValueTuple.dll" />
+        <File Id="src_System.ValueTuple.dll" Name="System.ValueTuple.dll" Source="$(var.GUI_TargetDir)System.ValueTuple.dll" />
       </Component>
       <Component Id="src_System.Xml.ReaderWriter.dll" Guid="1bb74f05-5878-45a2-aee1-4b8516647375">
-        <File Id="src_System.Xml.ReaderWriter.dll" Name="System.Xml.ReaderWriter.dll" Source="$(var.GUI_TargetDir)src\System.Xml.ReaderWriter.dll" />
+        <File Id="src_System.Xml.ReaderWriter.dll" Name="System.Xml.ReaderWriter.dll" Source="$(var.GUI_TargetDir)System.Xml.ReaderWriter.dll" />
       </Component>
       <Component Id="src_System.Xml.XDocument.dll" Guid="ac2952a1-24f1-418a-8223-01e8962b4a44">
-        <File Id="src_System.Xml.XDocument.dll" Name="System.Xml.XDocument.dll" Source="$(var.GUI_TargetDir)src\System.Xml.XDocument.dll" />
+        <File Id="src_System.Xml.XDocument.dll" Name="System.Xml.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XDocument.dll" />
       </Component>
       <Component Id="src_System.Xml.XmlDocument.dll" Guid="4b90f9c2-b543-4d65-b0fc-516c7d8516ff">
-        <File Id="src_System.Xml.XmlDocument.dll" Name="System.Xml.XmlDocument.dll" Source="$(var.GUI_TargetDir)src\System.Xml.XmlDocument.dll" />
+        <File Id="src_System.Xml.XmlDocument.dll" Name="System.Xml.XmlDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XmlDocument.dll" />
       </Component>
       <Component Id="src_System.Xml.XmlSerializer.dll" Guid="a29d452a-8199-4dc0-9541-bb8f2e0a7349">
-        <File Id="src_System.Xml.XmlSerializer.dll" Name="System.Xml.XmlSerializer.dll" Source="$(var.GUI_TargetDir)src\System.Xml.XmlSerializer.dll" />
+        <File Id="src_System.Xml.XmlSerializer.dll" Name="System.Xml.XmlSerializer.dll" Source="$(var.GUI_TargetDir)System.Xml.XmlSerializer.dll" />
       </Component>
       <Component Id="src_System.Xml.XPath.dll" Guid="57f402a9-4a38-4b91-9f62-f7dd83a8ab77">
-        <File Id="src_System.Xml.XPath.dll" Name="System.Xml.XPath.dll" Source="$(var.GUI_TargetDir)src\System.Xml.XPath.dll" />
+        <File Id="src_System.Xml.XPath.dll" Name="System.Xml.XPath.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.dll" />
       </Component>
       <Component Id="src_System.Xml.XPath.XDocument.dll" Guid="70f63556-f331-4c08-ac9f-3515dacbf0e9">
-        <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)src\System.Xml.XPath.XDocument.dll" />
+        <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.XDocument.dll" />
       </Component>
       <Component Id="src_TaskLayer.dll" Guid="7d468a75-d294-432e-bd59-8fcf1e254486">
-        <File Id="src_TaskLayer.dll" Name="TaskLayer.dll" Source="$(var.GUI_TargetDir)src\TaskLayer.dll" />
+        <File Id="src_TaskLayer.dll" Name="TaskLayer.dll" Source="$(var.GUI_TargetDir)TaskLayer.dll" />
       </Component>
       <Component Id="src_System.Security.Principal.dll" Guid="29c4ae27-1628-48d2-a2c0-f8f707aa57c3">
-        <File Id="src_System.Security.Principal.dll" Name="System.Security.Principal.dll" Source="$(var.GUI_TargetDir)src\System.Security.Principal.dll" />
+        <File Id="src_System.Security.Principal.dll" Name="System.Security.Principal.dll" Source="$(var.GUI_TargetDir)System.Security.Principal.dll" />
       </Component>
       <Component Id="src_System.Security.Cryptography.Primitives.dll" Guid="89c7b243-2c84-4b96-aef2-56e80f98b809">
-        <File Id="src_System.Security.Cryptography.Primitives.dll" Name="System.Security.Cryptography.Primitives.dll" Source="$(var.GUI_TargetDir)src\System.Security.Cryptography.Primitives.dll" />
+        <File Id="src_System.Security.Cryptography.Primitives.dll" Name="System.Security.Cryptography.Primitives.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Primitives.dll" />
       </Component>
       <Component Id="src_System.Security.Cryptography.Encoding.dll" Guid="8626a53d-a465-4bd6-99f2-2828774cc0f0">
-        <File Id="src_System.Security.Cryptography.Encoding.dll" Name="System.Security.Cryptography.Encoding.dll" Source="$(var.GUI_TargetDir)src\System.Security.Cryptography.Encoding.dll" />
+        <File Id="src_System.Security.Cryptography.Encoding.dll" Name="System.Security.Cryptography.Encoding.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Encoding.dll" />
       </Component>
       <Component Id="src_System.Security.Cryptography.Csp.dll" Guid="7f2a712b-3924-48c1-94eb-dbe9d337ba57">
-        <File Id="src_System.Security.Cryptography.Csp.dll" Name="System.Security.Cryptography.Csp.dll" Source="$(var.GUI_TargetDir)src\System.Security.Cryptography.Csp.dll" />
+        <File Id="src_System.Security.Cryptography.Csp.dll" Name="System.Security.Cryptography.Csp.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Csp.dll" />
       </Component>
       <Component Id="src_System.Security.Cryptography.Algorithms.dll" Guid="af07a661-d962-48e2-8ca4-96f40f167ee7">
-        <File Id="src_System.Security.Cryptography.Algorithms.dll" Name="System.Security.Cryptography.Algorithms.dll" Source="$(var.GUI_TargetDir)src\System.Security.Cryptography.Algorithms.dll" />
+        <File Id="src_System.Security.Cryptography.Algorithms.dll" Name="System.Security.Cryptography.Algorithms.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Algorithms.dll" />
       </Component>
       <Component Id="src_System.Runtime.Serialization.Xml.dll" Guid="4ab52368-de95-4411-899d-784777a968a8">
-        <File Id="src_System.Runtime.Serialization.Xml.dll" Name="System.Runtime.Serialization.Xml.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.Serialization.Xml.dll" />
+        <File Id="src_System.Runtime.Serialization.Xml.dll" Name="System.Runtime.Serialization.Xml.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Xml.dll" />
       </Component>
       <Component Id="src_System.Security.Claims.dll" Guid="6711a1c7-b00b-4da7-86b6-f71d4ae38ba2">
-        <File Id="src_System.Security.Claims.dll" Name="System.Security.Claims.dll" Source="$(var.GUI_TargetDir)src\System.Security.Claims.dll" />
+        <File Id="src_System.Security.Claims.dll" Name="System.Security.Claims.dll" Source="$(var.GUI_TargetDir)System.Security.Claims.dll" />
       </Component>
       <Component Id="src_System.Runtime.Serialization.Primitives.dll" Guid="561a0d2f-182d-42f4-9e0c-81e4f81650c6">
-        <File Id="src_System.Runtime.Serialization.Primitives.dll" Name="System.Runtime.Serialization.Primitives.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.Serialization.Primitives.dll" />
+        <File Id="src_System.Runtime.Serialization.Primitives.dll" Name="System.Runtime.Serialization.Primitives.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Primitives.dll" />
       </Component>
       <Component Id="src_System.Runtime.Serialization.Json.dll" Guid="4b29d16f-344c-4f6b-ba6f-efbc18d1aea3">
-        <File Id="src_System.Runtime.Serialization.Json.dll" Name="System.Runtime.Serialization.Json.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.Serialization.Json.dll" />
+        <File Id="src_System.Runtime.Serialization.Json.dll" Name="System.Runtime.Serialization.Json.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Json.dll" />
       </Component>
       <Component Id="src_System.Runtime.InteropServices.RuntimeInformation.dll" Guid="7ed2a609-3039-41d7-827f-4f6520cb5852">
-        <File Id="src_System.Runtime.InteropServices.RuntimeInformation.dll" Name="System.Runtime.InteropServices.RuntimeInformation.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.InteropServices.RuntimeInformation.dll" />
+        <File Id="src_System.Runtime.InteropServices.RuntimeInformation.dll" Name="System.Runtime.InteropServices.RuntimeInformation.dll" Source="$(var.GUI_TargetDir)System.Runtime.InteropServices.RuntimeInformation.dll" />
       </Component>
       <Component Id="src_System.Runtime.Numerics.dll" Guid="28496f68-4240-4806-b4dc-8f22603e7096">
-        <File Id="src_System.Runtime.Numerics.dll" Name="System.Runtime.Numerics.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.Numerics.dll" />
+        <File Id="src_System.Runtime.Numerics.dll" Name="System.Runtime.Numerics.dll" Source="$(var.GUI_TargetDir)System.Runtime.Numerics.dll" />
       </Component>
       <Component Id="src_System.Runtime.Serialization.Formatters.dll" Guid="225e668f-afef-4b5f-9fe6-d260c2497fbd">
-        <File Id="src_System.Runtime.Serialization.Formatters.dll" Name="System.Runtime.Serialization.Formatters.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.Serialization.Formatters.dll" />
+        <File Id="src_System.Runtime.Serialization.Formatters.dll" Name="System.Runtime.Serialization.Formatters.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Formatters.dll" />
       </Component>
       <Component Id="src_System.Runtime.InteropServices.dll" Guid="dc8b6ea8-73d3-4b5c-909c-6e24e0955ec7">
-        <File Id="src_System.Runtime.InteropServices.dll" Name="System.Runtime.InteropServices.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.InteropServices.dll" />
+        <File Id="src_System.Runtime.InteropServices.dll" Name="System.Runtime.InteropServices.dll" Source="$(var.GUI_TargetDir)System.Runtime.InteropServices.dll" />
       </Component>
       <Component Id="src_System.Runtime.Extensions.dll" Guid="1a2654dc-482d-43d7-875a-f1e5a44b7713">
-        <File Id="src_System.Runtime.Extensions.dll" Name="System.Runtime.Extensions.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.Extensions.dll" />
+        <File Id="src_System.Runtime.Extensions.dll" Name="System.Runtime.Extensions.dll" Source="$(var.GUI_TargetDir)System.Runtime.Extensions.dll" />
       </Component>
       <Component Id="src_System.Runtime.Handles.dll" Guid="50d4c76f-e4d0-498b-bd58-1868f0f89f68">
-        <File Id="src_System.Runtime.Handles.dll" Name="System.Runtime.Handles.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.Handles.dll" />
+        <File Id="src_System.Runtime.Handles.dll" Name="System.Runtime.Handles.dll" Source="$(var.GUI_TargetDir)System.Runtime.Handles.dll" />
       </Component>
       <Component Id="src_System.Runtime.dll" Guid="6c4cb017-5699-4a15-9a5c-0a7fa080754e">
-        <File Id="src_System.Runtime.dll" Name="System.Runtime.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.dll" />
+        <File Id="src_System.Runtime.dll" Name="System.Runtime.dll" Source="$(var.GUI_TargetDir)System.Runtime.dll" />
       </Component>
       <Component Id="src_System.Runtime.CompilerServices.VisualC.dll" Guid="84e237fb-fe2a-405e-9c98-0651363d7551">
-        <File Id="src_System.Runtime.CompilerServices.VisualC.dll" Name="System.Runtime.CompilerServices.VisualC.dll" Source="$(var.GUI_TargetDir)src\System.Runtime.CompilerServices.VisualC.dll" />
+        <File Id="src_System.Runtime.CompilerServices.VisualC.dll" Name="System.Runtime.CompilerServices.VisualC.dll" Source="$(var.GUI_TargetDir)System.Runtime.CompilerServices.VisualC.dll" />
       </Component>
       <Component Id="src_System.Resources.Writer.dll" Guid="30635d7c-feff-4643-bfc2-f2e8e66ef37c">
-        <File Id="src_System.Resources.Writer.dll" Name="System.Resources.Writer.dll" Source="$(var.GUI_TargetDir)src\System.Resources.Writer.dll" />
+        <File Id="src_System.Resources.Writer.dll" Name="System.Resources.Writer.dll" Source="$(var.GUI_TargetDir)System.Resources.Writer.dll" />
       </Component>
       <Component Id="src_MetaMorpheusGUI.exe.config" Guid="929da846-1537-40ba-b615-2335b32cadb1">
-        <File Id="src_MetaMorpheusGUI.exe.config" Name="MetaMorpheusGUI.exe.config" Source="$(var.GUI_TargetDir)src\MetaMorpheusGUI.exe.config" />
+        <File Id="src_MetaMorpheusGUI.exe.config" Name="MetaMorpheusGUI.exe.config" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe.config" />
       </Component>
       <Component Id="src_Chemistry.dll" Guid="bd4869a2-82a3-4d52-97b7-888881ae1827">
-        <File Id="src_Chemistry.dll" Name="Chemistry.dll" Source="$(var.GUI_TargetDir)src\Chemistry.dll" />
+        <File Id="src_Chemistry.dll" Name="Chemistry.dll" Source="$(var.GUI_TargetDir)Chemistry.dll" />
       </Component>
       <Component Id="src_EngineLayer.dll" Guid="ebfe6a93-fdc4-4cff-a510-ff516e532d50">
-        <File Id="src_EngineLayer.dll" Name="EngineLayer.dll" Source="$(var.GUI_TargetDir)src\EngineLayer.dll" />
+        <File Id="src_EngineLayer.dll" Name="EngineLayer.dll" Source="$(var.GUI_TargetDir)EngineLayer.dll" />
       </Component>
       <Component Id="src_EngineLayer.pdb" Guid="8f9592a4-02b1-4462-a259-f7aa41d890a4">
-        <File Id="src_EngineLayer.pdb" Name="EngineLayer.pdb" Source="$(var.GUI_TargetDir)src\EngineLayer.pdb" />
+        <File Id="src_EngineLayer.pdb" Name="EngineLayer.pdb" Source="$(var.GUI_TargetDir)EngineLayer.pdb" />
       </Component>
       <Component Id="src_FlashLFQ.dll" Guid="69e33379-5301-49db-8913-4d777ed5a5f9">
-        <File Id="src_FlashLFQ.dll" Name="FlashLFQ.dll" Source="$(var.GUI_TargetDir)src\FlashLFQ.dll" />
+        <File Id="src_FlashLFQ.dll" Name="FlashLFQ.dll" Source="$(var.GUI_TargetDir)FlashLFQ.dll" />
       </Component>
       <Component Id="src_ManagedThermoHelperLayer.dll" Guid="5706aec2-8e67-4094-ac81-95cd9aa9a49e">
-        <File Id="src_ManagedThermoHelperLayer.dll" Name="ManagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)src\ManagedThermoHelperLayer.dll" />
+        <File Id="src_ManagedThermoHelperLayer.dll" Name="ManagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)ManagedThermoHelperLayer.dll" />
       </Component>
       <Component Id="src_MassSpectrometry.dll" Guid="d6241678-3d48-4c7a-becf-9c1160fbe06b">
-        <File Id="src_MassSpectrometry.dll" Name="MassSpectrometry.dll" Source="$(var.GUI_TargetDir)src\MassSpectrometry.dll" />
+        <File Id="src_MassSpectrometry.dll" Name="MassSpectrometry.dll" Source="$(var.GUI_TargetDir)MassSpectrometry.dll" />
       </Component>
       <Component Id="src_MathNet.Numerics.dll" Guid="dea92905-719e-48e1-8a64-e845dca06dac">
-        <File Id="src_MathNet.Numerics.dll" Name="MathNet.Numerics.dll" Source="$(var.GUI_TargetDir)src\MathNet.Numerics.dll" />
+        <File Id="src_MathNet.Numerics.dll" Name="MathNet.Numerics.dll" Source="$(var.GUI_TargetDir)MathNet.Numerics.dll" />
       </Component>
       <Component Id="src_MetaMorpheusGUI.pdb" Guid="bf568e2b-42c1-4209-9f45-11a3af86110a">
-        <File Id="src_MetaMorpheusGUI.pdb" Name="MetaMorpheusGUI.pdb" Source="$(var.GUI_TargetDir)src\MetaMorpheusGUI.pdb" />
+        <File Id="src_MetaMorpheusGUI.pdb" Name="MetaMorpheusGUI.pdb" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.pdb" />
       </Component>
       <Component Id="src_Microsoft.Win32.Primitives.dll" Guid="1541dbcf-ade3-407d-b451-defe29350f3f">
-        <File Id="src_Microsoft.Win32.Primitives.dll" Name="Microsoft.Win32.Primitives.dll" Source="$(var.GUI_TargetDir)src\Microsoft.Win32.Primitives.dll" />
+        <File Id="src_Microsoft.Win32.Primitives.dll" Name="Microsoft.Win32.Primitives.dll" Source="$(var.GUI_TargetDir)Microsoft.Win32.Primitives.dll" />
       </Component>
       <Component Id="src_mzIdentML.dll" Guid="cb1200d2-2356-4664-8968-bff79c83eeac">
-        <File Id="src_mzIdentML.dll" Name="mzIdentML.dll" Source="$(var.GUI_TargetDir)src\mzIdentML.dll" />
+        <File Id="src_mzIdentML.dll" Name="mzIdentML.dll" Source="$(var.GUI_TargetDir)mzIdentML.dll" />
       </Component>
       <Component Id="src_MzLibUtil.dll" Guid="9475fcb2-63bd-490c-8441-17a1760869ac">
-        <File Id="src_MzLibUtil.dll" Name="MzLibUtil.dll" Source="$(var.GUI_TargetDir)src\MzLibUtil.dll" />
+        <File Id="src_MzLibUtil.dll" Name="MzLibUtil.dll" Source="$(var.GUI_TargetDir)MzLibUtil.dll" />
       </Component>
       <Component Id="src_MzML.dll" Guid="40c12490-638a-41b9-9e0c-05e949236a5a">
-        <File Id="src_MzML.dll" Name="MzML.dll" Source="$(var.GUI_TargetDir)src\MzML.dll" />
+        <File Id="src_MzML.dll" Name="MzML.dll" Source="$(var.GUI_TargetDir)MzML.dll" />
       </Component>
       <Component Id="src_NetSerializer.dll" Guid="9eddc340-0dcb-415a-85f4-322f0eaeee4b">
-        <File Id="src_NetSerializer.dll" Name="NetSerializer.dll" Source="$(var.GUI_TargetDir)src\NetSerializer.dll" />
+        <File Id="src_NetSerializer.dll" Name="NetSerializer.dll" Source="$(var.GUI_TargetDir)NetSerializer.dll" />
       </Component>
       <Component Id="src_netstandard.dll" Guid="a044cfe9-d8fc-4aaf-aa32-081237198b91">
-        <File Id="src_netstandard.dll" Name="netstandard.dll" Source="$(var.GUI_TargetDir)src\netstandard.dll" />
+        <File Id="src_netstandard.dll" Name="netstandard.dll" Source="$(var.GUI_TargetDir)netstandard.dll" />
       </Component>
       <Component Id="src_Nett.dll" Guid="656c78ef-0234-4e45-957c-a6dd6fff044f">
-        <File Id="src_Nett.dll" Name="Nett.dll" Source="$(var.GUI_TargetDir)src\Nett.dll" />
+        <File Id="src_Nett.dll" Name="Nett.dll" Source="$(var.GUI_TargetDir)Nett.dll" />
       </Component>
       <Component Id="src_Nett.pdb" Guid="68030b29-c0fe-4287-9b7b-aa07f0cc153a">
-        <File Id="src_Nett.pdb" Name="Nett.pdb" Source="$(var.GUI_TargetDir)src\Nett.pdb" />
+        <File Id="src_Nett.pdb" Name="Nett.pdb" Source="$(var.GUI_TargetDir)Nett.pdb" />
       </Component>
       <Component Id="src_pepXML.dll" Guid="9a086709-4b5d-4711-aec0-9a8a9ba7b886">
-        <File Id="src_pepXML.dll" Name="pepXML.dll" Source="$(var.GUI_TargetDir)src\pepXML.dll" />
+        <File Id="src_pepXML.dll" Name="pepXML.dll" Source="$(var.GUI_TargetDir)pepXML.dll" />
       </Component>
       <Component Id="src_Proteomics.dll" Guid="e0bd6f66-afa5-49fa-a17c-2a24164f600d">
-        <File Id="src_Proteomics.dll" Name="Proteomics.dll" Source="$(var.GUI_TargetDir)src\Proteomics.dll" />
+        <File Id="src_Proteomics.dll" Name="Proteomics.dll" Source="$(var.GUI_TargetDir)Proteomics.dll" />
       </Component>
       <Component Id="src_SharpLearning.AdaBoost.dll" Guid="d1a60f38-7061-4706-85ba-a3d48a50f3f4">
-        <File Id="src_SharpLearning.AdaBoost.dll" Name="SharpLearning.AdaBoost.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.AdaBoost.dll" />
+        <File Id="src_SharpLearning.AdaBoost.dll" Name="SharpLearning.AdaBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.AdaBoost.dll" />
       </Component>
       <Component Id="src_SharpLearning.Common.Interfaces.dll" Guid="62b8e7de-7965-4942-9e5b-9449c5ab7deb">
-        <File Id="src_SharpLearning.Common.Interfaces.dll" Name="SharpLearning.Common.Interfaces.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.Common.Interfaces.dll" />
+        <File Id="src_SharpLearning.Common.Interfaces.dll" Name="SharpLearning.Common.Interfaces.dll" Source="$(var.GUI_TargetDir)SharpLearning.Common.Interfaces.dll" />
       </Component>
       <Component Id="src_SharpLearning.Containers.dll" Guid="6bdbf050-26d7-4e11-b378-d71055ecba80">
-        <File Id="src_SharpLearning.Containers.dll" Name="SharpLearning.Containers.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.Containers.dll" />
+        <File Id="src_SharpLearning.Containers.dll" Name="SharpLearning.Containers.dll" Source="$(var.GUI_TargetDir)SharpLearning.Containers.dll" />
       </Component>
       <Component Id="src_SharpLearning.CrossValidation.dll" Guid="da2245c7-362d-4a90-9408-a671e210896a">
-        <File Id="src_SharpLearning.CrossValidation.dll" Name="SharpLearning.CrossValidation.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.CrossValidation.dll" />
+        <File Id="src_SharpLearning.CrossValidation.dll" Name="SharpLearning.CrossValidation.dll" Source="$(var.GUI_TargetDir)SharpLearning.CrossValidation.dll" />
       </Component>
       <Component Id="src_SharpLearning.DecisionTrees.dll" Guid="b3c202a8-795d-4198-b927-0fcd02d8ae05">
-        <File Id="src_SharpLearning.DecisionTrees.dll" Name="SharpLearning.DecisionTrees.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.DecisionTrees.dll" />
+        <File Id="src_SharpLearning.DecisionTrees.dll" Name="SharpLearning.DecisionTrees.dll" Source="$(var.GUI_TargetDir)SharpLearning.DecisionTrees.dll" />
       </Component>
       <Component Id="src_SharpLearning.Ensemble.dll" Guid="9f820a12-57bf-44b2-b143-0fd2b3617a45">
-        <File Id="src_SharpLearning.Ensemble.dll" Name="SharpLearning.Ensemble.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.Ensemble.dll" />
+        <File Id="src_SharpLearning.Ensemble.dll" Name="SharpLearning.Ensemble.dll" Source="$(var.GUI_TargetDir)SharpLearning.Ensemble.dll" />
       </Component>
       <Component Id="src_SharpLearning.GradientBoost.dll" Guid="ee43d34e-ca7c-4047-9c4e-7982d1ec0e13">
-        <File Id="src_SharpLearning.GradientBoost.dll" Name="SharpLearning.GradientBoost.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.GradientBoost.dll" />
+        <File Id="src_SharpLearning.GradientBoost.dll" Name="SharpLearning.GradientBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.GradientBoost.dll" />
       </Component>
       <Component Id="src_SharpLearning.InputOutput.dll" Guid="357e6a45-5852-474d-aceb-e05942958ae6">
-        <File Id="src_SharpLearning.InputOutput.dll" Name="SharpLearning.InputOutput.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.InputOutput.dll" />
+        <File Id="src_SharpLearning.InputOutput.dll" Name="SharpLearning.InputOutput.dll" Source="$(var.GUI_TargetDir)SharpLearning.InputOutput.dll" />
       </Component>
       <Component Id="src_SharpLearning.Metrics.dll" Guid="9ec3dd96-8228-49db-98e7-4288845b63a4">
-        <File Id="src_SharpLearning.Metrics.dll" Name="SharpLearning.Metrics.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.Metrics.dll" />
+        <File Id="src_SharpLearning.Metrics.dll" Name="SharpLearning.Metrics.dll" Source="$(var.GUI_TargetDir)SharpLearning.Metrics.dll" />
       </Component>
       <Component Id="src_SharpLearning.RandomForest.dll" Guid="f86fdc0c-6a23-4e4f-803b-0012aaa418e7">
-        <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)src\SharpLearning.RandomForest.dll" />
+        <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)SharpLearning.RandomForest.dll" />
       </Component>
       <Component Id="src_Spectra.dll" Guid="280ccb7f-a4f8-4df7-9f88-6cf6fa9bc15b">
-        <File Id="src_Spectra.dll" Name="Spectra.dll" Source="$(var.GUI_TargetDir)src\Spectra.dll" />
+        <File Id="src_Spectra.dll" Name="Spectra.dll" Source="$(var.GUI_TargetDir)Spectra.dll" />
       </Component>
       <Component Id="src_System.AppContext.dll" Guid="2a687b9d-5ba9-4a8c-99d5-7a77a15cb1f3">
-        <File Id="src_System.AppContext.dll" Name="System.AppContext.dll" Source="$(var.GUI_TargetDir)src\System.AppContext.dll" />
+        <File Id="src_System.AppContext.dll" Name="System.AppContext.dll" Source="$(var.GUI_TargetDir)System.AppContext.dll" />
       </Component>
       <Component Id="src_System.Collections.Concurrent.dll" Guid="7b033632-bb52-4bcd-92c5-3350a868ed93">
-        <File Id="src_System.Collections.Concurrent.dll" Name="System.Collections.Concurrent.dll" Source="$(var.GUI_TargetDir)src\System.Collections.Concurrent.dll" />
+        <File Id="src_System.Collections.Concurrent.dll" Name="System.Collections.Concurrent.dll" Source="$(var.GUI_TargetDir)System.Collections.Concurrent.dll" />
       </Component>
       <Component Id="src_System.Collections.dll" Guid="9e28e1b2-1cf2-4577-96f7-927182210091">
-        <File Id="src_System.Collections.dll" Name="System.Collections.dll" Source="$(var.GUI_TargetDir)src\System.Collections.dll" />
+        <File Id="src_System.Collections.dll" Name="System.Collections.dll" Source="$(var.GUI_TargetDir)System.Collections.dll" />
       </Component>
       <Component Id="src_System.Collections.NonGeneric.dll" Guid="4f898565-1e86-4ee1-8bb2-f3ff70850ea9">
-        <File Id="src_System.Collections.NonGeneric.dll" Name="System.Collections.NonGeneric.dll" Source="$(var.GUI_TargetDir)src\System.Collections.NonGeneric.dll" />
+        <File Id="src_System.Collections.NonGeneric.dll" Name="System.Collections.NonGeneric.dll" Source="$(var.GUI_TargetDir)System.Collections.NonGeneric.dll" />
       </Component>
       <Component Id="src_System.Collections.Specialized.dll" Guid="1ea1fe2d-f91a-4730-8ea4-990decad0bf6">
-        <File Id="src_System.Collections.Specialized.dll" Name="System.Collections.Specialized.dll" Source="$(var.GUI_TargetDir)src\System.Collections.Specialized.dll" />
+        <File Id="src_System.Collections.Specialized.dll" Name="System.Collections.Specialized.dll" Source="$(var.GUI_TargetDir)System.Collections.Specialized.dll" />
       </Component>
       <Component Id="src_System.ComponentModel.dll" Guid="a8b0e616-09e5-46d3-8366-19e537055168">
-        <File Id="src_System.ComponentModel.dll" Name="System.ComponentModel.dll" Source="$(var.GUI_TargetDir)src\System.ComponentModel.dll" />
+        <File Id="src_System.ComponentModel.dll" Name="System.ComponentModel.dll" Source="$(var.GUI_TargetDir)System.ComponentModel.dll" />
       </Component>
       <Component Id="src_System.ComponentModel.EventBasedAsync.dll" Guid="c51239a4-e07f-4ea1-aff5-96c7e318b22e">
-        <File Id="src_System.ComponentModel.EventBasedAsync.dll" Name="System.ComponentModel.EventBasedAsync.dll" Source="$(var.GUI_TargetDir)src\System.ComponentModel.EventBasedAsync.dll" />
+        <File Id="src_System.ComponentModel.EventBasedAsync.dll" Name="System.ComponentModel.EventBasedAsync.dll" Source="$(var.GUI_TargetDir)System.ComponentModel.EventBasedAsync.dll" />
       </Component>
       <Component Id="src_System.ComponentModel.Primitives.dll" Guid="ecdc158f-a0f5-462c-8b6f-32ddcd62a468">
-        <File Id="src_System.ComponentModel.Primitives.dll" Name="System.ComponentModel.Primitives.dll" Source="$(var.GUI_TargetDir)src\System.ComponentModel.Primitives.dll" />
+        <File Id="src_System.ComponentModel.Primitives.dll" Name="System.ComponentModel.Primitives.dll" Source="$(var.GUI_TargetDir)System.ComponentModel.Primitives.dll" />
       </Component>
       <Component Id="src_System.ComponentModel.TypeConverter.dll" Guid="5aeab976-e87a-4ccb-899b-52ee3c358ed2">
-        <File Id="src_System.ComponentModel.TypeConverter.dll" Name="System.ComponentModel.TypeConverter.dll" Source="$(var.GUI_TargetDir)src\System.ComponentModel.TypeConverter.dll" />
+        <File Id="src_System.ComponentModel.TypeConverter.dll" Name="System.ComponentModel.TypeConverter.dll" Source="$(var.GUI_TargetDir)System.ComponentModel.TypeConverter.dll" />
       </Component>
       <Component Id="src_System.Console.dll" Guid="55fd4bc7-e98a-470c-a217-34c67ad347a0">
-        <File Id="src_System.Console.dll" Name="System.Console.dll" Source="$(var.GUI_TargetDir)src\System.Console.dll" />
+        <File Id="src_System.Console.dll" Name="System.Console.dll" Source="$(var.GUI_TargetDir)System.Console.dll" />
       </Component>
       <Component Id="src_System.Data.Common.dll" Guid="795499dd-11a0-4132-8e33-c1f64bd11c51">
-        <File Id="src_System.Data.Common.dll" Name="System.Data.Common.dll" Source="$(var.GUI_TargetDir)src\System.Data.Common.dll" />
+        <File Id="src_System.Data.Common.dll" Name="System.Data.Common.dll" Source="$(var.GUI_TargetDir)System.Data.Common.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.Contracts.dll" Guid="8613f58e-de4c-447e-a037-0e506fbe28ab">
-        <File Id="src_System.Diagnostics.Contracts.dll" Name="System.Diagnostics.Contracts.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.Contracts.dll" />
+        <File Id="src_System.Diagnostics.Contracts.dll" Name="System.Diagnostics.Contracts.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Contracts.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.Debug.dll" Guid="cbfe6c05-6179-4ff3-9bfd-b4328f17eeca">
-        <File Id="src_System.Diagnostics.Debug.dll" Name="System.Diagnostics.Debug.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.Debug.dll" />
+        <File Id="src_System.Diagnostics.Debug.dll" Name="System.Diagnostics.Debug.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Debug.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.FileVersionInfo.dll" Guid="71fae08a-c111-49ca-a45b-1ac687396562">
-        <File Id="src_System.Diagnostics.FileVersionInfo.dll" Name="System.Diagnostics.FileVersionInfo.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.FileVersionInfo.dll" />
+        <File Id="src_System.Diagnostics.FileVersionInfo.dll" Name="System.Diagnostics.FileVersionInfo.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.FileVersionInfo.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.Process.dll" Guid="d038de3e-12d5-4c36-870b-04928b41d04f">
-        <File Id="src_System.Diagnostics.Process.dll" Name="System.Diagnostics.Process.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.Process.dll" />
+        <File Id="src_System.Diagnostics.Process.dll" Name="System.Diagnostics.Process.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Process.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.StackTrace.dll" Guid="727eb4a0-a11d-4948-b8d0-403b96de69c4">
-        <File Id="src_System.Diagnostics.StackTrace.dll" Name="System.Diagnostics.StackTrace.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.StackTrace.dll" />
+        <File Id="src_System.Diagnostics.StackTrace.dll" Name="System.Diagnostics.StackTrace.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.StackTrace.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.TextWriterTraceListener.dll" Guid="bcb7a4ae-cb34-410e-85cd-fc7993e50284">
-        <File Id="src_System.Diagnostics.TextWriterTraceListener.dll" Name="System.Diagnostics.TextWriterTraceListener.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.TextWriterTraceListener.dll" />
+        <File Id="src_System.Diagnostics.TextWriterTraceListener.dll" Name="System.Diagnostics.TextWriterTraceListener.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.TextWriterTraceListener.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.Tools.dll" Guid="c78e204c-5f3c-4787-aaf1-0413e1984767">
-        <File Id="src_System.Diagnostics.Tools.dll" Name="System.Diagnostics.Tools.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.Tools.dll" />
+        <File Id="src_System.Diagnostics.Tools.dll" Name="System.Diagnostics.Tools.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Tools.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.TraceSource.dll" Guid="c6e3783a-2389-4cb5-b1ba-0be7c82ebbee">
-        <File Id="src_System.Diagnostics.TraceSource.dll" Name="System.Diagnostics.TraceSource.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.TraceSource.dll" />
+        <File Id="src_System.Diagnostics.TraceSource.dll" Name="System.Diagnostics.TraceSource.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.TraceSource.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.Tracing.dll" Guid="7e43f9df-4a1c-4f02-99f7-d7f5aa8c63f1">
-        <File Id="src_System.Diagnostics.Tracing.dll" Name="System.Diagnostics.Tracing.dll" Source="$(var.GUI_TargetDir)src\System.Diagnostics.Tracing.dll" />
+        <File Id="src_System.Diagnostics.Tracing.dll" Name="System.Diagnostics.Tracing.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Tracing.dll" />
       </Component>
       <Component Id="src_System.Drawing.Primitives.dll" Guid="ea79adfb-35db-43b5-9747-4656d67932de">
-        <File Id="src_System.Drawing.Primitives.dll" Name="System.Drawing.Primitives.dll" Source="$(var.GUI_TargetDir)src\System.Drawing.Primitives.dll" />
+        <File Id="src_System.Drawing.Primitives.dll" Name="System.Drawing.Primitives.dll" Source="$(var.GUI_TargetDir)System.Drawing.Primitives.dll" />
       </Component>
       <Component Id="src_System.Dynamic.Runtime.dll" Guid="0838afe4-4a31-413b-a5b9-2e4cc73e375d">
-        <File Id="src_System.Dynamic.Runtime.dll" Name="System.Dynamic.Runtime.dll" Source="$(var.GUI_TargetDir)src\System.Dynamic.Runtime.dll" />
+        <File Id="src_System.Dynamic.Runtime.dll" Name="System.Dynamic.Runtime.dll" Source="$(var.GUI_TargetDir)System.Dynamic.Runtime.dll" />
       </Component>
       <Component Id="src_System.Globalization.Calendars.dll" Guid="0ab61464-615a-44cc-922f-13ef1b9a6802">
-        <File Id="src_System.Globalization.Calendars.dll" Name="System.Globalization.Calendars.dll" Source="$(var.GUI_TargetDir)src\System.Globalization.Calendars.dll" />
+        <File Id="src_System.Globalization.Calendars.dll" Name="System.Globalization.Calendars.dll" Source="$(var.GUI_TargetDir)System.Globalization.Calendars.dll" />
       </Component>
       <Component Id="src_System.Globalization.dll" Guid="fffd41bf-9a02-4d95-82dc-7d621d0722f7">
-        <File Id="src_System.Globalization.dll" Name="System.Globalization.dll" Source="$(var.GUI_TargetDir)src\System.Globalization.dll" />
+        <File Id="src_System.Globalization.dll" Name="System.Globalization.dll" Source="$(var.GUI_TargetDir)System.Globalization.dll" />
       </Component>
       <Component Id="src_System.Globalization.Extensions.dll" Guid="12b04d22-78d4-4cf3-b2a5-92d2ca9eb504">
-        <File Id="src_System.Globalization.Extensions.dll" Name="System.Globalization.Extensions.dll" Source="$(var.GUI_TargetDir)src\System.Globalization.Extensions.dll" />
+        <File Id="src_System.Globalization.Extensions.dll" Name="System.Globalization.Extensions.dll" Source="$(var.GUI_TargetDir)System.Globalization.Extensions.dll" />
       </Component>
       <Component Id="src_System.IO.Compression.dll" Guid="5d786beb-ae3e-4a9e-9496-189ddb307903">
-        <File Id="src_System.IO.Compression.dll" Name="System.IO.Compression.dll" Source="$(var.GUI_TargetDir)src\System.IO.Compression.dll" />
+        <File Id="src_System.IO.Compression.dll" Name="System.IO.Compression.dll" Source="$(var.GUI_TargetDir)System.IO.Compression.dll" />
       </Component>
       <Component Id="src_System.IO.Compression.ZipFile.dll" Guid="a3790896-454d-40d2-ad1e-3acb97a18416">
-        <File Id="src_System.IO.Compression.ZipFile.dll" Name="System.IO.Compression.ZipFile.dll" Source="$(var.GUI_TargetDir)src\System.IO.Compression.ZipFile.dll" />
+        <File Id="src_System.IO.Compression.ZipFile.dll" Name="System.IO.Compression.ZipFile.dll" Source="$(var.GUI_TargetDir)System.IO.Compression.ZipFile.dll" />
       </Component>
       <Component Id="src_System.IO.dll" Guid="4cee9a55-3104-4353-af1a-cd5fdc831b10">
-        <File Id="src_System.IO.dll" Name="System.IO.dll" Source="$(var.GUI_TargetDir)src\System.IO.dll" />
+        <File Id="src_System.IO.dll" Name="System.IO.dll" Source="$(var.GUI_TargetDir)System.IO.dll" />
       </Component>
       <Component Id="src_System.IO.FileSystem.dll" Guid="f0338c97-747b-4eb3-8d9c-6d4c8a6886c1">
-        <File Id="src_System.IO.FileSystem.dll" Name="System.IO.FileSystem.dll" Source="$(var.GUI_TargetDir)src\System.IO.FileSystem.dll" />
+        <File Id="src_System.IO.FileSystem.dll" Name="System.IO.FileSystem.dll" Source="$(var.GUI_TargetDir)System.IO.FileSystem.dll" />
       </Component>
       <Component Id="src_System.IO.FileSystem.DriveInfo.dll" Guid="97819d35-bb53-4c2f-8c58-1e311c1d7812">
-        <File Id="src_System.IO.FileSystem.DriveInfo.dll" Name="System.IO.FileSystem.DriveInfo.dll" Source="$(var.GUI_TargetDir)src\System.IO.FileSystem.DriveInfo.dll" />
+        <File Id="src_System.IO.FileSystem.DriveInfo.dll" Name="System.IO.FileSystem.DriveInfo.dll" Source="$(var.GUI_TargetDir)System.IO.FileSystem.DriveInfo.dll" />
       </Component>
       <Component Id="src_System.IO.FileSystem.Primitives.dll" Guid="89b9071b-a1b0-4e1c-ac47-db7738e11e79">
-        <File Id="src_System.IO.FileSystem.Primitives.dll" Name="System.IO.FileSystem.Primitives.dll" Source="$(var.GUI_TargetDir)src\System.IO.FileSystem.Primitives.dll" />
+        <File Id="src_System.IO.FileSystem.Primitives.dll" Name="System.IO.FileSystem.Primitives.dll" Source="$(var.GUI_TargetDir)System.IO.FileSystem.Primitives.dll" />
       </Component>
       <Component Id="src_System.IO.FileSystem.Watcher.dll" Guid="f310dc2a-695a-421e-8cff-e030b14771d4">
-        <File Id="src_System.IO.FileSystem.Watcher.dll" Name="System.IO.FileSystem.Watcher.dll" Source="$(var.GUI_TargetDir)src\System.IO.FileSystem.Watcher.dll" />
+        <File Id="src_System.IO.FileSystem.Watcher.dll" Name="System.IO.FileSystem.Watcher.dll" Source="$(var.GUI_TargetDir)System.IO.FileSystem.Watcher.dll" />
       </Component>
       <Component Id="src_System.IO.IsolatedStorage.dll" Guid="e67be0fe-05e6-4f9f-b59f-bbc09a973842">
-        <File Id="src_System.IO.IsolatedStorage.dll" Name="System.IO.IsolatedStorage.dll" Source="$(var.GUI_TargetDir)src\System.IO.IsolatedStorage.dll" />
+        <File Id="src_System.IO.IsolatedStorage.dll" Name="System.IO.IsolatedStorage.dll" Source="$(var.GUI_TargetDir)System.IO.IsolatedStorage.dll" />
       </Component>
       <Component Id="src_System.IO.MemoryMappedFiles.dll" Guid="b5e70dbc-fad9-488b-b29a-c16a6a76d9df">
-        <File Id="src_System.IO.MemoryMappedFiles.dll" Name="System.IO.MemoryMappedFiles.dll" Source="$(var.GUI_TargetDir)src\System.IO.MemoryMappedFiles.dll" />
+        <File Id="src_System.IO.MemoryMappedFiles.dll" Name="System.IO.MemoryMappedFiles.dll" Source="$(var.GUI_TargetDir)System.IO.MemoryMappedFiles.dll" />
       </Component>
       <Component Id="src_System.IO.Pipes.dll" Guid="2bfd689c-9e6a-434b-8990-e24fff2a7c2c">
-        <File Id="src_System.IO.Pipes.dll" Name="System.IO.Pipes.dll" Source="$(var.GUI_TargetDir)src\System.IO.Pipes.dll" />
+        <File Id="src_System.IO.Pipes.dll" Name="System.IO.Pipes.dll" Source="$(var.GUI_TargetDir)System.IO.Pipes.dll" />
       </Component>
       <Component Id="src_System.IO.UnmanagedMemoryStream.dll" Guid="d81f361c-9e1f-43a5-8eb2-2a14a2049aa6">
-        <File Id="src_System.IO.UnmanagedMemoryStream.dll" Name="System.IO.UnmanagedMemoryStream.dll" Source="$(var.GUI_TargetDir)src\System.IO.UnmanagedMemoryStream.dll" />
+        <File Id="src_System.IO.UnmanagedMemoryStream.dll" Name="System.IO.UnmanagedMemoryStream.dll" Source="$(var.GUI_TargetDir)System.IO.UnmanagedMemoryStream.dll" />
       </Component>
       <Component Id="src_System.Linq.dll" Guid="74a17980-004c-4903-8e63-e0ee8f893872">
-        <File Id="src_System.Linq.dll" Name="System.Linq.dll" Source="$(var.GUI_TargetDir)src\System.Linq.dll" />
+        <File Id="src_System.Linq.dll" Name="System.Linq.dll" Source="$(var.GUI_TargetDir)System.Linq.dll" />
       </Component>
       <Component Id="src_System.Linq.Expressions.dll" Guid="e75ba705-d17a-4037-9f7e-6d3b9e651588">
-        <File Id="src_System.Linq.Expressions.dll" Name="System.Linq.Expressions.dll" Source="$(var.GUI_TargetDir)src\System.Linq.Expressions.dll" />
+        <File Id="src_System.Linq.Expressions.dll" Name="System.Linq.Expressions.dll" Source="$(var.GUI_TargetDir)System.Linq.Expressions.dll" />
       </Component>
       <Component Id="src_System.Linq.Parallel.dll" Guid="0cc4d249-964d-48e9-91a4-12ef483f1745">
-        <File Id="src_System.Linq.Parallel.dll" Name="System.Linq.Parallel.dll" Source="$(var.GUI_TargetDir)src\System.Linq.Parallel.dll" />
+        <File Id="src_System.Linq.Parallel.dll" Name="System.Linq.Parallel.dll" Source="$(var.GUI_TargetDir)System.Linq.Parallel.dll" />
       </Component>
       <Component Id="src_System.Linq.Queryable.dll" Guid="3c881b27-d564-4a1e-a9de-b489fe576b48">
-        <File Id="src_System.Linq.Queryable.dll" Name="System.Linq.Queryable.dll" Source="$(var.GUI_TargetDir)src\System.Linq.Queryable.dll" />
+        <File Id="src_System.Linq.Queryable.dll" Name="System.Linq.Queryable.dll" Source="$(var.GUI_TargetDir)System.Linq.Queryable.dll" />
       </Component>
       <Component Id="src_System.Net.Http.dll" Guid="480e547f-a7d7-4f57-a9a3-4ddb448faddf">
-        <File Id="src_System.Net.Http.dll" Name="System.Net.Http.dll" Source="$(var.GUI_TargetDir)src\System.Net.Http.dll" />
+        <File Id="src_System.Net.Http.dll" Name="System.Net.Http.dll" Source="$(var.GUI_TargetDir)System.Net.Http.dll" />
       </Component>
       <Component Id="src_System.Net.NameResolution.dll" Guid="53641ac0-88aa-401f-842c-1d86a12d0b4b">
-        <File Id="src_System.Net.NameResolution.dll" Name="System.Net.NameResolution.dll" Source="$(var.GUI_TargetDir)src\System.Net.NameResolution.dll" />
+        <File Id="src_System.Net.NameResolution.dll" Name="System.Net.NameResolution.dll" Source="$(var.GUI_TargetDir)System.Net.NameResolution.dll" />
       </Component>
       <Component Id="src_System.Net.NetworkInformation.dll" Guid="4ef7ae50-4d12-4c45-8d5b-ea7419004ca9">
-        <File Id="src_System.Net.NetworkInformation.dll" Name="System.Net.NetworkInformation.dll" Source="$(var.GUI_TargetDir)src\System.Net.NetworkInformation.dll" />
+        <File Id="src_System.Net.NetworkInformation.dll" Name="System.Net.NetworkInformation.dll" Source="$(var.GUI_TargetDir)System.Net.NetworkInformation.dll" />
       </Component>
       <Component Id="src_System.Net.Ping.dll" Guid="d926e898-8186-4632-800d-0b13a0cb5c76">
-        <File Id="src_System.Net.Ping.dll" Name="System.Net.Ping.dll" Source="$(var.GUI_TargetDir)src\System.Net.Ping.dll" />
+        <File Id="src_System.Net.Ping.dll" Name="System.Net.Ping.dll" Source="$(var.GUI_TargetDir)System.Net.Ping.dll" />
       </Component>
       <Component Id="src_System.Net.Primitives.dll" Guid="92672334-d519-4c0a-8870-cf19afbb7022">
-        <File Id="src_System.Net.Primitives.dll" Name="System.Net.Primitives.dll" Source="$(var.GUI_TargetDir)src\System.Net.Primitives.dll" />
+        <File Id="src_System.Net.Primitives.dll" Name="System.Net.Primitives.dll" Source="$(var.GUI_TargetDir)System.Net.Primitives.dll" />
       </Component>
       <Component Id="src_System.Net.Requests.dll" Guid="8412388b-2def-48fb-9788-75efa3a30139">
-        <File Id="src_System.Net.Requests.dll" Name="System.Net.Requests.dll" Source="$(var.GUI_TargetDir)src\System.Net.Requests.dll" />
+        <File Id="src_System.Net.Requests.dll" Name="System.Net.Requests.dll" Source="$(var.GUI_TargetDir)System.Net.Requests.dll" />
       </Component>
       <Component Id="src_System.Net.Security.dll" Guid="6876fad8-b8c9-472c-81c5-38195da76226">
-        <File Id="src_System.Net.Security.dll" Name="System.Net.Security.dll" Source="$(var.GUI_TargetDir)src\System.Net.Security.dll" />
+        <File Id="src_System.Net.Security.dll" Name="System.Net.Security.dll" Source="$(var.GUI_TargetDir)System.Net.Security.dll" />
       </Component>
       <Component Id="src_System.Net.Sockets.dll" Guid="340d9c4a-dc96-4ddf-8813-d071f92581cb">
-        <File Id="src_System.Net.Sockets.dll" Name="System.Net.Sockets.dll" Source="$(var.GUI_TargetDir)src\System.Net.Sockets.dll" />
+        <File Id="src_System.Net.Sockets.dll" Name="System.Net.Sockets.dll" Source="$(var.GUI_TargetDir)System.Net.Sockets.dll" />
       </Component>
       <Component Id="src_System.Net.WebHeaderCollection.dll" Guid="d0d79286-40dc-45dd-a119-039ba16449d9">
-        <File Id="src_System.Net.WebHeaderCollection.dll" Name="System.Net.WebHeaderCollection.dll" Source="$(var.GUI_TargetDir)src\System.Net.WebHeaderCollection.dll" />
+        <File Id="src_System.Net.WebHeaderCollection.dll" Name="System.Net.WebHeaderCollection.dll" Source="$(var.GUI_TargetDir)System.Net.WebHeaderCollection.dll" />
       </Component>
       <Component Id="src_System.Net.WebSockets.Client.dll" Guid="58673c3c-6685-4897-ad64-f3d4b0403e08">
-        <File Id="src_System.Net.WebSockets.Client.dll" Name="System.Net.WebSockets.Client.dll" Source="$(var.GUI_TargetDir)src\System.Net.WebSockets.Client.dll" />
+        <File Id="src_System.Net.WebSockets.Client.dll" Name="System.Net.WebSockets.Client.dll" Source="$(var.GUI_TargetDir)System.Net.WebSockets.Client.dll" />
       </Component>
       <Component Id="src_System.Net.WebSockets.dll" Guid="26d21876-bb15-4b33-9124-947772e5619a">
-        <File Id="src_System.Net.WebSockets.dll" Name="System.Net.WebSockets.dll" Source="$(var.GUI_TargetDir)src\System.Net.WebSockets.dll" />
+        <File Id="src_System.Net.WebSockets.dll" Name="System.Net.WebSockets.dll" Source="$(var.GUI_TargetDir)System.Net.WebSockets.dll" />
       </Component>
       <Component Id="src_System.ObjectModel.dll" Guid="ccc48046-fb20-405d-a4cf-e933cfa545e5">
-        <File Id="src_System.ObjectModel.dll" Name="System.ObjectModel.dll" Source="$(var.GUI_TargetDir)src\System.ObjectModel.dll" />
+        <File Id="src_System.ObjectModel.dll" Name="System.ObjectModel.dll" Source="$(var.GUI_TargetDir)System.ObjectModel.dll" />
       </Component>
       <Component Id="src_System.Reflection.dll" Guid="c9ad3b06-cc45-4ef7-a48c-3bda604f03b6">
-        <File Id="src_System.Reflection.dll" Name="System.Reflection.dll" Source="$(var.GUI_TargetDir)src\System.Reflection.dll" />
+        <File Id="src_System.Reflection.dll" Name="System.Reflection.dll" Source="$(var.GUI_TargetDir)System.Reflection.dll" />
       </Component>
       <Component Id="src_System.Reflection.Extensions.dll" Guid="bb6e019a-1122-48d8-a690-a0104e6983d3">
-        <File Id="src_System.Reflection.Extensions.dll" Name="System.Reflection.Extensions.dll" Source="$(var.GUI_TargetDir)src\System.Reflection.Extensions.dll" />
+        <File Id="src_System.Reflection.Extensions.dll" Name="System.Reflection.Extensions.dll" Source="$(var.GUI_TargetDir)System.Reflection.Extensions.dll" />
       </Component>
       <Component Id="src_System.Reflection.Primitives.dll" Guid="8194702c-3065-430e-8f7b-14f942d77d75">
-        <File Id="src_System.Reflection.Primitives.dll" Name="System.Reflection.Primitives.dll" Source="$(var.GUI_TargetDir)src\System.Reflection.Primitives.dll" />
+        <File Id="src_System.Reflection.Primitives.dll" Name="System.Reflection.Primitives.dll" Source="$(var.GUI_TargetDir)System.Reflection.Primitives.dll" />
       </Component>
       <Component Id="src_System.Resources.Reader.dll" Guid="0d64c654-ac26-4b33-a8f7-d7afe18a2847">
-        <File Id="src_System.Resources.Reader.dll" Name="System.Resources.Reader.dll" Source="$(var.GUI_TargetDir)src\System.Resources.Reader.dll" />
+        <File Id="src_System.Resources.Reader.dll" Name="System.Resources.Reader.dll" Source="$(var.GUI_TargetDir)System.Resources.Reader.dll" />
       </Component>
       <Component Id="src_System.Resources.ResourceManager.dll" Guid="33f622e2-5024-4e99-bcce-839a51fa7166">
-        <File Id="src_System.Resources.ResourceManager.dll" Name="System.Resources.ResourceManager.dll" Source="$(var.GUI_TargetDir)src\System.Resources.ResourceManager.dll" />
+        <File Id="src_System.Resources.ResourceManager.dll" Name="System.Resources.ResourceManager.dll" Source="$(var.GUI_TargetDir)System.Resources.ResourceManager.dll" />
       </Component>
 		</ComponentGroup>
   <DirectoryRef Id="ApplicationProgramFolder">
@@ -441,28 +441,28 @@
   <Fragment>
     <ComponentGroup Id="src_Mods_files" Directory="src_Mods">
       <Component Id="src_Mods_aListOfmods.txt" Guid="2e7f8d26-aa92-48bd-b48c-e4992907f643">
-        <File Id="src_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)src\Mods\aListOfmods.txt" />
+        <File Id="src_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
       </Component>
       <Component Id="src_Mods_detachers.txt" Guid="1737d141-c96b-4d8a-a045-6c3e89f852eb">
-        <File Id="src_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)src\Mods\detachers.txt" />
+        <File Id="src_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)Mods\detachers.txt" />
       </Component>
       <Component Id="src_Mods_glyco.txt" Guid="51eff892-5ccd-43b2-b5ff-e47d3bd2d5c5">
-        <File Id="src_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)src\Mods\glyco.txt" />
+        <File Id="src_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)Mods\glyco.txt" />
       </Component>
       <Component Id="src_Mods_missing.txt" Guid="044193e1-dd6d-4bf1-b1ee-fe7b9189dd7b">
-        <File Id="src_Mods_missing.txt" Name="missing.txt" Source="$(var.GUI_TargetDir)src\Mods\missing.txt" />
+        <File Id="src_Mods_missing.txt" Name="missing.txt" Source="$(var.GUI_TargetDir)Mods\missing.txt" />
       </Component>
       <Component Id="src_Mods_Mods.txt" Guid="63fad17b-34ad-4382-8d04-de1e2582eb42">
-        <File Id="src_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)src\Mods\Mods.txt" />
+        <File Id="src_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
       </Component>
       <Component Id="src_Mods_substitutions.txt" Guid="981009b4-c656-42e3-9b65-d8eca7bce329">
-        <File Id="src_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)src\Mods\substitutions.txt" />
+        <File Id="src_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)Mods\substitutions.txt" />
       </Component>
       <Component Id="src_Mods_surfactants.txt" Guid="8f68de4e-2ef9-48b3-af72-3763749fe96e">
-        <File Id="src_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)src\Mods\surfactants.txt" />
+        <File Id="src_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)Mods\surfactants.txt" />
       </Component>
       <Component Id="src_Mods_tmt.txt" Guid="07ef6766-e057-409e-a7de-93b0614bb83a">
-        <File Id="src_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)src\Mods\tmt.txt" />
+        <File Id="src_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>
@@ -472,22 +472,22 @@
   <Fragment>
     <ComponentGroup Id="src_Data_files" Directory="src_Data">
       <Component Id="src_Data_combos.txt" Guid="286f4e79-a9f9-4a32-acef-3837a7e773c2">
-        <File Id="src_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)src\Data\combos.txt" />
+        <File Id="src_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
       </Component>
       <Component Id="src_Data_PSI_MOD.obo.xml" Guid="1a15b3a0-4280-4aa3-b365-9681e10e0a32">
-        <File Id="src_Data_PSI_MOD.obo.xml" Name="PSI-MOD.obo.xml" Source="$(var.GUI_TargetDir)src\Data\PSI-MOD.obo.xml" />
+        <File Id="src_Data_PSI_MOD.obo.xml" Name="PSI-MOD.obo.xml" Source="$(var.GUI_TargetDir)Data\PSI-MOD.obo.xml" />
       </Component>
       <Component Id="src_Data_ptmlist.txt" Guid="25c61def-762c-4523-a751-52fbf2165f1b">
-        <File Id="src_Data_ptmlist.txt" Name="ptmlist.txt" Source="$(var.GUI_TargetDir)src\Data\ptmlist.txt" />
+        <File Id="src_Data_ptmlist.txt" Name="ptmlist.txt" Source="$(var.GUI_TargetDir)Data\ptmlist.txt" />
       </Component>
       <Component Id="src_Data_unimod.xml" Guid="3d466d11-6769-4d0e-ab0b-34bd0ae7d9f7">
-        <File Id="src_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)src\Data\unimod.xml" />
+        <File Id="src_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)Data\unimod.xml" />
       </Component>
       <Component Id="src_Data_elements.dat" Guid="2a33ba0a-1836-4d82-b4d2-5a7955517fb6">
-        <File Id="src_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)src\Data\elements.dat" />
+        <File Id="src_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
       </Component>
       <Component Id="src_Data_proteases.tsv" Guid="d2e5977a-f9b5-48c8-919f-97a7322d402c">
-        <File Id="src_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)src\Data\proteases.tsv" />
+        <File Id="src_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
       </Component>
     </ComponentGroup>
   </Fragment>
