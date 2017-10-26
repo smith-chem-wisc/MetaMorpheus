@@ -125,7 +125,7 @@ namespace EngineLayer.Indexing
 
             try
             {
-                fragmentIndex = new List<int>[(int)Math.Ceiling(maxFragmentSize) * fragmentBinsPerDalton];
+                fragmentIndex = new List<int>[(int)Math.Ceiling(maxFragmentSize) * fragmentBinsPerDalton + 1];
             }
             catch (OutOfMemoryException)
             {
