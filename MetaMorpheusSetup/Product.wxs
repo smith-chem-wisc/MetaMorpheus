@@ -23,7 +23,7 @@
       <ComponentGroupRef Id="src_Mods_files" />
       <ComponentGroupRef Id="src_Data_files" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
-      <ComponentRef Id="AppShortCut"/>
+      <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -37,18 +37,7 @@
         <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus"/>
       </Directory>
     </Directory>
-
-    <Component Id="AppShortCut" Directory="MetaMorpheusProgramMenuFolder" >
-      <Shortcut Id="AppStartMenuSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
-      <Shortcut Id="UninstallProduct"
-                Name="Uninstall Metamorpheus"
-                Description="Uninstalls My Application"
-                Target="[System64Folder]msiexec.exe"
-                Arguments="/x [ProductCode]"/>
-      <RemoveFolder Id="MetaMorpheusProgramMenuFolder" On="uninstall"/>
-      <RegistryValue Root="HKCU" Key="Software\Microsoft\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-    </Component>
-
+    
   </Product>
 
   <!--Executables and libraries-->
@@ -501,8 +490,22 @@
     </ComponentGroup>
   </Fragment>
 
+  <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
+    <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="b4a458e0-06ce-452d-bfaf-0f413007abc3">
+      <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      <Shortcut Id="AppStartMenuSC"
+                Name="MetaMorpheus"
+                Description="Shortcut to App"
+                Target="[#MetaMorpheusGUI.exe]"
+                WorkingDirectory="MetaMorpheusInstallFolder" />
+      <Shortcut Id="UninstallProduct"
+                Name="Uninstall Metamorpheus"
+                Description="Uninstalls My Application"
+                Target="[System64Folder]msiexec.exe"
+                Arguments="/x [ProductCode]"/>
+      <RemoveFolder Id="MyRemoveFolderId" On="uninstall"/>
+    </Component>
   </Fragment>
   
-
 </Wix>
