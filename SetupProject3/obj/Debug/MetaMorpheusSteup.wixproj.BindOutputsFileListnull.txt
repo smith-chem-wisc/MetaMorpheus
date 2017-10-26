@@ -1,3 +1,0 @@
-E:\XRSheeranQ\MetaMorpheus-master\SetupProject3\bin\Debug\cab1.cab
-E:\XRSheeranQ\MetaMorpheus-master\SetupProject3\bin\Debug\SetupProject3.msi
-E:\XRSheeranQ\MetaMorpheus-master\SetupProject3\bin\Debug\SetupProject3.wixpdb

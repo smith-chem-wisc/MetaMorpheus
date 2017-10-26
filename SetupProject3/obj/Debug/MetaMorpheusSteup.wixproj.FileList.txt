@@ -1,7 +1,0 @@
-E:\XRSheeranQ\MetaMorpheus-master\SetupProject3\bin\Debug\cab1.cab
-E:\XRSheeranQ\MetaMorpheus-master\SetupProject3\bin\Debug\SetupProject3.msi
-E:\XRSheeranQ\MetaMorpheus-master\SetupProject3\bin\Debug\SetupProject3.wixpdb
-obj\Debug\Product.wixobj
-obj\Debug\MetaMorpheusSteup.wixproj.BindContentsFileListnull.txt
-obj\Debug\MetaMorpheusSteup.wixproj.BindOutputsFileListnull.txt
-obj\Debug\MetaMorpheusSteup.wixproj.BindBuiltOutputsFileListnull.txt
