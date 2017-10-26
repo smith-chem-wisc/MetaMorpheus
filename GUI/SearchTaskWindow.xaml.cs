@@ -496,6 +496,11 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void modernSearchRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
