@@ -495,6 +495,7 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
