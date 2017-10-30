@@ -32,6 +32,7 @@
       <ComponentGroupRef Id="src_Data_files" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
+      <ComponentRef Id="DesktopShortcut"/>
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -44,8 +45,32 @@
       <Directory Id="ProgramMenuFolder">
         <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus"/>
       </Directory>
+      <Directory Id="DesktopFolder" Name="Desktop">
+        <Component Id="DesktopShortcut" Guid="dd284b3d-bd13-444b-8e24-f3aa54b9dac1">
+          <Condition>INSTALLDESKTOPSHORTCUT</Condition>
+          <RegistryKey Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Action="createAndRemoveOnUninstall">
+            <RegistryValue Name="Installed" Value="1" Type="integer" KeyPath="yes"/>
+          </RegistryKey>
+          <Shortcut Id="DeskTopSC"
+                Name="MetaMorpheus"
+                Description="Shortcut to App"
+                Target="[#MetaMorpheusGUI.exe]"
+                WorkingDirectory="MetaMorpheusInstallFolder" />
+        </Component>
+      </Directory>
     </Directory>
+
     
+
+    <Property Id='WIXUI_INSTALLDIR' Value="MetaMorpheusInstallFolder"/>
+    <UIRef Id="MyWixUI_InstallDir"/>
+    <Property Id="INSTALLDESKTOPSHORTCUT" Value="1" />
+    <CustomAction Id="StartAppOnExit" FileKey="MetaMorpheusGUI.exe" ExeCommand="" Execute="immediate" Impersonate="yes" Return="asyncNoWait"/>
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="1" />
+    <UI>
+      
+      <Publish  Dialog="ExitDialog" Control="Finish" Order="1" Event="DoAction" Value="StartAppOnExit">WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT</Publish>
+    </UI>
   </Product>
 
   <!--Executables and libraries-->
@@ -440,6 +465,9 @@
       </Component>
       <Component Id="src_System.Resources.ResourceManager.dll" Guid="33f622e2-5024-4e99-bcce-839a51fa7166">
         <File Id="src_System.Resources.ResourceManager.dll" Name="System.Resources.ResourceManager.dll" Source="$(var.GUI_TargetDir)System.Resources.ResourceManager.dll" />
+      </Component>
+      <Component Id="src_update.txt" Guid="d62d81b4-a1d9-4b09-bfed-5e9c4c03097a">
+        <File Id="src_update.txt" Name="update.txt" Source="$(var.GUI_TargetDir)update.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>

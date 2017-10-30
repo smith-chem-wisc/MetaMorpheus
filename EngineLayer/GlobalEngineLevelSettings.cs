@@ -30,6 +30,12 @@ namespace EngineLayer
             try
             {
                 UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
+
+
+                UsefulProteomicsDatabases.Loaders.UpdateElements(elementsLocation);
+
+
+
                 UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
                 PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(psiModLocation);
                 var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
