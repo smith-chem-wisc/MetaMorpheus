@@ -878,5 +878,14 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void MenuItem_Click_2(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult quit = MessageBox.Show("Are you sure to close Metamorpheus and retore?", "MetaMorpheus Exit", MessageBoxButton.YesNo);
+            if (quit.Equals(MessageBoxResult.Yes))
+            {
+                MessageBox.Show(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+            }
+        }
     }
 }

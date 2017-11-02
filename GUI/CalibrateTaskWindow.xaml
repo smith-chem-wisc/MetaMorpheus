@@ -61,6 +61,7 @@
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="label_Copy" Content="Protease" />
                                         <ComboBox x:Name="proteaseComboBox" />
+                                        <Button Content="Close Program &#38; Modify Protease" Margin="10 0" Width="192" RenderTransformOrigin="2.333,0.5" Click="Button_Click_1"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
@@ -166,6 +167,8 @@
                                 <StackPanel Grid.Column="2">
                                     <Label Content="Database Localized" />
                                     <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
+                                    <Label Height="38"></Label>
+                                    <Button Height="42" Content="Close Metamorpheus &#38;  Edit Mods" RenderTransformOrigin="0.519,1.884" Margin="0,0,27,0" Click="Button_Click"/>
                                     <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
                                         <TreeView.Style>
                                             <Style TargetType="{x:Type TreeView}">

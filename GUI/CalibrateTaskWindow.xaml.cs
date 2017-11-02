@@ -9,7 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-
+using System.Diagnostics;
 namespace MetaMorpheusGUI
 {
     /// <summary>
@@ -267,5 +267,26 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult quit = MessageBox.Show("Are you sure to close Metamorpheus?", "MetaMorpheus Exit", MessageBoxButton.YesNo);
+            if (quit.Equals(MessageBoxResult.Yes))
+            {
+                Process.Start("explorer.exe", @"Data");
+                Application.Current.Shutdown();
+            }
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult quit=MessageBox.Show("Are you sure to close Metamorpheus?", "MetaMorpheus Exit", MessageBoxButton.YesNo);
+            if (quit.Equals(MessageBoxResult.Yes))
+            {
+                Process.Start(@"Data\proteases.tsv");
+                Application.Current.Shutdown();
+            }
+                        
+        }
     }
 }
