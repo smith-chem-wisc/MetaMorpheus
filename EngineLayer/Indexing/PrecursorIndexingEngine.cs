@@ -107,7 +107,7 @@ namespace EngineLayer.Indexing
                 }
             }
 
-            var fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton];
+            var fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton+1];
 
             // populate fragment index
             progress = 0;
@@ -115,14 +115,15 @@ namespace EngineLayer.Indexing
             for (int i = 0; i < peptidesSortedByMass.Count; i++)
             {
                 double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods, 1);
+                if (!Double.IsNaN(mz))
+                {
+                    int fragmentBin = (int)Math.Round(mz * fragmentBinsPerDalton);
 
-                int fragmentBin = (int)Math.Round(mz * fragmentBinsPerDalton);
-
-                if (fragmentIndex[fragmentBin] == null)
-                    fragmentIndex[fragmentBin] = new List<int> { i };
-                else
-                    fragmentIndex[fragmentBin].Add(i);
-
+                    if (fragmentIndex[fragmentBin] == null)
+                        fragmentIndex[fragmentBin] = new List<int> { i };
+                    else
+                        fragmentIndex[fragmentBin].Add(i);
+                }
                 progress++;
                 var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
 
