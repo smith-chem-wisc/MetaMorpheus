@@ -150,9 +150,6 @@
     <Compile Include="MetaUpdater.xaml.cs">
       <DependentUpon>MetaUpdater.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MetaUpdater_Yes.xaml.cs">
-      <DependentUpon>MetaUpdater_Yes.xaml</DependentUpon>
-    </Compile>
     <Compile Include="ModForTreeView.cs" />
     <Compile Include="ModTypeForTreeView.cs" />
     <Compile Include="OutputFileForTreeView.cs" />
@@ -209,10 +206,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="MetaUpdater.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="MetaUpdater_Yes.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -9,16 +9,9 @@
         Loaded="MyWindow_Loaded">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
-            <MenuItem Header="_Settings">
-                <MenuItem Header="Global Settings" Click="MenuItem_Click_1" />
-                <MenuItem Header="Default Search Task" />
-                <MenuItem Header="Default Gptmd Task" />
-                <MenuItem Header="Default Calibration Task" />
-            </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
-            </MenuItem>
-            
+            </MenuItem>            
         </Menu>
         <Grid>
             <Grid.ColumnDefinitions>

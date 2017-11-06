@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using System;
-using System.IO;
+using System.Diagnostics;
+using System.Net;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -15,35 +16,62 @@ namespace MetaMorpheusGUI
         public MetaUpdater()
         {
             InitializeComponent();
-            lbl.Text = "A newer version: " + GlobalEngineLevelSettings.NewestVersion + " is available, would you like to download it?";
+            lbl.Text = "A newer version: " + GlobalEngineLevelSettings.NewestVersion + " is available!";
         }
 
         #endregion Public Constructors
 
         #region Private Methods
 
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        private void InstallerClicked(object semder, RoutedEventArgs e)
         {
-            String LogPath = "update.txt";
-            File.WriteAllText(LogPath, "false");
+            using (var client = new WebClient())
+            {
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.NewestVersion + @"/MetaMorpheusInstaller.msi");
+
+                try
+                {
+                    var tempDownloadLocation = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MetaMorpheusInstaller.msi");
+                    client.DownloadFile(uri, tempDownloadLocation);
+                    Process p = new Process();
+                    p.StartInfo.FileName = tempDownloadLocation;
+                    Application.Current.Shutdown();
+                    p.Start();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            }
+            DialogResult = true;
         }
 
-        private void CheckBox_unChecked(object sender, RoutedEventArgs e)
+        private void PortableClicked(object semder, RoutedEventArgs e)
         {
-            String LogPath = "update.txt";
-            File.WriteAllText(LogPath, "true");
-        }
+            using (var client = new WebClient())
+            {
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.NewestVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
 
-        private void YesClicked(object semder, RoutedEventArgs e)
-        {
-            this.Close();
-            MetaUpdater_Yes newwind = new MetaUpdater_Yes();
-            newwind.Show();
+                try
+                {
+                    var tempDownloadLocation = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
+                    client.DownloadFile(uri, tempDownloadLocation);
+                    Process p = new Process();
+                    p.StartInfo.FileName = tempDownloadLocation;
+                    Application.Current.Shutdown();
+                    p.Start();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            }
+            DialogResult = true;
         }
 
         private void NoClicked(object semder, RoutedEventArgs e)
         {
-            this.Close();
+            DialogResult = false;
         }
 
         #endregion Private Methods
