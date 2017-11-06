@@ -25,6 +25,7 @@ namespace MetaMorpheusGUI
 
         private void InstallerClicked(object semder, RoutedEventArgs e)
         {
+            DialogResult = true;
             using (var client = new WebClient())
             {
                 var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.NewestVersion + @"/MetaMorpheusInstaller.msi");
@@ -43,11 +44,11 @@ namespace MetaMorpheusGUI
                     MessageBox.Show(ex.Message);
                 }
             }
-            DialogResult = true;
         }
 
         private void PortableClicked(object semder, RoutedEventArgs e)
         {
+            DialogResult = true;
             using (var client = new WebClient())
             {
                 var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.NewestVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
@@ -66,7 +67,6 @@ namespace MetaMorpheusGUI
                     MessageBox.Show(ex.Message);
                 }
             }
-            DialogResult = true;
         }
 
         private void NoClicked(object semder, RoutedEventArgs e)

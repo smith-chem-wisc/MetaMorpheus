@@ -1,11 +1,11 @@
 ﻿using Nett;
+using Newtonsoft.Json.Linq;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text.RegularExpressions;
+using System.Net.Http;
 
 namespace EngineLayer
 {
@@ -54,6 +54,7 @@ namespace EngineLayer
             }
             else
                 AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
+            AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
 
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
@@ -94,11 +95,20 @@ namespace EngineLayer
             // Attempt to get current MetaMorpheus version
             try
             {
-                HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
-                HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse();
-                String versionNum = "" + versionLink.ResponseUri;
-                Regex versionReg = new Regex(@"\d+\.\d+\.\d+.\d+");
-                NewestVersion = "" + versionReg.Matches(versionNum)[0];
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
+
+                    using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
+                    {
+                        var json = response.Content.ReadAsStringAsync().Result;
+                        JObject deserialized = JObject.Parse(json);
+                        var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+                        if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
+                            throw new MetaMorpheusException("Necessary files do not exist!");
+                        NewestVersion = deserialized["tag_name"].ToString();
+                    }
+                }
             }
             catch (Exception e)
             {
