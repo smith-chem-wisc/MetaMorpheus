@@ -17,11 +17,7 @@
             <MenuItem Header="_Help">
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
             </MenuItem>
-            <MenuItem Header="Restore">
-                <MenuItem Header="Restore Data Files" Click="MenuItem_Click_2"></MenuItem>
-                <MenuItem Header="Restore Mod Files"></MenuItem>
-                <MenuItem Header="Restore All (Both Data and Mods)"></MenuItem>
-            </MenuItem>
+            
         </Menu>
         <Grid>
             <Grid.ColumnDefinitions>

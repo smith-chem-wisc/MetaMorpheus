@@ -212,16 +212,16 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="MetaUpdater.xaml">
-      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="MetaUpdater_No.xaml">
-      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="MetaUpdater_Yes.xaml">
-      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="SearchTaskWindow.xaml">
       <SubType>Designer</SubType>
@@ -276,11 +276,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="MMnice.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="update.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

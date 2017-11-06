@@ -15,6 +15,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Reflection;
+using System.Configuration;
 
 namespace MetaMorpheusGUI
 {
@@ -39,7 +40,7 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion + "2.0.0";
+            Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion ;
 
             try
             {
@@ -53,14 +54,23 @@ namespace MetaMorpheusGUI
                 VersionCheck = "" + versionReg.Matches(versionNum)[0];//version check will be shared with all the forms
 
                 //get current version number
-
-                String currVersionNum = "" + versionReg.Matches(this.Title)[0];//exception may be thrown here
+                String currVersionNum;
+                if (versionReg.IsMatch(this.Title))
+                {
+                    currVersionNum = "" + versionReg.Matches(this.Title)[0];
+                }
+                else
+                {
+                    currVersionNum = VersionCheck;//avoid updating unreleased
+                }
+                //exception may be thrown here
                                                                                //update file, if user choose not to update (unchecked checkbox), false; otherwise is true; default value is also true
-                String LogPath = "update.txt";// only work for the output file
+                String LogPath = "settings.toml";// only work for the output file
                 //get string
-                string text = System.IO.File.ReadAllText(LogPath);
+                var upd = Toml.ReadFile(LogPath).Get<bool>("autoUpdate");
                 //check the version and whether to update or not
-                if (!currVersionNum.Equals(VersionCheck) && text.Equals("true"))
+                
+                if (!currVersionNum.Equals(VersionCheck) && upd)
                 {
                     MetaUpdater newwind = new MetaUpdater();
                     newwind.Show();
@@ -879,13 +889,6 @@ namespace MetaMorpheusGUI
 
         #endregion Private Methods
 
-        private void MenuItem_Click_2(object sender, RoutedEventArgs e)
-        {
-            MessageBoxResult quit = MessageBox.Show("Are you sure to close Metamorpheus and retore?", "MetaMorpheus Exit", MessageBoxButton.YesNo);
-            if (quit.Equals(MessageBoxResult.Yes))
-            {
-                MessageBox.Show(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
-            }
-        }
+        
     }
 }
