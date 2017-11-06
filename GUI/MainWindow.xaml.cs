@@ -11,11 +11,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using System.Net;
-using System.Text.RegularExpressions;
-using System.Diagnostics;
-using System.Reflection;
-using System.Configuration;
 
 namespace MetaMorpheusGUI
 {
@@ -35,51 +30,12 @@ namespace MetaMorpheusGUI
         #endregion Private Fields
 
         #region Public Constructors
-        public static string VersionCheck;
+
         public MainWindow()
         {
             InitializeComponent();
 
-            Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion ;
-
-            try
-            {
-                /*Version Check*/
-                //get current version link
-                HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
-                HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse(); //get final version link
-                String versionNum = "" + versionLink.ResponseUri; //convert version link to string
-                                                                  //match version number
-                Regex versionReg = new Regex(@"\d+\.\d+\.\d+");
-                VersionCheck = "" + versionReg.Matches(versionNum)[0];//version check will be shared with all the forms
-
-                //get current version number
-                String currVersionNum;
-                if (versionReg.IsMatch(this.Title))
-                {
-                    currVersionNum = "" + versionReg.Matches(this.Title)[0];
-                }
-                else
-                {
-                    currVersionNum = VersionCheck;//avoid updating unreleased
-                }
-                //exception may be thrown here
-                                                                               //update file, if user choose not to update (unchecked checkbox), false; otherwise is true; default value is also true
-                String LogPath = "settings.toml";// only work for the output file
-                //get string
-                var upd = Toml.ReadFile(LogPath).Get<bool>("autoUpdate");
-                //check the version and whether to update or not
-                
-                if (!currVersionNum.Equals(VersionCheck) && upd)
-                {
-                    MetaUpdater newwind = new MetaUpdater();
-                    newwind.Show();
-                }
-            }
-            catch(Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
+            Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
@@ -116,6 +72,8 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusTask.WarnHandler += GuiWarnHandler;
 
+            GlobalEngineLevelSettings.WarnHandler += GuiWarnHandler;
+
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusEngine.WarnHandler += GuiWarnHandler;
@@ -130,6 +88,22 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void MyWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.MostCurrentVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+                {
+                    MetaUpdater newwind = new MetaUpdater();
+                    newwind.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
 
         private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
         {
@@ -888,7 +862,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
-        
     }
 }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="MetaUpdater" Height="223.567" Width="434.713" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterOwner">
+        Title="MetaUpdater" Height="223.567" Width="434.713" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen" >
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="83*"/>
