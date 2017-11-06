@@ -35,24 +35,12 @@ namespace EngineLayer
 
         static GlobalEngineLevelSettings()
         {
-            try
-            {
-                HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
-                HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse();
-                String versionNum = "" + versionLink.ResponseUri;
-                Regex versionReg = new Regex(@"\d+\.\d+\.\d+.\d+");
-                NewestVersion = "" + versionReg.Matches(versionNum)[0];//version check will be shared with all the forms
-
-                UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-                UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
-                PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(psiModLocation);
-                var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
-                UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation, formalChargesDictionary).ToList();
-            }
-            catch (WebException e)
-            {
-                Warn(e.Message);
-            }
+            // No exceptions to be caught here, since we are just reading these files!
+            UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
+            UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
+            PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(psiModLocation);
+            var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
+            UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation, formalChargesDictionary).ToList();
 
             AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
 
@@ -94,11 +82,28 @@ namespace EngineLayer
 
         public static List<Modification> AllModsKnown { get; }
 
-        public static string NewestVersion { get; }
+        public static string NewestVersion { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
+
+        public static void GetVersionNumbersFromWeb()
+        {
+            // Attempt to get current MetaMorpheus version
+            try
+            {
+                HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
+                HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse();
+                String versionNum = "" + versionLink.ResponseUri;
+                Regex versionReg = new Regex(@"\d+\.\d+\.\d+.\d+");
+                NewestVersion = "" + versionReg.Matches(versionNum)[0];
+            }
+            catch (WebException e)
+            {
+                Warn("Could not get newest MM version: " + e.Message);
+            }
+        }
 
         public static void AddMods(IEnumerable<Modification> enumerable)
         {

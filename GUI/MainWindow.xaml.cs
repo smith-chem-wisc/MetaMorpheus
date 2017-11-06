@@ -72,17 +72,19 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusTask.WarnHandler += GuiWarnHandler;
 
-            GlobalEngineLevelSettings.WarnHandler += GuiWarnHandler;
-
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusEngine.WarnHandler += GuiWarnHandler;
+
+            GlobalEngineLevelSettings.WarnHandler += GuiWarnHandler;
 
             MyFileManager.WarnHandler += GuiWarnHandler;
 
             UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
+
+            GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
         }
 
         #endregion Public Constructors
@@ -93,7 +95,7 @@ namespace MetaMorpheusGUI
         {
             try
             {
-                if (!GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+                if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
                 {
                     MetaUpdater newwind = new MetaUpdater();
                     newwind.ShowDialog();
