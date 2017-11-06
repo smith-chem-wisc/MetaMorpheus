@@ -42,17 +42,18 @@ namespace EngineLayer
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation, formalChargesDictionary).ToList();
 
-            AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
-
             MetaMorpheusVersion = typeof(GlobalEngineLevelSettings).Assembly.GetName().Version.ToString();
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
             {
+                AskAboutUpdating = false;
 #if DEBUG
                 MetaMorpheusVersion = "Not a release version. DEBUG.";
 #else
                 MetaMorpheusVersion = "Not a release version.";
 #endif
             }
+            else
+                AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
 
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
@@ -99,7 +100,7 @@ namespace EngineLayer
                 Regex versionReg = new Regex(@"\d+\.\d+\.\d+.\d+");
                 NewestVersion = "" + versionReg.Matches(versionNum)[0];
             }
-            catch (WebException e)
+            catch (Exception e)
             {
                 Warn("Could not get newest MM version: " + e.Message);
             }

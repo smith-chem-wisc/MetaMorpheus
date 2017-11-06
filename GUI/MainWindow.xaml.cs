@@ -93,17 +93,17 @@ namespace MetaMorpheusGUI
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            try
+            if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
             {
-                if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+                try
                 {
                     MetaUpdater newwind = new MetaUpdater();
                     newwind.ShowDialog();
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
             }
         }
 
@@ -860,6 +860,28 @@ namespace MetaMorpheusGUI
                     File.WriteAllLines(fullPathofToml[i] + ".toml", lines);
                 }
                 UpdateFileSpecificParamsDisplay(fullPathofToml);
+            }
+        }
+
+        private void MenuItem_Click_2(object sender, RoutedEventArgs e)
+        {
+            GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+
+            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion))
+                MessageBox.Show("You have the most updated version!");
+            else if (GlobalEngineLevelSettings.NewestVersion == null)
+                MessageBox.Show("Error getting newest version");
+            else
+            {
+                try
+                {
+                    MetaUpdater newwind = new MetaUpdater();
+                    newwind.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
             }
         }
 
