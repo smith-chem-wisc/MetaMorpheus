@@ -536,6 +536,7 @@ namespace Test
             {
                 ProductMassTolerance = productMassTolerance,
                 YIons = false,
+                ScoreCutoff = 2
             };
             CommonParameters.DigestionParams = new DigestionParams
             {
