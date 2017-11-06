@@ -81,11 +81,36 @@ namespace MetaMorpheusGUI
             UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
+
+            try
+            {
+                GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+            }
+            catch (Exception e)
+            {
+                GuiWarnHandler(null, new StringEventArgs("Could not get newest MM version from web: " + e.Message, null));
+            }
         }
 
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void MyWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+            {
+                try
+                {
+                    MetaUpdater newwind = new MetaUpdater();
+                    newwind.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+            }
+        }
 
         private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
         {
@@ -840,6 +865,34 @@ namespace MetaMorpheusGUI
                     File.WriteAllLines(fullPathofToml[i] + ".toml", lines);
                 }
                 UpdateFileSpecificParamsDisplay(fullPathofToml);
+            }
+        }
+
+        private void MenuItem_Click_2(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+            }
+            catch (Exception ex)
+            {
+                GuiWarnHandler(null, new StringEventArgs("Could not get newest MM version from web: " + ex.Message, null));
+                return;
+            }
+
+            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion))
+                MessageBox.Show("You have the most updated version!");
+            else
+            {
+                try
+                {
+                    MetaUpdater newwind = new MetaUpdater();
+                    newwind.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
             }
         }
 
