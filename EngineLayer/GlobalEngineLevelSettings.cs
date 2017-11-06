@@ -61,12 +61,6 @@ namespace EngineLayer
 
         #endregion Public Constructors
 
-        #region Public Events
-
-        public static event EventHandler<StringEventArgs> WarnHandler;
-
-        #endregion Public Events
-
         #region Public Properties
 
         public static bool AskAboutUpdating { get; }
@@ -92,26 +86,19 @@ namespace EngineLayer
         public static void GetVersionNumbersFromWeb()
         {
             // Attempt to get current MetaMorpheus version
-            try
+            using (var client = new HttpClient())
             {
-                using (var client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
 
-                    using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
-                    {
-                        var json = response.Content.ReadAsStringAsync().Result;
-                        JObject deserialized = JObject.Parse(json);
-                        var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
-                        if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
-                            throw new MetaMorpheusException("Necessary files do not exist!");
-                        NewestVersion = deserialized["tag_name"].ToString();
-                    }
+                using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
+                {
+                    var json = response.Content.ReadAsStringAsync().Result;
+                    JObject deserialized = JObject.Parse(json);
+                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+                    if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
+                        throw new MetaMorpheusException("Necessary files do not exist!");
+                    NewestVersion = deserialized["tag_name"].ToString();
                 }
-            }
-            catch (Exception e)
-            {
-                Warn("Could not get newest MM version: " + e.Message);
             }
         }
 
@@ -133,11 +120,6 @@ namespace EngineLayer
         #endregion Public Methods
 
         #region Private Methods
-
-        private static void Warn(string v)
-        {
-            WarnHandler?.Invoke(null, new StringEventArgs(v, new List<string>()));
-        }
 
         private static Dictionary<string, Protease> LoadProteaseDictionary()
         {

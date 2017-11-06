@@ -76,15 +76,20 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusEngine.WarnHandler += GuiWarnHandler;
 
-            GlobalEngineLevelSettings.WarnHandler += GuiWarnHandler;
-
             MyFileManager.WarnHandler += GuiWarnHandler;
 
             UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
 
-            GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+            try
+            {
+                GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+            }
+            catch (Exception e)
+            {
+                GuiWarnHandler(null, new StringEventArgs("Could not get newest MM version from web: " + e.Message, null));
+            }
         }
 
         #endregion Public Constructors

@@ -43,8 +43,6 @@ namespace MetaMorpheusCommandLine
 
             if (result.HasErrors == false)
             {
-                GlobalEngineLevelSettings.WarnHandler += MyEngine_outLabelStatusHandler;
-
                 MetaMorpheusEngine.WarnHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
                 MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
