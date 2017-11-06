@@ -54,7 +54,6 @@ namespace EngineLayer
             }
             else
                 AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
-            AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
 
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
