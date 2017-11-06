@@ -30,8 +30,12 @@
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <ComponentGroupRef Id="src_Mods_files" />
       <ComponentGroupRef Id="src_Data_files" />
+      <ComponentGroupRef Id="Appsrc_Mods_files" />
+      <ComponentGroupRef Id="Appsrc_Data_files" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
+      <ComponentRef Id="DesktopShortcut"/>
+      <ComponentRef Id="settings.toml"/>
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -41,27 +45,75 @@
           <Directory Id="ModsFolder" Name="Mods" />
         </Directory>
       </Directory>
+    <Directory Id="DesktopFolder" Name="Desktop">
+      <Component Id="DesktopShortcut" Guid="ef1fd292-b162-4990-80cb-cd2a0c839d4b">
+        <Condition>INSTALLDESKTOPSHORTCUT</Condition>
+        <RegistryKey Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Action="createAndRemoveOnUninstall">
+        <RegistryValue Name="MetaMorpheusDeskTop" Value="1" Type="integer" KeyPath="yes"/>
+        </RegistryKey>
+        <Shortcut Id="AppDeskTopSC"
+                Name="MetaMorpheus"
+                Description="Shortcut to App"
+                Target="[#MetaMorpheusGUI.exe]"
+                WorkingDirectory="MetaMorpheusInstallFolder" />
+    </Component>
+    </Directory>
       <Directory Id="ProgramMenuFolder">
         <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus"/>
       </Directory>
+      <Directory Id="LocalAppDataFolder">
+        
+          <Directory Id="MetaMorpheusAppFolder" Name="MetaMorpheus">
+              <Component Id="settings.toml" Guid="1d8da0c2-5b44-4fe4-a581-1fc526346313">
+              <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+              <File ReadOnly="no" Id="settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
+              </Component>
+              <Directory Id="MyAppDataFolder" Name="Data" />
+              <Directory Id="MyAppModsFolder" Name="Mods" />
+          </Directory>
+      </Directory>
     </Directory>
     
+    <UI>
+      <UIRef Id="WixUI_Mondo"/>
+      <UIRef Id="newDlg"/>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
+      <Publish Dialog="MetaSCDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="1">1</Publish>
+      <Publish Dialog="MetaSCDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1">1</Publish>
+      
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
+      <Publish Dialog="ExitDialog"
+        Control="Finish" 
+        Event="DoAction" 
+        Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+      
+    </UI>
+    
+ 
+  <CustomAction Id='LaunchFile' FileKey='MetaMorpheusGUI.exe' ExeCommand='' Return="asyncNoWait" />
+  
+  <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
+  <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Metamorpheus" />
+  <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
+  <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
   </Product>
 
   <!--Executables and libraries-->
   <Fragment>
     <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup" Directory="MetaMorpheusInstallFolder">
+      
       <Component Id="MetaMorpheusGUI.exe" Guid="63370d96-1880-40ab-8525-685ccf64326f">
         <File Id="MetaMorpheusGUI.exe" Name="MetaMorpheusGUI.exe" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe" />
+      </Component>
+      <Component Id="pcsettings.toml" Guid="953341a8-4e70-4bdf-bcf9-2f544a734db4">
+              <File ReadOnly="yes" Id="pcsettings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
       </Component>
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
       </Component>
+      
       <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="18bed74c-eedb-4efa-a6e3-1592ac7022e3">
         <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)UnmanagedThermoHelperLayer.dll" />
-      </Component>
-      <Component Id="src_Thermo.dll">
-        <File Id="src_Thermo.dll" Name="Thermo.dll" Source="$(var.GUI_TargetDir)Thermo.dll" />
       </Component>
       <Component Id="src_UsefulProteomicsDatabases.dll" Guid="e7f76fbf-d21c-4e57-bed4-33f71822ee18">
         <File Id="src_UsefulProteomicsDatabases.dll" Name="UsefulProteomicsDatabases.dll" Source="$(var.GUI_TargetDir)UsefulProteomicsDatabases.dll" />
@@ -448,28 +500,28 @@
   <Fragment>
     <ComponentGroup Id="src_Mods_files" Directory="ModsFolder">
       <Component Id="src_Mods_aListOfmods.txt" Guid="2e7f8d26-aa92-48bd-b48c-e4992907f643">
-        <File Id="src_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
+        <File ReadOnly="yes" Id="src_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
       </Component>
       <Component Id="src_Mods_detachers.txt" Guid="1737d141-c96b-4d8a-a045-6c3e89f852eb">
-        <File Id="src_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)Mods\detachers.txt" />
+        <File ReadOnly="yes" Id="src_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)Mods\detachers.txt" />
       </Component>
       <Component Id="src_Mods_glyco.txt" Guid="51eff892-5ccd-43b2-b5ff-e47d3bd2d5c5">
-        <File Id="src_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)Mods\glyco.txt" />
+        <File ReadOnly="yes" Id="src_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)Mods\glyco.txt" />
       </Component>
       <Component Id="src_Mods_missing.txt" Guid="044193e1-dd6d-4bf1-b1ee-fe7b9189dd7b">
-        <File Id="src_Mods_missing.txt" Name="missing.txt" Source="$(var.GUI_TargetDir)Mods\missing.txt" />
+        <File ReadOnly="yes" Id="src_Mods_missing.txt" Name="missing.txt" Source="$(var.GUI_TargetDir)Mods\missing.txt" />
       </Component>
       <Component Id="src_Mods_Mods.txt" Guid="63fad17b-34ad-4382-8d04-de1e2582eb42">
-        <File Id="src_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
+        <File ReadOnly="yes" Id="src_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
       </Component>
       <Component Id="src_Mods_substitutions.txt" Guid="981009b4-c656-42e3-9b65-d8eca7bce329">
-        <File Id="src_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)Mods\substitutions.txt" />
+        <File ReadOnly="yes" Id="src_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)Mods\substitutions.txt" />
       </Component>
       <Component Id="src_Mods_surfactants.txt" Guid="8f68de4e-2ef9-48b3-af72-3763749fe96e">
-        <File Id="src_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)Mods\surfactants.txt" />
+        <File ReadOnly="yes" Id="src_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)Mods\surfactants.txt" />
       </Component>
       <Component Id="src_Mods_tmt.txt" Guid="07ef6766-e057-409e-a7de-93b0614bb83a">
-        <File Id="src_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
+        <File ReadOnly="yes" Id="src_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>
@@ -478,26 +530,101 @@
   <Fragment>
     <ComponentGroup Id="src_Data_files" Directory="DataFolder">
       <Component Id="src_Data_combos.txt" Guid="286f4e79-a9f9-4a32-acef-3837a7e773c2">
-        <File Id="src_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
+        <File ReadOnly="yes" Id="src_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
       </Component>
       <Component Id="src_Data_PSI_MOD.obo.xml" Guid="1a15b3a0-4280-4aa3-b365-9681e10e0a32">
-        <File Id="src_Data_PSI_MOD.obo.xml" Name="PSI-MOD.obo.xml" Source="$(var.GUI_TargetDir)Data\PSI-MOD.obo.xml" />
+        <File ReadOnly="yes" Id="src_Data_PSI_MOD.obo.xml" Name="PSI-MOD.obo.xml" Source="$(var.GUI_TargetDir)Data\PSI-MOD.obo.xml" />
       </Component>
       <Component Id="src_Data_ptmlist.txt" Guid="25c61def-762c-4523-a751-52fbf2165f1b">
-        <File Id="src_Data_ptmlist.txt" Name="ptmlist.txt" Source="$(var.GUI_TargetDir)Data\ptmlist.txt" />
+        <File ReadOnly="yes" Id="src_Data_ptmlist.txt" Name="ptmlist.txt" Source="$(var.GUI_TargetDir)Data\ptmlist.txt" />
       </Component>
       <Component Id="src_Data_unimod.xml" Guid="3d466d11-6769-4d0e-ab0b-34bd0ae7d9f7">
-        <File Id="src_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)Data\unimod.xml" />
+        <File ReadOnly="yes" Id="src_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)Data\unimod.xml" />
       </Component>
       <Component Id="src_Data_elements.dat" Guid="2a33ba0a-1836-4d82-b4d2-5a7955517fb6">
-        <File Id="src_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
+        <File ReadOnly="yes" Id="src_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
       </Component>
       <Component Id="src_Data_proteases.tsv" Guid="d2e5977a-f9b5-48c8-919f-97a7322d402c">
-        <File Id="src_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
+        <File ReadOnly="yes" Id="src_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+  
+  <!--Build the App Mods folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_Mods_files" Directory="MyAppModsFolder">
+      <Component Id="Appsrc_Mods_aListOfmods.txt" Guid="0aa9b5ed-b47d-4a78-93b1-49ebc104d011">
+        <File ReadOnly="no" Id="Appsrc_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      <RemoveFolder Directory="MetaMorpheusAppFolder" Id="MyRemoveFolderId1" On="uninstall"/>
+      <RemoveFolder Directory="MyAppDataFolder" Id="MyRemoveDataFolderId1" On="uninstall"/>
+      <RemoveFolder Directory="MyAppModsFolder" Id="MyRemoveModFolderId1" On="uninstall"/>
+      
+      </Component>
+      <Component Id="Appsrc_Mods_detachers.txt" Guid="9224cf63-edb0-4e30-83c2-b10fff7af13e">
+        
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)Mods\detachers.txt" />
+      </Component>
+      
+      <Component Id="Appsrc_Mods_glyco.txt" Guid="1707b26b-070e-46d5-9632-f1bc8bf4d281">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)Mods\glyco.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_missing.txt" Guid="0f659a4e-3ea9-4d3a-9a0f-65cda1015b01">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_missing.txt" Name="missing.txt" Source="$(var.GUI_TargetDir)Mods\missing.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_Mods.txt" Guid="9be193e3-266c-4c1d-9973-341f0a5d108a">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_substitutions.txt" Guid="f108606b-f9eb-4c3c-893b-7ec33c88a1d1">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)Mods\substitutions.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_surfactants.txt" Guid="937d6734-a4c0-469a-b070-64bf5de84b13">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)Mods\surfactants.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_tmt.txt" Guid="f064b7a0-c650-4a40-8a9f-301cc6cb946e">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>
 
+  <!--Builds the App Data folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_Data_files" Directory="MyAppDataFolder">
+      <Component Id="Appsrc_Data_combos.txt" Guid="e16d25a3-d773-4a7f-9252-63d737c2c7ba">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
+      </Component>
+      <Component Id="Appsrc_Data_PSI_MOD.obo.xml" Guid="348109bd-4645-448e-b272-19a126e4c3cf">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_PSI_MOD.obo.xml" Name="PSI-MOD.obo.xml" Source="$(var.GUI_TargetDir)Data\PSI-MOD.obo.xml" />
+      </Component>
+      <Component Id="Appsrc_Data_ptmlist.txt" Guid="ea6237f4-9acd-4660-a4e8-831b7aab8c39">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_ptmlist.txt" Name="ptmlist.txt" Source="$(var.GUI_TargetDir)Data\ptmlist.txt" />
+      </Component>
+      <Component Id="Appsrc_Data_unimod.xml" Guid="cb7b6d9e-3eb0-47ac-857f-7a0009d95619">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)Data\unimod.xml" />
+      </Component>
+      <Component Id="Appsrc_Data_elements.dat" Guid="5ba496cc-8b84-4d25-a410-b2274718ebf9">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
+      </Component>
+      <Component Id="Appsrc_Data_proteases.tsv" Guid="fd26b186-64bd-49b7-b8ee-638efef79e03">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+  
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
     <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="b4a458e0-06ce-452d-bfaf-0f413007abc3">
@@ -512,7 +639,7 @@
                 Description="Uninstalls My Application"
                 Target="[System64Folder]msiexec.exe"
                 Arguments="/x [ProductCode]"/>
-      <RemoveFolder Id="MyRemoveFolderId" On="uninstall"/>
+      <RemoveFolder Id="MetaMorpheusProgramMenuFolder" On="uninstall"/>
     </Component>
   </Fragment>
   
