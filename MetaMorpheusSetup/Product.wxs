@@ -63,6 +63,9 @@
       <Component Id="src_Thermo.dll">
         <File Id="src_Thermo.dll" Name="Thermo.dll" Source="$(var.GUI_TargetDir)Thermo.dll" />
       </Component>
+      <Component Id="src_Newtonsoft.Json.dll">
+        <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
+      </Component>
       <Component Id="src_UsefulProteomicsDatabases.dll" Guid="e7f76fbf-d21c-4e57-bed4-33f71822ee18">
         <File Id="src_UsefulProteomicsDatabases.dll" Name="UsefulProteomicsDatabases.dll" Source="$(var.GUI_TargetDir)UsefulProteomicsDatabases.dll" />
       </Component>
