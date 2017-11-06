@@ -870,12 +870,18 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click_2(object sender, RoutedEventArgs e)
         {
-            GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+            try
+            {
+                GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+            }
+            catch (Exception ex)
+            {
+                GuiWarnHandler(null, new StringEventArgs("Could not get newest MM version from web: " + ex.Message, null));
+                return;
+            }
 
             if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion))
                 MessageBox.Show("You have the most updated version!");
-            else if (GlobalEngineLevelSettings.NewestVersion == null)
-                MessageBox.Show("Error getting newest version");
             else
             {
                 try
