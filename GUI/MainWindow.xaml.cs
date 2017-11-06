@@ -93,7 +93,7 @@ namespace MetaMorpheusGUI
         {
             try
             {
-                if (!GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.MostCurrentVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+                if (!GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
                 {
                     MetaUpdater newwind = new MetaUpdater();
                     newwind.ShowDialog();

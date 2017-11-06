@@ -25,6 +25,10 @@ namespace EngineLayer
 
         private static readonly string psiModLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"PSI-MOD.obo.xml");
 
+        private static readonly string settingsTomlLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"settings.toml");
+
+        private static readonly string proteasesLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", "proteases.tsv");
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -36,8 +40,8 @@ namespace EngineLayer
                 HttpWebRequest metaRepo = (HttpWebRequest)WebRequest.Create("https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest");
                 HttpWebResponse versionLink = (HttpWebResponse)metaRepo.GetResponse();
                 String versionNum = "" + versionLink.ResponseUri;
-                Regex versionReg = new Regex(@"\d+\.\d+\.\d+");
-                MostCurrentVersion = "" + versionReg.Matches(versionNum)[0] + ".0";//version check will be shared with all the forms
+                Regex versionReg = new Regex(@"\d+\.\d+\.\d+.\d+");
+                NewestVersion = "" + versionReg.Matches(versionNum)[0];//version check will be shared with all the forms
 
                 UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
                 UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
@@ -50,8 +54,7 @@ namespace EngineLayer
                 Warn(e.Message);
             }
 
-            String LogPath = "settings.toml";
-            AskAboutUpdating = Toml.ReadFile(LogPath).Get<bool>("autoUpdate");
+            AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("autoUpdate");
 
             MetaMorpheusVersion = typeof(GlobalEngineLevelSettings).Assembly.GetName().Version.ToString();
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
@@ -88,7 +91,8 @@ namespace EngineLayer
         public static Dictionary<string, Protease> ProteaseDictionary { get; }
 
         public static List<Modification> AllModsKnown { get; }
-        public static string MostCurrentVersion { get; }
+
+        public static string NewestVersion { get; }
 
         #endregion Public Properties
 
@@ -121,7 +125,7 @@ namespace EngineLayer
         private static Dictionary<string, Protease> LoadProteaseDictionary()
         {
             Dictionary<string, Protease> dict = new Dictionary<string, Protease>();
-            using (StreamReader proteases = new StreamReader(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", "proteases.tsv")))
+            using (StreamReader proteases = new StreamReader(proteasesLocation))
             {
                 proteases.ReadLine();
 

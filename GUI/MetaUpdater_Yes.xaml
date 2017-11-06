@@ -8,7 +8,7 @@
         Title="MetaUpdater" Height="323.567" Width="434.713" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterOwner">
     <Grid>
         <TextBlock Text="Would you like to download and install yourself or download and update with one click?"  HorizontalAlignment="Left" Margin="25,22,0,0" TextWrapping="Wrap" FontSize="15" VerticalAlignment="Top" RenderTransformOrigin="-0.317,-0.906" Height="61" Width="374" Grid.ColumnSpan="2"/>
-        <Button Content="Download and install (One Click)" FontSize="13" HorizontalAlignment="Left" Margin="25,132,0,0" VerticalAlignment="Top" Width="280" Height="31" Click="InstallerClicked"/>
-        <Button Content="Download Portable version (.zip)" FontSize="13" HorizontalAlignment="Left" Margin="25,88,0,0" VerticalAlignment="Top" Width="280" Height="31" Click="FilesClicked" RenderTransformOrigin="1.89,2.898"/>
+        <Button Content="Download and run installer" FontSize="13" HorizontalAlignment="Left" Margin="25,132,0,0" VerticalAlignment="Top" Width="280" Height="31" Click="InstallerClicked"/>
+        <Button Content="Download and open portable version (.zip)" FontSize="13" HorizontalAlignment="Left" Margin="25,88,0,0" VerticalAlignment="Top" Width="280" Height="31" Click="FilesClicked" RenderTransformOrigin="1.89,2.898"/>
     </Grid>
 </Window>

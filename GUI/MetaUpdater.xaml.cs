@@ -15,7 +15,7 @@ namespace MetaMorpheusGUI
         public MetaUpdater()
         {
             InitializeComponent();
-            lbl.Text = "A newer version: " + GlobalEngineLevelSettings.MostCurrentVersion + " is available, would you like to download it?";
+            lbl.Text = "A newer version: " + GlobalEngineLevelSettings.NewestVersion + " is available, would you like to download it?";
         }
 
         #endregion Public Constructors

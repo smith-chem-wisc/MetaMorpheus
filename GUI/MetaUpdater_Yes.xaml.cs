@@ -26,7 +26,7 @@ namespace MetaMorpheusGUI
         {
             using (var client = new WebClient())
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.MostCurrentVersion + @"/MetaMorpheusInstaller.msi");
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.NewestVersion + @"/MetaMorpheusInstaller.msi");
 
                 try
                 {
@@ -48,7 +48,7 @@ namespace MetaMorpheusGUI
         {
             using (var client = new WebClient())
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.MostCurrentVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.NewestVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
 
                 try
                 {
