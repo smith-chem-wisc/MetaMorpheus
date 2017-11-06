@@ -54,7 +54,7 @@ namespace EngineLayer
                 Warn(e.Message);
             }
 
-            AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("autoUpdate");
+            AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
 
             MetaMorpheusVersion = typeof(GlobalEngineLevelSettings).Assembly.GetName().Version.ToString();
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
