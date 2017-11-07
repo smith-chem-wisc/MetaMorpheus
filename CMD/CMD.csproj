@@ -8,7 +8,7 @@
   <ItemGroup>
     <PackageReference Include="FlashLFQ" Version="0.1.99" />
     <PackageReference Include="FluentCommandLineParser" Version="1.4.3" />
-    <PackageReference Include="mzLib" Version="1.0.256" />
+    <PackageReference Include="mzLib" Version="1.0.261" />
     <PackageReference Include="Nett" Version="0.8.0" />
   </ItemGroup>
 
@@ -20,6 +20,7 @@
   
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
     <PlatformTarget>x64</PlatformTarget>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   

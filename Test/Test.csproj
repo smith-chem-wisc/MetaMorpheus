@@ -7,9 +7,9 @@
   <ItemGroup>
     <PackageReference Include="FlashLFQ" Version="0.1.99" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
-    <PackageReference Include="mzLib" Version="1.0.256" />
+    <PackageReference Include="mzLib" Version="1.0.261" />
     <PackageReference Include="NUnit" Version="3.8.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.8.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
     <PackageReference Include="SharpLearning.AdaBoost" Version="0.26.5" />
     <PackageReference Include="SharpLearning.RandomForest" Version="0.26.5" />
   </ItemGroup>
