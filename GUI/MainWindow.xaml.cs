@@ -98,12 +98,13 @@ namespace MetaMorpheusGUI
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            MetaUpdater newwind = new MetaUpdater();
+            newwind.ShowDialog();
             if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
             {
                 try
                 {
-                    MetaUpdater newwind = new MetaUpdater();
-                    newwind.ShowDialog();
+                    
                 }
                 catch (Exception ex)
                 {

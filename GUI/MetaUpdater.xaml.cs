@@ -3,6 +3,8 @@ using System;
 using System.Diagnostics;
 using System.Net;
 using System.Windows;
+using Nett;
+using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -75,5 +77,21 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\settings1.toml");
+            TomlTable obj = Toml.ReadFile(fileName);
+            obj.Update("AskAboutUpdating",false);
+            Toml.WriteFile(obj, fileName);
+        }
+
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\settings1.toml");
+            TomlTable obj = Toml.ReadFile(fileName);
+            obj.Update("AskAboutUpdating", true);
+            Toml.WriteFile(obj, fileName);
+        }
     }
 }
