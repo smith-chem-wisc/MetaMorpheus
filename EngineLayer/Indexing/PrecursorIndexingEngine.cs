@@ -107,7 +107,7 @@ namespace EngineLayer.Indexing
                 }
             }
 
-            var fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton+1];
+            var fragmentIndex = new List<int>[maxFragmentMass * fragmentBinsPerDalton + 1];
 
             // populate fragment index
             progress = 0;
