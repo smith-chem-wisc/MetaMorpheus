@@ -769,8 +769,6 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].BaseSequence, allPsmsArray2[0].BaseSequence);
         }
 
-        #endregion Public Methods
-
         [Test]
         public static void TestClassicSemiProteolysis()
         {
@@ -823,5 +821,7 @@ namespace Test
             foreach (KeyValuePair<string, bool> kvp in found)
                 Assert.IsTrue(kvp.Value);
         }
+
+        #endregion Public Methods
     }
 }
