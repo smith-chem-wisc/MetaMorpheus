@@ -6,7 +6,7 @@
 
   <!--Product compiles into an msi file. Only one can be present.-->
   <!--Version needs to be replaced automatically-->
-  <Product Id="*" Name="MetaMorpheus" Language="1033" Version="!(bind.FileVersion.EngineLayer.dll)" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5">
+  <Product Id="*" Name="MetaMorpheus" Language="1033" Version="!(bind.FileVersion.MetaMorpheusGUI.exe)" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5">
 
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
