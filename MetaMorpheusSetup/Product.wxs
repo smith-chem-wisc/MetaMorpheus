@@ -30,11 +30,16 @@
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <ComponentGroupRef Id="src_Mods_files" />
       <ComponentGroupRef Id="src_Data_files" />
+<<<<<<< HEAD
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
+=======
+      <!--ComponentRef creates a reference to a Component element in another Fragment-->
+      <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
+>>>>>>> 38a905915a0c7dc0a7450c74d9714514b9f312f9
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -47,6 +52,7 @@
       <Directory Id="ProgramMenuFolder">
         <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus"/>
       </Directory>
+<<<<<<< HEAD
       <Directory Id="LocalAppDataFolder">
         <Directory Id="MetaMorpheusAppFolder" Name="MetaMorpheus">
           <Component Id="MetaAppsettings.toml" Guid="1d8da0c2-5b44-4fe4-a581-1fc526346313">
@@ -57,6 +63,8 @@
           <Directory Id="MetaAppModsFolder" Name="Mods" />
         </Directory>
       </Directory>
+=======
+>>>>>>> 38a905915a0c7dc0a7450c74d9714514b9f312f9
     </Directory>
     
   </Product>
@@ -76,9 +84,12 @@
       <Component Id="src_Thermo.dll">
         <File Id="src_Thermo.dll" Name="Thermo.dll" Source="$(var.GUI_TargetDir)Thermo.dll" />
       </Component>
+<<<<<<< HEAD
       <Component Id="src_settings.toml">
         <File Id="src_settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
       </Component>
+=======
+>>>>>>> 38a905915a0c7dc0a7450c74d9714514b9f312f9
       <Component Id="src_Newtonsoft.Json.dll">
         <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
       </Component>
@@ -513,6 +524,7 @@
       </Component>
       <Component Id="src_Data_proteases.tsv" Guid="d2e5977a-f9b5-48c8-919f-97a7322d402c">
         <File Id="src_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
+<<<<<<< HEAD
       </Component>
     </ComponentGroup>
   </Fragment>
@@ -551,10 +563,13 @@
       <Component Id="Appsrc_Mods_tmt.txt" Guid="f064b7a0-c650-4a40-8a9f-301cc6cb946e">
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
+=======
+>>>>>>> 38a905915a0c7dc0a7450c74d9714514b9f312f9
       </Component>
     </ComponentGroup>
   </Fragment>
 
+<<<<<<< HEAD
   <!--Builds the App Data folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Data_files" Directory="MetaAppDataFolder">
@@ -586,6 +601,8 @@
     </ComponentGroup>
   </Fragment>
   
+=======
+>>>>>>> 38a905915a0c7dc0a7450c74d9714514b9f312f9
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
     <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="b4a458e0-06ce-452d-bfaf-0f413007abc3">
@@ -601,9 +618,12 @@
                 Target="[System64Folder]msiexec.exe"
                 Arguments="/x [ProductCode]"/>
       <RemoveFolder Id="MyRemoveFolderId" On="uninstall"/>
+<<<<<<< HEAD
       <RemoveFolder Directory="MetaMorpheusAppFolder" Id="MyRemoveFolderId1" On="uninstall"/>
       <RemoveFolder Directory="MetaAppDataFolder" Id="MyRemoveDataFolderId1" On="uninstall"/>
       <RemoveFolder Directory="MetaAppModsFolder" Id="MyRemoveModFolderId1" On="uninstall"/>
+=======
+>>>>>>> 38a905915a0c7dc0a7450c74d9714514b9f312f9
     </Component>
   </Fragment>
   
