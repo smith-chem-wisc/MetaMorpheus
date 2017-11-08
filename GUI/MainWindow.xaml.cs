@@ -898,5 +898,11 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
+        {
+            UsefulProteomicsDatabases.Loaders.UpdateUnimod(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),@"MetaMorpheus\Data\unimod.xml"));
+            Application.Current.Shutdown();
+        }
     }
 }
