@@ -93,15 +93,17 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                         for (int j = 0; j < binsToSearch.Count; j++)
                         {
-                            if (fragmentIndex[binsToSearch[j] - binShift] != null)
-                                fragmentIndex[binsToSearch[j] - binShift].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                            int bin = binsToSearch[j] - binShift;
+                            if (bin < fragmentIndex.Length && fragmentIndex[bin] != null)
+                                fragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
                         }
                     }
 
                     for (int j = 0; j < binsToSearch.Count; j++)
                     {
-                        if (fragmentIndexPrecursor[binsToSearch[j]] != null)
-                            fragmentIndexPrecursor[binsToSearch[j]].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                        int bin = binsToSearch[j];
+                        if (bin < fragmentIndexPrecursor.Length && fragmentIndexPrecursor[bin] != null)
+                            fragmentIndexPrecursor[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
                     }
 
                     // done with initial scoring; refine scores and create PSMs
