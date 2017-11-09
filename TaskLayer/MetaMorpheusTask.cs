@@ -117,7 +117,23 @@ namespace TaskLayer
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                         ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                     if (doPrecursorDeconvolution)
-                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndChargesOld(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
+                    {
+                        var isotopeEnvelopes = ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance.Value, deconvolutionIntensityRatio);
+                        foreach (var isotopeEnvelope in isotopeEnvelopes)
+                        {
+                            double precursorMz = Chemistry.ClassExtensions.ToMz(isotopeEnvelope.monoisotopicMass, isotopeEnvelope.charge);
+                            int precursorIndex = precursorSpectrum.MassSpectrum.GetClosestPeakIndex(precursorMz);
+                            double precursorIntensity = precursorSpectrum.MassSpectrum.YArray[precursorIndex];
+
+                            var peak = new MzPeak(precursorMz, precursorIntensity);
+                            var peakList = new List<IMzPeak> { peak };
+                            var tuple = new Tuple<List<IMzPeak>, int>(peakList, isotopeEnvelope.charge);
+
+                            isolatedStuff.Add(tuple);
+                        }
+
+                        //isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndChargesOld(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
+                    }
                 }
 
                 if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
