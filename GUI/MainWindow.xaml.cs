@@ -98,13 +98,12 @@ namespace MetaMorpheusGUI
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            MetaUpdater newwind = new MetaUpdater();
-            newwind.ShowDialog();
             if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
             {
                 try
                 {
-                    
+                    MetaUpdater newwind = new MetaUpdater();
+                    newwind.ShowDialog();
                 }
                 catch (Exception ex)
                 {
@@ -898,11 +897,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
-        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
-        {
-            UsefulProteomicsDatabases.Loaders.UpdateUnimod(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),@"MetaMorpheus\Data\unimod.xml"));
-            Application.Current.Shutdown();
-        }
     }
 }

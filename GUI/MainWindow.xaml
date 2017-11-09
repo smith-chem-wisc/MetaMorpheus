@@ -13,7 +13,6 @@
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
             </MenuItem>
-            <MenuItem Header="Unimod" Click="MenuItem_Click_3"></MenuItem>
         </Menu>
         <Grid>
             <Grid.ColumnDefinitions>
