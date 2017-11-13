@@ -13,6 +13,9 @@
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
             </MenuItem>
+            <MenuItem Header="Unimod">
+                <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
+            </MenuItem>
         </Menu>
         <Grid>
             <Grid.ColumnDefinitions>

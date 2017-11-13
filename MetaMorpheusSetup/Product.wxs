@@ -58,7 +58,7 @@
         </Directory>
       </Directory>
     </Directory>
-    
+
   </Product>
 
   <!--Executables and libraries-->
@@ -585,7 +585,7 @@
 
     </ComponentGroup>
   </Fragment>
-  
+
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
     <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="b4a458e0-06ce-452d-bfaf-0f413007abc3">
@@ -606,5 +606,5 @@
       <RemoveFolder Directory="MetaAppModsFolder" Id="MyRemoveModFolderId1" On="uninstall"/>
     </Component>
   </Fragment>
-  
+
 </Wix>

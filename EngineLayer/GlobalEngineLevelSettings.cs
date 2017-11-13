@@ -54,6 +54,12 @@ namespace EngineLayer
             }
             else
                 AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
+            
+            
+            if (Directory.GetCurrentDirectory().Contains(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)))
+                ByInstaller = true;
+            else
+                ByInstaller = false;
 
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
@@ -64,6 +70,8 @@ namespace EngineLayer
         #region Public Properties
 
         public static bool AskAboutUpdating { get; }
+
+        public static bool ByInstaller { get; }
 
         public static string MetaMorpheusVersion { get; }
 
