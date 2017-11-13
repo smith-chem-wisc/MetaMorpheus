@@ -34,17 +34,17 @@ namespace Test
 
             CompactPeptide peptide1 = new CompactPeptide(pep1, TerminusType.None);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan1 = t.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, new MzPeak(peptide1.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
+            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, peptide1.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             Psm psm1 = new Psm(peptide1, 0, 3, 0, scan1);
 
             CompactPeptide peptide2 = new CompactPeptide(pep2, TerminusType.None);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan2 = t.GetOneBasedScan(4) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-            Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, new MzPeak(peptide2.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
+            Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, peptide2.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             Psm psm2 = new Psm(peptide2, 1, 2, 1, scan2);
 
             CompactPeptide peptide3 = new CompactPeptide(pep3, TerminusType.None);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan3 = t.GetOneBasedScan(6) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-            Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, new MzPeak(peptide3.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
+            Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, peptide3.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             Psm psm3 = new Psm(peptide3, 0, 1, 2, scan3);
 
             CompactPeptide peptide4 = new CompactPeptide(pep4, TerminusType.None);
