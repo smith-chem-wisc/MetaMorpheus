@@ -896,6 +896,17 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
+        }
+
+        private void MenuItem_Click_4(object sender, RoutedEventArgs e)
+        {
+            string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "solntsev@wisc.edu");
+            System.Diagnostics.Process.Start(mailto);
+        }
+
         #endregion Private Methods
     }
 }
