@@ -220,13 +220,10 @@ namespace Test
             CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3, TerminusType.None);
 
             string fullFilePath = null;
-            double intensity = 0;
-            double mz = 0;
-            IMzPeak precursorMonoisotopicPeak = new MzPeak(mz, intensity);
             int precursorCharge = 0;
             TestDataFile testDataFile = new TestDataFile();
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan = testDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(mzLibScan, precursorMonoisotopicPeak, precursorCharge, fullFilePath);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(mzLibScan, 0, precursorCharge, fullFilePath);
             int scanIndex = 0;
             double score = 0;
             int notch = 0;
