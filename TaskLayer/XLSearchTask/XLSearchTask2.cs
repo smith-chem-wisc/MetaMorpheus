@@ -34,7 +34,7 @@ namespace TaskLayer
                     output.WriteLine(
                                             item.FullFilePath
                                             + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                                            + "\t" + item.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
+                                            + "\t" + item.ScanPrecursorMonoisotopicPeakMz.ToString() //CultureInfo.InvariantCulture
                                             + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                                             + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                                             + "\t"
@@ -84,7 +84,7 @@ namespace TaskLayer
                         output.WriteLine(
                             item.FullFilePath
                             + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + item.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
+                            + "\t" + item.ScanPrecursorMonoisotopicPeakMz.ToString() //CultureInfo.InvariantCulture
                             + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.CrossType.ToString()
@@ -104,7 +104,7 @@ namespace TaskLayer
                         output.WriteLine(
                                                 item.FullFilePath
                                                 + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                                                + "\t" + item.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
+                                                + "\t" + item.ScanPrecursorMonoisotopicPeakMz.ToString() //CultureInfo.InvariantCulture
                                                 + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                                                 + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                                                 + "\t" + item.CrossType.ToString()
@@ -320,7 +320,7 @@ namespace TaskLayer
                     spectrum = fileNameNoExtension + "." + items[i].ScanNumber.ToString(),
                     start_scan = Convert.ToUInt32(items[i].ScanNumber),
                     end_scan = Convert.ToUInt32(items[i].ScanNumber),
-                    precursor_neutral_mass = (float)items[i].ScanPrecursorMonoisotopicPeak.Mz * items[i].ScanPrecursorCharge,
+                    precursor_neutral_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
                     assumed_charge = items[i].ScanPrecursorCharge.ToString(),
                     index = Convert.ToUInt32(i + 1),
                     retention_time_sec = (float)items[i].ScanRetentionTime,
@@ -334,7 +334,7 @@ namespace TaskLayer
                                 {
                                     hit_rank = 1,
                                     peptide = "-", peptide_prev_aa="-", peptide_next_aa="-", protein="-", num_tot_proteins = 1,
-                                    calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeak.Mz * items[i].ScanPrecursorCharge,
+                                    calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
                                     massdiff = (items[i].ScanPrecursorMass - items[i].BetaPsmCross.PeptideMonisotopicMass.Value - items[i].PeptideMonisotopicMass.Value - crosslinker.TotalMass).ToString(),
                                     xlink_typeSpecified = true,
                                     xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.xl,
