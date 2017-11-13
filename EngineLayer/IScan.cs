@@ -1,6 +1,4 @@
-﻿using MassSpectrometry;
-
-namespace EngineLayer
+﻿namespace EngineLayer
 {
     public interface IScan
     {
@@ -13,7 +11,7 @@ namespace EngineLayer
         int NumPeaks { get; }
         double TotalIonCurrent { get; }
         int PrecursorCharge { get; }
-        IMzPeak PrecursorMonoisotopicPeak { get; }
+        double PrecursorMonoisotopicPeakMz { get; }
         double PrecursorMass { get; }
 
         #endregion Public Properties
