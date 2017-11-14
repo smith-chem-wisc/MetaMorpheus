@@ -100,7 +100,7 @@ namespace MetaMorpheusGUI
         {
             var fileName = "";
             if (GlobalEngineLevelSettings.ByInstaller)
-                fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\settings1.toml");
+                fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\settings.toml");
             else
                 fileName = Path.Combine(Directory.GetCurrentDirectory(), "settings.toml");
             try
