@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Net;
 using System.Windows;
-using System.IO;
+using System.IO;		
 using Nett;
 namespace MetaMorpheusGUI
 {
@@ -75,44 +75,45 @@ namespace MetaMorpheusGUI
             DialogResult = false;
         }
 
+		private void CheckBox_Checked(object sender, RoutedEventArgs e)		
+		{
+			var fileName="";
+			if (GlobalEngineLevelSettings.ByInstaller)	
+				fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\settings.toml");		
+            else		
+                fileName = Path.Combine(Directory.GetCurrentDirectory(), "settings.toml");		
+            try		
+            {		
+                TomlTable obj = Toml.ReadFile(fileName);		
+                obj.Update("AskAboutUpdating", false);		
+                Toml.WriteFile(obj, fileName);		
+            }		
+            catch(Exception inner)		
+            {		
+                MessageBox.Show(inner.ToString());		
+            }		
+        }		
+		
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)		
+	        {		
+	            var fileName = "";		
+	            if (GlobalEngineLevelSettings.ByInstaller)		
+	                fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\settings.toml");		
+	            else		
+	                fileName = Path.Combine(Directory.GetCurrentDirectory(), "settings.toml");		
+	            try		
+	            {		
+	                TomlTable obj = Toml.ReadFile(fileName);		
+	                obj.Update("AskAboutUpdating", true);		
+	                Toml.WriteFile(obj, fileName);		
+	            }		
+	            catch (Exception inner)		
+	            {		
+	                MessageBox.Show(inner.ToString());		
+	            }		
+	        }
+		
+
         #endregion Private Methods
-
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            var fileName="";
-            if (GlobalEngineLevelSettings.ByInstaller)
-                fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\settings.toml");
-            else
-                fileName = Path.Combine(Directory.GetCurrentDirectory(), "settings.toml");
-            try
-            {
-                TomlTable obj = Toml.ReadFile(fileName);
-                obj.Update("AskAboutUpdating", false);
-                Toml.WriteFile(obj, fileName);
-            }
-            catch(Exception inner)
-            {
-                MessageBox.Show(inner.ToString());
-            }
-        }
-
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            var fileName = "";
-            if (GlobalEngineLevelSettings.ByInstaller)
-                fileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\settings.toml");
-            else
-                fileName = Path.Combine(Directory.GetCurrentDirectory(), "settings.toml");
-            try
-            {
-                TomlTable obj = Toml.ReadFile(fileName);
-                obj.Update("AskAboutUpdating", true);
-                Toml.WriteFile(obj, fileName);
-            }
-            catch (Exception inner)
-            {
-                MessageBox.Show(inner.ToString());
-            }
-        }
     }
 }
