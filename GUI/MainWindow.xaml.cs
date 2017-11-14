@@ -905,6 +905,7 @@ namespace MetaMorpheusGUI
                 file = Path.Combine(Directory.GetCurrentDirectory(), @"Data\unimod.xml");
             UsefulProteomicsDatabases.Loaders.UpdateUnimod(file);
             Application.Current.Shutdown();
+            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
         }
 
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)

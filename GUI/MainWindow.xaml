@@ -10,8 +10,10 @@
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
             <MenuItem Header="_Help">
-                <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
+                <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
+                <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_3" />
+                <MenuItem Header="Email Support at solntsev@wisc.edu" Click="MenuItem_Click_4" />
             </MenuItem>
             <MenuItem Header="Unimod">
                 <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
