@@ -40,10 +40,9 @@ namespace MetaMorpheusGUI
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
-            
+
             try
             {
-                
                 foreach (var modFile in Directory.GetFiles(GlobalEngineLevelSettings.modsLocation))
                     GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             }
@@ -897,8 +896,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        #endregion Private Methods
-
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
             var file = "";
@@ -909,5 +906,13 @@ namespace MetaMorpheusGUI
             UsefulProteomicsDatabases.Loaders.UpdateUnimod(file);
             Application.Current.Shutdown();
         }
+
+        private void MenuItem_Click_4(object sender, RoutedEventArgs e)
+        {
+            string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "solntsev@wisc.edu");
+            System.Diagnostics.Process.Start(mailto);
+        }
+
+        #endregion Private Methods
     }
 }
