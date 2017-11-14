@@ -13,21 +13,24 @@ namespace EngineLayer
     {
         #region Public Fields
 
-        public static readonly string elementsLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"elements.dat");
-
+        public static readonly string elementsLocation;
+        public static readonly string modsLocation;
         #endregion Public Fields
 
         #region Private Fields
 
-        private static readonly string unimodLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"unimod.xml");
 
-        private static readonly string uniprotLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"ptmlist.txt");
+        private static readonly string unimodLocation;
 
-        private static readonly string psiModLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"PSI-MOD.obo.xml");
+        private static readonly string uniprotLocation;
 
-        private static readonly string settingsTomlLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"settings.toml");
+        private static readonly string psiModLocation;
 
-        private static readonly string proteasesLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", "proteases.tsv");
+        private static readonly string settingsTomlLocation;
+
+        private static readonly string proteasesLocation;
+
+       
 
         #endregion Private Fields
 
@@ -35,6 +38,25 @@ namespace EngineLayer
 
         static GlobalEngineLevelSettings()
         {
+            string dir;
+            if (Directory.GetCurrentDirectory().Contains(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)))
+            {
+                ByInstaller = true;
+                dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+            }
+            else
+            {
+                ByInstaller = false;
+                dir = AppDomain.CurrentDomain.BaseDirectory;
+            }
+            elementsLocation = Path.Combine(dir,@"Data", @"elements.dat");
+            unimodLocation = Path.Combine(dir, @"Data", @"unimod.xml");
+            uniprotLocation = Path.Combine(dir, @"Data", @"ptmlist.txt");
+            psiModLocation = Path.Combine(dir, @"Data", @"PSI-MOD.obo.xml");
+            settingsTomlLocation = Path.Combine(dir, @"settings.toml");
+            proteasesLocation = Path.Combine(dir, @"Data", "proteases.tsv");
+            modsLocation= Path.Combine(dir, @"Mods");
+
             // No exceptions to be caught here, since we are just reading these files!
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
@@ -54,13 +76,8 @@ namespace EngineLayer
             }
             else
                 AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
-            
-            
-            if (Directory.GetCurrentDirectory().Contains(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)))
-                ByInstaller = true;
-            else
-                ByInstaller = false;
 
+            
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
         }
