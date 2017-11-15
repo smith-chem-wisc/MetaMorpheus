@@ -11,9 +11,9 @@
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
-
-    <MajorUpgrade DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
-
+    <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="Stoping..."/>
+    
+    
     <Condition Message="This application is only supported on Windows 7 or higher.">
       <![CDATA[Installed OR (VersionNT >= 601)]]>
     </Condition>
@@ -23,9 +23,12 @@
     </Condition>
 
     <MediaTemplate EmbedCab="yes"/>
-
+    
+    
+    
     <!--A feature for the Feature table. Features are the smallest installable unit.-->
     <Feature Id="ProductFeature" Level="1">
+      
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <ComponentGroupRef Id="src_Mods_files" />
@@ -35,6 +38,7 @@
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
+      <ComponentRef Id="RomoveApp"/>
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -45,13 +49,19 @@
         </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder">
-        <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus"/>
+        <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus">
+
+        </Directory>
       </Directory>
       <Directory Id="LocalAppDataFolder">
         <Directory Id="MetaMorpheusAppFolder" Name="MetaMorpheus">
           <Component Id="MetaAppsettings.toml" Guid="1d8da0c2-5b44-4fe4-a581-1fc526346313">
             <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             <File Id="settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
+          </Component>
+          <Component Id="RomoveApp" Guid="a5443b89-65b0-4855-b521-e7bcc9c5a85c">
+            <RemoveFolder Id="MetaMorpheusAppFolder" On="both"/>
+            <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
           </Component>
           <Directory Id="MetaAppDataFolder" Name="Data" />
           <Directory Id="MetaAppModsFolder" Name="Mods" />
@@ -520,6 +530,10 @@
   <!--Build the App Mods folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Mods_files" Directory="MetaAppModsFolder">
+      <Component Id="RemoveMods" Guid="284c0784-2183-4f80-af61-56cadeb800bf">
+        <RemoveFolder Id="MetaAppModsFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
       <Component Id="Appsrc_Mods_aListOfmods.txt" Guid="0aa9b5ed-b47d-4a78-93b1-49ebc104d011">
         <File ReadOnly="no" Id="Appsrc_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
@@ -558,6 +572,10 @@
   <!--Builds the App Data folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Data_files" Directory="MetaAppDataFolder">
+      <Component Id="RomoveData" Guid="80dd5110-5563-499a-93ee-652e351c64f9">
+        <RemoveFolder Id="MetaAppDataFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
       <Component Id="Appsrc_Data_combos.txt" Guid="e16d25a3-d773-4a7f-9252-63d737c2c7ba">
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
@@ -588,7 +606,7 @@
 
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
-    <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="b4a458e0-06ce-452d-bfaf-0f413007abc3">
+    <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="c68bc3b0-cc4f-48ed-9ea0-25dbd7492292">
       <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       <Shortcut Id="AppStartMenuSC"
                 Name="MetaMorpheus"
@@ -600,10 +618,7 @@
                 Description="Uninstalls My Application"
                 Target="[System64Folder]msiexec.exe"
                 Arguments="/x [ProductCode]"/>
-      <RemoveFolder Id="MyRemoveFolderId" On="uninstall"/>
-      <RemoveFolder Directory="MetaMorpheusAppFolder" Id="MyRemoveFolderId1" On="uninstall"/>
-      <RemoveFolder Directory="MetaAppDataFolder" Id="MyRemoveDataFolderId1" On="uninstall"/>
-      <RemoveFolder Directory="MetaAppModsFolder" Id="MyRemoveModFolderId1" On="uninstall"/>
+      <RemoveFolder Id="MetaMorpheusProgramMenuFolder" On="both"/>
     </Component>
   </Fragment>
 
