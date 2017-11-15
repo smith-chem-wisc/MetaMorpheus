@@ -106,17 +106,30 @@ namespace MetaMorpheusCommandLine
                 string outputFolder = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
 
                 EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, outputFolder);
-                a.Run();
+
+                try
+                {
+                    a.Run();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Run failed.");
+                    Console.WriteLine("Exception:");
+                    Console.WriteLine(e.Message);
+                }
             }
-            Console.WriteLine("Error Text:" + result.ErrorText);
-            Console.WriteLine("Version: {0}", Environment.Version.ToString());
-            Console.WriteLine("OSVersion: {0}", Environment.OSVersion.ToString());
-            Console.WriteLine("EmptyArgs:" + result.EmptyArgs);
-            Console.WriteLine("EmptyArgs:" + string.Join(" , ", result.Errors.Select(b => b.Option.Description)));
-            Console.WriteLine("Usage:");
-            Console.WriteLine("\t-t --tasks     List of task poml files");
-            Console.WriteLine("\t-s --spectra   List of spectra files");
-            Console.WriteLine("\t-d --databases List of database files");
+            else
+            {
+                Console.WriteLine("Error Text:" + result.ErrorText);
+                Console.WriteLine("Version: {0}", Environment.Version.ToString());
+                Console.WriteLine("OSVersion: {0}", Environment.OSVersion.ToString());
+                Console.WriteLine("EmptyArgs:" + result.EmptyArgs);
+                Console.WriteLine("EmptyArgs:" + string.Join(" , ", result.Errors.Select(b => b.Option.Description)));
+                Console.WriteLine("Usage:");
+                Console.WriteLine("\t-t --tasks     List of task poml files");
+                Console.WriteLine("\t-s --spectra   List of spectra files");
+                Console.WriteLine("\t-d --databases List of database files");
+            }
         }
 
         private static bool IsContaminant(string b)

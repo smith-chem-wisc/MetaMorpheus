@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -410,11 +410,16 @@ namespace MetaMorpheusGUI
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
-            var t = new Thread(() => a.Run())
-            {
-                IsBackground = true
-            };
+            var t = new Task(a.Run);
+            t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
+        }
+
+        private void EverythingRunnerExceptionHandler(Task obj)
+        {
+            MessageBox.Show("Run failed, Exception: " + obj.Exception.Message + Environment.NewLine + obj.Exception.);
+            outRichTextBox.AppendText("Run failed, Exception: " + obj.Exception.Message);
+            outRichTextBox.AppendText(Environment.NewLine);
         }
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
