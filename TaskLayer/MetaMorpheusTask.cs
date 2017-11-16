@@ -109,7 +109,7 @@ namespace TaskLayer
         {
             foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
             {
-                List<Tuple<List<IMzPeak>, int>> isolatedStuff = new List<Tuple<List<IMzPeak>, int>>();
+                List<Tuple<double, int>> isolatedStuff = new List<Tuple<double, int>>();
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                 {
                     var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
@@ -117,7 +117,11 @@ namespace TaskLayer
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                         ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                     if (doPrecursorDeconvolution)
-                        isolatedStuff.AddRange(ms2scan.GetIsolatedMassesAndChargesOld(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio));
+                        foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, 1, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance.Value, deconvolutionIntensityRatio))
+                        {
+                            var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
+                            isolatedStuff.Add(new Tuple<double, int>(monoPeakMz, envelope.charge));
+                        }
                 }
 
                 if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
@@ -126,19 +130,19 @@ namespace TaskLayer
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                     {
                         var precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
-                            isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(precursorMZ, ms2scan.SelectedIonMonoisotopicGuessIntensity.Value) }, precursorCharge));
+                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
+                            isolatedStuff.Add(new Tuple<double, int>(precursorMZ, precursorCharge));
                     }
                     else
                     {
                         var precursorMZ = ms2scan.SelectedIonMZ;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
-                            isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(precursorMZ, ms2scan.SelectedIonIntensity ?? double.NaN) }, precursorCharge));
+                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
+                            isolatedStuff.Add(new Tuple<double, int>(precursorMZ, precursorCharge));
                     }
                 }
 
                 foreach (var heh in isolatedStuff)
-                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, fullFilePath);
+                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1, heh.Item2, fullFilePath);
             }
         }
 
@@ -199,39 +203,36 @@ namespace TaskLayer
             #endregion write TOML
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-#if !DEBUG
             try
             {
-#endif
-            var stopWatch = new Stopwatch();
-            stopWatch.Start();
+                var stopWatch = new Stopwatch();
+                stopWatch.Start();
 
-            FileSpecificSettings[] fileSettingsList = new FileSpecificSettings[currentRawDataFilepathList.Count];
-            for (int i = 0; i < currentRawDataFilepathList.Count; i++)
-            {
-                string rawFilePath = currentRawDataFilepathList[i];
-                var fileSpecificToml = Directory.GetFiles(Directory.GetParent(rawFilePath).ToString(), Path.GetFileNameWithoutExtension(rawFilePath) + ".toml");
-                //Will only enter if Toml file exists with same name
-                if (fileSpecificToml.Length == 1)
+                FileSpecificSettings[] fileSettingsList = new FileSpecificSettings[currentRawDataFilepathList.Count];
+                for (int i = 0; i < currentRawDataFilepathList.Count; i++)
                 {
-                    TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
-                    var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
-                    fileSettingsList[i] = new FileSpecificSettings(tomlSettingsList);
+                    string rawFilePath = currentRawDataFilepathList[i];
+                    var fileSpecificToml = Directory.GetFiles(Directory.GetParent(rawFilePath).ToString(), Path.GetFileNameWithoutExtension(rawFilePath) + ".toml");
+                    //Will only enter if Toml file exists with same name
+                    if (fileSpecificToml.Length == 1)
+                    {
+                        TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
+                        var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
+                        fileSettingsList[i] = new FileSpecificSettings(tomlSettingsList);
+                    }
                 }
-            }
 
-            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
-            stopWatch.Stop();
-            myTaskResults.Time = stopWatch.Elapsed;
-            var resultsFileName = Path.Combine(output_folder, "results.txt");
-            using (StreamWriter file = new StreamWriter(resultsFileName))
-            {
-                file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
-                file.Write(myTaskResults.ToString());
-            }
-            SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
-            FinishedSingleTask(displayName);
-#if !DEBUG
+                RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
+                stopWatch.Stop();
+                myTaskResults.Time = stopWatch.Elapsed;
+                var resultsFileName = Path.Combine(output_folder, "results.txt");
+                using (StreamWriter file = new StreamWriter(resultsFileName))
+                {
+                    file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                    file.Write(myTaskResults.ToString());
+                }
+                SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
+                FinishedSingleTask(displayName);
             }
             catch (Exception e)
             {
@@ -240,7 +241,7 @@ namespace TaskLayer
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
-                    file.WriteLine(MzLibUtil.SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+                    file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
                     file.Write("e: " + e);
                     file.Write("e.Message: " + e.Message);
                     file.Write("e.InnerException: " + e.InnerException);
@@ -250,7 +251,6 @@ namespace TaskLayer
                 }
                 throw;
             }
-#endif
 
             #region Write prose
 

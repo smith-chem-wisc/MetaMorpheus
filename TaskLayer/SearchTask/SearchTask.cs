@@ -441,7 +441,7 @@ namespace TaskLayer
                     rank = 1,
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
-                    experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeak.Mz, 5),
+                    experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeakMz, 5),
                     passThreshold = psm.FdrInfo.QValue <= threshold,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
                     peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,

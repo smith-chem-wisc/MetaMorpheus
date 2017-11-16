@@ -6,7 +6,7 @@
 
   <!--Product compiles into an msi file. Only one can be present.-->
   <!--Version needs to be replaced automatically-->
-  <Product Id="*" Name="MetaMorpheus" Language="1033" Version="1.0.0.0" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5">
+  <Product Id="*" Name="MetaMorpheus" Language="1033" Version="!(bind.FileVersion.MetaMorpheusGUI.exe)" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5">
 
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
@@ -51,17 +51,23 @@
   <!--Executables and libraries-->
   <Fragment>
     <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup" Directory="MetaMorpheusInstallFolder">
-
       <Component Id="MetaMorpheusGUI.exe" Guid="63370d96-1880-40ab-8525-685ccf64326f">
         <File Id="MetaMorpheusGUI.exe" Name="MetaMorpheusGUI.exe" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe" />
       </Component>
-
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
       </Component>
-
       <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="18bed74c-eedb-4efa-a6e3-1592ac7022e3">
         <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)UnmanagedThermoHelperLayer.dll" />
+      </Component>
+      <Component Id="src_Thermo.dll">
+        <File Id="src_Thermo.dll" Name="Thermo.dll" Source="$(var.GUI_TargetDir)Thermo.dll" />
+      </Component>
+      <Component Id="src_settings.toml">
+        <File Id="src_settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
+      </Component>
+      <Component Id="src_Newtonsoft.Json.dll">
+        <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
       </Component>
       <Component Id="src_UsefulProteomicsDatabases.dll" Guid="e7f76fbf-d21c-4e57-bed4-33f71822ee18">
         <File Id="src_UsefulProteomicsDatabases.dll" Name="UsefulProteomicsDatabases.dll" Source="$(var.GUI_TargetDir)UsefulProteomicsDatabases.dll" />

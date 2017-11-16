@@ -163,7 +163,8 @@ namespace EngineLayer.ModernSearch
                     {
                         if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                         {
-                            int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass +protonMassShift)* fragmentBinsPerDalton)) - obsFragmentCeilingMass;
+                            protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
+                            int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
                             int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentFloorMass;
                             if (compFragmentFloorMass > 0)
                                 for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
