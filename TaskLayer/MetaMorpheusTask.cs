@@ -203,39 +203,36 @@ namespace TaskLayer
             #endregion write TOML
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-#if !DEBUG
             try
             {
-#endif
-            var stopWatch = new Stopwatch();
-            stopWatch.Start();
+                var stopWatch = new Stopwatch();
+                stopWatch.Start();
 
-            FileSpecificSettings[] fileSettingsList = new FileSpecificSettings[currentRawDataFilepathList.Count];
-            for (int i = 0; i < currentRawDataFilepathList.Count; i++)
-            {
-                string rawFilePath = currentRawDataFilepathList[i];
-                var fileSpecificToml = Directory.GetFiles(Directory.GetParent(rawFilePath).ToString(), Path.GetFileNameWithoutExtension(rawFilePath) + ".toml");
-                //Will only enter if Toml file exists with same name
-                if (fileSpecificToml.Length == 1)
+                FileSpecificSettings[] fileSettingsList = new FileSpecificSettings[currentRawDataFilepathList.Count];
+                for (int i = 0; i < currentRawDataFilepathList.Count; i++)
                 {
-                    TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
-                    var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
-                    fileSettingsList[i] = new FileSpecificSettings(tomlSettingsList);
+                    string rawFilePath = currentRawDataFilepathList[i];
+                    var fileSpecificToml = Directory.GetFiles(Directory.GetParent(rawFilePath).ToString(), Path.GetFileNameWithoutExtension(rawFilePath) + ".toml");
+                    //Will only enter if Toml file exists with same name
+                    if (fileSpecificToml.Length == 1)
+                    {
+                        TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
+                        var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
+                        fileSettingsList[i] = new FileSpecificSettings(tomlSettingsList);
+                    }
                 }
-            }
 
-            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
-            stopWatch.Stop();
-            myTaskResults.Time = stopWatch.Elapsed;
-            var resultsFileName = Path.Combine(output_folder, "results.txt");
-            using (StreamWriter file = new StreamWriter(resultsFileName))
-            {
-                file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
-                file.Write(myTaskResults.ToString());
-            }
-            SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
-            FinishedSingleTask(displayName);
-#if !DEBUG
+                RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
+                stopWatch.Stop();
+                myTaskResults.Time = stopWatch.Elapsed;
+                var resultsFileName = Path.Combine(output_folder, "results.txt");
+                using (StreamWriter file = new StreamWriter(resultsFileName))
+                {
+                    file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                    file.Write(myTaskResults.ToString());
+                }
+                SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
+                FinishedSingleTask(displayName);
             }
             catch (Exception e)
             {
@@ -244,7 +241,7 @@ namespace TaskLayer
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
-                    file.WriteLine(MzLibUtil.SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+                    file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
                     file.Write("e: " + e);
                     file.Write("e.Message: " + e.Message);
                     file.Write("e.InnerException: " + e.InnerException);
@@ -254,7 +251,6 @@ namespace TaskLayer
                 }
                 throw;
             }
-#endif
 
             #region Write prose
 
