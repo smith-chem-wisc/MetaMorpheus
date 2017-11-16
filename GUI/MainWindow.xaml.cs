@@ -417,9 +417,18 @@ namespace MetaMorpheusGUI
 
         private void EverythingRunnerExceptionHandler(Task obj)
         {
-            MessageBox.Show("Run failed, Exception: " + obj.Exception.Message + Environment.NewLine + obj.Exception.);
-            outRichTextBox.AppendText("Run failed, Exception: " + obj.Exception.Message);
-            outRichTextBox.AppendText(Environment.NewLine);
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => EverythingRunnerExceptionHandler(obj)));
+            }
+            else
+            {
+                Exception e = obj.Exception;
+                while (e.InnerException != null) e = e.InnerException;
+                var message = "Run failed, Exception: " + e.Message;
+                MessageBox.Show(message);
+                outRichTextBox.AppendText(message + Environment.NewLine);
+            }
         }
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
