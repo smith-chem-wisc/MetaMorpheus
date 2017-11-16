@@ -335,7 +335,10 @@ namespace TaskLayer
             List<Psm> goodIdentifications = GetGoodIdentifications(myMsDataFile, searchMode, currentDataFile, variableModifications, fixedModifications, proteinList, taskId);
 
             if (!goodIdentifications.Any())
+            {
+                Warn("No good identifications!");
                 return (0, null);
+            }
 
             // Store
 
@@ -362,7 +365,10 @@ namespace TaskLayer
                     new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                 if (currentResult.Ms1List.Count == 0 || currentResult.Ms2List.Count == 0)
+                {
+                    Warn("currentResult.Ms1List.Count = " + currentResult.Ms1List.Count + " currentResult.Ms2List.Count = " + currentResult.Ms2List.Count);
                     return (0, null);
+                }
 
                 var computedPrecursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPpm.Item1 + 6 * currentResult.Ms1InfoPpm.Item2), Math.Abs(currentResult.Ms1InfoPpm.Item1 - 6 * currentResult.Ms1InfoPpm.Item2)));
                 var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPpm.Item1 + 6 * currentResult.Ms2InfoPpm.Item2), Math.Abs(currentResult.Ms2InfoPpm.Item1 - 6 * currentResult.Ms2InfoPpm.Item2)));
