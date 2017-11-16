@@ -113,9 +113,9 @@ namespace MetaMorpheusCommandLine
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Run failed.");
-                    Console.WriteLine("Exception:");
-                    Console.WriteLine(e.Message);
+                    while (e.InnerException != null) e = e.InnerException;
+                    var message = "Run failed, Exception: " + e.Message;
+                    Console.WriteLine(message);
                 }
             }
             else
