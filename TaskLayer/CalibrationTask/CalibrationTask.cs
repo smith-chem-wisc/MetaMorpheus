@@ -133,7 +133,7 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var currentDataFile = currentRawFileList[spectraFileIndex];
-                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                     lock (lock1) // Lock because reading is sequential
@@ -177,7 +177,7 @@ namespace TaskLayer
 
                     mzSepLearners = mzSepLearners.Select(b => new SeparateMzLearner(b) as ILearner<double>).ToList();
 
-                    (int count, DataPointAquisitionResults datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
+                    (int count, DataPointAquisitionResults datapointAcquisitionResult, Tolerance precTol, Tolerance prodTol) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
 
                     if (datapointAcquisitionResult == null)
                     {
@@ -206,10 +206,10 @@ namespace TaskLayer
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, initLearners, "mz", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                         prevCount = count;
-                        prevPrecTol = combinedParams.PrecursorMassTolerance;
-                        prevProdTol = combinedParams.ProductMassTolerance;
+                        prevPrecTol = precTol;
+                        prevProdTol = prodTol;
 
-                        (count, datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
+                        (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
 
                         if (datapointAcquisitionResult == null)
                         {
@@ -242,9 +242,6 @@ namespace TaskLayer
                         round++;
                     } while (true);
 
-                    combinedParams.PrecursorMassTolerance = prevPrecTol;
-                    combinedParams.ProductMassTolerance = prevProdTol;
-
                     myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
 
                     do
@@ -252,10 +249,10 @@ namespace TaskLayer
                         new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, mzSepLearners, "mzRtTicInj", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
                         prevCount = count;
-                        prevPrecTol = combinedParams.PrecursorMassTolerance;
-                        prevProdTol = combinedParams.ProductMassTolerance;
+                        prevPrecTol = precTol;
+                        prevProdTol = prodTol;
 
-                        (count, datapointAcquisitionResult) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
+                        (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
 
                         if (datapointAcquisitionResult == null)
                         {
@@ -315,7 +312,7 @@ namespace TaskLayer
             return countRatio > 0.9 && precRatio + prodRatio < 1.8;
         }
 
-        private (int, DataPointAquisitionResults) GetDataAcquisitionResultsAndSetTolerances(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters)
+        private (int, DataPointAquisitionResults, Tolerance, Tolerance) GetDataAcquisitionResultsAndSetTolerances(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, ICommonParameters combinedParameters)
         {
             MassDiffAcceptor searchMode;
             if (combinedParameters.PrecursorMassTolerance is PpmTolerance)
@@ -338,7 +335,7 @@ namespace TaskLayer
             if (!goodIdentifications.Any())
             {
                 Warn("No good identifications!");
-                return (0, null);
+                return (0, null, null, null);
             }
 
             // Store
@@ -368,7 +365,7 @@ namespace TaskLayer
                 if (currentResult.Ms1List.Count == 0 || currentResult.Ms2List.Count == 0)
                 {
                     Warn("currentResult.Ms1List.Count = " + currentResult.Ms1List.Count + " currentResult.Ms2List.Count = " + currentResult.Ms2List.Count);
-                    return (0, null);
+                    return (0, null, null, null);
                 }
 
                 var computedPrecursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPpm.Item1 + 6 * currentResult.Ms1InfoPpm.Item2), Math.Abs(currentResult.Ms1InfoPpm.Item1 - 6 * currentResult.Ms1InfoPpm.Item2)));
@@ -390,13 +387,10 @@ namespace TaskLayer
                 round++;
             } while (true);
 
-            combinedParameters.PrecursorMassTolerance = bestPrecursorMassToleranceForDatapointAcquisition;
-            combinedParameters.ProductMassTolerance = bestProductMassToleranceForDatapointAcquisition;
-
-            return (goodIdentifications.Count, bestResult);
+            return (goodIdentifications.Count, bestResult, bestPrecursorMassToleranceForDatapointAcquisition, bestProductMassToleranceForDatapointAcquisition);
         }
 
-        private List<Psm> GetGoodIdentifications(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, MassDiffAcceptor searchMode, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters)
+        private List<Psm> GetGoodIdentifications(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, MassDiffAcceptor searchMode, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, ICommonParameters combinedParameters)
         {
             List<ProductType> lp = new List<ProductType>();
             if (combinedParameters.BIons)
