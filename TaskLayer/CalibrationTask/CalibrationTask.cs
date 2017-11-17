@@ -177,7 +177,7 @@ namespace TaskLayer
 
                     mzSepLearners = mzSepLearners.Select(b => new SeparateMzLearner(b) as ILearner<double>).ToList();
 
-                    (int count, DataPointAquisitionResults datapointAcquisitionResult, Tolerance precTol, Tolerance prodTol) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
+                    (int count, DataPointAquisitionResults datapointAcquisitionResult, Tolerance precTol, Tolerance prodTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
 
                     if (datapointAcquisitionResult == null)
                     {
@@ -209,7 +209,7 @@ namespace TaskLayer
                         prevPrecTol = precTol;
                         prevProdTol = prodTol;
 
-                        (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
+                        (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, precTol, prodTol);
 
                         if (datapointAcquisitionResult == null)
                         {
@@ -252,7 +252,7 @@ namespace TaskLayer
                         prevPrecTol = precTol;
                         prevProdTol = prodTol;
 
-                        (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndSetTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams);
+                        (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, precTol, prodTol);
 
                         if (datapointAcquisitionResult == null)
                         {
@@ -312,13 +312,16 @@ namespace TaskLayer
             return countRatio > 0.9 && precRatio + prodRatio < 1.8;
         }
 
-        private (int, DataPointAquisitionResults, Tolerance, Tolerance) GetDataAcquisitionResultsAndSetTolerances(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, ICommonParameters combinedParameters)
+        private (int, DataPointAquisitionResults, Tolerance, Tolerance) GetDataAcquisitionResultsAndAppropriateTolerances(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, ICommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
         {
             MassDiffAcceptor searchMode;
-            if (combinedParameters.PrecursorMassTolerance is PpmTolerance)
-                searchMode = new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            if (initPrecTol is PpmTolerance)
+                searchMode = new SinglePpmAroundZeroSearchMode(initPrecTol.Value);
             else
-                searchMode = new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+                searchMode = new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
+
+            Console.WriteLine("Searching with searchMode" + searchMode);
+            Console.WriteLine("Searching with initProdTol" + initProdTol);
 
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
             if (combinedParameters.BIons)
@@ -330,7 +333,35 @@ namespace TaskLayer
             if (combinedParameters.ZdotIons)
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.zdot;
 
-            List<Psm> goodIdentifications = GetGoodIdentifications(myMsDataFile, searchMode, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParameters);
+            var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters.DoPrecursorDeconvolution, combinedParameters.UseProvidedPrecursorInfo, combinedParameters.DeconvolutionIntensityRatio, combinedParameters.DeconvolutionMaxAssumedChargeState, combinedParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+
+            List<ProductType> lp = new List<ProductType>();
+            if (combinedParameters.BIons)
+                lp.Add(ProductType.B);
+            if (combinedParameters.YIons)
+                lp.Add(ProductType.Y);
+            if (combinedParameters.CIons)
+                lp.Add(ProductType.C);
+            if (combinedParameters.ZdotIons)
+                lp.Add(ProductType.Zdot);
+
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, false, combinedParameters, initProdTol, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+
+            List<Psm> allPsms = allPsmsArray.ToList();
+
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run()).CompactPeptideToProteinPeptideMatching;
+
+            foreach (var huh in allPsms)
+                if (huh != null && huh.MostProbableProteinInfo == null)
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+
+            allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+
+            new FdrAnalysisEngine(allPsms, searchMode, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+
+            List<Psm> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
             if (!goodIdentifications.Any())
             {
@@ -387,40 +418,9 @@ namespace TaskLayer
                 round++;
             } while (true);
 
+            Console.WriteLine("Returning precTol:" + bestPrecursorMassToleranceForDatapointAcquisition);
+            Console.WriteLine("Returning prodTol:" + bestProductMassToleranceForDatapointAcquisition);
             return (goodIdentifications.Count, bestResult, bestPrecursorMassToleranceForDatapointAcquisition, bestProductMassToleranceForDatapointAcquisition);
-        }
-
-        private List<Psm> GetGoodIdentifications(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, MassDiffAcceptor searchMode, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, ICommonParameters combinedParameters)
-        {
-            List<ProductType> lp = new List<ProductType>();
-            if (combinedParameters.BIons)
-                lp.Add(ProductType.B);
-            if (combinedParameters.YIons)
-                lp.Add(ProductType.Y);
-            if (combinedParameters.CIons)
-                lp.Add(ProductType.C);
-            if (combinedParameters.ZdotIons)
-                lp.Add(ProductType.Zdot);
-
-            var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters.DoPrecursorDeconvolution, combinedParameters.UseProvidedPrecursorInfo, combinedParameters.DeconvolutionIntensityRatio, combinedParameters.DeconvolutionMaxAssumedChargeState, combinedParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
-
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, false, combinedParameters, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-
-            List<Psm> allPsms = allPsmsArray.ToList();
-
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run()).CompactPeptideToProteinPeptideMatching;
-
-            foreach (var huh in allPsms)
-                if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-
-            allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-
-            new FdrAnalysisEngine(allPsms, searchMode, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-
-            return allPsms.Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
         }
 
         #endregion Private Methods
