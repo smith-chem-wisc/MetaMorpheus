@@ -33,23 +33,16 @@ namespace EngineLayer
         static GlobalEngineLevelSettings()
         {
             string dir;
-            Console.WriteLine("Environment.SpecialFolder.ProgramFiles = " + Environment.SpecialFolder.ProgramFiles);
-
-            Console.WriteLine("Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) = " + Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
-
-            if (Directory.GetCurrentDirectory().Contains(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)))
+            var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && Directory.GetCurrentDirectory().Contains(pathToProgramFiles))
             {
                 ByInstaller = true;
                 dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
-                Console.WriteLine("ByInstaller = true");
-                Console.WriteLine("dir = " + dir);
             }
             else
             {
                 ByInstaller = false;
                 dir = AppDomain.CurrentDomain.BaseDirectory;
-                Console.WriteLine("ByInstaller = false");
-                Console.WriteLine("dir = " + dir);
             }
             elementsLocation = Path.Combine(dir, @"Data", @"elements.dat");
             unimodLocation = Path.Combine(dir, @"Data", @"unimod.xml");
