@@ -15,22 +15,16 @@ namespace EngineLayer
 
         public static readonly string elementsLocation;
         public static readonly string modsLocation;
+        public static readonly string settingsTomlLocation;
+
         #endregion Public Fields
 
         #region Private Fields
 
-
         private static readonly string unimodLocation;
-
         private static readonly string uniprotLocation;
-
         private static readonly string psiModLocation;
-
-        private static readonly string settingsTomlLocation;
-
         private static readonly string proteasesLocation;
-
-       
 
         #endregion Private Fields
 
@@ -49,13 +43,13 @@ namespace EngineLayer
                 ByInstaller = false;
                 dir = AppDomain.CurrentDomain.BaseDirectory;
             }
-            elementsLocation = Path.Combine(dir,@"Data", @"elements.dat");
+            elementsLocation = Path.Combine(dir, @"Data", @"elements.dat");
             unimodLocation = Path.Combine(dir, @"Data", @"unimod.xml");
             uniprotLocation = Path.Combine(dir, @"Data", @"ptmlist.txt");
             psiModLocation = Path.Combine(dir, @"Data", @"PSI-MOD.obo.xml");
             settingsTomlLocation = Path.Combine(dir, @"settings.toml");
             proteasesLocation = Path.Combine(dir, @"Data", "proteases.tsv");
-            modsLocation= Path.Combine(dir, @"Mods");
+            modsLocation = Path.Combine(dir, @"Mods");
 
             // No exceptions to be caught here, since we are just reading these files!
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
@@ -77,7 +71,6 @@ namespace EngineLayer
             else
                 AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
 
-            
             ProteaseDictionary = LoadProteaseDictionary();
             AllModsKnown = new List<Modification>();
         }
