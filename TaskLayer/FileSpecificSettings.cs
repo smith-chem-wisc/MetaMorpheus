@@ -70,7 +70,7 @@ namespace TaskLayer
             }
             if (tomlDict.ContainsKey("PrecursorMassTolerance"))
             {
-                PrecursorMassTolerance = tomlDict["ProductMassTolerance"].Value.Get<Tolerance>();
+                PrecursorMassTolerance = tomlDict["PrecursorMassTolerance"].Value.Get<Tolerance>();
             }
             if (tomlDict.ContainsKey("ConserveMemory"))
             {
