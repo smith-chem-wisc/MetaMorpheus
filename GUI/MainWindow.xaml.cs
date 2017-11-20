@@ -915,18 +915,23 @@ namespace MetaMorpheusGUI
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
             var file = "";
-			if (GlobalEngineLevelSettings.ByInstaller)
-				file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\Data\unimod.xml");
-			else
-				file = Path.Combine(Directory.GetCurrentDirectory(), @"Data\unimod.xml");
-			UsefulProteomicsDatabases.Loaders.UpdateUnimod(file);
-			Application.Current.Shutdown();
+            if (GlobalEngineLevelSettings.ByInstaller)
+                file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"MetaMorpheus\Data\unimod.xml");
+            else
+                file = Path.Combine(Directory.GetCurrentDirectory(), @"Data\unimod.xml");
+            UsefulProteomicsDatabases.Loaders.UpdateUnimod(file);
+            Application.Current.Shutdown();
         }
 
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)
         {
             string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
             System.Diagnostics.Process.Start(mailto);
+        }
+
+        private void MenuItem_Click_5(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
         }
 
         #endregion Private Methods
