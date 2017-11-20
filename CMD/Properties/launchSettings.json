@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CMD": {
+      "commandName": "Project",
+      "commandLineArgs": "-t C:\\Users\\stepa\\Desktop\\ParallelCalibValidate\\2017-11-17-14-56-18\\Task1CalibrationTask\\CalibrationTaskconfig.toml -s C:\\Users\\stepa\\Desktop\\ParallelCalibValidate\\04-29-13_B6_Frac5_4uL.raw -d C:\\Users\\stepa\\Desktop\\ParallelCalibValidate\\uniprot-mouse-reviewed-9-14-2017.xml"
+    }
+  }
+}
