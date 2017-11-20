@@ -43,7 +43,7 @@ namespace MetaMorpheusGUI
 
             try
             {
-                foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
+                foreach (var modFile in Directory.GetFiles(GlobalEngineLevelSettings.modsLocation))
                     GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             }
             catch (Exception e)
@@ -914,13 +914,24 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
+            UsefulProteomicsDatabases.Loaders.UpdateUnimod(GlobalEngineLevelSettings.unimodLocation);
+            Application.Current.Shutdown();
         }
 
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)
         {
             string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
             System.Diagnostics.Process.Start(mailto);
+        }
+
+        private void MenuItem_Click_5(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
+        }
+
+        private void MenuItem_Click_6(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(GlobalEngineLevelSettings.dataDir);
         }
 
         #endregion Private Methods
