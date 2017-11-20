@@ -43,6 +43,8 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalEngineLevelSettings.ProteaseDictionary[tmlString.Value])))
+                        .ConfigureType<ICommonParameters>(ct => ct
+                            .CreateInstance(() => new CommonParameters()))
                         .ConfigureType<List<Tuple<string, string>>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
@@ -92,7 +94,7 @@ namespace TaskLayer
 
         public MyTask TaskType { get; set; }
 
-        public CommonParameters CommonParameters { get; set; }
+        public ICommonParameters CommonParameters { get; set; }
 
         #endregion Public Properties
 
@@ -146,7 +148,7 @@ namespace TaskLayer
             }
         }
 
-        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
+        public static ICommonParameters SetAllFileSpecificCommonParams(ICommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
         {
             if (currentFileSpecificSettings == null)
                 return commonParams;
@@ -166,6 +168,8 @@ namespace TaskLayer
                 TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
 
                 ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
+
+                PrecursorMassTolerance = currentFileSpecificSettings.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance,
 
                 ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
 
@@ -305,7 +309,7 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
-        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
+        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
         {
             HashSet<DigestionParams> okay = new HashSet<DigestionParams>
             {

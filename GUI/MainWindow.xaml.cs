@@ -409,6 +409,8 @@ namespace MetaMorpheusGUI
             }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
+            outRichTextBox.Document.Blocks.Clear();
+
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
             var t = new Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
@@ -923,7 +925,7 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)
         {
-            string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "solntsev@wisc.edu");
+            string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
             System.Diagnostics.Process.Start(mailto);
         }
 
