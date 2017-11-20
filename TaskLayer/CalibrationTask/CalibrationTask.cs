@@ -392,11 +392,11 @@ namespace TaskLayer
 
             DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>());
 
-            Tolerance bestPrecursorMassToleranceForDatapointAcquisition = combinedParameters.PrecursorMassTolerance;
-            Tolerance bestProductMassToleranceForDatapointAcquisition = combinedParameters.ProductMassTolerance;
+            Tolerance bestPrecursorMassToleranceForDatapointAcquisition = initPrecTol;
+            Tolerance bestProductMassToleranceForDatapointAcquisition = initProdTol;
 
-            Tolerance testPrecursorMassToleranceForDatapointAcquisition = combinedParameters.PrecursorMassTolerance;
-            Tolerance testProductMassToleranceForDatapointAcquisition = combinedParameters.ProductMassTolerance;
+            Tolerance testPrecursorMassToleranceForDatapointAcquisition = initPrecTol;
+            Tolerance testProductMassToleranceForDatapointAcquisition = initProdTol;
 
             var round = 1;
             do
