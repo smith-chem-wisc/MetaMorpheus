@@ -37,11 +37,15 @@ namespace EngineLayer
             {
                 ByInstaller = true;
                 dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+                Console.WriteLine("ByInstaller = true");
+                Console.WriteLine("dir = " + dir);
             }
             else
             {
                 ByInstaller = false;
                 dir = AppDomain.CurrentDomain.BaseDirectory;
+                Console.WriteLine("ByInstaller = false");
+                Console.WriteLine("dir = " + dir);
             }
             elementsLocation = Path.Combine(dir, @"Data", @"elements.dat");
             unimodLocation = Path.Combine(dir, @"Data", @"unimod.xml");
