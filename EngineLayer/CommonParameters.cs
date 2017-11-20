@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class CommonParameters
+    public class CommonParameters : ICommonParameters
     {
         #region Public Constructors
 

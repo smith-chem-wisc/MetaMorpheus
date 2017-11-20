@@ -123,7 +123,7 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -147,7 +147,7 @@ namespace TaskLayer
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 Psm[] allPsmsArray = new Psm[arrayOfMs2ScansSortedByMass.Length];
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, searchModes, false, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, searchModes, false, combinedParams, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
                 lock (lock2)
                 {
                     allPsms.AddRange(allPsmsArray);

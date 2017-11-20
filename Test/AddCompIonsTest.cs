@@ -51,9 +51,9 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>()).Run();
             Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, true, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, true, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
             double scoreF = allPsmsArray[0].Score;
