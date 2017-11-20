@@ -16,12 +16,12 @@ namespace EngineLayer
         public static readonly string elementsLocation;
         public static readonly string modsLocation;
         public static readonly string settingsTomlLocation;
+        public static readonly string unimodLocation;
 
         #endregion Public Fields
 
         #region Private Fields
 
-        private static readonly string unimodLocation;
         private static readonly string uniprotLocation;
         private static readonly string psiModLocation;
         private static readonly string proteasesLocation;
@@ -34,7 +34,7 @@ namespace EngineLayer
         {
             string dir;
             var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && Directory.GetCurrentDirectory().Contains(pathToProgramFiles))
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles))
             {
                 ByInstaller = true;
                 dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
