@@ -33,6 +33,8 @@ namespace EngineLayer
         static GlobalEngineLevelSettings()
         {
             string dir;
+            Console.WriteLine("Environment.SpecialFolder.ProgramFiles = " + Environment.SpecialFolder.ProgramFiles);
+
             if (Directory.GetCurrentDirectory().Contains(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)))
             {
                 ByInstaller = true;
