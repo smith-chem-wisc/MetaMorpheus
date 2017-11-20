@@ -35,6 +35,8 @@ namespace EngineLayer
             string dir;
             Console.WriteLine("Environment.SpecialFolder.ProgramFiles = " + Environment.SpecialFolder.ProgramFiles);
 
+            Console.WriteLine("Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) = " + Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
+
             if (Directory.GetCurrentDirectory().Contains(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)))
             {
                 ByInstaller = true;
