@@ -11,9 +11,8 @@
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
-
-    <MajorUpgrade DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
-
+    <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of MetaMorpheus is already installed."/>
+        
     <Condition Message="This application is only supported on Windows 7 or higher.">
       <![CDATA[Installed OR (VersionNT >= 601)]]>
     </Condition>
@@ -23,17 +22,26 @@
     </Condition>
 
     <MediaTemplate EmbedCab="yes"/>
-
+    
+    
+    
     <!--A feature for the Feature table. Features are the smallest installable unit.-->
     <Feature Id="ProductFeature" Level="1">
+      
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <ComponentGroupRef Id="src_Mods_files" />
       <ComponentGroupRef Id="src_Data_files" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
+      <!--App Data Section-->
+      
+      <ComponentGroupRef Id="Appsrc_Mods_files"/>
+      <ComponentGroupRef Id="Appsrc_Data_files"/>
+      <ComponentRef Id="MetaAppsettings.toml"/>
+      <ComponentRef Id="RomoveApp"/>
     </Feature>
-
+   
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
@@ -42,10 +50,55 @@
         </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder">
-        <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus"/>
+        <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus">
+
+        </Directory>
+      </Directory>
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="MetaMorpheusAppFolder" Name="MetaMorpheus">
+          <Component Id="MetaAppsettings.toml" Guid="1d8da0c2-5b44-4fe4-a581-1fc526346313">
+            <Condition>OVERWRITEAPPDATA</Condition> 
+            <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+            <File Id="settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
+          </Component>
+          <Component Id="RomoveApp" Guid="a5443b89-65b0-4855-b521-e7bcc9c5a85c">
+            <RemoveFolder Id="MetaMorpheusAppFolder" On="uninstall"/>
+            <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+          </Component>
+          <Directory Id="MetaAppDataFolder" Name="Data" />
+          <Directory Id="MetaAppModsFolder" Name="Mods" />
+        </Directory>
       </Directory>
     </Directory>
     
+    <UI>
+      <UIRef Id="WixUI_Mondo"/>
+      <UIRef Id="newDlg"/>
+      <UIRef Id="MyMaintenance"/>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
+      <Publish Dialog="MetaSCDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="1">1</Publish>
+      <Publish Dialog="MetaSCDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1">1</Publish>
+      
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MyMaintenanceTypeDlg">1</Publish>
+      <Publish Dialog="MyMaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="1">1</Publish>
+      <!--<Publish Dialog="MyMaintenanceTypeDlg" Control="Next" Event="NewDialog" Value="ExitDialog" Order="1">1</Publish>-->
+
+      <Publish Dialog="ExitDialog"
+        Control="Finish" 
+        Event="DoAction" 
+        Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+      
+    </UI>
+    
+ 
+  <CustomAction Id='LaunchFile' FileKey='MetaMorpheusGUI.exe' ExeCommand='' Return="asyncNoWait" />
+  <Property Id="OVERWRITEAPPDATA" Value="1" />
+  <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
+  <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Metamorpheus" />
+  <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
+  <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+  
   </Product>
 
   <!--Executables and libraries-->
@@ -504,9 +557,102 @@
     </ComponentGroup>
   </Fragment>
 
+  <!--Build the App Mods folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_Mods_files" Directory="MetaAppModsFolder">
+      <Component Id="RemoveMods" Guid="284c0784-2183-4f80-af61-56cadeb800bf">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppModsFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      <Component Id="Appsrc_Mods_aListOfmods.txt" Guid="0aa9b5ed-b47d-4a78-93b1-49ebc104d011">
+        <File ReadOnly="no" Id="Appsrc_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      <Component Id="Appsrc_Mods_detachers.txt" Guid="9224cf63-edb0-4e30-83c2-b10fff7af13e">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)Mods\detachers.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_glyco.txt" Guid="1707b26b-070e-46d5-9632-f1bc8bf4d281">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)Mods\glyco.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_missing.txt" Guid="0f659a4e-3ea9-4d3a-9a0f-65cda1015b01">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_missing.txt" Name="missing.txt" Source="$(var.GUI_TargetDir)Mods\missing.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_Mods.txt" Guid="9be193e3-266c-4c1d-9973-341f0a5d108a">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_substitutions.txt" Guid="f108606b-f9eb-4c3c-893b-7ec33c88a1d1">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)Mods\substitutions.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_surfactants.txt" Guid="937d6734-a4c0-469a-b070-64bf5de84b13">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)Mods\surfactants.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_tmt.txt" Guid="f064b7a0-c650-4a40-8a9f-301cc6cb946e">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!--Builds the App Data folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_Data_files" Directory="MetaAppDataFolder">
+      <Component Id="RomoveData" Guid="80dd5110-5563-499a-93ee-652e351c64f9">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppDataFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      <Component Id="Appsrc_Data_combos.txt" Guid="e16d25a3-d773-4a7f-9252-63d737c2c7ba">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
+      </Component>
+      <Component Id="Appsrc_Data_PSI_MOD.obo.xml" Guid="348109bd-4645-448e-b272-19a126e4c3cf">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_PSI_MOD.obo.xml" Name="PSI-MOD.obo.xml" Source="$(var.GUI_TargetDir)Data\PSI-MOD.obo.xml" />
+      </Component>
+      <Component Id="Appsrc_Data_ptmlist.txt" Guid="ea6237f4-9acd-4660-a4e8-831b7aab8c39">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <File ReadOnly="no" Id="Appsrc_Data_ptmlist.txt" Name="ptmlist.txt" Source="$(var.GUI_TargetDir)Data\ptmlist.txt" />
+      </Component>
+      <Component Id="Appsrc_Data_unimod.xml" Guid="cb7b6d9e-3eb0-47ac-857f-7a0009d95619">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)Data\unimod.xml" />
+      </Component>
+      <Component Id="Appsrc_Data_elements.dat" Guid="5ba496cc-8b84-4d25-a410-b2274718ebf9">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
+      </Component>
+      <Component Id="Appsrc_Data_proteases.tsv" Guid="fd26b186-64bd-49b7-b8ee-638efef79e03">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
-    <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="b4a458e0-06ce-452d-bfaf-0f413007abc3">
+    <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="c68bc3b0-cc4f-48ed-9ea0-25dbd7492292">
       <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       <Shortcut Id="AppStartMenuSC"
                 Name="MetaMorpheus"
@@ -518,8 +664,8 @@
                 Description="Uninstalls My Application"
                 Target="[System64Folder]msiexec.exe"
                 Arguments="/x [ProductCode]"/>
-      <RemoveFolder Id="MyRemoveFolderId" On="uninstall"/>
+      <RemoveFolder Id="MetaMorpheusProgramMenuFolder" On="both"/>
     </Component>
   </Fragment>
-  
+
 </Wix>
