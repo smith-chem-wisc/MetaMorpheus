@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using Nett;
 using System;
 using System.Diagnostics;
 using System.Net;
@@ -72,6 +73,34 @@ namespace MetaMorpheusGUI
         private void NoClicked(object semder, RoutedEventArgs e)
         {
             DialogResult = false;
+        }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                TomlTable obj = Toml.ReadFile(GlobalEngineLevelSettings.settingsTomlLocation);
+                obj.Update("AskAboutUpdating", false);
+                Toml.WriteFile(obj, GlobalEngineLevelSettings.settingsTomlLocation);
+            }
+            catch (Exception inner)
+            {
+                MessageBox.Show(inner.ToString());
+            }
+        }
+
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                TomlTable obj = Toml.ReadFile(GlobalEngineLevelSettings.settingsTomlLocation);
+                obj.Update("AskAboutUpdating", true);
+                Toml.WriteFile(obj, GlobalEngineLevelSettings.settingsTomlLocation);
+            }
+            catch (Exception inner)
+            {
+                MessageBox.Show(inner.ToString());
+            }
         }
 
         #endregion Private Methods
