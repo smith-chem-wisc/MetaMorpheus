@@ -169,6 +169,8 @@ namespace TaskLayer
 
                 ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
 
+                PrecursorMassTolerance = currentFileSpecificSettings.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance,
+
                 ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
 
                 ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,

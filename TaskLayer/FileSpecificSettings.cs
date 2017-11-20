@@ -68,6 +68,10 @@ namespace TaskLayer
             {
                 ProductMassTolerance = tomlDict["ProductMassTolerance"].Value.Get<Tolerance>();
             }
+            if (tomlDict.ContainsKey("PrecursorMassTolerance"))
+            {
+                PrecursorMassTolerance = tomlDict["ProductMassTolerance"].Value.Get<Tolerance>();
+            }
             if (tomlDict.ContainsKey("ConserveMemory"))
             {
                 ConserveMemory = tomlDict["ConserveMemory"].Value.Get<bool?>();
@@ -110,6 +114,7 @@ namespace TaskLayer
         public double? ScoreCutoff { get; set; }
         public bool? ConserveMemory { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
+        public Tolerance PrecursorMassTolerance { get; set; }
         public int? TotalPartitions { get; set; }
         public int? MaxModificationIsoforms { get; set; }
         public int? MaxPeptideLength { get; set; }
