@@ -35,15 +35,9 @@ namespace EngineLayer
             string dir;
             var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles))
-            {
-                ByInstaller = true;
                 dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
-            }
             else
-            {
-                ByInstaller = false;
                 dir = AppDomain.CurrentDomain.BaseDirectory;
-            }
             elementsLocation = Path.Combine(dir, @"Data", @"elements.dat");
             unimodLocation = Path.Combine(dir, @"Data", @"unimod.xml");
             uniprotLocation = Path.Combine(dir, @"Data", @"ptmlist.txt");
@@ -81,8 +75,6 @@ namespace EngineLayer
         #region Public Properties
 
         public static bool AskAboutUpdating { get; }
-
-        public static bool ByInstaller { get; }
 
         public static string MetaMorpheusVersion { get; }
 
