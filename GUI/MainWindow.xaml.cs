@@ -929,6 +929,11 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
         }
 
+        private void MenuItem_Click_6(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(GlobalEngineLevelSettings.dataDir);
+        }
+
         #endregion Private Methods
     }
 }

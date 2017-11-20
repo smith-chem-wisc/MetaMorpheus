@@ -15,7 +15,8 @@
                 <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" />
                 <MenuItem Header="Email Support at mm_support@chem.wisc.edu" Click="MenuItem_Click_4" />
             </MenuItem>
-            <MenuItem Header="Unimod">
+            <MenuItem Header="Data">
+                <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
                 <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
             </MenuItem>
         </Menu>

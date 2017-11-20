@@ -17,6 +17,7 @@ namespace EngineLayer
         public static readonly string modsLocation;
         public static readonly string settingsTomlLocation;
         public static readonly string unimodLocation;
+        public static readonly string dataDir;
 
         #endregion Public Fields
 
@@ -32,19 +33,18 @@ namespace EngineLayer
 
         static GlobalEngineLevelSettings()
         {
-            string dir;
             var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles))
-                dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+                dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
             else
-                dir = AppDomain.CurrentDomain.BaseDirectory;
-            elementsLocation = Path.Combine(dir, @"Data", @"elements.dat");
-            unimodLocation = Path.Combine(dir, @"Data", @"unimod.xml");
-            uniprotLocation = Path.Combine(dir, @"Data", @"ptmlist.txt");
-            psiModLocation = Path.Combine(dir, @"Data", @"PSI-MOD.obo.xml");
-            settingsTomlLocation = Path.Combine(dir, @"settings.toml");
-            proteasesLocation = Path.Combine(dir, @"Data", "proteases.tsv");
-            modsLocation = Path.Combine(dir, @"Mods");
+                dataDir = AppDomain.CurrentDomain.BaseDirectory;
+            elementsLocation = Path.Combine(dataDir, @"Data", @"elements.dat");
+            unimodLocation = Path.Combine(dataDir, @"Data", @"unimod.xml");
+            uniprotLocation = Path.Combine(dataDir, @"Data", @"ptmlist.txt");
+            psiModLocation = Path.Combine(dataDir, @"Data", @"PSI-MOD.obo.xml");
+            settingsTomlLocation = Path.Combine(dataDir, @"settings.toml");
+            proteasesLocation = Path.Combine(dataDir, @"Data", "proteases.tsv");
+            modsLocation = Path.Combine(dataDir, @"Mods");
 
             // No exceptions to be caught here, since we are just reading these files!
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
