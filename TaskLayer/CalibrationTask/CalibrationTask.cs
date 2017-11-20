@@ -292,48 +292,48 @@ namespace TaskLayer
                         round++;
                     } while (true);
 
-                    myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
+                    //myMsDataFile = Mzml.LoadAllStaticData(bestFilePath);
 
-                    do
-                    {
-                        new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, finalLearners, "mzRtTicInjInt", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+                    //do
+                    //{
+                    //    new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, finalLearners, "mzRtTicInjInt", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-                        prevCount = count;
-                        prevPrecTol = precTol;
-                        prevProdTol = prodTol;
+                    //    prevCount = count;
+                    //    prevPrecTol = precTol;
+                    //    prevProdTol = prodTol;
 
-                        (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, precTol, prodTol);
+                    //    (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, precTol, prodTol);
 
-                        if (datapointAcquisitionResult == null)
-                        {
-                            Warn("datapointAcquisitionResult is null");
-                            return;
-                        }
-                        if (datapointAcquisitionResult.Ms1List.Count < 4 || datapointAcquisitionResult.Ms2List.Count < 4)
-                        {
-                            Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
-                            Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
-                            return;
-                        }
+                    //    if (datapointAcquisitionResult == null)
+                    //    {
+                    //        Warn("datapointAcquisitionResult is null");
+                    //        return;
+                    //    }
+                    //    if (datapointAcquisitionResult.Ms1List.Count < 4 || datapointAcquisitionResult.Ms2List.Count < 4)
+                    //    {
+                    //        Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
+                    //        Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
+                    //        return;
+                    //    }
 
-                        if (!ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance))
-                            break;
+                    //    if (!ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance))
+                    //        break;
 
-                        if (CalibrationParameters.WriteIntermediateFiles)
-                        {
-                            WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                            WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+                    //    if (CalibrationParameters.WriteIntermediateFiles)
+                    //    {
+                    //        WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+                    //        WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
 
-                            var intermediateFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final.mzml");
-                            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, intermediateFilePath, false);
-                            SucessfullyFinishedWritingFile(intermediateFilePath, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-                        }
+                    //        var intermediateFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "round" + round + "final.mzml");
+                    //        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, intermediateFilePath, false);
+                    //        SucessfullyFinishedWritingFile(intermediateFilePath, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+                    //    }
 
-                        bestFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-calib.mzml");
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, bestFilePath, false);
+                    //    bestFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-calib.mzml");
+                    //    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, bestFilePath, false);
 
-                        round++;
-                    } while (true);
+                    //    round++;
+                    //} while (true);
 
                     SucessfullyFinishedWritingFile(bestFilePath, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
 
