@@ -23,222 +23,222 @@ namespace Test
 
         #region Public Methods
 
-        //[Test]
-        //public static void TestEverythingRunner()
-        //{
-        //    #region Setup tasks
+        [Test]
+        public static void TestEverythingRunner()
+        {
+            #region Setup tasks
 
-        //    foreach (var modFile in Directory.GetFiles(@"Mods"))
-        //        GlobalEngineLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+            foreach (var modFile in Directory.GetFiles(@"Mods"))
+                GlobalEngineLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
-        //    CalibrationTask task1 = new CalibrationTask
-        //    {
-        //        CommonParameters = new CommonParameters
-        //        {
-        //            ConserveMemory = false,
-        //            DigestionParams = new DigestionParams
-        //            {
-        //                MaxMissedCleavages = 0,
-        //                MinPeptideLength = null,
-        //                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
-        //            },
-        //        },
-        //        CalibrationParameters = new CalibrationParameters
-        //        {
-        //            WriteIntermediateFiles = true,
-        //            NumFragmentsNeededForEveryIdentification = 6,
-        //        }
-        //    };
-        //    GptmdTask task2 = new GptmdTask
-        //    {
-        //        CommonParameters = new CommonParameters
-        //        {
-        //            ConserveMemory = false
-        //        },
-        //    };
+            CalibrationTask task1 = new CalibrationTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    ConserveMemory = false,
+                    DigestionParams = new DigestionParams
+                    {
+                        MaxMissedCleavages = 0,
+                        MinPeptideLength = null,
+                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
+                    },
+                },
+                CalibrationParameters = new CalibrationParameters
+                {
+                    WriteIntermediateFiles = true,
+                    NumFragmentsNeededForEveryIdentification = 6,
+                }
+            };
+            GptmdTask task2 = new GptmdTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    ConserveMemory = false
+                },
+            };
 
-        //    SearchTask task3 = new SearchTask
-        //    {
-        //        CommonParameters = new CommonParameters
-        //        {
-        //            ConserveMemory = false
-        //        },
-        //        SearchParameters = new SearchParameters
-        //        {
-        //            DoParsimony = true,
-        //            SearchType = SearchType.Modern
-        //        }
-        //    };
+            SearchTask task3 = new SearchTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    ConserveMemory = false
+                },
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = true,
+                    SearchType = SearchType.Modern
+                }
+            };
 
-        //    SearchTask task4 = new SearchTask
-        //    {
-        //        CommonParameters = new CommonParameters
-        //        {
-        //            ConserveMemory = false
-        //        },
-        //        SearchParameters = new SearchParameters
-        //        {
-        //            SearchType = SearchType.Modern,
-        //        }
-        //    };
-        //    List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-        //        new Tuple<string, MetaMorpheusTask>("task1", task1),
-        //        new Tuple<string, MetaMorpheusTask>("task2", task2),
-        //        new Tuple<string, MetaMorpheusTask>("task3", task3),
-        //        new Tuple<string, MetaMorpheusTask>("task4", task4),};
+            SearchTask task4 = new SearchTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    ConserveMemory = false
+                },
+                SearchParameters = new SearchParameters
+                {
+                    SearchType = SearchType.Modern,
+                }
+            };
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
+                new Tuple<string, MetaMorpheusTask>("task1", task1),
+                new Tuple<string, MetaMorpheusTask>("task2", task2),
+                new Tuple<string, MetaMorpheusTask>("task3", task3),
+                new Tuple<string, MetaMorpheusTask>("task4", task4),};
 
-        //    #endregion Setup tasks
+            #endregion Setup tasks
 
-        //    List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-        //    List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
-        //    // Generate data for files
-        //    Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
+            // Generate data for files
+            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-        //    var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-        //    Assert.AreEqual(3, digestedList.Count);
+            Assert.AreEqual(3, digestedList.Count);
 
-        //    PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
+            PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
 
-        //    PeptideWithSetModifications pepWithSetMods2 = digestedList[2];
+            PeptideWithSetModifications pepWithSetMods2 = digestedList[2];
 
-        //    var dictHere = new Dictionary<int, List<Modification>>();
-        //    ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
-        //    dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
-        //    Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
-        //    digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var dictHere = new Dictionary<int, List<Modification>>();
+            ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
+            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
+            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
+            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-        //    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
-        //    Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
+            Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
 
-        //    #region Write the files
+            #region Write the files
 
-        //    string mzmlName = @"ok.mzML";
-        //    IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-        //    string xmlName = "okk.xml";
-        //    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
+            string mzmlName = @"ok.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            string xmlName = "okk.xml";
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
 
-        //    #endregion Write the files
+            #endregion Write the files
 
-        //    // RUN!
-        //    var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
-        //    engine.Run();
-        //}
+            // RUN!
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            engine.Run();
+        }
 
-        //[Test]
-        //public static void TestMultipleFilesRunner()
-        //{
-        //    #region Setup tasks
+        [Test]
+        public static void TestMultipleFilesRunner()
+        {
+            #region Setup tasks
 
-        //    foreach (var modFile in Directory.GetFiles(@"Mods"))
-        //        GlobalEngineLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+            foreach (var modFile in Directory.GetFiles(@"Mods"))
+                GlobalEngineLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
-        //    CalibrationTask task1 = new CalibrationTask
-        //    {
-        //        CommonParameters = new CommonParameters
-        //        {
-        //            DigestionParams = new DigestionParams
-        //            {
-        //                MaxMissedCleavages = 0,
-        //                MinPeptideLength = null,
-        //                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
-        //            },
-        //            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
-        //            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-        //            ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
-        //            ProductMassTolerance = new AbsoluteTolerance(0.01)
-        //        },
-        //        CalibrationParameters = new CalibrationParameters
-        //        {
-        //            NumFragmentsNeededForEveryIdentification = 6,
-        //        }
-        //    };
-        //    GptmdTask task2 = new GptmdTask
-        //    {
-        //        CommonParameters = new CommonParameters
-        //        {
-        //            DigestionParams = new DigestionParams
-        //            {
-        //                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
-        //            },
-        //            ProductMassTolerance = new AbsoluteTolerance(0.01)
-        //        },
-        //    };
+            CalibrationTask task1 = new CalibrationTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    DigestionParams = new DigestionParams
+                    {
+                        MaxMissedCleavages = 0,
+                        MinPeptideLength = null,
+                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
+                    },
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    ProductMassTolerance = new AbsoluteTolerance(0.01)
+                },
+                CalibrationParameters = new CalibrationParameters
+                {
+                    NumFragmentsNeededForEveryIdentification = 6,
+                }
+            };
+            GptmdTask task2 = new GptmdTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    DigestionParams = new DigestionParams
+                    {
+                        Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
+                    },
+                    ProductMassTolerance = new AbsoluteTolerance(0.01)
+                },
+            };
 
-        //    SearchTask task3 = new SearchTask
-        //    {
-        //        CommonParameters = new CommonParameters
-        //        {
-        //            ConserveMemory = false
-        //        },
-        //        SearchParameters = new SearchParameters
-        //        {
-        //            DoParsimony = true,
-        //            SearchType = SearchType.Modern,
-        //        }
-        //    };
-        //    SearchTask task4 = new SearchTask
-        //    {
-        //        CommonParameters = new CommonParameters
-        //        {
-        //            ConserveMemory = false
-        //        },
-        //        SearchParameters = new SearchParameters
-        //        {
-        //            SearchType = SearchType.Modern,
-        //        }
-        //    };
-        //    List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-        //        new Tuple<string, MetaMorpheusTask>("task1", task1),
-        //        new Tuple<string, MetaMorpheusTask>("task2", task2),
-        //        new Tuple<string, MetaMorpheusTask>("task3", task3),
-        //        new Tuple<string, MetaMorpheusTask>("task4", task4),};
+            SearchTask task3 = new SearchTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    ConserveMemory = false
+                },
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = true,
+                    SearchType = SearchType.Modern,
+                }
+            };
+            SearchTask task4 = new SearchTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    ConserveMemory = false
+                },
+                SearchParameters = new SearchParameters
+                {
+                    SearchType = SearchType.Modern,
+                }
+            };
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
+                new Tuple<string, MetaMorpheusTask>("task1", task1),
+                new Tuple<string, MetaMorpheusTask>("task2", task2),
+                new Tuple<string, MetaMorpheusTask>("task3", task3),
+                new Tuple<string, MetaMorpheusTask>("task4", task4),};
 
-        //    #endregion Setup tasks
+            #endregion Setup tasks
 
-        //    List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-        //    List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
-        //    // Generate data for files
-        //    Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
+            // Generate data for files
+            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-        //    var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-        //    Assert.AreEqual(3, digestedList.Count);
+            Assert.AreEqual(3, digestedList.Count);
 
-        //    PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
+            PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
 
-        //    PeptideWithSetModifications pepWithSetMods2 = digestedList[2];
+            PeptideWithSetModifications pepWithSetMods2 = digestedList[2];
 
-        //    var dictHere = new Dictionary<int, List<Modification>>();
-        //    ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
-        //    dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
-        //    Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
-        //    digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
-        //    Assert.AreEqual(4, digestedList.Count);
+            var dictHere = new Dictionary<int, List<Modification>>();
+            ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
+            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
+            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
+            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            Assert.AreEqual(4, digestedList.Count);
 
-        //    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
-        //    string mzmlName1 = @"ok1.mzML";
-        //    IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName1, false);
+            string mzmlName1 = @"ok1.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName1, false);
 
-        //    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
-        //    string mzmlName2 = @"ok2.mzML";
-        //    IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
+            string mzmlName2 = @"ok2.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
 
-        //    Protein proteinWithChain1 = new Protein("MAACNNNCAA", "accession3", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
-        //    Protein proteinWithChain2 = new Protein("MAACNNNCAA", "accession3", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
+            Protein proteinWithChain1 = new Protein("MAACNNNCAA", "accession3", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
+            Protein proteinWithChain2 = new Protein("MAACNNNCAA", "accession3", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
 
-        //    string xmlName = "okk.xml";
-        //    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain1, proteinWithChain2 }, xmlName);
+            string xmlName = "okk.xml";
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain1, proteinWithChain2 }, xmlName);
 
-        //    // RUN!
-        //    var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
-        //    engine.Run();
-        //}
+            // RUN!
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            engine.Run();
+        }
 
         [Test]
         public static void MakeSureFdrDoesntSkip()

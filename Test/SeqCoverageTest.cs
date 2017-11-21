@@ -1,4 +1,6 @@
 ﻿using EngineLayer;
+using IO.MzML;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
@@ -59,15 +61,16 @@ namespace Test
                 { pwsm3.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm3 } },
             };
 
-            IScan scan = new ThisTestScan();
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
+            Ms2ScanWithSpecificMass scan = new ThisTestScan(jdfk);
             var psm1 = new Psm(pwsm1.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0);
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0,0,0,0,0);
             psm1.MatchToProteinLinkedPeptides(matching);
             var psm2 = new Psm(pwsm2.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0,0,0,0,0);
             psm2.MatchToProteinLinkedPeptides(matching);
             var psm3 = new Psm(pwsm3.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0);
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0,0,0,0,0);
             psm3.MatchToProteinLinkedPeptides(matching);
 
             List<Psm> newPsms = new List<Psm>

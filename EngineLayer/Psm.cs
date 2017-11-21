@@ -167,9 +167,6 @@ namespace EngineLayer
             sb.Append("\t" + "NumPeaks");
             sb.Append("\t" + "scanMinMz");
             sb.Append("\t" + "scanMaxMz");
-            
-
-            sb.Append("\t" + "productMassErrorPPM");
 
             sb.Append("\t" + "theoreticalsWithinTolerance");
 
@@ -177,6 +174,7 @@ namespace EngineLayer
             sb.Append("\t" + "eValue");
             sb.Append("\t" + "eScore");
             sb.Append("\t" + "twoD_qValue");
+            sb.Append("\t");
 
             return sb.ToString();
         }
@@ -273,17 +271,17 @@ namespace EngineLayer
 
             if (compactPeptides.First().Value.Item2 != null)
             {
-                sb.Append("\t" + TrimStringForExcel(string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture)))));
+                sb.Append("\t" + TrimStringForExcel(string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))))); //peptides sharing same peaks
 
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1); //chemical formula
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NumVariableMods)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages.HasValue ? b.missedCleavages.Value.ToString(CultureInfo.InvariantCulture) : "unknown")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ScanPrecursorMass - b.MonoisotopicMass)).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ScanPrecursorMass - b.MonoisotopicMass)).Item1); //mass diff Da
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1); //mass diff ppm
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.FullName)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).Item1);
@@ -298,7 +296,7 @@ namespace EngineLayer
 
                 sb.Append("\t" + fCount); //total number of theoretical fragments
 
-                sb.Append("\t" + String.Join(",",  this.allScores));
+                sb.Append("\t" + String.Join(",",  this.allScores)); // total global scores
 
 
 
@@ -312,7 +310,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (MatchedIonDictOnlyMatches != null)
@@ -345,8 +343,8 @@ namespace EngineLayer
 
             if (LocalizedScores != null)
             {
-                sb.Append('\t' + "[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]");
-                sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
+                sb.Append('\t' + "[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]"); //localized scores
+                sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));//improement possible
             }
             else
             {
@@ -365,22 +363,17 @@ namespace EngineLayer
             else
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
 
-            sb.Append("\t" + Scan.TheScan.MassSpectrum.XArray.Length + "\t");
-            sb.Append(Scan.TheScan.ScanWindowRange.Minimum + "\t");
-            sb.Append(Scan.TheScan.ScanWindowRange.Maximum + "\t");
-            List<double> temp = ProductMassErrorPpm.Values.SelectMany(p => p).ToList();
+            sb.Append("\t" + Scan.TheScan.MassSpectrum.XArray.Length); //numpeaks
+            sb.Append("\t" + Scan.TheScan.ScanWindowRange.Minimum);//scan min mz
+            sb.Append("\t" + Scan.TheScan.ScanWindowRange.Maximum);//scan max mz
 
-            if (temp.Count == 0)
-                temp.Add(20);
+            sb.Append("\t" + counter); //theoreticals within tolerance
 
-            sb.Append(temp.Max() + "\t");
-
-            sb.Append(counter + "\t");
-
-            sb.Append(this.maximumLikelihood + "\t");
-            sb.Append(this.eValue + "\t");
-            sb.Append(this.eScore + "\t");
-            sb.Append(this.twoD_qValue + "\t");
+            sb.Append("\t" + this.maximumLikelihood);
+            sb.Append("\t" + this.eValue);
+            sb.Append("\t" + this.eScore);
+            sb.Append("\t" + this.twoD_qValue);
+            sb.Append("\t");
 
             return sb.ToString();
         }

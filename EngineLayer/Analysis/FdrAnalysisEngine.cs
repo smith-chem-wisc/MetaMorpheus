@@ -59,7 +59,9 @@ namespace EngineLayer.Analysis
             }
 
             double meanAllScoresCounts = allScoresCounts.Average() - 1;
-            double meanGlobalAllScores = globalAllScores.Average();
+            double meanGlobalAllScores = 0;
+            if (globalAllScores.Count>0)
+                meanGlobalAllScores =globalAllScores.Average();
 
 
             var ids = new List<Psm>();

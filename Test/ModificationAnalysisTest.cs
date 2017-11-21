@@ -1,5 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
+using IO.MzML;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
@@ -15,7 +17,9 @@ namespace Test
         [Test]
         public static void TestModificationAnalysis()
         {
-            IScan scan = new ThisTestScan();
+            
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
+            Ms2ScanWithSpecificMass scan = new ThisTestScan(jdfk);
 
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
             ModificationWithMass mod1 = new ModificationWithMass("mod1", null, motif1, TerminusLocalization.Any, 10);
@@ -110,7 +114,8 @@ namespace Test
         [Test]
         public static void TestModificationAnalysisWithNonLocalizedPtms()
         {
-            IScan scan = new ThisTestScan();
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
+            Ms2ScanWithSpecificMass scan = new ThisTestScan(jdfk);
 
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
             ModificationWithMass mod1 = new ModificationWithMass("mod1", "mt", motif1, TerminusLocalization.Any, 10, neutralLosses: new List<double> { 10 });
@@ -184,9 +189,11 @@ namespace Test
         #endregion Public Methods
     }
 
-    internal class ThisTestScan : IScan
+    internal class ThisTestScan : Ms2ScanWithSpecificMass
     {
         #region Public Properties
+
+        public ThisTestScan(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> sc) : base(sc, 0, 0, null) { }
 
         public string FullFilePath => null;
 
