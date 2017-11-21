@@ -912,7 +912,7 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
 
-            allPsms = allPsms.Where(b => b != null && b.Score >= 5.0).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            allPsms = allPsms.Where(b => b != null && b.Score >= CommonParameters.ScoreCutoff).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             Status("Running FDR analysis...", taskId);
             var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, massDiffAcceptor, new List<string> { taskId }).Run();
