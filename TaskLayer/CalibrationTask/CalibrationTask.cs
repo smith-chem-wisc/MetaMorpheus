@@ -33,7 +33,7 @@ namespace TaskLayer
             CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(25),
-                PrecursorMassTolerance = new PpmTolerance(20),
+                PrecursorMassTolerance = new PpmTolerance(15),
                 TrimMs1Peaks = false,
                 TrimMsMsPeaks = false,
                 DoPrecursorDeconvolution = false,
