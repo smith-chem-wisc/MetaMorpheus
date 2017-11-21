@@ -73,7 +73,7 @@ namespace EngineLayer.ClassicSearch
             int old_progress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
             Status("Starting classic search loop...");
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), new ParallelOptions { MaxDegreeOfParallelism = 1}, partitionRange =>
             {
                 var psms = new Psm[arrayOfSortedMS2Scans.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
@@ -100,24 +100,35 @@ namespace EngineLayer.ClassicSearch
                         var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                         Array.Sort(productMasses);
 
-                        var searchMode = searchModes;
-                        foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
+                        foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchModes).ToList())
                         {
+
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
                             var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
-                            if (score > commonParameters.ScoreCutoff)
+                            if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
                             {
-                                if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
-                                    psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
-                                else
-                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                                psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
                             }
+                            else
+                            {
+                                psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                            }
+
+                            if (!protein.IsDecoy) // for eValue calculations we only want to consider target peptides (not decoy peptides)
+                            {
+                                psms[scanWithIndexAndNotchInfo.scanIndex].counter++;
+                                var rounded = Math.Round(score, 0);
+                                var intConverted = (int)rounded;
+                                psms[scanWithIndexAndNotchInfo.scanIndex].allScores.Add(intConverted);
+                            }
+                            
                         }
                     }
+
                 }
                 lock (lockObject)
-                {
+                {   
                     for (int i = 0; i < globalPsms.Length; i++)
                         if (psms[i] != null)
                         {

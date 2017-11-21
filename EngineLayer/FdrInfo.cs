@@ -10,6 +10,10 @@
         public int cumulativeDecoyNotch { get; set; }
         public double QValue { get; set; }
         public double QValueNotch { get; set; }
+        public double maximumLikelihood { get; set; }
+        public decimal eValue { get; set; }
+        public double eScore { get; set; }
+        public double twoD_qValue { get; set; }
 
         #endregion Public Properties
     }

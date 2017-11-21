@@ -53,7 +53,7 @@ namespace EngineLayer
             if (containsAdot)
                 throw new NotImplementedException();
             if (containsBnoB1)
-                massLen += NTerminalMasses.Length - 1;
+                massLen += NTerminalMasses.Length;
             else if (containsB)
                 massLen += NTerminalMasses.Length;
             if (containsC)

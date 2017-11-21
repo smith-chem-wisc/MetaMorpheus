@@ -8,6 +8,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+using MathNet.Numerics;
+
 namespace EngineLayer
 {
     public class Psm
@@ -23,7 +25,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -37,9 +39,16 @@ namespace EngineLayer
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
             this.ExcelCompatible = true;
+            this.Scan = scan;
+            this.allScores = new List<int>();
+            this.counter = 0;
+            this.maximumLikelihood = 0;
+            this.eValue = 0;
+            this.eScore = 0;
+            this.twoD_qValue = 0;
         }
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, score, scanIndex, scan)
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, bool excelCompatible) : this(peptide, notch, score, scanIndex, scan)
         {
             this.ExcelCompatible = excelCompatible;
         }
@@ -48,6 +57,13 @@ namespace EngineLayer
 
         #region Public Properties
 
+        public int counter { get; set; }
+        public List<int> allScores { get; set; }
+        public double maximumLikelihood { get; set; }
+        public decimal eValue { get; set; }
+        public double eScore { get; set; }
+        public double twoD_qValue { get; set; }
+        public Ms2ScanWithSpecificMass Scan { get; set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
@@ -127,6 +143,10 @@ namespace EngineLayer
             sb.Append('\t' + "Start and End Residues In Protein");
             sb.Append('\t' + "Previous Amino Acid");
             sb.Append('\t' + "Next Amino Acid");
+
+            sb.Append('\t' + "TotalTheoreticalFragmentCount");
+            sb.Append('\t' + "TotalGlobalScores");
+
             sb.Append('\t' + "Decoy/Contaminant/Target");
 
             sb.Append('\t' + "Matched Ion Counts");
@@ -144,11 +164,29 @@ namespace EngineLayer
             sb.Append('\t' + "Cumulative Decoy Notch");
             sb.Append('\t' + "QValue Notch");
 
+
+
+            sb.Append("\t" + "NumPeaks");
+            sb.Append("\t" + "scanMinMz");
+            sb.Append("\t" + "scanMaxMz");
+            
+
+            sb.Append("\t" + "productMassErrorPPM");
+
+            sb.Append("\t" + "theoreticalsWithinTolerance");
+
+            sb.Append("\t" + "maximumLikelihood");
+            sb.Append("\t" + "eValue");
+            sb.Append("\t" + "eScore");
+            sb.Append("\t" + "twoD_qValue");
+
             return sb.ToString();
         }
 
         public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
         {
+            //compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
+
             if (score - Score > tolForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
                 compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
@@ -256,8 +294,16 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PeptideDescription)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PreviousAminoAcid.ToString())).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NextAminoAcid.ToString())).Item1);
+                sb.Append("\t" + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PreviousAminoAcid.ToString())).Item1);
+                sb.Append("\t" + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NextAminoAcid.ToString())).Item1);
+
+                int fCount = compactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }).Where(p => p != double.NaN).Distinct().Count();
+
+                sb.Append("\t" + fCount); //total number of theoretical fragments
+
+                sb.Append("\t" + String.Join(",",  this.allScores));
+
+
 
                 // Unambiguous
                 if (IsDecoy)
@@ -322,10 +368,27 @@ namespace EngineLayer
             else
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
 
+            sb.Append("\t" + Scan.TheScan.MassSpectrum.XArray.Length + "\t");
+            sb.Append(Scan.TheScan.ScanWindowRange.Minimum + "\t");
+            sb.Append(Scan.TheScan.ScanWindowRange.Maximum + "\t");
+            List<double> temp = ProductMassErrorPpm.Values.SelectMany(p => p).ToList();
+
+            if (temp.Count == 0)
+                temp.Add(20);
+
+            sb.Append(temp.Max() + "\t");
+
+            sb.Append(counter + "\t");
+
+            sb.Append(this.maximumLikelihood + "\t");
+            sb.Append(this.eValue + "\t");
+            sb.Append(this.eScore + "\t");
+            sb.Append(this.twoD_qValue + "\t");
+
             return sb.ToString();
         }
 
-        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
+        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximum_liklihood, decimal e_value, double e_score, double tDQV)
         {
             FdrInfo = new FdrInfo
             {
@@ -334,7 +397,11 @@ namespace EngineLayer
                 QValue = tempQValue,
                 cumulativeTargetNotch = cumulativeTargetNotch,
                 cumulativeDecoyNotch = cumulativeDecoyNotch,
-                QValueNotch = tempQValueNotch
+                QValueNotch = tempQValueNotch,
+                maximumLikelihood = maximum_liklihood,
+                eValue = e_value,
+                eScore = e_score,
+                twoD_qValue = tDQV
             };
         }
 
@@ -346,6 +413,10 @@ namespace EngineLayer
         {
             foreach (var kvp in psmParent.compactPeptides)
                 AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
+
+            allScores.AddRange(psmParent.allScores);
+            this.counter += psmParent.counter;
+
         }
 
         #endregion Internal Methods
