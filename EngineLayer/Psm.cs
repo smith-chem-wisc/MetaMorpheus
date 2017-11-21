@@ -1,5 +1,4 @@
 ﻿using Chemistry;
-using MassSpectrometry;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -35,7 +34,7 @@ namespace EngineLayer
             this.ScanExperimentalPeaks = scan.NumPeaks;
             this.TotalIonCurrent = scan.TotalIonCurrent;
             this.ScanPrecursorCharge = scan.PrecursorCharge;
-            this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
+            this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
             this.ExcelCompatible = true;
@@ -71,7 +70,7 @@ namespace EngineLayer
         public int ScanExperimentalPeaks { get; }
         public double TotalIonCurrent { get; }
         public int ScanPrecursorCharge { get; }
-        public IMzPeak ScanPrecursorMonoisotopicPeak { get; }
+        public double ScanPrecursorMonoisotopicPeakMz { get; }
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
@@ -118,7 +117,6 @@ namespace EngineLayer
             sb.Append('\t' + "Precursor Scan Number");
             sb.Append('\t' + "Precursor Charge");
             sb.Append('\t' + "Precursor MZ");
-            sb.Append('\t' + "Precursor Intensity");
             sb.Append('\t' + "Precursor Mass");
             sb.Append('\t' + "Score");
             sb.Append('\t' + "Notch");
@@ -267,8 +265,7 @@ namespace EngineLayer
             sb.Append('\t' + TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + (PrecursorScanNumber.HasValue ? PrecursorScanNumber.Value.ToString(CultureInfo.InvariantCulture) : "unknown"));
             sb.Append('\t' + ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture));
-            sb.Append('\t' + ScanPrecursorMonoisotopicPeak.Mz.ToString("F5", CultureInfo.InvariantCulture));
-            sb.Append('\t' + ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + Score.ToString("F3", CultureInfo.InvariantCulture));
             sb.Append("\t" + Resolve(compactPeptides.Select(b => b.Value.Item1)).Item1); // Notch

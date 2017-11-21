@@ -5,17 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="MetaMorpheus Not a release" Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="500" Width="800">
+        Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="500" Width="800"
+        Loaded="MyWindow_Loaded">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
-            <MenuItem Header="_Settings">
-                <MenuItem Header="Global Settings" Click="MenuItem_Click_1" />
-                <MenuItem Header="Default Search Task" />
-                <MenuItem Header="Default Gptmd Task" />
-                <MenuItem Header="Default Calibration Task" />
-            </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
+                <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" />
+                <MenuItem Header="Email Support at mm_support@chem.wisc.edu" Click="MenuItem_Click_4" />
+            </MenuItem>
+            <MenuItem Header="Data">
+                <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
+                <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
             </MenuItem>
         </Menu>
         <Grid>

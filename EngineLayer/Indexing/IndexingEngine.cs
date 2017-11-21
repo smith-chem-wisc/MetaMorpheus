@@ -22,14 +22,14 @@ namespace EngineLayer.Indexing
         protected readonly int currentPartition;
         protected readonly DecoyType decoyType;
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
-        protected readonly CommonParameters commonParams;
+        protected readonly ICommonParameters commonParams;
         protected readonly double maxFragmentSize;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, ICommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -125,7 +125,7 @@ namespace EngineLayer.Indexing
 
             try
             {
-                fragmentIndex = new List<int>[(int)Math.Ceiling(maxFragmentSize) * fragmentBinsPerDalton];
+                fragmentIndex = new List<int>[(int)Math.Ceiling(maxFragmentSize) * fragmentBinsPerDalton + 1];
             }
             catch (OutOfMemoryException)
             {

@@ -47,81 +47,84 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Chemistry, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\Chemistry.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\Chemistry.dll</HintPath>
     </Reference>
     <Reference Include="FlashLFQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\FlashLFQ.0.1.98\lib\net461\FlashLFQ.dll</HintPath>
+      <HintPath>..\packages\FlashLFQ.0.1.99\lib\net461\FlashLFQ.dll</HintPath>
     </Reference>
-    <Reference Include="ManagedThermoHelperLayer, Version=1.0.246.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\ManagedThermoHelperLayer.dll</HintPath>
+    <Reference Include="ManagedThermoHelperLayer, Version=1.0.263.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\ManagedThermoHelperLayer.dll</HintPath>
     </Reference>
     <Reference Include="MassSpectrometry, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\MassSpectrometry.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\MassSpectrometry.dll</HintPath>
     </Reference>
     <Reference Include="MathNet.Numerics, Version=3.20.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MathNet.Numerics.3.20.0\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="mzIdentML, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\mzIdentML.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\mzIdentML.dll</HintPath>
     </Reference>
     <Reference Include="MzLibUtil, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\MzLibUtil.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\MzLibUtil.dll</HintPath>
     </Reference>
     <Reference Include="MzML, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\MzML.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\MzML.dll</HintPath>
     </Reference>
     <Reference Include="Nett, Version=0.8.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Nett.0.8.0\lib\Net40\Nett.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="pepXML, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\pepXML.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\pepXML.dll</HintPath>
     </Reference>
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\Proteomics.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\Proteomics.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.AdaBoost, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.AdaBoost.0.26.2\lib\netstandard2.0\SharpLearning.AdaBoost.dll</HintPath>
+    <Reference Include="SharpLearning.AdaBoost, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.AdaBoost.0.26.5\lib\netstandard2.0\SharpLearning.AdaBoost.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Common.Interfaces, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Common.Interfaces.0.26.2\lib\netstandard2.0\SharpLearning.Common.Interfaces.dll</HintPath>
+    <Reference Include="SharpLearning.Common.Interfaces, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Common.Interfaces.0.26.5\lib\netstandard2.0\SharpLearning.Common.Interfaces.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Containers, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Containers.0.26.2\lib\netstandard2.0\SharpLearning.Containers.dll</HintPath>
+    <Reference Include="SharpLearning.Containers, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Containers.0.26.5\lib\netstandard2.0\SharpLearning.Containers.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.CrossValidation, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.CrossValidation.0.26.2\lib\netstandard2.0\SharpLearning.CrossValidation.dll</HintPath>
+    <Reference Include="SharpLearning.CrossValidation, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.CrossValidation.0.26.5\lib\netstandard2.0\SharpLearning.CrossValidation.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.DecisionTrees, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.DecisionTrees.0.26.2\lib\netstandard2.0\SharpLearning.DecisionTrees.dll</HintPath>
+    <Reference Include="SharpLearning.DecisionTrees, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.DecisionTrees.0.26.5\lib\netstandard2.0\SharpLearning.DecisionTrees.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Ensemble, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Ensemble.0.26.2\lib\netstandard2.0\SharpLearning.Ensemble.dll</HintPath>
+    <Reference Include="SharpLearning.Ensemble, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Ensemble.0.26.5\lib\netstandard2.0\SharpLearning.Ensemble.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.GradientBoost, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.GradientBoost.0.26.2\lib\netstandard2.0\SharpLearning.GradientBoost.dll</HintPath>
+    <Reference Include="SharpLearning.GradientBoost, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.GradientBoost.0.26.5\lib\netstandard2.0\SharpLearning.GradientBoost.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.InputOutput, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.InputOutput.0.26.2\lib\netstandard2.0\SharpLearning.InputOutput.dll</HintPath>
+    <Reference Include="SharpLearning.InputOutput, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.InputOutput.0.26.5\lib\netstandard2.0\SharpLearning.InputOutput.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Metrics, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Metrics.0.26.2\lib\netstandard2.0\SharpLearning.Metrics.dll</HintPath>
+    <Reference Include="SharpLearning.Metrics, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Metrics.0.26.5\lib\netstandard2.0\SharpLearning.Metrics.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.RandomForest, Version=0.26.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.RandomForest.0.26.2\lib\netstandard2.0\SharpLearning.RandomForest.dll</HintPath>
+    <Reference Include="SharpLearning.RandomForest, Version=0.26.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.RandomForest.0.26.5\lib\netstandard2.0\SharpLearning.RandomForest.dll</HintPath>
     </Reference>
     <Reference Include="Spectra, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\Spectra.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\Spectra.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="Thermo, Version=1.0.246.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\Thermo.dll</HintPath>
+    <Reference Include="Thermo, Version=1.0.263.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\Thermo.dll</HintPath>
     </Reference>
     <Reference Include="UsefulProteomicsDatabases, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\mzLib.1.0.246\lib\net45\UsefulProteomicsDatabases.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.263\lib\net45\UsefulProteomicsDatabases.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
@@ -132,6 +135,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
@@ -139,12 +143,12 @@
       <DependentUpon>ChangeParametersWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CollectionForTreeView.cs" />
-    <Compile Include="DialogWindow.xaml.cs">
-      <DependentUpon>DialogWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="ForTreeView.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
       <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MetaUpdater.xaml.cs">
+      <DependentUpon>MetaUpdater.xaml</DependentUpon>
     </Compile>
     <Compile Include="ModForTreeView.cs" />
     <Compile Include="ModTypeForTreeView.cs" />
@@ -177,10 +181,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="DialogWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="GlobalSettingsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -201,6 +201,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="MetaUpdater.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="SearchTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -267,11 +271,11 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
-  <Import Project="..\packages\mzLib.1.0.246\build\net45\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.246\build\net45\mzLib.targets')" />
+  <Import Project="..\packages\mzLib.1.0.263\build\net45\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.263\build\net45\mzLib.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\mzLib.1.0.246\build\net45\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.246\build\net45\mzLib.targets'))" />
+    <Error Condition="!Exists('..\packages\mzLib.1.0.263\build\net45\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.263\build\net45\mzLib.targets'))" />
   </Target>
 </Project>

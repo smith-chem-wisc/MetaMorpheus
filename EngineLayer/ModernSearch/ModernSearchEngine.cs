@@ -19,7 +19,7 @@ namespace EngineLayer.ModernSearch
         protected readonly List<CompactPeptide> peptideIndex;
         protected readonly List<ProductType> lp;
         protected readonly int currentPartition;
-        protected readonly CommonParameters CommonParameters;
+        protected readonly ICommonParameters CommonParameters;
         protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
@@ -28,7 +28,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -159,13 +159,20 @@ namespace EngineLayer.ModernSearch
                 if (addCompIons)
                 {
                     //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
-                    for (int j = 0; j < dissociationTypes.Count; j++)
+                    foreach (DissociationType dissociationType in dissociationTypes)
                     {
-                        int compFragmentFloorMass = (int)Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
-                        int compFragmentCeilingMass = (int)Math.Round((scan.PrecursorMass * fragmentBinsPerDalton)) - obsFragmentFloorMass;
-                        for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
-                            if (fragmentIndex[fragmentBin] != null)
-                                binsToSearch.Add(fragmentBin);
+                        if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
+                        {
+                            protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
+                            int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
+                            int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentFloorMass;
+                            if (compFragmentFloorMass > 0)
+                                for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                                    if (fragmentIndex[fragmentBin] != null)
+                                        binsToSearch.Add(fragmentBin);
+                        }
+                        else
+                            throw new NotImplementedException();
                     }
                 }
             }

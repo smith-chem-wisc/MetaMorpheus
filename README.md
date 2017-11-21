@@ -35,10 +35,9 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 ## Spectra Requirements
 
 * One of the following formats:
-   * .raw
+   * Thermo .raw
    * .mzML file in centroid mode
-   * .mgf files must be converted to .mzML using the MSConvert program within [ProteoWizard](http://proteowizard.sourceforge.net/) 
-* MS2 resolution of 15,000
+* MS and MS/MS scans
 
 ## Database Requirements
 
@@ -46,7 +45,7 @@ UniProt .XML or .fasta format, may be used in compressed (.gz) format.
 
 ## Test Installation (Windows GUI)
 
-1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusGUI.zip" using, for example, [7-Zip](http://www.7-zip.org/).
+1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusGUI.zip" using, for example, [7-Zip](http://www.7-zip.org).
 2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/v/MetaMorpheusPublic).
 3. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot XML database on the GUI.
 4. Add search tasks that test all of the functionality of MetaMorpheus. Drag the .toml files **IN ORDER** (Task1 - Task5) onto the application. 
