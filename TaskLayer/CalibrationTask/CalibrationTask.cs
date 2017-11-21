@@ -339,9 +339,6 @@ namespace TaskLayer
             else
                 searchMode = new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
-            Console.WriteLine("Searching with searchMode: " + searchMode);
-            Console.WriteLine("Searching with initProdTol: " + initProdTol);
-
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
             if (combinedParameters.BIons)
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.b;
@@ -419,7 +416,7 @@ namespace TaskLayer
                 }
 
                 var computedPrecursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPpm.Item1 + 6 * currentResult.Ms1InfoPpm.Item2), Math.Abs(currentResult.Ms1InfoPpm.Item1 - 6 * currentResult.Ms1InfoPpm.Item2)));
-                var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPpm.Item1 + 6 * currentResult.Ms2InfoPpm.Item2), Math.Abs(currentResult.Ms2InfoPpm.Item1 - 6 * currentResult.Ms2InfoPpm.Item2)));
+                var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPpm.Item1 + 4 * currentResult.Ms2InfoPpm.Item2), Math.Abs(currentResult.Ms2InfoPpm.Item1 - 4 * currentResult.Ms2InfoPpm.Item2)));
 
                 bool ms1Worse = currentResult.Ms1List.Count <= bestResult.Ms1List.Count && ((currentResult.Ms1InfoPpm.Item2 / bestResult.Ms1InfoPpm.Item2) >= ((double)currentResult.Ms1List.Count / bestResult.Ms1List.Count));
                 bool ms2Worse = currentResult.Ms2List.Count <= bestResult.Ms2List.Count && ((currentResult.Ms2InfoPpm.Item2 / bestResult.Ms2InfoPpm.Item2) >= ((double)currentResult.Ms2List.Count / bestResult.Ms2List.Count));
