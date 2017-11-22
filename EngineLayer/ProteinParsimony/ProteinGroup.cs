@@ -141,7 +141,8 @@ namespace EngineLayer
             DigestionParams digestionParams = new DigestionParams
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                Protease = GlobalEngineLevelSettings.ProteaseDictionary["top-down"]
+                Protease = GlobalEngineLevelSettings.ProteaseDictionary["top-down"],
+                MinPeptideLength = 0
             };
             // list of masses
             sb.Append(string.Join("|", new HashSet<double>(Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass))));
