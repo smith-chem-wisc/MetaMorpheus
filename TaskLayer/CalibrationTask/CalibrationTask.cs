@@ -32,8 +32,8 @@ namespace TaskLayer
         {
             CommonParameters = new CommonParameters
             {
-                ProductMassTolerance = new PpmTolerance(30),
-                PrecursorMassTolerance = new PpmTolerance(10),
+                ProductMassTolerance = new PpmTolerance(25),
+                PrecursorMassTolerance = new PpmTolerance(15),
                 TrimMs1Peaks = false,
                 TrimMsMsPeaks = false,
                 DoPrecursorDeconvolution = false,
@@ -338,9 +338,6 @@ namespace TaskLayer
                 searchMode = new SinglePpmAroundZeroSearchMode(initPrecTol.Value);
             else
                 searchMode = new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
-
-            Console.WriteLine("Searching with searchMode: " + searchMode);
-            Console.WriteLine("Searching with initProdTol: " + initProdTol);
 
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
             if (combinedParameters.BIons)
