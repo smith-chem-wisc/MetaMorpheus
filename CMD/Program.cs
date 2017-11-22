@@ -54,13 +54,13 @@ namespace MetaMorpheusCommandLine
 
             if (result.HasErrors == false)
             {
-                MetaMorpheusEngine.WarnHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusEngine.WarnHandler += WarnHandler;
                 MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
                 MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
                 MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
-                MetaMorpheusTask.WarnHandler += MyEngine_outLabelStatusHandler;
-                MetaMorpheusTask.LogHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusTask.WarnHandler += WarnHandler;
+                MetaMorpheusTask.LogHandler += LogHandler;
                 MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
                 MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
@@ -195,12 +195,20 @@ namespace MetaMorpheusCommandLine
             inProgress = true;
         }
 
-        private static void MyEngine_outLabelStatusHandler(object sender, StringEventArgs e)
+        private static void WarnHandler(object sender, StringEventArgs e)
         {
             if (inProgress)
                 myWriter.WriteLine();
             inProgress = false;
-            WriteMultiLineIndented("Status: " + e.S);
+            WriteMultiLineIndented("WARN: " + e.S);
+        }
+
+        private static void LogHandler(object sender, StringEventArgs e)
+        {
+            if (inProgress)
+                myWriter.WriteLine();
+            inProgress = false;
+            WriteMultiLineIndented("Log: " + e.S);
         }
 
         #endregion Private Methods
