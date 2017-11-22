@@ -34,16 +34,12 @@ namespace EngineLayer
         static GlobalEngineLevelSettings()
         {
             var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            Console.WriteLine("pathToProgramFiles: " + pathToProgramFiles);
-            Console.WriteLine("AppDomain.CurrentDomain.BaseDirectory: " + AppDomain.CurrentDomain.BaseDirectory);
-            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles))
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
             {
-                Console.WriteLine("Installed version");
                 dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
             }
             else
             {
-                Console.WriteLine("Portable version");
                 dataDir = AppDomain.CurrentDomain.BaseDirectory;
             }
             elementsLocation = Path.Combine(dataDir, @"Data", @"elements.dat");
