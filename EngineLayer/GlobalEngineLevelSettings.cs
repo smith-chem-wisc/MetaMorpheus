@@ -34,6 +34,7 @@ namespace EngineLayer
         static GlobalEngineLevelSettings()
         {
             var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            Console.WriteLine("pathToProgramFiles: " + pathToProgramFiles);
             if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles))
             {
                 Console.WriteLine("Installed version");
