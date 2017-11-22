@@ -34,10 +34,14 @@ namespace EngineLayer
         static GlobalEngineLevelSettings()
         {
             var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles))
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+            {
                 dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+            }
             else
+            {
                 dataDir = AppDomain.CurrentDomain.BaseDirectory;
+            }
             elementsLocation = Path.Combine(dataDir, @"Data", @"elements.dat");
             unimodLocation = Path.Combine(dataDir, @"Data", @"unimod.xml");
             uniprotLocation = Path.Combine(dataDir, @"Data", @"ptmlist.txt");
