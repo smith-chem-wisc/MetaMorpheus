@@ -20,18 +20,17 @@ namespace EngineLayer
 
         #endregion Public Constructors
 
-        #region Protected Properties
+        #region Public Properties
 
-        protected MetaMorpheusEngine MyEngine { get; }
+        public MetaMorpheusEngine MyEngine { get; }
 
-        #endregion Protected Properties
+        #endregion Public Properties
 
         #region Public Methods
 
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(MyEngine.GetType().Name + " " + MyEngine.GetId());
             sb.Append("Time to run: " + Time);
             return sb.ToString();
         }
