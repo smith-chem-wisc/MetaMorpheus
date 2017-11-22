@@ -60,6 +60,7 @@ namespace MetaMorpheusCommandLine
                 MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
                 MetaMorpheusTask.WarnHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusTask.LogHandler += MyEngine_outLabelStatusHandler;
                 MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
                 MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
@@ -146,7 +147,7 @@ namespace MetaMorpheusCommandLine
         private static void MyTaskEngine_startingSingleTaskHander(object sender, SingleTaskEventArgs e)
         {
             if (inProgress)
-                Console.WriteLine();
+                myWriter.WriteLine();
             inProgress = false;
             WriteMultiLineIndented("Starting task: " + e.DisplayName);
             myWriter.Indent++;
@@ -155,7 +156,7 @@ namespace MetaMorpheusCommandLine
         private static void MyTaskEngine_finishedWritingFileHandler(object sender, SingleFileEventArgs e)
         {
             if (inProgress)
-                Console.WriteLine();
+                myWriter.WriteLine();
             inProgress = false;
             WriteMultiLineIndented("Finished writing file: " + e.writtenFile);
         }
@@ -163,16 +164,16 @@ namespace MetaMorpheusCommandLine
         private static void MyTaskEngine_finishedSingleTaskHandler(object sender, SingleTaskEventArgs e)
         {
             if (inProgress)
-                Console.WriteLine();
+                myWriter.WriteLine();
             inProgress = false;
-            WriteMultiLineIndented("Finished task: " + e.DisplayName);
             myWriter.Indent--;
+            WriteMultiLineIndented("Finished task: " + e.DisplayName);
         }
 
         private static void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
         {
             if (inProgress)
-                Console.WriteLine();
+                myWriter.WriteLine();
             inProgress = false;
             WriteMultiLineIndented("Starting engine: " + e.myEngine.GetType().Name + " " + e.myEngine.GetId());
             myWriter.Indent++;
@@ -181,10 +182,11 @@ namespace MetaMorpheusCommandLine
         private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
             if (inProgress)
-                Console.WriteLine();
+                myWriter.WriteLine();
             inProgress = false;
-            WriteMultiLineIndented("Finished engine: " + e);
+            WriteMultiLineIndented("Engine results: " + e);
             myWriter.Indent--;
+            WriteMultiLineIndented("Finished engine: " + e.myResults.MyEngine.GetType().Name + " " + e.myResults.MyEngine.GetId());
         }
 
         private static void MyEngine_outProgressHandler(object sender, ProgressEventArgs e)
@@ -196,7 +198,7 @@ namespace MetaMorpheusCommandLine
         private static void MyEngine_outLabelStatusHandler(object sender, StringEventArgs e)
         {
             if (inProgress)
-                Console.WriteLine();
+                myWriter.WriteLine();
             inProgress = false;
             WriteMultiLineIndented("Status: " + e.S);
         }

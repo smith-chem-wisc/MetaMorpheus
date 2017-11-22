@@ -363,6 +363,9 @@ namespace TaskLayer
             if (combinedParameters.ZdotIons)
                 lp.Add(ProductType.Zdot);
 
+            Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+            Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, false, combinedParameters, initProdTol, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
             List<Psm> allPsms = allPsmsArray.ToList();
@@ -434,8 +437,8 @@ namespace TaskLayer
                 round++;
             } while (true);
 
-            Status("Returning precTol:" + bestPrecursorMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-            Status("Returning prodTol:" + bestProductMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+            Log("Returning precTol:" + bestPrecursorMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+            Log("Returning prodTol:" + bestProductMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
             return (goodIdentifications.Count, bestResult, bestPrecursorMassToleranceForDatapointAcquisition, bestProductMassToleranceForDatapointAcquisition);
         }
 

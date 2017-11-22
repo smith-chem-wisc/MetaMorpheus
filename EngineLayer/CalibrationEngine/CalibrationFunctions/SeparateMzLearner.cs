@@ -46,7 +46,7 @@ namespace EngineLayer.Calibration
 
                 var inputs = kvp.Value.Select(b => new[] { b.Item1[0] }).ToArray();
                 var outputs = kvp.Value.Select(b => b.Item2).ToArray();
-                
+
                 var ye = new Func<double[], double>[1];
                 ye[0] = a => a[0];
 
