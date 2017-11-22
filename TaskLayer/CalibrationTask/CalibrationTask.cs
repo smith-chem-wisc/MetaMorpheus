@@ -434,8 +434,8 @@ namespace TaskLayer
                 round++;
             } while (true);
 
-            Console.WriteLine("Returning precTol:" + bestPrecursorMassToleranceForDatapointAcquisition);
-            Console.WriteLine("Returning prodTol:" + bestProductMassToleranceForDatapointAcquisition);
+            Status("Returning precTol:" + bestPrecursorMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+            Status("Returning prodTol:" + bestProductMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
             return (goodIdentifications.Count, bestResult, bestPrecursorMassToleranceForDatapointAcquisition, bestProductMassToleranceForDatapointAcquisition);
         }
 
