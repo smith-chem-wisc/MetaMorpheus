@@ -941,7 +941,7 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + massDiffAcceptor.ToProseString() + "}; ");
-            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
             proseCreatedWhileRunning.Append("report all ambiguity = " + CommonParameters.ReportAllAmbiguity + "; ");
 
@@ -957,6 +957,8 @@ namespace TaskLayer
             object psmLock = new object();
 
             Status("Searching files...", taskId);
+            Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
+
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -1243,7 +1245,7 @@ namespace TaskLayer
                     WritePsmsToTsv(allPsms, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
                 }
-                myTaskResults.AddNiceText("All target PSMS within 1% FDR: " + allPsms.Count(a => a.FdrInfo.QValue <= .01 && !a.IsDecoy));
+                myTaskResults.AddNiceText("All target PSMS within 1% FDR: " + allPsms.Count(a => a.FdrInfo.QValue < .01 && !a.IsDecoy));
             }
 
             var uniquePeptides = allPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
@@ -1254,8 +1256,11 @@ namespace TaskLayer
                     WritePsmsToTsv(uniquePeptides, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
                 }
-                myTaskResults.AddNiceText("Unique peptides within 1% FDR: " + uniquePeptides.Count(a => a.FdrInfo.QValue <= .01 && !a.IsDecoy));
+                myTaskResults.AddNiceText("Unique target peptides within 1% FDR: " + uniquePeptides.Count(a => a.FdrInfo.QValue < .01 && !a.IsDecoy));
             }
+
+            if (SearchParameters.DoParsimony)
+                myTaskResults.AddNiceText("Target protein groups within 1% FDR: " + proteinGroups.Count(b => b.QValue < 0.01 && !b.isDecoy) + Environment.NewLine);
 
             var psmsGroupedByFile = allPsms.GroupBy(p => p.FullFilePath);
 
@@ -1270,15 +1275,21 @@ namespace TaskLayer
                     var writtenFile = Path.Combine(OutputFolder, strippedFileName + "_PSMs_" + massDiffAcceptor.FileNameAddition + ".psmtsv");
                     WritePsmsToTsv(psmsForThisFile, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
-                    myTaskResults.AddNiceText("PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
+                    myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
                 }
+            }
+            foreach (var group in psmsGroupedByFile)
+            {
+                var psmsForThisFile = group.ToList();
+
+                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
 
                 {
                     var uniquePeptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                     var writtenFile = Path.Combine(OutputFolder, strippedFileName + "_UniquePeptides_" + massDiffAcceptor.FileNameAddition + ".psmtsv");
                     WritePsmsToTsv(uniquePeptidesForFile, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
-                    myTaskResults.AddNiceText("Unique peptides within 1% FDR in " + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
+                    myTaskResults.AddNiceText("Unique target peptides within 1% FDR in " + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
                 }
             }
 
@@ -1300,6 +1311,8 @@ namespace TaskLayer
 
                     var subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, false, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
                     subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.sortedAndScoredProteinGroups;
+
+                    myTaskResults.AddNiceText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue < 0.01 && !b.isDecoy));
 
                     WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + massDiffAcceptor.FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, new List<string> { fullFilePath });
 

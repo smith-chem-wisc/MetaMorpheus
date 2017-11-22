@@ -196,7 +196,6 @@ namespace Test
             foreach (var kvp in dictionary)
             {
                 proteinList = new List<Protein>();
-                System.Console.Write(string.Join("", kvp.Value.First().BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
                 foreach (var peptide in kvp.Value)
                 {
                     if (!proteinList.Contains(peptide.Protein))
