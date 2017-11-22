@@ -95,6 +95,7 @@ namespace EngineLayer
             sb.Append("Protein Accession" + '\t');
             sb.Append("Gene" + '\t');
             sb.Append("Protein Full Name" + '\t');
+            sb.Append("Unmodified Mass" + '\t');
             sb.Append("Number of Proteins in Group" + '\t');
             sb.Append("Unique Peptides" + '\t');
             sb.Append("Shared Peptides" + '\t');
@@ -135,6 +136,15 @@ namespace EngineLayer
 
             // list of protein names
             sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName))));
+            sb.Append("\t");
+
+            DigestionParams digestionParams = new DigestionParams
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                Protease = GlobalEngineLevelSettings.ProteaseDictionary["top-down"]
+            };
+            // list of masses
+            sb.Append(string.Join("|", new HashSet<double>(Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass))));
             sb.Append("\t");
 
             // number of proteins in group
