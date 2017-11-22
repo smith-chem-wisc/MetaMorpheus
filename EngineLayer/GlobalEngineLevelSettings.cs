@@ -92,7 +92,7 @@ namespace EngineLayer
 
         public static List<Modification> AllModsKnown { get; }
 
-        public static string NewestVersion { get; private set; }
+        public static string NewestKnownVersion { get; private set; }
 
         #endregion Public Properties
 
@@ -112,7 +112,7 @@ namespace EngineLayer
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
                     if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
                         throw new MetaMorpheusException("Necessary files do not exist!");
-                    NewestVersion = deserialized["tag_name"].ToString();
+                    NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
             }
         }
