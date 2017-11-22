@@ -98,7 +98,7 @@ namespace MetaMorpheusGUI
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+            if (GlobalEngineLevelSettings.NewestKnownVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
             {
                 try
                 {
@@ -896,7 +896,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion))
+            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion))
                 MessageBox.Show("You have the most updated version!");
             else
             {
