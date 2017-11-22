@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace EngineLayer
@@ -26,19 +25,6 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            if (ProteinGroups != null && ProteinGroups.Any(s => s != null))
-            {
-                var numProteinsList = new List<int>();
-                if (ProteinGroups == null)
-                    numProteinsList.Add(0);
-                else
-                {
-                    int j = ProteinGroups.FindIndex(c => (c.QValue >= 0.01));
-                    numProteinsList.Add(j);
-                }
-
-                sb.Append("All proteins within 1% FDR: " + string.Join(", ", numProteinsList));
-            }
             return sb.ToString();
         }
 
