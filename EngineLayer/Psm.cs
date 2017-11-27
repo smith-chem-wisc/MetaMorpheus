@@ -222,7 +222,7 @@ namespace EngineLayer
                     MostProbableProteinInfo = candidatePli;
             }
 
-            IsDecoy = compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
+            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
 
             FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
 
