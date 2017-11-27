@@ -226,10 +226,10 @@ namespace MetaMorpheusGUI
             else
                 CommonParamsToSave.TaskDescriptor = "CalibrateTask";
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
-                TheTask.CommonParameters.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                CommonParamsToSave.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             CommonParamsToSave.ListOfModsFixed = new List<Tuple<string, string>>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
-                TheTask.CommonParameters.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                CommonParamsToSave.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             if (localizeAllCheckBox.IsChecked.Value)
             {
                 CommonParamsToSave.ListOfModsLocalize = null;
@@ -240,7 +240,7 @@ namespace MetaMorpheusGUI
                 CommonParamsToSave.LocalizeAll = false;
                 CommonParamsToSave.ListOfModsLocalize = new List<Tuple<string, string>>();
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    TheTask.CommonParameters.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                    CommonParamsToSave.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
             if (productMassToleranceComboBox.SelectedIndex == 0)
