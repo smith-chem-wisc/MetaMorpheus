@@ -20,6 +20,9 @@ namespace EngineLayer
             UdXLkerResidue = 'K';
             XlPrecusorMsTl = new PpmTolerance(10);
             XlBetaPrecusorMsTl = new PpmTolerance(10);
+            xlQuench_H2O = true;
+            xlQuench_NH2 = false;
+            xlQuench_Tris = true;
 
             XlOutAll = true;
             XlOutCrosslink = true;
@@ -53,6 +56,10 @@ namespace EngineLayer
         public bool XlOutAll { get; set; }
         public bool XlOutPepXML { get; set; }
         public bool XlOutCrosslink { get; set; }
+
+        public bool xlQuench_H2O { get; set; }
+        public bool xlQuench_Tris { get; set; }
+        public bool xlQuench_NH2 { get; set; }
         #endregion Public Properties
     }
 }

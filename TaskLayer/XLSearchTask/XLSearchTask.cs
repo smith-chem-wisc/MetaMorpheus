@@ -174,6 +174,7 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+            //Parallel.For(0, currentRawFileList.Count, new ParallelOptions { MaxDegreeOfParallelism = 1 }, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 List<PsmCross> newPsms = new List<PsmCross>();
@@ -243,7 +244,7 @@ namespace TaskLayer
                     if (XlSearchParameters.CrosslinkSearchWithAllBeta)
                         new CrosslinkSearchEngine2(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, variableModifications, fixedModifications, CommonParameters, thisId).Run();
                     else
-                        new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, CommonParameters.ProductMassTolerance, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, ionTypes, modsDictionary, thisId).Run();
+                        new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, CommonParameters.ProductMassTolerance, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, ionTypes, modsDictionary, XlSearchParameters.xlQuench_H2O, XlSearchParameters.xlQuench_NH2, XlSearchParameters.xlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                 }
@@ -272,7 +273,7 @@ namespace TaskLayer
             #region Inter Crosslink
             //Write Inter Psms FDR
             var interPsmsXL = allPsmsXL.Where(p => !p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) &&
-            !p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLTotalScore).ToList();
+            !p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
             //var interPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXL).ToList();
             var interPsmsXLFDR = CrosslinkFDRAnalysis(interPsmsXL).ToList();
             if (XlSearchParameters.XlOutCrosslink)
@@ -304,9 +305,9 @@ namespace TaskLayer
             //Write Intra Psms FDR
             var intraPsmsXL = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() ||
             p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) ||
-            p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLTotalScore).ToList();
+            p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
             //var intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXL).ToList();
-            var intraPsmsXLFDR = CrosslinkFDRAnalysis(intraPsmsXL).ToList();
+            var intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXL).ToList();
             if (XlSearchParameters.XlOutCrosslink)
             {
                 WriteCrosslinkToTsv(intraPsmsXLFDR, OutputFolder, "xl_intra_fdr", new List<string> { taskId });
@@ -331,6 +332,34 @@ namespace TaskLayer
                 WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
             }
             #endregion
+
+            #region Single peptide
+            var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe).OrderByDescending(p => p.Score).ToList();
+            var singlePsmsFDR = SingleFDRAnalysis(singlePsms).ToList();
+            if (XlSearchParameters.XlOutCrosslink)
+            {
+                WriteSingleToTsv(singlePsmsFDR, OutputFolder, "single_fdr", new List<string> { taskId });
+            }
+
+            #endregion
+
+            #region Loop peptide
+            var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop).OrderByDescending(p => p.Score).ToList();
+            var loopPsmsFDR = SingleFDRAnalysis(loopPsms).ToList();
+            if (XlSearchParameters.XlOutCrosslink)
+            {
+                WriteSingleToTsv(loopPsmsFDR, OutputFolder, "loop_fdr", new List<string> { taskId });
+            }
+            #endregion
+
+            #region deadend peptide
+            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd).OrderByDescending(p => p.Score).ToList();
+            var deadendPsmsFDR = SingleFDRAnalysis(deadendPsms).ToList();
+            if (XlSearchParameters.XlOutCrosslink)
+            {
+                WriteSingleToTsv(deadendPsmsFDR, OutputFolder, "deadend_fdr", new List<string> { taskId });
+            }
+            #endregion
             return myTaskResults;
         }
 
@@ -349,6 +378,46 @@ namespace TaskLayer
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
                     return true;
             return false;
+        }
+
+        //Calculate the FDR of single peptide FP/TP
+        private static List<PsmCross> SingleFDRAnalysis(List<PsmCross> items)
+        {
+            var ids = new List<PsmCross>();
+            foreach (var item in items)
+            {
+                ids.Add(item);
+            }
+
+            int cumulative_target = 0;
+            int cumulative_decoy = 0;
+
+            for (int i = 0; i < ids.Count; i++)
+            {
+                var item1 = ids[i]; 
+
+                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; 
+                if (isDecoy1)
+                    cumulative_decoy++;
+                else
+                    cumulative_target++;
+
+                double temp_q_value = (double)cumulative_decoy / cumulative_target;
+                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+            }
+
+            double min_q_value = double.PositiveInfinity;
+
+            for (int i = ids.Count - 1; i >= 0; i--)
+            {
+                PsmCross id = ids[i];
+                if (id.FdrInfo.QValue > min_q_value)
+                    id.FdrInfo.QValue = min_q_value;
+                else if (id.FdrInfo.QValue < min_q_value)
+                    min_q_value = id.FdrInfo.QValue;
+            }
+
+            return ids;
         }
 
         //Calculate the FDR of crosslinked peptide FP/TP

@@ -166,6 +166,9 @@ namespace MetaMorpheusGUI
             txtXLPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
             cbbXLBetaprecusorMsTl.SelectedIndex = task.XlSearchParameters.XlPrecusorMsTl is AbsoluteTolerance ? 0 : 1;
             txtXLBetaPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
+            cbQuech_H2O.IsChecked = task.XlSearchParameters.xlQuench_H2O;
+            cbQuech_NH2.IsChecked = task.XlSearchParameters.xlQuench_NH2;
+            cbQuech_Tris.IsChecked = task.XlSearchParameters.xlQuench_Tris;
 
             checkBoxDecoy.IsChecked = task.XlSearchParameters.SearchDecoy;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);

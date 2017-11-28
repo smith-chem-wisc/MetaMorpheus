@@ -46,7 +46,13 @@
                                 <Label x:Name="lblXLTopNum" Content="Search Top matches" />
                                 <TextBox x:Name="txtXLTopNum" Width="45" />
                             </StackPanel>
-                        </Grid>
+                                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
+                                    <Label x:Name="lblCrosslinkerQuench" Content="Crosslinker Quench Method: " />
+                                    <CheckBox x:Name="cbQuech_H2O" Content="H2O"/>
+                                    <CheckBox x:Name="cbQuech_NH2" Content="NH2"/>
+                                    <CheckBox x:Name="cbQuech_Tris" Content="Tris"/>
+                                </StackPanel>
+                            </Grid>
                         <GroupBox>
                             <Expander x:Name="UserDefineCrosslinker">
                                 <StackPanel>
