@@ -4,11 +4,11 @@ namespace EngineLayer
 {
     public class SingleEngineFinishedEventArgs : EventArgs
     {
-        #region Private Fields
+        #region Public Fields
 
-        private readonly MetaMorpheusEngineResults myResults;
+        public readonly MetaMorpheusEngineResults myResults;
 
-        #endregion Private Fields
+        #endregion Public Fields
 
         #region Public Constructors
 

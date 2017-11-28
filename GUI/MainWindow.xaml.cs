@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -43,7 +43,7 @@ namespace MetaMorpheusGUI
 
             try
             {
-                foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
+                foreach (var modFile in Directory.GetFiles(GlobalEngineLevelSettings.modsLocation))
                     GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             }
             catch (Exception e)
@@ -98,7 +98,7 @@ namespace MetaMorpheusGUI
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+            if (GlobalEngineLevelSettings.NewestKnownVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
             {
                 try
                 {
@@ -228,7 +228,6 @@ namespace MetaMorpheusGUI
             else
             {
                 var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
-                theTask.InProgress = true;
                 theTask.Status = "Starting...";
 
                 dataGridDatafiles.Items.Refresh();
@@ -245,7 +244,7 @@ namespace MetaMorpheusGUI
             else
             {
                 var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
-                theTask.InProgress = false;
+                theTask.IsIndeterminate = false;
                 theTask.Progress = 100;
                 theTask.Status = "Done!";
 
@@ -409,12 +408,28 @@ namespace MetaMorpheusGUI
             }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
+            outRichTextBox.Document.Blocks.Clear();
+
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
-            var t = new Thread(() => a.Run())
-            {
-                IsBackground = true
-            };
+            var t = new Task(a.Run);
+            t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
+        }
+
+        private void EverythingRunnerExceptionHandler(Task obj)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => EverythingRunnerExceptionHandler(obj)));
+            }
+            else
+            {
+                Exception e = obj.Exception;
+                while (e.InnerException != null) e = e.InnerException;
+                var message = "Run failed, Exception: " + e.Message;
+                MessageBox.Show(message);
+                outRichTextBox.AppendText(message + Environment.NewLine);
+            }
         }
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
@@ -555,6 +570,7 @@ namespace MetaMorpheusGUI
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.S;
+                theEntityOnWhichToUpdateLabel.IsIndeterminate = true;
             }
         }
 
@@ -584,6 +600,7 @@ namespace MetaMorpheusGUI
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.v;
+                theEntityOnWhichToUpdateLabel.IsIndeterminate = false;
                 theEntityOnWhichToUpdateLabel.Progress = s.new_progress;
             }
         }
@@ -880,7 +897,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion))
+            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion))
                 MessageBox.Show("You have the most updated version!");
             else
             {
@@ -894,6 +911,28 @@ namespace MetaMorpheusGUI
                     MessageBox.Show(ex.ToString());
                 }
             }
+        }
+
+        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
+        {
+            UsefulProteomicsDatabases.Loaders.UpdateUnimod(GlobalEngineLevelSettings.unimodLocation);
+            Application.Current.Shutdown();
+        }
+
+        private void MenuItem_Click_4(object sender, RoutedEventArgs e)
+        {
+            string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
+            System.Diagnostics.Process.Start(mailto);
+        }
+
+        private void MenuItem_Click_5(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
+        }
+
+        private void MenuItem_Click_6(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(GlobalEngineLevelSettings.dataDir);
         }
 
         #endregion Private Methods

@@ -127,7 +127,6 @@ namespace MetaMorpheusGUI
 
                                     if (!a.Equals(b))
                                     {
-                                        Console.WriteLine(a);
                                         nonEqualValueNames.Add(tomlSettingsListList[j][key].Key);
                                     }
                                 }

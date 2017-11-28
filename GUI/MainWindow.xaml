@@ -10,8 +10,14 @@
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
             <MenuItem Header="_Help">
-                <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
+                <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
+                <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" />
+                <MenuItem Header="Email Support at mm_support@chem.wisc.edu" Click="MenuItem_Click_4" />
+            </MenuItem>
+            <MenuItem Header="Data">
+                <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
+                <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
             </MenuItem>
         </Menu>
         <Grid>
@@ -137,7 +143,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="T " />
                                         <TextBlock Text="{Binding DisplayName}" />
-                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" />
+                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"  Margin="5,0,5,0" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
@@ -145,7 +151,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="C " />
                                         <TextBlock Text="{Binding DisplayName}" />
-                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" />
+                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </HierarchicalDataTemplate>

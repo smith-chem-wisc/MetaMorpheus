@@ -13,7 +13,7 @@ namespace EngineLayer.ClassicSearch
     {
         #region Private Fields
 
-        private readonly MassDiffAcceptor searchModes;
+        private readonly MassDiffAcceptor searchMode;
 
         private readonly List<Protein> proteinList;
 
@@ -31,15 +31,16 @@ namespace EngineLayer.ClassicSearch
 
         private readonly bool addCompIons;
 
-        private readonly CommonParameters commonParameters;
+        private readonly ICommonParameters commonParameters;
 
         private readonly List<DissociationType> dissociationTypes;
+        private readonly Tolerance productMassTolerance;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchModes, bool addCompIons, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, bool addCompIons, ICommonParameters CommonParameters, Tolerance productMassTolerance, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -47,11 +48,12 @@ namespace EngineLayer.ClassicSearch
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.proteinList = proteinList;
-            this.searchModes = searchModes;
+            this.searchMode = searchMode;
             this.lp = lp;
             this.addCompIons = addCompIons;
             this.dissociationTypes = DetermineDissociationType(lp);
             this.commonParameters = CommonParameters;
+            this.productMassTolerance = productMassTolerance;
         }
 
         #endregion Public Constructors
@@ -100,11 +102,11 @@ namespace EngineLayer.ClassicSearch
                         var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                         Array.Sort(productMasses);
 
-                        var searchMode = searchModes;
+                        var searchMode = this.searchMode;
                         foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                         {
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                            var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
+                            var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
                             if (score > commonParameters.ScoreCutoff)
                             {

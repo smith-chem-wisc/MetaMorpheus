@@ -13,21 +13,19 @@ namespace EngineLayer
     {
         #region Public Fields
 
-        public static readonly string elementsLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"elements.dat");
+        public static readonly string elementsLocation;
+        public static readonly string modsLocation;
+        public static readonly string settingsTomlLocation;
+        public static readonly string unimodLocation;
+        public static readonly string dataDir;
 
         #endregion Public Fields
 
         #region Private Fields
 
-        private static readonly string unimodLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"unimod.xml");
-
-        private static readonly string uniprotLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"ptmlist.txt");
-
-        private static readonly string psiModLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"PSI-MOD.obo.xml");
-
-        private static readonly string settingsTomlLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"settings.toml");
-
-        private static readonly string proteasesLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", "proteases.tsv");
+        private static readonly string uniprotLocation;
+        private static readonly string psiModLocation;
+        private static readonly string proteasesLocation;
 
         #endregion Private Fields
 
@@ -35,6 +33,23 @@ namespace EngineLayer
 
         static GlobalEngineLevelSettings()
         {
+            var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+            {
+                dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+            }
+            else
+            {
+                dataDir = AppDomain.CurrentDomain.BaseDirectory;
+            }
+            elementsLocation = Path.Combine(dataDir, @"Data", @"elements.dat");
+            unimodLocation = Path.Combine(dataDir, @"Data", @"unimod.xml");
+            uniprotLocation = Path.Combine(dataDir, @"Data", @"ptmlist.txt");
+            psiModLocation = Path.Combine(dataDir, @"Data", @"PSI-MOD.obo.xml");
+            settingsTomlLocation = Path.Combine(dataDir, @"settings.toml");
+            proteasesLocation = Path.Combine(dataDir, @"Data", "proteases.tsv");
+            modsLocation = Path.Combine(dataDir, @"Mods");
+
             // No exceptions to be caught here, since we are just reading these files!
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
@@ -77,7 +92,7 @@ namespace EngineLayer
 
         public static List<Modification> AllModsKnown { get; }
 
-        public static string NewestVersion { get; private set; }
+        public static string NewestKnownVersion { get; private set; }
 
         #endregion Public Properties
 
@@ -97,7 +112,7 @@ namespace EngineLayer
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
                     if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
                         throw new MetaMorpheusException("Necessary files do not exist!");
-                    NewestVersion = deserialized["tag_name"].ToString();
+                    NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
             }
         }

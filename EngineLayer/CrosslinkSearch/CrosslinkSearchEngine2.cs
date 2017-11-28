@@ -38,7 +38,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ModificationWithMass> fixedModifications;
 
-        private readonly CommonParameters CommonParameters;
+        private readonly ICommonParameters CommonParameters;
 
         private readonly List<PsmCross> psmCross;
         private MassDiffAcceptor XLBetaSearchMode;
@@ -48,7 +48,7 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Constructors
 
-        public CrosslinkSearchEngine2(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, Dictionary<ModificationWithMass, ushort> modsDictionary, List<ProductType> lp, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkSearchEngine2(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, Dictionary<ModificationWithMass, ushort> modsDictionary, List<ProductType> lp, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, ICommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.psmCross = psmCross;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
