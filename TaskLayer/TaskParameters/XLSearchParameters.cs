@@ -11,7 +11,7 @@ namespace TaskLayer
         public XlSearchParameters()
         {
             DecoyType = DecoyType.Reverse;
-            CrosslinkerType = CrosslinkerType.DSS;
+            CrosslinkerType = CrosslinkerType.DSSO;
             CrosslinkSearchTopNum = 300;
             CrosslinkSearchWithAllBeta = false;
             UdXLkerName = null;
@@ -22,6 +22,9 @@ namespace TaskLayer
             UdXLkerResidue = 'K';
             XlPrecusorMsTl = new PpmTolerance(10);
             XlBetaPrecusorMsTl = new PpmTolerance(10);
+            XlQuench_H2O = true;
+            XlQuench_NH2 = false;
+            XlQuench_Tris = true;
 
             XlOutAll = true;
             XlOutCrosslink = true;
@@ -56,6 +59,9 @@ namespace TaskLayer
         public bool XlOutPepXML { get; set; }
         public bool XlOutCrosslink { get; set; }
 
+        public bool XlQuench_H2O { get; set; }
+        public bool XlQuench_Tris { get; set; }
+        public bool XlQuench_NH2 { get; set; }
         #endregion Public Properties
     }
 }

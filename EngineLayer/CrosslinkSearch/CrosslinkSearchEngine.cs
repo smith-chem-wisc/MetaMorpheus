@@ -78,7 +78,7 @@ namespace EngineLayer.CrosslinkSearch
                 XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLprecusorMsTl.Value);
             }
 
-            Status("In crosslink search engine...", nestedIds);
+            Status("In crosslink search engine...");
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
