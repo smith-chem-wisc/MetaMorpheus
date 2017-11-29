@@ -26,9 +26,11 @@ namespace TaskLayer
 
         public XLSearchTask() : base(MyTask.XLSearch)
         {
-            CommonParameters = new CommonParameters();
-            CommonParameters.DoPrecursorDeconvolution = false;
-            CommonParameters.ConserveMemory = false;
+            CommonParameters = new CommonParameters
+            {
+                DoPrecursorDeconvolution = false,
+                ConserveMemory = false
+            };
             XlSearchParameters = new XlSearchParameters();
         }
 
@@ -62,7 +64,7 @@ namespace TaskLayer
             sb.AppendLine("Fixed mod lists: " + string.Join(",", CommonParameters.ListOfModsFixed));
             sb.AppendLine("Variable mod lists: " + string.Join(",", CommonParameters.ListOfModsVariable));
             sb.AppendLine("Localized mod lists: " + string.Join(",", CommonParameters.ListOfModsLocalize));
-            sb.AppendLine("searchDecoy: " + XlSearchParameters.SearchDecoy);
+            sb.AppendLine("searchDecoy: " + XlSearchParameters.DecoyType);
             sb.AppendLine("productMassTolerance: " + CommonParameters.ProductMassTolerance);
 
             sb.AppendLine("Crosslink Precusor mass tolerance: " + XlSearchParameters.XlPrecusorMsTl);
@@ -111,7 +113,7 @@ namespace TaskLayer
             #endregion Load modifications
 
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -136,8 +138,8 @@ namespace TaskLayer
                 crosslinker.CrosslinkerModSite = XlSearchParameters.UdXLkerResidue;
             }
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
+            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             MyFileManager myFileManager = new MyFileManager(XlSearchParameters.DisposeOfFileWhenDone);
 
             int completedFiles = 0;
@@ -174,7 +176,6 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
-            //Parallel.For(0, currentRawFileList.Count, new ParallelOptions { MaxDegreeOfParallelism = 1 }, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 List<PsmCross> newPsms = new List<PsmCross>();
@@ -196,9 +197,8 @@ namespace TaskLayer
                     #region Generate indices for modern search
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.SearchDecoy, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.DecoyType, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string> { taskId });
 
-                    Dictionary<float, List<int>> fragmentIndexDict;
                     lock (indexLock)
                     {
                         string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -212,12 +212,11 @@ namespace TaskLayer
                             Status("Running Index Engine...", new List<string> { taskId });
                             var indexResults = (IndexingResults)indexEngine.Run();
                             peptideIndex = indexResults.PeptideIndex;
-                            fragmentIndexDict = indexResults.FragmentIndexDict;
 
                             Status("Writing peptide index...", new List<string> { taskId });
                             WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
                             Status("Writing fragment index...", new List<string> { taskId });
-                            WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
+                            WriteFragmentIndexNetSerializer(fragmentIndex, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
                         }
                         else
                         {
@@ -231,11 +230,9 @@ namespace TaskLayer
                             messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
                             ser = new NetSerializer.Serializer(messageTypes);
                             using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                                fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                                fragmentIndex = (List<int>[])ser.Deserialize(file);
                         }
                     }
-                    keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-                    fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
                     #endregion Generate indices for modern search
 
@@ -244,7 +241,7 @@ namespace TaskLayer
                     if (XlSearchParameters.CrosslinkSearchWithAllBeta)
                         new CrosslinkSearchEngine2(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, variableModifications, fixedModifications, CommonParameters, thisId).Run();
                     else
-                        new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, CommonParameters.ProductMassTolerance, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, ionTypes, modsDictionary, XlSearchParameters.xlQuench_H2O, XlSearchParameters.xlQuench_NH2, XlSearchParameters.xlQuench_Tris, thisId).Run();
+                        new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, CommonParameters.ProductMassTolerance, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, ionTypes, modsDictionary, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                 }
@@ -266,14 +263,14 @@ namespace TaskLayer
             if (XlSearchParameters.XlOutAll)
             {
                 WriteAllToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
-
             }
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).ToList();
 
             #region Inter Crosslink
+
             //Write Inter Psms FDR
             var interPsmsXL = allPsmsXL.Where(p => !p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) &&
-            !p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+            !p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLTotalScore).ToList();
             //var interPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXL).ToList();
             var interPsmsXLFDR = CrosslinkFDRAnalysis(interPsmsXL).ToList();
             if (XlSearchParameters.XlOutCrosslink)
@@ -299,15 +296,17 @@ namespace TaskLayer
                 var interPsmsXLPercolator = interPsmsXL.Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).OrderBy(p => p.ScanNumber).ToList();
                 WriteCrosslinkToTxtForPercolator(interPsmsXLPercolator, OutputFolder, "xl_inter_perc", crosslinker, new List<string> { taskId });
             }
-            #endregion
+
+            #endregion Inter Crosslink
 
             #region Intra Cross-link
+
             //Write Intra Psms FDR
             var intraPsmsXL = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() ||
             p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) ||
-            p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+            p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLTotalScore).ToList();
             //var intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXL).ToList();
-            var intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXL).ToList();
+            var intraPsmsXLFDR = CrosslinkFDRAnalysis(intraPsmsXL).ToList();
             if (XlSearchParameters.XlOutCrosslink)
             {
                 WriteCrosslinkToTsv(intraPsmsXLFDR, OutputFolder, "xl_intra_fdr", new List<string> { taskId });
@@ -331,35 +330,9 @@ namespace TaskLayer
                 var intraPsmsXLPercolator = intraPsmsXL.Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).OrderBy(p => p.ScanNumber).ToList();
                 WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
             }
-            #endregion
 
-            #region Single peptide
-            var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe).OrderByDescending(p => p.Score).ToList();
-            var singlePsmsFDR = SingleFDRAnalysis(singlePsms).ToList();
-            if (XlSearchParameters.XlOutCrosslink)
-            {
-                WriteSingleToTsv(singlePsmsFDR, OutputFolder, "single_fdr", new List<string> { taskId });
-            }
+            #endregion Intra Cross-link
 
-            #endregion
-
-            #region Loop peptide
-            var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop).OrderByDescending(p => p.Score).ToList();
-            var loopPsmsFDR = SingleFDRAnalysis(loopPsms).ToList();
-            if (XlSearchParameters.XlOutCrosslink)
-            {
-                WriteSingleToTsv(loopPsmsFDR, OutputFolder, "loop_fdr", new List<string> { taskId });
-            }
-            #endregion
-
-            #region deadend peptide
-            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd).OrderByDescending(p => p.Score).ToList();
-            var deadendPsmsFDR = SingleFDRAnalysis(deadendPsms).ToList();
-            if (XlSearchParameters.XlOutCrosslink)
-            {
-                WriteSingleToTsv(deadendPsmsFDR, OutputFolder, "deadend_fdr", new List<string> { taskId });
-            }
-            #endregion
             return myTaskResults;
         }
 
@@ -378,46 +351,6 @@ namespace TaskLayer
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
                     return true;
             return false;
-        }
-
-        //Calculate the FDR of single peptide FP/TP
-        private static List<PsmCross> SingleFDRAnalysis(List<PsmCross> items)
-        {
-            var ids = new List<PsmCross>();
-            foreach (var item in items)
-            {
-                ids.Add(item);
-            }
-
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
-
-            for (int i = 0; i < ids.Count; i++)
-            {
-                var item1 = ids[i]; 
-
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; 
-                if (isDecoy1)
-                    cumulative_decoy++;
-                else
-                    cumulative_target++;
-
-                double temp_q_value = (double)cumulative_decoy / cumulative_target;
-                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-            }
-
-            double min_q_value = double.PositiveInfinity;
-
-            for (int i = ids.Count - 1; i >= 0; i--)
-            {
-                PsmCross id = ids[i];
-                if (id.FdrInfo.QValue > min_q_value)
-                    id.FdrInfo.QValue = min_q_value;
-                else if (id.FdrInfo.QValue < min_q_value)
-                    min_q_value = id.FdrInfo.QValue;
-            }
-
-            return ids;
         }
 
         //Calculate the FDR of crosslinked peptide FP/TP
@@ -488,9 +421,9 @@ namespace TaskLayer
                     cumulative_decoy_decoy++;
                 }
 
-                double temp_q_value = (double)(cumulative_decoy - 2*cumulative_decoy_decoy) / (cumulative_target + cumulative_decoy);
+                double temp_q_value = (double)(cumulative_decoy - 2 * cumulative_decoy_decoy) / (cumulative_target + cumulative_decoy);
                 item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-// item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                // item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
             }
 
             double min_q_value = double.PositiveInfinity;
@@ -508,10 +441,20 @@ namespace TaskLayer
                 }
                 else if (id.FdrInfo.QValue < min_q_value)
                 {
-                    min_q_value = id.FdrInfo.QValue;                   
+                    min_q_value = id.FdrInfo.QValue;
                 }
             }
             return ids;
+        }
+
+        private void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.Create(fragmentIndexFile))
+                ser.Serialize(file, fragmentIndex);
+            SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
         }
 
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
@@ -551,16 +494,6 @@ namespace TaskLayer
                 }
             }
             return null;
-        }
-
-        private void WriteFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile, string taskId)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(fragmentIndexFile))
-                ser.Serialize(file, fragmentIndex);
-            SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
         }
 
         private void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile, string taskId)

@@ -12,7 +12,7 @@ namespace MetaMorpheusGUI
 
         #region Public Constructors
 
-        public InRunTask(string id, MetaMorpheusTask task) : base(id)
+        public InRunTask(string displayName, MetaMorpheusTask task) : base(displayName, displayName)
         {
             this.task = task;
         }

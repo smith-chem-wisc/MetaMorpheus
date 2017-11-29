@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.SearchTaskWindow"
+<Window x:Class="MetaMorpheusGUI.SearchTaskWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,6 +6,9 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <local:BooleanInverter x:Key="InvertedBooleanConverter" />
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -13,38 +16,65 @@
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                    <Label Content="Task Name" />
+                    <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                        <VisualBrush.Visual>
+                                            <Label Content="SearchTask" Foreground="Gray" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
                 <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
                         <StackPanel>
-                        <GroupBox Header="Deisotoping">
-                        <StackPanel>
-                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
-                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label Content="Deconvolution Intensity Ratio " />
-                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label Content="Deconvolution Max Assumed Charge State" />
-                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label Content="Deconvolution Mass Tolerance in PPM" />
-                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
-                            </StackPanel>
-                            </StackPanel>
+                            <GroupBox Header="Deisotoping">
+                                <StackPanel>
+                                    <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
+                                    <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Deconvolution Intensity Ratio " />
+                                        <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Deconvolution Max Assumed Charge State" />
+                                        <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Deconvolution Mass Tolerance in PPM" />
+                                        <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
+                                    </StackPanel>
+                                </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
                                     <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" />
                                     <CheckBox x:Name="trimMsMs" Content="Trim MS/MS Peaks" IsChecked="True" />
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label Content="Top N peaks" />
-                                    <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label Content="Minimum ratio" />
-                                    <TextBox x:Name="MinRatioCheckBox" Width="45" />
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Top N peaks" />
+                                        <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Minimum ratio" />
+                                        <TextBox x:Name="MinRatioCheckBox" Width="45" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -113,6 +143,8 @@
                                     <StackPanel>
                                         <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" />
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" />
+                                        <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
+                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
@@ -120,10 +152,6 @@
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
-                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -141,6 +169,10 @@
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                             <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
+                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
@@ -153,6 +185,10 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da)" />
+                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -177,7 +213,7 @@
                                     <RadioButton x:Name="mdac187" Content="-187 and Up" />
                                     <RadioButton x:Name="mdacOpen" Content="Accept all" />
                                     <RadioButton x:Name="mdacCustom" Content="Custom:" />
-                                    <TextBox x:Name="customkMdacTextBox"  IsEnabled="{Binding IsChecked, ElementName=mdacCustom}" />
+                                    <TextBox x:Name="customkMdacTextBox" ToolTipService.ShowDuration="999999" ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" />
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Ambiguity Parameters">
@@ -234,13 +270,13 @@
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </DataTemplate>
@@ -253,13 +289,13 @@
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </DataTemplate>
@@ -283,13 +319,13 @@
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </DataTemplate>
@@ -360,7 +396,11 @@
                                 </Grid>
                             </GroupBox>
                             <GroupBox Header="Mass Shift Histogram Analysis">
-                                <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
+                                    <Label Content="Histogram bin width (Da):" />
+                                    <TextBox x:Name="histogramBinWidthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Pruned Database Writing">
                                 <StackPanel Orientation="Horizontal">

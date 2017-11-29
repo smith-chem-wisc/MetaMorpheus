@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class CommonParameters
+    public class CommonParameters : ICommonParameters
     {
         #region Public Constructors
 
@@ -28,15 +28,19 @@ namespace EngineLayer
             ListOfModsLocalize = null;
 
             ConserveMemory = true;
-            MaxDegreeOfParallelism = 1;
+
+            MaxParallelFilesToAnalyze = 1;
+
+            MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;
+
             ScoreCutoff = 5;
 
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
             UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 5;
-            DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(20);
+            DeconvolutionIntensityRatio = 3;
+            DeconvolutionMaxAssumedChargeState = 12;
+            DeconvolutionMassTolerance = new PpmTolerance(4);
             ReportAllAmbiguity = true;
             ExcelCompatible = true;
 
@@ -50,7 +54,8 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public int? MaxDegreeOfParallelism { get; set; }
+        public int? MaxParallelFilesToAnalyze { get; set; }
+        public int MaxThreadsToUsePerFile { get; set; }
         public bool LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
         public List<Tuple<string, string>> ListOfModsVariable { get; set; }
@@ -88,6 +93,7 @@ namespace EngineLayer
         public double? MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }
         public bool TrimMsMsPeaks { get; set; }
+        public string TaskDescriptor { get; set; }
 
         #endregion Public Properties
     }

@@ -1,4 +1,5 @@
 ﻿using MzLibUtil;
+using System;
 using System.Collections.Generic;
 
 namespace EngineLayer
@@ -22,7 +23,7 @@ namespace EngineLayer
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            yield return new AllowedIntervalWithNotch(new DoubleRange(double.MinValue, double.MaxValue), 0);
+            yield return new AllowedIntervalWithNotch(new DoubleRange(Double.NegativeInfinity, Double.PositiveInfinity), 0);
         }
 
         public override string ToProseString()

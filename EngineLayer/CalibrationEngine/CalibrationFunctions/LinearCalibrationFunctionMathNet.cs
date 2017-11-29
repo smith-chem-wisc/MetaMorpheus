@@ -1,27 +1,25 @@
 ﻿using MathNet.Numerics;
+using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace EngineLayer.Calibration
 {
-    internal class LinearCalibrationFunctionMathNet : CalibrationFunction
+    public class LinearCalibrationFunctionMathNet : ILearner<double>
     {
         #region Private Fields
 
-        private readonly int numFeatures;
-        private readonly TransformFunction transformFunction;
-        private Func<double[], double> f;
+        private readonly int[] v;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public LinearCalibrationFunctionMathNet(TransformFunction transformFunction)
+        public LinearCalibrationFunctionMathNet(int[] v)
         {
-            this.transformFunction = transformFunction;
-            numFeatures = transformFunction.numOutputs;
+            this.v = v;
         }
 
         #endregion Public Constructors
@@ -30,43 +28,77 @@ namespace EngineLayer.Calibration
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("Linear");
-            sb.Append(" numFeatures: " + numFeatures);
-            sb.Append(" transform num outputs: " + transformFunction.numOutputs);
-            return sb.ToString();
+            return "LinearCalibrationFunctionMathNet " + string.Join(",", v);
+        }
+
+        public IPredictorModel<double> Learn(F64Matrix observations, double[] targets)
+        {
+            double[][] ok = new double[targets.Length][];
+            for (int i = 0; i < targets.Length; i++)
+            {
+                ok[i] = observations.Row(i);
+            }
+
+            var ye = new Func<double[], double>[v.Length + 1];
+            int k = 0;
+            ye[0] = a => 1;
+            for (int i = 0; i < observations.Row(0).Length; i++)
+            {
+                if (v.Contains(i))
+                {
+                    int ii = i;
+                    int kk = k;
+                    ye[kk + 1] = a => a[ii];
+                    k++;
+                }
+            }
+            var f = Fit.LinearMultiDimFunc(ok, targets, ye);
+
+            return new LinearCalibrationFunctionPredictorModel(f);
         }
 
         #endregion Public Methods
+    }
 
-        #region Internal Methods
+    internal class LinearCalibrationFunctionPredictorModel : IPredictorModel<double>
+    {
+        #region Private Fields
 
-        internal override double Predict(double[] t)
+        private readonly Func<double[], double> f;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public LinearCalibrationFunctionPredictorModel(Func<double[], double> f)
         {
-            return f(transformFunction.Transform(t));
+            this.f = f;
         }
 
-        internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
-        {
-            double[][] ok = new double[trainingList.Count()][];
-            int k = 0;
-            foreach (LabeledDataPoint p in trainingList)
-            {
-                ok[k] = transformFunction.Transform(p.Inputs);
-                k++;
-            }
-            var ok2 = trainingList.Select(b => b.Label).ToArray();
+        #endregion Public Constructors
 
-            var ye = new Func<double[], double>[numFeatures + 1];
-            ye[0] = a => 1;
-            for (int i = 0; i < numFeatures; i++)
-            {
-                int j = i;
-                ye[j + 1] = a => a[j];
-            }
-            f = Fit.LinearMultiDimFunc(ok, ok2, ye);
+        #region Public Methods
+
+        public double[] GetRawVariableImportance()
+        {
+            throw new NotImplementedException();
         }
 
-        #endregion Internal Methods
+        public Dictionary<string, double> GetVariableImportance(Dictionary<string, int> featureNameToIndex)
+        {
+            return new Dictionary<string, double>();
+        }
+
+        public double Predict(double[] observation)
+        {
+            return f(observation);
+        }
+
+        public double[] Predict(F64Matrix observations)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion Public Methods
     }
 }

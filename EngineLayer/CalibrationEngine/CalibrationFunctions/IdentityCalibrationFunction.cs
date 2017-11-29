@@ -1,33 +1,45 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using SharpLearning.Common.Interfaces;
+using SharpLearning.Containers.Matrices;
+using System.Collections.Generic;
 
-namespace EngineLayer.Calibration
+namespace EngineLayer
 {
-    public class IdentityCalibrationFunction : CalibrationFunction
+    internal class IdentityCalibrationFunction : ILearner<double>
     {
         #region Public Methods
 
-        public override string ToString()
+        public IPredictorModel<double> Learn(F64Matrix observations, double[] targets)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("Identity");
-            return sb.ToString();
+            return new IdentityCalibrationFunctionPredictorModel();
         }
 
         #endregion Public Methods
+    }
 
-        #region Internal Methods
+    internal class IdentityCalibrationFunctionPredictorModel : IPredictorModel<double>
+    {
+        #region Public Methods
 
-        internal override double Predict(double[] t)
+        public double[] GetRawVariableImportance()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Dictionary<string, double> GetVariableImportance(Dictionary<string, int> featureNameToIndex)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public double Predict(double[] observation)
         {
             return 0;
         }
 
-        internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+        public double[] Predict(F64Matrix observations)
         {
-            // Does nothing because this is the identity calibration function
+            throw new System.NotImplementedException();
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
     }
 }

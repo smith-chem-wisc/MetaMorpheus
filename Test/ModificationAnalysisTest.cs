@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
-using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
@@ -203,7 +202,7 @@ namespace Test
 
         public int PrecursorCharge => 0;
 
-        public IMzPeak PrecursorMonoisotopicPeak => null;
+        public double PrecursorMonoisotopicPeakMz => 0;
 
         public double PrecursorMass => 0;
 

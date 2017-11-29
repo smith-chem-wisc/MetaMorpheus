@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using MzLibUtil;
 using Nett;
 using NUnit.Framework;
 using System.IO;
@@ -15,20 +16,27 @@ namespace Test
         [Test]
         public static void TestTomlFunction()
         {
-            SearchTask searchTask = new SearchTask();
+            SearchTask searchTask = new SearchTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    ProductMassTolerance = new PpmTolerance(666),
+                },
+            };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
 
             Assert.AreEqual(searchTask.CommonParameters.DeconvolutionMassTolerance.ToString(), searchTaskLoaded.CommonParameters.DeconvolutionMassTolerance.ToString());
             Assert.AreEqual(searchTask.CommonParameters.ProductMassTolerance.ToString(), searchTaskLoaded.CommonParameters.ProductMassTolerance.ToString());
             Assert.AreEqual(searchTask.CommonParameters.PrecursorMassTolerance.ToString(), searchTaskLoaded.CommonParameters.PrecursorMassTolerance.ToString());
-            Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptorType, searchTaskLoaded.SearchParameters.MassDiffAcceptorType);
-            Assert.AreEqual(searchTask.SearchParameters.CustomMdac, searchTaskLoaded.SearchParameters.CustomMdac);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed[0].Item1, searchTaskLoaded.CommonParameters.ListOfModsFixed[0].Item1);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed[0].Item2, searchTaskLoaded.CommonParameters.ListOfModsFixed[0].Item2);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsLocalize, searchTaskLoaded.CommonParameters.ListOfModsLocalize);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.Count, searchTaskLoaded.CommonParameters.ListOfModsFixed.Count);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsVariable.Count, searchTaskLoaded.CommonParameters.ListOfModsVariable.Count);
+
+            Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptorType, searchTaskLoaded.SearchParameters.MassDiffAcceptorType);
+            Assert.AreEqual(searchTask.SearchParameters.CustomMdac, searchTaskLoaded.SearchParameters.CustomMdac);
 
             CalibrationTask calibrationTask = new CalibrationTask();
             Toml.WriteFile(calibrationTask, "CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
@@ -46,9 +54,7 @@ namespace Test
         [Test]
         public static void TestTomlForSpecficFiles()
         {
-            var dir = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).ToString()).ToString();
-            var file = Directory.GetFiles(dir, Path.GetFileNameWithoutExtension("testFileSpecfic") + ".to*");
-            var fileSpecificToml = Toml.ReadFile(file[0], MetaMorpheusTask.tomlConfig);
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
             Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "Asp-N");
             Assert.IsFalse(tomlSettingsList.ContainsKey("MaxMissedCleavages"));
@@ -60,7 +66,7 @@ namespace Test
             Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
             Assert.IsNull(f.MaxMissedCleavages);
 
-            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+            ICommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);

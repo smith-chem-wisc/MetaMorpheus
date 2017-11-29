@@ -4,7 +4,7 @@
     {
         #region Public Constructors
 
-        public CollectionForTreeView(string id, string displayName) : base(id, displayName)
+        public CollectionForTreeView(string displayName, string id) : base(displayName, id)
         {
         }
 

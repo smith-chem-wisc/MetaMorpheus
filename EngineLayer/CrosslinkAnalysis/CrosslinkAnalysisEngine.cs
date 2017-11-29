@@ -29,13 +29,13 @@ namespace EngineLayer.CrosslinkAnalysis
 
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly string OutputFolder;
-        private readonly CommonParameters CommonParameters;
+        private readonly ICommonParameters CommonParameters;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, ICommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -59,13 +59,13 @@ namespace EngineLayer.CrosslinkAnalysis
             MassDiffAcceptor XLsearchMode = new OpenSearchMode();
 
             CrosslinkAnalysisResults myAnalysisResults = new CrosslinkAnalysisResults(this);
-            Status("Running analysis engine!", nestedIds);
+            Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
 
             #region Match Seqeunces to PeptideWithSetModifications
 
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            Status("Adding observed peptides to dictionary...", nestedIds);
+            Status("Adding observed peptides to dictionary...");
             foreach (var psmpair in newPsms)
             {
                 if (psmpair != null)
@@ -87,22 +87,15 @@ namespace EngineLayer.CrosslinkAnalysis
             int proteinsSeen = 0;
             int old_progress = 0;
             var obj = new object();
-            Status("Adding possible sources to peptide dictionary...", nestedIds);
+            Status("Adding possible sources to peptide dictionary...");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications))
-                    {
-                        //if (peptideWithPossibleModifications.Length <= 1)
-                        //    continue;
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications))
-                        {
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+                    foreach (var peptideWithSetModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList())
+                        if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+                            v.Add(peptideWithSetModifications);
 
-                                v.Add(peptideWithSetModifications);
-                        }
-                    }
                 lock (obj)
                 {
                     foreach (var ye in local)
@@ -127,7 +120,7 @@ namespace EngineLayer.CrosslinkAnalysis
             List<PsmCross> allResultingIdentifications = new List<PsmCross>();
             List<Tuple<PsmCross, PsmCross>> allResultingIdentificationsfdr = new List<Tuple<PsmCross, PsmCross>>();
 
-            Status("Computing info about actual peptides with modifications...", nestedIds);
+            Status("Computing info about actual peptides with modifications...");
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
                 var huh = newPsms[myScanWithMassIndex];

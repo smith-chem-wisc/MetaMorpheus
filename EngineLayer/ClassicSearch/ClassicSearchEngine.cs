@@ -13,7 +13,7 @@ namespace EngineLayer.ClassicSearch
     {
         #region Private Fields
 
-        private readonly MassDiffAcceptor searchModes;
+        private readonly MassDiffAcceptor searchMode;
 
         private readonly List<Protein> proteinList;
 
@@ -31,15 +31,16 @@ namespace EngineLayer.ClassicSearch
 
         private readonly bool addCompIons;
 
-        private readonly CommonParameters CommonParameters;
+        private readonly ICommonParameters commonParameters;
 
         private readonly List<DissociationType> dissociationTypes;
+        private readonly Tolerance productMassTolerance;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchModes, bool addCompIons, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, bool addCompIons, ICommonParameters CommonParameters, Tolerance productMassTolerance, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -47,11 +48,12 @@ namespace EngineLayer.ClassicSearch
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.proteinList = proteinList;
-            this.searchModes = searchModes;
+            this.searchMode = searchMode;
             this.lp = lp;
             this.addCompIons = addCompIons;
             this.dissociationTypes = DetermineDissociationType(lp);
-            this.CommonParameters = CommonParameters;
+            this.commonParameters = CommonParameters;
+            this.productMassTolerance = productMassTolerance;
         }
 
         #endregion Public Constructors
@@ -60,62 +62,58 @@ namespace EngineLayer.ClassicSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In classic search engine!", nestedIds);
+            Status("In classic search engine!");
 
             int totalProteins = proteinList.Count;
 
             var observedPeptides = new HashSet<CompactPeptide>();
 
-            Status("Getting ms2 scans...", nestedIds);
+            Status("Getting ms2 scans...");
 
             var lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-            Status("Starting classic search loop...", nestedIds);
+            Status("Starting classic search loop...");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
                 var psms = new Psm[arrayOfSortedMS2Scans.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(CommonParameters.DigestionParams, fixedModifications).ToList();
-                    foreach (var peptide in digestedList)
+                    var digestedList = protein.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+                    foreach (var yyy in digestedList)
                     {
-                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).ToList();
-                        foreach (var yyy in ListOfModifiedPeptides)
+                        var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
+                        if (!commonParameters.ConserveMemory)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
-                            if (!CommonParameters.ConserveMemory)
+                            var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
+                            if (peptideWasObserved)
+                                continue;
+                            lock (observedPeptides)
                             {
-                                var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
+                                peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
                                 if (peptideWasObserved)
                                     continue;
-                                lock (observedPeptides)
-                                {
-                                    peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
-                                    if (peptideWasObserved)
-                                        continue;
-                                    observedPeptides.Add(correspondingCompactPeptide);
-                                }
+                                observedPeptides.Add(correspondingCompactPeptide);
                             }
+                        }
 
-                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                            Array.Sort(productMasses);
+                        var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                        Array.Sort(productMasses);
 
-                            var searchMode = searchModes;
-                            foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
+                        var searchMode = this.searchMode;
+                        foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
+                        {
+                            double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
+                            var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
+
+                            if (score > commonParameters.ScoreCutoff)
                             {
-                                double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                var score = CalculateClassicScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
-
-                                if (score > CommonParameters.ScoreCutoff)
-                                {
-                                    if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
-                                        psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, CommonParameters.ExcelCompatible);
-                                    else
-                                        psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, CommonParameters.ReportAllAmbiguity);
-                                }
+                                if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
+                                    psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
+                                else
+                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
                             }
                         }
                     }
@@ -129,7 +127,7 @@ namespace EngineLayer.ClassicSearch
                                 globalPsms[i] = psms[i];
                             else
                             {
-                                globalPsms[i].AddOrReplace(psms[i], CommonParameters.ReportAllAmbiguity);
+                                globalPsms[i].AddOrReplace(psms[i], commonParameters.ReportAllAmbiguity);
                             }
                         }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

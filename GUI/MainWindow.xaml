@@ -5,17 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="MetaMorpheus Not a release" Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="500" Width="800">
+        Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="500" Width="800"
+        Loaded="MyWindow_Loaded">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
-            <MenuItem Header="_Settings">
-                <MenuItem Header="Global Settings" Click="MenuItem_Click_1" />
-                <MenuItem Header="Default Search Task" />
-                <MenuItem Header="Default Gptmd Task" />
-                <MenuItem Header="Default Calibration Task" />
-            </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
+                <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" />
+                <MenuItem Header="Email Support at mm_support@chem.wisc.edu" Click="MenuItem_Click_4" />
+            </MenuItem>
+            <MenuItem Header="Data">
+                <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
+                <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
             </MenuItem>
         </Menu>
         <Grid>
@@ -60,7 +62,7 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
                         </Grid.RowDefinitions>
-                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top" >
+                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top">
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
@@ -126,6 +128,7 @@
                             <RowDefinition Height="20" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
+                            <RowDefinition Height="36" />
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -140,7 +143,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="T " />
                                         <TextBlock Text="{Binding DisplayName}" />
-                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" />
+                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"  Margin="5,0,5,0" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
@@ -148,7 +151,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="C " />
                                         <TextBlock Text="{Binding DisplayName}" />
-                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" />
+                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
@@ -172,13 +175,11 @@
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
-                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3">
-                            <Button.ContextMenu>
-                                <ContextMenu AllowDrop="True">
-                                    <MenuItem Header="Add Folder Suffix" Click="AddMetaMorpheusTaskFolderSuffix_Click"></MenuItem>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                        </Button>
+                        <DockPanel Margin="5" Grid.Row="3" LastChildFill="True">
+                            <Label Content="Output Folder:" />
+                            <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" />
+                        </DockPanel>
+                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="4" />
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1"

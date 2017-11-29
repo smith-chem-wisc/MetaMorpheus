@@ -4,7 +4,6 @@
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5044926)
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 <a href="https://scan.coverity.com/projects/metamorpheus">
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/11282/badge.svg"/>
@@ -26,17 +25,19 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 ## System Requirements
 
-* 16 GB of RAM is recommended
-* For thermo .RAW files: Need to have [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed.
+* Environment:
+  * For .NET Core versions: .NET Core 2.0.0 runtime
+  * For .NET Framework versions: .NET Framework 4.6.1
+    * The .NET Framework versions have the ability to read Thermo .RAW files. Those require [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed, and at least an x64 Windows 7.
+* At least 16 GB RAM recommended
 
 
 ## Spectra Requirements
 
 * One of the following formats:
-   * .raw
+   * Thermo .raw
    * .mzML file in centroid mode
-   * .mgf files must be converted to .mzML using the MSConvert program within [ProteoWizard](http://proteowizard.sourceforge.net/) 
-* MS2 resolution of 15,000
+* MS and MS/MS scans
 
 ## Database Requirements
 
@@ -44,7 +45,7 @@ UniProt .XML or .fasta format, may be used in compressed (.gz) format.
 
 ## Test Installation (Windows GUI)
 
-1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusGUI.zip" using, for example, [7-Zip](http://www.7-zip.org/).
+1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusGUI.zip" using, for example, [7-Zip](http://www.7-zip.org).
 2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/v/MetaMorpheusPublic).
 3. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot XML database on the GUI.
 4. Add search tasks that test all of the functionality of MetaMorpheus. Drag the .toml files **IN ORDER** (Task1 - Task5) onto the application. 

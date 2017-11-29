@@ -24,7 +24,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
-                    SearchDecoy = false,
+                    DecoyType = DecoyType.None,
                     ModPeptidesAreUnique = false
                 },
                 CommonParameters = new CommonParameters
@@ -74,16 +74,10 @@ namespace Test
                 };
             Protein protein2 = new Protein("MG", "protein3", oneBasedModifications: oneBasedModifications2);
 
-            var prot1List = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>());
-            PeptideWithPossibleModifications pepWithPossibleModifications = prot1List.First();
-            var pep1list = pepWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications);
-            PeptideWithSetModifications pepMA = pep1list.First();
-            PeptideWithSetModifications pepMA111 = pep1list.Last();
+            PeptideWithSetModifications pepMA = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
+            PeptideWithSetModifications pepMA111 = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).Last();
 
-            var prot2List = protein2.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>());
-            pepWithPossibleModifications = prot2List.First();
-            var pep2list = pepWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications);
-            PeptideWithSetModifications pepMG = pep2list.First();
+            var pepMG = protein2.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
 
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
 

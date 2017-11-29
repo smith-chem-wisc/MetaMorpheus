@@ -1,6 +1,13 @@
 ﻿using EngineLayer;
 using IO.MzML;
+
+#if NET461
+
 using IO.Thermo;
+
+#else
+#endif
+
 using MassSpectrometry;
 using System;
 using System.Collections.Generic;
@@ -42,14 +49,15 @@ namespace TaskLayer
 
             // By now know that need to load this file!!!
             lock (fileLoadingLock) // Lock because reading is sequential
-                if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
+                if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
                 else
-                {
-                    if (trimMs1Peaks || trimMsMsPeaks)
-                        Warn("Thermo files do not have peak trimming implemented yet");
-                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile);
-                }
+
+#if NET461
+                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
+#else
+                    Warn("No capability for reading " + origDataFile);
+#endif
 
             return myMsDataFiles[origDataFile];
         }

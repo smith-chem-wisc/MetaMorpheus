@@ -1,25 +1,64 @@
-﻿using System.Collections.Generic;
+﻿using MathNet.Numerics.Statistics;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace EngineLayer.Calibration
 {
-    internal class DataPointAquisitionResults
+    public class DataPointAquisitionResults : MetaMorpheusEngineResults
     {
-        #region Public Fields
+        #region Public Constructors
 
-        public int numMs1MassChargeCombinationsConsidered;
-        public int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
-        public int numMs2MassChargeCombinationsConsidered;
-        public int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
+        public DataPointAquisitionResults(
+            MetaMorpheusEngine dataPointAcquisitionEngine,
+            List<LabeledMs1DataPoint> ms1List,
+            List<LabeledMs2DataPoint> ms2List) : base(dataPointAcquisitionEngine)
+        {
+            Ms1List = ms1List;
+            Ms2List = ms2List;
 
-        #endregion Public Fields
+            Ms1InfoTh = Ms1List.Select(b => b.LabelTh).MeanStandardDeviation();
+            Ms2InfoTh = Ms2List.Select(b => b.LabelTh).MeanStandardDeviation();
+
+            Ms1InfoPpm = Ms1List.Select(b => b.LabelPpm).MeanStandardDeviation();
+            Ms2InfoPpm = Ms2List.Select(b => b.LabelPpm).MeanStandardDeviation();
+        }
+
+        #endregion Public Constructors
 
         #region Public Properties
 
-        public List<LabeledMs1DataPoint> Ms1List { get; set; }
-        public List<LabeledMs2DataPoint> Ms2List { get; set; }
+        public Tuple<double, double> Ms1InfoTh { get; }
+
+        public Tuple<double, double> Ms2InfoTh { get; }
+
+        public Tuple<double, double> Ms1InfoPpm { get; }
+
+        public Tuple<double, double> Ms2InfoPpm { get; }
+
+        public List<LabeledMs1DataPoint> Ms1List { get; }
+
+        public List<LabeledMs2DataPoint> Ms2List { get; }
 
         public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 
         #endregion Public Properties
+
+        #region Public Methods
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.AppendLine("Ms1List.Count: " + Ms1List.Count + " Ms2List.Count: " + Ms2List.Count);
+            sb.AppendLine("Ms1ppm mean: " + Ms1InfoPpm.Item1 + " Ms1ppm sd: " + Ms1InfoPpm.Item2);
+            sb.AppendLine("Ms1th mean: " + Ms1InfoTh.Item1 + " Ms1th sd: " + Ms1InfoTh.Item2);
+            sb.AppendLine("Ms2ppm mean: " + Ms2InfoPpm.Item1 + " Ms2ppm sd: " + Ms2InfoPpm.Item2);
+            sb.Append("Ms2th mean: " + Ms2InfoTh.Item1 + " Ms2th sd: " + Ms2InfoTh.Item2);
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
     }
 }

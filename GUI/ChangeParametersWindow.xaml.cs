@@ -1,23 +1,15 @@
-﻿using System;
+﻿using EngineLayer;
+using MzLibUtil;
+using Nett;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using MetaMorpheusGUI;
-using EngineLayer;
 using TaskLayer;
-using System.IO;
-using Nett;
-using MzLibUtil;
 
 namespace MetaMorpheusGUI
 {
@@ -26,17 +18,17 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class ChangeParametersWindow : Window
     {
-        internal ObservableCollection<RawDataForDataGrid> SelectedRaw { get; private set; }
-        internal FileSpecificSettings[] FileSpecificSettingsList { get; private set; }
-        Parameter[] paramList;
-        Parameter[] tempParamList;
-        FileSpecificSettings[] TempSettings { get; set; }
+        #region Private Fields
 
+        private Parameter[] paramList;
+        private Parameter[] tempParamList;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public ChangeParametersWindow(ObservableCollection<RawDataForDataGrid> selectedRaw)
         {
-
-
             SelectedRaw = selectedRaw;
             FileSpecificSettingsList = new FileSpecificSettings[selectedRaw.Count];
             InitializeComponent();
@@ -49,9 +41,7 @@ namespace MetaMorpheusGUI
             }
             ParameterGrid.Items.Refresh();
 
-
             FileSpecificSettingsList = new FileSpecificSettings[selectedRaw.Count];
-
 
             if (selectedRaw.Count == 1)
             {
@@ -64,7 +54,6 @@ namespace MetaMorpheusGUI
                     FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
                     Array.Copy(paramList, tempParamList, 20);
                     UpdateAndPopulateFields(settings);
-
                 }
                 else
                 {
@@ -88,7 +77,6 @@ namespace MetaMorpheusGUI
                 //Set tomlSettingListList (list of tomlSettings)
                 for (int i = 0; i < selectedRaw.Count; i++)
                 {
-
                     tomlFileNames[i] = System.IO.Path.ChangeExtension(SelectedRaw[i].FilePath, ".toml");
                     if (File.Exists(tomlFileNames[i]))
                     {
@@ -99,8 +87,6 @@ namespace MetaMorpheusGUI
                     {
                         tomlSettingsListList.Add(new Dictionary<string, KeyValuePair<string, TomlObject>>());
                     }
-
-
                 }
 
                 //check every value against every other value; if same, then add to list to set 'different in multiple files' later in Parameter Object
@@ -110,7 +96,6 @@ namespace MetaMorpheusGUI
                     {
                         foreach (var key in tomlSettingsListList[j].Keys)
                         {
-
                             if (tomlSettingsListList[i].ContainsKey(key))
                             {
                                 if (tomlSettingsListList[j].ContainsKey(tomlSettingsListList[i][key].Key))
@@ -142,18 +127,14 @@ namespace MetaMorpheusGUI
 
                                     if (!a.Equals(b))
                                     {
-                                        Console.WriteLine(a);
                                         nonEqualValueNames.Add(tomlSettingsListList[j][key].Key);
                                     }
-
-
                                 }
                             }
                             //add different checked if null and others are not
                             else nonEqualValueNames.Add(key);
                         }
                     }
-
                 }
 
                 //now set settings so that it reflects if values are different
@@ -270,11 +251,30 @@ namespace MetaMorpheusGUI
 
                 UpdateAndPopulateFields(settings);
             }
-
-
-
         }
 
+        #endregion Public Constructors
+
+        #region Internal Properties
+
+        internal ObservableCollection<RawDataForDataGrid> SelectedRaw { get; private set; }
+        internal FileSpecificSettings[] FileSpecificSettingsList { get; private set; }
+
+        #endregion Internal Properties
+
+        #region Private Properties
+
+        private FileSpecificSettings[] TempSettings { get; set; }
+
+        #endregion Private Properties
+
+        #region Private Methods
+
+        private static Boolean TextBoxIntAllowed(String Text2)
+        {
+            return Array.TrueForAll<Char>(Text2.ToCharArray(),
+                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
+        }
 
         //Updates fields of display so that it reflects current settings
         private void UpdateAndPopulateFields(FileSpecificSettings settings)
@@ -378,7 +378,6 @@ namespace MetaMorpheusGUI
             {
                 tempString = settings.ProductMassTolerance.ToString().Split(' ');
             }
-
             else if (settings.DeconvolutionMassTolerance != null)
             {
                 tempString = settings.DeconvolutionMassTolerance.ToString().Split(' ');
@@ -393,7 +392,6 @@ namespace MetaMorpheusGUI
             }
 
             ParameterGrid.Items.Refresh();
-
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -403,7 +401,7 @@ namespace MetaMorpheusGUI
             !string.IsNullOrEmpty(hm.Text)) { }
         }
 
-        //upon clicking save button, settings are saved to memory in FileSettingsList in order to be 
+        //upon clicking save button, settings are saved to memory in FileSettingsList in order to be
         //written to a toml file later
         private void Save_Click(object sender, RoutedEventArgs e)
         {
@@ -595,18 +593,11 @@ namespace MetaMorpheusGUI
             }
 
             DialogResult = true;
-
         }
 
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !TextBoxIntAllowed(e.Text);
-        }
-
-        private static Boolean TextBoxIntAllowed(String Text2)
-        {
-            return Array.TrueForAll<Char>(Text2.ToCharArray(),
-                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
 
         private Parameter[] InitializeParameterList()
@@ -639,7 +630,7 @@ namespace MetaMorpheusGUI
         }
 
         //Undoes value(sets to null)
-        void Unset(object sender, RoutedEventArgs e)
+        private void Unset(object sender, RoutedEventArgs e)
         {
             int index = ParameterGrid.SelectedIndex;
             Parameter a = ParameterGrid.Items[index] as Parameter;
@@ -654,60 +645,79 @@ namespace MetaMorpheusGUI
                         case 0:
                             b.Protease = null;
                             break;
+
                         case 1:
                             b.ConserveMemory = null;
                             break;
+
                         case 2:
                             b.Max_mods_for_peptide = null;
                             break;
+
                         case 3:
                             b.DeconvolutionIntensityRatio = null;
                             break;
+
                         case 4:
                             b.DoPrecursorDeconvolution = null;
                             break;
+
                         case 5:
                             b.UseProvidedPrecursorInfo = null;
                             break;
+
                         case 6:
                             b.ScoreCutoff = null;
                             break;
+
                         case 7:
                             b.ProductMassTolerance = null;
                             break;
+
                         case 8:
                             b.DeconvolutionMaxAssumedChargeState = null;
                             break;
+
                         case 9:
                             b.TotalPartitions = null;
                             break;
+
                         case 10:
                             b.MaxModificationIsoforms = null;
                             break;
+
                         case 11:
                             b.MaxPeptideLength = null;
                             break;
+
                         case 12:
                             b.MinPeptideLength = null;
                             break;
+
                         case 13:
                             b.MaxMissedCleavages = null;
                             break;
+
                         case 14:
                             b.InitiatorMethionineBehavior = 0;
                             break;
+
                         case 15:
                             b.DeconvolutionMassTolerance = null;
                             break;
+
                         case 16:
                             b.TrimMsMsPeaks = null;
                             break;
+
                         case 17:
                             b.TrimMs1Peaks = null;
                             break;
+
                         case 18:
                             b.MinRatio = null;
                             break;
+
                         case 19:
                             b.TopNpeaks = null;
                             break;
@@ -723,7 +733,6 @@ namespace MetaMorpheusGUI
             DialogResult = false;
         }
 
+        #endregion Private Methods
     }
 }
-
-

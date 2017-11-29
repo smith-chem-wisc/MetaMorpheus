@@ -34,7 +34,7 @@ namespace Test
                 {
                     DoHistogramAnalysis = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
-                    SearchDecoy = false,
+                    DecoyType = DecoyType.None,
                     DoParsimony = true,
                     DoQuantification = true
                 },
@@ -49,19 +49,16 @@ namespace Test
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
             ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
 
-            var possMod1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep1_0 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep1_10 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass> { mod }).Last();
+            var pep1_0 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
+            var pep1_10 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Last();
 
             Protein prot3 = new Protein("MAAADAAAAAAAAAAAAAAA", "prot3");
 
-            var possMod3 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep2_0 = possMod3.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep2_10 = possMod3.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass> { mod }).Last();
+            var pep2_0 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
+            var pep2_10 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass> { mod }).Last();
 
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
-            var possMod4 = prot4.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep3_10 = possMod4.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass> { mod }).Last();
+            var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass> { mod }).Last();
 
             List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepsWithSetMods);
@@ -120,9 +117,8 @@ namespace Test
 
             Protein prot1 = new Protein("MEDEEK", "prot1", oneBasedModifications: oneBasedModification);
 
-            var possMod1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep1 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep2 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).Last();
+            var pep1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
+            var pep2 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Last();
 
             List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
             List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
