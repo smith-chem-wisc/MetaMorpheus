@@ -34,10 +34,14 @@ namespace EngineLayer
         static GlobalEngineLevelSettings()
         {
             var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles))
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+            {
                 dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+            }
             else
+            {
                 dataDir = AppDomain.CurrentDomain.BaseDirectory;
+            }
             elementsLocation = Path.Combine(dataDir, @"Data", @"elements.dat");
             unimodLocation = Path.Combine(dataDir, @"Data", @"unimod.xml");
             uniprotLocation = Path.Combine(dataDir, @"Data", @"ptmlist.txt");
@@ -88,7 +92,7 @@ namespace EngineLayer
 
         public static List<Modification> AllModsKnown { get; }
 
-        public static string NewestVersion { get; private set; }
+        public static string NewestKnownVersion { get; private set; }
 
         #endregion Public Properties
 
@@ -108,7 +112,7 @@ namespace EngineLayer
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
                     if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
                         throw new MetaMorpheusException("Necessary files do not exist!");
-                    NewestVersion = deserialized["tag_name"].ToString();
+                    NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
             }
         }

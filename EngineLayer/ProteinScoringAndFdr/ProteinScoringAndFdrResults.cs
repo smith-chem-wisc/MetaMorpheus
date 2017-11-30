@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace EngineLayer
 {
@@ -17,5 +19,17 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
+
+        #region Public Methods
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.Append("Number of proteins within 1% FDR: " + sortedAndScoredProteinGroups.Count(b => b.QValue < 0.01));
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
     }
 }

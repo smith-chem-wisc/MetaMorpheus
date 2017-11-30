@@ -14,7 +14,7 @@
   <Fragment>
     <UI Id="newDlg">
       <Dialog Id="MetaSCDlg" Width="370" Height="270" Title="!(loc.SetupTypeDlg_Title)">
-        <Control Id="OverwriteAppDataCheckBox" Type="CheckBox" X="20" Y="160" Width="290" Height="17" Property="OVERWRITEAPPDATA" CheckBoxValue="1" Text="Overwrite local data, mods and settings." />
+        <Control Id="OverwriteAppDataCheckBox" Type="CheckBox" X="20" Y="160" Width="290" Height="17" Property="OVERWRITEAPPDATA" CheckBoxValue="1" Text="Overwrite modification databases and user settings with updated default versions" />
         <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)" />
         <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Text="!(loc.WixUINext)" />
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
