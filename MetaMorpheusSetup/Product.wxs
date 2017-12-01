@@ -10,7 +10,7 @@
 
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
-    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
+    <Package Id="*" InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
     <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of MetaMorpheus is already installed."/>
         
     <Condition Message="This application is only supported on Windows 7 or higher.">
