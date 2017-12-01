@@ -40,9 +40,21 @@
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="RomoveApp"/>
+      <ComponentRef Id="DesktopShortcut"/>
     </Feature>
    
     <Directory Id="TARGETDIR" Name="SourceDir">
+      <!--Desktop Shortcut Installation-->
+      <Directory Id="DesktopFolder" Name="Desktop">
+        <Component Id="DesktopShortcut" Guid="ef1fd292-b162-4990-80cb-cd2a0c839d4b">
+          <Condition>INSTALLDESKTOPSHORTCUT</Condition>
+          <RegistryKey Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Action="createAndRemoveOnUninstall">
+            <RegistryValue Name="MetaMorpheusDeskTop" Value="1" Type="integer" KeyPath="yes"/>
+          </RegistryKey>
+          <Shortcut Id="AppDeskTopSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
+        </Component>
+      </Directory>
+      
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="DataFolder" Name="Data" />
