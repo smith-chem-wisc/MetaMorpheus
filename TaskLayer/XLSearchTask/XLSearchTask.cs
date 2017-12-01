@@ -117,7 +117,7 @@ namespace TaskLayer
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
-                ionTypes.Add(ProductType.B);
+                ionTypes.Add(ProductType.BnoB1ions);
             if (CommonParameters.YIons)
                 ionTypes.Add(ProductType.Y);
             if (CommonParameters.ZdotIons)
@@ -137,10 +137,13 @@ namespace TaskLayer
                 crosslinker.CleaveMassLong = (double)XlSearchParameters.UdXLkerLongMass;
                 crosslinker.CrosslinkerModSite = XlSearchParameters.UdXLkerResidue;
             }
+
             ParallelOptions parallelOptions = new ParallelOptions();
             if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             MyFileManager myFileManager = new MyFileManager(XlSearchParameters.DisposeOfFileWhenDone);
+
+            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -180,7 +183,9 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
+                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
                 List<PsmCross> newPsms = new List<PsmCross>();
+
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
@@ -191,59 +196,24 @@ namespace TaskLayer
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
                     List<CompactPeptide> peptideIndex = null;
-                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / CommonParameters.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / CommonParameters.TotalPartitions) - (currentPartition * proteinList.Count() / CommonParameters.TotalPartitions));
-
-                    float[] keys = null;
-                    List<int>[] fragmentIndex = null;
+                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     #region Generate indices for modern search
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.DecoyType, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string> { taskId });
-
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
+                    List<int>[] fragmentIndex = null;
                     lock (indexLock)
-                    {
-                        string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-
-                        if (pathToFolderWithIndices == null)
-                        {
-                            var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
-                            Status("Writing params...", new List<string> { taskId });
-                            WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
-
-                            Status("Running Index Engine...", new List<string> { taskId });
-                            var indexResults = (IndexingResults)indexEngine.Run();
-                            peptideIndex = indexResults.PeptideIndex;
-
-                            Status("Writing peptide index...", new List<string> { taskId });
-                            WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
-                            Status("Writing fragment index...", new List<string> { taskId });
-                            WriteFragmentIndexNetSerializer(fragmentIndex, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
-                        }
-                        else
-                        {
-                            Status("Reading peptide index...", new List<string> { taskId });
-                            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-                            var ser = new NetSerializer.Serializer(messageTypes);
-                            using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                                peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
-
-                            Status("Reading fragment index...", new List<string> { taskId });
-                            messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-                            ser = new NetSerializer.Serializer(messageTypes);
-                            using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                                fragmentIndex = (List<int>[])ser.Deserialize(file);
-                        }
-                    }
+                        GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
 
                     #endregion Generate indices for modern search
 
                     Status("Searching files...", taskId);
 
-                    if (XlSearchParameters.CrosslinkSearchWithAllBeta)
-                        new CrosslinkSearchEngine2(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, variableModifications, fixedModifications, CommonParameters, thisId).Run();
-                    else
-                        new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, CommonParameters.ProductMassTolerance, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, ionTypes, modsDictionary, XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
+                    //if (XlSearchParameters.CrosslinkSearchWithAllBeta)
+                    //    new CrosslinkSearchEngine2(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, variableModifications, fixedModifications, CommonParameters, thisId).Run();
+                    //else
+                        new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, CommonParameters.ProductMassTolerance, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, ionTypes, modsDictionary, XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                 }
@@ -575,6 +545,77 @@ namespace TaskLayer
             }
 
             SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+        }
+
+        private static void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.Create(peptideIndexFile))
+            {
+                ser.Serialize(file, peptideIndex);
+            }
+        }
+
+        private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
+        {
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+            if (pathToFolderWithIndices == null)
+            {
+                var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
+                Status("Writing params...", new List<string> { taskId });
+                var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
+                WriteIndexEngineParams(indexEngine, paramsFile);
+                SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
+
+                Status("Running Index Engine...", new List<string> { taskId });
+                var indexResults = (IndexingResults)indexEngine.Run();
+                peptideIndex = indexResults.PeptideIndex;
+                fragmentIndex = indexResults.FragmentIndex;
+
+                Status("Writing peptide index...", new List<string> { taskId });
+                var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
+                WritePeptideIndex(peptideIndex, peptideIndexFile);
+                SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+
+                Status("Writing fragment index...", new List<string> { taskId });
+                var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
+                WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
+                SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+            }
+            else
+            {
+                Status("Reading peptide index...", new List<string> { taskId });
+                var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                var ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                    peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+
+                Status("Reading fragment index...", new List<string> { taskId });
+                messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+                ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+                    fragmentIndex = (List<int>[])ser.Deserialize(file);
+            }
+        }
+
+        private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.Create(fragmentIndexFile))
+                ser.Serialize(file, fragmentIndex);
+        }
+
+        private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
+        {
+            using (StreamWriter output = new StreamWriter(fileName))
+            {
+                output.Write(indexEngine);
+            }
         }
 
         #endregion Private Methods
