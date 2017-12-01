@@ -53,6 +53,12 @@ PP   Anywhere.
 MT   Metal
 CF   H-1 Na1
 //
+ID   Potassium
+TG   D or E
+PP   Anywhere.
+MT   Metal
+CF   H-1 K1
+//
 ID   Dioxidation
 TG   W or P or R or K or M or F or Y or C
 PP   Anywhere.
