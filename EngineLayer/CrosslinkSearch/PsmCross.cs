@@ -19,7 +19,7 @@ namespace EngineLayer.CrosslinkSearch
 
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
-        private CompactPeptide compactPeptide;
+        public CompactPeptide compactPeptide;
 
         #endregion Private Fields
 
@@ -34,7 +34,7 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Properties
 
-        public CompactPeptide CompactPeptide { get { return compactPeptide; } set { compactPeptide = value; } }
+        //public CompactPeptide CompactPeptide { get { return compactPeptide; } set { compactPeptide = value; } }
 
         //public ProductMassesMightHave pmmh { get; set; }
         public double peptideMass { get; set; }
@@ -172,14 +172,14 @@ namespace EngineLayer.CrosslinkSearch
         public static void XLCalculateTotalProductMassesMightHave(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance)
         {
             bool CalculateHighCharge = false;
-            var modMass = theScan.PrecursorMass - psmCross.CompactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass;
-            int length = psmCross.CompactPeptide.NTerminalMasses.Length;
+            var modMass = theScan.PrecursorMass - psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass;
+            int length = psmCross.compactPeptide.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
             ProductMassesMightHave pmmhTop = new ProductMassesMightHave();
 
             List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
 
-            var linkPos = PsmCross.xlPosCal(psmCross.CompactPeptide, crosslinker);
+            var linkPos = PsmCross.xlPosCal(psmCross.compactPeptide, crosslinker);
 
             foreach (var ipos in linkPos)
             {
@@ -342,13 +342,13 @@ namespace EngineLayer.CrosslinkSearch
         public static void XLCalculateTotalProductMassesMightHaveDeadend(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, Double modMass)
         {
             bool CalculateHighCharge = false;
-            int length = psmCross.CompactPeptide.NTerminalMasses.Length;
+            int length = psmCross.compactPeptide.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
             ProductMassesMightHave pmmhTop = new ProductMassesMightHave();
 
             List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
 
-            var linkPos = PsmCross.xlPosCal(psmCross.CompactPeptide, crosslinker);
+            var linkPos = PsmCross.xlPosCal(psmCross.compactPeptide, crosslinker);
 
             foreach (var ipos in linkPos)
             {
@@ -358,9 +358,9 @@ namespace EngineLayer.CrosslinkSearch
                 List<string> y = new List<string>();
                 if (crosslinker.Cleavable)
                 {
-                    x.Add(psmCross.CompactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassLong);
+                    x.Add(psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassLong);
                     y.Add("PepL");
-                    x.Add(psmCross.CompactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassShort);
+                    x.Add(psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassShort);
                     y.Add("PepS");
                 }
                 for (int i = 0; i < pmmh.ProductMz.Length; i++)
@@ -521,15 +521,15 @@ namespace EngineLayer.CrosslinkSearch
             if (containsAdot)
                 throw new NotImplementedException();
             if (containsB)
-                massLen += CompactPeptide.NTerminalMasses.Length - 1;
+                massLen += compactPeptide.NTerminalMasses.Length - 1;
             if (containsC)
-                massLen += CompactPeptide.NTerminalMasses.Length;
+                massLen += compactPeptide.NTerminalMasses.Length;
             if (containsX)
                 throw new NotImplementedException();
             if (containsY)
-                massLen += CompactPeptide.CTerminalMasses.Length;
+                massLen += compactPeptide.CTerminalMasses.Length;
             if (containsZdot)
-                massLen += CompactPeptide.CTerminalMasses.Length;
+                massLen += compactPeptide.CTerminalMasses.Length;
 
             ProductMassesMightHave productMassMightHave = new ProductMassesMightHave(massLen);
             int i = 0;

@@ -70,13 +70,13 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 if (psmpair != null)
                 {
-                    var cp = psmpair.CompactPeptide;
+                    var cp = psmpair.compactPeptide;
                     if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
                         compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
 
                     if (psmpair.BetaPsmCross != null)
                     {
-                        var cp1 = psmpair.BetaPsmCross.CompactPeptide;
+                        var cp1 = psmpair.BetaPsmCross.compactPeptide;
                         if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp1))
                             compactPeptideToProteinPeptideMatching.Add(cp1, new HashSet<PeptideWithSetModifications>());
                     }
@@ -116,9 +116,6 @@ namespace EngineLayer.CrosslinkAnalysis
             });
 
             #endregion Match Seqeunces to PeptideWithSetModifications
-
-            List<PsmCross> allResultingIdentifications = new List<PsmCross>();
-            List<Tuple<PsmCross, PsmCross>> allResultingIdentificationsfdr = new List<Tuple<PsmCross, PsmCross>>();
 
             Status("Computing info about actual peptides with modifications...");
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)

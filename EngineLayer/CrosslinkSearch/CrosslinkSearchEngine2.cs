@@ -219,25 +219,25 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     for (int j = 0; j < newPsmsTop[i].Count; j++)
                     {
-                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
+                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].compactPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
                         {
                             newPsmsTop[i][j].XLTotalScore = newPsmsTop[i][j].Score;
                             newPsmsTop[i][j].CrossType = PsmCrossType.Singe;
                             AllCrossPsms.Add(newPsmsTop[i][j]);
                         }
-                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods + 156.0786) >= 0)
+                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].compactPeptide.MonoisotopicMassIncludingFixedMods + 156.0786) >= 0)
                         {
                             newPsmsTop[i][j].XLTotalScore = newPsmsTop[i][j].Score;
                             newPsmsTop[i][j].CrossType = PsmCrossType.DeadEnd;
                             AllCrossPsms.Add(newPsmsTop[i][j]);
                         }
-                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods + 138.06808) >= 0)
+                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].compactPeptide.MonoisotopicMassIncludingFixedMods + 138.06808) >= 0)
                         {
                             newPsmsTop[i][j].XLTotalScore = newPsmsTop[i][j].Score;
                             newPsmsTop[i][j].CrossType = PsmCrossType.Loop;
                             AllCrossPsms.Add(newPsmsTop[i][j]);
                         }
-                        if (newPsmsTop[i][j].ScanPrecursorMass - newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass > 500)
+                        if (newPsmsTop[i][j].ScanPrecursorMass - newPsmsTop[i][j].compactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass > 500)
                         {
                             allAlphaPsms.Add(newPsmsTop[i][j]);
                         }
@@ -322,7 +322,7 @@ namespace EngineLayer.CrosslinkSearch
         private List<PsmCross> ClassSearchTheBetaPeptide(Ms2ScanWithSpecificMass[] selectedScan, PsmCross[] selectedPsmParent, bool conserveMemory)
         {
             double[] selectedScanPrecusor = selectedScan.Select(p => p.PrecursorMass).ToArray();
-            double[] AlphaPeptidePrecusor = selectedPsmParent.Select(p => p.CompactPeptide.MonoisotopicMassIncludingFixedMods).ToArray();
+            double[] AlphaPeptidePrecusor = selectedPsmParent.Select(p => p.compactPeptide.MonoisotopicMassIncludingFixedMods).ToArray();
             double[] BetaPeptidePrecusor = selectedScanPrecusor.Zip(AlphaPeptidePrecusor, (one, two) => one - two - crosslinker.TotalMass).ToArray();
             //Sort the BetaPeptidePrecusor which is necessary for the GetAcceptableScans
             Array.Sort(BetaPeptidePrecusor.ToArray(), selectedPsmParent);
@@ -432,7 +432,7 @@ namespace EngineLayer.CrosslinkSearch
             List<PsmCross> newPsmsTop = new List<PsmCross>();
             for (int i = 0; i < outerPsms.Length; i++)
             {
-                if (outerPsms[i] != null && PsmCross.xlPosCal(selectedPsmParent[i].CompactPeptide, crosslinker).Count != 0)
+                if (outerPsms[i] != null && PsmCross.xlPosCal(selectedPsmParent[i].compactPeptide, crosslinker).Count != 0)
                 {
                     PsmCross.XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i], crosslinker, lp, CommonParameters.ProductMassTolerance);
                     selectedPsmParent[i].XLTotalScore = selectedPsmParent[i].XLBestScore + outerPsms[i].XLBestScore;
