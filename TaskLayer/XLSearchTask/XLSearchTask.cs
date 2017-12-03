@@ -29,8 +29,7 @@ namespace TaskLayer
             CommonParameters = new CommonParameters
             {
                 DoPrecursorDeconvolution = false,
-                ConserveMemory = false,
-                ScoreCutoff = 2
+                ScoreCutoff = 3
             };
             XlSearchParameters = new XlSearchParameters();
         }
@@ -178,9 +177,6 @@ namespace TaskLayer
 
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = " + XlSearchParameters.XlPrecusorMsTl + "; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
-            proseCreatedWhileRunning.Append("DoPrecursorDeconvolution = " + CommonParameters.DoPrecursorDeconvolution + "; ");
-            proseCreatedWhileRunning.Append("ConserveMemory = " + CommonParameters.ConserveMemory + "; ");
-            proseCreatedWhileRunning.Append("Score cutoff = " + CommonParameters.ScoreCutoff + "; ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
             #endregion 
 
@@ -240,7 +236,7 @@ namespace TaskLayer
             //{
             //    WriteAllToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
             //}
-            var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= 5 && p.BetaPsmCross.XLBestScore >= 5).ToList();
+            var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= 3 && p.BetaPsmCross.XLBestScore >= 2).ToList();
 
             #region Inter Crosslink
 

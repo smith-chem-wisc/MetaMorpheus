@@ -122,7 +122,20 @@
                             </Style>
                         </Expander.Style>
                         <StackPanel>
-
+                            <GroupBox Header="File Load Parameters">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <StackPanel Margin="5">
+                                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
+                                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="False" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </GroupBox>
                             <GroupBox Header="In-Silico Digestion Parameters">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -169,6 +182,10 @@
                                             <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
                                             <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
+                                            <TextBox x:Name="minScoreAllowed" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">

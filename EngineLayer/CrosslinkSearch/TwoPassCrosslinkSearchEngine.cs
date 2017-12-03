@@ -1,5 +1,4 @@
-﻿using Chemistry;
-using MassSpectrometry;
+﻿using MassSpectrometry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -133,7 +132,6 @@ namespace EngineLayer.CrosslinkSearch
                             Array.Sort(productMasses);
 
                             double thePrecursorMass = scan.PrecursorMass;
-                            //double score = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
                             int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMassIncludingFixedMods);
 
                             BestPeptideScoreNotch bestPeptideScoreNotch = new BestPeptideScoreNotch(peptide, 0, notch);
@@ -332,7 +330,7 @@ namespace EngineLayer.CrosslinkSearch
                     bestPsmCrossList.Add(psmCrossLoop);
                 }
                 //Cross-linked peptide
-                else if (theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 500)
+                else if (theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 300)
                 {
                     var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
                     for (int inx = ind; inx < theScanBestPeptide.Count; inx++)

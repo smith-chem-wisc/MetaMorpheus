@@ -169,6 +169,8 @@ namespace MetaMorpheusGUI
             txtXLBetaPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
+            deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
+            useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -181,6 +183,7 @@ namespace MetaMorpheusGUI
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
+            minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             ckbAllResults.IsChecked = task.XlSearchParameters.XlOutAll;
             ckbCLMSVault.IsChecked = task.XlSearchParameters.XlOutCLMSVault;
@@ -294,6 +297,8 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.UdXLkerTotalMass = double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
             }
 
+            CommonParamsToSave.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
+            CommonParamsToSave.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
             CommonParamsToSave.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             CommonParamsToSave.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
@@ -309,6 +314,7 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;
             CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             TheTask.XlSearchParameters.XlOutPercolator = ckbPercolator.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutPepXML = ckbPepXML.IsChecked.Value;

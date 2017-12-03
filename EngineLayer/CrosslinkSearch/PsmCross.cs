@@ -171,7 +171,7 @@ namespace EngineLayer.CrosslinkSearch
 
         public static void XLCalculateTotalProductMassesMightHave(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance)
         {
-            bool CalculateHighCharge = false;
+            bool CalculateHighCharge = true;
             var modMass = theScan.PrecursorMass - psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass;
             int length = psmCross.compactPeptide.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
@@ -217,8 +217,8 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
                             y.Add("t2b" + nm.ToString());
-                            //x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
-                            //y.Add("t3b" + nm.ToString());
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
+                            y.Add("t3b" + nm.ToString());
                         }
                         if (crosslinker.Cleavable)
                         {
@@ -238,8 +238,8 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
                             y.Add("t2c" + nm.ToString());
-                            //x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
-                            //y.Add("t3c" + nm.ToString());
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
+                            y.Add("t3c" + nm.ToString());
                         }
 
                         if (crosslinker.Cleavable)
@@ -261,8 +261,8 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
                             y.Add("t2y" + nm.ToString());
-                            //x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
-                            //y.Add("t3y" + nm.ToString());
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
+                            y.Add("t3y" + nm.ToString());
                         }
                         if (crosslinker.Cleavable)
                         {
@@ -282,8 +282,8 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
                             y.Add("t2z" + nm.ToString());
-                            //x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
-                            //y.Add("t3z" + nm.ToString());
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
+                            y.Add("t3z" + nm.ToString());
                         }
                         if (crosslinker.Cleavable)
                         {
