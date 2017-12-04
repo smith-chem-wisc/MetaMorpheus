@@ -595,10 +595,6 @@ namespace EngineLayer.CrosslinkSearch
             return productMassMightHave;
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
         public static int[] GenerateIntensityRanks(double[] experimental_mzs, double[] experimental_intensities)
         {
             var x = experimental_mzs;
@@ -608,7 +604,8 @@ namespace EngineLayer.CrosslinkSearch
             Array.Sort(x, experimental_intensities_rank);
             return experimental_intensities_rank;
         }
+        
+        #endregion Public Methods
 
-        #endregion Private Methods
     }
 }

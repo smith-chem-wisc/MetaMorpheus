@@ -123,13 +123,21 @@ namespace EngineLayer.CrosslinkSearch
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
+                        List<int> idsRankedByScore = new List<int>();
+                        foreach(var id in idsOfPeptidesPossiblyObserved)
+                        {
+                            idsRankedByScore.Add(id);
+                        }
 
+                        idsRankedByScore.OrderByDescending(p => scoringTable[p]);
+                        idsRankedByScore = idsRankedByScore.Take(1000).ToList();
+                        if (false)
+                        {
+                            idsOfPeptidesPossiblyObserved = idsRankedByScore;
+                        }
                         foreach (var id in idsOfPeptidesPossiblyObserved)
                         {
                             var peptide = peptideIndex[id];
-
-                            var productMasses = peptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                            Array.Sort(productMasses);
 
                             double thePrecursorMass = scan.PrecursorMass;
                             int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMassIncludingFixedMods);
@@ -137,6 +145,7 @@ namespace EngineLayer.CrosslinkSearch
                             BestPeptideScoreNotch bestPeptideScoreNotch = new BestPeptideScoreNotch(peptide, 0, notch);
                             bestPeptideScoreNotchList.Add(bestPeptideScoreNotch);
                         }
+
                         var possiblePsmCross = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, i);
                         if (possiblePsmCross != null)
                         {
