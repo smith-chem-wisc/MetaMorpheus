@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace Test
 {
@@ -51,6 +52,16 @@ namespace Test
             Assert.AreEqual(n2[4] - n2[3], 128.09496301518999, 1e-6);
             var x2 = PsmCross.xlPosCal(pep2.CompactPeptide(TerminusType.None), crosslinker).ToArray();
             Assert.AreEqual(x2[0], 4);
+        }
+
+        [Test]
+        public static void XLGetRankArrayOfDoubleArray()
+        {
+            double[] mz = new double[] { 1.0, 1.3, 1.5, 1.7, 1.9, 2.1 };
+            double[] intensity = new double[] { 1.1, 1.1, 0.5, 3.2, 0.5, 6.0};
+            int[] rank = PsmCross.GenerateIntensityRanks(mz, intensity);
+            int[] Rank = new int[] { 4, 3, 6, 2, 5, 1 };
+            Assert.AreEqual(rank, Rank);
         }
 
         #endregion Public Methods

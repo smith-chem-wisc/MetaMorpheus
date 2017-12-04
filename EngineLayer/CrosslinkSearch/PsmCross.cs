@@ -68,7 +68,7 @@ namespace EngineLayer.CrosslinkSearch
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
-            int[] experimental_intensities_rank = thisScan.MassSpectrum.YArray.Select((x, i) => new KeyValuePair<double, int>(x, i)).OrderBy(x => x.Key).Select(x => x.Value).ToArray();
+            int[] experimental_intensities_rank = GenerateIntensityRanks(experimental_mzs, experimental_intensities);
             int num_experimental_peaks = experimental_mzs.Length;
 
             int currentTheoreticalIndex = -1;
@@ -331,12 +331,12 @@ namespace EngineLayer.CrosslinkSearch
                         if (psmCross.matchedIonInfo.MatchedIonName[i].Contains("PepS"))
                         {
                             psmCross.ParentIonExist += "PepS";
-                            psmCross.ParentIonMaxIntensityRanks.Add(psmCross.matchedIonInfo.MatchedIonIntensityRank[i]+1);
+                            psmCross.ParentIonMaxIntensityRanks.Add(psmCross.matchedIonInfo.MatchedIonIntensityRank[i]);
                         }
                         if (psmCross.matchedIonInfo.MatchedIonName[i].Contains("PepL"))
                         {
                             psmCross.ParentIonExist += "PepL";
-                            psmCross.ParentIonMaxIntensityRanks.Add(psmCross.matchedIonInfo.MatchedIonIntensityRank[i]+1);
+                            psmCross.ParentIonMaxIntensityRanks.Add(psmCross.matchedIonInfo.MatchedIonIntensityRank[i]);
                         }
                     }
                 }
@@ -596,5 +596,19 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         #endregion Public Methods
+
+        #region Private Methods
+
+        public static int[] GenerateIntensityRanks(double[] experimental_mzs, double[] experimental_intensities)
+        {
+            var x = experimental_mzs;
+            var y = experimental_intensities;
+            Array.Sort(experimental_intensities, experimental_mzs);
+            var experimental_intensities_rank = Enumerable.Range(1, y.Length).OrderByDescending(p => p).ToArray();
+            Array.Sort(x, experimental_intensities_rank);
+            return experimental_intensities_rank;
+        }
+
+        #endregion Private Methods
     }
 }
