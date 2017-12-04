@@ -236,15 +236,15 @@ namespace TaskLayer
             //{
             //    WriteAllToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
             //}
-            var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= 3 && p.BetaPsmCross.XLBestScore >= 2).ToList();
+            var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= 3.02 && p.BetaPsmCross.XLBestScore >= 3.02).ToList();
 
             #region Inter Crosslink
 
             //Write Inter Psms FDR
             var interPsmsXL = allPsmsXL.Where(p => !p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) &&
             !p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
-            //var interPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXL).ToList();
-            var interPsmsXLFDR = CrosslinkFDRAnalysis(interPsmsXL).ToList();
+            var interPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXL).ToList();
+            //var interPsmsXLFDR = CrosslinkFDRAnalysis(interPsmsXL).ToList();
             if (XlSearchParameters.XlOutCrosslink)
             {
                 WriteCrosslinkToTsv(interPsmsXLFDR, OutputFolder, "xl_inter_fdr", new List<string> { taskId });

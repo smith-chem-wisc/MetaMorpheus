@@ -46,6 +46,7 @@ namespace EngineLayer.CrosslinkSearch
         public int XlPos { get; set; }
         public int[] XlRank { get; set; }
         public string ParentIonExist { get; set; }
+        public List<int> ParentIonMaxIntensityRanks { get; set; }
         public int Charge2IonExist { get; set; }
         public PsmCross BetaPsmCross { get; set; }
         public PsmCrossType CrossType { get; set; }
@@ -67,6 +68,7 @@ namespace EngineLayer.CrosslinkSearch
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
+            int[] experimental_intensities_rank = thisScan.MassSpectrum.YArray.Select((x, i) => new KeyValuePair<double, int>(x, i)).OrderBy(x => x.Key).Select(x => x.Value).ToArray();
             int num_experimental_peaks = experimental_mzs.Length;
 
             int currentTheoreticalIndex = -1;
@@ -97,6 +99,7 @@ namespace EngineLayer.CrosslinkSearch
                     matchedIonMassesListPositiveIsMatch.MatchedIonMz[currentTheoreticalIndex] = currentTheoreticalMass;
                     matchedIonMassesListPositiveIsMatch.MatchedIonIntensity[currentTheoreticalIndex] = experimental_intensities[experimentalIndex];
                     matchedIonMassesListPositiveIsMatch.MatchedIonName[currentTheoreticalIndex] = sorted_theoretical_product_name_for_this_peptide[currentTheoreticalIndex];
+                    matchedIonMassesListPositiveIsMatch.MatchedIonIntensityRank[currentTheoreticalIndex] = experimental_intensities_rank[experimentalIndex];
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
@@ -191,8 +194,12 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     x.Add(theScan.PrecursorMass - modMass - crosslinker.CleaveMassLong);
                     y.Add("PepS");
+                    //x.Add((theScan.PrecursorMass - modMass - crosslinker.CleaveMassLong)/2);
+                    //y.Add("PepS2");
                     x.Add(theScan.PrecursorMass - modMass - crosslinker.CleaveMassShort);
                     y.Add("PepL");
+                    //x.Add((theScan.PrecursorMass - modMass - crosslinker.CleaveMassShort)/2);
+                    //y.Add("PepL2");
                 }
                 for (int i = 0; i < pmmh.ProductMz.Length; i++)
                 {
@@ -316,13 +323,22 @@ namespace EngineLayer.CrosslinkSearch
             psmCross.XlPos = pmmhList[scoreList.IndexOf(scoreList.Max())].XlPos + 1;
             if (crosslinker.Cleavable)
             {
-                if (psmCross.matchedIonInfo.MatchedIonName.Contains("PepS"))
+                psmCross.ParentIonMaxIntensityRanks = new List<int>();
+                for (int i = 0; i < psmCross.matchedIonInfo.MatchedIonName.Length; i++)
                 {
-                    psmCross.ParentIonExist += "PepS";
-                }
-                if (psmCross.matchedIonInfo.MatchedIonName.Contains("PepL"))
-                {
-                    psmCross.ParentIonExist += "PepL";
+                    if (psmCross.matchedIonInfo.MatchedIonName[i]!=null)
+                    {
+                        if (psmCross.matchedIonInfo.MatchedIonName[i].Contains("PepS"))
+                        {
+                            psmCross.ParentIonExist += "PepS";
+                            psmCross.ParentIonMaxIntensityRanks.Add(psmCross.matchedIonInfo.MatchedIonIntensityRank[i]+1);
+                        }
+                        if (psmCross.matchedIonInfo.MatchedIonName[i].Contains("PepL"))
+                        {
+                            psmCross.ParentIonExist += "PepL";
+                            psmCross.ParentIonMaxIntensityRanks.Add(psmCross.matchedIonInfo.MatchedIonIntensityRank[i]+1);
+                        }
+                    }
                 }
             }
             if (CalculateHighCharge)

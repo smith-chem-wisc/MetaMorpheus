@@ -351,10 +351,10 @@ namespace EngineLayer.CrosslinkSearch
                             }
                             psmCrossAlpha.XlRank = new int[] { ind, inx };
                             psmCrossAlpha.XLTotalScore = psmCrossAlpha.XLBestScore + psmCrossBeta.XLBestScore;
-                            psmCrossAlpha.XLQvalueTotalScore = Math.Sqrt(psmCrossAlpha.XLBestScore) * psmCrossBeta.XLBestScore;
-                            psmCrossAlpha.CrossType = PsmCrossType.Cross;
+                            psmCrossAlpha.XLQvalueTotalScore = Math.Sqrt(psmCrossAlpha.XLBestScore) * psmCrossBeta.XLBestScore;                           
                             psmCrossAlpha.BetaPsmCross = psmCrossBeta;
-
+                            psmCrossAlpha.ParentIonMaxIntensityRanks.AddRange(psmCrossBeta.ParentIonMaxIntensityRanks);
+                            psmCrossAlpha.CrossType = PsmCrossType.Cross;
                             bestPsmCrossList.Add(psmCrossAlpha);
                         }
                     }
@@ -373,7 +373,6 @@ namespace EngineLayer.CrosslinkSearch
 
             return bestPsmCross;
         }
-
 
         #endregion Private Methods
     }

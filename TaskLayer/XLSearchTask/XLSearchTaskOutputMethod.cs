@@ -20,9 +20,9 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
-                    "\tPep1\tPep1 Protein Access(Protein link site)\tPep1 Base sequence(crosslink site)\tPep1 Full sequence\tPep1 mass\tPep1 Score\tPep1 XLBestScore\tPep1 Rank" +
-                    "\tPep2\tPep2 Protein Access(Protein link site)\tPep2 Base sequence(crosslink site)\tPep2 Full sequence\tPep2 mass\tPep2 Score\tPep2 XLBestScore\tPep2 Rank" +
-                    "\tSummary\tQvalueTotalScore\tMass diff\tQValue\tParentIons\tCharge2Number\tLabel");
+                    "\tPep1\tPep1 Protein Access(Protein link site)\tPep1 Base sequence(crosslink site)\tPep1 Full sequence\tPep1 mass\tPep1 XLBestScore\tPep1 Rank" +
+                    "\tPep2\tPep2 Protein Access(Protein link site)\tPep2 Base sequence(crosslink site)\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tPep2 Rank" +
+                    "\tSummary\tQvalueTotalScore\tMass diff\tQValue\tParentIons\tParentIonMaxIntensityRank\tCharge2Number\tLabel");
                 foreach (var item in items)
                 {
                     string label = "1";
@@ -43,7 +43,7 @@ namespace TaskLayer
                                             + "\t" + item.BaseSequence + "(" + item.XlPos.ToString(CultureInfo.InvariantCulture) + ")"
                                             + "\t" + item.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence
                                             + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
-                                            + "\t" + item.Score.ToString(CultureInfo.InvariantCulture)
+                                            //"\t" + item.Score.ToString(CultureInfo.InvariantCulture)
                                             + "\t" + item.XLBestScore.ToString(CultureInfo.InvariantCulture)
                                             + "\t" + item.XlRank[0].ToString(CultureInfo.InvariantCulture)
                                             + "\t"
@@ -52,7 +52,7 @@ namespace TaskLayer
                                             + "\t" + item.BetaPsmCross.BaseSequence + "(" + item.BetaPsmCross.XlPos.ToString(CultureInfo.InvariantCulture) + ")"
                                             + "\t" + item.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence
                                             + "\t" + (item.BetaPsmCross.PeptideMonisotopicMass.HasValue ? item.BetaPsmCross.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
-                                            + "\t" + item.BetaPsmCross.Score.ToString(CultureInfo.InvariantCulture)
+                                            //"\t" + item.BetaPsmCross.Score.ToString(CultureInfo.InvariantCulture)
                                             + "\t" + item.BetaPsmCross.XLBestScore.ToString(CultureInfo.InvariantCulture)
                                             + "\t" + item.XlRank[1].ToString(CultureInfo.InvariantCulture)
                                             + "\t"
@@ -60,6 +60,7 @@ namespace TaskLayer
                                             + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPsmCross.PeptideMonisotopicMass.HasValue) ? (item.BetaPsmCross.ScanPrecursorMass - item.BetaPsmCross.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value).ToString(CultureInfo.InvariantCulture) : "---")
                                             + "\t" + (item.FdrInfo != null ? item.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture) : "-")
                                             + "\t" + item.ParentIonExist + "." + item.BetaPsmCross.ParentIonExist
+                                            + "\t" + ((item.ParentIonMaxIntensityRanks.Any()) ? item.ParentIonMaxIntensityRanks.Min().ToString(CultureInfo.InvariantCulture) : "-")
                                             + "\t" + (item.Charge2IonExist + item.BetaPsmCross.Charge2IonExist).ToString(CultureInfo.InvariantCulture)
                                             + "\t" + label
                                             );
