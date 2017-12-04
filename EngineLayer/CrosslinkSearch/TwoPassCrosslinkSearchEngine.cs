@@ -27,6 +27,7 @@ namespace EngineLayer.CrosslinkSearch
 
         //Crosslink parameters
         private readonly CrosslinkerTypeClass crosslinker;
+        private readonly bool CrosslinkSearchTop;
         private readonly int CrosslinkSearchTopNum;
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLPrecusorMsTl;
@@ -41,7 +42,7 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Constructors
 
-        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris,List<string> nestedIds) : base(nestedIds)
+        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris,List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsmsCross = globalPsmsCross;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -61,6 +62,7 @@ namespace EngineLayer.CrosslinkSearch
             //    XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLPrecusorMsTl.Value);
             //}
             this.crosslinker = crosslinker;
+            this.CrosslinkSearchTop = CrosslinkSearchTop;
             this.CrosslinkSearchTopNum = CrosslinkSearchTopNum;
             this.quench_H2O = quench_H2O;
             this.quench_NH2 = quench_NH2;
@@ -131,7 +133,7 @@ namespace EngineLayer.CrosslinkSearch
 
                         idsRankedByScore.OrderByDescending(p => scoringTable[p]);
                         idsRankedByScore = idsRankedByScore.Take(1000).ToList();
-                        if (false)
+                        if (CrosslinkSearchTop)
                         {
                             idsOfPeptidesPossiblyObserved = idsRankedByScore;
                         }

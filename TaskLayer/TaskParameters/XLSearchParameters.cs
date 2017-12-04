@@ -12,6 +12,7 @@ namespace TaskLayer
         {
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSSO;
+            CrosslinkSearchTop = false;
             CrosslinkSearchTopNum = 300;
             CrosslinkSearchWithAllBeta = false;
             UdXLkerName = null;
@@ -41,6 +42,7 @@ namespace TaskLayer
         public bool DoLocalizationAnalysis { get; set; }
 
         public CrosslinkerType CrosslinkerType { get; set; }
+        public bool CrosslinkSearchTop { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
         public bool CrosslinkSearchWithAllBeta { get; set; }
         public string UdXLkerName { get; set; }

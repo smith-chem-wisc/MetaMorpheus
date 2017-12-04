@@ -155,6 +155,7 @@ namespace MetaMorpheusGUI
         {
             //Crosslink search para
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
+            ckbXLTopNum.IsChecked = task.XlSearchParameters.CrosslinkSearchTop;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbSearchWithXLAllBeta.IsChecked = task.XlSearchParameters.CrosslinkSearchWithAllBeta;
             txtUdXLKerName.Text = task.XlSearchParameters.UdXLkerName;
@@ -274,7 +275,7 @@ namespace MetaMorpheusGUI
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             CommonParameters CommonParamsToSave = new CommonParameters();
-
+            TheTask.XlSearchParameters.CrosslinkSearchTop = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkSearchWithAllBeta = ckbSearchWithXLAllBeta.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;

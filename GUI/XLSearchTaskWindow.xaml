@@ -71,8 +71,9 @@
                                     <ComboBox x:Name="cbCrosslinker" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
-                                    <Label x:Name="lblXLTopNum" Content="Search Top matches" />
-                                    <TextBox x:Name="txtXLTopNum" Width="45" />
+                                    <CheckBox x:Name="ckbXLTopNum" Content="Search Top matches"/>
+                                    <Label x:Name="lblXLTopNum" Content="Top Num" />
+                                    <TextBox x:Name="txtXLTopNum" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}"/>
                                 </StackPanel>
                             </Grid>
                             <GroupBox>
