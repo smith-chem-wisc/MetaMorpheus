@@ -109,7 +109,7 @@ namespace Test
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
             foreach (var huh in newPsms)
-                if (huh != null && huh.MostProbableProteinInfo == null)
+                if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchModes, new List<string> { "ff" });

@@ -257,7 +257,7 @@ namespace EngineLayer
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
             {
-                foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
+                foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                 {
                     if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out List<PeptideWithSetModifications> temp))
                         temp.Add(pepWithSetMods);
@@ -406,7 +406,7 @@ namespace EngineLayer
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
             var allPsmsForThisFile = new HashSet<Psm>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.MostProbableProteinInfo.PeptidesWithSetModifications));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.CompactPeptides.SelectMany(b => b.Value.Item2)));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
 
             ProteinGroup subsetPg = new ProteinGroup(this.Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)
