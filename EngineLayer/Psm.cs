@@ -389,16 +389,6 @@ namespace EngineLayer
             }
         }
 
-        private static bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
-        {
-            if (firstPli.IsDecoy && !secondPli.IsDecoy)
-                return true;
-            if (!firstPli.IsDecoy && secondPli.IsDecoy)
-                return false;
-
-            return true;
-        }
-
         private Tuple<string, Dictionary<string, int>> Resolve(IEnumerable<Dictionary<int, ModificationWithMass>> enumerable)
         {
             Dictionary<string, int> ok = enumerable.First().Values.OrderBy(b => b.id).GroupBy(b => b.id).ToDictionary(b => b.Key, b => b.Count());
