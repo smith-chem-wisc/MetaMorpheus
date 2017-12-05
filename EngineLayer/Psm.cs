@@ -63,7 +63,6 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
 
-        public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
