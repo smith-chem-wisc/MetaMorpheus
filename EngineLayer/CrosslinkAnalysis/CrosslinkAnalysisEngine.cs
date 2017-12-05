@@ -124,12 +124,12 @@ namespace EngineLayer.CrosslinkAnalysis
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
                 var huh = newPsms[myScanWithMassIndex];
-                if (huh != null && huh.MostProbableProteinInfo == null)
+                if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 if (huh != null)
                 {
                     var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
-                    if (huh1 != null && huh1.MostProbableProteinInfo == null)
+                    if (huh1 != null)
                         huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 }
             }
