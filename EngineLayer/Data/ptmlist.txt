@@ -10,7 +10,7 @@
 
 Description: Controlled vocabulary of posttranslational modifications (PTM)
 Name:        ptmlist.txt
-Release:     2017_08 of 30-Aug-2017
+Release:     2017_11 of 22-Nov-2017
 
 ---------------------------------------------------------------------------
 
@@ -299,6 +299,106 @@ TR   Eukaryota; taxId:6073 (Cnidaria).
 DR   RESID; AA0183.
 DR   PSI-MOD; MOD:00191.
 //
+ID   2,3-didehydrotyrosine
+AC   PTM-0008
+FT   MOD_RES
+TG   Tyrosine.
+PA   Amino acid backbone.
+PP   Protein core.
+CF   H-2
+MM   -2.015650
+MA   -2.02
+LC   Intracellular localisation.
+TR   Eukaryota; taxId:6073 (Cnidaria).
+DR   PSI-MOD; MOD:00706.
+//
+ID   2,3-didehydroalanine (Cys)
+AC   PTM-0468
+FT   MOD_RES
+TG   Cysteine.
+PA   Amino acid backbone.
+PP   Protein core.
+CF   H-2 S-1
+MM   -33.987721
+MA   -34.08
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+TR   Eukaryota; taxId:4932 (Saccharomyces cerevisiae).
+DR   RESID; AA0181.
+DR   PSI-MOD; MOD:00793.
+//
+ID   2,3-didehydroalanine (Ser)
+AC   PTM-0006
+FT   MOD_RES
+TG   Serine.
+PA   Amino acid backbone.
+PP   Protein core.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
+LC   Intracellular localisation.
+TR   Archaea; taxId:28890 (Euryarchaeota).
+TR   Bacteria; taxId:2 (Bacteria).
+TR   Eukaryota; taxId:2759 (Eukaryota).
+DR   RESID; AA0181.
+DR   PSI-MOD; MOD:00189.
+//
+ID   2,3-didehydroalanine (Tyr)
+AC   PTM-0647
+FT   MOD_RES
+TG   Tyrosine.
+PA   Amino acid backbone.
+PP   Protein core.
+CF   C-6 H-6 O-1
+MM   -94.041865
+MA   -94.11
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+TR   Eukaryota; taxId:2759 (Eukaryota).
+DR   RESID; AA0181.
+DR   PSI-MOD; MOD:00824.
+//
+ID   (E)-2,3-didehydrobutyrine
+AC   PTM-0441
+FT   MOD_RES
+TG   Threonine.
+PA   Amino acid backbone.
+PP   Protein core.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
+LC   Intracellular localisation.
+TR   Bacteria; taxId:932694 (Streptomyces sp. OH-4156).
+DR   RESID; AA0547.
+DR   PSI-MOD; MOD:01470.
+//
+ID   (Z)-2,3-didehydrobutyrine
+AC   PTM-0440
+FT   MOD_RES
+TG   Threonine.
+PA   Amino acid backbone.
+PP   Protein core.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
+LC   Extracellular localisation.
+TR   Bacteria; taxId:1239 (Firmicutes).
+DR   RESID; AA0182.
+DR   PSI-MOD; MOD:01471.
+//
+ID   2,3-didehydrobutyrine
+AC   PTM-0007
+FT   MOD_RES
+TG   Threonine.
+PA   Amino acid backbone.
+PP   Protein core.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
+LC   Extracellular localisation.
+TR   Bacteria; taxId:1239 (Firmicutes).
+DR   PSI-MOD; MOD:00190.
+//
 ID   1-amino-2-propanone
 AC   PTM-0379
 FT   MOD_RES
@@ -373,93 +473,6 @@ TR   Eukaryota; taxId:6447 (Mollusca), taxId:91827 (Gunneridae), taxId:451864 (D
 KW   Thioether bond.
 DR   RESID; AA0109.
 DR   PSI-MOD; MOD:00118.
-//
-ID   2,3-didehydroalanine (Cys)
-AC   PTM-0468
-FT   MOD_RES
-TG   Cysteine.
-PA   Amino acid backbone.
-PP   Protein core.
-CF   H-2 S-1
-MM   -33.987721
-MA   -34.08
-LC   Intracellular localisation.
-TR   Eukaryota; taxId:4932 (Saccharomyces cerevisiae).
-DR   RESID; AA0181.
-DR   PSI-MOD; MOD:00793.
-//
-ID   2,3-didehydroalanine (Ser)
-AC   PTM-0006
-FT   MOD_RES
-TG   Serine.
-PA   Amino acid backbone.
-PP   Protein core.
-CF   H-2 O-1
-MM   -18.010565
-MA   -18.02
-LC   Intracellular localisation.
-TR   Archaea; taxId:28890 (Euryarchaeota).
-TR   Bacteria; taxId:2 (Bacteria).
-TR   Eukaryota; taxId:2759 (Eukaryota).
-DR   RESID; AA0181.
-DR   PSI-MOD; MOD:00189.
-//
-ID   (E)-2,3-didehydrobutyrine
-AC   PTM-0441
-FT   MOD_RES
-TG   Threonine.
-PA   Amino acid backbone.
-PP   Protein core.
-CF   H-2 O-1
-MM   -18.010565
-MA   -18.02
-LC   Intracellular localisation.
-TR   Bacteria; taxId:932694 (Streptomyces sp. OH-4156).
-DR   RESID; AA0547.
-DR   PSI-MOD; MOD:01841.
-//
-ID   (Z)-2,3-didehydrobutyrine
-AC   PTM-0440
-FT   MOD_RES
-TG   Threonine.
-PA   Amino acid backbone.
-PP   Protein core.
-CF   H-2 O-1
-MM   -18.010565
-MA   -18.02
-LC   Extracellular localisation.
-TR   Bacteria; taxId:1239 (Firmicutes).
-DR   RESID; AA0182.
-DR   PSI-MOD; MOD:00190.
-//
-ID   2,3-didehydrobutyrine
-AC   PTM-0007
-FT   MOD_RES
-TG   Threonine.
-PA   Amino acid backbone.
-PP   Protein core.
-CF   H-2 O-1
-MM   -18.010565
-MA   -18.02
-LC   Extracellular localisation.
-TR   Bacteria; taxId:1239 (Firmicutes).
-DR   RESID; AA0182.
-DR   RESID; AA0547.
-DR   PSI-MOD; MOD:00190.
-DR   PSI-MOD; MOD:01841.
-//
-ID   2,3-didehydrotyrosine
-AC   PTM-0008
-FT   MOD_RES
-TG   Tyrosine.
-PA   Amino acid backbone.
-PP   Protein core.
-CF   H-2
-MM   -2.015650
-MA   -2.02
-LC   Intracellular localisation.
-TR   Eukaryota; taxId:6073 (Cnidaria).
-DR   PSI-MOD; MOD:00706.
 //
 ID   2',4',5'-topaquinone
 AC   PTM-0009
@@ -699,7 +712,7 @@ ID   3-(O4'-tyrosyl)-valine (Val-Tyr)
 AC   PTM-0390
 FT   CROSSLNK
 TG   Valine-Tyrosine.
-PA   Amino acid backbone-Amino acid side chain.
+PA   Amino acid side chain-Amino acid side chain.
 PP   Anywhere-Anywhere.
 CF   H-2
 MM   -2.015650
@@ -978,7 +991,7 @@ AC   PTM-0434
 FT   MOD_RES
 TG   Tyrosine.
 PA   Amino acid side chain.
-PP   Protein core.
+PP   Anywhere.
 CF   H-1 N1 O2
 MM   44.985078
 MA   45.00
@@ -1659,6 +1672,19 @@ KW   ADP-ribosylation.
 DR   RESID; AA0169.
 DR   PSI-MOD; MOD:00178.
 //
+ID   ADP-ribosyl glutamic acid
+AC   PTM-0646
+FT   MOD_RES
+TG   Glutamate.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C15 H21 N5 O13 P2
+MM   541.061109
+MA   541.30
+LC   Intracellular localisation.
+TR   Eukaryota; taxId:40674 (Mammalia).
+KW   ADP-ribosylation.
+//
 ID   ADP-ribosylserine
 AC   PTM-0056
 FT   MOD_RES
@@ -2261,6 +2287,18 @@ MA   -18.02
 LC   Extracellular and lumenal localisation.
 TR   Eukaryota; taxId:71240 (eudicotyledons).
 //
+ID   Cyclopeptide (Gly-Arg)
+AC   PTM-0643
+FT   CROSSLNK
+TG   Glycine-Arginine.
+PA   Amino acid backbone-Amino acid backbone.
+PP   N-terminal-C-terminal.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
+LC   Extracellular and lumenal localisation.
+TR   Eukaryota; taxId:71240 (eudicotyledons).
+//
 ID   Cyclopeptide (Gly-Asn)
 AC   PTM-0098
 FT   CROSSLNK
@@ -2404,6 +2442,18 @@ MM   -18.010565
 MA   -18.02
 LC   Extracellular and lumenal localisation.
 TR   Eukaryota; taxId:3674 (Momordica cochinchinensis).
+//
+ID   Cyclopeptide (Ser-Lys)
+AC   PTM-0644
+FT   CROSSLNK
+TG   Serine-Lysine.
+PA   Amino acid backbone-Amino acid backbone.
+PP   N-terminal-C-terminal.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
+LC   Extracellular and lumenal localisation.
+TR   Eukaryota; taxId:71240 (eudicotyledons).
 //
 ID   CysO-cysteine adduct
 AC   PTM-0433
@@ -3029,11 +3079,28 @@ FT   CROSSLNK
 TG   Cysteine-Glycine.
 PA   Amino acid side chain-Amino acid backbone.
 PP   Anywhere-C-terminal.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
 LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
 TR   Eukaryota; taxId:2759 (Eukaryota).
 KW   Thioester bond.
 DR   RESID; AA0206.
 DR   PSI-MOD; MOD:00211.
+//
+ID   Glycyl cysteine thioester (Gly-Cys) (interchain with C-...)
+AC   PTM-0648
+FT   CROSSLNK
+TG   Glycine-Cysteine.
+PA   Amino acid backbone-Amino acid side chain.
+PP   C-terminal-Anywhere.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+KW   Thioester bond.
 //
 ID   Glycyl lysine isopeptide (Gly-Lys) (interchain with K-...)
 AC   PTM-0134
@@ -3041,6 +3108,9 @@ FT   CROSSLNK
 TG   Glycine-Lysine.
 PA   Amino acid backbone-Amino acid side chain.
 PP   C-terminal-Anywhere.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
 LC   Intracellular localisation.
 TR   Archaea; taxId:2157 (Archaea).
 TR   Bacteria; taxId:2 (Bacteria).
@@ -3055,6 +3125,9 @@ FT   CROSSLNK
 TG   Lysine-Glycine.
 PA   Amino acid side chain-Amino acid backbone.
 PP   Anywhere-C-terminal.
+CF   H-2 O-1
+MM   -18.010565
+MA   -18.02
 LC   Intracellular localisation.
 TR   Archaea; taxId:2157 (Archaea).
 TR   Bacteria; taxId:2 (Bacteria).
@@ -4288,7 +4361,7 @@ CF   C4 H4 O1
 MM   68.026215
 MA   68.07
 LC   Intracellular localisation.
-TR   Eukaryota; taxId:7742 (Vertebrata).
+TR   Eukaryota; taxId:2759 (Eukaryota).
 DR   RESID; AA0567.
 DR   PSI-MOD; MOD:01892.
 //
@@ -4419,9 +4492,6 @@ FT   MOD_RES
 TG   Lysine.
 PA   Amino acid side chain.
 PP   Anywhere.
-CF   C24 H54 N6
-MM   426.440996
-MA   426.74
 LC   Extracellular and lumenal localisation.
 TR   Eukaryota; taxId:2853 (Cylindrotheca fusiformis).
 KW   Methylation.
@@ -4457,7 +4527,35 @@ LC   Intracellular localisation.
 TR   Bacteria; taxId:2 (Bacteria).
 TR   Eukaryota; taxId:2759 (Eukaryota).
 //
-ID   N6-(beta-hydroxybutyrate)lysine
+ID   N6-butyryllysine
+AC   PTM-0637
+FT   MOD_RES
+TG   Lysine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C4 H6 O1
+MM   70.041865
+MA   70.09
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+TR   Eukaryota; taxId:2759 (Eukaryota).
+DR   RESID; AA0532.
+DR   PSI-MOD; MOD:01781.
+//
+ID   N6-(2-hydroxyisobutyryl)lysine
+AC   PTM-0638
+FT   MOD_RES
+TG   Lysine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C4 H6 O2
+MM   86.036780
+MA   86.09
+LC   Intracellular localisation.
+TR   Eukaryota; taxId:2759 (Eukaryota).
+KW   Hydroxylation.
+//
+ID   N6-(beta-hydroxybutyryl)lysine
 AC   PTM-0499
 FT   MOD_RES
 TG   Lysine.
@@ -4467,8 +4565,57 @@ CF   C4 H7 O2
 MM   87.044604
 MA   87.09
 LC   Intracellular localisation.
-TR   Eukaryota; taxId:40674 (Mammalia).
+TR   Eukaryota; taxId:2759 (Eukaryota).
 KW   Hydroxylation.
+//
+ID   N6-poly(beta-hydroxybutyryl)lysine
+AC   PTM-0639
+FT   MOD_RES
+TG   Lysine.
+PA   Amino acid side chain.
+PP   Anywhere.
+LC   Intracellular localisation.
+TR   Eukaryota; taxId:2759 (Eukaryota).
+KW   Hydroxylation.
+//
+ID   O3-poly(beta-hydroxybutyryl)serine
+AC   PTM-0640
+FT   MOD_RES
+TG   Serine.
+PA   Amino acid side chain.
+PP   Anywhere.
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+KW   Hydroxylation.
+DR   RESID; AA0618.
+DR   PSI-MOD; MOD:01976.
+//
+ID   S-poly(beta-hydroxybutyryl)cysteine
+AC   PTM-0641
+FT   MOD_RES
+TG   Cysteine.
+PA   Amino acid side chain.
+PP   Anywhere.
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+KW   Hydroxylation.
+DR   RESID; AA0617.
+DR   PSI-MOD; MOD:01975.
+//
+ID   N6-propionyllysine
+AC   PTM-0642
+FT   MOD_RES
+TG   Lysine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C3 H4 O1
+MM   56.026215
+MA   56.06
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+TR   Eukaryota; taxId:40674 (Mammalia).
+DR   RESID; AA0475.
+DR   PSI-MOD; MOD:01398.
 //
 ID   N-[(12R)-12-hydroxymyristoyl]cysteine
 AC   PTM-0419
@@ -4783,7 +4930,7 @@ AC   PTM-0483
 FT   MOD_RES
 TG   Glycine.
 PA   Amino acid backbone.
-PP   Anywhere.
+PP   N-terminal.
 CF   C1 H2
 MM   14.015650
 MA   14.03
@@ -5823,7 +5970,7 @@ ID   S-(15-deoxy-Delta12,14-prostaglandin J2-9-yl)cysteine
 AC   PTM-0447
 FT   LIPID
 TG   Cysteine.
-PA   Amino acid backbone.
+PA   Amino acid side chain.
 PP   Anywhere.
 CF   C20 H28 O3
 MM   316.203845
@@ -6813,7 +6960,7 @@ TR   Eukaryota; taxId:2759 (Eukaryota).
 DR   RESID; AA0596.
 DR   PSI-MOD; MOD:01950.
 //
-ID   O-palmitoleyl serine
+ID   O-palmitoleoyl serine
 AC   PTM-0493
 FT   LIPID
 TG   Serine.
@@ -6826,6 +6973,20 @@ TR   Eukaryota; taxId:2759 (Eukaryota).
 KW   Lipoprotein.
 DR   RESID; AA0455.
 DR   PSI-MOD; MOD:01381.
+//
+ID   S-palmitoleoyl cysteine
+AC   PTM-0645
+FT   LIPID
+TG   Cysteine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C 16 H 28 O 1
+MM   236.214016
+MA   236.40
+TR   Eukaryota; taxId:2759 (Eukaryota).
+KW   Lipoprotein.
+DR   RESID; AA0308.
+DR   PSI-MOD; MOD:00313.
 //
 ID   C-linked (Man) hydroxytryptophan
 AC   PTM-0504
