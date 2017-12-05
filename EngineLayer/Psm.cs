@@ -10,7 +10,7 @@ using System.Text;
 namespace EngineLayer
 {
     public class Psm
-    {
+    { 
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
