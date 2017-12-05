@@ -86,7 +86,7 @@ namespace Test
 
             foreach (var huh in allPsmsArray)
             {
-                if (huh != null && huh.MostProbableProteinInfo == null)
+                if (huh != null)
                     huh.MatchToProteinLinkedPeptides(ojdfkj.CompactPeptideToProteinPeptideMatching);
             }
 
