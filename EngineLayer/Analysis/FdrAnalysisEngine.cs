@@ -10,16 +10,16 @@ namespace EngineLayer.Analysis
         #region Private Fields
 
         private readonly IEnumerable<Psm> newPsms;
-        private readonly MassDiffAcceptor searchModes;
+        private readonly int massDiffAcceptorNumNotches;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<Psm> newPsms, MassDiffAcceptor searchModes, List<string> nestedIds) : base(nestedIds)
+        public FdrAnalysisEngine(List<Psm> newPsms, int massDiffAcceptorNumNotches, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
-            this.searchModes = searchModes;
+            this.massDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
         }
 
         #endregion Public Constructors
@@ -31,7 +31,7 @@ namespace EngineLayer.Analysis
             FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
 
             Status("Running FDR analysis...");
-            DoFalseDiscoveryRateAnalysis(newPsms, searchModes);
+            DoFalseDiscoveryRateAnalysis(newPsms, massDiffAcceptorNumNotches);
 
             myAnalysisResults.PsmsWithin1PercentFdr = newPsms.Count(b => b.FdrInfo.QValue < 0.01);
 
@@ -42,7 +42,7 @@ namespace EngineLayer.Analysis
 
         #region Private Methods
 
-        private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, MassDiffAcceptor sm)
+        private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, int massDiffAcceptorNumNotches)
         {
             List<int> allScoresCounts = new List<int>();
             List<int> globalAllScores = new List<int>();
@@ -71,14 +71,14 @@ namespace EngineLayer.Analysis
             int cumulative_target = 0;
             int cumulative_decoy = 0;
 
-            int[] cumulative_target_per_notch = new int[sm.NumNotches + 1];
-            int[] cumulative_decoy_per_notch = new int[sm.NumNotches + 1];
+            int[] cumulative_target_per_notch = new int[massDiffAcceptorNumNotches + 1];
+            int[] cumulative_decoy_per_notch = new int[massDiffAcceptorNumNotches + 1];
 
             for (int i = 0; i < ids.Count; i++)
             {
                 var item = ids[i];
                 var isDecoy = item.IsDecoy;
-                int notch = item.Notch ?? sm.NumNotches;
+                int notch = item.Notch ?? massDiffAcceptorNumNotches;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
@@ -99,8 +99,8 @@ namespace EngineLayer.Analysis
             }
 
             double min_q_value = double.PositiveInfinity;
-            double[] min_q_value_notch = new double[sm.NumNotches + 1];
-            for (int i = 0; i < sm.NumNotches + 1; i++)
+            double[] min_q_value_notch = new double[massDiffAcceptorNumNotches + 1];
+            for (int i = 0; i < massDiffAcceptorNumNotches + 1; i++)
                 min_q_value_notch[i] = double.PositiveInfinity;
 
             for (int i = ids.Count - 1; i >= 0; i--)
@@ -111,7 +111,7 @@ namespace EngineLayer.Analysis
                 else if (id.FdrInfo.QValue < min_q_value)
                     min_q_value = id.FdrInfo.QValue;
 
-                int notch = id.Notch ?? sm.NumNotches;
+                int notch = id.Notch ?? massDiffAcceptorNumNotches;
                 if (id.FdrInfo.QValueNotch > min_q_value_notch[notch])
                     id.FdrInfo.QValueNotch = min_q_value_notch[notch];
                 else if (id.FdrInfo.QValueNotch < min_q_value_notch[notch])

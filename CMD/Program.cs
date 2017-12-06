@@ -139,7 +139,7 @@ namespace MetaMorpheusCommandLine
         private static bool IsContaminant(string b)
         {
             if (b.ToUpper().Contains("contaminant".ToUpper())
-                || b.Contains("cRAP"))
+                || b.ToUpper().Contains("CRAP"))
                 return true;
             return false;
         }
