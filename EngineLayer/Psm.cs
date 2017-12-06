@@ -146,18 +146,7 @@ namespace EngineLayer
 
         public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
         {
-            if (score - Score > tolForScoreDifferentiation) //if new score beat the old score, overwrite it
-            {
-                compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
-                {
-                    { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
-                };
-                Score = score;
-            }
-            else if (score - Score > -tolForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
-            {
-                compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
-            }
+            compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
         }
 
         public void CompactCompactPeptides()
