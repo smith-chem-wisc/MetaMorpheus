@@ -106,7 +106,7 @@ namespace EngineLayer.CrosslinkSearch
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
                 List<BestPeptideScoreNotch> bestPeptideScoreNotch = new List<BestPeptideScoreNotch>();
-                double worstScores = new double();
+                double worstScores; //does not need to initial
 
                 double[] fullPeptideScores = new double[peptideIndexCount];
                 //Find the Top matched peptides

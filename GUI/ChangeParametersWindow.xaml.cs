@@ -721,6 +721,7 @@ namespace MetaMorpheusGUI
                         case 19:
                             b.TopNpeaks = null;
                             break;
+                        default: break;
                     }
                 }
             }

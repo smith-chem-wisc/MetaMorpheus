@@ -161,6 +161,7 @@ namespace Test
                         case "G": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 4, 0, scan)); break;
                         case "H": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 3, 0, scan)); break;
                         case "I": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 2, 0, scan)); break;
+                        default: break;
                     }
                 }
             }

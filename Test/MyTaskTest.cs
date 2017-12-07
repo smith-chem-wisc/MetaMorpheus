@@ -20,6 +20,9 @@ namespace Test
         public static bool hasPrunedRun;
 
         #endregion Public Fields
+        #region Private Fields
+        private static bool PrunedBool;
+        #endregion Private Fields
 
         #region Public Methods
 

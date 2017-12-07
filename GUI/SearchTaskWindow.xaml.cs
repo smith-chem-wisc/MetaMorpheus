@@ -97,7 +97,7 @@ namespace MetaMorpheusGUI
             return Array.TrueForAll<Char>(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
-
+        //again, default manner
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -479,7 +479,7 @@ namespace MetaMorpheusGUI
 
             DialogResult = true;
         }
-
+        //used, but not detected
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));

@@ -8,7 +8,7 @@ namespace EngineLayer
     {
         #region Public Fields
 
-        public List<ProteinGroup> sortedAndScoredProteinGroups;
+        public List<ProteinGroup> sortedAndScoredProteinGroups; //used outside the function, better keep public
 
         #endregion Public Fields
 

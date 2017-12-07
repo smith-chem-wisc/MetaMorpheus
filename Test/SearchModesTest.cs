@@ -74,6 +74,7 @@ namespace Test
         }
 
         [Test]
+        //This is an unused function
         public static void TestIntervalsSearchMode()
         {
         }
@@ -99,7 +100,7 @@ namespace Test
             {
                 return scanPrecursorMass * peptideMass >= 1 ? 1 : -1;
             }
-
+            //used, not detected
             public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
             {
                 yield return new AllowedIntervalWithNotch(new DoubleRange(1 / peptideMonoisotopicMass, double.MaxValue), 1);

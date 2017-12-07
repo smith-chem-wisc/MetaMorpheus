@@ -10,7 +10,7 @@ namespace EngineLayer
     {
         #region Public Fields
 
-        public readonly int numFixedMods;
+        public readonly int numFixedMods; //used in protein extension, keep public
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
         public readonly int? missedCleavages;
 
@@ -49,7 +49,7 @@ namespace EngineLayer
         {
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
         }
-
+        //optional params should not matter too much in our case
         public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int? missedCleavages = null) : base(protein, proteinOneBasedStart, proteinOneBasedEnd)
         {
             this.missedCleavages = missedCleavages;

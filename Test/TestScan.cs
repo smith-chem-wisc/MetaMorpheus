@@ -68,6 +68,7 @@ namespace Test
             get
             {
                 return Polarity.Positive;
+                
             }
         }
 

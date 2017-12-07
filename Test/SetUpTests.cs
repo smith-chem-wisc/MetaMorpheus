@@ -12,13 +12,19 @@ namespace Test
     public class MySetUpClass
     {
         #region Public Fields
-
-        public static string outputFolder = "";
-
+        //fix public static
+        public static string outputFolder
+        {
+            get
+            {
+                return FolderDir;
+            }
+        }
+        public static int abc;
         #endregion Public Fields
 
         #region Private Fields
-
+        private static string FolderDir;
         private const string elementsLocation = @"elements.dat";
         private const string unimodLocation = @"unimod_tables.xml";
         private const string uniprotLocation = @"ptmlist.txt";
@@ -45,7 +51,7 @@ namespace Test
 
         private static void SuccessfullyFinishedAllTasks(object sender, StringEventArgs rootOutputFolderPath)
         {
-            outputFolder = rootOutputFolderPath.S;
+            FolderDir = rootOutputFolderPath.S;
         }
 
         private static void WarnStatusHandler(object sender, StringEventArgs e)

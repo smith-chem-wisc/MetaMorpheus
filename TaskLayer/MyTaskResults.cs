@@ -9,7 +9,7 @@ namespace TaskLayer
     {
         #region Public Fields
 
-        public List<string> newSpectra;
+        public List<string> newSpectra;//used else where, should be public
         public List<DbForTask> newDatabases;
         public TimeSpan Time;
 

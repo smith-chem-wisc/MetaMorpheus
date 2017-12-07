@@ -7,7 +7,7 @@ namespace EngineLayer
         #region Public Fields
 
         public DoubleRange allowedInterval;
-        public int notch;
+        public int notch; //we need to interact with notch so definitely keep it public
 
         #endregion Public Fields
 
