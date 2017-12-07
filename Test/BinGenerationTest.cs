@@ -76,7 +76,7 @@ namespace Test
                 new List<string> { mzmlFilePath },
                 null);
 
-            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"aggregate_OpenSearch.mytsv")).Count());
+            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"aggregate.mytsv")).Count());
         }
 
         [Test]

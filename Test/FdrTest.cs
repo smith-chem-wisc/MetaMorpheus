@@ -70,7 +70,7 @@ namespace Test
             psm3.MatchToProteinLinkedPeptides(matching);
 
             var newPsms = new List<Psm> { psm1, psm2, psm3 };
-            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes, nestedIds);
+            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, nestedIds);
 
             fdr.Run();
 
