@@ -193,7 +193,7 @@ namespace MetaMorpheusGUI
             DeconvolutionIntensityRatioTextBox.Text = task.CommonParameters.DeconvolutionIntensityRatio.ToString();
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             DeconvolutionMassToleranceInPpmTextBox.Text = task.CommonParameters.DeconvolutionMassTolerance.Value.ToString();
-            minScoreAllowed.Text = task.CommonParameters.MinMatchingFragments.ToString(CultureInfo.InvariantCulture);
+            minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -418,7 +418,7 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             CommonParamsToSave.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
-            CommonParamsToSave.MinMatchingFragments = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             CommonParamsToSave.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
             CommonParamsToSave.ExcelCompatible = excelCompatible.IsChecked.Value;

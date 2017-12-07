@@ -40,7 +40,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
 
-            byte byteScoreCutoff = (byte)CommonParameters.MinMatchingFragments;
+            byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
             {
@@ -110,7 +110,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
                         int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
-                        while (maxInitialScore > CommonParameters.MinMatchingFragments)
+                        while (maxInitialScore > CommonParameters.ScoreCutoff)
                         {
                             maxInitialScore--;
                             foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))

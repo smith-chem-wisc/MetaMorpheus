@@ -108,7 +108,7 @@ namespace EngineLayer.ClassicSearch
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
                             var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
-                            if (score.Item1 >= commonParameters.MinMatchingFragments)
+                            if (score.Item1 >= commonParameters.ScoreCutoff)
                             {
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
                                     psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, new Features(score), scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);

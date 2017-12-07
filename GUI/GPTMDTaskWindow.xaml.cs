@@ -87,7 +87,7 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CommonParameters.CIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
-            minScoreAllowed.Text = task.CommonParameters.MinMatchingFragments.ToString(CultureInfo.InvariantCulture);
+            minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
@@ -270,7 +270,7 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
             CommonParamsToSave.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
-            CommonParamsToSave.MinMatchingFragments = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             CommonParamsToSave.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)

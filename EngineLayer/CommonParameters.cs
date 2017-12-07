@@ -33,7 +33,7 @@ namespace EngineLayer
 
             MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;
 
-            MinMatchingFragments = 5;
+            ScoreCutoff = 5;
 
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
@@ -82,7 +82,7 @@ namespace EngineLayer
 
         public bool ConserveMemory { get; set; }
 
-        public double MinMatchingFragments { get; set; }
+        public double ScoreCutoff { get; set; }
 
         public DigestionParams DigestionParams { get; set; }
 
