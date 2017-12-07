@@ -202,11 +202,11 @@ namespace EngineLayer
             }
         }
 
-        public static double CalculatePeptideScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static (double, double) CalculatePeptideScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
-                return 0;
+                return (0,0);
             int MatchingProductsHere = 0;
             double MatchingIntensityHere = 0;
 
@@ -219,7 +219,7 @@ namespace EngineLayer
             } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sortedTheoreticalProductMassesForThisPeptide.Length - 1);
 
             if (double.IsNaN(currentTheoreticalMass))
-                return 0;
+                return (0, 0);
 
             double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
             int testTheoreticalIndex;
@@ -350,7 +350,7 @@ namespace EngineLayer
                     }
                 }
             }
-            return (MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent);
+            return (MatchingProductsHere, MatchingIntensityHere / thisScan.TotalIonCurrent);
         }
 
         public MetaMorpheusEngineResults Run()

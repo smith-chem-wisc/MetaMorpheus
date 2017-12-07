@@ -108,12 +108,12 @@ namespace EngineLayer.ClassicSearch
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
                             var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
-                            if (score > commonParameters.ScoreCutoff)
+                            if (score.Item1 >= commonParameters.MinMatchingFragments)
                             {
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
-                                    psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
+                                    psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, new Features(score), scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
                                 else
-                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, new Features(score), scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
                             }
                         }
                     }

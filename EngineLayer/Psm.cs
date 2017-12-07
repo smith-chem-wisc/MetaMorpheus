@@ -16,13 +16,13 @@ namespace EngineLayer
         private const double tolForDoubleResolution = 1e-6;
         private const double tolForScoreDifferentiation = 1e-9;
 
-        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+        private Dictionary<CompactPeptideBase, (int,  HashSet<PeptideWithSetModifications>, Features)> compactPeptides = new Dictionary<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, Features)>();
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
+        public Psm(CompactPeptideBase peptide, int notch, Features features, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -34,11 +34,11 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch, true);
+            AddOrReplace(peptide, features, notch, true);
             this.ExcelCompatible = true;
         }
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, score, scanIndex, scan)
+        public Psm(CompactPeptideBase peptide, int notch, Features features, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, features, scanIndex, scan)
         {
             this.ExcelCompatible = excelCompatible;
         }
@@ -58,7 +58,7 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
-        public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
+        public IEnumerable<KeyValuePair<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, Features)>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
@@ -144,30 +144,30 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
+        public void AddOrReplace(CompactPeptideBase compactPeptide, Features features, int notch, bool reportAllAmbiguity)
         {
-            compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
+            compactPeptides[compactPeptide] = (notch, null, features);
         }
 
         public void CompactCompactPeptides()
         {
-            List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
-            foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in compactPeptides)
-            {
-                //Change CPWM to reflect actual CP
-                Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
-                if (!cps.Contains(tempTuple))
-                    cps.Add(tempTuple);
-            }
-            compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
-            foreach (Tuple<CompactPeptideBase, int> cp in cps)
-                compactPeptides[cp.Item1] = new Tuple<int, HashSet<PeptideWithSetModifications>>(cp.Item2, null);
+            //List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
+            //foreach (KeyValuePair<CompactPeptideBase, (int, Features, HashSet<PeptideWithSetModifications>)> kvp in compactPeptides)
+            //{
+            //    //Change CPWM to reflect actual CP
+            //    Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
+            //    if (!cps.Contains(tempTuple))
+            //        cps.Add(tempTuple);
+            //}
+            //compactPeptides = new Dictionary<CompactPeptideBase, (int, Features, HashSet<PeptideWithSetModifications>)>();
+            //foreach (Tuple<CompactPeptideBase, int> cp in cps)
+            //    compactPeptides[cp.Item1] = (cp.Item1, cp.Item2,null);
         }
 
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var cpKey in compactPeptides.Keys.ToList())
-                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matching[cpKey]);
+                compactPeptides[cpKey] = (compactPeptides[cpKey].Item1, matching[cpKey], compactPeptides[cpKey].Item3);
 
             IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
 
@@ -325,7 +325,7 @@ namespace EngineLayer
         internal void AddOrReplace(Psm psmParent, bool reportAllAmbiguity)
         {
             foreach (var kvp in psmParent.compactPeptides)
-                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
+                AddOrReplace(kvp.Key,kvp.Value.Item3, kvp.Value.Item1, reportAllAmbiguity);
         }
 
         #endregion Internal Methods

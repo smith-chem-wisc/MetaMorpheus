@@ -52,7 +52,7 @@ namespace EngineLayer.ModernSearch
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing modern search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
 
-            byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
+            byte byteScoreCutoff = (byte)CommonParameters.MinMatchingFragments;
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
             {
@@ -109,15 +109,15 @@ namespace EngineLayer.ModernSearch
                             Array.Sort(productMasses);
 
                             double thePrecursorMass = scan.PrecursorMass;
-                            double score = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
+                            var score = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
                             int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMassIncludingFixedMods);
 
-                            if (score > CommonParameters.ScoreCutoff)
+                            if (score.Item1 >= CommonParameters.MinMatchingFragments)
                             {
                                 if (globalPsms[i] == null)
-                                    globalPsms[i] = new Psm(peptide, notch, score, i, scan, CommonParameters.ExcelCompatible);
+                                    globalPsms[i] = new Psm(peptide, notch, new Features(score), i, scan, CommonParameters.ExcelCompatible);
                                 else
-                                    globalPsms[i].AddOrReplace(peptide, score, notch, CommonParameters.ReportAllAmbiguity);
+                                    globalPsms[i].AddOrReplace(peptide, new Features(score), notch, CommonParameters.ReportAllAmbiguity);
                             }
                         }
                     }

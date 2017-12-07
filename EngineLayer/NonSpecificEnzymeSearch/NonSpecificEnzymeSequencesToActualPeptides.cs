@@ -267,7 +267,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             foreach (var psm in allPsms)
                 if (psm != null)
                 {
-                    foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in psm.CompactPeptides)
+                    foreach (KeyValuePair<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, Features)> kvp in psm.CompactPeptides)
                     {
                         (kvp.Key as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
                         //Change CPWM to reflect actual CP

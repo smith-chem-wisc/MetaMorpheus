@@ -40,7 +40,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
 
-            byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
+            byte byteScoreCutoff = (byte)CommonParameters.MinMatchingFragments;
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
             {
@@ -110,23 +110,23 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
                         int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
-                        while (maxInitialScore > CommonParameters.ScoreCutoff)
+                        while (maxInitialScore > CommonParameters.MinMatchingFragments)
                         {
                             maxInitialScore--;
                             foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                             {
                                 var candidatePeptide = peptideIndex[id];
                                 double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
-                                double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
+                                var peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
                                 Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, candidatePeptide, terminusType, massDiffAcceptor);
                                 if (notchAndPrecursor.Item1 >= 0)
                                 {
                                     CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, notchAndPrecursor.Item2);
 
                                     if (globalPsms[i] == null)
-                                        globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, peptideScore, i, scan);
+                                        globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, new Features(peptideScore), i, scan);
                                     else
-                                        globalPsms[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                        globalPsms[i].AddOrReplace(cp, new Features(peptideScore), notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
                                 }
                             }
                             if (globalPsms[i] != null)

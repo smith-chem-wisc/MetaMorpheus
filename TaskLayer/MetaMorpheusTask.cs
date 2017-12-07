@@ -175,7 +175,7 @@ namespace TaskLayer
 
                 ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
 
-                ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
+                MinMatchingFragments = currentFileSpecificSettings.ScoreCutoff ?? commonParams.MinMatchingFragments,
 
                 TopNpeaks = currentFileSpecificSettings.TopNpeaks ?? commonParams.TopNpeaks,
                 MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio,

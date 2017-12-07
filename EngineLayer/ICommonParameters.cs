@@ -36,7 +36,7 @@ namespace EngineLayer
 
         bool ConserveMemory { get; }
 
-        double ScoreCutoff { get; }
+        double MinMatchingFragments { get; }
 
         DigestionParams DigestionParams { get; }
 

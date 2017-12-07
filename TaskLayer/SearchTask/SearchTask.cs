@@ -1,4 +1,6 @@
-﻿using Chemistry;
+﻿using Accord.Statistics.Models.Regression;
+using Accord.Statistics.Models.Regression.Fitting;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
@@ -914,6 +916,8 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
 
+            ScorePsms(allPsms, OutputFolder);
+
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             Status("Running FDR analysis...", taskId);
@@ -1371,6 +1375,53 @@ namespace TaskLayer
             if (oneIsNterminus == peptideWithSetModifications.Length + 2)
                 return peptideWithSetModifications.OneBasedEndResidueInProtein;
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
+        }
+
+        private void ScorePsms(List<Psm> allPsms, string outputFolder)
+        {
+            Console.WriteLine("in ScorePsms");
+
+            var writtenFile = Path.Combine(outputFolder, "beforeScoring.tsv");
+
+            int numTrainingPoints = 0;
+            using (StreamWriter outputff = new StreamWriter(writtenFile))
+            {
+                for (int i = 0; i < allPsms.Count; i++)
+                    if (allPsms[i] != null)
+                        foreach (var asdfj in allPsms[i].CompactPeptides)
+                        {
+                            numTrainingPoints++;
+                            outputff.WriteLine(i + "\t" + asdfj.Value.Item3 + "\t" + asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy));
+                        }
+            }
+
+            Console.WriteLine("after writing file");
+
+            double[][] input = new double[numTrainingPoints][];
+            bool[] output = new bool[numTrainingPoints];
+            int j = 0;
+            for (int i = 0; i < allPsms.Count; i++)
+                if (allPsms[i] != null)
+                    foreach (var asdfj in allPsms[i].CompactPeptides)
+                    {
+                        input[j] = asdfj.Value.Item3.ToDoubleArray();
+                        output[j] = asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy);
+                        j++;
+                    }
+
+            // Create a new Iterative Reweighted Least Squares algorithm
+            var learner = new IterativeReweightedLeastSquares<LogisticRegression>()
+            {
+                Tolerance = 1e-4,  // Let's set some convergence parameters
+                MaxIterations = 100,  // maximum number of iterations to perform
+                Regularization = 0
+            };
+
+            // Now, we can use the learner to finally estimate our model:
+            LogisticRegression regression = learner.Learn(input, output);
+
+            Console.WriteLine("weights: "+ string.Join("\t", regression.Weights));
+            Console.WriteLine("intercept: " + regression.Intercept);
         }
 
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
