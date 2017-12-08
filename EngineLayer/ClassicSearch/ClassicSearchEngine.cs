@@ -113,7 +113,7 @@ namespace EngineLayer.ClassicSearch
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
                                     psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, matchQualityFeatures, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
                                 else
-                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, matchQualityFeatures, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddCompactPeptide(correspondingCompactPeptide, matchQualityFeatures, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
                             }
                         }
                     }

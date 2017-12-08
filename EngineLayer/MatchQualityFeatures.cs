@@ -2,12 +2,12 @@
 {
     public class MatchQualityFeatures
     {
-        #region Private Fields
+        #region Public Fields
 
         public readonly int matchingProductsHere;
-        private readonly double intensityFracMatch;
+        public readonly double intensityFracMatch;
 
-        #endregion Private Fields
+        #endregion Public Fields
 
         #region Public Constructors
 

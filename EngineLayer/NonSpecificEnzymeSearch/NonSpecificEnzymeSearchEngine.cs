@@ -126,7 +126,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (globalPsms[i] == null)
                                         globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, peptideScore, i, scan);
                                     else
-                                        globalPsms[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                        globalPsms[i].AddCompactPeptide(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
                                 }
                             }
                             if (globalPsms[i] != null)

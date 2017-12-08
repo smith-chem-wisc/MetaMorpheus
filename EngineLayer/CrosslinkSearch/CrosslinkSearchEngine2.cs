@@ -379,7 +379,7 @@ namespace EngineLayer.CrosslinkSearch
 
                             if (score.matchingProductsHere >= 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
                             {
-                                var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score.matchingProductsHere, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score.matchingProductsHere + score.intensityFracMatch, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
                                 PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, crosslinker, lp, CommonParameters.ProductMassTolerance);
                                 double currentBestPsmLocalScore = 0;
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)

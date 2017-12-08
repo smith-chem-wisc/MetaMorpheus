@@ -117,7 +117,7 @@ namespace EngineLayer.ModernSearch
                                 if (globalPsms[i] == null)
                                     globalPsms[i] = new Psm(peptide, notch, score, i, scan, CommonParameters.ExcelCompatible);
                                 else
-                                    globalPsms[i].AddOrReplace(peptide, score, notch, CommonParameters.ReportAllAmbiguity);
+                                    globalPsms[i].AddCompactPeptide(peptide, score, notch, CommonParameters.ReportAllAmbiguity);
                             }
                         }
                     }
