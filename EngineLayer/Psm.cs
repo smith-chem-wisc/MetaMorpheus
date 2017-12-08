@@ -16,13 +16,13 @@ namespace EngineLayer
         private const double tolForDoubleResolution = 1e-6;
         private const double tolForScoreDifferentiation = 1e-9;
 
-        private Dictionary<CompactPeptideBase, (int,  HashSet<PeptideWithSetModifications>, Features)> compactPeptides = new Dictionary<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, Features)>();
+        private Dictionary<CompactPeptideBase, (int,  HashSet<PeptideWithSetModifications>, MatchQualityFeatures)> compactPeptides = new Dictionary<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, MatchQualityFeatures)>();
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, Features features, int scanIndex, IScan scan)
+        public Psm(CompactPeptideBase peptide, int notch, MatchQualityFeatures features, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -38,7 +38,7 @@ namespace EngineLayer
             this.ExcelCompatible = true;
         }
 
-        public Psm(CompactPeptideBase peptide, int notch, Features features, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, features, scanIndex, scan)
+        public Psm(CompactPeptideBase peptide, int notch, MatchQualityFeatures features, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, features, scanIndex, scan)
         {
             this.ExcelCompatible = excelCompatible;
         }
@@ -58,7 +58,7 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
-        public IEnumerable<KeyValuePair<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, Features)>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
+        public IEnumerable<KeyValuePair<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, MatchQualityFeatures)>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
@@ -144,7 +144,7 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void AddOrReplace(CompactPeptideBase compactPeptide, Features features, int notch, bool reportAllAmbiguity)
+        public void AddOrReplace(CompactPeptideBase compactPeptide, MatchQualityFeatures features, int notch, bool reportAllAmbiguity)
         {
             compactPeptides[compactPeptide] = (notch, null, features);
         }
@@ -445,6 +445,12 @@ namespace EngineLayer
                 var possibleReturn = string.Join(" or ", list);
                 return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
             }
+        }
+
+        public void ScoreAndPrune(Func<MatchQualityFeatures, double> scoringFunction)
+        {
+            Score = CompactPeptides.Select(b => scoringFunction(b.Value.Item3)).Max();
+            compactPeptides = CompactPeptides.Where(b => Math.Abs(scoringFunction(b.Value.Item3) - Score) < 1e-9).ToDictionary(i => i.Key, i => i.Value);
         }
 
         #endregion Private Methods

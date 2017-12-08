@@ -16,12 +16,13 @@ namespace EngineLayer
         private readonly Tolerance fragmentTolerance;
         private readonly bool addCompIons;
         private readonly List<DissociationType> dissociationTypes;
+        private readonly Func<MatchQualityFeatures, double> scoringFunction;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public LocalizationEngine(IEnumerable<Psm> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<Psm> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons,Func<MatchQualityFeatures, double> scoringFunction) : base(nestedIds)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.lp = lp;
@@ -29,6 +30,7 @@ namespace EngineLayer
             this.fragmentTolerance = fragmentTolerance;
             this.addCompIons = addCompIons;
             this.dissociationTypes = DetermineDissociationType(lp);
+            this.scoringFunction = scoringFunction;
         }
 
         #endregion Public Constructors
@@ -78,8 +80,8 @@ namespace EngineLayer
 
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
-                    var score = CalculatePeptideScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons);
-                    localizedScores.Add(score.Item1+score.Item2);
+                    var matchQualityFeatures = CalculateMatchQualityFeatures(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons);
+                    localizedScores.Add(scoringFunction(matchQualityFeatures));
                 }
 
                 ok.LocalizedScores = localizedScores;

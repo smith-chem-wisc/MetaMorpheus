@@ -915,7 +915,7 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
 
-            ScorePsms(allPsms, OutputFolder);
+            Func<MatchQualityFeatures, double> scoringFunction = ScorePsms(allPsms, OutputFolder);
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
@@ -940,7 +940,7 @@ namespace TaskLayer
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
-                    var localizationEngine = new LocalizationEngine(allPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.SearchParameters.AddCompIons);
+                    var localizationEngine = new LocalizationEngine(allPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.SearchParameters.AddCompIons, scoringFunction);
                     localizationEngine.Run();
                     myFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
@@ -1377,7 +1377,7 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
-        private void ScorePsms(List<Psm> allPsms, string outputFolder)
+        private Func<MatchQualityFeatures, double> ScorePsms(List<Psm> allPsms, string outputFolder)
         {
             Console.WriteLine("in ScorePsms");
 
@@ -1420,9 +1420,21 @@ namespace TaskLayer
             // Now, we can use the learner to finally estimate our model:
             LogisticRegression regression = learner.Learn(input, output);
 
-            Console.WriteLine("weights: "+ string.Join("\t", regression.Weights));
+            Console.WriteLine("weights: " + string.Join("\t", regression.Weights));
             Console.WriteLine("intercept: " + regression.Intercept);
+
+            double scoringFunction(MatchQualityFeatures matchQualityFeatures) => regression.Probability(matchQualityFeatures.ToDoubleArray());
+
+            // Actually, score!!!
+            for (int i = 0; i < allPsms.Count; i++)
+                if (allPsms[i] != null)
+                {
+                    allPsms[i].ScoreAndPrune(scoringFunction);
+                }
+
+            return scoringFunction;
         }
+
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
             switch (massDiffAcceptorType)
@@ -1452,6 +1464,7 @@ namespace TaskLayer
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
+
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);

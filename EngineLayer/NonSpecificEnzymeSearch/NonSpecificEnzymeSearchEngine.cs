@@ -117,16 +117,16 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 var candidatePeptide = peptideIndex[id];
                                 double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
-                                var peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
+                                var peptideScore = CalculateMatchQualityFeatures(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
                                 Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, candidatePeptide, terminusType, massDiffAcceptor);
                                 if (notchAndPrecursor.Item1 >= 0)
                                 {
                                     CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, notchAndPrecursor.Item2);
 
                                     if (globalPsms[i] == null)
-                                        globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, new Features(peptideScore), i, scan);
+                                        globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, new MatchQualityFeatures(peptideScore), i, scan);
                                     else
-                                        globalPsms[i].AddOrReplace(cp, new Features(peptideScore), notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                        globalPsms[i].AddOrReplace(cp, new MatchQualityFeatures(peptideScore), notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
                                 }
                             }
                             if (globalPsms[i] != null)

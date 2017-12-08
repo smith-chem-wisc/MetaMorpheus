@@ -1,18 +1,24 @@
 ﻿namespace EngineLayer
 {
-    public class Features
+    public class MatchQualityFeatures
     {
         #region Private Fields
 
-        private (double, double) score;
+        private readonly int matchingProductsHere;
+        private readonly double intensityFracMatch;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public Features((double, double) score)
+        public MatchQualityFeatures(int matchingProductsHere, double intensityFracMatch)
         {
-            this.score = score;
+            this.matchingProductsHere = matchingProductsHere;
+            this.intensityFracMatch = intensityFracMatch;
+        }
+
+        public MatchQualityFeatures()
+        {
         }
 
         #endregion Public Constructors
@@ -21,12 +27,12 @@
 
         public override string ToString()
         {
-            return score.Item1 + "\t" + score.Item2;
+            return matchingProductsHere + "\t" + intensityFracMatch;
         }
 
         public double[] ToDoubleArray()
         {
-            return new []{ score.Item1, score.Item2 };
+            return new[] { matchingProductsHere, intensityFracMatch };
         }
 
         #endregion Public Methods
