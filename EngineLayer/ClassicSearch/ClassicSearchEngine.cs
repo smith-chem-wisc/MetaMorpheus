@@ -108,12 +108,12 @@ namespace EngineLayer.ClassicSearch
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
                             var matchQualityFeatures = CalculateMatchQualityFeatures(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
-                            if (matchQualityFeatures.Item1 >= commonParameters.ScoreCutoff)
+                            if (matchQualityFeatures.matchingProductsHere >= commonParameters.ScoreCutoff)
                             {
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
-                                    psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, new MatchQualityFeatures(matchQualityFeatures), scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
+                                    psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, matchQualityFeatures, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
                                 else
-                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, new MatchQualityFeatures(matchQualityFeatures), scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, matchQualityFeatures, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
                             }
                         }
                     }

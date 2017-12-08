@@ -124,9 +124,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, notchAndPrecursor.Item2);
 
                                     if (globalPsms[i] == null)
-                                        globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, new MatchQualityFeatures(peptideScore), i, scan);
+                                        globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, peptideScore, i, scan);
                                     else
-                                        globalPsms[i].AddOrReplace(cp, new MatchQualityFeatures(peptideScore), notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                        globalPsms[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
                                 }
                             }
                             if (globalPsms[i] != null)

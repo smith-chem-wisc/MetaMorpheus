@@ -168,31 +168,7 @@ namespace EngineLayer
         {
             foreach (var cpKey in compactPeptides.Keys.ToList())
                 compactPeptides[cpKey] = (compactPeptides[cpKey].Item1, matching[cpKey], compactPeptides[cpKey].Item3);
-
-            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
-
-            FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
-
-            BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
-
-            PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
-
-            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
-
-            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
-
-            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
-
-            PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
-
-            ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
-
-            ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
-
-            ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
-
-            Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
-        }
+                    }
 
         public bool CompactPeptidesContainsKey(CompactPeptideBase key)
         {
@@ -450,7 +426,32 @@ namespace EngineLayer
         public void ScoreAndPrune(Func<MatchQualityFeatures, double> scoringFunction)
         {
             Score = CompactPeptides.Select(b => scoringFunction(b.Value.Item3)).Max();
+
             compactPeptides = CompactPeptides.Where(b => Math.Abs(scoringFunction(b.Value.Item3) - Score) < 1e-9).ToDictionary(i => i.Key, i => i.Value);
+
+            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
+
+            FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
+
+            BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
+
+            PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
+
+            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
+
+            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
+
+            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
+
+            PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
+
+            ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
+
+            ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
+
+            ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
+
+            Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
         #endregion Private Methods

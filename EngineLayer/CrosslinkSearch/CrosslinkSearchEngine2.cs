@@ -377,9 +377,9 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             var score = CalculateMatchQualityFeatures(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false);
 
-                            if (score.Item1 >= 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
+                            if (score.matchingProductsHere >= 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
                             {
-                                var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score.Item1, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score.matchingProductsHere, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
                                 PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, crosslinker, lp, CommonParameters.ProductMassTolerance);
                                 double currentBestPsmLocalScore = 0;
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)

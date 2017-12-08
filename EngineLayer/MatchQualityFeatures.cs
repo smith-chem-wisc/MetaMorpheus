@@ -4,7 +4,7 @@
     {
         #region Private Fields
 
-        private readonly int matchingProductsHere;
+        public readonly int matchingProductsHere;
         private readonly double intensityFracMatch;
 
         #endregion Private Fields

@@ -112,12 +112,12 @@ namespace EngineLayer.ModernSearch
                             var score = CalculateMatchQualityFeatures(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
                             int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMassIncludingFixedMods);
 
-                            if (score.Item1 >= CommonParameters.ScoreCutoff)
+                            if (score.matchingProductsHere >= CommonParameters.ScoreCutoff)
                             {
                                 if (globalPsms[i] == null)
-                                    globalPsms[i] = new Psm(peptide, notch, new MatchQualityFeatures(score), i, scan, CommonParameters.ExcelCompatible);
+                                    globalPsms[i] = new Psm(peptide, notch, score, i, scan, CommonParameters.ExcelCompatible);
                                 else
-                                    globalPsms[i].AddOrReplace(peptide, new MatchQualityFeatures(score), notch, CommonParameters.ReportAllAmbiguity);
+                                    globalPsms[i].AddOrReplace(peptide, score, notch, CommonParameters.ReportAllAmbiguity);
                             }
                         }
                     }
