@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+        Title="Search Task" Width="750" Height="880" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
     </Window.Resources>
@@ -336,7 +336,7 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top">
+                <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
                     <Expander x:Name="AnalysisExpander" Collapsed="ApmdExpander_Collapsed">
                         <Expander.Style>
                             <Style TargetType="Expander">
@@ -402,12 +402,45 @@
                                     <TextBox x:Name="histogramBinWidthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
                                 </StackPanel>
                             </GroupBox>
-                            <GroupBox Header="Pruned Database Writing">
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox x:Name="writePrunedDatabaseCheckBox" Content="Write Pruned Database" />
-                                    <CheckBox x:Name="keepAllUniprotModsCheckBox" Content="Keep Uniprot Modifications"  IsEnabled="{Binding IsChecked, ElementName=writePrunedDatabaseCheckBox}" />
-                                </StackPanel>
+                            <GroupBox Header="Pruned Database Writing" Height="333">
+                                <DockPanel   Grid.Row="0" Margin="0,0,0,19" Grid.RowSpan="2" >
+                                    <CheckBox x:Name="writePrunedDBCheckBox" Checked="writePrunedDBCheckBox_Checked" Unchecked="writePrunedDBCheckBox_Unchecked" Content="Write Pruned Database" Margin="0,0,0,101" Width="152" />
+                                    <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" AllowDrop="True" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=writePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Mod Type"  Width="16*" Binding="{Binding ModName}" />
+                                            <DataGridTemplateColumn  Header=" Do not Write"  Width ="30*" IsReadOnly="False" >
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if in DB and Observed"  Width ="30*" IsReadOnly="False" >
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if in DB"  Width ="30*" IsReadOnly="False" >
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if Observed"  Width ="30*" IsReadOnly="False" >
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center"  GroupName="{Binding ModName}" IsChecked="{Binding Item5, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </DockPanel>
                             </GroupBox>
+
                         </StackPanel>
                     </Expander>
                 </GroupBox>

@@ -12,9 +12,11 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
@@ -586,7 +588,7 @@ namespace TaskLayer
                             },
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession =  "MS:1001093",
+                                accession = "MS:1001093",
                                 name = "sequence coverage",
                                 cvRef = "PSI-MS",
                                 value = proteinGroup.SequenceCoveragePercent.First().ToString()
@@ -744,10 +746,9 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
-
+            Dictionary<string, Modification> unknownModifications = new Dictionary<string, Modification>();
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
-
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
             proseCreatedWhileRunning.Append("The following search settings were used: ");
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
@@ -1159,34 +1160,70 @@ namespace TaskLayer
             if (SearchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { taskId });
-
                 List<Modification> modificationsToAlwaysKeep = new List<Modification>();
-                if (SearchParameters.KeepAllUniprotMods)
-                    modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
+                List<Modification> modificationsToLeaveOut = new List<Modification>();
+                List<Modification> modificationsKeepIfObserved = new List<Modification>();
 
+                //if (SearchParameters.KeepAllUniprotMods)
+                //  modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
-
+                //var goodPsmsForEachProtein = allPsms.GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
+                
+                foreach (var modType in SearchParameters.ModTypeList) //not in here....
+                {
+                    if (modType.Value == 1)
+                        continue;
+                    if (modType.Value == 0)
+                        modificationsToLeaveOut.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                    if (modType.Value == 2)
+                        modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                    if (modType.Value == 3)
+                    {
+                        modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                    }
+                }
+                
                 foreach (var protein in proteinList)
                 {
                     if (!protein.IsDecoy)
                     {
+                        
+                         protein.OneBasedPossibleLocalizedModifications.Add(protein.OneBasedPossibleLocalizedModifications.Count + 1, modificationsKeepIfObserved);
+                        
+                        //protein.OneBasedPossibleLocalizedModifications.Add(modificationsKeepIfObserved[0]);
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (goodPsmsForEachProtein.ContainsKey(protein))
+                        {
                             modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.MostProbableProteinInfo.PeptidesWithSetModifications.First()), c.Value))));
+                        }
+                        //Is this where? No
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
-                                if (modificationsToAlwaysKeep.Contains(mod as Modification)
-                                    || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
+                                //Add if Observed (regardless if in database) REDUE
+                                //if (modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass))
+                                    if(modificationsKeepIfObserved.Contains(mod as Modification))
                                 {
                                     if (!modsToWrite.ContainsKey(modd.Key))
                                         modsToWrite.Add(modd.Key, new List<Modification> { mod
                                         });
                                     else
                                         modsToWrite[modd.Key].Add(mod);
+                                    continue;
                                 }
+                                //Add if always In Database or if was observed and in database
+                                if (!modificationsToLeaveOut.Contains(mod as Modification))
+                                    if (modificationsToAlwaysKeep.Contains(mod as Modification)
+                                        || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
+                                    {
+                                        if (!modsToWrite.ContainsKey(modd.Key))
+                                            modsToWrite.Add(modd.Key, new List<Modification> { mod
+                                        });
+                                        else
+                                            modsToWrite[modd.Key].Add(mod);
+                                    }
                             }
                         protein.OneBasedPossibleLocalizedModifications.Clear();
                         foreach (var kvp in modsToWrite)
@@ -1454,6 +1491,7 @@ namespace TaskLayer
                 SucessfullyFinishedWritingFile(writtenFile, nestedIds);
             }
         }
+
 
         #endregion Private Methods
     }

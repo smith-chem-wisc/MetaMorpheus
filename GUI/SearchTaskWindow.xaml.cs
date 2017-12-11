@@ -27,6 +27,8 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForGrid> modSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+        string prunedVisible = "Hidden";
 
         #endregion Private Fields
 
@@ -35,9 +37,17 @@ namespace MetaMorpheusGUI
         public SearchTaskWindow()
         {
             InitializeComponent();
+            TheTask = new SearchTask();
+
+            foreach (var a in TheTask.SearchParameters.ModTypeList)
+            {
+                var b = new Tuple<string, bool, bool, bool, bool>(a.Key, false, true, false, false);
+                modSelectionGridItems.Add(new ModTypeForGrid(b.Item1, b.Item2, b.Item3, b.Item4, b.Item5));
+            }
+            ModSelectionGrid.ItemsSource = modSelectionGridItems;
+
             PopulateChoices();
 
-            TheTask = new SearchTask();
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the Search Task";
@@ -56,14 +66,24 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = dataContextForSearchTaskWindow;
+            
         }
 
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
+            TheTask = task;
+
+            foreach (var a in TheTask.SearchParameters.ModTypeList)
+            {
+                var b = new Tuple<string, bool, bool, bool, bool>(a.Key, false, true, false, false);
+                modSelectionGridItems.Add(new ModTypeForGrid(b.Item1, b.Item2, b.Item3, b.Item4, b.Item5));
+            }
+
+            ModSelectionGrid.ItemsSource = modSelectionGridItems;
+
             PopulateChoices();
 
-            TheTask = task;
             UpdateFieldsFromTask(TheTask);
 
             dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
@@ -80,6 +100,8 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = dataContextForSearchTaskWindow;
+
+           
         }
 
         #endregion Public Constructors
@@ -284,8 +306,8 @@ namespace MetaMorpheusGUI
             if (task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom)
                 customkMdacTextBox.Text = task.SearchParameters.CustomMdac;
 
-            writePrunedDatabaseCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
-            keepAllUniprotModsCheckBox.IsChecked = task.SearchParameters.KeepAllUniprotMods;
+            writePrunedDBCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
+            UpdateModSelectionGrid();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -468,8 +490,11 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
             TheTask.SearchParameters.HistogramBinTolInDaltons = double.Parse(histogramBinWidthTextBox.Text, CultureInfo.InvariantCulture);
 
-            TheTask.SearchParameters.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
-            TheTask.SearchParameters.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WritePrunedDatabase = writePrunedDBCheckBox.IsChecked.Value;
+
+            SetModSelectionForPrunedDB();
+
+
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
 
@@ -499,7 +524,85 @@ namespace MetaMorpheusGUI
             e.Handled = !TextBoxIntAllowed(e.Text);
         }
 
+
+        public Dictionary<string, int> SetModSelectionForPrunedDB()
+        {
+            List<Tuple< string, bool, bool, bool, bool>> listOfSelectedMods = new List<Tuple<string, bool, bool, bool, bool>>();
+            //checks the grid values for which button is checked then sets paramaters accordingly
+            foreach (var modTypeInGrid in modSelectionGridItems)
+            {
+                if(modTypeInGrid.Item2 == true)
+                {
+                    TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 0;
+                    continue;
+                }
+                if (modTypeInGrid.Item3 == true)
+                {
+                    TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 1;
+                    continue;
+                }
+                if (modTypeInGrid.Item4 == true)
+                {
+                    TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 2;
+                    continue;
+                }
+                if (modTypeInGrid.Item5 == true)
+                {
+                    TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 3;
+                }
+
+            }
+
+            foreach (var modType in listOfSelectedMods)
+            {
+                //int tempVal;
+               // TheTask.SearchParameters.ModTypeList[modType.Key] = tempVal;
+
+            }
+            return new Dictionary<string,int>();
+        }
+
+
+        public void UpdateModSelectionGrid()
+        {
+            int i = 0;
+            foreach (var modType in TheTask.SearchParameters.ModTypeList)
+            {
+                var a = modType as KeyValuePair<string, int>?;
+                var tempTuple = new Tuple<string, int>(a.Value.Key, a.Value.Value);
+                
+                switch (tempTuple.Item2)
+                {
+                    case (0):
+                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, true, false, false, false);
+                        break;
+                    case (1):
+                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, false,true , false, false);
+                        break;
+                    case (2):
+                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, true, false, true, false);
+                        break;
+                    case (3):
+                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, false, false, false, true);
+                        break;
+                }
+
+                i++;
+            }
+        }
+        
         #endregion Private Methods
+
+        private void writePrunedDBCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            prunedVisible = "Visible";
+            var a = prunedVisible;
+        }
+
+        private void writePrunedDBCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            prunedVisible = "Hidden";
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
@@ -569,6 +672,7 @@ namespace MetaMorpheusGUI
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
+
 
         #endregion Protected Methods
     }
