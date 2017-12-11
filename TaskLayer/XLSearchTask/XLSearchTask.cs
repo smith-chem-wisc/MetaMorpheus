@@ -232,17 +232,26 @@ namespace TaskLayer
             Status("Crosslink analysis engine", taskId);
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, modsDictionary, OutputFolder, crosslinker, terminusType, CommonParameters, new List<string> { taskId }).Run();
-            //if (XlSearchParameters.XlOutAll)
-            //{
-            //    WriteAllToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
-            //}
-            var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= 3.02 && p.BetaPsmCross.XLBestScore >= 3.02).ToList();
-
+            allPsms = allPsms.Where(p => p != null).ToList();
+            if (XlSearchParameters.XlOutAll)
+            {
+                WriteAllToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
+            }
+            var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= CommonParameters.ScoreCutoff && p.BetaPsmCross.XLBestScore >= CommonParameters.ScoreCutoff).ToList();
+            foreach (var item in allPsmsXL)
+            {
+                item.XlProteinPos = item.MostProbableProteinInfo.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + item.XlPos - 1;
+                item.BetaPsmCross.XlProteinPos = item.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + item.BetaPsmCross.XlPos - 1;
+            }
             #region Inter Crosslink
 
             //Write Inter Psms FDR
             var interPsmsXL = allPsmsXL.Where(p => !p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) &&
             !p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+            foreach (var item in interPsmsXL)
+            {
+                item.CrossType = PsmCrossType.Inter;
+            }
             var interPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXL).ToList();
             //var interPsmsXLFDR = CrosslinkFDRAnalysis(interPsmsXL).ToList();
             if (XlSearchParameters.XlOutCrosslink)
@@ -277,6 +286,10 @@ namespace TaskLayer
             var intraPsmsXL = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() ||
             p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) ||
             p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+            foreach (var item in intraPsmsXL)
+            {
+                item.CrossType = PsmCrossType.Intra;
+            }
             var intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXL).ToList();
             //var intraPsmsXLFDR = CrosslinkFDRAnalysis(intraPsmsXL).ToList();
             if (XlSearchParameters.XlOutCrosslink)
@@ -303,6 +316,17 @@ namespace TaskLayer
                 WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
             }
             #endregion
+
+            List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
+            allPsmsXLFDR.AddRange( intraPsmsXLFDR.Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());       
+            allPsmsXLFDR.AddRange( interPsmsXLFDR.Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+            allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore);
+            var allPsmsXLFDRGroup = FindCrosslinks(allPsmsXLFDR);
+            if (XlSearchParameters.XlOutCrosslink)
+            {
+                WriteCrosslinkToTsv(allPsmsXLFDRGroup, OutputFolder, "allPsmsXLFDRGroup", new List<string> { taskId });
+            }
+
 
             #region Single peptide
             var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe).OrderByDescending(p => p.Score).ToList();
@@ -483,6 +507,33 @@ namespace TaskLayer
                 }
             }
             return ids;
+        }
+
+        //Find crosslinks
+        private static List<PsmCross> FindCrosslinks(List<PsmCross> items)
+        {
+            List<PsmCross> psmCrossCrosslinks = new List<PsmCross>();
+            List<string> allString = new List<string>();
+            foreach (var item in items)
+            {
+                string st;
+                if (item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) > 0)
+                {
+                    st = item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")" + item.ProteinAccesion + "(" + item.XlProteinPos + ")";
+                }
+                else if(item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) == 0 && item.XlProteinPos.CompareTo(item.BetaPsmCross.XlProteinPos) > 0)
+                {
+                    st = item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")" + item.ProteinAccesion + "(" + item.XlProteinPos + ")";
+                }
+                else { st = item.ProteinAccesion + "(" + item.XlProteinPos + ")" + item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")"; }
+              
+                if (!allString.Contains(st))
+                {
+                    allString.Add(st);
+                    psmCrossCrosslinks.Add(item);
+                }
+            }
+            return psmCrossCrosslinks;
         }
 
         private void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)

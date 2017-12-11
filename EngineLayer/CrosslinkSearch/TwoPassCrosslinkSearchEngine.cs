@@ -143,8 +143,7 @@ namespace EngineLayer.CrosslinkSearch
 
                             double thePrecursorMass = scan.PrecursorMass;
                             int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMassIncludingFixedMods);
-
-                            BestPeptideScoreNotch bestPeptideScoreNotch = new BestPeptideScoreNotch(peptide, 0, notch);
+                            BestPeptideScoreNotch bestPeptideScoreNotch = new BestPeptideScoreNotch(peptide, scoringTable[id], notch);
                             bestPeptideScoreNotchList.Add(bestPeptideScoreNotch);
                         }
 
@@ -362,9 +361,13 @@ namespace EngineLayer.CrosslinkSearch
                             }
                             psmCrossAlpha.XlRank = new int[] { ind, inx };
                             psmCrossAlpha.XLTotalScore = psmCrossAlpha.XLBestScore + psmCrossBeta.XLBestScore;
-                            psmCrossAlpha.XLQvalueTotalScore = Math.Sqrt(psmCrossAlpha.XLBestScore) * psmCrossBeta.XLBestScore;                           
+                            psmCrossAlpha.XLQvalueTotalScore = Math.Sqrt(psmCrossAlpha.XLBestScore) * psmCrossBeta.XLBestScore;
                             psmCrossAlpha.BetaPsmCross = psmCrossBeta;
-                            psmCrossAlpha.ParentIonMaxIntensityRanks.AddRange(psmCrossBeta.ParentIonMaxIntensityRanks);
+                            if (crosslinker.Cleavable)
+                            {
+                                psmCrossAlpha.ParentIonMaxIntensityRanks.AddRange(psmCrossBeta.ParentIonMaxIntensityRanks);
+                                psmCrossAlpha.ParentIonExistNum += psmCrossBeta.ParentIonExistNum;
+                            }
                             psmCrossAlpha.CrossType = PsmCrossType.Cross;
                             bestPsmCrossList.Add(psmCrossAlpha);
                         }

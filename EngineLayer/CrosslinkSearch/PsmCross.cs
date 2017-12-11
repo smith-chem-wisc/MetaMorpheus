@@ -44,8 +44,10 @@ namespace EngineLayer.CrosslinkSearch
         public double XLTotalScore { get; set; }
         public double XLQvalueTotalScore { get; set; }
         public int XlPos { get; set; }
+        public int XlProteinPos { get; set; }
         public int[] XlRank { get; set; }
         public string ParentIonExist { get; set; }
+        public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public int Charge2IonExist { get; set; }
         public PsmCross BetaPsmCross { get; set; }
@@ -194,12 +196,12 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     x.Add(theScan.PrecursorMass - modMass - crosslinker.CleaveMassLong);
                     y.Add("PepS");
-                    //x.Add((theScan.PrecursorMass - modMass - crosslinker.CleaveMassLong)/2);
-                    //y.Add("PepS2");
+                    x.Add((theScan.PrecursorMass - modMass - crosslinker.CleaveMassLong) / 2);
+                    y.Add("PepS2");
                     x.Add(theScan.PrecursorMass - modMass - crosslinker.CleaveMassShort);
                     y.Add("PepL");
-                    //x.Add((theScan.PrecursorMass - modMass - crosslinker.CleaveMassShort)/2);
-                    //y.Add("PepL2");
+                    x.Add((theScan.PrecursorMass - modMass - crosslinker.CleaveMassShort) / 2);
+                    y.Add("PepL2");
                 }
                 for (int i = 0; i < pmmh.ProductMz.Length; i++)
                 {
@@ -324,18 +326,22 @@ namespace EngineLayer.CrosslinkSearch
             if (crosslinker.Cleavable)
             {
                 psmCross.ParentIonMaxIntensityRanks = new List<int>();
+                if (psmCross.matchedIonInfo.MatchedIonName.Any(p => p!= null && p.Contains("PepS")))
+                {
+                    psmCross.ParentIonExist += "PepS";
+                    psmCross.ParentIonExistNum += 1;
+                }
+                if (psmCross.matchedIonInfo.MatchedIonName.Any(p => p != null && p.Contains("PepL")))
+                {
+                    psmCross.ParentIonExist += "PepL";
+                    psmCross.ParentIonExistNum += 1;
+                }
                 for (int i = 0; i < psmCross.matchedIonInfo.MatchedIonName.Length; i++)
                 {
                     if (psmCross.matchedIonInfo.MatchedIonName[i]!=null)
                     {
-                        if (psmCross.matchedIonInfo.MatchedIonName[i].Contains("PepS"))
+                        if (psmCross.matchedIonInfo.MatchedIonName[i].Contains("Pep"))
                         {
-                            psmCross.ParentIonExist += "PepS";
-                            psmCross.ParentIonMaxIntensityRanks.Add(psmCross.matchedIonInfo.MatchedIonIntensityRank[i]);
-                        }
-                        if (psmCross.matchedIonInfo.MatchedIonName[i].Contains("PepL"))
-                        {
-                            psmCross.ParentIonExist += "PepL";
                             psmCross.ParentIonMaxIntensityRanks.Add(psmCross.matchedIonInfo.MatchedIonIntensityRank[i]);
                         }
                     }
