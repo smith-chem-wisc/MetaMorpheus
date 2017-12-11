@@ -1177,11 +1177,7 @@ namespace TaskLayer
                 List<Modification> modificationsToLeaveOut = new List<Modification>();
                 List<Modification> modificationsKeepIfObserved = new List<Modification>();
 
-                //if (SearchParameters.KeepAllUniprotMods)
-                //  modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
-                //var goodPsmsForEachProtein = allPsms.GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
-                
                 foreach (var modType in SearchParameters.ModTypeList) //not in here....
                 {
                     if (modType.Value == 1)
@@ -1195,15 +1191,14 @@ namespace TaskLayer
                         modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                     }
                 }
-                
+
                 foreach (var protein in proteinList)
                 {
                     if (!protein.IsDecoy)
                     {
-                        
-                         protein.OneBasedPossibleLocalizedModifications.Add(protein.OneBasedPossibleLocalizedModifications.Count + 1, modificationsKeepIfObserved);
-                        
-                        //protein.OneBasedPossibleLocalizedModifications.Add(modificationsKeepIfObserved[0]);
+
+                        protein.OneBasedPossibleLocalizedModifications.Add(protein.OneBasedPossibleLocalizedModifications.Count + 1, modificationsKeepIfObserved);
+
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (goodPsmsForEachProtein.ContainsKey(protein))
                             modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.CompactPeptides.First().Value.Item2.First()), c.Value))));
@@ -1213,8 +1208,7 @@ namespace TaskLayer
                             foreach (var mod in modd.Value)
                             {
                                 //Add if Observed (regardless if in database) REDUE
-                                //if (modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass))
-                                    if(modificationsKeepIfObserved.Contains(mod as Modification))
+                                if (modificationsKeepIfObserved.Contains(mod as Modification))
                                 {
                                     if (!modsToWrite.ContainsKey(modd.Key))
                                         modsToWrite.Add(modd.Key, new List<Modification> { mod

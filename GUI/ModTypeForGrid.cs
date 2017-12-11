@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+//Object that is placed in the DataGrid for ModSelection when writing a pruned DB
 namespace MetaMorpheusGUI
 {
+
     public class ModTypeForGrid
     {
 
