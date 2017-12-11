@@ -84,6 +84,8 @@ namespace TaskLayer
 
         public static event EventHandler<StringEventArgs> WarnHandler;
 
+        public static event EventHandler<StringEventArgs> LogHandler;
+
         public static event EventHandler<StringEventArgs> NewCollectionHandler;
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
@@ -358,6 +360,11 @@ namespace TaskLayer
         protected void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, null));
+        }
+
+        protected void Log(string v, List<string> nestedIds)
+        {
+            LogHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
         protected void NewCollection(string displayName, List<string> nestedIds)

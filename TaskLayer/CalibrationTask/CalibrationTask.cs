@@ -363,6 +363,9 @@ namespace TaskLayer
             if (combinedParameters.ZdotIons)
                 lp.Add(ProductType.Zdot);
 
+            Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+            Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, false, combinedParameters, initProdTol, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
             List<Psm> allPsms = allPsmsArray.ToList();
@@ -370,12 +373,12 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run()).CompactPeptideToProteinPeptideMatching;
 
             foreach (var huh in allPsms)
-                if (huh != null && huh.MostProbableProteinInfo == null)
+                if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-            new FdrAnalysisEngine(allPsms, searchMode, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
+            new FdrAnalysisEngine(allPsms, searchMode.NumNotches, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
             List<Psm> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
@@ -416,7 +419,7 @@ namespace TaskLayer
                 }
 
                 var computedPrecursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPpm.Item1 + 6 * currentResult.Ms1InfoPpm.Item2), Math.Abs(currentResult.Ms1InfoPpm.Item1 - 6 * currentResult.Ms1InfoPpm.Item2)));
-                var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPpm.Item1 + 4 * currentResult.Ms2InfoPpm.Item2), Math.Abs(currentResult.Ms2InfoPpm.Item1 - 4 * currentResult.Ms2InfoPpm.Item2)));
+                var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPpm.Item1 + 6 * currentResult.Ms2InfoPpm.Item2), Math.Abs(currentResult.Ms2InfoPpm.Item1 - 6 * currentResult.Ms2InfoPpm.Item2)));
 
                 bool ms1Worse = currentResult.Ms1List.Count <= bestResult.Ms1List.Count && ((currentResult.Ms1InfoPpm.Item2 / bestResult.Ms1InfoPpm.Item2) >= ((double)currentResult.Ms1List.Count / bestResult.Ms1List.Count));
                 bool ms2Worse = currentResult.Ms2List.Count <= bestResult.Ms2List.Count && ((currentResult.Ms2InfoPpm.Item2 / bestResult.Ms2InfoPpm.Item2) >= ((double)currentResult.Ms2List.Count / bestResult.Ms2List.Count));
@@ -434,8 +437,8 @@ namespace TaskLayer
                 round++;
             } while (true);
 
-            Console.WriteLine("Returning precTol:" + bestPrecursorMassToleranceForDatapointAcquisition);
-            Console.WriteLine("Returning prodTol:" + bestProductMassToleranceForDatapointAcquisition);
+            Log("Returning precTol:" + bestPrecursorMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
+            Log("Returning prodTol:" + bestProductMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
             return (goodIdentifications.Count, bestResult, bestPrecursorMassToleranceForDatapointAcquisition, bestProductMassToleranceForDatapointAcquisition);
         }
 

@@ -10,7 +10,7 @@ namespace MetaMorpheusGUI
 
         private string status;
         private int progress;
-        private bool inProgress;
+        private bool isIndeterminate;
 
         #endregion Private Fields
 
@@ -55,18 +55,18 @@ namespace MetaMorpheusGUI
             }
         }
 
-        public bool InProgress
+        public string DisplayName { get; }
+        public string Id { get; }
+
+        public bool IsIndeterminate
         {
-            get { return inProgress; }
+            get { return isIndeterminate; }
             set
             {
-                inProgress = value;
+                isIndeterminate = value;
                 OnPropertyChanged();
             }
         }
-
-        public string DisplayName { get; }
-        public string Id { get; }
 
         #endregion Public Properties
 

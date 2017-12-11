@@ -63,7 +63,6 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
 
-        public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
@@ -179,14 +178,9 @@ namespace EngineLayer
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var cpKey in compactPeptides.Keys.ToList())
-            {
                 compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matching[cpKey]);
-                var candidatePli = new ProteinLinkedInfo(matching[cpKey]);
-                if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
-                    MostProbableProteinInfo = candidatePli;
-            }
 
-            IsDecoy = compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
+            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
 
             FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
 
@@ -393,16 +387,6 @@ namespace EngineLayer
             {
                 return (f.Formula, f);
             }
-        }
-
-        private static bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
-        {
-            if (firstPli.IsDecoy && !secondPli.IsDecoy)
-                return true;
-            if (!firstPli.IsDecoy && secondPli.IsDecoy)
-                return false;
-
-            return true;
         }
 
         private Tuple<string, Dictionary<string, int>> Resolve(IEnumerable<Dictionary<int, ModificationWithMass>> enumerable)

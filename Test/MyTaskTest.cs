@@ -742,8 +742,8 @@ namespace Test
             using (StreamReader file = new StreamReader(Path.Combine(MySetUpClass.outputFolder, "TestUnique", "results.txt")))
             {
                 while ((line = file.ReadLine()) != null)
-                {   
-                    if (line.Contains("Unique peptides within 1% FDR: 4"))
+                {
+                    if (line.Contains("Unique target peptides within 1% FDR: 4"))
                     {
                         foundD = true;
                     }

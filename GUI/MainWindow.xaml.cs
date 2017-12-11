@@ -98,7 +98,7 @@ namespace MetaMorpheusGUI
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (GlobalEngineLevelSettings.NewestVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+            if (GlobalEngineLevelSettings.NewestKnownVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
             {
                 try
                 {
@@ -228,7 +228,6 @@ namespace MetaMorpheusGUI
             else
             {
                 var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
-                theTask.InProgress = true;
                 theTask.Status = "Starting...";
 
                 dataGridDatafiles.Items.Refresh();
@@ -245,7 +244,7 @@ namespace MetaMorpheusGUI
             else
             {
                 var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
-                theTask.InProgress = false;
+                theTask.IsIndeterminate = false;
                 theTask.Progress = 100;
                 theTask.Status = "Done!";
 
@@ -577,6 +576,7 @@ namespace MetaMorpheusGUI
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.S;
+                theEntityOnWhichToUpdateLabel.IsIndeterminate = true;
             }
         }
 
@@ -606,6 +606,7 @@ namespace MetaMorpheusGUI
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.v;
+                theEntityOnWhichToUpdateLabel.IsIndeterminate = false;
                 theEntityOnWhichToUpdateLabel.Progress = s.new_progress;
             }
         }
@@ -902,7 +903,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestVersion))
+            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion))
                 MessageBox.Show("You have the most updated version!");
             else
             {
