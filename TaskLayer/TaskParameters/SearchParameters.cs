@@ -26,7 +26,7 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = 30000.0;
-            ModTypeList = asdf;
+            ModTypeList = defaultModTypes;
         }
 
         #endregion Public Constructors
@@ -56,7 +56,7 @@ namespace TaskLayer
 
         #endregion Public Properties
 
-        public Dictionary<string, int> asdf = new Dictionary<string, int>()
+        public Dictionary<string, int> defaultModTypes = new Dictionary<string, int>()
         {
            {"Common Fixed", 0},
            {"Common Variable", 0 },

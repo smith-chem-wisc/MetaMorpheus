@@ -526,9 +526,9 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif2);
 
             var connorMod = new ModificationWithMass("ModToNotAppear", "Mod", motif, TerminusLocalization.Any, 10);
-            var connorMod2 = new ModificationWithMass("Default(Mod in DB and Observed) ", "Common Fixed", motif, TerminusLocalization.Any, 10);
-            var connorMod3 = new ModificationWithMass("ModToAlwaysAppear ", "Glycan", motif, TerminusLocalization.Any, 10);
-            var connorMod4 = new ModificationWithMass("ModObservedNotinDB ", "missing", motif2, TerminusLocalization.Any, 5);
+            var connorMod2 = new ModificationWithMass("Default(Mod in DB and Observed)", "Common Fixed", motif, TerminusLocalization.Any, 10);
+            var connorMod3 = new ModificationWithMass("ModToAlwaysAppear", "Glycan", motif, TerminusLocalization.Any, 10);
+            var connorMod4 = new ModificationWithMass("ModObservedNotinDB", "missing", motif2, TerminusLocalization.Any, 5);
             GlobalEngineLevelSettings.AddMods(new List<ModificationWithLocation>
             {
                 connorMod,
@@ -605,7 +605,6 @@ namespace Test
             var protein = ProteinDbLoader.LoadProteinXML(xmlName2, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-            //Assert.AreEqual(4, digestedList.Count);
 
             //Set Peptide with 1 mod at position 3
             PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
@@ -615,16 +614,9 @@ namespace Test
             PeptideWithSetModifications pepWithSetMods5 = digestedList[4];
 
 
-
-
-
-
             //CUSTOM PEP
             //PeptideWithSetModifications pep = new PeptideWithSetModifications();
-
-
-            //Finally Write MZML file
-            // Assert.AreEqual("PEP[ConnorModType:ConnorMod]TID", pepWithSetMods1.Sequence);
+            
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
             string mzmlName = @"hello.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -641,13 +633,16 @@ namespace Test
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 3);
             List<Modification> listOfMods = new List<Modification>();
-            listOfMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[0]);
-            listOfMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[1]);
             listOfMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[2]);
+            listOfMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[3]);
+            listOfMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[4]);
 
             //check Type, count, ID
-            Assert.AreEqual(listOfMods[0].modificationType, "ConnorModType");
-            Assert.AreEqual(listOfMods[0].id, "ConnorMod");
+            Assert.AreEqual(listOfMods[0].modificationType, "Common Fixed");
+            Assert.AreEqual(listOfMods[0].id, "Default(Mod in DB and Observed)");
+            Assert.AreEqual(listOfMods[1].id, "ModToAlwaysAppear");
+            //Makes sure Mod that was not in the DB but was observed is in pruned DB
+            Assert.AreEqual(listOfMods[2].id, "ModObservedNotinDB");
             Assert.AreEqual(listOfMods.Count, 3);
         }
 
