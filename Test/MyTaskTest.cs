@@ -406,7 +406,7 @@ namespace Test
                 }
             };
 
-            //add task 1 to task list
+            //add task to task list
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                new Tuple<string, MetaMorpheusTask>("task1", task1)};
 
@@ -502,7 +502,7 @@ namespace Test
             #region setup
 
             //Create Search Task
-            SearchTask task1 = new SearchTask
+            SearchTask task5 = new SearchTask
             {
                 SearchParameters = new SearchParameters
                 {
@@ -512,16 +512,15 @@ namespace Test
 
             };
 
-            task1.SearchParameters.ModTypeList["Mod"] = 0;
-            task1.SearchParameters.ModTypeList["Common Fixed"] = 1;
-            task1.SearchParameters.ModTypeList["Glycan"] = 2;
-            task1.SearchParameters.ModTypeList["missing"] = 3;
+            task5.SearchParameters.ModTypeList["Mod"] = 0;
+            task5.SearchParameters.ModTypeList["Common Fixed"] = 1;
+            task5.SearchParameters.ModTypeList["Glycan"] = 2;
+            task5.SearchParameters.ModTypeList["missing"] = 3;
 
 
             //add task 1 to task list
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-               new Tuple<string, MetaMorpheusTask>("task1", task1)};
-
+               new Tuple<string, MetaMorpheusTask>("task5", task5)};
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif2);
 
@@ -529,12 +528,13 @@ namespace Test
             var connorMod2 = new ModificationWithMass("Default(Mod in DB and Observed)", "Common Fixed", motif, TerminusLocalization.Any, 10);
             var connorMod3 = new ModificationWithMass("ModToAlwaysAppear", "Glycan", motif, TerminusLocalization.Any, 10);
             var connorMod4 = new ModificationWithMass("ModObservedNotinDB", "missing", motif2, TerminusLocalization.Any, 5);
+
             GlobalEngineLevelSettings.AddMods(new List<ModificationWithLocation>
             {
                 connorMod,
                 connorMod2,
                 connorMod3,
-                connorMod4,
+                connorMod4
             });
 
             #endregion setup
@@ -542,9 +542,8 @@ namespace Test
             #region Protein and Mod Creation
 
             //create modification lists
-            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-
+            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
 
             //add modification to Protein object
@@ -555,15 +554,22 @@ namespace Test
             ModificationWithMass modToAdd4 = connorMod4;
 
 
+            //add Fixed modifcation so can test if mod that is observed and not in DB
+            fixedModifications.Add(connorMod4);
+            task5.CommonParameters.ListOfModsFixed.Add(Tuple.Create<string,string>(connorMod4.modificationType, connorMod4.id));
+            
+
+
             dictHere.Add(1, new List<Modification> { modToAdd });
             dictHere.Add(2, new List<Modification> { modToAdd2 }); //default
             dictHere.Add(3, new List<Modification> { modToAdd3 }); //Alway Appear
+
 
             var dictHere2 = new Dictionary<int, List<Modification>>();
             dictHere2.Add(1, new List<Modification> { modToAdd });
             dictHere2.Add(2, new List<Modification> { modToAdd2 }); //default
             dictHere2.Add(3, new List<Modification> { modToAdd3 }); //Alway Appear
-            dictHere2.Add(4, new List<Modification> { modToAdd4 });
+            dictHere2.Add(4, new List<Modification> { modToAdd4 });//observed
             //protein Creation (One with mod and one without)
             Protein TestProtein = new Protein("PEPTID", "accession1");
             Protein TestProteinWithModForDB = new Protein("PPPPPPPPPPE", "accession1", new List<Tuple<string, string>>(), dictHere);
@@ -577,7 +583,6 @@ namespace Test
 
             string xmlName = "selectedMods.xml";
             string xmlName2 = "selectedModsObvs.xml";
-
 
 
             //Add Mod to list and write XML input database
@@ -603,7 +608,7 @@ namespace Test
 
             //now create MZML data
             var protein = ProteinDbLoader.LoadProteinXML(xmlName2, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var digestedList = protein[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
 
             //Set Peptide with 1 mod at position 3
@@ -618,32 +623,39 @@ namespace Test
             //PeptideWithSetModifications pep = new PeptideWithSetModifications();
             
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
-            string mzmlName = @"hello.mzML";
+            string mzmlName = @"newMzml.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             #endregion MZML File
             //make sure this runs correctly
             //run!
+            Console.WriteLine(task5.CommonParameters.ListOfModsLocalize);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
-
             string outputFolderInThisTest = MySetUpClass.outputFolder;
-            string final = Path.Combine(MySetUpClass.outputFolder, "task1", "selectedModsPruned.xml");
+            string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModsPruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
+            var Dlist = proteins[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            Assert.AreEqual(Dlist[0].numFixedMods, 1);
+            
+
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 3);
-            List<Modification> listOfMods = new List<Modification>();
-            listOfMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[2]);
-            listOfMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[3]);
-            listOfMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[4]);
+            List<Modification> listOfLocalMods = new List<Modification>();
+            listOfLocalMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[2]);
+            listOfLocalMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[3]);
+            listOfLocalMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[11]);
 
             //check Type, count, ID
-            Assert.AreEqual(listOfMods[0].modificationType, "Common Fixed");
-            Assert.AreEqual(listOfMods[0].id, "Default(Mod in DB and Observed)");
-            Assert.AreEqual(listOfMods[1].id, "ModToAlwaysAppear");
+            Assert.AreEqual(listOfLocalMods[0].modificationType, "Common Fixed");
+            Assert.AreEqual(listOfLocalMods[2].modificationType, "missing");
+            Assert.IsFalse(listOfLocalMods.Contains(connorMod)); //make sure that mod set not to show up is not in mod list
+
+            Assert.AreEqual(listOfLocalMods[0].id, "Default(Mod in DB and Observed)");
+            Assert.AreEqual(listOfLocalMods[1].id, "ModToAlwaysAppear");
             //Makes sure Mod that was not in the DB but was observed is in pruned DB
-            Assert.AreEqual(listOfMods[2].id, "ModObservedNotinDB");
-            Assert.AreEqual(listOfMods.Count, 3);
+            Assert.AreEqual(listOfLocalMods[2].id, "ModObservedNotinDB");
+            Assert.AreEqual(listOfLocalMods.Count, 3);
         }
 
         [Test]

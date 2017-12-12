@@ -1178,7 +1178,8 @@ namespace TaskLayer
                 List<Modification> modificationsKeepIfObserved = new List<Modification>();
 
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
-                foreach (var modType in SearchParameters.ModTypeList) //not in here....
+
+                foreach (var modType in SearchParameters.ModTypeList)
                 {
                     if (modType.Value == 1)
                         continue;
@@ -1188,7 +1189,17 @@ namespace TaskLayer
                         modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                     if (modType.Value == 3)
                     {
-                        modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        foreach (var mod in fixedModifications)
+                        {
+                            if (mod.modificationType == modType.Key)
+                                modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        }
+
+                        foreach (var mod in variableModifications)
+                        {
+                            if (mod.modificationType == modType.Key)
+                                modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        }
                     }
                 }
 
@@ -1197,27 +1208,34 @@ namespace TaskLayer
                     if (!protein.IsDecoy)
                     {
 
-                        protein.OneBasedPossibleLocalizedModifications.Add(protein.OneBasedPossibleLocalizedModifications.Count + 1, modificationsKeepIfObserved);
-
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (goodPsmsForEachProtein.ContainsKey(protein))
                             modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.CompactPeptides.First().Value.Item2.First()), c.Value))));
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
+
+                        foreach (var observedMod in modsObservedOnThisProtein)
+                        {
+                            //Add if Observed (regardless if in database) 
+                            var tempMod = observedMod.Item2;
+
+                            if (modificationsKeepIfObserved.Contains(tempMod as Modification))
+                            {
+                                if (!modsToWrite.ContainsKey(observedMod.Item1))
+                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification
+                                        });
+                                else
+                                    modsToWrite[observedMod.Item1].Add(observedMod.Item2 as Modification);
+                                continue;
+                            }
+                        }
+
+                        //Add in all other cases if not already added
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
-                                //Add if Observed (regardless if in database) REDUE
-                                if (modificationsKeepIfObserved.Contains(mod as Modification))
-                                {
-                                    if (!modsToWrite.ContainsKey(modd.Key))
-                                        modsToWrite.Add(modd.Key, new List<Modification> { mod
-                                        });
-                                    else
-                                        modsToWrite[modd.Key].Add(mod);
-                                    continue;
-                                }
-                                //Add if always In Database or if was observed and in database
+
+                                //Add if always In Database or if was observed and in database and not set to not include
                                 if (!modificationsToLeaveOut.Contains(mod as Modification))
                                     if (modificationsToAlwaysKeep.Contains(mod as Modification)
                                         || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
