@@ -1179,15 +1179,16 @@ namespace TaskLayer
 
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
 
+                //Add user mod selection behavours to Pruned DB
                 foreach (var modType in SearchParameters.ModTypeList)
                 {
-                    if (modType.Value == 1)
+                    if (modType.Value == 1)//keep if observed and in DB
                         continue;
-                    if (modType.Value == 0)
+                    if (modType.Value == 0) //Leave out of Pruned DB
                         modificationsToLeaveOut.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                    if (modType.Value == 2)
+                    if (modType.Value == 2)//Keep in Pruned no matter what
                         modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                    if (modType.Value == 3)
+                    if (modType.Value == 3)//Write to pruned DB if observed regardless if in DB
                     {
                         foreach (var mod in fixedModifications)
                         {

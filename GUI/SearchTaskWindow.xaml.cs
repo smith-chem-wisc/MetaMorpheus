@@ -28,7 +28,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForGrid> modSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
-        string prunedVisible = "Hidden";
 
         #endregion Private Fields
 
@@ -525,45 +524,37 @@ namespace MetaMorpheusGUI
         }
 
 
-        public Dictionary<string, int> SetModSelectionForPrunedDB()
+        private void SetModSelectionForPrunedDB()
         {
             List<Tuple< string, bool, bool, bool, bool>> listOfSelectedMods = new List<Tuple<string, bool, bool, bool, bool>>();
             //checks the grid values for which button is checked then sets paramaters accordingly
             foreach (var modTypeInGrid in modSelectionGridItems)
             {
-                if(modTypeInGrid.Item2 == true)
+                if(modTypeInGrid.Item2)
                 {
                     TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 0;
                     continue;
                 }
-                if (modTypeInGrid.Item3 == true)
+                if (modTypeInGrid.Item3)
                 {
                     TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 1;
                     continue;
                 }
-                if (modTypeInGrid.Item4 == true)
+                if (modTypeInGrid.Item4)
                 {
                     TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 2;
                     continue;
                 }
-                if (modTypeInGrid.Item5 == true)
+                if (modTypeInGrid.Item5)
                 {
                     TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 3;
                 }
 
             }
-
-            foreach (var modType in listOfSelectedMods)
-            {
-                //int tempVal;
-               // TheTask.SearchParameters.ModTypeList[modType.Key] = tempVal;
-
-            }
-            return new Dictionary<string,int>();
         }
 
 
-        public void UpdateModSelectionGrid()
+        private void UpdateModSelectionGrid()
         {
             int i = 0;
             foreach (var modType in TheTask.SearchParameters.ModTypeList)
@@ -592,17 +583,6 @@ namespace MetaMorpheusGUI
         }
         
         #endregion Private Methods
-
-        private void writePrunedDBCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            prunedVisible = "Visible";
-            var a = prunedVisible;
-        }
-
-        private void writePrunedDBCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            prunedVisible = "Hidden";
-        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

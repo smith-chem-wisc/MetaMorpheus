@@ -56,7 +56,7 @@ namespace TaskLayer
 
         #endregion Public Properties
 
-        public Dictionary<string, int> defaultModTypes = new Dictionary<string, int>()
+        private Dictionary<string, int> defaultModTypes = new Dictionary<string, int>
         {
            {"Common Fixed", 0},
            {"Common Variable", 0 },
