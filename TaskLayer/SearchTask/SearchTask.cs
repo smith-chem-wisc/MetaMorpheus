@@ -1171,35 +1171,23 @@ namespace TaskLayer
             if (SearchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { taskId });
-                List<Modification> modificationsToAlwaysKeep = new List<Modification>();
+                List<Modification> modificationsToWriteIfInDatabase = new List<Modification>();
                 List<Modification> modificationsToLeaveOut = new List<Modification>();
-                List<Modification> modificationsKeepIfObserved = new List<Modification>();
+                List<Modification> modificationsToWriteIfObserved = new List<Modification>();
 
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
 
                 //Add user mod selection behavours to Pruned DB
                 foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {
-                    if (modType.Value == 1)//keep if observed and in DB
-                        continue;
-                    if (modType.Value == 0) //Leave out of Pruned DB
+                    if (modType.Value == 0) // Do not write
                         modificationsToLeaveOut.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                    if (modType.Value == 2)//Keep in Pruned no matter what
-                        modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                    if (modType.Value == 3)//Write to pruned DB if observed regardless if in DB
-                    {
-                        foreach (var mod in fixedModifications)
-                        {
-                            if (mod.modificationType == modType.Key)
-                                modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                        }
-
-                        foreach (var mod in variableModifications)
-                        {
-                            if (mod.modificationType == modType.Key)
-                                modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                        }
-                    }
+                    if (modType.Value == 1) // Write if observed and in database
+                        continue;
+                    if (modType.Value == 2) // Write if in database
+                        modificationsToWriteIfInDatabase.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                    if (modType.Value == 3) // Write if observed
+                        modificationsToWriteIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                 }
 
                 foreach (var protein in proteinList)
@@ -1217,7 +1205,7 @@ namespace TaskLayer
                             //Add if Observed (regardless if in database)
                             var tempMod = observedMod.Item2;
 
-                            if (modificationsKeepIfObserved.Contains(tempMod as Modification))
+                            if (modificationsToWriteIfObserved.Contains(tempMod as Modification))
                             {
                                 if (!modsToWrite.ContainsKey(observedMod.Item1))
                                     modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification
@@ -1234,7 +1222,7 @@ namespace TaskLayer
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
                                 if (!modificationsToLeaveOut.Contains(mod as Modification))
-                                    if (modificationsToAlwaysKeep.Contains(mod as Modification)
+                                    if (modificationsToWriteIfInDatabase.Contains(mod as Modification)
                                         || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
                                     {
                                         if (!modsToWrite.ContainsKey(modd.Key))
