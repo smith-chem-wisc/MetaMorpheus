@@ -1171,19 +1171,17 @@ namespace TaskLayer
             if (SearchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { taskId });
+                List<Modification> modificationsToWriteIfBoth = new List<Modification>();
                 List<Modification> modificationsToWriteIfInDatabase = new List<Modification>();
-                List<Modification> modificationsToLeaveOut = new List<Modification>();
                 List<Modification> modificationsToWriteIfObserved = new List<Modification>();
 
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
 
-                //Add user mod selection behavours to Pruned DB
+                // Add user mod selection behavours to Pruned DB
                 foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {
-                    if (modType.Value == 0) // Do not write
-                        modificationsToLeaveOut.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                     if (modType.Value == 1) // Write if observed and in database
-                        continue;
+                        modificationsToWriteIfBoth.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                     if (modType.Value == 2) // Write if in database
                         modificationsToWriteIfInDatabase.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                     if (modType.Value == 3) // Write if observed
@@ -1220,14 +1218,14 @@ namespace TaskLayer
                             foreach (var mod in modd.Value)
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
-                                if (!modificationsToLeaveOut.Contains(mod as Modification))
-                                    if (modificationsToWriteIfInDatabase.Contains(mod as Modification) || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
-                                    {
-                                        if (!modsToWrite.ContainsKey(modd.Key))
-                                            modsToWrite.Add(modd.Key, new List<Modification> { mod });
-                                        else
-                                            modsToWrite[modd.Key].Add(mod);
-                                    }
+                                if (modificationsToWriteIfInDatabase.Contains(mod as Modification) ||
+                                (modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)) && modificationsToWriteIfBoth.Contains(mod as Modification)))
+                                {
+                                    if (!modsToWrite.ContainsKey(modd.Key))
+                                        modsToWrite.Add(modd.Key, new List<Modification> { mod });
+                                    else
+                                        modsToWrite[modd.Key].Add(mod);
+                                }
                             }
 
                         protein.OneBasedPossibleLocalizedModifications.Clear();
