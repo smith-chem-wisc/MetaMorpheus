@@ -513,15 +513,10 @@ namespace MetaMorpheusGUI
 
         private void SetModSelectionForPrunedDB()
         {
-            List<Tuple<string, bool, bool, bool, bool>> listOfSelectedMods = new List<Tuple<string, bool, bool, bool, bool>>();
+            TheTask.SearchParameters.ModsToWriteSelection = new Dictionary<string, int>();
             //checks the grid values for which button is checked then sets paramaters accordingly
             foreach (var modTypeInGrid in modSelectionGridItems)
             {
-                if (modTypeInGrid.Item2)
-                {
-                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 0;
-                    continue;
-                }
                 if (modTypeInGrid.Item3)
                 {
                     TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 1;
