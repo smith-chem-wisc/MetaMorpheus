@@ -109,10 +109,10 @@ namespace EngineLayer.ModernSearch
                             Array.Sort(productMasses);
 
                             double thePrecursorMass = scan.PrecursorMass;
-                            var score = CalculateMatchQualityFeatures(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
+                            var score = CalculateMatchQualityFeatures(scan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
                             int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMassIncludingFixedMods);
 
-                            if (score.matchingProductsHere >= CommonParameters.ScoreCutoff)
+                            if (score.arr[0] >= CommonParameters.ScoreCutoff)
                             {
                                 if (globalPsms[i] == null)
                                     globalPsms[i] = new Psm(peptide, notch, score, i, scan, CommonParameters.ExcelCompatible);

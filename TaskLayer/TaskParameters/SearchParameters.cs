@@ -19,7 +19,6 @@ namespace TaskLayer
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
             HistogramBinTolInDaltons = 0.003;
-            DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
@@ -43,7 +42,6 @@ namespace TaskLayer
         public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
-        public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
         public string CustomMdac { get; set; }

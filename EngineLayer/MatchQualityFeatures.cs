@@ -4,17 +4,15 @@
     {
         #region Public Fields
 
-        public readonly int matchingProductsHere;
-        public readonly double intensityFracMatch;
+        public readonly double[] arr;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public MatchQualityFeatures(int matchingProductsHere, double intensityFracMatch)
+        public MatchQualityFeatures(double[] arr)
         {
-            this.matchingProductsHere = matchingProductsHere;
-            this.intensityFracMatch = intensityFracMatch;
+            this.arr = arr;
         }
 
         public MatchQualityFeatures()
@@ -27,12 +25,7 @@
 
         public override string ToString()
         {
-            return matchingProductsHere + "\t" + intensityFracMatch;
-        }
-
-        public double[] ToDoubleArray()
-        {
-            return new[] { matchingProductsHere, intensityFracMatch };
+            return string.Join("\t", arr);
         }
 
         #endregion Public Methods

@@ -766,7 +766,7 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
             proseCreatedWhileRunning.Append("report all ambiguity = " + CommonParameters.ReportAllAmbiguity + "; ");
-
+        
             ParallelOptions parallelOptions = new ParallelOptions();
             if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
@@ -915,7 +915,7 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
 
-            Func<MatchQualityFeatures, double> scoringFunction = ScorePsms(allPsms, OutputFolder);
+            ScorePsms(allPsms, OutputFolder);
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
@@ -929,22 +929,6 @@ namespace TaskLayer
             {
                 var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, true, new List<string> { taskId }).Run();
                 proteinGroups = proteinScoringAndFdrResults.sortedAndScoredProteinGroups;
-            }
-
-            if (SearchParameters.DoLocalizationAnalysis)
-            {
-                Status("Running localization analysis...", taskId);
-                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
-                {
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                    var origDataFile = currentRawFileList[spectraFileIndex];
-                    Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
-                    var localizationEngine = new LocalizationEngine(allPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.SearchParameters.AddCompIons, scoringFunction);
-                    localizationEngine.Run();
-                    myFileManager.DoneWithFile(origDataFile);
-                    ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
-                });
             }
 
             new ModificationAnalysisEngine(allPsms, new List<string> { taskId }).Run();
@@ -1377,9 +1361,11 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
-        private Func<MatchQualityFeatures, double> ScorePsms(List<Psm> allPsms, string outputFolder)
+        private void ScorePsms(List<Psm> allPsms, string outputFolder)
         {
             Console.WriteLine("in ScorePsms");
+
+            (Dictionary<Protein, HashSet<CompactPeptideBase>>, Dictionary <Protein, HashSet < Psm >>) fff = GetProteinDictionary(allPsms);
 
             var writtenFile = Path.Combine(outputFolder, "beforeScoring.tsv");
 
@@ -1404,7 +1390,7 @@ namespace TaskLayer
                 if (allPsms[i] != null)
                     foreach (var asdfj in allPsms[i].CompactPeptides)
                     {
-                        input[j] = asdfj.Value.Item3.ToDoubleArray();
+                        input[j] = asdfj.Value.Item3.arr;
                         output[j] = asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy);
                         j++;
                     }
@@ -1421,9 +1407,8 @@ namespace TaskLayer
             LogisticRegression regression = learner.Learn(input, output);
 
             Console.WriteLine("weights: " + string.Join("\t", regression.Weights));
-            Console.WriteLine("intercept: " + regression.Intercept);
 
-            double scoringFunction(MatchQualityFeatures matchQualityFeatures) => regression.Probability(matchQualityFeatures.ToDoubleArray());
+            double scoringFunction(MatchQualityFeatures matchQualityFeatures) => regression.Probability(matchQualityFeatures.arr);
 
             // Actually, score!!!
             for (int i = 0; i < allPsms.Count; i++)
@@ -1431,8 +1416,30 @@ namespace TaskLayer
                 {
                     allPsms[i].ScoreAndPrune(scoringFunction);
                 }
+        }
 
-            return scoringFunction;
+        private (Dictionary<Protein, HashSet<CompactPeptideBase>>, Dictionary<Protein, HashSet<Psm>>) GetProteinDictionary(List<Psm> allPsms)
+        {
+            Dictionary<Protein, HashSet<CompactPeptideBase>> toReturnCompactPeptideBase = new Dictionary<Protein, HashSet<CompactPeptideBase>>();
+            Dictionary<Protein, HashSet<Psm>> toReturnPsm = new Dictionary<Protein, HashSet<Psm>>();
+            
+            foreach (var ok in allPsms.Where(b=>b!=null))
+            {
+                foreach (var kk in ok.CompactPeptides)
+                {
+                    foreach (var djkfj in kk.Value.Item2)
+                    {
+                        if (!toReturnCompactPeptideBase.ContainsKey(djkfj.Protein))
+                            toReturnCompactPeptideBase[djkfj.Protein] = new HashSet<CompactPeptideBase>();
+                        if (!toReturnPsm.ContainsKey(djkfj.Protein))
+                            toReturnPsm[djkfj.Protein] = new HashSet<Psm>();
+                        toReturnCompactPeptideBase[djkfj.Protein].Add(kk.Key);
+                        toReturnPsm[djkfj.Protein].Add(ok);
+                    }
+                }
+            }
+
+            return (toReturnCompactPeptideBase, toReturnPsm);
         }
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)

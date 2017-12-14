@@ -106,9 +106,9 @@ namespace EngineLayer.ClassicSearch
                         foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                         {
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                            var matchQualityFeatures = CalculateMatchQualityFeatures(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
+                            var matchQualityFeatures = CalculateMatchQualityFeatures(scanWithIndexAndNotchInfo.theScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
-                            if (matchQualityFeatures.matchingProductsHere >= commonParameters.ScoreCutoff)
+                            if (matchQualityFeatures.arr[0] >= commonParameters.ScoreCutoff)
                             {
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
                                     psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, matchQualityFeatures, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);

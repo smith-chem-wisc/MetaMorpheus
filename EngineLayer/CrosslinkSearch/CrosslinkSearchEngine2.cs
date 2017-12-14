@@ -375,11 +375,11 @@ namespace EngineLayer.CrosslinkSearch
 
                         foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                         {
-                            var score = CalculateMatchQualityFeatures(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false);
+                            var score = CalculateMatchQualityFeatures(scanWithIndexAndNotchInfo.theScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false);
 
-                            if (score.matchingProductsHere >= 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
+                            if (score.arr[0] >= 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
                             {
-                                var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score.matchingProductsHere + score.intensityFracMatch, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score.arr[0] + score.arr[1], scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
                                 PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, crosslinker, lp, CommonParameters.ProductMassTolerance);
                                 double currentBestPsmLocalScore = 0;
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)

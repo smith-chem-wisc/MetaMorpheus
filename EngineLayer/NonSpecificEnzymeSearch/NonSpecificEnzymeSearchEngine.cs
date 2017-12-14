@@ -117,7 +117,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 var candidatePeptide = peptideIndex[id];
                                 double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
-                                var peptideScore = CalculateMatchQualityFeatures(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
+                                var peptideScore = CalculateMatchQualityFeatures(scan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
                                 Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, candidatePeptide, terminusType, massDiffAcceptor);
                                 if (notchAndPrecursor.Item1 >= 0)
                                 {
