@@ -1208,7 +1208,6 @@ namespace TaskLayer
                 {
                     if (!protein.IsDecoy)
                     {
-
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (goodPsmsForEachProtein.ContainsKey(protein))
                             modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.CompactPeptides.First().Value.Item2.First()), c.Value))));
@@ -1217,7 +1216,7 @@ namespace TaskLayer
 
                         foreach (var observedMod in modsObservedOnThisProtein)
                         {
-                            //Add if Observed (regardless if in database) 
+                            //Add if Observed (regardless if in database)
                             var tempMod = observedMod.Item2;
 
                             if (modificationsKeepIfObserved.Contains(tempMod as Modification))
@@ -1235,7 +1234,6 @@ namespace TaskLayer
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
-
                                 //Add if always In Database or if was observed and in database and not set to not include
                                 if (!modificationsToLeaveOut.Contains(mod as Modification))
                                     if (modificationsToAlwaysKeep.Contains(mod as Modification)
@@ -1544,7 +1542,6 @@ namespace TaskLayer
                 SucessfullyFinishedWritingFile(writtenFile, nestedIds);
             }
         }
-
 
         #endregion Private Methods
     }

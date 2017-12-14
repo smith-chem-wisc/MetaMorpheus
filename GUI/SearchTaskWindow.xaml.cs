@@ -65,7 +65,6 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = dataContextForSearchTaskWindow;
-            
         }
 
         public SearchTaskWindow(SearchTask task)
@@ -99,8 +98,6 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = dataContextForSearchTaskWindow;
-
-           
         }
 
         #endregion Public Constructors
@@ -493,7 +490,6 @@ namespace MetaMorpheusGUI
 
             SetModSelectionForPrunedDB();
 
-
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
 
@@ -523,14 +519,13 @@ namespace MetaMorpheusGUI
             e.Handled = !TextBoxIntAllowed(e.Text);
         }
 
-
         private void SetModSelectionForPrunedDB()
         {
-            List<Tuple< string, bool, bool, bool, bool>> listOfSelectedMods = new List<Tuple<string, bool, bool, bool, bool>>();
+            List<Tuple<string, bool, bool, bool, bool>> listOfSelectedMods = new List<Tuple<string, bool, bool, bool, bool>>();
             //checks the grid values for which button is checked then sets paramaters accordingly
             foreach (var modTypeInGrid in modSelectionGridItems)
             {
-                if(modTypeInGrid.Item2)
+                if (modTypeInGrid.Item2)
                 {
                     TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 0;
                     continue;
@@ -549,10 +544,8 @@ namespace MetaMorpheusGUI
                 {
                     TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 3;
                 }
-
             }
         }
-
 
         private void UpdateModSelectionGrid()
         {
@@ -561,18 +554,21 @@ namespace MetaMorpheusGUI
             {
                 var a = modType as KeyValuePair<string, int>?;
                 var tempTuple = new Tuple<string, int>(a.Value.Key, a.Value.Value);
-                
+
                 switch (tempTuple.Item2)
                 {
                     case (0):
                         modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, true, false, false, false);
                         break;
+
                     case (1):
-                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, false,true , false, false);
+                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, false, true, false, false);
                         break;
+
                     case (2):
                         modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, true, false, true, false);
                         break;
+
                     case (3):
                         modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, false, false, false, true);
                         break;
@@ -581,7 +577,7 @@ namespace MetaMorpheusGUI
                 i++;
             }
         }
-        
+
         #endregion Private Methods
     }
 
@@ -652,7 +648,6 @@ namespace MetaMorpheusGUI
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-
 
         #endregion Protected Methods
     }

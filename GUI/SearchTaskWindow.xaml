@@ -402,34 +402,34 @@
                                     <TextBox x:Name="histogramBinWidthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
                                 </StackPanel>
                             </GroupBox>
-                            <GroupBox Header="Pruned Database Writing" Height="333">
-                                <DockPanel   Grid.Row="0" Margin="0,0,0,19" Grid.RowSpan="2" >
-                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Pruned Database" Margin="0,0,0,101" Width="152" />
-                                    <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" AllowDrop="True" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=writePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                            <GroupBox Header="Pruned Database Writing">
+                                <StackPanel>
+                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Pruned Database" />
+                                    <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=writePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Mod Type"  Width="16*" Binding="{Binding ModName}" />
-                                            <DataGridTemplateColumn  Header=" Do not Write"  Width ="30*" IsReadOnly="False" >
+                                            <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
+                                            <DataGridTemplateColumn  Header=" Do not Write"  Width ="1*" IsReadOnly="False">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn  Header="Write if in DB and Observed"  Width ="30*" IsReadOnly="False" >
+                                            <DataGridTemplateColumn  Header="Write if in DB and Observed"  Width ="1*" IsReadOnly="False">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn  Header="Write if in DB"  Width ="30*" IsReadOnly="False" >
+                                            <DataGridTemplateColumn  Header="Write if in DB"  Width ="1*" IsReadOnly="False">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
-                                            <DataGridTemplateColumn  Header="Write if Observed"  Width ="30*" IsReadOnly="False" >
+                                            <DataGridTemplateColumn  Header="Write if Observed"  Width ="1*" IsReadOnly="False">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <RadioButton HorizontalAlignment="Center"  GroupName="{Binding ModName}" IsChecked="{Binding Item5, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
@@ -438,9 +438,8 @@
                                             </DataGridTemplateColumn>
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                </DockPanel>
+                                </StackPanel>
                             </GroupBox>
-
                         </StackPanel>
                     </Expander>
                 </GroupBox>
