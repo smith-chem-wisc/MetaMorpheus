@@ -742,7 +742,6 @@ namespace TaskLayer
             if (CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
 
-            MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             Dictionary<string, Modification> unknownModifications = new Dictionary<string, Modification>();
             Status("Loading proteins...", new List<string> { taskId });
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
@@ -785,7 +784,7 @@ namespace TaskLayer
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
-                massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -890,7 +889,7 @@ namespace TaskLayer
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
                 List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
-                massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
                 foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
                     new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, allPsms, proteinList, fixedModifications, variableModifications, terminusSpecificIons, ListOfDigestionParams, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string> { taskId }).Run();
             }
