@@ -516,8 +516,7 @@ namespace Test
             task5.SearchParameters.ModsToWriteSelection["missing"] = 3;
 
             //add task 1 to task list
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-               new Tuple<string, MetaMorpheusTask>("task5", task5)};
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {new Tuple<string, MetaMorpheusTask>("task5", task5)};
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif2);
 
@@ -621,7 +620,7 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
             string outputFolderInThisTest = MySetUpClass.outputFolder;
-            string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModsPruned.xml");
+            string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             var Dlist = proteins[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(Dlist[0].numFixedMods, 1);
