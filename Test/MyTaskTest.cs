@@ -398,7 +398,11 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,
-                    MassDiffAcceptorType = MassDiffAcceptorType.Exact
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                    ModsToWriteSelection = new Dictionary<string, int>
+                    {
+                        {"ConnorModType", 1}
+                    }
                 }
             };
 
