@@ -404,7 +404,7 @@
                             </GroupBox>
                             <GroupBox Header="Pruned Database Writing">
                                 <StackPanel>
-                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Pruned Database" />
+                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" />
                                     <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=writePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />

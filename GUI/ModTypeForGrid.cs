@@ -5,13 +5,10 @@ namespace MetaMorpheusGUI
     {
         #region Public Constructors
 
-        public ModTypeForGrid(string modName, bool item2, bool item3, bool item4, bool item5)
+        public ModTypeForGrid(string modName)
         {
             ModName = modName;
-            Item2 = item2;
-            Item3 = item3;
-            Item4 = item4;
-            Item5 = item5;
+            Item2 = true;
         }
 
         #endregion Public Constructors

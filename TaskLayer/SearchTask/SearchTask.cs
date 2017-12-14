@@ -1178,7 +1178,7 @@ namespace TaskLayer
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
 
                 //Add user mod selection behavours to Pruned DB
-                foreach (var modType in SearchParameters.ModTypeList)
+                foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {
                     if (modType.Value == 1)//keep if observed and in DB
                         continue;

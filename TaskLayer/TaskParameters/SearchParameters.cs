@@ -5,30 +5,6 @@ namespace TaskLayer
 {
     public class SearchParameters
     {
-        #region Private Fields
-
-        private Dictionary<string, int> defaultModTypes = new Dictionary<string, int>
-        {
-           {"Common Fixed", 0},
-           {"Common Variable", 0 },
-           {"Detached",0 },
-           {"Glycan",0 },
-           {"missing",0 },
-           {"Mod",0 },
-           {"ProteinTermMod",0 },
-           {"PeptideTermMod",0 },
-           {"Metal",0 },
-           {"TrypsinDigestedMod",1 },
-           {"1 nucleotide substitution",1 },
-           {"2+ nucleotide substitution",1 },
-           {"Surfactant",1 },
-           {"Tandem Mass Tag",1 },
-           {"Unimod",1 },
-           {"UniProt",1 },
-        };
-
-        #endregion Private Fields
-
         #region Public Constructors
 
         public SearchParameters()
@@ -49,7 +25,11 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = 30000.0;
-            ModTypeList = defaultModTypes;
+            ModsToWriteSelection = new Dictionary<string, int>
+            {
+                {"ProteinTermMod", 3},
+                {"UniProt", 2},
+            };
         }
 
         #endregion Public Constructors
@@ -75,7 +55,7 @@ namespace TaskLayer
         public string CustomMdac { get; set; }
         public double MaxFragmentSize { get; set; }
         public double HistogramBinTolInDaltons { get; set; }
-        public Dictionary<string, int> ModTypeList { get; set; }
+        public Dictionary<string, int> ModsToWriteSelection { get; set; }
 
         #endregion Public Properties
     }

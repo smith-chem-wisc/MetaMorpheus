@@ -506,10 +506,10 @@ namespace Test
                 }
             };
 
-            task5.SearchParameters.ModTypeList["Mod"] = 0;
-            task5.SearchParameters.ModTypeList["Common Fixed"] = 1;
-            task5.SearchParameters.ModTypeList["Glycan"] = 2;
-            task5.SearchParameters.ModTypeList["missing"] = 3;
+            task5.SearchParameters.ModsToWriteSelection["Mod"] = 0;
+            task5.SearchParameters.ModsToWriteSelection["Common Fixed"] = 1;
+            task5.SearchParameters.ModsToWriteSelection["Glycan"] = 2;
+            task5.SearchParameters.ModsToWriteSelection["missing"] = 3;
 
             //add task 1 to task list
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {

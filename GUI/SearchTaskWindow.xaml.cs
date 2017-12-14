@@ -37,14 +37,7 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
             TheTask = new SearchTask();
-
-            foreach (var a in TheTask.SearchParameters.ModTypeList)
-            {
-                var b = new Tuple<string, bool, bool, bool, bool>(a.Key, false, true, false, false);
-                modSelectionGridItems.Add(new ModTypeForGrid(b.Item1, b.Item2, b.Item3, b.Item4, b.Item5));
-            }
-            ModSelectionGrid.ItemsSource = modSelectionGridItems;
-
+            
             PopulateChoices();
 
             UpdateFieldsFromTask(TheTask);
@@ -71,15 +64,7 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
             TheTask = task;
-
-            foreach (var a in TheTask.SearchParameters.ModTypeList)
-            {
-                var b = new Tuple<string, bool, bool, bool, bool>(a.Key, false, true, false, false);
-                modSelectionGridItems.Add(new ModTypeForGrid(b.Item1, b.Item2, b.Item3, b.Item4, b.Item5));
-            }
-
-            ModSelectionGrid.ItemsSource = modSelectionGridItems;
-
+            
             PopulateChoices();
 
             UpdateFieldsFromTask(TheTask);
@@ -139,7 +124,14 @@ namespace MetaMorpheusGUI
 
             precursorMassToleranceComboBox.Items.Add("Absolute");
             precursorMassToleranceComboBox.Items.Add("ppm");
-
+            
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForGrid(hm.Key);
+                modSelectionGridItems.Add(theModType);
+            }
+            ModSelectionGrid.ItemsSource = modSelectionGridItems;
+            
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
@@ -527,54 +519,64 @@ namespace MetaMorpheusGUI
             {
                 if (modTypeInGrid.Item2)
                 {
-                    TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 0;
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 0;
                     continue;
                 }
                 if (modTypeInGrid.Item3)
                 {
-                    TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 1;
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 1;
                     continue;
                 }
                 if (modTypeInGrid.Item4)
                 {
-                    TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 2;
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 2;
                     continue;
                 }
                 if (modTypeInGrid.Item5)
                 {
-                    TheTask.SearchParameters.ModTypeList[modTypeInGrid.ModName] = 3;
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 3;
                 }
             }
         }
 
         private void UpdateModSelectionGrid()
         {
-            int i = 0;
-            foreach (var modType in TheTask.SearchParameters.ModTypeList)
+            foreach (var modType in TheTask.SearchParameters.ModsToWriteSelection)
             {
-                var a = modType as KeyValuePair<string, int>?;
-                var tempTuple = new Tuple<string, int>(a.Value.Key, a.Value.Value);
-
-                switch (tempTuple.Item2)
+                var huhb = modSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
+                if (huhb!=null)
                 {
-                    case (0):
-                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, true, false, false, false);
-                        break;
+                    switch (modType.Value)
+                    {
+                        case (0):
+                            huhb.Item2 = true;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
 
-                    case (1):
-                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, false, true, false, false);
-                        break;
+                        case (1):
+                            huhb.Item2 = false;
+                            huhb.Item3 = true;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
 
-                    case (2):
-                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, true, false, true, false);
-                        break;
+                        case (2):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = true;
+                            huhb.Item5 = false;
+                            break;
 
-                    case (3):
-                        modSelectionGridItems[i] = new ModTypeForGrid(a.Value.Key, false, false, false, true);
-                        break;
+                        case (3):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = true;
+                            break;
+                    }
                 }
-
-                i++;
             }
         }
 
