@@ -1202,36 +1202,34 @@ namespace TaskLayer
 
                         foreach (var observedMod in modsObservedOnThisProtein)
                         {
-                            //Add if Observed (regardless if in database)
+                            //Add if observed (regardless if in database)
                             var tempMod = observedMod.Item2;
 
                             if (modificationsToWriteIfObserved.Contains(tempMod as Modification))
                             {
                                 if (!modsToWrite.ContainsKey(observedMod.Item1))
-                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification
-                                        });
+                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification });
                                 else
                                     modsToWrite[observedMod.Item1].Add(observedMod.Item2 as Modification);
                                 continue;
                             }
                         }
 
-                        //Add in all other cases if not already added
+                        // Add if in database (two cases: always or if observed)
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
                                 if (!modificationsToLeaveOut.Contains(mod as Modification))
-                                    if (modificationsToWriteIfInDatabase.Contains(mod as Modification)
-                                        || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
+                                    if (modificationsToWriteIfInDatabase.Contains(mod as Modification) || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
                                     {
                                         if (!modsToWrite.ContainsKey(modd.Key))
-                                            modsToWrite.Add(modd.Key, new List<Modification> { mod
-                                        });
+                                            modsToWrite.Add(modd.Key, new List<Modification> { mod });
                                         else
                                             modsToWrite[modd.Key].Add(mod);
                                     }
                             }
+
                         protein.OneBasedPossibleLocalizedModifications.Clear();
                         foreach (var kvp in modsToWrite)
                             protein.OneBasedPossibleLocalizedModifications.Add(kvp);
