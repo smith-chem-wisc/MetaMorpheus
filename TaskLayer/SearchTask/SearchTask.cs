@@ -766,7 +766,7 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
             proseCreatedWhileRunning.Append("report all ambiguity = " + CommonParameters.ReportAllAmbiguity + "; ");
-        
+
             ParallelOptions parallelOptions = new ParallelOptions();
             if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
@@ -1365,35 +1365,72 @@ namespace TaskLayer
         {
             Console.WriteLine("in ScorePsms");
 
-            (Dictionary<Protein, HashSet<CompactPeptideBase>>, Dictionary <Protein, HashSet < Psm >>) fff = GetProteinDictionary(allPsms);
-
             var writtenFile = Path.Combine(outputFolder, "beforeScoring.tsv");
 
-            int numTrainingPoints = 0;
+            (Dictionary<Protein, HashSet<PeptideWithSetModifications>>, Dictionary<Protein, HashSet<Psm>>) fff = GetIntraSetFeatures(allPsms);
+
+            int numTrainingPoints = allPsms.Count(b => b != null);
+
+            bool[] output = new bool[numTrainingPoints];
+            double[][] input = new double[numTrainingPoints][];
+
             using (StreamWriter outputff = new StreamWriter(writtenFile))
             {
+                outputff.WriteLine("Scan\t" +
+                                   "Peaks\t" +
+                                   "IntensityMatch\t" +
+                                   "IntensityFraction\t" +
+                                   "MaxPep\t" +
+                                   "SumPep\t" +
+                                   "MaxPsm\t" +
+                                   "SumPsm\t" +
+                                   "NumVarMods\t" +
+                                   "NumMods\t" +
+                                   "MissedCleavages\t" +
+                                   "Length\t" +
+                                   "ScanPrecursorMass\t" +
+                                   "ScanPrecursorCharge\t" +
+                                   "ScanPrecursorMonoisotopicPeakMz\t" +
+                                   "ScanRetentionTime\t" +
+                                   "TotalIonCurrent\t" +
+                                   "Decoy");
+
+                int j = 0;
                 for (int i = 0; i < allPsms.Count; i++)
                     if (allPsms[i] != null)
                         foreach (var asdfj in allPsms[i].CompactPeptides)
                         {
                             numTrainingPoints++;
-                            outputff.WriteLine(i + "\t" + asdfj.Value.Item3 + "\t" + asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy));
+
+                            var protStuff = GetProteinInferenceStuff(fff, asdfj.Value.Item2);
+
+                            input[j] = new double[]{
+                                asdfj.Value.Item3.arr[0],
+                                asdfj.Value.Item3.arr[1],
+                                asdfj.Value.Item3.arr[2],
+                                protStuff.Item1,
+                                protStuff.Item2,
+                                protStuff.Item3,
+                                protStuff.Item4,
+                                protStuff.Item5,
+                                protStuff.Item6,
+                                protStuff.Item7,
+                                protStuff.Item8,
+                                allPsms[i].ScanPrecursorMass,
+                                allPsms[i].ScanPrecursorCharge,
+                                allPsms[i].ScanPrecursorMonoisotopicPeakMz,
+                                allPsms[i].ScanRetentionTime,
+                                allPsms[i].TotalIonCurrent,
+                            };
+
+                            outputff.WriteLine(i + "\t" + string.Join("\t", input[j]) + "\t" + asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy));
+
+                            output[j] = asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy);
+                            j++;
                         }
             }
 
             Console.WriteLine("after writing file");
-
-            double[][] input = new double[numTrainingPoints][];
-            bool[] output = new bool[numTrainingPoints];
-            int j = 0;
-            for (int i = 0; i < allPsms.Count; i++)
-                if (allPsms[i] != null)
-                    foreach (var asdfj in allPsms[i].CompactPeptides)
-                    {
-                        input[j] = asdfj.Value.Item3.arr;
-                        output[j] = asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy);
-                        j++;
-                    }
 
             // Create a new Iterative Reweighted Least Squares algorithm
             var learner = new IterativeReweightedLeastSquares<LogisticRegression>()
@@ -1418,23 +1455,39 @@ namespace TaskLayer
                 }
         }
 
-        private (Dictionary<Protein, HashSet<CompactPeptideBase>>, Dictionary<Protein, HashSet<Psm>>) GetProteinDictionary(List<Psm> allPsms)
+        private (int, int, int, int, int, int, int, double) GetProteinInferenceStuff((Dictionary<Protein, HashSet<PeptideWithSetModifications>>, Dictionary<Protein, HashSet<Psm>>) fff, HashSet<PeptideWithSetModifications> item2)
         {
-            Dictionary<Protein, HashSet<CompactPeptideBase>> toReturnCompactPeptideBase = new Dictionary<Protein, HashSet<CompactPeptideBase>>();
+            return (item2.Max(b => fff.Item1[b.Protein].Count),
+             item2.Sum(b => fff.Item1[b.Protein].Count),
+             item2.Max(b => fff.Item2[b.Protein].Count),
+             item2.Sum(b => fff.Item2[b.Protein].Count),
+             item2.Max(b => b.NumVariableMods),
+             item2.Max(b => b.NumMods),
+             item2.Max(b => b.missedCleavages.Value),
+             item2.Max(b => b.Length));
+        }
+
+        private (Dictionary<Protein, HashSet<PeptideWithSetModifications>>, Dictionary<Protein, HashSet<Psm>>) GetIntraSetFeatures(List<Psm> allPsms)
+        {
+            Dictionary<Protein, HashSet<PeptideWithSetModifications>> toReturnCompactPeptideBase = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
             Dictionary<Protein, HashSet<Psm>> toReturnPsm = new Dictionary<Protein, HashSet<Psm>>();
-            
-            foreach (var ok in allPsms.Where(b=>b!=null))
+
+            foreach (var psm in allPsms.Where(b => b != null))
             {
-                foreach (var kk in ok.CompactPeptides)
+                foreach (var kvp in psm.CompactPeptides)
                 {
-                    foreach (var djkfj in kk.Value.Item2)
+                    foreach (var pwsm in kvp.Value.Item2)
                     {
-                        if (!toReturnCompactPeptideBase.ContainsKey(djkfj.Protein))
-                            toReturnCompactPeptideBase[djkfj.Protein] = new HashSet<CompactPeptideBase>();
-                        if (!toReturnPsm.ContainsKey(djkfj.Protein))
-                            toReturnPsm[djkfj.Protein] = new HashSet<Psm>();
-                        toReturnCompactPeptideBase[djkfj.Protein].Add(kk.Key);
-                        toReturnPsm[djkfj.Protein].Add(ok);
+                        if (!toReturnCompactPeptideBase.ContainsKey(pwsm.Protein))
+                            toReturnCompactPeptideBase[pwsm.Protein] = new HashSet<PeptideWithSetModifications>();
+                        if (!toReturnPsm.ContainsKey(pwsm.Protein))
+                            toReturnPsm[pwsm.Protein] = new HashSet<Psm>();
+
+                        // All peptides from a protein
+                        toReturnCompactPeptideBase[pwsm.Protein].Add(pwsm);
+
+                        // All psms from a protein
+                        toReturnPsm[pwsm.Protein].Add(psm);
                     }
                 }
             }

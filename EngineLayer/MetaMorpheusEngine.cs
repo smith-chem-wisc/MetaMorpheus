@@ -350,8 +350,8 @@ namespace EngineLayer
                     }
                 }
             }
-            double ExpectedIntensityHere = thisScan.TotalIonCurrent * thisScan.IntensityFraction;
-            return new MatchQualityFeatures(new double[] { MatchingProductsHere, MatchingIntensityHere / thisScan.TotalIonCurrent, MatchingIntensityHere / ExpectedIntensityHere, MatchingProductsHere/ ((double)(TotalProductsHere)) });
+            return new MatchQualityFeatures(new double[] { MatchingProductsHere, MatchingIntensityHere / thisScan.TotalIonCurrent, thisScan.IntensityFraction });
+            // return new MatchQualityFeatures(new double[] { MatchingProductsHere, MatchingIntensityHere / thisScan.TotalIonCurrent, MatchingIntensityHere / ExpectedIntensityHere, MatchingProductsHere/ ((double)(TotalProductsHere)) });
         }
 
         public MetaMorpheusEngineResults Run()
