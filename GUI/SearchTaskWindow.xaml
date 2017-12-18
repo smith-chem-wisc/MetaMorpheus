@@ -407,7 +407,7 @@
                                     <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Pruned Database" Margin="0,0,0,101" Width="152" />
                                     <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" AllowDrop="True" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=writePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Mod Type"  Width="16*" Binding="{Binding ModName}" />
+                                            <DataGridTextColumn Header="Mod Type"  Width="16*" Binding="{Binding ModName}" IsReadOnly="True"/>
                                             <DataGridTemplateColumn  Header=" Do not Write"  Width ="30*" IsReadOnly="False" >
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>

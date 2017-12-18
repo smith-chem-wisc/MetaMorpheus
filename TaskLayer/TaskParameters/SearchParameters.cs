@@ -58,22 +58,22 @@ namespace TaskLayer
 
         private Dictionary<string, int> defaultModTypes = new Dictionary<string, int>
         {
-           {"Common Fixed", 0},
-           {"Common Variable", 0 },
-           {"Detached",0 },
-           {"Glycan",0 },
-           {"missing",0 },
-           {"Mod",0 },
-           {"ProteinTermMod",0 },
-           {"PeptideTermMod",0 },
-           {"Metal",0 },
-           {"TrypsinDigestedMod",1 },
-           {"1 nucleotide substitution",1 },
-           {"2+ nucleotide substitution",1 },
-           {"Surfactant",1 },
-           {"Tandem Mass Tag",1 },
-           {"Unimod",1 },
-           {"UniProt",1 },
+           {"Common Fixed", 1},
+           {"Common Variable", 1},
+           {"Detached",1},
+           {"Glycan",1},
+           {"missing",1},
+           {"Mod",1},
+           {"ProteinTermMod",1},
+           {"PeptideTermMod",1},
+           {"Metal",1},
+           {"TrypsinDigestedMod",1},
+           {"1 nucleotide substitution",1},
+           {"2+ nucleotide substitution",1},
+           {"Surfactant",1},
+           {"Tandem Mass Tag",1},
+           {"Unimod",1},
+           {"UniProt",1},
 
         };
 
