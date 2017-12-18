@@ -742,10 +742,8 @@ namespace TaskLayer
             if (CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
 
-            MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
-            Dictionary<string, Modification> unknownModifications = new Dictionary<string, Modification>();
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
             proseCreatedWhileRunning.Append("The following search settings were used: ");
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
@@ -785,7 +783,7 @@ namespace TaskLayer
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
-                massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -890,7 +888,7 @@ namespace TaskLayer
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
                 List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
-                massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
                 foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
                     new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, allPsms, proteinList, fixedModifications, variableModifications, terminusSpecificIons, ListOfDigestionParams, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string> { taskId }).Run();
             }
@@ -1173,42 +1171,27 @@ namespace TaskLayer
             if (SearchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { taskId });
-                List<Modification> modificationsToAlwaysKeep = new List<Modification>();
-                List<Modification> modificationsToLeaveOut = new List<Modification>();
-                List<Modification> modificationsKeepIfObserved = new List<Modification>();
+                List<Modification> modificationsToWriteIfBoth = new List<Modification>();
+                List<Modification> modificationsToWriteIfInDatabase = new List<Modification>();
+                List<Modification> modificationsToWriteIfObserved = new List<Modification>();
 
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
 
-                //Add user mod selection behavours to Pruned DB
-                foreach (var modType in SearchParameters.ModTypeList)
+                // Add user mod selection behavours to Pruned DB
+                foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {
-                    if (modType.Value == 1)//keep if observed and in DB
-                        continue;
-                    if (modType.Value == 0) //Leave out of Pruned DB
-                        modificationsToLeaveOut.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                    if (modType.Value == 2)//Keep in Pruned no matter what
-                        modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                    if (modType.Value == 3)//Write to pruned DB if observed regardless if in DB
-                    {
-                        foreach (var mod in fixedModifications)
-                        {
-                            if (mod.modificationType == modType.Key)
-                                modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                        }
-
-                        foreach (var mod in variableModifications)
-                        {
-                            if (mod.modificationType == modType.Key)
-                                modificationsKeepIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
-                        }
-                    }
+                    if (modType.Value == 1) // Write if observed and in database
+                        modificationsToWriteIfBoth.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                    if (modType.Value == 2) // Write if in database
+                        modificationsToWriteIfInDatabase.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                    if (modType.Value == 3) // Write if observed
+                        modificationsToWriteIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                 }
 
                 foreach (var protein in proteinList)
                 {
                     if (!protein.IsDecoy)
                     {
-
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (goodPsmsForEachProtein.ContainsKey(protein))
                             modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.CompactPeptides.First().Value.Item2.First()), c.Value))));
@@ -1217,37 +1200,34 @@ namespace TaskLayer
 
                         foreach (var observedMod in modsObservedOnThisProtein)
                         {
-                            //Add if Observed (regardless if in database) 
+                            //Add if observed (regardless if in database)
                             var tempMod = observedMod.Item2;
 
-                            if (modificationsKeepIfObserved.Contains(tempMod as Modification))
+                            if (modificationsToWriteIfObserved.Contains(tempMod as Modification))
                             {
                                 if (!modsToWrite.ContainsKey(observedMod.Item1))
-                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification
-                                        });
+                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification });
                                 else
                                     modsToWrite[observedMod.Item1].Add(observedMod.Item2 as Modification);
                                 continue;
                             }
                         }
 
-                        //Add in all other cases if not already added
+                        // Add if in database (two cases: always or if observed)
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
-
                                 //Add if always In Database or if was observed and in database and not set to not include
-                                if (!modificationsToLeaveOut.Contains(mod as Modification))
-                                    if (modificationsToAlwaysKeep.Contains(mod as Modification)
-                                        || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
-                                    {
-                                        if (!modsToWrite.ContainsKey(modd.Key))
-                                            modsToWrite.Add(modd.Key, new List<Modification> { mod
-                                        });
-                                        else
-                                            modsToWrite[modd.Key].Add(mod);
-                                    }
+                                if (modificationsToWriteIfInDatabase.Contains(mod as Modification) ||
+                                (modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)) && modificationsToWriteIfBoth.Contains(mod as Modification)))
+                                {
+                                    if (!modsToWrite.ContainsKey(modd.Key))
+                                        modsToWrite.Add(modd.Key, new List<Modification> { mod });
+                                    else
+                                        modsToWrite[modd.Key].Add(mod);
+                                }
                             }
+
                         protein.OneBasedPossibleLocalizedModifications.Clear();
                         foreach (var kvp in modsToWrite)
                             protein.OneBasedPossibleLocalizedModifications.Add(kvp);
@@ -1544,7 +1524,6 @@ namespace TaskLayer
                 SucessfullyFinishedWritingFile(writtenFile, nestedIds);
             }
         }
-
 
         #endregion Private Methods
     }

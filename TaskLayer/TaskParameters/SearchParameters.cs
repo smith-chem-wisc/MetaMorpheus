@@ -1,4 +1,3 @@
-using EngineLayer;
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 
@@ -26,7 +25,11 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = 30000.0;
-            ModTypeList = defaultModTypes;
+            ModsToWriteSelection = new Dictionary<string, int>
+            {
+                {"ProteinTermMod", 3},
+                {"UniProt", 2},
+            };
         }
 
         #endregion Public Constructors
@@ -52,30 +55,8 @@ namespace TaskLayer
         public string CustomMdac { get; set; }
         public double MaxFragmentSize { get; set; }
         public double HistogramBinTolInDaltons { get; set; }
-        public Dictionary<string, int> ModTypeList { get; set; }
+        public Dictionary<string, int> ModsToWriteSelection { get; set; }
 
         #endregion Public Properties
-
-        private Dictionary<string, int> defaultModTypes = new Dictionary<string, int>
-        {
-           {"Common Fixed", 1},
-           {"Common Variable", 1},
-           {"Detached",1},
-           {"Glycan",1},
-           {"missing",1},
-           {"Mod",1},
-           {"ProteinTermMod",1},
-           {"PeptideTermMod",1},
-           {"Metal",1},
-           {"TrypsinDigestedMod",1},
-           {"1 nucleotide substitution",1},
-           {"2+ nucleotide substitution",1},
-           {"Surfactant",1},
-           {"Tandem Mass Tag",1},
-           {"Unimod",1},
-           {"UniProt",1},
-
-        };
-
     }
 }
