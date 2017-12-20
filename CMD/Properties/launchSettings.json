@@ -2,7 +2,7 @@
   "profiles": {
     "CMD": {
       "commandName": "Project",
-      "commandLineArgs": "-s C:\\Users\\stepa\\Data\\Yeast\\calib\\12-10-16_A17A_yeast_BU_fract3_rep2-calib.mzml -d C:\\Users\\stepa\\Data\\Yeast\\uniprot-cRAP-12-5-2017.xml C:\\Users\\stepa\\Data\\Yeast\\uniprot-yeast-reviewed-12-5-2017.xml -t C:\\Users\\stepa\\Data\\SearchTaskConfig.toml"
+      "commandLineArgs": "-s C:\\Users\\stepa\\Data\\Yeast\\calib\\12-10-16_A17A_yeast_BU_fract9_rep1_8uL-calib.mzml -d C:\\Users\\stepa\\Data\\Yeast\\uniprot-cRAP-12-5-2017.xml C:\\Users\\stepa\\Data\\Yeast\\uniprot-yeast-reviewed-12-5-2017.xml -t C:\\Users\\stepa\\Data\\SearchTaskConfig.toml"
     }
   }
 }

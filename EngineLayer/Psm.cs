@@ -294,37 +294,6 @@ namespace EngineLayer
             };
         }
 
-        public void ScoreAndPrune(Func<MatchQualityFeatures, double> scoringFunction)
-        {
-            Score = CompactPeptides.Select(b => scoringFunction(b.Value.Item3)).Max();
-
-            compactPeptides = CompactPeptides.Where(b => Math.Abs(scoringFunction(b.Value.Item3) - Score) < 1e-9).ToDictionary(i => i.Key, i => i.Value);
-
-            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
-
-            FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
-
-            BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
-
-            PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
-
-            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
-
-            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
-
-            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
-
-            PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
-
-            ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
-
-            ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
-
-            ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
-
-            Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
-        }
-
         #endregion Public Methods
 
         #region Internal Methods
@@ -452,6 +421,98 @@ namespace EngineLayer
                 var possibleReturn = string.Join(" or ", list);
                 return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
             }
+        }
+
+        public void ScoreAndPrune(Func<double[], double> scoringFunction)
+        {
+            Score = CompactPeptides.Select(b => scoringFunction(GetFeatures(b.Value))).Max();
+
+            compactPeptides = CompactPeptides.Where(b => Math.Abs(scoringFunction(GetFeatures(b.Value)) - Score) < 1e-9).ToDictionary(i => i.Key, i => i.Value);
+
+            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
+
+            FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
+
+            BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
+
+            PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
+
+            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
+
+            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
+
+            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
+
+            PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
+
+            ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
+
+            ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
+
+            ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
+
+            Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
+        }
+
+        public static (Dictionary<Protein, HashSet<string>>, Dictionary<Protein, HashSet<Psm>>) fff;
+
+        public double[] GetFeatures((int, HashSet<PeptideWithSetModifications>, MatchQualityFeatures) value)
+        {
+            var protStuff = GetProteinInferenceStuff(fff, value.Item2);
+
+            //return new double[]{value.Item3.arr[0], value.Item3.arr[1], protStuff.Item1};
+            return new double[] { value.Item3.arr[0], value.Item3.arr[1]};
+
+
+            //new double[]{
+            //    asdfj.Value.Item3.arr[0],
+            //    asdfj.Value.Item3.arr[1],
+            //asdfj.Value.Item3.arr[2],
+            //protStuff.Item1,
+            //protStuff.Item2,
+            //protStuff.Item3,
+            //protStuff.Item4,
+            //protStuff.Item5,
+            //protStuff.Item6,
+            //allPsms[i].CompactPeptides.Count(),
+            //allPsms[i].ScanPrecursorMass - asdfj.Key.MonoisotopicMassIncludingFixedMods,
+            //allPsms[i].ScanPrecursorMass,
+            //allPsms[i].ScanPrecursorCharge,
+            //allPsms[i].ScanPrecursorMonoisotopicPeakMz,
+            //allPsms[i].ScanRetentionTime,
+            //allPsms[i].TotalIonCurrent,
+            //};
+
+            //input[j] = new double[]{
+            //    asdfj.Value.Item3.arr[0],
+            //    asdfj.Value.Item3.arr[1],
+            //    asdfj.Value.Item3.arr[2],
+            //    protStuff.Item1,
+            //    protStuff.Item2,
+            //    protStuff.Item3,
+            //    protStuff.Item4,
+            //    protStuff.Item5,
+            //    protStuff.Item6,
+            //    allPsms[i].CompactPeptides.Count(),
+            //    allPsms[i].ScanPrecursorMass - asdfj.Key.MonoisotopicMassIncludingFixedMods,
+            //    allPsms[i].ScanPrecursorMass,
+            //    allPsms[i].ScanPrecursorCharge,
+            //    allPsms[i].ScanPrecursorMonoisotopicPeakMz,
+            //    allPsms[i].ScanRetentionTime,
+            //    allPsms[i].TotalIonCurrent,
+            //};
+
+        }
+
+
+        private static (int, int, int, int, int, int) GetProteinInferenceStuff((Dictionary<Protein, HashSet<string>>, Dictionary<Protein, HashSet<Psm>>) fff, HashSet<PeptideWithSetModifications> item2)
+        {
+            return (item2.Max(b => fff.Item1[b.Protein].Count),
+             item2.Max(b => fff.Item2[b.Protein].Count),
+             item2.Max(b => b.NumVariableMods),
+             item2.Max(b => b.NumMods),
+             item2.Max(b => b.missedCleavages.Value),
+             item2.Max(b => b.Length));
         }
 
         #endregion Private Methods
