@@ -382,7 +382,6 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     bestPsmCross.DScore = Math.Abs(bestPsmCrossList.First().XLTotalScore - bestPsmCrossList[1].XLTotalScore);
                 }
-                else { bestPsmCross.DScore = bestPsmCross.XLTotalScore; }
             }
 
             return bestPsmCross;
