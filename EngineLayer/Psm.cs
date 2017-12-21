@@ -188,8 +188,6 @@ namespace EngineLayer
 
             BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
 
-            //EssentialSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.EssentialSequence(ModstoWritePruned))).Item2;
-
             PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
 
             OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
