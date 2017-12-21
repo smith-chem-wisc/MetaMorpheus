@@ -17,7 +17,7 @@ namespace EngineLayer
         private const double tolForScoreDifferentiation = 1e-9;
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
-
+        
         #endregion Private Fields
 
         #region Public Constructors
@@ -46,7 +46,6 @@ namespace EngineLayer
         #endregion Public Constructors
 
         #region Public Properties
-
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
@@ -63,10 +62,12 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
 
+        public Dictionary<string, int> ModstoWritePruned { get;  set; }
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
+        public string EssentialSequence { get; private set; }
         public int? PeptideLength { get; private set; }
         public int? OneBasedStartResidueInProtein { get; private set; }
         public int? OneBasedEndResidueInProtein { get; private set; }
@@ -108,6 +109,7 @@ namespace EngineLayer
             sb.Append('\t' + "Peptides Sharing Same Peaks");
             sb.Append('\t' + "Base Sequence");
             sb.Append('\t' + "Full Sequence");
+            sb.Append('\t' + "Essential Sequence");
             sb.Append('\t' + "Mods");
             sb.Append('\t' + "Mods Chemical Formula");
             sb.Append('\t' + "Num Variable Mods");
@@ -186,6 +188,8 @@ namespace EngineLayer
 
             BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
 
+            EssentialSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.EssentialSequence(ModstoWritePruned))).Item2;
+
             PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
 
             OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
@@ -233,6 +237,7 @@ namespace EngineLayer
 
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.EssentialSequence(ModstoWritePruned))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NumVariableMods)).Item1);

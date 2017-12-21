@@ -1096,6 +1096,7 @@ namespace TaskLayer
 
                 {
                     var writtenFile = Path.Combine(OutputFolder, strippedFileName + "_PSMs.psmtsv");
+                    psmsForThisFile.Select(c => { c.ModstoWritePruned = SearchParameters.ModsToWriteSelection; return c; }).ToList();
                     WritePsmsToTsv(psmsForThisFile, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
@@ -1110,6 +1111,7 @@ namespace TaskLayer
                 {
                     var uniquePeptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                     var writtenFile = Path.Combine(OutputFolder, strippedFileName + "_UniquePeptides.psmtsv");
+                    uniquePeptidesForFile.Select(c => { c.ModstoWritePruned = SearchParameters.ModsToWriteSelection; return c; }).ToList();
                     WritePsmsToTsv(uniquePeptidesForFile, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Unique target peptides within 1% FDR in " + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
@@ -1176,7 +1178,6 @@ namespace TaskLayer
                 List<Modification> modificationsToWriteIfObserved = new List<Modification>();
 
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
-
                 // Add user mod selection behavours to Pruned DB
                 foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {

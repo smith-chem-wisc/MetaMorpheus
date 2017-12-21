@@ -289,7 +289,6 @@ namespace TaskLayer
         #endregion Public Methods
 
         #region Protected Methods
-
         protected static void WritePsmsToTsv(IEnumerable<Psm> items, string filePath)
         {
             using (StreamWriter output = new StreamWriter(filePath))
