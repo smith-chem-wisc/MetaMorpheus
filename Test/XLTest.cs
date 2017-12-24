@@ -73,19 +73,7 @@ namespace Test
         [Test]
         public static void XLTestCalculateTotalProductMassesMightHave()
         {
-            var mz1 = new double[] { 50, 60, 70, 80, 90, 2293.105.ToMz(3) };
-            var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
-            var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
-
-            var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
-            var mz2 = new double[] { 50, 60, 70, 76.0393, 133.0608, 147.0764, 190.0822, 247.1037, 257.1244, 258.127, 275.1350, 385.1830, 442.2045, 630.27216 };
-            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-            var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
-            ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2,
-                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 2293.105.ToMz(3), 2, 1, 2293.105.ToMz(3), 2, DissociationType.HCD, 1, 2293.105.ToMz(3), 1, "scan=2"));
-
-
-             var CommonParameters = new CommonParameters();
+            var CommonParameters = new CommonParameters();
             var proteinList = new List<Protein> { new Protein("CCTKPESERQREKVLTSSAR", null) };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -137,10 +125,11 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
 
-            //var psmCross = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, ScansHere[1]);
-            //var productMassesList = PsmCross.XLCalculateTotalProductMasses(psmCross, modMass, crosslinker, lp);
+            var psmCross = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
+            var productMassesList = PsmCross.XLCalculateTotalProductMasses(psmCross, listOfSortedms2Scans[0].PrecursorMass - psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods, crosslinker, lp);
 
-
+            var psmCrossBeta = new PsmCross(digestedList[4].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
+            var productMassesListBeta = PsmCross.XLCalculateTotalProductMasses(psmCrossBeta, listOfSortedms2Scans[0].PrecursorMass - psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods, crosslinker, lp);
 
         }
         #endregion Public Methods
@@ -152,16 +141,16 @@ namespace Test
 
         public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
-            var mz1 = new double[] { 50, 60, 70, 80, 90, 402.18629720155.ToMz(2) };
+            var mz1 = new double[] { 50, 60, 70, 80, 90, 2293.105.ToMz(3) };
             var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
-
             var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
-            var mz2 = new double[] { 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 };
-            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
+
+            var mz2 = new double[] { 50, 60, 70, 76.0393, 133.0608, 147.0764, 190.0822, 247.1037, 257.1244, 258.127, 275.1350, 385.1830, 442.2045, 630.27216, 900 };
+            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
             var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
-            ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2,
-                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 402.18629720155.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, DissociationType.HCD, 1, 402.18629720155.ToMz(2), 1, "scan=2"));
+            ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 5.0,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 2293.105.ToMz(3), 3, 1, 2293.105.ToMz(3), 2, DissociationType.HCD, 1, 2293.105.ToMz(3), 1, "scan=2"));
 
             Scans = ScansHere.ToArray();
         }
