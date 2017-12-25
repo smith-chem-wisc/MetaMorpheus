@@ -29,10 +29,10 @@ namespace EngineLayer.CrosslinkSearch
         private readonly CrosslinkerTypeClass crosslinker;
         private readonly bool CrosslinkSearchTop;
         private readonly int CrosslinkSearchTopNum;
-        private readonly bool CrosslinkSearchWithCrosslinkerMod;
+        //private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLPrecusorMsTl;
-        private readonly Tolerance XLBetaPrecusorMsTl;
-        private readonly List<PsmCross> psmCross;
+        //private readonly Tolerance XLBetaPrecusorMsTl;
+        //private readonly List<PsmCross> psmCross;
         private readonly bool quench_H2O;
         private readonly bool quench_NH2;
         private readonly bool quench_Tris;
@@ -346,13 +346,13 @@ namespace EngineLayer.CrosslinkSearch
                     for (int inx = ind; inx < theScanBestPeptide.Count; inx++)
                     {
                         var y = theScanBestPeptide[inx].BestPeptide.MonoisotopicMassIncludingFixedMods;
-                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, x + y + crosslinker.TotalMass) >= 0 && PsmCross.xlPosCal(theScanBestPeptide[ind].BestPeptide, crosslinker).Count != 0 && PsmCross.xlPosCal(theScanBestPeptide[inx].BestPeptide, crosslinker).Count != 0)
+                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, x + y + crosslinker.TotalMass) >= 0 && PsmCross.XlPosCal(theScanBestPeptide[ind].BestPeptide, crosslinker).Count != 0 && PsmCross.XlPosCal(theScanBestPeptide[inx].BestPeptide, crosslinker).Count != 0)
                         {
                             var psmCrossAlpha = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
                             var psmCrossBeta = new PsmCross(theScanBestPeptide[inx].BestPeptide, theScanBestPeptide[inx].BestNotch, theScanBestPeptide[inx].BestScore, i, theScan);
                             
-                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha, crosslinker, lp, CommonParameters.ProductMassTolerance);
-                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta, crosslinker, lp, CommonParameters.ProductMassTolerance);
+                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance);
+                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta, psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance);
                             if (psmCrossAlpha.XLBestScore < psmCrossBeta.XLBestScore)
                             {
                                 var swap = psmCrossAlpha;

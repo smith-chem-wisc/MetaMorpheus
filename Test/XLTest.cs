@@ -46,7 +46,7 @@ namespace Test
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c[0], 128.09496301518999, 1e-6);
-            var x = PsmCross.xlPosCal(pep.CompactPeptide(TerminusType.None), crosslinker).ToArray();
+            var x = PsmCross.XlPosCal(pep.CompactPeptide(TerminusType.None), crosslinker).ToArray();
             Assert.AreEqual(x[0], 4);
 
             var pep2 = ye[2];
@@ -56,7 +56,7 @@ namespace Test
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
             Assert.AreEqual(n2[4] - n2[3], 128.09496301518999, 1e-6);
-            var x2 = PsmCross.xlPosCal(pep2.CompactPeptide(TerminusType.None), crosslinker).ToArray();
+            var x2 = PsmCross.XlPosCal(pep2.CompactPeptide(TerminusType.None), crosslinker).ToArray();
             Assert.AreEqual(x2[0], 4);
         }
 
@@ -74,7 +74,7 @@ namespace Test
         public static void XLTestCalculateTotalProductMassesMightHave()
         {
             var CommonParameters = new CommonParameters();
-            var proteinList = new List<Protein> { new Protein("CCTKPESERQREKVLTSSAR", null) };
+            var proteinList = new List<Protein> { new Protein("CASIQKFGERLCVLHEKTPVSEK", null) };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
@@ -113,22 +113,22 @@ namespace Test
                 //Assert.Contains(fdfd.CompactPeptide(TerminusType.None), results.PeptideIndex);
             }
 
-            var productMasses = digestedList[2].CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+            var productMasses = digestedList[3].CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
 
 
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
             crosslinker.SelectCrosslinker(CrosslinkerType.DSS);
-            var x = PsmCross.xlPosCal(digestedList[2].CompactPeptide(TerminusType.None), crosslinker).ToArray();
-            Assert.AreEqual(x[0], 3);
+            var x = PsmCross.XlPosCal(digestedList[3].CompactPeptide(TerminusType.None), crosslinker).ToArray();
+            Assert.AreEqual(x[0], 5);
 
             var myMsDataFile = new XLTestDataFile();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
 
-            var psmCross = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
+            var psmCross = new PsmCross(digestedList[3].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
             var productMassesList = PsmCross.XLCalculateTotalProductMasses(psmCross, listOfSortedms2Scans[0].PrecursorMass - psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods, crosslinker, lp);
 
-            var psmCrossBeta = new PsmCross(digestedList[4].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
+            var psmCrossBeta = new PsmCross(digestedList[5].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
             var productMassesListBeta = PsmCross.XLCalculateTotalProductMasses(psmCrossBeta, listOfSortedms2Scans[0].PrecursorMass - psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods, crosslinker, lp);
 
         }

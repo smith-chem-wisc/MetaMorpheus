@@ -354,13 +354,13 @@ namespace EngineLayer.CrosslinkSearch
                     for (int inx = ind; inx < theScanBestPeptide.Count; inx++)
                     {
                         var y = theScanBestPeptide[inx].BestPeptide.MonoisotopicMassIncludingFixedMods;
-                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, x + y + crosslinker.TotalMass) >= 0 && PsmCross.xlPosCal(theScanBestPeptide[ind].BestPeptide, crosslinker).Count != 0 && PsmCross.xlPosCal(theScanBestPeptide[inx].BestPeptide, crosslinker).Count != 0)
+                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, x + y + crosslinker.TotalMass) >= 0 && PsmCross.XlPosCal(theScanBestPeptide[ind].BestPeptide, crosslinker).Count != 0 && PsmCross.XlPosCal(theScanBestPeptide[inx].BestPeptide, crosslinker).Count != 0)
                         {
                             var psmCrossAlpha = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
                             var psmCrossBeta = new PsmCross(theScanBestPeptide[inx].BestPeptide, theScanBestPeptide[inx].BestNotch, theScanBestPeptide[inx].BestScore, i, theScan);
                             psmCrossAlpha.XlRank = new int[] { ind, inx };
-                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha, crosslinker, lp, fragmentTolerance);
-                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta, crosslinker, lp, fragmentTolerance);
+                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, fragmentTolerance);
+                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta, psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, fragmentTolerance);
                             psmCrossAlpha.XLTotalScore = psmCrossAlpha.XLBestScore + psmCrossBeta.XLBestScore;
                             psmCrossAlpha.XLQvalueTotalScore = psmCrossAlpha.XLBestScore * psmCrossBeta.XLBestScore;
                             psmCrossAlpha.CrossType = PsmCrossType.Cross;
