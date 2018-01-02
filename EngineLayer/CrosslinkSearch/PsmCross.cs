@@ -193,13 +193,13 @@ namespace EngineLayer.CrosslinkSearch
                 List<string> y = new List<string>();
                 if (crosslinker.Cleavable)
                 {
-                    x.Add((double)psmCross.PeptideMonisotopicMass + crosslinker.CleaveMassShort);
+                    x.Add((double)psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassShort);
                     y.Add("PepS");
-                    x.Add(((double)psmCross.PeptideMonisotopicMass + crosslinker.CleaveMassShort) / 2);
+                    x.Add(((double)psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassShort) / 2);
                     y.Add("PepS2");
-                    x.Add((double)psmCross.PeptideMonisotopicMass + crosslinker.CleaveMassLong);
+                    x.Add((double)psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassLong);
                     y.Add("PepL");
-                    x.Add(((double)psmCross.PeptideMonisotopicMass + crosslinker.CleaveMassLong) / 2);
+                    x.Add(((double)psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassLong) / 2);
                     y.Add("PepL2");
                 }
                 for (int i = 0; i < pmmh.ProductMz.Length; i++)

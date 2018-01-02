@@ -236,14 +236,20 @@ namespace TaskLayer
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= CommonParameters.ScoreCutoff && p.BetaPsmCross.XLBestScore >= CommonParameters.ScoreCutoff).ToList();
             foreach (var item in allPsmsXL)
             {
-                item.XlProteinPos = item.MostProbableProteinInfo.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + item.XlPos - 1;
-                item.BetaPsmCross.XlProteinPos = item.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + item.BetaPsmCross.XlPos - 1;
+                if (item.OneBasedStartResidueInProtein.HasValue)
+                {
+                    item.XlProteinPos = item.OneBasedStartResidueInProtein.Value + item.XlPos - 1;
+                }
+                if (item.BetaPsmCross.OneBasedStartResidueInProtein.HasValue)
+                {
+                    item.BetaPsmCross.XlProteinPos = item.BetaPsmCross.OneBasedStartResidueInProtein.Value + item.BetaPsmCross.XlPos - 1;
+                }
             }
             #region Inter Crosslink
 
             //Write Inter Psms FDR
-            var interPsmsXL = allPsmsXL.Where(p => !p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) &&
-            !p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+            var interPsmsXL = allPsmsXL.Where(p => !p.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First()) &&
+            !p.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First().Contains(p.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
             foreach (var item in interPsmsXL)
             {
                 item.CrossType = PsmCrossType.Inter;
@@ -256,12 +262,12 @@ namespace TaskLayer
             }
             if (XlSearchParameters.XlOutCLMSVault)
             {
-                var interPsmsXLFDR_CLMSVault = interPsmsXLFDR.Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
+                var interPsmsXLFDR_CLMSVault = interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
                 WriteCrosslinkToTxtForCLMSVault(interPsmsXLFDR_CLMSVault, OutputFolder, "xl_inter_fdr_CLMSVault", crosslinker, new List<string> { taskId });
             }
             if (XlSearchParameters.XlOutPepXML && interPsmsXLFDR.Count != 0)
             {
-                var interPsmsXLFDR_PepXML = interPsmsXLFDR.Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
+                var interPsmsXLFDR_PepXML = interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
                 foreach (var fullFilePath in currentRawFileList)
                 {
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
@@ -279,9 +285,9 @@ namespace TaskLayer
             #region Intra Cross-link
 
             //Write Intra Psms FDR
-            var intraPsmsXL = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() ||
-            p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()) ||
-            p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First().Contains(p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+            var intraPsmsXL = allPsmsXL.Where(p => p.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First() == p.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First() ||
+            p.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First().Contains(p.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First()) ||
+            p.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First().Contains(p.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
             foreach (var item in intraPsmsXL)
             {
                 item.CrossType = PsmCrossType.Intra;
@@ -294,12 +300,12 @@ namespace TaskLayer
             }
             if (XlSearchParameters.XlOutCLMSVault)
             {
-                var intraPsmsXLFDR_CLMSVault = intraPsmsXLFDR.Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
+                var intraPsmsXLFDR_CLMSVault = intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
                 WriteCrosslinkToTxtForCLMSVault(intraPsmsXLFDR_CLMSVault, OutputFolder, "xl_intra_fdr_CLMSVault", crosslinker, new List<string> { taskId });
             }
             if (XlSearchParameters.XlOutPepXML && intraPsmsXLFDR.Count != 0)
             {
-                var intraPsmsXLFDR_PepXML = intraPsmsXLFDR.Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
+                var intraPsmsXLFDR_PepXML = intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
                 foreach (var fullFilePath in currentRawFileList)
                 {
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
@@ -314,8 +320,8 @@ namespace TaskLayer
             #endregion
 
             List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
-            allPsmsXLFDR.AddRange( intraPsmsXLFDR.Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());       
-            allPsmsXLFDR.AddRange( interPsmsXLFDR.Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+            allPsmsXLFDR.AddRange( intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());       
+            allPsmsXLFDR.AddRange( interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
             allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore);
             var allPsmsXLFDRGroup = FindCrosslinks(allPsmsXLFDR);
             if (XlSearchParameters.XlOutCrosslink)
@@ -387,7 +393,7 @@ namespace TaskLayer
             {
                 var item1 = ids[i]; 
 
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; 
+                var isDecoy1 = item1.IsDecoy; 
                 if (isDecoy1)
                     cumulative_decoy++;
                 else
@@ -427,7 +433,7 @@ namespace TaskLayer
             {
                 var item1 = ids[i]; var item2 = ids[i].BetaPsmCross;
 
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item2.MostProbableProteinInfo.IsDecoy;
+                var isDecoy1 = item1.IsDecoy; var isDecoy2 = item2.IsDecoy;
                 if (isDecoy1 || isDecoy2)
                     cumulative_decoy++;
                 else
@@ -468,7 +474,7 @@ namespace TaskLayer
             {
                 var item1 = ids[i]; var item2 = ids[i].BetaPsmCross;
 
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item2.MostProbableProteinInfo.IsDecoy;
+                var isDecoy1 = item1.IsDecoy; var isDecoy2 = item2.IsDecoy;
                 if (isDecoy1 || isDecoy2)
                     cumulative_decoy++;
                 else
