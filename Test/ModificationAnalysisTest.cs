@@ -69,7 +69,7 @@ namespace Test
                 new Psm(pep4, 0,10,0,scan),
             };
 
-            MassDiffAcceptor searchModes = new SinglePpmAroundZeroSearchMode(5);
+            MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
             CommonParameters CommonParameters = new CommonParameters
@@ -88,7 +88,7 @@ namespace Test
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchModes, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, new List<string>());
             fdrAnalysisEngine.Run();
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
@@ -142,7 +142,7 @@ namespace Test
                 new Psm(pep3, 0,10,0,scan),
             };
 
-            MassDiffAcceptor searchModes = new SinglePpmAroundZeroSearchMode(5);
+            MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
             CommonParameters CommonParameters = new CommonParameters
@@ -164,7 +164,7 @@ namespace Test
 
             Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
 
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchModes, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, new List<string>());
             fdrAnalysisEngine.Run();
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
