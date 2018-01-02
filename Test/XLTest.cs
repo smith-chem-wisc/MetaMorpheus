@@ -9,7 +9,6 @@ using Chemistry;
 using IO.MzML;
 using MassSpectrometry;
 using UsefulProteomicsDatabases;
-using System;
 using TaskLayer;
 
 namespace Test
@@ -125,12 +124,18 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
 
-            var psmCross = new PsmCross(digestedList[3].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
-            var productMassesList = PsmCross.XLCalculateTotalProductMasses(psmCross, listOfSortedms2Scans[0].PrecursorMass - psmCross.compactPeptide.MonoisotopicMassIncludingFixedMods, crosslinker, lp);
-
+            var psmCrossAlpha = new PsmCross(digestedList[3].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
             var psmCrossBeta = new PsmCross(digestedList[5].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
-            var productMassesListBeta = PsmCross.XLCalculateTotalProductMasses(psmCrossBeta, listOfSortedms2Scans[0].PrecursorMass - psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods, crosslinker, lp);
 
+            var modMassAlpha1 = psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass;
+
+            //Another method to calculate modification mass of cross-linked peptides
+            //var modMassAlpha2 = listOfSortedms2Scans[0].PrecursorMass - psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods;
+
+            var productMassesAlphaList = PsmCross.XLCalculateTotalProductMasses(psmCrossAlpha, modMassAlpha1, crosslinker, lp);
+
+            Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 35);
+            Assert.AreEqual(productMassesAlphaList[0].ProductMz[26], 2312.21985342336);
         }
         #endregion Public Methods
     }
@@ -141,7 +146,7 @@ namespace Test
 
         public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
-            var mz1 = new double[] { 50, 60, 70, 80, 90, 2293.105.ToMz(3) };
+            var mz1 = new double[] { 50, 60, 70, 80, 90, 2871.45827313843.ToMz(3) };
             var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
@@ -150,7 +155,7 @@ namespace Test
             var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
             var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
             ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 5.0,
-                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 2293.105.ToMz(3), 3, 1, 2293.105.ToMz(3), 2, DissociationType.HCD, 1, 2293.105.ToMz(3), 1, "scan=2"));
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 2871.45827313843.ToMz(3), 3, 1, 2871.45827313843.ToMz(3), 2, DissociationType.HCD, 1, 2871.45827313843.ToMz(3), 1, "scan=2"));
 
             Scans = ScansHere.ToArray();
         }
