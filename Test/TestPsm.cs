@@ -41,7 +41,7 @@ namespace Test
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 
-            psm.SetFdrValues(6, 6, 6, 6, 6, 6);
+            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, 0);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
         }

@@ -4,12 +4,16 @@
     {
         #region Public Properties
 
-        public int cumulativeTarget { get; set; }
-        public int cumulativeDecoy { get; set; }
-        public int cumulativeTargetNotch { get; set; }
-        public int cumulativeDecoyNotch { get; set; }
+        public int CumulativeTarget { get; set; }
+        public int CumulativeDecoy { get; set; }
+        public int CumulativeTargetNotch { get; set; }
+        public int CumulativeDecoyNotch { get; set; }
         public double QValue { get; set; }
         public double QValueNotch { get; set; }
+        public double MaximumLikelihood { get; set; }
+        public decimal EValue { get; set; }
+        public double EScore { get; set; }
+        public double TwoD_qValue { get; set; }
 
         #endregion Public Properties
     }

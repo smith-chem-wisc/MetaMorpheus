@@ -99,7 +99,7 @@ namespace EngineLayer.ModernSearch
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
                         int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]);
-                        var possiblyValidIds = idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore);
+                        var possiblyValidIds = maxInitialScore >= CommonParameters.ScoreCutoff ? idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore) : new List<int>();
 
                         foreach (var id in possiblyValidIds)
                         {
@@ -115,7 +115,16 @@ namespace EngineLayer.ModernSearch
                             if (score > CommonParameters.ScoreCutoff)
                             {
                                 if (globalPsms[i] == null)
+                                {
                                     globalPsms[i] = new Psm(peptide, notch, score, i, scan, CommonParameters.ExcelCompatible);
+                                    if (CommonParameters.CalculateEValue)
+                                    {
+                                        List<int> AllScores = new List<int>(new int[maxInitialScore+1]);
+                                        for (int allID = 0; allID < peptideIndex.Count; allID++)
+                                            if (massDiffAcceptor.Accepts(scan.PrecursorMass, peptideIndex[allID].MonoisotopicMassIncludingFixedMods) >= 0)
+                                                AllScores[scoringTable[allID]]++;
+                                    }
+                                }
                                 else
                                     globalPsms[i].AddOrReplace(peptide, score, notch, CommonParameters.ReportAllAmbiguity);
                             }

@@ -49,6 +49,8 @@ namespace EngineLayer
         bool TrimMsMsPeaks { get; }
         string TaskDescriptor { get; }
 
+        bool CalculateEValue { get; }
+
         #endregion Public Properties
     }
 }

@@ -48,6 +48,7 @@ namespace EngineLayer
             MinRatio = 0.01;
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
+            CalculateEValue = false;
         }
 
         #endregion Public Constructors
@@ -95,6 +96,7 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; set; }
         public string TaskDescriptor { get; set; }
 
+        public bool CalculateEValue { get; set; }
         #endregion Public Properties
     }
 }

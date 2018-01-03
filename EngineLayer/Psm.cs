@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MathNet.Numerics;
 
 namespace EngineLayer
 {
@@ -79,6 +80,9 @@ namespace EngineLayer
         public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
 
+        public List<int> AllScores { get; set; } //list where index is score and value is number of theoreticals at that score
+
+
         #endregion Public Properties
 
         #region Private Properties
@@ -124,6 +128,8 @@ namespace EngineLayer
             sb.Append('\t' + "Start and End Residues In Protein");
             sb.Append('\t' + "Previous Amino Acid");
             sb.Append('\t' + "Next Amino Acid");
+            sb.Append('\t' + "All Scores");
+            sb.Append('\t' + "Theoreticals Searched");
             sb.Append('\t' + "Decoy/Contaminant/Target");
 
             sb.Append('\t' + "Matched Ion Counts");
@@ -140,6 +146,11 @@ namespace EngineLayer
             sb.Append('\t' + "Cumulative Target Notch");
             sb.Append('\t' + "Cumulative Decoy Notch");
             sb.Append('\t' + "QValue Notch");
+
+            sb.Append('\t' + "Maximum Likelihood");
+            sb.Append('\t' + "eValue");
+            sb.Append('\t' + "eScore");
+            sb.Append('\t' + "2D q-value");
 
             return sb.ToString();
         }
@@ -249,6 +260,14 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PreviousAminoAcid.ToString())).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NextAminoAcid.ToString())).Item1);
+                int theoreticalsSearched = 0;
+                sb.Append('\t');
+                for (int i = 0; i < AllScores.Count; i++)
+                {
+                    sb.Append(AllScores[i] + '(' + i + ");");
+                    theoreticalsSearched += AllScores[i];
+                }
+                sb.Append('\t' + theoreticalsSearched.ToString());
 
                 // Unambiguous
                 if (IsDecoy)
@@ -260,7 +279,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (MatchedIonDictOnlyMatches != null)
@@ -303,30 +322,47 @@ namespace EngineLayer
 
             if (FdrInfo != null)
             {
-                sb.Append('\t' + FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture));
-                sb.Append('\t' + FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.CumulativeDecoy.ToString(CultureInfo.InvariantCulture));
                 sb.Append('\t' + FdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture));
-                sb.Append('\t' + FdrInfo.cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture));
-                sb.Append('\t' + FdrInfo.cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture));
                 sb.Append('\t' + FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
+
+                sb.Append("\t" + FdrInfo.MaximumLikelihood.ToString("F6", CultureInfo.InvariantCulture));
+                sb.Append("\t" + FdrInfo.EValue.ToString("F6", CultureInfo.InvariantCulture));
+                sb.Append("\t" + FdrInfo.EScore.ToString("F6", CultureInfo.InvariantCulture));
+                sb.Append("\t" + FdrInfo.TwoD_qValue.ToString("F6", CultureInfo.InvariantCulture));
             }
             else
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
 
             return sb.ToString();
         }
 
-        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
+        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, decimal eValue, double eScore, double twoD_qValue)
         {
             FdrInfo = new FdrInfo
             {
-                cumulativeTarget = cumulativeTarget,
-                cumulativeDecoy = cumulativeDecoy,
+                CumulativeTarget = cumulativeTarget,
+                CumulativeDecoy = cumulativeDecoy,
                 QValue = tempQValue,
-                cumulativeTargetNotch = cumulativeTargetNotch,
-                cumulativeDecoyNotch = cumulativeDecoyNotch,
-                QValueNotch = tempQValueNotch
+                CumulativeTargetNotch = cumulativeTargetNotch,
+                CumulativeDecoyNotch = cumulativeDecoyNotch,
+                QValueNotch = tempQValueNotch,
+                MaximumLikelihood = maximumLikelihood,
+                EScore = eScore,
+                EValue = eValue,
+                TwoD_qValue = twoD_qValue
             };
+        }
+
+        public void UpdateAllScores(double score)
+        {
+            int roundScore = (int)Math.Floor(score);
+            if (AllScores.Count < roundScore)
+                AllScores.Add(0);
+            AllScores[roundScore]++;
         }
 
         #endregion Public Methods
@@ -337,6 +373,14 @@ namespace EngineLayer
         {
             foreach (var kvp in psmParent.compactPeptides)
                 AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
+        }
+
+        internal void SumAllScores(Psm psmParent)
+        {
+            while (psmParent.AllScores.Count > AllScores.Count)
+                AllScores.Add(0);
+            for (int score = 0; score < psmParent.AllScores.Count; score++)
+                AllScores[score] += psmParent.AllScores[score];
         }
 
         #endregion Internal Methods
