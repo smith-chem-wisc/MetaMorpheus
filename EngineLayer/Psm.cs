@@ -37,6 +37,8 @@ namespace EngineLayer
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
             this.ExcelCompatible = true;
+            this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
+            this.AllScores[AllScores.Count - 1]++;
         }
 
         public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, score, scanIndex, scan)

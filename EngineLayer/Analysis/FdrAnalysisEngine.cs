@@ -54,7 +54,7 @@ namespace EngineLayer.Analysis
                 item.AllScores[item.AllScores.Count - 1]--; //remove top scoring peptide
                 while (combinedAllScores.Count < item.AllScores.Count) //expand array if neccessary
                     combinedAllScores.Add(0);
-                for (int score = 0; score < combinedAllScores.Count; score++) //add scores
+                for (int score = 0; score < item.AllScores.Count; score++) //add scores
                     combinedAllScores[score] += item.AllScores[score];
             }
             for (int i = 0; i < combinedAllScores.Count; i++)
@@ -142,7 +142,7 @@ namespace EngineLayer.Analysis
         private static double GetMaximumLikelihood(List<int> allScores)
         {
 
-            if (allScores.Count() <= 0)
+            if (!allScores.Any(x=>x!=0))
                 return 0;
             else
             {
