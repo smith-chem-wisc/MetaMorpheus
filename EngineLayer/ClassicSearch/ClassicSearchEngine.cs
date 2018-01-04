@@ -107,7 +107,7 @@ namespace EngineLayer.ClassicSearch
                         {
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
                             var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
-                            
+
                             if (score > commonParameters.ScoreCutoff || commonParameters.CalculateEValue)
                             {
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
@@ -116,7 +116,7 @@ namespace EngineLayer.ClassicSearch
                                     psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
                                 if (commonParameters.CalculateEValue)
                                     psms[scanWithIndexAndNotchInfo.scanIndex].UpdateAllScores(score);
-                            }                   
+                            }
                         }
                     }
                 }
@@ -143,6 +143,13 @@ namespace EngineLayer.ClassicSearch
                     }
                 }
             });
+            if (commonParameters.CalculateEValue)
+                Parallel.ForEach(Partitioner.Create(0, globalPsms.Length), partitionRange =>
+                 {
+                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                         if (globalPsms[i].Score < commonParameters.ScoreCutoff)
+                             globalPsms[i] = null;
+                 });
             return new MetaMorpheusEngineResults(this);
         }
 

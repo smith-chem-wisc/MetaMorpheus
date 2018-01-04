@@ -242,6 +242,9 @@
                                 <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues" />
+                            </StackPanel>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

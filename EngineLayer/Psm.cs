@@ -362,7 +362,7 @@ namespace EngineLayer
         public void UpdateAllScores(double score)
         {
             int roundScore = (int)Math.Floor(score);
-            if (AllScores.Count < roundScore)
+            while (AllScores.Count <= roundScore)
                 AllScores.Add(0);
             AllScores[roundScore]++;
         }
@@ -379,7 +379,7 @@ namespace EngineLayer
 
         internal void SumAllScores(Psm psmParent)
         {
-            while (psmParent.AllScores.Count > AllScores.Count)
+            while (psmParent.AllScores.Count >= AllScores.Count)
                 AllScores.Add(0);
             for (int score = 0; score < psmParent.AllScores.Count; score++)
                 AllScores[score] += psmParent.AllScores[score];

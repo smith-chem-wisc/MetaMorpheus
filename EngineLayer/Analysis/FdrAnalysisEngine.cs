@@ -123,10 +123,8 @@ namespace EngineLayer.Analysis
             List < Psm > decoysList = new List<Psm>(ids.Where(b => b.IsDecoy == true).ToList());
             List < Psm > targetsList = new List<Psm>(ids.Where(b => b.IsDecoy == false).ToList());
 
-            for (int i = ids.Count - 1; i >= 0; i--) // now calculate the twoD q-value
+            ids.AsParallel().ForAll(id =>
             {
-                Psm id = ids[i];
-
                 double decoys = decoysList.Where(b => b.Score >= id.Score && b.FdrInfo.EScore >= b.FdrInfo.EScore).Count();
                 double targets = targetsList.Where(b => b.Score >= id.Score && b.FdrInfo.EScore >= b.FdrInfo.EScore).Count();
 
@@ -134,7 +132,7 @@ namespace EngineLayer.Analysis
                     targets = 1;
 
                 id.FdrInfo.TwoD_qValue = (decoys / targets);
-            }
+            });
 
             return ids;
         }
