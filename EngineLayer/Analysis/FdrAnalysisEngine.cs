@@ -92,8 +92,9 @@ namespace EngineLayer.Analysis
 
                 double temp_q_value = (double)cumulative_decoy / cumulative_target;
                 double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / cumulative_target_per_notch[notch];
-                double maximumLikelihood = GetMaximumLikelihood(item.AllScores);
-                decimal eValue = GetEValue(item.Score, item.AllScores.Count, maximumLikelihood, globalMeanCount, globalMeanScore);
+                (int sum, int count) sumAndCount = GetSumAndCount(item.AllScores);
+                double maximumLikelihood = GetMaximumLikelihood(sumAndCount.sum, sumAndCount.count);
+                decimal eValue = GetEValue(item.Score, sumAndCount.count, maximumLikelihood, globalMeanCount, globalMeanScore);
                 double eScore = GetEScore(eValue);
                 double temp_twoD_qValue = 0;
                 item.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch, maximumLikelihood, eValue, eScore, temp_twoD_qValue);
@@ -125,35 +126,38 @@ namespace EngineLayer.Analysis
 
             ids.AsParallel().ForAll(id =>
             {
-                double decoys = decoysList.Where(b => b.Score >= id.Score && b.FdrInfo.EScore >= b.FdrInfo.EScore).Count();
-                double targets = targetsList.Where(b => b.Score >= id.Score && b.FdrInfo.EScore >= b.FdrInfo.EScore).Count();
+                int decoys = decoysList.Count(b => b.Score >= id.Score && b.FdrInfo.EScore >= b.FdrInfo.EScore);
+                int targets = targetsList.Count(b => b.Score >= id.Score && b.FdrInfo.EScore >= b.FdrInfo.EScore);
 
                 if (targets == 0)
                     targets = 1;
 
-                id.FdrInfo.TwoD_qValue = (decoys / targets);
+                id.FdrInfo.TwoD_qValue = (decoys * 1.0d / targets);
             });
 
             return ids;
         }
 
-        private static double GetMaximumLikelihood(List<int> allScores)
-        {
-
-            if (!allScores.Any(x=>x!=0))
-                return 0;
+        private static (int sum, int count) GetSumAndCount(List<int> allScores)
+        {           
+            if (!allScores.Any(x => x != 0))
+                return (0,0);
             else
             {
                 int count = 0;
                 int sum = 0;
-                for(int i=0; i<allScores.Count; i++)
+                for (int i = 0; i < allScores.Count; i++)
                 {
                     count += allScores[i];
                     sum = i * allScores[i];
                 }
-
-                return (1.0d / count) * sum;
+                return (sum,count);
             }
+        }
+
+        private static double GetMaximumLikelihood(int sum, int count)
+        {
+            return count == 0 ? 0 : (1.0d / count) * sum;
         }
 
         private static decimal GetEValue(double dScore, double count, double maximumLikelihood, double globalMeanCount, double globalMeanScore)

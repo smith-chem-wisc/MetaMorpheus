@@ -262,11 +262,11 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PreviousAminoAcid.ToString())).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NextAminoAcid.ToString())).Item1);
-                int theoreticalsSearched = 0;
-                sb.Append('\t');
-                for (int i = 0; i < AllScores.Count; i++)
+                int theoreticalsSearched = AllScores[0];
+                sb.Append('\t'+AllScores[0].ToString());
+                for (int i = 1; i < AllScores.Count; i++)
                 {
-                    sb.Append(AllScores[i] + '(' + i + ");");
+                    sb.Append("_" + AllScores[i]);
                     theoreticalsSearched += AllScores[i];
                 }
                 sb.Append('\t' + theoreticalsSearched.ToString());
@@ -379,7 +379,7 @@ namespace EngineLayer
 
         internal void SumAllScores(Psm psmParent)
         {
-            while (psmParent.AllScores.Count >= AllScores.Count)
+            while (psmParent.AllScores.Count > AllScores.Count)
                 AllScores.Add(0);
             for (int score = 0; score < psmParent.AllScores.Count; score++)
                 AllScores[score] += psmParent.AllScores[score];

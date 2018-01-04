@@ -147,7 +147,7 @@ namespace EngineLayer.ClassicSearch
                 Parallel.ForEach(Partitioner.Create(0, globalPsms.Length), partitionRange =>
                  {
                      for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
-                         if (globalPsms[i].Score < commonParameters.ScoreCutoff)
+                         if (globalPsms[i] != null && globalPsms[i].Score < commonParameters.ScoreCutoff)
                              globalPsms[i] = null;
                  });
             return new MetaMorpheusEngineResults(this);
