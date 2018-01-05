@@ -149,7 +149,7 @@ namespace EngineLayer.Analysis
                 for (int i = 0; i < allScores.Count; i++)
                 {
                     count += allScores[i];
-                    sum = i * allScores[i];
+                    sum += i * allScores[i];
                 }
                 return (sum,count);
             }
