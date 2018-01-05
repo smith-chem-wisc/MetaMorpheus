@@ -126,8 +126,8 @@ namespace EngineLayer.Analysis
 
             ids.AsParallel().ForAll(id =>
             {
-                int decoys = decoysList.Count(b => b.Score >= id.Score && b.FdrInfo.EScore >= b.FdrInfo.EScore);
-                int targets = targetsList.Count(b => b.Score >= id.Score && b.FdrInfo.EScore >= b.FdrInfo.EScore);
+                int decoys = decoysList.Count(b => b.Score >= id.Score && b.FdrInfo.EScore >= id.FdrInfo.EScore);
+                int targets = targetsList.Count(b => b.Score >= id.Score && b.FdrInfo.EScore >= id.FdrInfo.EScore);
 
                 if (targets == 0)
                     targets = 1;
