@@ -171,12 +171,9 @@ namespace EngineLayer
             return sortedProteinGroups;
         }
 
-        private string F(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
+        private static string F(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
         {
-            if (proteinGroupName.Contains("DECOY_"))
-                return proteinGroupName.Replace("DECOY_", "");
-            else
-                return (proteinGroupName);
+            return proteinGroupName.Contains("DECEOY_") ? proteinGroupName.Replace("DECOY_", "") : proteinGroupName;
         }
 
         #endregion Private Methods
