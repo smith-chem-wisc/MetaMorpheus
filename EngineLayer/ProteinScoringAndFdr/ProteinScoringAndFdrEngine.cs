@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
@@ -146,9 +147,36 @@ namespace EngineLayer
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
+                proteinGroup.BestPeptideScore = (double) proteinGroup.AllPsmsBelowOnePercentFDR.Select(psm => psm.FdrInfo.QValue).Min();
+            }
+
+
+            // do fdr for top-picked method
+            sortedProteinGroups = proteinGroups.OrderByDescending(b => -b.BestPeptideScore).GroupBy(b=> F(b.ProteinGroupName)).Select(b=>b.First()).ToList();
+  
+            cumulativeTarget = 0;
+            cumulativeDecoy = 0;
+            foreach (var proteinGroup in sortedProteinGroups)
+            {
+                if (proteinGroup.isDecoy)
+                    cumulativeDecoy++;
+                else
+                    cumulativeTarget++;
+
+                proteinGroup.CumulativeTarget = cumulativeTarget;
+                proteinGroup.CumulativeDecoy = cumulativeDecoy;
+                proteinGroup.BestPeptideQValue = (double)cumulativeDecoy / cumulativeTarget;
             }
 
             return sortedProteinGroups;
+        }
+
+        private string F(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
+        {
+            if (proteinGroupName.Contains("DECOY_"))
+                return proteinGroupName.Replace("DECOY_", "");
+            else
+                return (proteinGroupName);
         }
 
         #endregion Private Methods

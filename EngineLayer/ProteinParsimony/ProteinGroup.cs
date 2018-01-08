@@ -29,6 +29,7 @@ namespace EngineLayer
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
             ProteinGroupScore = 0;
+            BestPeptideScore = 0;
             QValue = 0;
             isDecoy = false;
             isContaminant = false;
@@ -76,6 +77,10 @@ namespace EngineLayer
 
         public double QValue { get; set; }
 
+        public double BestPeptideQValue { get; set; }
+
+        public double BestPeptideScore { get; set; }
+
         public int CumulativeTarget { get; set; }
 
         public int CumulativeDecoy { get; set; }
@@ -115,10 +120,14 @@ namespace EngineLayer
             }
             sb.Append("Number of PSMs" + '\t');
             sb.Append("Summed Score" + '\t');
+            
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("QValue");
+            sb.Append("QValue" + '\t');
+
+            sb.Append("Best Peptide Score" + '\t');
+            sb.Append("Best Peptide QValue");
             return sb.ToString();
         }
 
@@ -219,6 +228,8 @@ namespace EngineLayer
             sb.Append(ProteinGroupScore);
             sb.Append("\t");
 
+
+
             // isDecoy
             if (isDecoy)
                 sb.Append("D");
@@ -238,6 +249,15 @@ namespace EngineLayer
 
             // q value
             sb.Append(QValue);
+            sb.Append("\t");
+
+            // best peptide score
+            sb.Append(BestPeptideScore);
+            sb.Append("\t");
+
+
+            // best peptide q value
+            sb.Append(BestPeptideQValue);
             sb.Append("\t");
 
             return sb.ToString();
