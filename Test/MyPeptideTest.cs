@@ -250,10 +250,11 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>());
 
             cse.Run();
-            Assert.IsNull(globalPsms[0]);
+            Assert.AreEqual(globalPsms[0].Score, 0d); //The score cut-off in classic search was eliminated. Therefore, peptides with zero score are registered as psms. Therefore globalPsms[0] is not null
+            //Assert.IsNull(globalPsms[0]);
         }
 
         [Test]

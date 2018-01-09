@@ -734,7 +734,7 @@ namespace TaskLayer
             if (CommonParameters.BIons && SearchParameters.AddCompIons)
                 ionTypes.Add(ProductType.B);
             else if (CommonParameters.BIons)
-                ionTypes.Add(ProductType.BnoB1ions);
+                ionTypes.Add(ProductType.B);
             if (CommonParameters.YIons)
                 ionTypes.Add(ProductType.Y);
             if (CommonParameters.ZdotIons)
@@ -912,7 +912,7 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
 
-            allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            allPsms = allPsms.Where(b => b != null && b.Score >= CommonParameters.ScoreCutoff).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             Status("Running FDR analysis...", taskId);
             int massDiffAcceptorNumNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
