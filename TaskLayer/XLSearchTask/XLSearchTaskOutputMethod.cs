@@ -176,41 +176,6 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
-        private void WriteCrosslinkToTxtForCLMSVault(List<PsmCross> items, string outputFolder, string fileName, CrosslinkerTypeClass crosslinker, List<string> nestedIds)
-        {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine("Scan Number\tRet Time\tObs Mass\tCharge\tPSM Mass\tPPM Error\tScore\tdScore\tPep.Diff." +
-                    "\tPeptide #1\tLink #1\tProtein #1" +
-                    "\tPeptide #2\tLink #2\tProtein #2\tLinker Mass");
-                foreach (var item in items)
-                {
-                    output.WriteLine(
-                        item.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.ScanRetentionTime.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.ScanPrecursorMass.ToString() //CultureInfo.InvariantCulture
-                        + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPsmCross.PeptideMonisotopicMass.HasValue) ? (item.BetaPsmCross.PeptideMonisotopicMass.Value + item.PeptideMonisotopicMass.Value + crosslinker.TotalMass).ToString(CultureInfo.InvariantCulture) : "---")
-                        + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPsmCross.PeptideMonisotopicMass.HasValue) ? ((item.ScanPrecursorMass - item.BetaPsmCross.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value - crosslinker.TotalMass) / item.ScanPrecursorMass * 10E6).ToString(CultureInfo.InvariantCulture) : "---")
-                        + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.Score + item.BetaPsmCross.Score).ToString(CultureInfo.InvariantCulture)
-                        + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPsmCross.PeptideMonisotopicMass.HasValue) ? (item.ScanPrecursorMass - item.BetaPsmCross.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value - crosslinker.TotalMass).ToString(CultureInfo.InvariantCulture) : "---")
-
-                        + "\t" + item.BaseSequence
-                        + "\t" + item.XlPos.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-
-                        + "\t" + item.BetaPsmCross.BaseSequence
-                        + "\t" + item.BetaPsmCross.XlPos.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + crosslinker.TotalMass.ToString(CultureInfo.InvariantCulture)
-                        );
-                }
-            }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
-        }
-
         private void WriteCrosslinkToTxtForPercolator(List<PsmCross> items, string outputFolder, string fileName, CrosslinkerTypeClass crosslinker, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
@@ -220,14 +185,14 @@ namespace TaskLayer
                     "\tPeptide\tProtein");
                 foreach (var item in items)
                 {
-                    string x = "T"; string label = "1";
+                    string x = "T"; int label = 1;
                     if (item.IsDecoy || item.BetaPsmCross.IsDecoy)
                     {
-                        x = "D"; label = "-1";
+                        x = "D"; label = -1;
                     }
                     output.WriteLine(
                         x + "-" + item.ScanNumber.ToString(CultureInfo.InvariantCulture) + "-" + item.ScanRetentionTime.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + label
+                        + "\t" + label.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.DScore.ToString(CultureInfo.InvariantCulture)

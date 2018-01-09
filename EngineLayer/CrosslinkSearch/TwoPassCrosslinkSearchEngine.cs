@@ -32,17 +32,18 @@ namespace EngineLayer.CrosslinkSearch
         //private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLPrecusorMsTl;
         //private readonly Tolerance XLBetaPrecusorMsTl;
-        //private readonly List<PsmCross> psmCross;
         private readonly bool quench_H2O;
         private readonly bool quench_NH2;
         private readonly bool quench_Tris;
+        private readonly bool charge_2_3;
+        private readonly bool charge_2_3_PrimeFragment;
         private MassDiffAcceptor XLPrecusorSearchMode;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris,List<string> nestedIds) : base(nestedIds)
+        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsmsCross = globalPsmsCross;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -67,6 +68,8 @@ namespace EngineLayer.CrosslinkSearch
             this.quench_H2O = quench_H2O;
             this.quench_NH2 = quench_NH2;
             this.quench_Tris = quench_Tris;
+            this.charge_2_3 = charge_2_3;
+            this.charge_2_3_PrimeFragment = charge_2_3_PrimeFragment;
         }
 
         #endregion Public Constructors
@@ -132,7 +135,7 @@ namespace EngineLayer.CrosslinkSearch
                         }
 
                         idsRankedByScore.OrderByDescending(p => scoringTable[p]);
-                        idsRankedByScore = idsRankedByScore.Take(1000).ToList();
+                        idsRankedByScore = idsRankedByScore.Take(CrosslinkSearchTopNum).ToList();
                         if (CrosslinkSearchTop)
                         {
                             idsOfPeptidesPossiblyObserved = idsRankedByScore;
@@ -340,7 +343,7 @@ namespace EngineLayer.CrosslinkSearch
                     bestPsmCrossList.Add(psmCrossLoop);
                 }
                 //Cross-linked peptide
-                else if (theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 300)
+                else if (theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 200)
                 {
                     var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
                     for (int inx = ind; inx < theScanBestPeptide.Count; inx++)
@@ -350,9 +353,9 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             var psmCrossAlpha = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
                             var psmCrossBeta = new PsmCross(theScanBestPeptide[inx].BestPeptide, theScanBestPeptide[inx].BestNotch, theScanBestPeptide[inx].BestScore, i, theScan);
-                            
-                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance);
-                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta, psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance);
+
+                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment);
+                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta, psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment);
                             if (psmCrossAlpha.XLBestScore < psmCrossBeta.XLBestScore)
                             {
                                 var swap = psmCrossAlpha;

@@ -29,9 +29,11 @@ namespace TaskLayer
 
             XlOutAll = true;
             XlOutCrosslink = true;
-            XlOutCLMSVault = false;
             XlOutPercolator = false;
             XlOutPepXML = false;
+
+            XlCharge_2_3 = true;
+            XlCharge_2_3_PrimeFragment = false;
         }
 
         #endregion Public Constructors
@@ -56,7 +58,6 @@ namespace TaskLayer
         public bool DisposeOfFileWhenDone { get; set; }
 
         public bool XlOutPercolator { get; set; }
-        public bool XlOutCLMSVault { get; set; }
         public bool XlOutAll { get; set; }
         public bool XlOutPepXML { get; set; }
         public bool XlOutCrosslink { get; set; }
@@ -64,6 +65,9 @@ namespace TaskLayer
         public bool XlQuench_H2O { get; set; }
         public bool XlQuench_Tris { get; set; }
         public bool XlQuench_NH2 { get; set; }
+
+        public bool XlCharge_2_3 { get; set; }
+        public bool XlCharge_2_3_PrimeFragment { get; set; }
         #endregion Public Properties
     }
 }
