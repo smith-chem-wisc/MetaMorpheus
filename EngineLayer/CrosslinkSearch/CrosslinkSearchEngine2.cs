@@ -106,7 +106,7 @@ namespace EngineLayer.CrosslinkSearch
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
                 List<BestPeptideScoreNotch> bestPeptideScoreNotch = new List<BestPeptideScoreNotch>();
-                double worstScores = new double();
+                double worstScores;
 
                 double[] fullPeptideScores = new double[peptideIndexCount];
                 //Find the Top matched peptides
@@ -456,7 +456,7 @@ namespace EngineLayer.CrosslinkSearch
                     while (scanMass <= allowedInterval.Maximum)
                     {
                         var theScan = selectedScan[scanIndex];
-                        yield return new ScanWithIndexAndNotchInfo(theScan, allowedIntervalWithNotch.notch, scanIndex);
+                        yield return new ScanWithIndexAndNotchInfo(theScan, allowedIntervalWithNotch.Notch, scanIndex);
                         scanIndex++;
                         if (scanIndex == selectedScan.Length)
                             break;
