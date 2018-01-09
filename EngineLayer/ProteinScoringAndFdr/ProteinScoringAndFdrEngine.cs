@@ -11,7 +11,7 @@ namespace EngineLayer
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly bool mergeIndistinguishableProteinGroups;
-        private List<ProteinGroup> proteinGroups;
+        private readonly List<ProteinGroup> proteinGroups;
 
         #endregion Private Fields
 

@@ -169,7 +169,7 @@ namespace EngineLayer.ClassicSearch
                     while (scanMass <= allowedInterval.Maximum)
                     {
                         var theScan = arrayOfSortedMS2Scans[scanIndex];
-                        yield return new ScanWithIndexAndNotchInfo(theScan, allowedIntervalWithNotch.notch, scanIndex);
+                        yield return new ScanWithIndexAndNotchInfo(theScan, allowedIntervalWithNotch.Notch, scanIndex);
                         scanIndex++;
                         if (scanIndex == arrayOfSortedMS2Scans.Length)
                             break;
