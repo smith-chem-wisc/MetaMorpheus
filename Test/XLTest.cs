@@ -84,7 +84,7 @@ namespace Test
             var fixedModifications = new List<ModificationWithMass>() { mod2 };
             var localizeableModifications = new List<ModificationWithMass>();
 
-            var lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             foreach (var mod in fixedModifications)
                 modsDictionary.Add(mod, 0);
@@ -132,7 +132,7 @@ namespace Test
             //Another method to calculate modification mass of cross-linked peptides
             //var modMassAlpha2 = listOfSortedms2Scans[0].PrecursorMass - psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods;
 
-            var productMassesAlphaList = PsmCross.XLCalculateTotalProductMasses(psmCrossAlpha, modMassAlpha1, crosslinker, lp, false, false);
+            var productMassesAlphaList = PsmCross.XLCalculateTotalProductMasses(psmCrossAlpha, modMassAlpha1, crosslinker, lp, true, false);
 
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 35);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz[26], 2312.21985342336);

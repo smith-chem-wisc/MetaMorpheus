@@ -452,6 +452,13 @@ namespace EngineLayer.CrosslinkSearch
                         ib++;
                     }
                 }
+                if (containsB)
+                {
+                    productMassMightHave.ProductMz[i] = hm;
+                    productMassMightHave.ProductName[i] = "b" + (ib + 1).ToString();
+                    i++;
+                    ib++;
+                }
                 if (containsC)
                 {
                     productMassMightHave.ProductMz[i] = hm + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
