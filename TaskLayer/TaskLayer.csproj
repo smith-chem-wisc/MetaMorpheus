@@ -7,12 +7,12 @@
 
   <ItemGroup>
     <PackageReference Include="Accord.Statistics" Version="3.8.0" />
-    <PackageReference Include="FlashLFQ" Version="0.1.99" />
+    <PackageReference Include="FlashLFQ" Version="0.1.100" />
     <PackageReference Include="MathNet.Numerics" Version="3.20.0" />
-    <PackageReference Include="mzLib" Version="1.0.264" />
+    <PackageReference Include="mzLib" Version="1.0.266" />
     <PackageReference Include="NetSerializer" Version="4.1.0" />
     <PackageReference Include="Nett" Version="0.8.0" />
-    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.5" />
+    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.7" />
   </ItemGroup>
 
   <ItemGroup>

@@ -166,6 +166,36 @@ namespace EngineLayer
 
         #region Public Methods
 
+        public virtual string EssentialSequence(Dictionary<string, int> ModstoWritePruned)
+        {
+            string essentialSequence = BaseSequence;
+            if (ModstoWritePruned != null)
+            {
+                var sbsequence = new StringBuilder();
+
+                // variable modification on peptide N-terminus
+                if (allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
+                    if (ModstoWritePruned.ContainsKey(pep_n_term_variable_mod.modificationType))
+                        sbsequence.Append('[' + pep_n_term_variable_mod.modificationType + ":" + pep_n_term_variable_mod.id + ']');
+                for (int r = 0; r < Length; r++)
+                {
+                    sbsequence.Append(this[r]);
+                    // variable modification on this residue
+                    if (allModsOneIsNterminus.TryGetValue(r + 2, out ModificationWithMass residue_variable_mod))
+                        if (ModstoWritePruned.ContainsKey(residue_variable_mod.modificationType))
+                            sbsequence.Append('[' + residue_variable_mod.modificationType + ":" + residue_variable_mod.id + ']');
+                }
+
+                // variable modification on peptide C-terminus
+                if (allModsOneIsNterminus.TryGetValue(Length + 2, out ModificationWithMass pep_c_term_variable_mod))
+                    if (ModstoWritePruned.ContainsKey(pep_c_term_variable_mod.modificationType))
+                        sbsequence.Append('[' + pep_c_term_variable_mod.modificationType + ":" + pep_c_term_variable_mod.id + ']');
+
+                essentialSequence = sbsequence.ToString();
+            }
+            return essentialSequence;
+        }
+
         public CompactPeptide CompactPeptide(TerminusType terminusType)
         {
             if (compactPeptides.TryGetValue(terminusType, out CompactPeptide compactPeptide))
