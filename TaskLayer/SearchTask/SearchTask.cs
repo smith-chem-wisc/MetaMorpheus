@@ -1087,6 +1087,7 @@ namespace TaskLayer
 
             var psmsGroupedByFile = allPsms.GroupBy(p => p.FullFilePath);
 
+            Psm.ModstoWritePruned = SearchParameters.ModsToWriteSelection;
             // individual psm files (with global psm fdr, global parsimony)
             foreach (var group in psmsGroupedByFile)
             {
@@ -1176,7 +1177,6 @@ namespace TaskLayer
                 List<Modification> modificationsToWriteIfObserved = new List<Modification>();
 
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
-
                 // Add user mod selection behavours to Pruned DB
                 foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {
