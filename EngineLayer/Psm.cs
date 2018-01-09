@@ -17,7 +17,7 @@ namespace EngineLayer
         private const double tolForScoreDifferentiation = 1e-9;
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
-        
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -46,6 +46,8 @@ namespace EngineLayer
         #endregion Public Constructors
 
         #region Public Properties
+
+        public static Dictionary<string, int> ModstoWritePruned { get; set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
@@ -61,13 +63,10 @@ namespace EngineLayer
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
-
-        public Dictionary<string, int> ModstoWritePruned { get;  set; }
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
-        public string EssentialSequence { get; private set; }
         public int? PeptideLength { get; private set; }
         public int? OneBasedStartResidueInProtein { get; private set; }
         public int? OneBasedEndResidueInProtein { get; private set; }
