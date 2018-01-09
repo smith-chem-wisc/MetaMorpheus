@@ -384,12 +384,11 @@ namespace MetaMorpheusGUI
                             staticTasksObservableCollection.Add(te4);
                             staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te4) + 1) + "-" + ye4.CommonParameters.TaskDescriptor;
                             break;
-                        default:break;
                     }
                     break;
-                default: break;
             }
         }
+
         //default manner
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -497,7 +496,7 @@ namespace MetaMorpheusGUI
                 UpdateTaskGuiStuff();
             }
         }
-        //used in xaml, codacy's fault
+
         private void BtnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new XLSearchTaskWindow();
@@ -759,7 +758,6 @@ namespace MetaMorpheusGUI
                         preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
-                    default: break;
                 }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
@@ -767,7 +765,7 @@ namespace MetaMorpheusGUI
                 System.Diagnostics.Process.Start(fileThing.FullPath);
             }
         }
-        //again, not detected usage by codacy
+
         private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog()

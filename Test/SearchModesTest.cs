@@ -73,12 +73,6 @@ namespace Test
             Assert.IsTrue(theList2[1].allowedInterval.Contains(1001));
         }
 
-        [Test]
-        //This is an unused function
-        public static void TestIntervalsSearchMode()
-        {
-        }
-
         #endregion Public Methods
 
         #region Private Classes
@@ -100,7 +94,7 @@ namespace Test
             {
                 return scanPrecursorMass * peptideMass >= 1 ? 1 : -1;
             }
-            //used, not detected
+
             public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
             {
                 yield return new AllowedIntervalWithNotch(new DoubleRange(1 / peptideMonoisotopicMass, double.MaxValue), 1);

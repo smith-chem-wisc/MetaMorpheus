@@ -317,7 +317,7 @@ namespace EngineLayer
                     case CleavageSpecificity.None:
                         if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
                         {
-                            if ((!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength) && //doesn't matter anyway
+                            if ((!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength) &&
                                             (!maxPeptidesLength.HasValue || protein.Length <= maxPeptidesLength))
                             {
                                 foreach (PeptideWithSetModifications p in GetThePeptides(1, protein.Length, protein, 0, "full", allKnownFixedModifications, digestionParams, variableModifications))
@@ -470,6 +470,7 @@ namespace EngineLayer
                         if (Gptmd.GptmdEngine.ModFits(mod, protein, peptideLength, peptideLength, OneBasedStartResidueInProtein + peptideLength - 1))
                             fixedModsOneIsNterminus[peptideLength + 2] = mod;
                         break;
+
                     default: break;
                 }
             }

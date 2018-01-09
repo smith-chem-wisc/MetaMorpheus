@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
             TheTask = new SearchTask();
-            
+
             PopulateChoices();
 
             UpdateFieldsFromTask(TheTask);
@@ -64,7 +64,7 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
             TheTask = task;
-            
+
             PopulateChoices();
 
             UpdateFieldsFromTask(TheTask);
@@ -100,7 +100,7 @@ namespace MetaMorpheusGUI
             return Array.TrueForAll<Char>(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
-        //again, default manner
+
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -124,14 +124,14 @@ namespace MetaMorpheusGUI
 
             precursorMassToleranceComboBox.Items.Add("Absolute");
             precursorMassToleranceComboBox.Items.Add("ppm");
-            
+
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForGrid(hm.Key);
                 modSelectionGridItems.Add(theModType);
             }
             ModSelectionGrid.ItemsSource = modSelectionGridItems;
-            
+
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
@@ -491,7 +491,7 @@ namespace MetaMorpheusGUI
 
             DialogResult = true;
         }
-        //used, but not detected
+
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
@@ -539,7 +539,7 @@ namespace MetaMorpheusGUI
             foreach (var modType in TheTask.SearchParameters.ModsToWriteSelection)
             {
                 var huhb = modSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
-                if (huhb!=null)
+                if (huhb != null)
                 {
                     switch (modType.Value)
                     {

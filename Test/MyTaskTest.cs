@@ -15,15 +15,6 @@ namespace Test
     [TestFixture]
     public static class MyTaskTest
     {
-        #region Public Fields
-
-        public static bool hasPrunedRun;
-
-        #endregion Public Fields
-        #region Private Fields
-        private static bool PrunedBool;
-        #endregion Private Fields
-
         #region Public Methods
 
         [Test]
@@ -525,7 +516,7 @@ namespace Test
             task5.SearchParameters.ModsToWriteSelection["missing"] = 3;
 
             //add task 1 to task list
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {new Tuple<string, MetaMorpheusTask>("task5", task5)};
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("task5", task5) };
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif2);
 

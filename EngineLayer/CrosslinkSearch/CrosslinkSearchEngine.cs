@@ -133,7 +133,7 @@ namespace EngineLayer.CrosslinkSearch
                                 {
                                     // Score is better than the worst, only make sure it is acceptable
                                     int notch = XLsearchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                    if (notch >= 0) //nothing seems wrong
+                                    if (notch >= 0)
                                     {
                                         bestPeptideScoreNotch.RemoveAt(CrosslinkSearchTopNum - 1);
                                         bestPeptideScoreNotch.Add(new BestPeptideScoreNotch(candidatePeptide, consideredScore, notch));

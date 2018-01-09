@@ -7,7 +7,6 @@ namespace EngineLayer
         #region Public Fields
 
         public DoubleRange allowedInterval;
-        public int notch; //we need to interact with notch so definitely keep it public
 
         #endregion Public Fields
 
@@ -16,9 +15,15 @@ namespace EngineLayer
         public AllowedIntervalWithNotch(DoubleRange doubleRange, int j)
         {
             this.allowedInterval = doubleRange;
-            this.notch = j;
+            this.Notch = j;
         }
 
         #endregion Public Constructors
+
+        #region Public Properties
+
+        public int Notch { get; }
+
+        #endregion Public Properties
     }
 }

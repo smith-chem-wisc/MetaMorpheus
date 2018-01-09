@@ -2,7 +2,7 @@
 
 namespace EngineLayer
 {
-    [Serializable]//this should not be a problem anyway
+    [Serializable]
     public class MetaMorpheusException : Exception
     {
         #region Public Constructors

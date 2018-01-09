@@ -47,7 +47,7 @@ namespace MetaMorpheusGUI
         #endregion Public Methods
 
         #region Private Methods
-        //default manner
+
         private void InstallerClicked(object sender, RoutedEventArgs e)
         {
             DialogResult = true;

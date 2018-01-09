@@ -267,7 +267,7 @@ namespace MetaMorpheusGUI
         {
             DialogResult = false;
         }
-        //this is used, codacy's fault
+
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             CommonParameters CommonParamsToSave = new CommonParameters();

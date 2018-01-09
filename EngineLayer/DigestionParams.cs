@@ -1,6 +1,6 @@
 ﻿namespace EngineLayer
 {
-    public class DigestionParams //doesn't matter
+    public class DigestionParams
     {
         #region Public Constructors
 

@@ -103,7 +103,7 @@ namespace EngineLayer.Gptmd
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass))
                     yield return Mod;
                 foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
-                    if (modOnPsm.motif.Equals(Mod.motif)) //doesn't affect performance anyway
+                    if (modOnPsm.motif.Equals(Mod.motif))
                     {
                         if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
                             yield return Mod;
