@@ -168,7 +168,7 @@ namespace EngineLayer
 
         public virtual string EssentialSequence(Dictionary<string, int> ModstoWritePruned)
         {
-            string essentialSequence = null;
+            string essentialSequence = BaseSequence;
             if (ModstoWritePruned != null)
             {
                 var sbsequence = new StringBuilder();
