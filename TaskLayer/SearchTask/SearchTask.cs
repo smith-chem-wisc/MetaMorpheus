@@ -1089,6 +1089,10 @@ namespace TaskLayer
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
                 }
+
+                var writtenFileForPercolator = Path.Combine(@"C:\Users\stepa\Data\Yeast\forPercolator.tsv");
+                var writtenFileForPercolator2 = Path.Combine(@"C:\Users\stepa\Data\Yeast\forPercolator2.tsv");
+                WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator, writtenFileForPercolator2);
             }
             foreach (var group in psmsGroupedByFile)
             {
@@ -1361,15 +1365,57 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
-        private void ScorePsms(List<Psm> allPsms, string outputFolder)
+        private void WritePsmsForPercolator(List<Psm> psmsForThisFile, string writtenFileForPercolator, string writtenFileForPercolator2)
         {
-            Console.WriteLine("in ScorePsms");
+            using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
+            {
+                output.WriteLine("SpecId\tLabel\tScanNr\tF1\tF2\tPeptide\tProteins");
+                output.WriteLine("DefaultDirection\t-\t-\t1\t1\t\t");
+                for (int i = 0; i < psmsForThisFile.Count; i++)
+                {
+                    var heh = psmsForThisFile[i];
 
+                    var pwsm = heh.CompactPeptides.First().Value.Item2.First();
+
+                    output.Write(i.ToString());
+                    output.Write('\t' + (heh.IsDecoy ? -1 : 1).ToString());
+                    output.Write('\t' + heh.ScanNumber.ToString());
+                    output.Write('\t' + Math.Round(heh.Score).ToString());
+                    output.Write('\t' + (heh.Score - Math.Round(heh.Score)).ToString());
+                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.Sequence + "." + pwsm.NextAminoAcid).ToString());
+                    output.Write('\t' + (pwsm.Protein.Accession).ToString());
+                    output.WriteLine();
+                }
+            }
+            using (StreamWriter output = new StreamWriter(writtenFileForPercolator2))
+            {
+                output.WriteLine("SpecId\tLabel\tScanNr\tF1\tPeptide\tProteins");
+                output.WriteLine("DefaultDirection\t-\t-\t1\t\t");
+                for (int i = 0; i < psmsForThisFile.Count; i++)
+                {
+                    var heh = psmsForThisFile[i];
+
+                    var pwsm = heh.CompactPeptides.First().Value.Item2.First();
+
+                    output.Write(i.ToString());
+                    output.Write('\t' + (heh.IsDecoy ? -1 : 1).ToString());
+                    output.Write('\t' + "1");
+                    output.Write('\t' + Math.Round(heh.Score).ToString());
+                    //output.Write('\t' + (heh.Score - Math.Round(heh.Score)).ToString());
+                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.Sequence + "." + pwsm.NextAminoAcid).ToString());
+                    output.Write('\t' + (pwsm.Protein.Accession).ToString());
+                    output.WriteLine();
+                }
+            }
+        }
+
+        private void ScorePsms(List<Psm> allPsms, string outputFolder)
+        { 
             var writtenFile = Path.Combine(@"C:\Users\stepa\Data\Yeast\beforeScoring.tsv");
 
             Psm.fff = GetIntraSetFeatures(allPsms);
 
-            int numTrainingPoints = allPsms.Where(b => b != null).Sum(b=>b.CompactPeptides.Count());
+            int numTrainingPoints = allPsms.Where(b => b != null).Sum(b => b.CompactPeptides.Count());
 
             bool[] output = new bool[numTrainingPoints];
             double[][] input = new double[numTrainingPoints][];
@@ -1405,15 +1451,16 @@ namespace TaskLayer
 
                             input[j] = allPsms[i].GetFeatures(asdfj.Value);
 
-                            outputff.WriteLine(i + "\t" + asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy) + "\t" + string.Join("\t", input[j]));
+                            outputff.WriteLine(i + 
+                                "\t" + asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy) + 
+                                "\t" + string.Join("\t", input[j]));
 
                             output[j] = asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy);
 
                             j++;
                         }
             }
-
-            Console.WriteLine("after writing file");
+            
 
             // Create a new Iterative Reweighted Least Squares algorithm
             var learner = new IterativeReweightedLeastSquares<LogisticRegression>()
@@ -1425,13 +1472,15 @@ namespace TaskLayer
 
             // Now, we can use the learner to finally estimate our model:
             LogisticRegression regression = learner.Learn(input, output);
-
-
-            regression.Probability(new double[] { 1 });
-
+            
             Console.WriteLine("weights: " + string.Join("\t", regression.Weights));
 
-            Func<double[], double> scoringFunction = (double[] a) => a[0] + a[1];
+            // TEMPORARY DISABLE
+            //Func<double[], double> scoringFunction = (double[] a) => regression.Probability(a);
+
+            // TEMPORARY ENABLE, IGNORE LEARNED FUNCTION
+            double scoringFunction(double[] a) => a[0] + a[1];
+
             // Actually, score!!!
             for (int i = 0; i < allPsms.Count; i++)
                 if (allPsms[i] != null)
@@ -1439,7 +1488,7 @@ namespace TaskLayer
                     allPsms[i].ScoreAndPrune(scoringFunction);
                 }
         }
-        
+
         private (Dictionary<Protein, HashSet<string>>, Dictionary<Protein, HashSet<Psm>>) GetIntraSetFeatures(List<Psm> allPsms)
         {
             Dictionary<Protein, HashSet<string>> toReturnCompactPeptideBase = new Dictionary<Protein, HashSet<string>>();
