@@ -15,8 +15,6 @@ namespace EngineLayer
 
         #endregion Private Fields
 
-        //Readonly can be handy, so...
-
         #region Public Constructors
 
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, List<string> nestedIds) : base(nestedIds)

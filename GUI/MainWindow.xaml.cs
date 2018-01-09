@@ -389,7 +389,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        //default manner
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;

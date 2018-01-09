@@ -470,8 +470,6 @@ namespace EngineLayer
                         if (Gptmd.GptmdEngine.ModFits(mod, protein, peptideLength, peptideLength, OneBasedStartResidueInProtein + peptideLength - 1))
                             fixedModsOneIsNterminus[peptideLength + 2] = mod;
                         break;
-
-                    default: break;
                 }
             }
 
