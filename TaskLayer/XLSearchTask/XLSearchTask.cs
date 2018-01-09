@@ -148,6 +148,7 @@ namespace TaskLayer
             Status("Searching files...", taskId);
 
             #region proseCreatedWhileRunning
+
             proseCreatedWhileRunning.Append("The following crosslink discovery were used: ");
             proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName + "; ");
             proseCreatedWhileRunning.Append("crosslinker type = " + crosslinker.Cleavable + "; ");
@@ -174,7 +175,9 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = " + XlSearchParameters.XlPrecusorMsTl + "; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
-            #endregion 
+            #endregion proseCreatedWhileRunning
+
+
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
@@ -241,6 +244,7 @@ namespace TaskLayer
                     item.BetaPsmCross.XlProteinPos = item.BetaPsmCross.OneBasedStartResidueInProtein.Value + item.BetaPsmCross.XlPos - 1;
                 }
             }
+
             #region Inter Crosslink
 
             //Write Inter Psms FDR
@@ -303,11 +307,12 @@ namespace TaskLayer
                 var intraPsmsXLPercolator = intraPsmsXL.Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).OrderBy(p => p.ScanNumber).ToList();
                 WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
             }
-            #endregion
+
+            #endregion Intra Cross-link
 
             List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
-            allPsmsXLFDR.AddRange( intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());       
-            allPsmsXLFDR.AddRange( interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+            allPsmsXLFDR.AddRange(intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+            allPsmsXLFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
             allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore);
             var allPsmsXLFDRGroup = FindCrosslinks(allPsmsXLFDR);
             if (XlSearchParameters.XlOutCrosslink)
@@ -315,8 +320,8 @@ namespace TaskLayer
                 WriteCrosslinkToTsv(allPsmsXLFDRGroup, OutputFolder, "allPsmsXLFDRGroup", new List<string> { taskId });
             }
 
-
             #region Single peptide
+
             var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe).OrderByDescending(p => p.Score).ToList();
             var singlePsmsFDR = SingleFDRAnalysis(singlePsms).ToList();
             if (XlSearchParameters.XlOutAll)
@@ -324,25 +329,30 @@ namespace TaskLayer
                 WriteSingleToTsv(singlePsmsFDR, OutputFolder, "single_fdr", new List<string> { taskId });
             }
 
-            #endregion
+            #endregion Single peptide
 
             #region Loop peptide
+
             var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop).OrderByDescending(p => p.Score).ToList();
             var loopPsmsFDR = SingleFDRAnalysis(loopPsms).ToList();
             if (XlSearchParameters.XlOutAll)
             {
                 WriteSingleToTsv(loopPsmsFDR, OutputFolder, "loop_fdr", new List<string> { taskId });
             }
-            #endregion
+
+            #endregion Loop peptide
 
             #region deadend peptide
+
             var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd).OrderByDescending(p => p.Score).ToList();
             var deadendPsmsFDR = SingleFDRAnalysis(deadendPsms).ToList();
             if (XlSearchParameters.XlOutAll)
             {
                 WriteSingleToTsv(deadendPsmsFDR, OutputFolder, "deadend_fdr", new List<string> { taskId });
             }
-            #endregion
+
+            #endregion deadend peptide
+
             return myTaskResults;
         }
 
@@ -377,9 +387,9 @@ namespace TaskLayer
 
             for (int i = 0; i < ids.Count; i++)
             {
-                var item1 = ids[i]; 
+                var item1 = ids[i];
 
-                var isDecoy1 = item1.IsDecoy; 
+                var isDecoy1 = item1.IsDecoy;
                 if (isDecoy1)
                     cumulative_decoy++;
                 else
@@ -509,12 +519,12 @@ namespace TaskLayer
                 {
                     st = item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")" + item.ProteinAccesion + "(" + item.XlProteinPos + ")";
                 }
-                else if(item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) == 0 && item.XlProteinPos.CompareTo(item.BetaPsmCross.XlProteinPos) > 0)
+                else if (item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) == 0 && item.XlProteinPos.CompareTo(item.BetaPsmCross.XlProteinPos) > 0)
                 {
                     st = item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")" + item.ProteinAccesion + "(" + item.XlProteinPos + ")";
                 }
                 else { st = item.ProteinAccesion + "(" + item.XlProteinPos + ")" + item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")"; }
-              
+
                 if (!allString.Contains(st))
                 {
                     allString.Add(st);
@@ -522,6 +532,34 @@ namespace TaskLayer
                 }
             }
             return psmCrossCrosslinks;
+        }
+
+        private static void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.Create(peptideIndexFile))
+            {
+                ser.Serialize(file, peptideIndex);
+            }
+        }
+
+        private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.Create(fragmentIndexFile))
+                ser.Serialize(file, fragmentIndex);
+        }
+
+        private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
+        {
+            using (StreamWriter output = new StreamWriter(fileName))
+            {
+                output.Write(indexEngine);
+            }
         }
 
         private void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile, string taskId)
@@ -586,17 +624,6 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
         }
 
-        private static void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(peptideIndexFile))
-            {
-                ser.Serialize(file, peptideIndex);
-            }
-        }
-
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -637,23 +664,6 @@ namespace TaskLayer
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
-            }
-        }
-
-        private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(fragmentIndexFile))
-                ser.Serialize(file, fragmentIndex);
-        }
-
-        private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
-        {
-            using (StreamWriter output = new StreamWriter(fileName))
-            {
-                output.Write(indexEngine);
             }
         }
 

@@ -10,6 +10,12 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class PsmCross : Psm
     {
+        #region Public Fields
+
+        public CompactPeptide compactPeptide;
+
+        #endregion Public Fields
+
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
@@ -19,7 +25,6 @@ namespace EngineLayer.CrosslinkSearch
 
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
-        public CompactPeptide compactPeptide;
 
         #endregion Private Fields
 
@@ -32,9 +37,9 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Public Constructors
 
-        #region Public Properties
-
         //public CompactPeptide CompactPeptide { get { return compactPeptide; } set { compactPeptide = value; } }
+
+        #region Public Properties
 
         //public ProductMassesMightHave pmmh { get; set; }
         public double PeptideMass { get; set; }
@@ -250,9 +255,9 @@ namespace EngineLayer.CrosslinkSearch
                         y.Add("t1b" + nm.ToString());
                         if (Charge_2_3)
                         {
-                            x.Add((pmmh.ProductMz[i] + modMass ) / 2);
+                            x.Add((pmmh.ProductMz[i] + modMass) / 2);
                             y.Add("t2b" + nm.ToString());
-                            x.Add((pmmh.ProductMz[i] + modMass ) / 3);
+                            x.Add((pmmh.ProductMz[i] + modMass) / 3);
                             y.Add("t3b" + nm.ToString());
                         }
                         if (crosslinker.Cleavable)
@@ -267,13 +272,13 @@ namespace EngineLayer.CrosslinkSearch
 
                     if (cr == 'c' && nm >= ipos)
                     {
-                        x.Add(pmmh.ProductMz[i] + modMass );
+                        x.Add(pmmh.ProductMz[i] + modMass);
                         y.Add("t1c" + nm.ToString());
                         if (Charge_2_3)
                         {
-                            x.Add((pmmh.ProductMz[i] + modMass ) / 2);
+                            x.Add((pmmh.ProductMz[i] + modMass) / 2);
                             y.Add("t2c" + nm.ToString());
-                            x.Add((pmmh.ProductMz[i] + modMass ) / 3);
+                            x.Add((pmmh.ProductMz[i] + modMass) / 3);
                             y.Add("t3c" + nm.ToString());
                         }
 
@@ -294,9 +299,9 @@ namespace EngineLayer.CrosslinkSearch
 
                         if (Charge_2_3)
                         {
-                            x.Add((pmmh.ProductMz[i] + modMass ) / 2);
+                            x.Add((pmmh.ProductMz[i] + modMass) / 2);
                             y.Add("t2y" + nm.ToString());
-                            x.Add((pmmh.ProductMz[i] + modMass ) / 3);
+                            x.Add((pmmh.ProductMz[i] + modMass) / 3);
                             y.Add("t3y" + nm.ToString());
                         }
                         if (crosslinker.Cleavable)
@@ -315,9 +320,9 @@ namespace EngineLayer.CrosslinkSearch
                         y.Add("t1z" + nm.ToString());
                         if (Charge_2_3)
                         {
-                            x.Add((pmmh.ProductMz[i] + modMass ) / 2);
+                            x.Add((pmmh.ProductMz[i] + modMass) / 2);
                             y.Add("t2z" + nm.ToString());
-                            x.Add((pmmh.ProductMz[i] + modMass ) / 3);
+                            x.Add((pmmh.ProductMz[i] + modMass) / 3);
                             y.Add("t3z" + nm.ToString());
                         }
                         if (crosslinker.Cleavable)
@@ -337,10 +342,9 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             return pmmhList;
-
         }
 
-        public static void XLCalculateTotalProductMassesMightHave(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass,  CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment)
+        public static void XLCalculateTotalProductMassesMightHave(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment)
         {
             bool CalculateHighCharge = true;
 
@@ -362,7 +366,7 @@ namespace EngineLayer.CrosslinkSearch
             if (crosslinker.Cleavable)
             {
                 psmCross.ParentIonMaxIntensityRanks = new List<int>();
-                if (psmCross.MatchedIonInfo.MatchedIonName.Any(p => p!= null && p.Contains("PepS")))
+                if (psmCross.MatchedIonInfo.MatchedIonName.Any(p => p != null && p.Contains("PepS")))
                 {
                     psmCross.ParentIonExist += "PepS";
                     psmCross.ParentIonExistNum += 1;
@@ -384,7 +388,7 @@ namespace EngineLayer.CrosslinkSearch
                 //}
                 for (int i = 0; i < psmCross.MatchedIonInfo.MatchedIonName.Length; i++)
                 {
-                    if (psmCross.MatchedIonInfo.MatchedIonName[i]!=null)
+                    if (psmCross.MatchedIonInfo.MatchedIonName[i] != null)
                     {
                         if (psmCross.MatchedIonInfo.MatchedIonName[i].Contains("Pep"))
                         {
@@ -408,6 +412,16 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //public static void XLCalculateTotalProductMassesMightHaveDeadend(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, Double modMass)
+
+        public static int[] GenerateIntensityRanks(double[] experimental_mzs, double[] experimental_intensities)
+        {
+            var x = experimental_mzs;
+            var y = experimental_intensities;
+            Array.Sort(experimental_intensities, experimental_mzs);
+            var experimental_intensities_rank = Enumerable.Range(1, y.Length).OrderByDescending(p => p).ToArray();
+            Array.Sort(x, experimental_intensities_rank);
+            return experimental_intensities_rank;
+        }
 
         public ProductMassesMightHave ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
         {
@@ -490,17 +504,6 @@ namespace EngineLayer.CrosslinkSearch
             return productMassMightHave;
         }
 
-        public static int[] GenerateIntensityRanks(double[] experimental_mzs, double[] experimental_intensities)
-        {
-            var x = experimental_mzs;
-            var y = experimental_intensities;
-            Array.Sort(experimental_intensities, experimental_mzs);
-            var experimental_intensities_rank = Enumerable.Range(1, y.Length).OrderByDescending(p => p).ToArray();
-            Array.Sort(x, experimental_intensities_rank);
-            return experimental_intensities_rank;
-        }
-        
         #endregion Public Methods
-
     }
 }

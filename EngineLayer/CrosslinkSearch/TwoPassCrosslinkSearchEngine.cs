@@ -1,10 +1,10 @@
 ﻿using MassSpectrometry;
+using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MzLibUtil;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -25,21 +25,29 @@ namespace EngineLayer.CrosslinkSearch
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
 
+        #endregion Protected Fields
+
+        #region Private Fields
+
         //Crosslink parameters
         private readonly CrosslinkerTypeClass crosslinker;
+
         private readonly bool CrosslinkSearchTop;
         private readonly int CrosslinkSearchTopNum;
+
         //private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLPrecusorMsTl;
+
         //private readonly Tolerance XLBetaPrecusorMsTl;
         private readonly bool quench_H2O;
+
         private readonly bool quench_NH2;
         private readonly bool quench_Tris;
         private readonly bool charge_2_3;
         private readonly bool charge_2_3_PrimeFragment;
         private MassDiffAcceptor XLPrecusorSearchMode;
 
-        #endregion Protected Fields
+        #endregion Private Fields
 
         #region Public Constructors
 
@@ -129,7 +137,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
                         List<int> idsRankedByScore = new List<int>();
-                        foreach(var id in idsOfPeptidesPossiblyObserved)
+                        foreach (var id in idsOfPeptidesPossiblyObserved)
                         {
                             idsRankedByScore.Add(id);
                         }
@@ -167,7 +175,7 @@ namespace EngineLayer.CrosslinkSearch
                     }
                 }
             });
-            
+
             return new MetaMorpheusEngineResults(this);
         }
 
@@ -303,17 +311,15 @@ namespace EngineLayer.CrosslinkSearch
                 //Deadend Peptide
                 else if (quench_Tris && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.DeadendMassTris) >= 0)
                 {
-
                     var psmCrossEnd = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
                     //The Score need to recaculate.
                     //PsmCross.XLCalculateTotalProductMassesMightHaveDeadend(theScan, psmCrossEnd, crosslinker, lp, fragmentTolerance, crosslinker.DeadendMassTris);
 
                     psmCrossEnd.XLTotalScore = psmCrossEnd.Score;
                     psmCrossEnd.CrossType = PsmCrossType.DeadEnd;
- 
+
                     bestPsmCrossList.Add(psmCrossEnd);
                 }
-
                 else if (quench_H2O && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.DeadendMassH2O) >= 0)
                 {
                     var psmCrossEnd = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
@@ -323,7 +329,6 @@ namespace EngineLayer.CrosslinkSearch
 
                     bestPsmCrossList.Add(psmCrossEnd);
                 }
-
                 else if (quench_NH2 && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.DeadendMassNH2) >= 0)
                 {
                     var psmCrossEnd = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);

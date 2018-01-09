@@ -78,7 +78,6 @@
                 DeadendMassH2O = 156.0786;
                 DeadendMassNH2 = 155.0946;
                 DeadendMassTris = 259.142;
-
             }
             if (name == CrosslinkerType.DTSSP)
             {

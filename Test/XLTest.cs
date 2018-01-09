@@ -1,15 +1,15 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.Indexing;
+using IO.MzML;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using Chemistry;
-using IO.MzML;
-using MassSpectrometry;
-using UsefulProteomicsDatabases;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -63,7 +63,7 @@ namespace Test
         public static void XLTestGenerateIntensityRanks()
         {
             double[] mz = new double[] { 1.0, 1.3, 1.5, 1.7, 1.9, 2.1 };
-            double[] intensity = new double[] { 1.1, 1.1, 0.5, 3.2, 0.5, 6.0};
+            double[] intensity = new double[] { 1.1, 1.1, 0.5, 3.2, 0.5, 6.0 };
             int[] rank = PsmCross.GenerateIntensityRanks(mz, intensity);
             int[] Rank = new int[] { 4, 3, 6, 2, 5, 1 };
             Assert.AreEqual(rank, Rank);
@@ -114,7 +114,6 @@ namespace Test
 
             var productMasses = digestedList[3].CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
 
-
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
             crosslinker.SelectCrosslinker(CrosslinkerType.DSS);
             var x = PsmCross.XlPosCal(digestedList[3].CompactPeptide(TerminusType.None), crosslinker).ToArray();
@@ -122,7 +121,6 @@ namespace Test
 
             var myMsDataFile = new XLTestDataFile();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
 
             var psmCrossAlpha = new PsmCross(digestedList[3].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
             var psmCrossBeta = new PsmCross(digestedList[5].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
@@ -137,7 +135,6 @@ namespace Test
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 35);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz[26], 2312.21985342336);
         }
-
 
         #endregion Public Methods
     }
