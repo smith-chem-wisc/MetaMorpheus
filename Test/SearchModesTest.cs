@@ -73,11 +73,6 @@ namespace Test
             Assert.IsTrue(theList2[1].allowedInterval.Contains(1001));
         }
 
-        [Test]
-        public static void TestIntervalsSearchMode()
-        {
-        }
-
         #endregion Public Methods
 
         #region Private Classes

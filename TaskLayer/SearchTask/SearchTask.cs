@@ -764,7 +764,7 @@ namespace TaskLayer
                             },
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession =  "MS:1001093",
+                                accession = "MS:1001093",
                                 name = "sequence coverage",
                                 cvRef = "PSI-MS",
                                 value = proteinGroup.SequenceCoveragePercent.First().ToString()
@@ -922,7 +922,6 @@ namespace TaskLayer
 
             Status("Loading proteins...", new List<string> { taskId });
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
-
             proseCreatedWhileRunning.Append("The following search settings were used: ");
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
@@ -1266,6 +1265,7 @@ namespace TaskLayer
 
             var psmsGroupedByFile = allPsms.GroupBy(p => p.FullFilePath);
 
+            Psm.ModstoWritePruned = SearchParameters.ModsToWriteSelection;
             // individual psm files (with global psm fdr, global parsimony)
             foreach (var group in psmsGroupedByFile)
             {
@@ -1350,12 +1350,21 @@ namespace TaskLayer
             if (SearchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { taskId });
-
-                List<Modification> modificationsToAlwaysKeep = new List<Modification>();
-                if (SearchParameters.KeepAllUniprotMods)
-                    modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
+                List<Modification> modificationsToWriteIfBoth = new List<Modification>();
+                List<Modification> modificationsToWriteIfInDatabase = new List<Modification>();
+                List<Modification> modificationsToWriteIfObserved = new List<Modification>();
 
                 var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
+                // Add user mod selection behavours to Pruned DB
+                foreach (var modType in SearchParameters.ModsToWriteSelection)
+                {
+                    if (modType.Value == 1) // Write if observed and in database
+                        modificationsToWriteIfBoth.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                    if (modType.Value == 2) // Write if in database
+                        modificationsToWriteIfInDatabase.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                    if (modType.Value == 3) // Write if observed
+                        modificationsToWriteIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                }
 
                 foreach (var protein in proteinList)
                 {
@@ -1366,19 +1375,37 @@ namespace TaskLayer
                             modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.CompactPeptides.First().Value.Item2.First()), c.Value))));
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
+
+                        foreach (var observedMod in modsObservedOnThisProtein)
+                        {
+                            //Add if observed (regardless if in database)
+                            var tempMod = observedMod.Item2;
+
+                            if (modificationsToWriteIfObserved.Contains(tempMod as Modification))
+                            {
+                                if (!modsToWrite.ContainsKey(observedMod.Item1))
+                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification });
+                                else
+                                    modsToWrite[observedMod.Item1].Add(observedMod.Item2 as Modification);
+                                continue;
+                            }
+                        }
+
+                        // Add if in database (two cases: always or if observed)
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
-                                if (modificationsToAlwaysKeep.Contains(mod as Modification)
-                                    || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
+                                //Add if always In Database or if was observed and in database and not set to not include
+                                if (modificationsToWriteIfInDatabase.Contains(mod as Modification) ||
+                                (modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)) && modificationsToWriteIfBoth.Contains(mod as Modification)))
                                 {
                                     if (!modsToWrite.ContainsKey(modd.Key))
-                                        modsToWrite.Add(modd.Key, new List<Modification> { mod
-                                        });
+                                        modsToWrite.Add(modd.Key, new List<Modification> { mod });
                                     else
                                         modsToWrite[modd.Key].Add(mod);
                                 }
                             }
+
                         protein.OneBasedPossibleLocalizedModifications.Clear();
                         foreach (var kvp in modsToWrite)
                             protein.OneBasedPossibleLocalizedModifications.Add(kvp);
