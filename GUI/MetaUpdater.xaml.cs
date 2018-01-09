@@ -48,7 +48,7 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
-        private void InstallerClicked(object semder, RoutedEventArgs e)
+        private void InstallerClicked(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
             using (var client = new WebClient())

@@ -47,6 +47,7 @@ namespace EngineLayer
 
         #region Public Properties
 
+        public static Dictionary<string, int> ModstoWritePruned { get; set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
@@ -62,7 +63,6 @@ namespace EngineLayer
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
-
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
@@ -108,6 +108,7 @@ namespace EngineLayer
             sb.Append('\t' + "Peptides Sharing Same Peaks");
             sb.Append('\t' + "Base Sequence");
             sb.Append('\t' + "Full Sequence");
+            sb.Append('\t' + "Essential Sequence");
             sb.Append('\t' + "Mods");
             sb.Append('\t' + "Mods Chemical Formula");
             sb.Append('\t' + "Num Variable Mods");
@@ -233,6 +234,7 @@ namespace EngineLayer
 
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.EssentialSequence(ModstoWritePruned))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NumVariableMods)).Item1);
@@ -260,7 +262,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (MatchedIonDictOnlyMatches != null)
