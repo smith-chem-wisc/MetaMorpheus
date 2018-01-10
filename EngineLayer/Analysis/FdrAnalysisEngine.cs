@@ -1,7 +1,7 @@
-﻿using System;
+﻿using MathNet.Numerics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using MathNet.Numerics;
 
 namespace EngineLayer.Analysis
 {
@@ -44,7 +44,6 @@ namespace EngineLayer.Analysis
 
         private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, int massDiffAcceptorNumNotches)
         {
-
             List<Int64> combinedAllScores = new List<Int64>();
             Int64 totalCount = 0;
             Int64 totalSum = 0;
@@ -98,7 +97,6 @@ namespace EngineLayer.Analysis
                 double eScore = GetEScore(eValue);
                 double temp_twoD_qValue = 0;
                 item.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch, maximumLikelihood, eValue, eScore, temp_twoD_qValue);
-
             }
 
             double min_q_value = double.PositiveInfinity;
@@ -121,8 +119,8 @@ namespace EngineLayer.Analysis
                     min_q_value_notch[notch] = id.FdrInfo.QValueNotch;
             }
 
-            List < Psm > decoysList = new List<Psm>(ids.Where(b => b.IsDecoy == true).ToList());
-            List < Psm > targetsList = new List<Psm>(ids.Where(b => b.IsDecoy == false).ToList());
+            List<Psm> decoysList = new List<Psm>(ids.Where(b => b.IsDecoy == true).ToList());
+            List<Psm> targetsList = new List<Psm>(ids.Where(b => b.IsDecoy == false).ToList());
 
             ids.AsParallel().ForAll(id =>
             {
@@ -139,9 +137,9 @@ namespace EngineLayer.Analysis
         }
 
         private static (int sum, int count) GetSumAndCount(List<int> allScores)
-        {           
+        {
             if (!allScores.Any(x => x != 0))
-                return (0,0);
+                return (0, 0);
             else
             {
                 int count = 0;
@@ -151,7 +149,7 @@ namespace EngineLayer.Analysis
                     count += allScores[i];
                     sum += i * allScores[i];
                 }
-                return (sum,count);
+                return (sum, count);
             }
         }
 

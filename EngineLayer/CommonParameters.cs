@@ -97,6 +97,7 @@ namespace EngineLayer
         public string TaskDescriptor { get; set; }
 
         public bool CalculateEValue { get; set; }
+
         #endregion Public Properties
     }
 }

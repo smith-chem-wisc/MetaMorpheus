@@ -119,7 +119,7 @@ namespace EngineLayer.ModernSearch
                                     globalPsms[i] = new Psm(peptide, notch, score, i, scan, CommonParameters.ExcelCompatible);
                                     if (CommonParameters.CalculateEValue)
                                     {
-                                        List<int> AllScores = new List<int>(new int[maxInitialScore+1]);
+                                        List<int> AllScores = new List<int>(new int[maxInitialScore + 1]);
                                         for (int allID = 0; allID < peptideIndex.Count; allID++)
                                             if (massDiffAcceptor.Accepts(scan.PrecursorMass, peptideIndex[allID].MonoisotopicMassIncludingFixedMods) >= 0)
                                                 AllScores[scoringTable[allID]]++;
