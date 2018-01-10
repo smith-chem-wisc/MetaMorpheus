@@ -142,7 +142,7 @@ namespace EngineLayer.CrosslinkSearch
                             idsRankedByScore.Add(id);
                         }
 
-                        idsRankedByScore.OrderByDescending(p => scoringTable[p]);
+                        idsRankedByScore = idsRankedByScore.OrderByDescending(p => scoringTable[p]).ToList();
                         idsRankedByScore = idsRankedByScore.Take(CrosslinkSearchTopNum).ToList();
                         if (CrosslinkSearchTop)
                         {

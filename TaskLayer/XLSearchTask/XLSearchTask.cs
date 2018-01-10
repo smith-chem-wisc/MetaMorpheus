@@ -175,9 +175,8 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = " + XlSearchParameters.XlPrecusorMsTl + "; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+
             #endregion proseCreatedWhileRunning
-
-
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
@@ -313,7 +312,7 @@ namespace TaskLayer
             List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
             allPsmsXLFDR.AddRange(intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
             allPsmsXLFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
-            allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore);
+            allPsmsXLFDR = allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore).ToList();
             var allPsmsXLFDRGroup = FindCrosslinks(allPsmsXLFDR);
             if (XlSearchParameters.XlOutCrosslink)
             {
