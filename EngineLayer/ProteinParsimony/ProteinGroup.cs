@@ -120,7 +120,7 @@ namespace EngineLayer
             }
             sb.Append("Number of PSMs" + '\t');
             sb.Append("Summed Score" + '\t');
-            
+
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');
@@ -228,8 +228,6 @@ namespace EngineLayer
             sb.Append(ProteinGroupScore);
             sb.Append("\t");
 
-
-
             // isDecoy
             if (isDecoy)
                 sb.Append("D");
@@ -254,7 +252,6 @@ namespace EngineLayer
             // best peptide score
             sb.Append(BestPeptideScore);
             sb.Append("\t");
-
 
             // best peptide q value
             sb.Append(BestPeptideQValue);

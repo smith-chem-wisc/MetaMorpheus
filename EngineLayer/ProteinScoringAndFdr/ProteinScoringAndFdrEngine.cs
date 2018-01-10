@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
@@ -45,6 +44,11 @@ namespace EngineLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static string F(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
+        {
+            return proteinGroupName.Contains("DECOY_") ? proteinGroupName.Replace("DECOY_", "") : proteinGroupName;
+        }
 
         private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<Psm> psmList)
         {
@@ -147,13 +151,12 @@ namespace EngineLayer
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
-                proteinGroup.BestPeptideScore = (double) proteinGroup.AllPsmsBelowOnePercentFDR.Select(psm => psm.FdrInfo.QValue).Min();
+                proteinGroup.BestPeptideScore = (double)proteinGroup.AllPsmsBelowOnePercentFDR.Select(psm => psm.FdrInfo.QValue).Min();
             }
 
-
             // do fdr for top-picked method
-            sortedProteinGroups = proteinGroups.OrderByDescending(b => -b.BestPeptideScore).GroupBy(b=> F(b.ProteinGroupName)).Select(b=>b.First()).ToList();
-  
+            sortedProteinGroups = proteinGroups.OrderByDescending(b => -b.BestPeptideScore).GroupBy(b => F(b.ProteinGroupName)).Select(b => b.First()).ToList();
+
             cumulativeTarget = 0;
             cumulativeDecoy = 0;
             foreach (var proteinGroup in sortedProteinGroups)
@@ -169,11 +172,6 @@ namespace EngineLayer
             }
 
             return sortedProteinGroups;
-        }
-
-        private static string F(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
-        {
-            return proteinGroupName.Contains("DECOY_") ? proteinGroupName.Replace("DECOY_", "") : proteinGroupName;
         }
 
         #endregion Private Methods
