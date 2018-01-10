@@ -41014,6 +41014,294 @@ antiserum and mass spectrometric analysis</umod:text>
             <umod:element symbol="O" number="55"/>
          </umod:delta>
       </umod:mod>
+      <umod:mod title="Unknown:162"
+                full_name="Unidentified modification of 162.1258 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 09:51:01"
+                date_time_modified="2017-12-07 09:54:04"
+                approved="0"
+                record_id="1970">
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="162.125595" avge_mass="162.2267" composition="H(18) C(8) O(3)">
+            <umod:element symbol="H" number="18"/>
+            <umod:element symbol="C" number="8"/>
+            <umod:element symbol="O" number="3"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:177"
+                full_name="Unidentified modification of 176.7462 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 09:53:27"
+                date_time_modified="2017-12-07 09:53:27"
+                approved="0"
+                record_id="1971">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="176.744957" avge_mass="176.4788" composition="H(-7) O Fe(3)">
+            <umod:element symbol="H" number="-7"/>
+            <umod:element symbol="O" number="1"/>
+            <umod:element symbol="Fe" number="3"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:210"
+                full_name="Unidentified modification of 210.1616 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 09:55:06"
+                date_time_modified="2017-12-07 09:55:06"
+                approved="0"
+                record_id="1972">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="210.161980" avge_mass="210.3126" composition="H(22) C(13) O(2)">
+            <umod:element symbol="H" number="22"/>
+            <umod:element symbol="C" number="13"/>
+            <umod:element symbol="O" number="2"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:216"
+                full_name="Unidentified modification of 216.1002 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 09:59:22"
+                date_time_modified="2017-12-07 09:59:22"
+                approved="0"
+                record_id="1973">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="216.099774" avge_mass="216.2310" composition="H(16) C(10) O(5)">
+            <umod:element symbol="H" number="16"/>
+            <umod:element symbol="C" number="10"/>
+            <umod:element symbol="O" number="5"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:234"
+                full_name="Unidentified modification of 234.0742 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 10:00:16"
+                date_time_modified="2017-12-07 10:00:16"
+                approved="0"
+                record_id="1974">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="234.073953" avge_mass="234.2033" composition="H(14) C(9) O(7)">
+            <umod:element symbol="H" number="14"/>
+            <umod:element symbol="C" number="9"/>
+            <umod:element symbol="O" number="7"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:248"
+                full_name="Unidentified modification of 248.1986 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 10:00:57"
+                date_time_modified="2017-12-07 10:00:57"
+                approved="0"
+                record_id="1975">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="248.198760" avge_mass="248.3590" composition="H(28) C(13) O(4)">
+            <umod:element symbol="H" number="28"/>
+            <umod:element symbol="C" number="13"/>
+            <umod:element symbol="O" number="4"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:250"
+                full_name="Unidentified modification of 249.981 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 10:01:43"
+                date_time_modified="2017-12-07 10:01:43"
+                approved="0"
+                record_id="1976">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="249.981018" avge_mass="250.2075" composition="H(4) C(10) N O(5) S">
+            <umod:element symbol="H" number="4"/>
+            <umod:element symbol="C" number="10"/>
+            <umod:element symbol="N" number="1"/>
+            <umod:element symbol="O" number="5"/>
+            <umod:element symbol="S" number="1"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:302"
+                full_name="Unidentified modification of 301.9864 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 10:02:16"
+                date_time_modified="2017-12-07 10:02:16"
+                approved="0"
+                record_id="1977">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="301.986514" avge_mass="302.2656"
+                     composition="H(8) C(4) N(5) O(7) S(2)">
+            <umod:element symbol="H" number="8"/>
+            <umod:element symbol="C" number="4"/>
+            <umod:element symbol="N" number="5"/>
+            <umod:element symbol="O" number="7"/>
+            <umod:element symbol="S" number="2"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:306"
+                full_name="Unidentified modification of 306.0952 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 10:03:12"
+                date_time_modified="2017-12-07 10:03:12"
+                approved="0"
+                record_id="1978">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="306.095082" avge_mass="306.2659" composition="H(18) C(12) O(9)">
+            <umod:element symbol="H" number="18"/>
+            <umod:element symbol="C" number="12"/>
+            <umod:element symbol="O" number="9"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
+      <umod:mod title="Unknown:420"
+                full_name="Unidentified modification of 420.0506 found in open search"
+                username_of_poster="unimod"
+                group_of_poster=""
+                date_time_posted="2017-12-07 10:03:58"
+                date_time_modified="2017-12-07 10:03:58"
+                approved="0"
+                record_id="1979">
+         <umod:specificity hidden="1" site="D" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="E" position="Anywhere" classification="Artefact"
+                           spec_group="1"/>
+         <umod:specificity hidden="1" site="C-term" position="Any C-term" classification="Artefact"
+                           spec_group="2"/>
+         <umod:specificity hidden="1" site="N-term" position="Any N-term" classification="Artefact"
+                           spec_group="3"/>
+         <umod:delta mono_mass="420.050846" avge_mass="420.4049"
+                     composition="H(14) C(10) N(9) O(6) S(2)">
+            <umod:element symbol="H" number="14"/>
+            <umod:element symbol="C" number="10"/>
+            <umod:element symbol="N" number="9"/>
+            <umod:element symbol="O" number="6"/>
+            <umod:element symbol="S" number="2"/>
+         </umod:delta>
+         <umod:alt_name>The elemental composition should be assumed incorrect</umod:alt_name>
+         <umod:xref>
+            <umod:text>Trying to illuminate proteomics 'dark matter'</umod:text>
+            <umod:source>Misc. URL</umod:source>
+            <umod:url>http://www.matrixscience.com/blog/trying-to-illuminate-proteomics-dark-matter.html</umod:url>
+         </umod:xref>
+      </umod:mod>
    </umod:modifications>
    <umod:amino_acids>
       <umod:aa title="-" three_letter="" full_name="" mono_mass="0.0" avge_mass="0.0"/>
