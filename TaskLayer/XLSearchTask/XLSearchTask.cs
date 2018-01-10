@@ -312,7 +312,7 @@ namespace TaskLayer
             List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
             allPsmsXLFDR.AddRange(intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
             allPsmsXLFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
-            allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore);
+            allPsmsXLFDR = allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore).ToList();
             var allPsmsXLFDRGroup = FindCrosslinks(allPsmsXLFDR);
             if (XlSearchParameters.XlOutCrosslink)
             {
