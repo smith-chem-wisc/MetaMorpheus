@@ -45,7 +45,7 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private static string F(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
+        private static string StripDecoyIdentifier(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
         {
             return proteinGroupName.Contains("DECOY_") ? proteinGroupName.Replace("DECOY_", "") : proteinGroupName;
         }
@@ -155,7 +155,7 @@ namespace EngineLayer
             }
 
             // do fdr for top-picked method
-            sortedProteinGroups = proteinGroups.OrderByDescending(b => -b.BestPeptideScore).GroupBy(b => F(b.ProteinGroupName)).Select(b => b.First()).ToList();
+            sortedProteinGroups = proteinGroups.OrderByDescending(b => -b.BestPeptideScore).GroupBy(b => StripDecoyIdentifier(b.ProteinGroupName)).Select(b => b.First()).ToList();
 
             cumulativeTarget = 0;
             cumulativeDecoy = 0;
