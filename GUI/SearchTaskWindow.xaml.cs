@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
             TheTask = new SearchTask();
-            
+
             PopulateChoices();
 
             UpdateFieldsFromTask(TheTask);
@@ -64,7 +64,7 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
             TheTask = task;
-            
+
             PopulateChoices();
 
             UpdateFieldsFromTask(TheTask);
@@ -124,14 +124,14 @@ namespace MetaMorpheusGUI
 
             precursorMassToleranceComboBox.Items.Add("Absolute");
             precursorMassToleranceComboBox.Items.Add("ppm");
-            
+
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForGrid(hm.Key);
                 modSelectionGridItems.Add(theModType);
             }
             ModSelectionGrid.ItemsSource = modSelectionGridItems;
-            
+
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
@@ -539,7 +539,7 @@ namespace MetaMorpheusGUI
             foreach (var modType in TheTask.SearchParameters.ModsToWriteSelection)
             {
                 var huhb = modSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
-                if (huhb!=null)
+                if (huhb != null)
                 {
                     switch (modType.Value)
                     {
