@@ -6,7 +6,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MathNet.Numerics;
 
 namespace EngineLayer
 {
@@ -82,10 +81,11 @@ namespace EngineLayer
         public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
 
-        public List<int> AllScores { get; set; } //list where index is score and value is number of theoreticals at that score
-
+        public List<int> AllScores { get; set; }
 
         #endregion Public Properties
+
+        //list where index is score and value is number of theoreticals at that score
 
         #region Private Properties
 
@@ -265,7 +265,7 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PreviousAminoAcid.ToString())).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NextAminoAcid.ToString())).Item1);
                 int theoreticalsSearched = AllScores[0];
-                sb.Append('\t'+AllScores[0].ToString());
+                sb.Append('\t' + AllScores[0].ToString());
                 for (int i = 1; i < AllScores.Count; i++)
                 {
                     sb.Append("_" + AllScores[i]);
@@ -283,7 +283,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (MatchedIonDictOnlyMatches != null)

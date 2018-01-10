@@ -175,9 +175,8 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = " + XlSearchParameters.XlPrecusorMsTl + "; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+
             #endregion proseCreatedWhileRunning
-
-
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
@@ -396,7 +395,7 @@ namespace TaskLayer
                     cumulative_target++;
 
                 double temp_q_value = (double)cumulative_decoy / cumulative_target;
-                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0, 0, 0, 0, 0);
             }
 
             double min_q_value = double.PositiveInfinity;
