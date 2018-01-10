@@ -69,22 +69,21 @@
                                     <ComboBox x:Name="cbbXLprecusorMsTl" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
-                                    <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Search Top matches"/>
+                                    <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Search Top matches" />
                                     <Label x:Name="lblXLTopNum" Content="Top Num" />
-                                    <TextBox x:Name="txtXLTopNum" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}"/>
+                                    <TextBox x:Name="txtXLTopNum" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
                                     <Label x:Name="lblXLMSMS" Content="MS/MS Match" />
-                                    <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Considering Mass 2+ 3+"/>
+                                    <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Considering Mass 2+ 3+" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
-                                    <CheckBox x:Name="ckbCharge_2_3_PrimeFragments"  VerticalAlignment="Center" Content="Considering Mass 2+ 3+ of PrimeFragments"/>
+                                    <CheckBox x:Name="ckbCharge_2_3_PrimeFragments"  VerticalAlignment="Center" Content="Considering Mass 2+ 3+ of PrimeFragments" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
                                     <ComboBox x:Name="cbCrosslinker" />
                                 </StackPanel>
-                                
                             </Grid>
                             <GroupBox>
                                 <Expander x:Name="UserDefineCrosslinker">

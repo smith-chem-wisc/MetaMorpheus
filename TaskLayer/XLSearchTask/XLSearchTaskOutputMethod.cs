@@ -62,7 +62,7 @@ namespace TaskLayer
                                             + "\t" + (item.FdrInfo != null ? item.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture) : "-")
                                             + "\t" + item.ParentIonExist + "." + item.BetaPsmCross.ParentIonExist
                                             + "\t" + item.ParentIonExistNum.ToString(CultureInfo.InvariantCulture)
-                                            + "\t" + ((item.ParentIonMaxIntensityRanks!=null) && (item.ParentIonMaxIntensityRanks.Any()) ? item.ParentIonMaxIntensityRanks.Min().ToString(CultureInfo.InvariantCulture) : "-")
+                                            + "\t" + ((item.ParentIonMaxIntensityRanks != null) && (item.ParentIonMaxIntensityRanks.Any()) ? item.ParentIonMaxIntensityRanks.Min().ToString(CultureInfo.InvariantCulture) : "-")
                                             + "\t" + (item.Charge2IonExist + item.BetaPsmCross.Charge2IonExist).ToString(CultureInfo.InvariantCulture)
                                             + "\t" + label
                                             );
@@ -136,7 +136,6 @@ namespace TaskLayer
                                                 + "\t" + (item.Charge2IonExist + item.BetaPsmCross.Charge2IonExist).ToString(CultureInfo.InvariantCulture)
                                                 );
                     }
-
                 }
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
@@ -152,25 +151,23 @@ namespace TaskLayer
                     "\tQValue");
                 foreach (var item in items)
                 {
-
-                        output.WriteLine(
-                            item.FullFilePath
-                            + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + item.ScanPrecursorMonoisotopicPeakMz.ToString() //CultureInfo.InvariantCulture
-                            + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + item.CrossType.ToString()
-                            + "\t"
-                            + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                            + "\t" + item.BaseSequence
-                            + "\t" + item.FullSequence
-                            + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
-                            + "\t" + item.Score.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + item.XLBestScore.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + (item.XlRank != null ? item.XlRank[0].ToString(CultureInfo.InvariantCulture) : "-")
-                            + "\t" + (item.FdrInfo != null ? item.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture) : "-")
-                        );
-                    
+                    output.WriteLine(
+                        item.FullFilePath
+                        + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.ScanPrecursorMonoisotopicPeakMz.ToString() //CultureInfo.InvariantCulture
+                        + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.CrossType.ToString()
+                        + "\t"
+                        + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.BaseSequence
+                        + "\t" + item.FullSequence
+                        + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
+                        + "\t" + item.Score.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.XLBestScore.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + (item.XlRank != null ? item.XlRank[0].ToString(CultureInfo.InvariantCulture) : "-")
+                        + "\t" + (item.FdrInfo != null ? item.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture) : "-")
+                    );
                 }
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);

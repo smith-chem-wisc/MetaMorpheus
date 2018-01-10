@@ -68,6 +68,7 @@ namespace TaskLayer
 
         public bool XlCharge_2_3 { get; set; }
         public bool XlCharge_2_3_PrimeFragment { get; set; }
+
         #endregion Public Properties
     }
 }
