@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net471;netcoreapp2.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,13 +18,7 @@
   </ItemGroup>
 
   
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-    <DocumentationFile></DocumentationFile>
-  </PropertyGroup>
-
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
