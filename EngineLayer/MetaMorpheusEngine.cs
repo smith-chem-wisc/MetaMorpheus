@@ -202,7 +202,7 @@ namespace EngineLayer
             }
         }
 
-        public static MatchQualityFeatures CalculateMatchQualityFeatures(Ms2ScanWithSpecificMass thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static MatchQualityFeatures CalculatePeptideScore(Ms2ScanWithSpecificMass thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
