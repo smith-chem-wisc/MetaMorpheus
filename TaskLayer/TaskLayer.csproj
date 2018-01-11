@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   
-  <PropertyGroup Condition="'$(TargetFramework)'=='net461'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
