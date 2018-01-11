@@ -1067,6 +1067,10 @@ namespace TaskLayer
                     var writtenFile = Path.Combine(OutputFolder, "aggregatePSMs.psmtsv");
                     WritePsmsToTsv(allPsms, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+
+                    var writtenFileForPercolator = Path.Combine(OutputFolder, "forPercolator.tsv");
+                    WritePsmsForPercolator(allPsms, writtenFileForPercolator);
+                    SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { taskId });
                 }
                 myTaskResults.AddNiceText("All target PSMS within 1% FDR: " + allPsms.Count(a => a.FdrInfo.QValue < .01 && !a.IsDecoy));
             }
@@ -1101,6 +1105,10 @@ namespace TaskLayer
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
                 }
+
+                var writtenFileForPercolator = Path.Combine(OutputFolder, strippedFileName + "_forPercolator.tsv");
+                WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator);
+                SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
             }
             foreach (var group in psmsGroupedByFile)
             {
@@ -1398,6 +1406,32 @@ namespace TaskLayer
             if (oneIsNterminus == peptideWithSetModifications.Length + 2)
                 return peptideWithSetModifications.OneBasedEndResidueInProtein;
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
+        }
+
+        private void WritePsmsForPercolator(List<Psm> psmList, string writtenFileForPercolator)
+        {
+            using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
+            {
+                output.WriteLine("SpecId\tLabel\tScanNr\tF1\tF2\tPeptide\tProteins");
+                output.WriteLine("DefaultDirection\t-\t-\t1\t1\t\t");
+                for (int i = 0; i < psmList.Count; i++)
+                {
+                    var heh = psmList[i];
+
+                    output.Write(i.ToString());
+                    output.Write('\t' + (heh.IsDecoy ? -1 : 1).ToString());
+                    output.Write('\t' + heh.ScanNumber.ToString());
+                    output.Write('\t' + Math.Round(heh.Score).ToString());
+                    output.Write('\t' + (heh.Score - Math.Round(heh.Score)).ToString());
+
+                    // HACKY: Ignores all ambiguity
+                    var pwsm = heh.CompactPeptides.First().Value.Item2.First();
+
+                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.Sequence + "." + pwsm.NextAminoAcid).ToString());
+                    output.Write('\t' + (pwsm.Protein.Accession).ToString());
+                    output.WriteLine();
+                }
+            }
         }
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
