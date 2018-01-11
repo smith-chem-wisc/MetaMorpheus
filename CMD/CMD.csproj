@@ -19,13 +19,7 @@
   </ItemGroup>
 
   
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-    <DocumentationFile></DocumentationFile>
-  </PropertyGroup>
-
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
