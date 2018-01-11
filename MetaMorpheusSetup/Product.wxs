@@ -245,8 +245,8 @@
       <Component Id="src_System.Net.Sockets.dll" Guid="340d9c4a-dc96-4ddf-8813-d071f92581cb">
                 <File Id="src_System.Net.Sockets.dll" Name="System.Net.Sockets.dll" Source="$(var.GUI_TargetDir)System.Net.Sockets.dll" />
               </Component>
-      <Component Id="src_System.Reflection.Primitives.dll" Guid="8194702c-3065-430e-8f7b-14f942d77d75">
-                <File Id="src_System.Reflection.Primitives.dll" Name="System.Reflection.Primitives.dll" Source="$(var.GUI_TargetDir)System.Reflection.Primitives.dll" />
+      <Component Id="src_System.Runtime.Serialization.Primitives.dll" Guid="561a0d2f-182d-42f4-9e0c-81e4f81650c6">
+                <File Id="src_System.Runtime.Serialization.Primitives.dll" Name="System.Runtime.Serialization.Primitives.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Primitives.dll" />
               </Component>
       <Component Id="src_System.Security.Cryptography.Algorithms.dll" Guid="af07a661-d962-48e2-8ca4-96f40f167ee7">
                 <File Id="src_System.Security.Cryptography.Algorithms.dll" Name="System.Security.Cryptography.Algorithms.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Algorithms.dll" />
@@ -257,8 +257,8 @@
       <Component Id="src_System.Threading.Overlapped.dll" Guid="252a5ba3-10e0-41ac-8fb3-af9a955ea71a">
                 <File Id="src_System.Threading.Overlapped.dll" Name="System.Threading.Overlapped.dll" Source="$(var.GUI_TargetDir)System.Threading.Overlapped.dll" />
               </Component>
-      <Component Id="src_System.Xml.XDocument.dll" Guid="ac2952a1-24f1-418a-8223-01e8962b4a44">
-                <File Id="src_System.Xml.XDocument.dll" Name="System.Xml.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XDocument.dll" />
+      <Component Id="src_System.Xml.XPath.XDocument.dll" Guid="70f63556-f331-4c08-ac9f-3515dacbf0e9">
+                <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.XDocument.dll" />
               </Component>
     </ComponentGroup>
   </Fragment>
