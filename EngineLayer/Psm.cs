@@ -79,6 +79,14 @@ namespace EngineLayer
         public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
 
+        public double[] Features
+        {
+            get
+            {
+                return new[] { Math.Round(Score), Score - Math.Round(Score) };
+            }
+        }
+
         #endregion Public Properties
 
         #region Private Properties
