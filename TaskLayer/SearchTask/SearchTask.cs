@@ -1421,8 +1421,11 @@ namespace TaskLayer
                     output.Write(i.ToString());
                     output.Write('\t' + (heh.IsDecoy ? -1 : 1).ToString());
                     output.Write('\t' + heh.ScanNumber.ToString());
-                    output.Write('\t' + Math.Round(heh.Score).ToString());
-                    output.Write('\t' + (heh.Score - Math.Round(heh.Score)).ToString());
+
+                    // Features
+                    {
+                        output.Write('\t' + string.Join("\t", heh.Features));
+                    }
 
                     // HACKY: Ignores all ambiguity
                     var pwsm = heh.CompactPeptides.First().Value.Item2.First();
