@@ -224,6 +224,42 @@
       <Component Id="src_Spectra.dll" Guid="280ccb7f-a4f8-4df7-9f88-6cf6fa9bc15b">
         <File Id="src_Spectra.dll" Name="Spectra.dll" Source="$(var.GUI_TargetDir)Spectra.dll" />
       </Component>
+      <Component Id="src_System.Data.Common.dll" Guid="795499dd-11a0-4132-8e33-c1f64bd11c51">
+        <File Id="src_System.Data.Common.dll" Name="System.Data.Common.dll" Source="$(var.GUI_TargetDir)System.Data.Common.dll" />
+      </Component>
+      <Component Id="src_System.Diagnostics.StackTrace.dll" Guid="727eb4a0-a11d-4948-b8d0-403b96de69c4">
+                <File Id="src_System.Diagnostics.StackTrace.dll" Name="System.Diagnostics.StackTrace.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.StackTrace.dll" />
+              </Component>
+      <Component Id="src_System.Diagnostics.Tracing.dll" Guid="7e43f9df-4a1c-4f02-99f7-d7f5aa8c63f1">
+                <File Id="src_System.Diagnostics.Tracing.dll" Name="System.Diagnostics.Tracing.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Tracing.dll" />
+              </Component>
+      <Component Id="src_System.Globalization.Extensions.dll" Guid="12b04d22-78d4-4cf3-b2a5-92d2ca9eb504">
+                <File Id="src_System.Globalization.Extensions.dll" Name="System.Globalization.Extensions.dll" Source="$(var.GUI_TargetDir)System.Globalization.Extensions.dll" />
+              </Component>
+      <Component Id="src_System.IO.Compression.dll" Guid="5d786beb-ae3e-4a9e-9496-189ddb307903">
+                <File Id="src_System.IO.Compression.dll" Name="System.IO.Compression.dll" Source="$(var.GUI_TargetDir)System.IO.Compression.dll" />
+              </Component>
+      <Component Id="src_System.Net.Http.dll" Guid="480e547f-a7d7-4f57-a9a3-4ddb448faddf">
+                <File Id="src_System.Net.Http.dll" Name="System.Net.Http.dll" Source="$(var.GUI_TargetDir)System.Net.Http.dll" />
+              </Component>
+      <Component Id="src_System.Net.Sockets.dll" Guid="340d9c4a-dc96-4ddf-8813-d071f92581cb">
+                <File Id="src_System.Net.Sockets.dll" Name="System.Net.Sockets.dll" Source="$(var.GUI_TargetDir)System.Net.Sockets.dll" />
+              </Component>
+      <Component Id="src_System.Runtime.Serialization.Primitives.dll" Guid="561a0d2f-182d-42f4-9e0c-81e4f81650c6">
+                <File Id="src_System.Runtime.Serialization.Primitives.dll" Name="System.Runtime.Serialization.Primitives.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Primitives.dll" />
+              </Component>
+      <Component Id="src_System.Security.Cryptography.Algorithms.dll" Guid="af07a661-d962-48e2-8ca4-96f40f167ee7">
+                <File Id="src_System.Security.Cryptography.Algorithms.dll" Name="System.Security.Cryptography.Algorithms.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Algorithms.dll" />
+              </Component>
+      <Component Id="src_System.Security.SecureString.dll" Guid="58b65b98-6752-4030-badc-ff30f2d160e3">
+                <File Id="src_System.Security.SecureString.dll" Name="System.Security.SecureString.dll" Source="$(var.GUI_TargetDir)System.Security.SecureString.dll" />
+              </Component>
+      <Component Id="src_System.Threading.Overlapped.dll" Guid="252a5ba3-10e0-41ac-8fb3-af9a955ea71a">
+                <File Id="src_System.Threading.Overlapped.dll" Name="System.Threading.Overlapped.dll" Source="$(var.GUI_TargetDir)System.Threading.Overlapped.dll" />
+              </Component>
+      <Component Id="src_System.Xml.XPath.XDocument.dll" Guid="70f63556-f331-4c08-ac9f-3515dacbf0e9">
+                <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.XDocument.dll" />
+              </Component>
     </ComponentGroup>
   </Fragment>
 
