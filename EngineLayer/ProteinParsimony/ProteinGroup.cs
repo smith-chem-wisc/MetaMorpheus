@@ -1,7 +1,6 @@
 ﻿using Proteomics;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -110,14 +109,6 @@ namespace EngineLayer
             sb.Append("Sequence Coverage" + '\t');
             sb.Append("Sequence Coverage with Mods" + '\t');
             sb.Append("Modification Info List" + "\t");
-            if (FilesForQuantification != null)
-            {
-                if (!fileSpecificHeader)
-                    for (int i = 0; i < FilesForQuantification.Length; i++)
-                        sb.Append("Intensity_" + Path.GetFileNameWithoutExtension(FilesForQuantification[i]) + '\t');
-                else
-                    sb.Append("Intensity" + '\t');
-            }
             sb.Append("Number of PSMs" + '\t');
             sb.Append("Summed Score" + '\t');
 
