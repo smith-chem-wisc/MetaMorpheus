@@ -13,16 +13,27 @@ image: Visual Studio 2017
 init:
 
 - ps: >-
+
     if ($TRUE)
+
     {
+
             Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_TAG_NAME"
+
             echo $env:APPVEYOR_REPO_TAG_NAME
+
     }
+
     #else
+
     #{
+
     #        Update-AppveyorBuild -Version "$env:APPVEYOR_BUILD_NUMBER"
+
     #        echo $env:APPVEYOR_BUILD_NUMBER
+
     #}
+
 assembly_info:
 
   patch: true
@@ -92,4 +103,4 @@ deploy:
 
   on:
 
-APPVEYOR_REPO_TAG: TRUE
+    APPVEYOR_REPO_TAG: TRUE
