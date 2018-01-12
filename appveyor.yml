@@ -62,6 +62,11 @@ dotnet_csproj:
 
   informational_version: '{version}'
 
+install:
+- cmd: >-
+    nuget install secure-file -ExcludeVersion
+    secure-file\tools\secure-file -decrypt smith_MM_certificate.pfx.enc -secret %key_secret%
+
 build_script:
 
 - ps: "cat EngineLayer\\EngineLayer.csproj\ncat GUI\\Properties\\AssemblyInfo.cs\nnuget restore MetaMorpheus.sln\ndotnet restore MetaMorpheus.sln\n\n$buildArgs = @(\n \"MetaMorpheus.sln\"\n    \"/p:Configuration=TestAndRelease\"\n        \"/verbosity:minimal\"\n        \"/p:UseSharedCompilation=false\"\n        \"/logger:C:\\Program Files\\AppVeyor\\BuildAgent\\Appveyor.MSBuildLogger.dll\"\n);\n\n\nif($TRUE)\n{\n\n& cov-build --dir cov-int msbuild $buildArgs\n\n}\nelse\n{\n& msbuild $buildArgs\n& dotnet publish /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln  -f netcoreapp2.0 \n}\n\n\nif($TRUE)\n{\n7z a MetaMorpheusDotNetFrameworkAppveyor.zip $env:APPVEYOR_BUILD_FOLDER\\CMD\\bin\\Release\\net461\\*  \"-x!*.xml\"\n7z a MetaMorpheusDotNetCoreAppveyor.zip $env:APPVEYOR_BUILD_FOLDER\\CMD\\bin\\Release\\netcoreapp2.0\\publish\\*  \"-x!*.xml\"\n7z a MetaMorpheusGuiDotNetFrameworkAppveyor.zip $env:APPVEYOR_BUILD_FOLDER\\GUI\\bin\\Release\\* \"-x!*.xml\"\nCopy-Item $env:APPVEYOR_BUILD_FOLDER\\MetaMorpheusSetup\\bin\\Release\\MetaMorpheusInstaller.msi MetaMorpheusInstaller.msi\nPush-AppveyorArtifact MetaMorpheusDotNetFrameworkAppveyor.zip \nPush-AppveyorArtifact MetaMorpheusDotNetCoreAppveyor.zip \nPush-AppveyorArtifact MetaMorpheusGuiDotNetFrameworkAppveyor.zip\nPush-AppveyorArtifact MetaMorpheusInstaller.msi\n}"
