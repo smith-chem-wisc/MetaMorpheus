@@ -65,6 +65,7 @@ dotnet_csproj:
 install:
 - cmd: >-
     nuget install secure-file -ExcludeVersion
+    
     secure-file\tools\secure-file -decrypt smith_MM_certificate.pfx.enc -secret %key_secret%
 
 build_script:
