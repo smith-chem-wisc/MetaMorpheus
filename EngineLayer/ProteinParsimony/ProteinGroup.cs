@@ -207,6 +207,19 @@ namespace EngineLayer
             sb.Append(modsInfoString.Length < 32767 ? modsInfoString : "Too many mods to display");
             sb.Append("\t");
 
+            // MS1 intensity (retrieved from FlashLFQ in the SearchTask)
+            if (IntensitiesByFile != null)
+            {
+                for (int i = 0; i < IntensitiesByFile.Length; i++)
+                {
+                    if (IntensitiesByFile[i] > 0)
+                        sb.Append(IntensitiesByFile[i]);
+                    else
+                        sb.Append("");
+                    sb.Append("\t");
+                }
+            }
+
             // number of PSMs for listed peptides
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");

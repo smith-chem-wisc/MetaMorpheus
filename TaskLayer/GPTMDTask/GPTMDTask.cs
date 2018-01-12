@@ -4,7 +4,7 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Gptmd;
 using IO.MzML;
 
-#if NET461
+#if NETFRAMEWORK
 
 using IO.Thermo;
 
@@ -133,7 +133,7 @@ namespace TaskLayer
                     if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
-#if NET461
+#if NETFRAMEWORK
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
 #else
                     {
