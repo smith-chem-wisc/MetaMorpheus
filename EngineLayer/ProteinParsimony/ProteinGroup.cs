@@ -219,8 +219,6 @@ namespace EngineLayer
                     sb.Append("\t");
                 }
             }
-            else
-                sb.Append("\t");
 
             // number of PSMs for listed peptides
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
