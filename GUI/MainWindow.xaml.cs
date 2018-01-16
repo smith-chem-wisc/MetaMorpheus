@@ -1,4 +1,5 @@
 using EngineLayer;
+using MzLibUtil;
 using Nett;
 using Proteomics;
 using System;
@@ -427,8 +428,26 @@ namespace MetaMorpheusGUI
                 Exception e = obj.Exception;
                 while (e.InnerException != null) e = e.InnerException;
                 var message = "Run failed, Exception: " + e.Message;
-                MessageBox.Show(message);
+                var messageBoxResult = System.Windows.MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo);
                 outRichTextBox.AppendText(message + Environment.NewLine);
+                Exception exception = e;
+
+
+                if(messageBoxResult == MessageBoxResult.Yes)
+                {
+                    string body = exception.Message + "%0D%0A" + exception.Data +
+                       "%0D%0A" + exception.StackTrace +
+                       "%0D%0A" + exception.Source +
+                       "%0D%0A %0D%0A %0D%0A %0D%0A SYSTEM INFO: %0D%0A " +
+                        SystemInfo.CompleteSystemInfo() +
+                       "%0D%0A%0D%0A MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
+
+                    body = body.Replace('&', ' ');
+                    string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
+                    System.Diagnostics.Process.Start(mailto);
+                    Console.WriteLine(body);
+                }
+                
             }
         }
 
