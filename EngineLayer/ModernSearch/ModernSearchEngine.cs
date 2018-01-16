@@ -99,7 +99,7 @@ namespace EngineLayer.ModernSearch
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
                         int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]);
-                        var possiblyValidIds = maxInitialScore >= CommonParameters.ScoreCutoff ? idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore) : new List<int>();
+                        var possiblyValidIds = idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore);
 
                         foreach (var id in possiblyValidIds)
                         {

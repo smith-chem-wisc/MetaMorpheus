@@ -158,10 +158,8 @@ namespace EngineLayer
             sb.Append('\t' + "Cumulative Decoy Notch");
             sb.Append('\t' + "QValue Notch");
 
-            sb.Append('\t' + "Maximum Likelihood");
             sb.Append('\t' + "eValue");
             sb.Append('\t' + "eScore");
-            sb.Append('\t' + "2D q-value");
 
             return sb.ToString();
         }
@@ -272,14 +270,19 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PreviousAminoAcid.ToString())).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NextAminoAcid.ToString())).Item1);
-                int theoreticalsSearched = AllScores[0];
-                sb.Append('\t' + AllScores[0].ToString());
-                for (int i = 1; i < AllScores.Count; i++)
+                if (FdrInfo != null && FdrInfo.CalculateEValue)
                 {
-                    sb.Append("_" + AllScores[i]);
-                    theoreticalsSearched += AllScores[i];
+                    int theoreticalsSearched = AllScores[0];
+                    sb.Append('\t' + AllScores[0].ToString());
+                    for (int i = 1; i < AllScores.Count; i++)
+                    {
+                        sb.Append("_" + AllScores[i]);
+                        theoreticalsSearched += AllScores[i];
+                    }
+                    sb.Append('\t' + theoreticalsSearched.ToString());
                 }
-                sb.Append('\t' + theoreticalsSearched.ToString());
+                else
+                    sb.Append('\t' + " " + '\t' + " ");
 
                 // Unambiguous
                 if (IsDecoy)
@@ -341,18 +344,21 @@ namespace EngineLayer
                 sb.Append('\t' + FdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture));
                 sb.Append('\t' + FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
 
-                sb.Append("\t" + FdrInfo.MaximumLikelihood.ToString("F6", CultureInfo.InvariantCulture));
-                sb.Append("\t" + FdrInfo.EValue.ToString("F6", CultureInfo.InvariantCulture));
-                sb.Append("\t" + FdrInfo.EScore.ToString("F6", CultureInfo.InvariantCulture));
-                sb.Append("\t" + FdrInfo.TwoD_qValue.ToString("F6", CultureInfo.InvariantCulture));
+                if (FdrInfo.CalculateEValue)
+                {
+                    sb.Append("\t" + FdrInfo.EValue.ToString("F6", CultureInfo.InvariantCulture));
+                    sb.Append("\t" + FdrInfo.EScore.ToString("F6", CultureInfo.InvariantCulture));
+                }
+                else
+                    sb.Append('\t' + " " + '\t' + " ");
             }
             else
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
 
             return sb.ToString();
         }
 
-        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, decimal eValue, double eScore, double twoD_qValue)
+        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, decimal eValue, double eScore, bool calculateEValue)
         {
             FdrInfo = new FdrInfo
             {
@@ -365,7 +371,7 @@ namespace EngineLayer
                 MaximumLikelihood = maximumLikelihood,
                 EScore = eScore,
                 EValue = eValue,
-                TwoD_qValue = twoD_qValue
+                CalculateEValue = calculateEValue
             };
         }
 

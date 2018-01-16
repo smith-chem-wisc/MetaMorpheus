@@ -168,7 +168,7 @@ namespace TaskLayer
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-            new FdrAnalysisEngine(allPsms, searchMode.NumNotches, new List<string> { taskId }).Run();
+            new FdrAnalysisEngine(allPsms, searchMode.NumNotches, false, new List<string> { taskId }).Run();
 
             var writtenFile = Path.Combine(OutputFolder, "PSMs.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile);

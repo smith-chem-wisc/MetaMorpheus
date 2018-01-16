@@ -171,7 +171,7 @@ namespace Test
             foreach (var hm in psms)
             {
                 hm.MatchToProteinLinkedPeptides(initialDictionary);
-                hm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                hm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
 
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new List<string>());
@@ -394,15 +394,15 @@ namespace Test
             var match1 = new Psm(peptideList.ElementAt(0).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
-            match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             var match2 = new Psm(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
-            match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             var match3 = new Psm(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
-            match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             match1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             match2.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             match3.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);

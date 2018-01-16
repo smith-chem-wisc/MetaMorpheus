@@ -228,11 +228,11 @@ namespace Test
             double score = 0;
             int notch = 0;
             Psm psm1 = new Psm(compactPeptide1, notch, score, scanIndex, scan);
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             Psm psm2 = new Psm(compactPeptide1, notch, score, scanIndex, scan);
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             Psm psm3 = new Psm(compactPeptide2, notch, score, scanIndex, scan);
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             var newPsms = new List<Psm>
             {
                 psm1,

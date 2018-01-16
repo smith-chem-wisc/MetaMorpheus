@@ -11,15 +11,17 @@ namespace EngineLayer.Analysis
 
         private readonly IEnumerable<Psm> newPsms;
         private readonly int massDiffAcceptorNumNotches;
+        private readonly bool calculateEValue;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<Psm> newPsms, int massDiffAcceptorNumNotches, List<string> nestedIds) : base(nestedIds)
+        public FdrAnalysisEngine(List<Psm> newPsms, int massDiffAcceptorNumNotches, bool calculateEValue, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.massDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
+            this.calculateEValue = calculateEValue;
         }
 
         #endregion Public Constructors
@@ -31,7 +33,7 @@ namespace EngineLayer.Analysis
             FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
 
             Status("Running FDR analysis...");
-            DoFalseDiscoveryRateAnalysis(newPsms, massDiffAcceptorNumNotches);
+            DoFalseDiscoveryRateAnalysis(newPsms, massDiffAcceptorNumNotches, calculateEValue);
 
             myAnalysisResults.PsmsWithin1PercentFdr = newPsms.Count(b => b.FdrInfo.QValue < 0.01);
 
@@ -42,28 +44,33 @@ namespace EngineLayer.Analysis
 
         #region Private Methods
 
-        private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, int massDiffAcceptorNumNotches)
+        private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, int massDiffAcceptorNumNotches, bool calculateEValue)
         {
-            List<Int64> combinedAllScores = new List<Int64>();
-            Int64 totalCount = 0;
-            Int64 totalSum = 0;
+            double globalMeanScore=0;
+            double globalMeanCount=0;
 
-            foreach (Psm item in items)
+            if (calculateEValue)
             {
-                item.AllScores[item.AllScores.Count - 1]--; //remove top scoring peptide
-                while (combinedAllScores.Count < item.AllScores.Count) //expand array if neccessary
-                    combinedAllScores.Add(0);
-                for (int score = 0; score < item.AllScores.Count; score++) //add scores
-                    combinedAllScores[score] += item.AllScores[score];
-            }
-            for (int i = 0; i < combinedAllScores.Count; i++)
-            {
-                totalCount += combinedAllScores[i];
-                totalSum += combinedAllScores[i] * i;
-            }
-            double globalMeanScore = totalCount != 0 ? totalSum * 1.0d / totalCount : 0;
-            double globalMeanCount = totalCount * 1.0d / items.Count();
+                List<Int64> combinedAllScores = new List<Int64>();
+                Int64 totalCount = 0;
+                Int64 totalSum = 0;
 
+                foreach (Psm item in items)
+                {
+                    item.AllScores[item.AllScores.Count - 1]--; //remove top scoring peptide
+                    while (combinedAllScores.Count < item.AllScores.Count) //expand array if neccessary
+                        combinedAllScores.Add(0);
+                    for (int score = 0; score < item.AllScores.Count; score++) //add scores
+                        combinedAllScores[score] += item.AllScores[score];
+                }
+                for (int i = 0; i < combinedAllScores.Count; i++)
+                {
+                    totalCount += combinedAllScores[i];
+                    totalSum += combinedAllScores[i] * i;
+                }
+                globalMeanScore = totalCount != 0 ? totalSum * 1.0d / totalCount : 0;
+                globalMeanCount = totalCount * 1.0d / items.Count();
+            }
             var ids = new List<Psm>();
             foreach (Psm item in items)
                 ids.Add(item);
@@ -91,12 +98,18 @@ namespace EngineLayer.Analysis
 
                 double temp_q_value = (double)cumulative_decoy / cumulative_target;
                 double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / cumulative_target_per_notch[notch];
-                (int sum, int count) sumAndCount = GetSumAndCount(item.AllScores);
-                double maximumLikelihood = GetMaximumLikelihood(sumAndCount.sum, sumAndCount.count);
-                decimal eValue = GetEValue(item.Score, sumAndCount.count, maximumLikelihood, globalMeanCount, globalMeanScore);
-                double eScore = GetEScore(eValue);
-                double temp_twoD_qValue = 0;
-                item.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch, maximumLikelihood, eValue, eScore, temp_twoD_qValue);
+
+                double maximumLikelihood=0;
+                decimal eValue=0;
+                double eScore=0;
+                if (calculateEValue)
+                {
+                    (int sum, int count) sumAndCount = GetSumAndCount(item.AllScores);
+                    maximumLikelihood = GetMaximumLikelihood(sumAndCount.sum, sumAndCount.count);
+                    eValue = GetEValue(item.Score, sumAndCount.count, maximumLikelihood, globalMeanCount, globalMeanScore);
+                    eScore = GetEScore(eValue);
+                }
+                item.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch, maximumLikelihood, eValue, eScore, calculateEValue);
             }
 
             double min_q_value = double.PositiveInfinity;
@@ -118,20 +131,6 @@ namespace EngineLayer.Analysis
                 else if (id.FdrInfo.QValueNotch < min_q_value_notch[notch])
                     min_q_value_notch[notch] = id.FdrInfo.QValueNotch;
             }
-
-            List<Psm> decoysList = new List<Psm>(ids.Where(b => b.IsDecoy == true).ToList());
-            List<Psm> targetsList = new List<Psm>(ids.Where(b => b.IsDecoy == false).ToList());
-
-            ids.AsParallel().ForAll(id =>
-            {
-                int decoys = decoysList.Count(b => b.Score >= id.Score && b.FdrInfo.EScore >= id.FdrInfo.EScore);
-                int targets = targetsList.Count(b => b.Score >= id.Score && b.FdrInfo.EScore >= id.FdrInfo.EScore);
-
-                if (targets == 0)
-                    targets = 1;
-
-                id.FdrInfo.TwoD_qValue = (decoys * 1.0d / targets);
-            });
 
             return ids;
         }
