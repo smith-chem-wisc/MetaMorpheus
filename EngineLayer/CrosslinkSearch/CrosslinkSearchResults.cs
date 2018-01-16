@@ -6,12 +6,7 @@ namespace EngineLayer.CrosslinkSearch
     {
         #region Public Constructors
 
-        public CrosslinkSearchResults(List<PsmCross> newPsms, CrosslinkSearchEngine s) : base(s)
-        {
-            this.NewPsms = newPsms;
-        }
-
-        public CrosslinkSearchResults(List<PsmCross> newPsms, CrosslinkSearchEngine2 s) : base(s)
+        public CrosslinkSearchResults(List<PsmCross> newPsms, TwoSearchCrosslinkSearchEngine s) : base(s)
         {
             this.NewPsms = newPsms;
         }

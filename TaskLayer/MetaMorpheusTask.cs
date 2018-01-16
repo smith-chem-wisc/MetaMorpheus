@@ -32,6 +32,7 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
+
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -83,6 +84,8 @@ namespace TaskLayer
         public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
 
         public static event EventHandler<StringEventArgs> WarnHandler;
+
+        public static event EventHandler<StringEventArgs> LogHandler;
 
         public static event EventHandler<StringEventArgs> NewCollectionHandler;
 
@@ -358,6 +361,11 @@ namespace TaskLayer
         protected void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, null));
+        }
+
+        protected void Log(string v, List<string> nestedIds)
+        {
+            LogHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
         protected void NewCollection(string displayName, List<string> nestedIds)

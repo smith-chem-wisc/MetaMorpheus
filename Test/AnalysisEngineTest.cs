@@ -87,7 +87,7 @@ namespace Test
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
-            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            var searchMode = new SinglePpmAroundZeroSearchMode(5);
             Action<List<Psm>, string, List<string>> action2 = (List<Psm> l, string s, List<string> sdf) => {; };
 
             bool DoPrecursorDeconvolution = true;
@@ -109,10 +109,10 @@ namespace Test
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
             foreach (var huh in newPsms)
-                if (huh != null && huh.MostProbableProteinInfo == null)
+                if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchModes, new List<string> { "ff" });
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, new List<string> { "ff" });
 
             engine.Run();
         }

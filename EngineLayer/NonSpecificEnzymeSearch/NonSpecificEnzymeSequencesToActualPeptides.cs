@@ -13,16 +13,16 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private readonly MassDiffAcceptor massDiffAcceptors;
+        private readonly MassDiffAcceptor massDiffAcceptor;
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM, List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptors, bool reportAllAmbiguity, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM, List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptor, bool reportAllAmbiguity, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, nestedIds)
         {
-            this.massDiffAcceptors = massDiffAcceptors;
+            this.massDiffAcceptor = massDiffAcceptor;
             this.CPWMtoPWSM = CPWMtoPWSM;
         }
 
@@ -98,7 +98,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 foreach (double precursorMass in listScanPrecursorMasses) //foreach precursor
                                 {
                                     finalMass[0] = initialMass + waterMonoisotopicMass; //This is the starting mass of the final mass
-                                    int index = ComputePeptideIndexes(pwsm, finalMass, 1, 1, precursorMass, massDiffAcceptors);
+                                    int index = ComputePeptideIndexes(pwsm, finalMass, 1, 1, precursorMass, massDiffAcceptor);
                                     foreach (DigestionParams digestionParam in collectionOfDigestionParams)
                                         if (index >= 0 && (!digestionParam.MinPeptideLength.HasValue | index >= digestionParam.MinPeptideLength))
                                         {
@@ -197,7 +197,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 foreach (double precursorMass in listScanPrecursorMasses)
                                 {
                                     finalMass[0] = initialMass + waterMonoisotopicMass;
-                                    int index = ComputePeptideIndexes(pwsm, finalMass, pwsm.Length, -1, precursorMass, massDiffAcceptors);
+                                    int index = ComputePeptideIndexes(pwsm, finalMass, pwsm.Length, -1, precursorMass, massDiffAcceptor);
                                     foreach (DigestionParams digestionParam in collectionOfDigestionParams)
                                         if (index >= 0 && (!digestionParam.MinPeptideLength.HasValue | (pwsm.OneBasedEndResidueInProtein - (pwsm.OneBasedStartResidueInProtein + index - 2)) >= digestionParam.MinPeptideLength))
                                         {
@@ -294,7 +294,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Private Methods
 
-        private int ComputePeptideIndexes(PeptideWithSetModifications yyy, double[] prevMass, int oneBasedIndexToLookAt, int direction, double precursorMass, MassDiffAcceptor massDiffAcceptors)
+        private int ComputePeptideIndexes(PeptideWithSetModifications yyy, double[] prevMass, int oneBasedIndexToLookAt, int direction, double precursorMass, MassDiffAcceptor massDiffAcceptor)
         {
             ModificationWithMass residue_variable_mod = null;
             do
@@ -304,13 +304,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 yyy.allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
                 if (residue_variable_mod == null)
                 {
-                    if (massDiffAcceptors.Accepts(precursorMass, prevMass[0]) >= 0)
+                    if (massDiffAcceptor.Accepts(precursorMass, prevMass[0]) >= 0)
                         return oneBasedIndexToLookAt;
                 }
                 else if (residue_variable_mod.neutralLosses.Count == 1)
                 {
                     prevMass[0] += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLosses.First();
-                    if (massDiffAcceptors.Accepts(precursorMass, prevMass[0]) >= 0)
+                    if (massDiffAcceptor.Accepts(precursorMass, prevMass[0]) >= 0)
                         return oneBasedIndexToLookAt;
                 }
                 else
@@ -318,11 +318,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     foreach (double nl in residue_variable_mod.neutralLosses)
                     {
                         prevMass[0] = prevMass[0] + residue_variable_mod.monoisotopicMass - nl;
-                        if (massDiffAcceptors.Accepts(precursorMass, prevMass[0]) >= 0)
+                        if (massDiffAcceptor.Accepts(precursorMass, prevMass[0]) >= 0)
                             return oneBasedIndexToLookAt;
                         if ((direction == 1 && oneBasedIndexToLookAt + direction < yyy.Length) ||
                             (direction == -1 && oneBasedIndexToLookAt + direction > 1))
-                            return ComputePeptideIndexes(yyy, prevMass, oneBasedIndexToLookAt + direction, direction, precursorMass, massDiffAcceptors);
+                            return ComputePeptideIndexes(yyy, prevMass, oneBasedIndexToLookAt + direction, direction, precursorMass, massDiffAcceptor);
                     }
                     break;
                 }

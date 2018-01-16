@@ -27,6 +27,8 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForGrid> modSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -34,9 +36,10 @@ namespace MetaMorpheusGUI
         public SearchTaskWindow()
         {
             InitializeComponent();
+            TheTask = new SearchTask();
+
             PopulateChoices();
 
-            TheTask = new SearchTask();
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the Search Task";
@@ -60,9 +63,10 @@ namespace MetaMorpheusGUI
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
+            TheTask = task;
+
             PopulateChoices();
 
-            TheTask = task;
             UpdateFieldsFromTask(TheTask);
 
             dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
@@ -120,6 +124,13 @@ namespace MetaMorpheusGUI
 
             precursorMassToleranceComboBox.Items.Add("Absolute");
             precursorMassToleranceComboBox.Items.Add("ppm");
+
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForGrid(hm.Key);
+                modSelectionGridItems.Add(theModType);
+            }
+            ModSelectionGrid.ItemsSource = modSelectionGridItems;
 
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
@@ -283,8 +294,8 @@ namespace MetaMorpheusGUI
             if (task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom)
                 customkMdacTextBox.Text = task.SearchParameters.CustomMdac;
 
-            writePrunedDatabaseCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
-            keepAllUniprotModsCheckBox.IsChecked = task.SearchParameters.KeepAllUniprotMods;
+            writePrunedDBCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
+            UpdateModSelectionGrid();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -466,8 +477,10 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
             TheTask.SearchParameters.HistogramBinTolInDaltons = double.Parse(histogramBinWidthTextBox.Text, CultureInfo.InvariantCulture);
 
-            TheTask.SearchParameters.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
-            TheTask.SearchParameters.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WritePrunedDatabase = writePrunedDBCheckBox.IsChecked.Value;
+
+            SetModSelectionForPrunedDB();
+
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
 
@@ -495,6 +508,70 @@ namespace MetaMorpheusGUI
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !TextBoxIntAllowed(e.Text);
+        }
+
+        private void SetModSelectionForPrunedDB()
+        {
+            TheTask.SearchParameters.ModsToWriteSelection = new Dictionary<string, int>();
+            //checks the grid values for which button is checked then sets paramaters accordingly
+            foreach (var modTypeInGrid in modSelectionGridItems)
+            {
+                if (modTypeInGrid.Item3)
+                {
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 1;
+                    continue;
+                }
+                if (modTypeInGrid.Item4)
+                {
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 2;
+                    continue;
+                }
+                if (modTypeInGrid.Item5)
+                {
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 3;
+                }
+            }
+        }
+
+        private void UpdateModSelectionGrid()
+        {
+            foreach (var modType in TheTask.SearchParameters.ModsToWriteSelection)
+            {
+                var huhb = modSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
+                if (huhb != null)
+                {
+                    switch (modType.Value)
+                    {
+                        case (0):
+                            huhb.Item2 = true;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (1):
+                            huhb.Item2 = false;
+                            huhb.Item3 = true;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (2):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = true;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (3):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = true;
+                            break;
+                    }
+                }
+            }
         }
 
         #endregion Private Methods

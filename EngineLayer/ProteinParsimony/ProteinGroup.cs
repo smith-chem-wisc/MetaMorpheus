@@ -29,6 +29,7 @@ namespace EngineLayer
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
             ProteinGroupScore = 0;
+            BestPeptideScore = 0;
             QValue = 0;
             isDecoy = false;
             isContaminant = false;
@@ -76,6 +77,10 @@ namespace EngineLayer
 
         public double QValue { get; set; }
 
+        public double BestPeptideQValue { get; set; }
+
+        public double BestPeptideScore { get; set; }
+
         public int CumulativeTarget { get; set; }
 
         public int CumulativeDecoy { get; set; }
@@ -95,6 +100,7 @@ namespace EngineLayer
             sb.Append("Protein Accession" + '\t');
             sb.Append("Gene" + '\t');
             sb.Append("Protein Full Name" + '\t');
+            sb.Append("Unmodified Mass" + '\t');
             sb.Append("Number of Proteins in Group" + '\t');
             sb.Append("Unique Peptides" + '\t');
             sb.Append("Shared Peptides" + '\t');
@@ -114,10 +120,14 @@ namespace EngineLayer
             }
             sb.Append("Number of PSMs" + '\t');
             sb.Append("Summed Score" + '\t');
+
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("QValue");
+            sb.Append("QValue" + '\t');
+
+            sb.Append("Best Peptide Score" + '\t');
+            sb.Append("Best Peptide QValue");
             return sb.ToString();
         }
 
@@ -135,6 +145,16 @@ namespace EngineLayer
 
             // list of protein names
             sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName))));
+            sb.Append("\t");
+
+            DigestionParams digestionParams = new DigestionParams
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                Protease = GlobalEngineLevelSettings.ProteaseDictionary["top-down"],
+                MinPeptideLength = 0
+            };
+            // list of masses
+            sb.Append(string.Join("|", new HashSet<double>(Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass))));
             sb.Append("\t");
 
             // number of proteins in group
@@ -229,6 +249,14 @@ namespace EngineLayer
             sb.Append(QValue);
             sb.Append("\t");
 
+            // best peptide score
+            sb.Append(BestPeptideScore);
+            sb.Append("\t");
+
+            // best peptide q value
+            sb.Append(BestPeptideQValue);
+            sb.Append("\t");
+
             return sb.ToString();
         }
 
@@ -246,7 +274,7 @@ namespace EngineLayer
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
             {
-                foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
+                foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                 {
                     if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out List<PeptideWithSetModifications> temp))
                         temp.Add(pepWithSetMods);
@@ -395,7 +423,7 @@ namespace EngineLayer
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
             var allPsmsForThisFile = new HashSet<Psm>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.MostProbableProteinInfo.PeptidesWithSetModifications));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.CompactPeptides.SelectMany(b => b.Value.Item2)));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
 
             ProteinGroup subsetPg = new ProteinGroup(this.Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)

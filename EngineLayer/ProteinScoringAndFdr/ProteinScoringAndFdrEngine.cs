@@ -11,7 +11,7 @@ namespace EngineLayer
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly bool mergeIndistinguishableProteinGroups;
-        private List<ProteinGroup> proteinGroups;
+        private readonly List<ProteinGroup> proteinGroups;
 
         #endregion Private Fields
 
@@ -45,6 +45,11 @@ namespace EngineLayer
 
         #region Private Methods
 
+        private static string StripDecoyIdentifier(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
+        {
+            return proteinGroupName.Contains("DECOY_") ? proteinGroupName.Replace("DECOY_", "") : proteinGroupName;
+        }
+
         private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<Psm> psmList)
         {
             Status("Scoring protein groups...");
@@ -53,9 +58,9 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<Psm>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValue <= 0.01)
+                if (psm.FdrInfo.QValue < 0.01)
                 {
-                    foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
+                    foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                     {
                         if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<Psm> psmsForThisPeptide))
                             peptideToPsmMatching.Add(pepWithSetMods, new HashSet<Psm> { psm });
@@ -146,6 +151,24 @@ namespace EngineLayer
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
+                proteinGroup.BestPeptideScore = (double)proteinGroup.AllPsmsBelowOnePercentFDR.Select(psm => psm.FdrInfo.QValue).Min();
+            }
+
+            // do fdr for top-picked method
+            sortedProteinGroups = proteinGroups.OrderByDescending(b => -b.BestPeptideScore).GroupBy(b => StripDecoyIdentifier(b.ProteinGroupName)).Select(b => b.First()).ToList();
+
+            cumulativeTarget = 0;
+            cumulativeDecoy = 0;
+            foreach (var proteinGroup in sortedProteinGroups)
+            {
+                if (proteinGroup.isDecoy)
+                    cumulativeDecoy++;
+                else
+                    cumulativeTarget++;
+
+                proteinGroup.CumulativeTarget = cumulativeTarget;
+                proteinGroup.CumulativeDecoy = cumulativeDecoy;
+                proteinGroup.BestPeptideQValue = (double)cumulativeDecoy / cumulativeTarget;
             }
 
             return sortedProteinGroups;
