@@ -10,8 +10,8 @@
     <PackageReference Include="mzLib" Version="1.0.267" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
-    <PackageReference Include="SharpLearning.AdaBoost" Version="0.26.7" />
-    <PackageReference Include="SharpLearning.RandomForest" Version="0.26.7" />
+    <PackageReference Include="SharpLearning.AdaBoost" Version="0.26.7.1" />
+    <PackageReference Include="SharpLearning.RandomForest" Version="0.26.7.1" />
   </ItemGroup>
 
   <ItemGroup>

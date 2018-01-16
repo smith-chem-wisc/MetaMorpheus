@@ -7,11 +7,11 @@
 
   <ItemGroup>
     <PackageReference Include="FlashLFQ" Version="0.1.100" />
-    <PackageReference Include="MathNet.Numerics" Version="3.20.0" />
+    <PackageReference Include="MathNet.Numerics" Version="3.20.1" />
     <PackageReference Include="mzLib" Version="1.0.267" />
     <PackageReference Include="NetSerializer" Version="4.1.0" />
     <PackageReference Include="Nett" Version="0.8.0" />
-    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.7" />
+    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.7.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -46,8 +46,8 @@ namespace EngineLayer.Analysis
 
         private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, int massDiffAcceptorNumNotches, bool calculateEValue)
         {
-            double globalMeanScore=0;
-            double globalMeanCount=0;
+            double globalMeanScore = 0;
+            double globalMeanCount = 0;
 
             if (calculateEValue)
             {
@@ -99,9 +99,9 @@ namespace EngineLayer.Analysis
                 double temp_q_value = (double)cumulative_decoy / cumulative_target;
                 double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / cumulative_target_per_notch[notch];
 
-                double maximumLikelihood=0;
-                decimal eValue=0;
-                double eScore=0;
+                double maximumLikelihood = 0;
+                decimal eValue = 0;
+                double eScore = 0;
                 if (calculateEValue)
                 {
                     (int sum, int count) sumAndCount = GetSumAndCount(item.AllScores);
