@@ -91,7 +91,7 @@ dotnet CMD/bin/Release/netcoreapp2.0/CMD.dll -t Task1SearchExample.toml Task2Cal
 ## mzLib
 
 
-[mzLib](https://github.com/smith-chem-wisc/mzLib) is a [nuget](https://www.nuget.org/packages) package that we created as an all-purpose tool chest for mass-spec data analysis and many of its functions provide the tools for MetaMorpheus. mzLib is freely available for use in mass-spec applications.
+[mzLib](https://github.com/smith-chem-wisc/mzLib) is a [nuget](https://www.nuget.org/packages/mzLib/) package that we created as an all-purpose tool chest for mass-spec data analysis and many of its functions provide the tools for MetaMorpheus. mzLib is freely available for use in mass-spec applications.
 
 
 ## References
