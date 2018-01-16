@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net471;netcoreapp2.0</TargetFrameworks>
     <DebugType>full</DebugType>
   </PropertyGroup>
 
@@ -19,17 +19,12 @@
   </ItemGroup>
 
   
-  <PropertyGroup Condition="'$(TargetFramework)'=='net461'">
-    <DefineConstants>NET461</DefineConstants>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
+    <DefineConstants>NETFRAMEWORK</DefineConstants>
   </PropertyGroup>
 
   
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 

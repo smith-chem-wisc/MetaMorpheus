@@ -5,6 +5,7 @@ using EngineLayer.ClassicSearch;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using Proteomics;
 using SharpLearning.Common.Interfaces;
 using SharpLearning.GradientBoost.Learners;
@@ -13,9 +14,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Nett;
 
-#if NET461
+#if NETFRAMEWORK
 
 using IO.Thermo;
 
@@ -142,7 +142,7 @@ namespace TaskLayer
                         if (Path.GetExtension(currentDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
                             myMsDataFile = Mzml.LoadAllStaticData(currentDataFile);
                         else
-#if NET461
+#if NETFRAMEWORK
                             myMsDataFile = ThermoStaticData.LoadAllStaticData(currentDataFile);
 #else
                         {
