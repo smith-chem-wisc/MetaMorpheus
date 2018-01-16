@@ -18,6 +18,10 @@
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
   
   <PropertyGroup Condition="'$(TargetFramework)'=='net461'">
     <DefineConstants>NET461</DefineConstants>
