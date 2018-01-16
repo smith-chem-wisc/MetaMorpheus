@@ -69,7 +69,7 @@ UniProt .XML or .fasta format, may be used in compressed (.gz) format.
 ## Test Installation (Windows Command Line)
 
 1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusCommandLine.zip" using, for example, [7-Zip](http://www.7-zip.org/).
-2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/v/MetaMorpheusPublic) to the folder with MetaMorpheusCommandLine.exe executable.
+2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp) to the folder with MetaMorpheusCommandLine.exe executable.
 3. Run the command
 
 ```
@@ -81,7 +81,7 @@ MetaMorpheusCommandLine.exe -t Task1SearchExample.toml Task2CalibrationExample.t
 ## Test Installation (.NET Core)
 
 1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract files from "MetaMorpheusDotNetCoreAppveyor.zip".
-2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/v/MetaMorpheusPublic) to the folder with MetaMorpheusCommandLine.exe executable
+2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp) to the folder with MetaMorpheusCommandLine.exe executable
 3. Run the command
 
 ```
