@@ -556,7 +556,8 @@ namespace TaskLayer
                                 name = "search tolerance plus value",
                                 value = productTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
-
+                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             },
                             new mzIdentML110.Generated.CVParamType
