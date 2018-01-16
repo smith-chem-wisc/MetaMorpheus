@@ -17,11 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
-
   
   <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
     <DefineConstants>NETFRAMEWORK</DefineConstants>
