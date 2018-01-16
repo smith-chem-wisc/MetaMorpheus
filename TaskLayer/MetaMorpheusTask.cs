@@ -29,6 +29,7 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
+
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert

@@ -516,7 +516,7 @@ namespace Test
             task5.SearchParameters.ModsToWriteSelection["missing"] = 3;
 
             //add task 1 to task list
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {new Tuple<string, MetaMorpheusTask>("task5", task5)};
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("task5", task5) };
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif2);
 
