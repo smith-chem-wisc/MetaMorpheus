@@ -1061,8 +1061,6 @@ namespace TaskLayer
 
             // Now that we are done with fdr analysis and localization analysis, can write the results!
 
-            Psm.ModstoWritePruned = SearchParameters.ModsToWriteSelection;
-
             Status("Writing results...", taskId);
             {
                 if (currentRawFileList.Count > 1)
