@@ -1094,6 +1094,7 @@ namespace TaskLayer
 
             var psmsGroupedByFile = allPsms.GroupBy(p => p.FullFilePath);
 
+            Psm.ModstoWritePruned = SearchParameters.ModsToWriteSelection;
             // individual psm files (with global psm fdr, global parsimony)
             foreach (var group in psmsGroupedByFile)
             {
@@ -1103,7 +1104,6 @@ namespace TaskLayer
 
                 {
                     var writtenFile = Path.Combine(OutputFolder, strippedFileName + "_PSMs.psmtsv");
-                    psmsForThisFile.Select(c => { c.ModstoWritePruned = SearchParameters.ModsToWriteSelection; return c; }).ToList();
                     WritePsmsToTsv(psmsForThisFile, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
@@ -1122,7 +1122,6 @@ namespace TaskLayer
                 {
                     var uniquePeptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                     var writtenFile = Path.Combine(OutputFolder, strippedFileName + "_UniquePeptides.psmtsv");
-                    uniquePeptidesForFile.Select(c => { c.ModstoWritePruned = SearchParameters.ModsToWriteSelection; return c; }).ToList();
                     WritePsmsToTsv(uniquePeptidesForFile, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Unique target peptides within 1% FDR in " + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
