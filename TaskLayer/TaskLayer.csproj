@@ -17,7 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
   </ItemGroup>
-  
+
   <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
     <DefineConstants>NETFRAMEWORK</DefineConstants>
   </PropertyGroup>
