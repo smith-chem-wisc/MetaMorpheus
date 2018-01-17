@@ -1094,7 +1094,7 @@ namespace TaskLayer
 
             Status("Running FDR analysis...", taskId);
             int massDiffAcceptorNumNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
-            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, new List<string> { taskId }).Run();
+            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, CommonParameters.CalculateEValue, new List<string> { taskId }).Run();
 
             List<EngineLayer.ProteinGroup> proteinGroups = null;
 
@@ -1238,9 +1238,8 @@ namespace TaskLayer
             }
 
             // Now that we are done with fdr analysis and localization analysis, can write the results!
-
             Psm.ModstoWritePruned = SearchParameters.ModsToWriteSelection;
-
+            
             Status("Writing results...", taskId);
             {
                 if (currentRawFileList.Count > 1)
