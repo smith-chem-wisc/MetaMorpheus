@@ -165,15 +165,15 @@
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\PreRunTask.cs" />
     <Compile Include="Parameter.cs" />
-    <Compile Include="NeoSearchTaskWindow.xaml.cs">
-      <DependentUpon>NeoSearchTaskWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Compile Include="InRunTask.cs" />
     <Compile Include="TheTemplateSelector.cs" />
+    <Compile Include="NeoSearchTaskWindow.xaml.cs">
+      <DependentUpon>NeoSearchTaskWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
@@ -209,11 +209,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="NeoSearchTaskWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="SearchTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="NeoSearchTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

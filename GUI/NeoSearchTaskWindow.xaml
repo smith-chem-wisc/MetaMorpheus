@@ -1,4 +1,4 @@
-<Window x:Class="MetaMorpheusGUI.NeoSearchTaskWindow"
+﻿<Window x:Class="MetaMorpheusGUI.NeoSearchTaskWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -46,8 +46,15 @@
                             <GroupBox Header="PreProcessing Tasks">
                                 <Grid>
                                     <StackPanel>
-                                        <CheckBox x:Name="calibrate" Content="Calibrate Files" IsChecked="True" />
-                                        <CheckBox x:Name="gptmd" Content="Identify Novel PTMs (GPTMD)" IsChecked="True" />
+                                        <StackPanel Orientation="Horizontal">
+                                        <CheckBox x:Name="calibrate" Content="Calibrate Files" IsChecked="True" IsEnabled="False" Width="200" Margin="5"/>
+                                            <Label x:Name="precursorLabel" Content="Precursor Tolerance (ppm)" />
+                                            <TextBox x:Name="precursorTextBox" PreviewTextInput="PreviewIfInt" Width="45"  />
+                                            <Label x:Name="productLabel" Content="Product Tolerance (ppm)" />
+                                            <TextBox x:Name="productTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+
+                                        </StackPanel>
+                                        <CheckBox x:Name="gptmd" Content="Identify Novel PTMs (GPTMD)" IsChecked="True"  Margin="5" />
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
@@ -94,12 +101,12 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="3,0,123.556,0.222">
                                         <StackPanel Orientation="Horizontal">
-                                            <CheckBox x:Name="bCheckBox" Content="b ions" Width="60" Margin="10,8" IsEnabled="False" IsChecked="True"/>
-                                            <CheckBox x:Name="yCheckBox" Content="y ions" Margin="10,8" IsEnabled="False" IsChecked="True"/>
+                                            <CheckBox x:Name="bCheckBox" Content="b ions" Width="60" Margin="10,8" IsChecked="True"/>
+                                            <CheckBox x:Name="yCheckBox" Content="y ions" Margin="10,8" IsChecked="True"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <CheckBox x:Name="cCheckBox" Content="c ions" Width="60" Margin="10,8" IsEnabled="False"/>
-                                            <CheckBox x:Name="zdotCheckBox" Content="zdot ions" Margin="10,8" IsEnabled="False"/>
+                                            <CheckBox x:Name="cCheckBox" Content="c ions" Width="60" Margin="10,8"/>
+                                            <CheckBox x:Name="zdotCheckBox" Content="zdot ions" Margin="10,8" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -121,220 +128,50 @@
                             </Style>
                         </Expander.Style>
                         <StackPanel>
-                            <GroupBox Header="Search Mode">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" />
-                                        <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" />
-                                        <StackPanel Orientation="Horizontal" Margin="1">
-                                            <Label x:Name="label2" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <RadioButton x:Name="nonSpecificSearchRadioButton" Content="NonSpecific Search" GroupName="SearchType" />
-                                    </StackPanel>
-                                </Grid>
-                            </GroupBox>
-                            <GroupBox Header="In-Silico Digestion Parameters">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" />
-                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" />
-                                        <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
-                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label1" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label_Copy" Content="Protease" />
-                                            <ComboBox x:Name="proteaseComboBox" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label1_Copy" Content="Initiator Methionine" />
-                                            <ComboBox x:Name="initiatorMethionineBehaviorComboBox" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
-                                            <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
-                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Grid>
-                            </GroupBox>
-                            <GroupBox Header="Fragment Ion Search Parameters">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da)" />
-                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-
-                                    </StackPanel>
-                                </Grid>
-                            </GroupBox>
-                            <GroupBox Header="Mass Difference Acceptor Criterion">
-                                <StackPanel>
-                                    <RadioButton x:Name="mdacExact" Content="Exact" />
-                                    <RadioButton x:Name="mdac1mm" Content="1 Missed Monoisotopic Peak" />
-                                    <RadioButton x:Name="mdac2mm" Content="1 or 2 Missed Monoisotopic Peaks" />
-                                    <RadioButton x:Name="mdac3mm" Content="1, 2, or 3 Missed Monoisotopic Peaks" />
-                                    <RadioButton x:Name="mdac187" Content="-187 and Up" />
-                                    <RadioButton x:Name="mdacOpen" Content="Accept all" />
-                                    <RadioButton x:Name="mdacCustom" Content="Custom:" />
-                                    <TextBox x:Name="customkMdacTextBox" ToolTipService.ShowDuration="999999" ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" />
-                                </StackPanel>
-                            </GroupBox>
                             <GroupBox Header="Ambiguity Parameters">
                                 <Grid>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label x:Name="maxMissedConsecutiveLabel" Content="Max Missed Consecutive Cleavages" Margin="2" />
+                                            <TextBox x:Name="maxMissedConsecutiveTextBox" PreviewTextInput="PreviewIfInt" Width="45" Margin="2" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label x:Name="maxMissedLabel" Content="Max Missed Cleavages" Margin="2" />
+                                            <TextBox x:Name="maxMissedTextBox" PreviewTextInput="PreviewIfInt" Width="45" Margin="2" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label x:Name="maxCandidatesPerSpectrumLabel" Content="Max Candidates Per Spectrum" Margin="2" />
+                                            <TextBox x:Name="maxCandidatesPerSpectrumTextBox" PreviewTextInput="PreviewIfInt" Width="45" Margin="2" />
+                                        </StackPanel>
+                                    </StackPanel>                                    
+                                </Grid>
+                            </GroupBox>
+                            <GroupBox Header="Cis-Spliced Parameters">
+                                <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <StackPanel Orientation="Horizontal" Margin="1">
-                                            <CheckBox x:Name="allAmbiguity" Content="Report All Ambiguity (might be slow)" Margin="5" />
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label x:Name="minCisLengthLabel" Content="Min Distance (#AA) Allowed" Margin="2" />
+                                            <TextBox x:Name="minCisLengthTextBox" PreviewTextInput="PreviewIfInt" Width="45" Margin="2" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label x:Name="maxCisLengthLabel" Content="Max Distance (#AA) Allowed" Margin="2" />
+                                            <TextBox x:Name="maxCisLengthTextBox" PreviewTextInput="PreviewIfInt" Width="45" Margin="2" TextChanged="maxCisLengthTextBox_TextChanged" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
-                                        <StackPanel Orientation="Horizontal" Margin="1">
-                                            <CheckBox x:Name="excelCompatible" Content="Make Results Excel Compatible (crops cells at 32000 chars)" Margin="5" />
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <CheckBox x:Name="searchNormalCis" Content="Search Normal Cis" IsChecked="True" Margin="2"  />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <CheckBox x:Name="searchReverseCis" Content="Search Reverse Cis" IsChecked="True" Margin="2" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
-                                <TextBox x:Name="maxDegreesOfParallelism" PreviewTextInput="PreviewIfInt" Width="45" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
-                                <TextBox x:Name="minScoreAllowed" Width="45" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Expander>
-                </GroupBox>
-                <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top">
-                    <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed">
-                        <Expander.Style>
-                            <Style TargetType="Expander">
-                                <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
-                                <Style.Triggers>
-                                    <Trigger Property="IsExpanded" Value="True">
-                                        <Setter Property="Header" Value="Hide" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Expander.Style>
-                        <StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <Label Content="Fixed" />
-                                    <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <Label Content="Variable" />
-                                    <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <Label Content="Database Localized" />
-                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
-                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Style>
-                                            <Style TargetType="{x:Type TreeView}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                                        <Setter Property="Visibility" Value="Hidden" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TreeView.Style>
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>
-                            </Grid>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
