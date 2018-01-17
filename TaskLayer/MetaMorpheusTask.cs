@@ -1,8 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
-
 using MassSpectrometry;
-
 using MzLibUtil;
 using Nett;
 using Proteomics;
@@ -12,7 +10,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -200,12 +197,9 @@ namespace TaskLayer
             StartingSingleTask(displayName);
 
             #region write TOML
-
-            {
-                var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
-                Toml.WriteFile(this, tomlFileName, tomlConfig);
-                SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
-            }
+            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+            Toml.WriteFile(this, tomlFileName, tomlConfig);
+            SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             #endregion write TOML
 

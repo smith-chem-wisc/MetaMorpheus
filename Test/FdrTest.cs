@@ -70,24 +70,24 @@ namespace Test
             psm3.MatchToProteinLinkedPeptides(matching);
 
             var newPsms = new List<Psm> { psm1, psm2, psm3 };
-            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, nestedIds);
+            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, true, nestedIds);
 
             fdr.Run();
 
             Assert.AreEqual(2, searchModes.NumNotches);
-            Assert.AreEqual(0, newPsms[0].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0].FdrInfo.cumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[1].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[1].FdrInfo.cumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[2].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[2].FdrInfo.cumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[0].FdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[0].FdrInfo.CumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[1].FdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[1].FdrInfo.CumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[2].FdrInfo.CumulativeTargetNotch);
 
-            Assert.AreEqual(0, newPsms[0].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(1, newPsms[0].FdrInfo.cumulativeTarget);
-            Assert.AreEqual(0, newPsms[1].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(2, newPsms[1].FdrInfo.cumulativeTarget);
-            Assert.AreEqual(0, newPsms[2].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(3, newPsms[2].FdrInfo.cumulativeTarget);
+            Assert.AreEqual(0, newPsms[0].FdrInfo.CumulativeDecoy);
+            Assert.AreEqual(1, newPsms[0].FdrInfo.CumulativeTarget);
+            Assert.AreEqual(0, newPsms[1].FdrInfo.CumulativeDecoy);
+            Assert.AreEqual(2, newPsms[1].FdrInfo.CumulativeTarget);
+            Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoy);
+            Assert.AreEqual(3, newPsms[2].FdrInfo.CumulativeTarget);
         }
 
         #endregion Public Methods

@@ -22,7 +22,6 @@ namespace MetaMorpheusCommandLine
         #endregion Private Fields
 
         #region Private Methods
-
         private static void WriteMultiLineIndented(string toWrite)
         {
             string[] tokens = Regex.Split(toWrite, @"\r?\n|\r");
