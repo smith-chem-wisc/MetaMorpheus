@@ -27,7 +27,6 @@ namespace TaskLayer
     public class CalibrationTask : MetaMorpheusTask
     {
         #region Public Constructors
-
         public CalibrationTask() : base(MyTask.Calibrate)
         {
             CommonParameters = new CommonParameters
