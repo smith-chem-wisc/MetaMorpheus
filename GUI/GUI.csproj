@@ -153,6 +153,7 @@
     <Compile Include="ModForTreeView.cs" />
     <Compile Include="ModTypeForGrid.cs" />
     <Compile Include="ModTypeForTreeView.cs" />
+    <Compile Include="NeoLoadTomls.cs" />
     <Compile Include="OutputFileForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForCalibrationTask.cs" />

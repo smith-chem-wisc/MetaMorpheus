@@ -55,7 +55,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        CommonParameters Clone();
+        CommonParameters Clone(string taskDescriptor);
 
         #endregion Public Methods
     }

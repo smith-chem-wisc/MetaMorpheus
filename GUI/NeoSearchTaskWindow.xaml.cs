@@ -23,6 +23,7 @@ namespace MetaMorpheusGUI
 
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
         public NeoSearchTaskWindow()
@@ -87,6 +88,14 @@ namespace MetaMorpheusGUI
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
+                variableModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
                 localizeModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
@@ -109,6 +118,8 @@ namespace MetaMorpheusGUI
             maxMissedConsecutiveTextBox.Text = task.NeoParameters.MaxMissedConsecutiveCleavages.ToString();
             maxMissedTextBox.Text = task.NeoParameters.MaxMissedCleavages.ToString();
             maxCandidatesPerSpectrumTextBox.Text = task.NeoParameters.MaxCandidatesPerSpectrum.ToString();
+            minCisLengthTextBox.Text = task.NeoParameters.MinDistanceAllowed.ToString();
+            maxCisLengthTextBox.Text = task.NeoParameters.MaxDistanceAllowed.ToString();
             searchNormalCis.IsChecked = task.NeoParameters.NormalCis;
             searchReverseCis.IsChecked = task.NeoParameters.ReverseCis;
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
@@ -120,15 +131,18 @@ namespace MetaMorpheusGUI
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             txtMaxModNum.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
-            productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            if (task.CommonParameters.ProductMassTolerance != null)
+                productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            if (task.CommonParameters.PrecursorMassTolerance != null)
+                precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;         
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
+
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -147,7 +161,24 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-
+            foreach (var mod in task.CommonParameters.ListOfModsVariable)
+            {
+                var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                if (theModType != null)
+                {
+                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    if (theMod != null)
+                        theMod.Use = true;
+                    else
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+                else
+                {
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    variableModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+            }
             localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
             if (task.CommonParameters.LocalizeAll)
             {
@@ -175,20 +206,17 @@ namespace MetaMorpheusGUI
                     }
                 }
             }
+            foreach (var ye in variableModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in fixedModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in localizeModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
         }
 
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
-            //dataContextForSearchTaskWindow.ModExpanderTitle =
-            //    "fixed: "
-            //    + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
-            //    + " variable: "
-            //    + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
-            //    + " localize: "
-            //    + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName));
-            dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
-            dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -221,14 +249,14 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The number of missed cleavages was left empty. For no missed cleavages, please enter zero.");
                 return;
             }
-            if (!double.TryParse(productMassToleranceTextBox.Text, out double pmt) || pmt <= 0)
+            if ((!double.TryParse(productMassToleranceTextBox.Text, out double pmt) || pmt <= 0)&&productMassToleranceTextBox.Text.Length!=0)
             {
                 MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(precursorMassToleranceTextBox.Text, out double premt) || pmt <= 0)
+            if ((!double.TryParse(precursorMassToleranceTextBox.Text, out double premt) || premt <= 0)&& precursorMassToleranceTextBox.Text.Length != 0)
             {
-                MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
+                MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + precursorMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
 
@@ -255,6 +283,8 @@ namespace MetaMorpheusGUI
             neoParameters.MaxMissedConsecutiveCleavages = int.Parse(maxMissedConsecutiveTextBox.Text);
             neoParameters.MaxMissedCleavages = int.Parse(maxMissedConsecutiveTextBox.Text);
             neoParameters.MaxCandidatesPerSpectrum = int.Parse(maxMissedConsecutiveTextBox.Text);
+            neoParameters.MinDistanceAllowed = int.Parse(minCisLengthTextBox.Text);
+            neoParameters.MaxDistanceAllowed = int.Parse(maxCisLengthTextBox.Text);
             neoParameters.NormalCis = searchNormalCis.IsChecked.Value;
             neoParameters.ReverseCis = searchReverseCis.IsChecked.Value;
 
@@ -271,13 +301,36 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
             if (productMassToleranceComboBox.SelectedIndex == 0)
                 CommonParamsToSave.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            else if (productMassToleranceTextBox.Text.Length == 0 || precursorMassToleranceTextBox.Text.Length==0)
+                CommonParamsToSave.ProductMassTolerance = new PpmTolerance(25);
             else
                 CommonParamsToSave.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
                 CommonParamsToSave.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            else if (productMassToleranceTextBox.Text.Length == 0 || precursorMassToleranceTextBox.Text.Length == 0)
+                CommonParamsToSave.PrecursorMassTolerance = new PpmTolerance(15);
             else
                 CommonParamsToSave.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
+            CommonParamsToSave.ListOfModsVariable = new List<Tuple<string, string>>();
+            foreach (var heh in variableModTypeForTreeViewObservableCollection)
+                CommonParamsToSave.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            CommonParamsToSave.ListOfModsFixed = new List<Tuple<string, string>>();
+            foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+                CommonParamsToSave.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+
+            if (localizeAllCheckBox.IsChecked.Value)
+            {
+                CommonParamsToSave.ListOfModsLocalize = null;
+                CommonParamsToSave.LocalizeAll = true;
+            }
+            else
+            {
+                CommonParamsToSave.LocalizeAll = false;
+                CommonParamsToSave.ListOfModsLocalize = new List<Tuple<string, string>>();
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+                    CommonParamsToSave.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            }
 
             TheTask.NeoParameters = neoParameters;
             TheTask.CommonParameters = CommonParamsToSave;
@@ -394,6 +447,16 @@ namespace MetaMorpheusGUI
         private void CPath_TextChanged(object sender, TextChangedEventArgs e)
         {
             searchC.IsChecked = true;
+        }
+
+        private void precursorMassToleranceTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            calibrate.IsChecked = (precursorMassToleranceTextBox.Text.Length != 0 && productMassToleranceTextBox.Text.Length != 0) ? false : true;
+        }
+
+        private void productMassToleranceTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            calibrate.IsChecked = (precursorMassToleranceTextBox.Text.Length != 0 && productMassToleranceTextBox.Text.Length != 0) ? false : true;
         }
     }
 }

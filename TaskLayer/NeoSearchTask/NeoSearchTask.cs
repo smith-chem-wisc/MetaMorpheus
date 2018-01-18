@@ -24,14 +24,25 @@ namespace TaskLayer
 {
     public class NeoSearchTask : MetaMorpheusTask
     {
+
+        public bool AggregateTargetDecoyFiles { get; set; }
+        public bool GenerateSplicedPeptides { get; set; }
+        public bool AggregateNormalSplicedFiles { get; set; }
+
         public NeoSearchTask() : base(MyTask.Neo)
         {
             NeoParameters = new NeoParameters();
 
             CommonParameters = new CommonParameters
             {
-                DoPrecursorDeconvolution = false
+                DoPrecursorDeconvolution = false,
+                PrecursorMassTolerance = null,
+                ProductMassTolerance = null
             };
+            CommonParameters.DigestionParams.MinPeptideLength = 8;
+            CommonParameters.DigestionParams.MaxPeptideLength = 13;
+            CommonParameters.DigestionParams.Protease = GlobalEngineLevelSettings.ProteaseDictionary["non-specific"];
+            CommonParameters.DigestionParams.MaxMissedCleavages = 12;
         }
 
         #region Public Properties
@@ -45,6 +56,10 @@ namespace TaskLayer
             return myTaskResults;
         }
 
+        public NeoSearchTask Clone()
+        {
+            return (NeoSearchTask)this.MemberwiseClone();
+        }
         #endregion Public Properties
     }
 }

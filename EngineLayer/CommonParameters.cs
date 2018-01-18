@@ -102,9 +102,11 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public CommonParameters Clone()
+        public CommonParameters Clone(string taskDescriptor)
         {
-            return (CommonParameters)this.MemberwiseClone();
+            CommonParameters cpToReturn = (CommonParameters)this.MemberwiseClone();
+            cpToReturn.TaskDescriptor = taskDescriptor;
+            return cpToReturn;
         }
 
         #endregion Public Methods
