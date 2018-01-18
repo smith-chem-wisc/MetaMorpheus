@@ -920,7 +920,7 @@ namespace TaskLayer
 
             Status("Running FDR analysis...", taskId);
             int massDiffAcceptorNumNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
-            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, new List<string> { taskId }).Run();
+            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, CommonParameters.CalculateEValue, new List<string> { taskId }).Run();
 
             List<EngineLayer.ProteinGroup> proteinGroups = null;
 
@@ -1048,6 +1048,8 @@ namespace TaskLayer
             }
 
             // Now that we are done with fdr analysis and localization analysis, can write the results!
+            Psm.ModstoWritePruned = SearchParameters.ModsToWriteSelection;
+            
             Status("Writing results...", taskId);
             {
                 if (currentRawFileList.Count > 1)
@@ -1055,6 +1057,10 @@ namespace TaskLayer
                     var writtenFile = Path.Combine(OutputFolder, "aggregatePSMs.psmtsv");
                     WritePsmsToTsv(allPsms, writtenFile);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+
+                    var writtenFileForPercolator = Path.Combine(OutputFolder, "forPercolator.tsv");
+                    WritePsmsForPercolator(allPsms, writtenFileForPercolator);
+                    SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { taskId });
                 }
                 myTaskResults.AddNiceText("All target PSMS within 1% FDR: " + allPsms.Count(a => a.FdrInfo.QValue < .01 && !a.IsDecoy));
             }
@@ -1075,7 +1081,6 @@ namespace TaskLayer
 
             var psmsGroupedByFile = allPsms.GroupBy(p => p.FullFilePath);
 
-            Psm.ModstoWritePruned = SearchParameters.ModsToWriteSelection;
             // individual psm files (with global psm fdr, global parsimony)
             foreach (var group in psmsGroupedByFile)
             {
@@ -1090,9 +1095,9 @@ namespace TaskLayer
                     myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
                 }
 
-                var writtenFileForPercolator = Path.Combine(@"C:\Users\stepa\Data\Yeast\forPercolator.tsv");
-                var writtenFileForPercolator2 = Path.Combine(@"C:\Users\stepa\Data\Yeast\forPercolator2.tsv");
-                WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator, writtenFileForPercolator2);
+                var writtenFileForPercolator = Path.Combine(OutputFolder, strippedFileName + "_forPercolator.tsv");
+                WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator);
+                SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
             }
             foreach (var group in psmsGroupedByFile)
             {
@@ -1392,43 +1397,28 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
-        private void WritePsmsForPercolator(List<Psm> psmsForThisFile, string writtenFileForPercolator, string writtenFileForPercolator2)
+        private void WritePsmsForPercolator(List<Psm> psmList, string writtenFileForPercolator)
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
                 output.WriteLine("SpecId\tLabel\tScanNr\tF1\tF2\tPeptide\tProteins");
                 output.WriteLine("DefaultDirection\t-\t-\t1\t1\t\t");
-                for (int i = 0; i < psmsForThisFile.Count; i++)
+                for (int i = 0; i < psmList.Count; i++)
                 {
-                    var heh = psmsForThisFile[i];
-
-                    var pwsm = heh.CompactPeptides.First().Value.Item2.First();
+                    var heh = psmList[i];
 
                     output.Write(i.ToString());
                     output.Write('\t' + (heh.IsDecoy ? -1 : 1).ToString());
                     output.Write('\t' + heh.ScanNumber.ToString());
-                    output.Write('\t' + Math.Round(heh.Score).ToString());
-                    output.Write('\t' + (heh.Score - Math.Round(heh.Score)).ToString());
-                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.Sequence + "." + pwsm.NextAminoAcid).ToString());
-                    output.Write('\t' + (pwsm.Protein.Accession).ToString());
-                    output.WriteLine();
-                }
-            }
-            using (StreamWriter output = new StreamWriter(writtenFileForPercolator2))
-            {
-                output.WriteLine("SpecId\tLabel\tScanNr\tF1\tPeptide\tProteins");
-                output.WriteLine("DefaultDirection\t-\t-\t1\t\t");
-                for (int i = 0; i < psmsForThisFile.Count; i++)
-                {
-                    var heh = psmsForThisFile[i];
 
+                    // Features
+                    {
+                        output.Write('\t' + string.Join("\t", heh.Features));
+                    }
+
+                    // HACKY: Ignores all ambiguity
                     var pwsm = heh.CompactPeptides.First().Value.Item2.First();
 
-                    output.Write(i.ToString());
-                    output.Write('\t' + (heh.IsDecoy ? -1 : 1).ToString());
-                    output.Write('\t' + "1");
-                    output.Write('\t' + Math.Round(heh.Score).ToString());
-                    //output.Write('\t' + (heh.Score - Math.Round(heh.Score)).ToString());
                     output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.Sequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());
                     output.WriteLine();

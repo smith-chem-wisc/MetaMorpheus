@@ -108,12 +108,14 @@ namespace EngineLayer.ClassicSearch
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
                             var matchQualityFeatures = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
-                            if (matchQualityFeatures.arr[0] >= commonParameters.ScoreCutoff)
+                            if (matchQualityFeatures.arr[0] >= commonParameters.ScoreCutoff || commonParameters.CalculateEValue)
                             {
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
                                     psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, matchQualityFeatures, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
                                 else
                                     psms[scanWithIndexAndNotchInfo.scanIndex].AddCompactPeptide(correspondingCompactPeptide, matchQualityFeatures, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                                if (commonParameters.CalculateEValue)
+                                    psms[scanWithIndexAndNotchInfo.scanIndex].UpdateAllScores(score);
                             }
                         }
                     }
@@ -127,6 +129,8 @@ namespace EngineLayer.ClassicSearch
                                 globalPsms[i] = psms[i];
                             else
                             {
+                                if (commonParameters.CalculateEValue)
+                                    globalPsms[i].SumAllScores(psms[i]);
                                 globalPsms[i].AddOrReplace(psms[i], commonParameters.ReportAllAmbiguity);
                             }
                         }
@@ -139,6 +143,13 @@ namespace EngineLayer.ClassicSearch
                     }
                 }
             });
+            if (commonParameters.CalculateEValue)
+                Parallel.ForEach(Partitioner.Create(0, globalPsms.Length), partitionRange =>
+                 {
+                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                         if (globalPsms[i] != null && globalPsms[i].Score < commonParameters.ScoreCutoff)
+                             globalPsms[i] = null;
+                 });
             return new MetaMorpheusEngineResults(this);
         }
 

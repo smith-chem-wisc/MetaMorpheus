@@ -1,8 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
-
 using MassSpectrometry;
-
 using MzLibUtil;
 using Nett;
 using Proteomics;
@@ -12,7 +10,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -191,6 +188,7 @@ namespace TaskLayer
                 MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio,
                 TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks,
                 TrimMsMsPeaks = currentFileSpecificSettings.TrimMsMsPeaks ?? commonParams.TrimMsMsPeaks,
+                CalculateEValue = currentFileSpecificSettings.CalculateEValue ?? commonParams.CalculateEValue,
             };
 
             returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
@@ -210,11 +208,9 @@ namespace TaskLayer
 
             #region write TOML
 
-            {
-                var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
-                Toml.WriteFile(this, tomlFileName, tomlConfig);
-                SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
-            }
+            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+            Toml.WriteFile(this, tomlFileName, tomlConfig);
+            SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             #endregion write TOML
 
