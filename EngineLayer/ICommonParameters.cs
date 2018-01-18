@@ -52,5 +52,11 @@ namespace EngineLayer
         bool CalculateEValue { get; }
 
         #endregion Public Properties
+
+        #region Public Methods
+
+        CommonParameters Clone();
+
+        #endregion Public Methods
     }
 }

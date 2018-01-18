@@ -64,4 +64,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Neo\AmbiguityDictionaries\" />
+  </ItemGroup>
+
 </Project>

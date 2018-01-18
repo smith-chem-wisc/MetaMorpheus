@@ -126,6 +126,7 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="20" />
+                            <RowDefinition Height="20" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
                             <RowDefinition Height="36" />
@@ -135,9 +136,12 @@
                             <Button x:Name="addSearchTaskButton" Content="New Search Task" Click="AddSearchTaskButton_Click" />
                             <Button x:Name="addCalibrateTaskButton" Content="New Calibrate Task" Click="AddCalibrateTaskButton_Click" />
                             <Button x:Name="addGPTMDTaskButton" Content="New GPTMD Task" Click="AddGPTMDTaskButton_Click" />
-                            <Button x:Name="btnAddCrosslinkSearch" Content="New XL Task" Click="BtnAddCrosslinkSearch_Click" />
                         </StackPanel>
-                        <TreeView x:Name="tasksTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
+                            <Button x:Name="btnAddCrosslinkSearch" Content="New XL Task" Click="BtnAddCrosslinkSearch_Click" />
+                            <Button x:Name="addNeoTaskButton" Content="New Neo Task" Click="AddNeoTaskButton_Click" />
+                        </StackPanel>
+                        <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.Resources>
                                 <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">
@@ -169,13 +173,13 @@
                                 </DataTemplate>
                             </TreeView.Resources>
                         </TreeView>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3">
                             <Button x:Name="LoadTaskButton" Content="Load" Click="LoadTaskButton_Click" />
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
-                        <DockPanel Margin="5" Grid.Row="3" LastChildFill="True">
+                        <DockPanel Margin="5" Grid.Row="4" LastChildFill="True">
                             <Label Content="Output Folder:" />
                             <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" />
                         </DockPanel>

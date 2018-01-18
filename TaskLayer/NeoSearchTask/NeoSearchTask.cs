@@ -24,9 +24,14 @@ namespace TaskLayer
 {
     public class NeoSearchTask : MetaMorpheusTask
     {
-        public NeoSearchTask() : base(MyTask.Search)
+        public NeoSearchTask() : base(MyTask.Neo)
         {
             NeoParameters = new NeoParameters();
+
+            CommonParameters = new CommonParameters
+            {
+                DoPrecursorDeconvolution = false
+            };
         }
 
         #region Public Properties
@@ -35,7 +40,9 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
         {
-            return new MyTaskResults(this);
+            myTaskResults = new MyTaskResults(this);
+            //DOSTUFF
+            return myTaskResults;
         }
 
         #endregion Public Properties

@@ -18,15 +18,16 @@ namespace TaskLayer
             DecoySearch = true;
             SearchNTerminus = true;
             SearchCTerminus = true;
-            bIons = true;
-            yIons = true;
-            cIons = false;
-            zdotIons = false;
             MaxMissedConsecutiveCleavages = 2;
             MaxMissedCleavages = 5;
             MaxCandidatesPerSpectrum = 2000;
+            MinDistanceAllowed = 1;
+            MaxDistanceAllowed = 25;
             NormalCis = true;
             ReverseCis = true;
+            AggregateTargetDecoyFiles = false;
+            GenerateSplicedPeptides = false;
+            AggregateNormalSplicedFiles = false;
         }
 
         #endregion Public Constructors
@@ -46,10 +47,6 @@ namespace TaskLayer
         public string NFilePath { get; set; }
         public bool SearchCTerminus { get; set; }
         public string CFilePath { get; set; }
-        public bool bIons { get; set; }
-        public bool yIons { get; set; }
-        public bool cIons { get; set; }
-        public bool zdotIons { get; set; }
 
         public int MaxMissedConsecutiveCleavages { get; set; }
         public int MaxMissedCleavages { get; set; }
@@ -60,6 +57,19 @@ namespace TaskLayer
         public bool NormalCis { get; set; }
         public bool ReverseCis { get; set; }
 
+        public bool AggregateTargetDecoyFiles { get; set; }
+        public bool GenerateSplicedPeptides { get; set; }
+        public bool AggregateNormalSplicedFiles { get; set; }
+
         #endregion Public Properties
+
+        //#region Public Methods
+
+        //public NeoParameters Clone()
+        //{
+        //    return (NeoParameters)this.MemberwiseClone();
+        //}
+
+        //#endregion Public Methods
     }
 }

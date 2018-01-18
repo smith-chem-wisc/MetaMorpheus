@@ -360,34 +360,134 @@ namespace MetaMorpheusGUI
                     {
                         case "Search":
                             var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te1 = new PreRunTask(ye1);
-                            staticTasksObservableCollection.Add(te1);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te1) + 1) + "-" + ye1.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye1);
                             break;
 
                         case "Calibrate":
                             var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te2 = new PreRunTask(ye2);
-                            staticTasksObservableCollection.Add(te2);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te2) + 1) + "-" + ye2.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye2);
                             break;
 
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te3 = new PreRunTask(ye3);
-                            staticTasksObservableCollection.Add(te3);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te3) + 1) + "-" + ye3.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye3);
                             break;
 
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te4 = new PreRunTask(ye4);
-                            staticTasksObservableCollection.Add(te4);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te4) + 1) + "-" + ye4.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye4);
+                            break;
+
+                        case "Neo":
+                            var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+
+                            string novelFolderPath = "";
+                            string[] splitPath = draggedFilePath.Split('\\').ToArray();
+                            for (int i = 0; i < splitPath.Length - 1; i++)
+                                novelFolderPath += splitPath[i] + '\\';
+                            novelFolderPath += @"NeoTomlFiles\";
+
+                            string defaultFolderPath = "";
+                            splitPath = Directory.GetCurrentDirectory().Split('\\').ToArray();
+                            for (int i = 0; i < splitPath.Length - 3; i++)
+                                defaultFolderPath += splitPath[i] + '\\';
+                            defaultFolderPath += @"EngineLayer\Neo\TomlFiles\";
+
+                            if (ye5.NeoParameters.Calibrate)
+                            {
+                                string caliFileName = "CalibrationTaskconfig.toml";
+                                caliFileName = File.Exists(novelFolderPath + caliFileName) ? novelFolderPath + caliFileName : defaultFolderPath + caliFileName;
+                                var yeo = Toml.ReadFile<CalibrationTask>(caliFileName, MetaMorpheusTask.tomlConfig);
+                                yeo.CommonParameters = ye5.CommonParameters.Clone();
+                                AddTaskToCollection(yeo);
+                            }
+
+                            if (ye5.NeoParameters.GPTMD)
+                            {
+                                string gptmdFileName = "GptmdTaskconfig.toml";
+                                gptmdFileName = File.Exists(novelFolderPath + gptmdFileName) ? novelFolderPath + gptmdFileName : defaultFolderPath + gptmdFileName;
+                                var yeo = Toml.ReadFile<GptmdTask>(gptmdFileName, MetaMorpheusTask.tomlConfig);
+                                yeo.CommonParameters = ye5.CommonParameters.Clone();
+                                AddTaskToCollection(yeo);
+                            }
+
+                            if (ye5.NeoParameters.TargetSearch)
+                            {
+                                string targetFileName = "SearchTaskTargetconfig.toml";
+                                targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                                var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
+                                yeo.CommonParameters = ye5.CommonParameters.Clone();
+                                AddTaskToCollection(yeo);
+                            }
+
+                            if (ye5.NeoParameters.DecoySearch)
+                            {
+                                string targetFileName = "SearchTaskDecoyconfig.toml";
+                                targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                                var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
+                                yeo.CommonParameters = ye5.CommonParameters.Clone();
+                                AddTaskToCollection(yeo);
+                            }
+
+                            var yeo5_1 = new NeoSearchTask();
+                            yeo5_1.NeoParameters = new NeoParameters
+                            {
+                                AggregateTargetDecoyFiles = true,
+                                AggregateNormalSplicedFiles = false,
+                                GenerateSplicedPeptides = false
+                            };
+                            AddTaskToCollection(yeo5_1);
+
+                            if (ye5.NeoParameters.SearchNTerminus)
+                            {
+                                string targetFileName = "SearchTaskNconfig.toml";
+                                targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                                var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
+                                yeo.CommonParameters = ye5.CommonParameters.Clone();
+                                AddTaskToCollection(yeo);
+                            }
+
+                            if (ye5.NeoParameters.SearchCTerminus)
+                            {
+                                string targetFileName = "SearchTaskCconfig.toml";
+                                targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                                var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
+                                yeo.CommonParameters = ye5.CommonParameters.Clone();
+                                AddTaskToCollection(yeo);
+                            }
+
+                            var yeo5_2 = new NeoSearchTask();
+                            yeo5_1.NeoParameters = new NeoParameters
+                            {
+                                AggregateTargetDecoyFiles = false,
+                                AggregateNormalSplicedFiles = false,
+                                GenerateSplicedPeptides = true
+                            };
+                            AddTaskToCollection(yeo5_2);
+
+                            string cisFileName = "SearchTaskCisconfig.toml";
+                            cisFileName = File.Exists(novelFolderPath + cisFileName) ? novelFolderPath + cisFileName : defaultFolderPath + cisFileName;
+                            var yeocis = Toml.ReadFile<SearchTask>(cisFileName, MetaMorpheusTask.tomlConfig);
+                            yeocis.CommonParameters = ye5.CommonParameters.Clone();
+                            AddTaskToCollection(yeocis);
+
+                            string transFileName = "SearchTaskTransconfig.toml";
+                            transFileName = File.Exists(novelFolderPath + transFileName) ? novelFolderPath + transFileName : defaultFolderPath + transFileName;
+                            var yeotrans = Toml.ReadFile<SearchTask>(transFileName, MetaMorpheusTask.tomlConfig);
+                            yeotrans.CommonParameters = ye5.CommonParameters.Clone();
+                            AddTaskToCollection(yeotrans);
+
                             break;
                     }
                     break;
             }
+        }
+
+        private void AddTaskToCollection(MetaMorpheusTask yeo)
+        {
+            PreRunTask teo = new PreRunTask(yeo);
+            staticTasksObservableCollection.Add(teo);
+            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(teo) + 1) + "-" + yeo.CommonParameters.TaskDescriptor;
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -520,6 +620,23 @@ namespace MetaMorpheusGUI
             var dialog = new XLSearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
+                PreRunTask task = new PreRunTask(dialog.TheTask);
+                staticTasksObservableCollection.Add(task);
+                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                UpdateTaskGuiStuff();
+            }
+        }
+
+        private void AddNeoTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new NeoSearchTaskWindow();
+            if (dialog.ShowDialog() == true)
+            {
+                //var calibrateWindow = new CalibrateTaskWindow();
+                //PreRunTask task1 = new PreRunTask(calibrateWindow.TheTask);
+                //staticTasksObservableCollection.Add(task1);
+                //staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task1) + 1) + "-" + calibrateWindow.TheTask.CommonParameters.TaskDescriptor;
+
                 PreRunTask task = new PreRunTask(dialog.TheTask);
                 staticTasksObservableCollection.Add(task);
                 staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
@@ -776,6 +893,13 @@ namespace MetaMorpheusGUI
                         preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
+
+                    case MyTask.Neo:
+                        var Neodialog = new NeoSearchTaskWindow(preRunTask.metaMorpheusTask as NeoSearchTask);
+                        Neodialog.ShowDialog();
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + Neodialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
+                        return;
                 }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
@@ -955,5 +1079,7 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+
     }
 }
