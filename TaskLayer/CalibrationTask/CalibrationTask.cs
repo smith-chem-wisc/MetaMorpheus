@@ -27,6 +27,7 @@ namespace TaskLayer
     public class CalibrationTask : MetaMorpheusTask
     {
         #region Public Constructors
+
         public CalibrationTask() : base(MyTask.Calibrate)
         {
             CommonParameters = new CommonParameters
@@ -87,7 +88,6 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
         {
-            
             myTaskResults = new MyTaskResults(this)
             {
                 newSpectra = new List<string>()
@@ -130,7 +130,6 @@ namespace TaskLayer
             if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
@@ -213,7 +212,7 @@ namespace TaskLayer
                 do
                 {
                     new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, initLearners, "mz", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
-                    
+
                     prevCount = count;
                     prevPrecTol = precTol;
                     prevProdTol = prodTol;
@@ -234,7 +233,6 @@ namespace TaskLayer
 
                     if (round >= 3 && !ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count, precTol, prodTol))
                     {
-                        
                         break;
                     }
                     if (CalibrationParameters.WriteIntermediateFiles)
@@ -249,7 +247,7 @@ namespace TaskLayer
 
                     bestFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-calib.mzml");
                     MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, bestFilePath, false);
-                    
+
                     round++;
                 } while (true);
 
@@ -308,11 +306,11 @@ namespace TaskLayer
                     Toml.WriteFile(f, tomlFileName, tomlConfig);
                     SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                 }
-                
+
                 myTaskResults.newSpectra.Add(bestFilePath);
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", currentDataFile }));
             });
-            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files"}));
+            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             return myTaskResults;
         }
