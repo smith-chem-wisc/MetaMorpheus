@@ -50,21 +50,21 @@ namespace EngineLayer.Neo
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < line.Length; i++)
             {
-                if (i == AggregateSearchFiles.baseIndex)
+                if (i == ImportPsmtsv.baseIndex)
                     sb.Append(baseSequence + '\t');
-                else if (i == AggregateSearchFiles.fullIndex)
+                else if (i == ImportPsmtsv.fullIndex)
                     sb.Append(fullSequence + '\t');
-                else if (i == AggregateSearchFiles.accessionIndex)
+                else if (i == ImportPsmtsv.accessionIndex)
                     sb.Append(accession + '\t');
-                else if (i == AggregateSearchFiles.proteinIndex)
+                else if (i == ImportPsmtsv.proteinIndex)
                     sb.Append(proteinName + '\t');
-                else if (i == AggregateSearchFiles.geneIndex)
+                else if (i == ImportPsmtsv.geneIndex)
                     sb.Append(geneName + '\t');
-                else if (i == AggregateSearchFiles.targetIndex)
+                else if (i == ImportPsmtsv.targetIndex)
                     sb.Append(target + '\t');
-                else if (i == AggregateSearchFiles.decoyIndex)
+                else if (i == ImportPsmtsv.decoyIndex)
                     sb.Append(decoy + '\t');
-                else if (i == AggregateSearchFiles.qIndex)
+                else if (i == ImportPsmtsv.qIndex)
                     sb.Append(q + '\t');
                 else
                     sb.Append(line[i] + '\t');

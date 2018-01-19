@@ -52,7 +52,39 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
-            //DOSTUFF
+            //Read N and C files
+            string NPath = "";
+            string CPath = "";
+            //if termini input
+
+            //if no termini input
+            string taskHeader = "Task";
+            string[] pathArray=OutputFolder.Split('\\');
+            string basePath = "";
+            for(int i=0; i<pathArray.Length-1; i++)
+                basePath += pathArray[i] + '\\';
+            string currentTaskNumber = pathArray[pathArray.Length - 1].Split('-')[0];
+            currentTaskNumber = currentTaskNumber.Substring(taskHeader.Length, currentTaskNumber.Length - taskHeader.Length);
+            string NHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 2);
+            string CHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 1);
+            foreach (string s in Directory.GetFiles(basePath))
+            {
+                if (s.Contains(NHeader))
+                    NPath = s;
+                else if (s.Contains(CHeader))
+                    CPath = s;
+            }
+
+
+            //Splice
+
+
+            //Find Ambiguity
+
+
+            //Export Results
+
+
             return myTaskResults;
         }
 

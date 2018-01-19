@@ -13,8 +13,8 @@ namespace EngineLayer.Neo
         public string seq { get; set; }
         public string score { get; set; }
 
-        public InitialID(string file, int scan, double expMass, string id, string seq, string peaks, string scorem)
-            : base(file, scan, expMass)
+        public InitialID(int scan, double expMass, string id, string seq, string peaks, string scorem)
+            : base(scan, expMass)
         {
             this.seq = CleanSeq(seq);
             this.id = id;
