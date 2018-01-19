@@ -89,12 +89,12 @@ namespace TaskLayer
                             name = "MetaMorpheusGroup",
                             cvRef = "PSI-MS"
                         },
-                        
-                       
+
+
                     },
                 },
-                
-                
+
+
             };
 
             _mzid.AuditCollection = new mzIdentML110.Generated.AbstractContactType[2];
@@ -120,8 +120,8 @@ namespace TaskLayer
                         value ="UWMadisonChem"
                     }
                 }
-                
-                
+
+
             };
 
             _mzid.AuditCollection[1] = new mzIdentML110.Generated.OrganizationType()
@@ -422,7 +422,18 @@ namespace TaskLayer
                         id = "SIR_" + scan_result_scan_item.Item1,
                         spectraData_ref = "SD_" + spectral_ids[psm.FullFilePath].ToString(),
                         spectrumID = "scan=" + psm.ScanNumber.ToString(),
-                        SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500]
+                        SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500],
+                        cvParam = new mzIdentML110.Generated.CVParamType[1]
+                        {
+                                 new mzIdentML110.Generated.CVParamType
+                            {
+                                name = "retention time",
+                                cvRef = "PSI-MS",
+                                accession = "MS:1000894",
+                                value = psm.ScanRetentionTime.ToString()
+                            }
+
+                        }
                     };
                     psm_per_scan.Add(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), scan_result_scan_item);
                     sir_id++;
@@ -633,7 +644,12 @@ namespace TaskLayer
                 foreach (var tempModification in set)
                 {
                     nameOfMod = tempModification.id.Substring(0, (tempModification.id.IndexOf(" ")));
-                    if (nameOfMod.Equals(mod.id.Substring(0, (mod.id.IndexOf(" ")))))
+                    string modID;
+                    if (mod.id.Contains(" "))
+                        modID = mod.id.Substring(0, (mod.id.IndexOf(" ")));
+                    else
+                        modID = mod.id;
+                    if (nameOfMod.Equals(modID))
                     {
                         modification = (ModificationWithMass)tempModification;
                         break;
@@ -757,10 +773,10 @@ namespace TaskLayer
                             },
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession = "MS1002373",
+                                accession = "MS:1002373",
                                 name = "protein group-level q-value",
-                                value = proteinGroup.QValue.ToString(),
-                                 cvRef = "PSI-MS",
+                                cvRef = "PSI-MS",
+                                value = proteinGroup.QValue.ToString()
                             },
                             new mzIdentML110.Generated.CVParamType
                             {

@@ -616,7 +616,7 @@ namespace Test
 
             //make sure this runs correctly
             //run!
-            Console.WriteLine(task5.CommonParameters.ListOfModsLocalize);
+           // Console.WriteLine(task5.CommonParameters.ListOfModsLocalize);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
             string outputFolderInThisTest = MySetUpClass.outputFolder;
