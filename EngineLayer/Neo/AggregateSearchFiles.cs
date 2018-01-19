@@ -68,6 +68,14 @@ namespace EngineLayer.Neo
             return aggregatedLines;
         }
 
+        private static List<NeoPsm> AggregateNandC(string[] nInput, string[] cInput)
+        {
+            List<NeoPsm> psms = new List<NeoPsm>();
+
+
+            return psms;
+        }
+
         private static void CalculateFDR(List<PsmTsvLine> aggregatedLines)
         {
             aggregatedLines = aggregatedLines.OrderByDescending(x => x.score).ToList();

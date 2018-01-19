@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.Neo;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
@@ -51,39 +52,78 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
         {
-            myTaskResults = new MyTaskResults(this);
-            //Read N and C files
-            string NPath = "";
-            string CPath = "";
-            //if termini input
+            ParallelOptions parallelOptions = new ParallelOptions();
+            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+            MyFileManager myFileManager = new MyFileManager(true);
 
-            //if no termini input
-            string taskHeader = "Task";
-            string[] pathArray=OutputFolder.Split('\\');
-            string basePath = "";
-            for(int i=0; i<pathArray.Length-1; i++)
-                basePath += pathArray[i] + '\\';
-            string currentTaskNumber = pathArray[pathArray.Length - 1].Split('-')[0];
-            currentTaskNumber = currentTaskNumber.Substring(taskHeader.Length, currentTaskNumber.Length - taskHeader.Length);
-            string NHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 2);
-            string CHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 1);
-            foreach (string s in Directory.GetFiles(basePath))
+            //Import Spectra
+            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
-                if (s.Contains(NHeader))
-                    NPath = s;
-                else if (s.Contains(CHeader))
-                    CPath = s;
-            }
+                var origDataFile = currentRawFileList[spectraFileIndex];
+                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+
+                var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
+                NewCollection(Path.GetFileName(origDataFile), thisId);
+                Status("Loading spectra file...", thisId);
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                Status("Getting ms2 scans...", thisId);
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
 
-            //Splice
+                //Import Database
+                Status("Loading modifications...", taskId);
+
+                #region Load modifications
+
+                List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                List<ModificationWithMass> localizeableModifications;
+                if (CommonParameters.LocalizeAll)
+                    localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+                else
+                    localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+
+                #endregion Load modifications 
+
+                var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
 
-            //Find Ambiguity
+                myTaskResults = new MyTaskResults(this);
+                //Read N and C files
+                string nPath = "";
+                string cPath = "";
+                //if termini input
+
+                //if no termini input
+                string taskHeader = "Task";
+                string[] pathArray = OutputFolder.Split('\\');
+                string basePath = "";
+                for (int i = 0; i < pathArray.Length - 1; i++)
+                    basePath += pathArray[i] + '\\';
+                string currentTaskNumber = pathArray[pathArray.Length - 1].Split('-')[0];
+                currentTaskNumber = currentTaskNumber.Substring(taskHeader.Length, currentTaskNumber.Length - taskHeader.Length);
+                string NHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 2);
+                string CHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 1);
+                foreach (string s in Directory.GetFiles(basePath))
+                {
+                    if (s.Contains(NHeader))
+                        nPath = s;
+                    else if (s.Contains(CHeader))
+                        cPath = s;
+                }
+
+                List<NeoPsm> psms = ImportPsmtsv.ImportNeoPsms(nPath, cPath);
 
 
-            //Export Results
+                //Splice
+                List<NeoPsm> candidates = NeoSplicePeptides.SplicePeptides(psms);
 
+                //Find Ambiguity
+                NeoFindAmbiguity.FindAmbiguity(candidates, proteinList, arrayOfMs2ScansSortedByMass);
+
+                //Export Results
+            });
 
             return myTaskResults;
         }

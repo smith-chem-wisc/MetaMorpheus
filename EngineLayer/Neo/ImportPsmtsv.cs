@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -37,7 +38,6 @@ namespace EngineLayer.Neo
         public static readonly string matchedIonsHeader = "Matched Ion Masses";
         public static readonly string matchedionCountsHeader = "Matched Ion Counts";
 
-
         public static List<PsmTsvLine> ImportLinesToAggregate(string[] lines)
         {
             List<PsmTsvLine> results = new List<PsmTsvLine>();
@@ -72,8 +72,10 @@ namespace EngineLayer.Neo
             return results.OrderBy(x => x.scanNumber).ToList();
         }
 
-        public static List<NeoPsm> ImportNeoPsms(string[] nInput, string[] cInput)
+        public static List<NeoPsm> ImportNeoPsms(string nFileName, string cFileName)
         {
+            string[] nInput = File.ReadAllLines(nFileName);
+            string[] cInput = File.ReadAllLines(cFileName);
             List<NeoPsm> psms = new List<NeoPsm>();
             string[] header = nInput[0].Split('\t');
             for (int col = 0; col < header.Length; col++)

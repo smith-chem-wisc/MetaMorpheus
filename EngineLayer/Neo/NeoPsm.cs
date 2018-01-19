@@ -13,7 +13,6 @@ namespace EngineLayer.Neo
         public List<FusionCandidate> candidates { get; set; }
         public FusionCandidate.FusionType fusionType { get; set; }
 
-
         public NeoPsm(int scan, double expMass)
         {
             this.scanNumber = scan;
