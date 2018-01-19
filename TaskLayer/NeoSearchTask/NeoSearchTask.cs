@@ -1,24 +1,12 @@
-﻿using Chemistry;
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.Neo;
-using EngineLayer.Analysis;
-using EngineLayer.ClassicSearch;
-using EngineLayer.Indexing;
-using EngineLayer.ModernSearch;
-using EngineLayer.NonSpecificEnzymeSearch;
-using FlashLFQ;
 using MassSpectrometry;
-using MathNet.Numerics.Distributions;
-using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Serialization;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -91,30 +79,39 @@ namespace TaskLayer
 
                 myTaskResults = new MyTaskResults(this);
                 //Read N and C files
-                string nPath = "";
-                string cPath = "";
+                string nPath = NeoParameters.NFilePath;
+                string cPath = NeoParameters.CFilePath;
                 //if termini input
 
-                //if no termini input
-                string taskHeader = "Task";
-                string[] pathArray = OutputFolder.Split('\\');
-                string basePath = "";
-                for (int i = 0; i < pathArray.Length - 1; i++)
-                    basePath += pathArray[i] + '\\';
-                string currentTaskNumber = pathArray[pathArray.Length - 1].Split('-')[0];
-                currentTaskNumber = currentTaskNumber.Substring(taskHeader.Length, currentTaskNumber.Length - taskHeader.Length);
-                string NHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 2);
-                string CHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 1);
-                foreach (string s in Directory.GetFiles(basePath))
+                if (nPath == null || cPath == null)
                 {
-                    if (s.Contains(NHeader))
-                        nPath = s;
-                    else if (s.Contains(CHeader))
-                        cPath = s;
+                    //if no termini input
+                    string taskHeader = "Task";
+                    string[] pathArray = OutputFolder.Split('\\');
+                    string basePath = "";
+                    for (int i = 0; i < pathArray.Length - 1; i++)
+                        basePath += pathArray[i] + '\\';
+                    string currentTaskNumber = pathArray[pathArray.Length - 1].Split('-')[0];
+                    currentTaskNumber = currentTaskNumber.Substring(taskHeader.Length, currentTaskNumber.Length - taskHeader.Length);
+                    string NHeader = "";
+                    string CHeader = "";
+                    if (cPath == null)
+                    {
+                        CHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 1);
+                        if (nPath == null)
+                            NHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 2);
+                    }
+                    else
+                        NHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 1);
+                    foreach (string s in Directory.GetFiles(basePath))
+                    {
+                        if (s.Contains(NHeader))
+                            nPath = s;
+                        else if (s.Contains(CHeader))
+                            cPath = s;
+                    }
                 }
-
                 List<NeoPsm> psms = ImportPsmtsv.ImportNeoPsms(nPath, cPath);
-
 
                 //Splice
                 List<NeoPsm> candidates = NeoSplicePeptides.SplicePeptides(psms);
@@ -132,6 +129,7 @@ namespace TaskLayer
         {
             return (NeoSearchTask)this.MemberwiseClone();
         }
+
         #endregion Public Properties
     }
 }
