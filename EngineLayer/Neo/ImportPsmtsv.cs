@@ -36,7 +36,7 @@ namespace EngineLayer.Neo
         public static readonly string scanPrecursorMassHeader = "Precursor Mass";
         public static readonly string matchedIonsHeader = "Matched Ion Masses";
         public static readonly string matchedionCountsHeader = "Matched Ion Counts";
-        
+
 
         public static List<PsmTsvLine> ImportLinesToAggregate(string[] lines)
         {

@@ -10,7 +10,7 @@
     <PackageReference Include="FlashLFQ" Version="0.1.100" />
     <PackageReference Include="mzLib" Version="1.0.268" />
     <PackageReference Include="Nett" Version="0.8.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.1-beta3" />
     <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.7.1" />
     <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.7.1" />
     <PackageReference Include="SharpLearning.Metrics" Version="0.26.7.1" />
