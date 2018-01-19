@@ -179,6 +179,7 @@ namespace TaskLayer
                 MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio,
                 TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks,
                 TrimMsMsPeaks = currentFileSpecificSettings.TrimMsMsPeaks ?? commonParams.TrimMsMsPeaks,
+                CalculateEValue = currentFileSpecificSettings.CalculateEValue ?? commonParams.CalculateEValue,
             };
 
             returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
@@ -197,6 +198,7 @@ namespace TaskLayer
             StartingSingleTask(displayName);
 
             #region write TOML
+
             var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
