@@ -11,7 +11,7 @@ namespace EngineLayer.Neo
     {
         public static string folder;
 
-        public string ExportAll(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
+        public static string ExportAll(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
             folder = DateTime.Now.ToString("yyyy-MM-dd_hh-mm-ss");
             string path = "";
@@ -29,7 +29,7 @@ namespace EngineLayer.Neo
             return "";
         }
 
-        public void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path)
+        public static void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path)
         {
             using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesAll.txt"))
             {

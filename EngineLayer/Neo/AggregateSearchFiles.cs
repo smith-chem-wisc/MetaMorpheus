@@ -13,7 +13,7 @@ namespace EngineLayer.Neo
             string header = "";
             string[] primaryLines = (System.IO.File.ReadAllLines(primaryFilePath));
             string[] secondaryLines = (System.IO.File.ReadAllLines(secondaryFilePath));
-            List<PsmTsvLine> aggregatedLines = AggregateTargetDecoy(primaryLines, secondaryLines);
+            List<PsmTsvLine> aggregatedLines = AggregateDifferentDatabaseSearches(primaryLines, secondaryLines);
             CalculateFDR(aggregatedLines);
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"\\bison\share\users\Zach\NeoPaper\e001318\Parameter_Benchmarking\500\2017-12-18-13-52-20\Task1-Neo_Cis\180116NormalNeoCis_Aggregated_MinusOnePointFive.txt"))
@@ -24,7 +24,7 @@ namespace EngineLayer.Neo
             }
         }
 
-        private static List<PsmTsvLine> AggregateTargetDecoy(string[] primaryLines, string[] secondaryLines)
+        private static List<PsmTsvLine> AggregateDifferentDatabaseSearches(string[] primaryLines, string[] secondaryLines)
         {
             List<PsmTsvLine> primaryPsms = ImportPsmtsv.ImportLinesToAggregate(primaryLines);
             List<PsmTsvLine> secondaryPsms = ImportPsmtsv.ImportLinesToAggregate(secondaryLines);
@@ -66,14 +66,6 @@ namespace EngineLayer.Neo
                 }
             }
             return aggregatedLines;
-        }
-
-        private static List<NeoPsm> AggregateNandC(string[] nInput, string[] cInput)
-        {
-            List<NeoPsm> psms = new List<NeoPsm>();
-
-
-            return psms;
         }
 
         private static void CalculateFDR(List<PsmTsvLine> aggregatedLines)

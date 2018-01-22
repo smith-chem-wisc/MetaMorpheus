@@ -23,12 +23,13 @@ namespace EngineLayer.ModernSearch
         protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
+        protected readonly double? weightIons;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, double? weightIons, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -40,6 +41,7 @@ namespace EngineLayer.ModernSearch
             this.addCompIons = addCompIons;
             this.massDiffAcceptor = massDiffAcceptor;
             this.dissociationTypes = DetermineDissociationType(lp);
+            this.weightIons = weightIons;
         }
 
         #endregion Public Constructors
@@ -252,6 +254,21 @@ namespace EngineLayer.ModernSearch
                     // add possible search results to the hashset of id's
                     if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
                         idsOfPeptidesPossiblyObserved.Add(id);
+                }
+                if(weightIons!=null)
+                {
+                    for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
+                    {
+                        if (j < weightIons * 1000)
+                        {
+                            int id = peptideIdsInThisBin[j];
+                            scoringTable[id]++;
+
+                            // add possible search results to the hashset of id's
+                            if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
+                                idsOfPeptidesPossiblyObserved.Add(id);
+                        }
+                    }
                 }
             }
         }
