@@ -20,6 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="elements.dat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="sliced-db.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
