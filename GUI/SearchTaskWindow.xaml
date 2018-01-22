@@ -1,11 +1,11 @@
-﻿<Window x:Class="MetaMorpheusGUI.SearchTaskWindow"
+<Window x:Class="MetaMorpheusGUI.SearchTaskWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+        Title="Search Task" Width="750" Height="880" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
     </Window.Resources>
@@ -242,6 +242,9 @@
                                 <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues" />
+                            </StackPanel>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
@@ -336,7 +339,7 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top">
+                <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
                     <Expander x:Name="AnalysisExpander" Collapsed="ApmdExpander_Collapsed">
                         <Expander.Style>
                             <Style TargetType="Expander">
@@ -403,9 +406,41 @@
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Pruned Database Writing">
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox x:Name="writePrunedDatabaseCheckBox" Content="Write Pruned Database" />
-                                    <CheckBox x:Name="keepAllUniprotModsCheckBox" Content="Keep Uniprot Modifications"  IsEnabled="{Binding IsChecked, ElementName=writePrunedDatabaseCheckBox}" />
+                                <StackPanel>
+                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" />
+                                    <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=writePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
+                                            <DataGridTemplateColumn  Header=" Do not Write"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if in DB and Observed"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if in DB"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if Observed"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center"  GroupName="{Binding ModName}" IsChecked="{Binding Item5, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
                                 </StackPanel>
                             </GroupBox>
                         </StackPanel>

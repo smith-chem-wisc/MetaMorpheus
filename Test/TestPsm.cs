@@ -19,9 +19,8 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams();
             PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", "accession1").Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
-            IMzPeak peak = new MzPeak(4, 4);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scann = myMsDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, peak, 1, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
             Psm psm = new Psm(pepWithSetMods.CompactPeptide(TerminusType.None), 1, 2, 3, scan);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
@@ -42,7 +41,7 @@ namespace Test
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 
-            psm.SetFdrValues(6, 6, 6, 6, 6, 6);
+            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, false);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
         }

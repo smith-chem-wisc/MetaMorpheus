@@ -34,17 +34,17 @@ namespace Test
 
             CompactPeptide peptide1 = new CompactPeptide(pep1, TerminusType.None);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan1 = t.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, new MzPeak(peptide1.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
+            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, peptide1.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             Psm psm1 = new Psm(peptide1, 0, 3, 0, scan1);
 
             CompactPeptide peptide2 = new CompactPeptide(pep2, TerminusType.None);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan2 = t.GetOneBasedScan(4) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-            Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, new MzPeak(peptide2.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
+            Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, peptide2.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             Psm psm2 = new Psm(peptide2, 1, 2, 1, scan2);
 
             CompactPeptide peptide3 = new CompactPeptide(pep3, TerminusType.None);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan3 = t.GetOneBasedScan(6) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-            Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, new MzPeak(peptide3.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
+            Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, peptide3.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             Psm psm3 = new Psm(peptide3, 0, 1, 2, scan3);
 
             CompactPeptide peptide4 = new CompactPeptide(pep4, TerminusType.None);
@@ -70,24 +70,24 @@ namespace Test
             psm3.MatchToProteinLinkedPeptides(matching);
 
             var newPsms = new List<Psm> { psm1, psm2, psm3 };
-            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes, nestedIds);
+            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, true, nestedIds);
 
             fdr.Run();
 
             Assert.AreEqual(2, searchModes.NumNotches);
-            Assert.AreEqual(0, newPsms[0].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0].FdrInfo.cumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[1].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[1].FdrInfo.cumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[2].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[2].FdrInfo.cumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[0].FdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[0].FdrInfo.CumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[1].FdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[1].FdrInfo.CumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[2].FdrInfo.CumulativeTargetNotch);
 
-            Assert.AreEqual(0, newPsms[0].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(1, newPsms[0].FdrInfo.cumulativeTarget);
-            Assert.AreEqual(0, newPsms[1].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(2, newPsms[1].FdrInfo.cumulativeTarget);
-            Assert.AreEqual(0, newPsms[2].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(3, newPsms[2].FdrInfo.cumulativeTarget);
+            Assert.AreEqual(0, newPsms[0].FdrInfo.CumulativeDecoy);
+            Assert.AreEqual(1, newPsms[0].FdrInfo.CumulativeTarget);
+            Assert.AreEqual(0, newPsms[1].FdrInfo.CumulativeDecoy);
+            Assert.AreEqual(2, newPsms[1].FdrInfo.CumulativeTarget);
+            Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoy);
+            Assert.AreEqual(3, newPsms[2].FdrInfo.CumulativeTarget);
         }
 
         #endregion Public Methods

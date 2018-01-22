@@ -1,6 +1,5 @@
 ﻿using EngineLayer.CrosslinkSearch;
 using Proteomics;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,13 +28,13 @@ namespace EngineLayer.CrosslinkAnalysis
 
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly string OutputFolder;
-        private readonly CommonParameters CommonParameters;
+        private readonly ICommonParameters CommonParameters;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, ICommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -70,13 +69,13 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 if (psmpair != null)
                 {
-                    var cp = psmpair.CompactPeptide;
+                    var cp = psmpair.compactPeptide;
                     if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
                         compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
 
                     if (psmpair.BetaPsmCross != null)
                     {
-                        var cp1 = psmpair.BetaPsmCross.CompactPeptide;
+                        var cp1 = psmpair.BetaPsmCross.compactPeptide;
                         if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp1))
                             compactPeptideToProteinPeptideMatching.Add(cp1, new HashSet<PeptideWithSetModifications>());
                     }
@@ -117,19 +116,16 @@ namespace EngineLayer.CrosslinkAnalysis
 
             #endregion Match Seqeunces to PeptideWithSetModifications
 
-            List<PsmCross> allResultingIdentifications = new List<PsmCross>();
-            List<Tuple<PsmCross, PsmCross>> allResultingIdentificationsfdr = new List<Tuple<PsmCross, PsmCross>>();
-
             Status("Computing info about actual peptides with modifications...");
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
                 var huh = newPsms[myScanWithMassIndex];
-                if (huh != null && huh.MostProbableProteinInfo == null)
+                if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 if (huh != null)
                 {
                     var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
-                    if (huh1 != null && huh1.MostProbableProteinInfo == null)
+                    if (huh1 != null)
                         huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 }
             }

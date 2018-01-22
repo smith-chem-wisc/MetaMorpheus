@@ -70,7 +70,7 @@ namespace Test
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
-            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
                 DigestionParams = new DigestionParams
@@ -84,7 +84,7 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>());
 
             cse.Run();
 
@@ -112,7 +112,7 @@ namespace Test
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
-            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
@@ -126,7 +126,7 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>());
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -153,7 +153,7 @@ namespace Test
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
-            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
@@ -167,7 +167,7 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>());
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -194,7 +194,7 @@ namespace Test
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
-            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(600, 1), 1, null) };
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 600, 1, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
@@ -236,7 +236,7 @@ namespace Test
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
 
             Psm[] globalPsms = new Psm[1];
-            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
@@ -250,7 +250,7 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>());
 
             cse.Run();
             Assert.IsNull(globalPsms[0]);

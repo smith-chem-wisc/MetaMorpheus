@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class CommonParameters
+    public class CommonParameters : ICommonParameters
     {
         #region Public Constructors
 
@@ -38,9 +38,9 @@ namespace EngineLayer
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
             UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 5;
-            DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(20);
+            DeconvolutionIntensityRatio = 3;
+            DeconvolutionMaxAssumedChargeState = 12;
+            DeconvolutionMassTolerance = new PpmTolerance(4);
             ReportAllAmbiguity = true;
             ExcelCompatible = true;
 
@@ -48,6 +48,7 @@ namespace EngineLayer
             MinRatio = 0.01;
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
+            CalculateEValue = false;
         }
 
         #endregion Public Constructors
@@ -94,6 +95,8 @@ namespace EngineLayer
         public bool TrimMs1Peaks { get; set; }
         public bool TrimMsMsPeaks { get; set; }
         public string TaskDescriptor { get; set; }
+
+        public bool CalculateEValue { get; set; }
 
         #endregion Public Properties
     }

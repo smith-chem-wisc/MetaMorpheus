@@ -27,6 +27,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForGrid> modSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
 
         #endregion Private Fields
 
@@ -35,9 +36,10 @@ namespace MetaMorpheusGUI
         public SearchTaskWindow()
         {
             InitializeComponent();
+            TheTask = new SearchTask();
+
             PopulateChoices();
 
-            TheTask = new SearchTask();
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the Search Task";
@@ -61,9 +63,10 @@ namespace MetaMorpheusGUI
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
+            TheTask = task;
+
             PopulateChoices();
 
-            TheTask = task;
             UpdateFieldsFromTask(TheTask);
 
             dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
@@ -121,6 +124,13 @@ namespace MetaMorpheusGUI
 
             precursorMassToleranceComboBox.Items.Add("Absolute");
             precursorMassToleranceComboBox.Items.Add("ppm");
+
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForGrid(hm.Key);
+                modSelectionGridItems.Add(theModType);
+            }
+            ModSelectionGrid.ItemsSource = modSelectionGridItems;
 
             foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
@@ -194,6 +204,7 @@ namespace MetaMorpheusGUI
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             DeconvolutionMassToleranceInPpmTextBox.Text = task.CommonParameters.DeconvolutionMassTolerance.Value.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            eValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -284,8 +295,8 @@ namespace MetaMorpheusGUI
             if (task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom)
                 customkMdacTextBox.Text = task.SearchParameters.CustomMdac;
 
-            writePrunedDatabaseCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
-            keepAllUniprotModsCheckBox.IsChecked = task.SearchParameters.KeepAllUniprotMods;
+            writePrunedDBCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
+            UpdateModSelectionGrid();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -351,15 +362,17 @@ namespace MetaMorpheusGUI
 
             #region Save Parameters
 
-            if (OutputFileNameTextBox.Text != "")
-                TheTask.CommonParameters.TaskDescriptor = OutputFileNameTextBox.Text;
-            else
-                TheTask.CommonParameters.TaskDescriptor = "SearchTask";
+            CommonParameters CommonParamsToSave = new CommonParameters();
 
-            TheTask.CommonParameters.TrimMs1Peaks = trimMs1.IsChecked.Value;
-            TheTask.CommonParameters.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
-            TheTask.CommonParameters.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
-            TheTask.CommonParameters.MinRatio = double.TryParse(MinRatioCheckBox.Text, out double MinRatio) ? (double?)MinRatio : null;
+            if (OutputFileNameTextBox.Text != "")
+                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
+            else
+                CommonParamsToSave.TaskDescriptor = "SearchTask";
+
+            CommonParamsToSave.TrimMs1Peaks = trimMs1.IsChecked.Value;
+            CommonParamsToSave.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
+            CommonParamsToSave.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
+            CommonParamsToSave.MinRatio = double.TryParse(MinRatioCheckBox.Text, out double MinRatio) ? (double?)MinRatio : null;
 
             if (classicSearchRadioButton.IsChecked.Value)
                 TheTask.SearchParameters.SearchType = SearchType.Classic;
@@ -369,8 +382,8 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
 
             //Code for determining SemiSpecific
-            TheTask.CommonParameters.DigestionParams.SemiProteaseDigestion = nonSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC;
-            TheTask.CommonParameters.DigestionParams.TerminusTypeSemiProtease = bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C;
+            CommonParamsToSave.DigestionParams.SemiProteaseDigestion = nonSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC;
+            CommonParamsToSave.DigestionParams.TerminusTypeSemiProtease = bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C;
 
             TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
@@ -388,61 +401,61 @@ namespace MetaMorpheusGUI
             }
             else
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
-            TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
-            TheTask.CommonParameters.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
-            TheTask.CommonParameters.DigestionParams.Protease = (Protease)proteaseComboBox.SelectedItem;
-            TheTask.CommonParameters.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.CommonParameters.DigestionParams.MaxModsForPeptide = int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture);
-            TheTask.CommonParameters.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            CommonParamsToSave.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
+            CommonParamsToSave.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            CommonParamsToSave.DigestionParams.Protease = (Protease)proteaseComboBox.SelectedItem;
+            CommonParamsToSave.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.DigestionParams.MaxModsForPeptide = int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             if (productMassToleranceComboBox.SelectedIndex == 0)
-                TheTask.CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                CommonParamsToSave.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             else
-                TheTask.CommonParameters.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                CommonParamsToSave.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
-                TheTask.CommonParameters.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                CommonParamsToSave.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             else
-                TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                CommonParamsToSave.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
             TheTask.SearchParameters.MaxFragmentSize = Double.Parse(txtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.AddCompIons = addCompIonCheckBox.IsChecked.Value;
-            TheTask.CommonParameters.BIons = bCheckBox.IsChecked.Value;
-            TheTask.CommonParameters.YIons = yCheckBox.IsChecked.Value;
-            TheTask.CommonParameters.CIons = cCheckBox.IsChecked.Value;
-            TheTask.CommonParameters.ZdotIons = zdotCheckBox.IsChecked.Value;
-            TheTask.CommonParameters.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
-            TheTask.CommonParameters.TotalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;
+            CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;
+            CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
+            CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            CommonParamsToSave.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
+            CommonParamsToSave.TotalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
 
-            TheTask.CommonParameters.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
-            TheTask.CommonParameters.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+            CommonParamsToSave.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
+            CommonParamsToSave.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
-            TheTask.CommonParameters.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.CalculateEValue = eValueCheckBox.IsChecked.Value;
+            CommonParamsToSave.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
+            CommonParamsToSave.ExcelCompatible = excelCompatible.IsChecked.Value;
 
-            TheTask.CommonParameters.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
-            TheTask.CommonParameters.ExcelCompatible = excelCompatible.IsChecked.Value;
-
-            TheTask.CommonParameters.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.CommonParameters.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.CommonParameters.DeconvolutionMassTolerance = new PpmTolerance(double.Parse(DeconvolutionMassToleranceInPpmTextBox.Text, CultureInfo.InvariantCulture));
+            CommonParamsToSave.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.DeconvolutionMassTolerance = new PpmTolerance(double.Parse(DeconvolutionMassToleranceInPpmTextBox.Text, CultureInfo.InvariantCulture));
             TheTask.SearchParameters.DisposeOfFileWhenDone = disposeOfFilesWhenDone.IsChecked.Value;
-            TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();
+            CommonParamsToSave.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
-                TheTask.CommonParameters.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
-            TheTask.CommonParameters.ListOfModsFixed = new List<Tuple<string, string>>();
+                CommonParamsToSave.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            CommonParamsToSave.ListOfModsFixed = new List<Tuple<string, string>>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
-                TheTask.CommonParameters.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                CommonParamsToSave.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
 
             if (localizeAllCheckBox.IsChecked.Value)
             {
-                TheTask.CommonParameters.ListOfModsLocalize = null;
-                TheTask.CommonParameters.LocalizeAll = true;
+                CommonParamsToSave.ListOfModsLocalize = null;
+                CommonParamsToSave.LocalizeAll = true;
             }
             else
             {
-                TheTask.CommonParameters.LocalizeAll = false;
-                TheTask.CommonParameters.ListOfModsLocalize = new List<Tuple<string, string>>();
+                CommonParamsToSave.LocalizeAll = false;
+                CommonParamsToSave.ListOfModsLocalize = new List<Tuple<string, string>>();
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    TheTask.CommonParameters.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                    CommonParamsToSave.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
             if (mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
@@ -466,10 +479,14 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
             TheTask.SearchParameters.HistogramBinTolInDaltons = double.Parse(histogramBinWidthTextBox.Text, CultureInfo.InvariantCulture);
 
-            TheTask.SearchParameters.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
-            TheTask.SearchParameters.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WritePrunedDatabase = writePrunedDBCheckBox.IsChecked.Value;
+
+            SetModSelectionForPrunedDB();
+
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                TheTask.CommonParameters.MaxParallelFilesToAnalyze = jsakdf;
+                CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
+
+            TheTask.CommonParameters = CommonParamsToSave;
 
             #endregion Save Parameters
 
@@ -495,8 +512,71 @@ namespace MetaMorpheusGUI
             e.Handled = !TextBoxIntAllowed(e.Text);
         }
 
-        #endregion Private Methods
+        private void SetModSelectionForPrunedDB()
+        {
+            TheTask.SearchParameters.ModsToWriteSelection = new Dictionary<string, int>();
+            //checks the grid values for which button is checked then sets paramaters accordingly
+            foreach (var modTypeInGrid in modSelectionGridItems)
+            {
+                if (modTypeInGrid.Item3)
+                {
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 1;
+                    continue;
+                }
+                if (modTypeInGrid.Item4)
+                {
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 2;
+                    continue;
+                }
+                if (modTypeInGrid.Item5)
+                {
+                    TheTask.SearchParameters.ModsToWriteSelection[modTypeInGrid.ModName] = 3;
+                }
+            }
+        }
 
+        private void UpdateModSelectionGrid()
+        {
+            foreach (var modType in TheTask.SearchParameters.ModsToWriteSelection)
+            {
+                var huhb = modSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
+                if (huhb != null)
+                {
+                    switch (modType.Value)
+                    {
+                        case (0):
+                            huhb.Item2 = true;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (1):
+                            huhb.Item2 = false;
+                            huhb.Item3 = true;
+                            huhb.Item4 = false;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (2):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = true;
+                            huhb.Item5 = false;
+                            break;
+
+                        case (3):
+                            huhb.Item2 = false;
+                            huhb.Item3 = false;
+                            huhb.Item4 = false;
+                            huhb.Item5 = true;
+                            break;
+                    }
+                }
+            }
+        }
+
+        #endregion Private Methods
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

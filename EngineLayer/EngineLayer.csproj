@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlashLFQ" Version="0.1.99" />
-    <PackageReference Include="mzLib" Version="1.0.258" />
-    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.5" />
-    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.5" />
-    <PackageReference Include="SharpLearning.Metrics" Version="0.26.5" />
+    <PackageReference Include="FlashLFQ" Version="0.1.100" />
+    <PackageReference Include="mzLib" Version="1.0.268" />
+    <PackageReference Include="Nett" Version="0.8.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.7.1" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.7.1" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.7.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -55,6 +57,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Mods\tmt.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="settings.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

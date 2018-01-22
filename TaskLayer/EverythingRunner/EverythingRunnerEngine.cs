@@ -54,7 +54,6 @@ namespace TaskLayer
         public void Run()
         {
             StartingAllTasks();
-
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
@@ -92,7 +91,9 @@ namespace TaskLayer
                 if (!Directory.Exists(outputFolderForThisTask))
                     Directory.CreateDirectory(outputFolderForThisTask);
 
+                // Actual task running code
                 var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, currentXmlDbFilenameList, currentRawDataFilenameList, ok.Item1);
+
                 if (myTaskResults.newDatabases != null)
                 {
                     currentXmlDbFilenameList = myTaskResults.newDatabases;
@@ -106,7 +107,6 @@ namespace TaskLayer
                 allResultsText.AppendLine(Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + myTaskResults.ToString());
             }
             stopWatch.Stop();
-
             var resultsFileName = Path.Combine(outputFolder, "allResults.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
@@ -115,7 +115,6 @@ namespace TaskLayer
                 file.Write(allResultsText.ToString());
             }
             FinishedWritingAllResultsFileHandler?.Invoke(this, new StringEventArgs(resultsFileName, null));
-
             FinishedAllTasks(outputFolder);
         }
 
