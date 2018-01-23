@@ -69,6 +69,20 @@ NL   C46H76N2O35
 CF   C46H76N2O35
 MT   N-linked glycosylation
 //
+ID   Hex(7)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C58H96N2O45
+CF   C58H96N2O45
+MT   N-linked glycosylation
+//
+ID   Hex(8)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C64H106N2O50
+CF   C64H106N2O50
+MT   N-linked glycosylation
+//
 ID   Hex(1)HexNAc(1)NeuAc(1)
 TG   Nxs or Nxt
 PP   Anywhere.
