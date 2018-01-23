@@ -244,10 +244,3 @@ NL   C14H23NO9
 CF   C14H23NO9
 MT   O-linked glycosylation
 //
-ID   Bacillosamine
-TG   Nxs or Nxt
-PP   Anywhere.
-NL   C10H16N2O4
-CF   C10H16N2O4
-MT   N-linked glycosylation
-//
