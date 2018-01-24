@@ -107,7 +107,7 @@
   <CustomAction Id='LaunchFile' FileKey='MetaMorpheusGUI.exe' ExeCommand='' Return="asyncNoWait" />
   <Property Id="OVERWRITEAPPDATA" Value="1" />
   <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
-  <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Metamorpheus" />
+  <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
   <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
   <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
   
@@ -423,7 +423,7 @@
                 Target="[#MetaMorpheusGUI.exe]"
                 WorkingDirectory="MetaMorpheusInstallFolder" />
       <Shortcut Id="UninstallProduct"
-                Name="Uninstall Metamorpheus"
+                Name="Uninstall MetaMorpheus"
                 Description="Uninstalls My Application"
                 Target="[System64Folder]msiexec.exe"
                 Arguments="/x [ProductCode]"/>
