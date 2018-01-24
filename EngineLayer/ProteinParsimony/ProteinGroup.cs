@@ -208,7 +208,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // MS1 intensity (retrieved from FlashLFQ in the SearchTask)
-            if (IntensitiesByFile != null)
+            if (FilesForQuantification != null)
             {
                 for (int i = 0; i < IntensitiesByFile.Length; i++)
                 {
