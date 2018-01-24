@@ -119,6 +119,9 @@
       <Component Id="MetaMorpheusGUI.exe" Guid="63370d96-1880-40ab-8525-685ccf64326f">
         <File Id="MetaMorpheusGUI.exe" Name="MetaMorpheusGUI.exe" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe" />
       </Component>
+      <Component Id="app.manifest" Guid="d894958a-07c1-4078-9e0e-081a6cc29030">
+        <File Id="app.manifest" Name="app.manifest" Source="$(var.GUI_TargetDir)app.manifest" />
+      </Component>
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
       </Component>
