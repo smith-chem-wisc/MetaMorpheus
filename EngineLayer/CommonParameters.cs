@@ -24,7 +24,7 @@ namespace EngineLayer
             LocalizeAll = true;
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C"), new Tuple<string, string>("Common Fixed", "Carbamidomethyl of U") };
             ListOfModsLocalize = null;
 
             ConserveMemory = true;
