@@ -24,8 +24,8 @@ namespace TaskLayer
             TotalPartitions = 1;
             LocalizeAll = true;
 
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C"), new Tuple<string, string>("Common Fixed", "Carbamidomethyl of U") };
+            ListOfModsVariable = new List<(string, string)> {  ("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             ListOfModsLocalize = null;
 
             ConserveMemory = true;
@@ -59,9 +59,9 @@ namespace TaskLayer
         public int? MaxParallelFilesToAnalyze { get; set; }
         public int MaxThreadsToUsePerFile { get; set; }
         public bool LocalizeAll { get; set; }
-        public IEnumerable<Tuple<string, string>> ListOfModsFixed { get; set; }
-        public IEnumerable<Tuple<string, string>> ListOfModsVariable { get; set; }
-        public IEnumerable<Tuple<string, string>> ListOfModsLocalize { get; set; }
+        public IEnumerable<(string, string)> ListOfModsFixed { get; set; }
+        public IEnumerable<(string, string)> ListOfModsVariable { get; set; }
+        public IEnumerable<(string, string)> ListOfModsLocalize { get; set; }
 
         public bool DoPrecursorDeconvolution { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }

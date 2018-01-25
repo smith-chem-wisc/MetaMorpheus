@@ -440,14 +440,14 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
             CommonParamsToSave.DeconvolutionMassTolerance = new PpmTolerance(double.Parse(DeconvolutionMassToleranceInPpmTextBox.Text, CultureInfo.InvariantCulture));
             TheTask.SearchParameters.DisposeOfFileWhenDone = disposeOfFilesWhenDone.IsChecked.Value;
-            var listOfModsVariable = new List<Tuple<string, string>>();
+            var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
-                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             CommonParamsToSave.ListOfModsVariable = listOfModsVariable;
 
-            var listOfModsFixed = new List<Tuple<string, string>>();
+            var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
-                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
 
             if (localizeAllCheckBox.IsChecked.Value)
@@ -458,9 +458,9 @@ namespace MetaMorpheusGUI
             else
             {
                 CommonParamsToSave.LocalizeAll = false;
-                var listOfModsLocalize = new List<Tuple<string, string>>();
+                var listOfModsLocalize = new List<(string, string)>();
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    listOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                    listOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
                 CommonParamsToSave.ListOfModsLocalize = listOfModsLocalize;
             }
 

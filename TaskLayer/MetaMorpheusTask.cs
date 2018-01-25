@@ -44,7 +44,7 @@ namespace TaskLayer
                             .CreateInstance(() => new CommonParameters()))
                         .ConfigureType<IDigestionParams>(ct => ct
                             .CreateInstance(() => new DigestionParams()))
-                        .ConfigureType<List<Tuple<string, string>>>(type => type
+                        .ConfigureType<List<(string, string)>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
@@ -112,7 +112,7 @@ namespace TaskLayer
         {
             foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
             {
-                List<Tuple<double, int>> isolatedStuff = new List<Tuple<double, int>>();
+                List<(double, int)> isolatedStuff = new List<(double, int)>();
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                 {
                     var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
@@ -123,7 +123,7 @@ namespace TaskLayer
                         foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, 1, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance.Value, deconvolutionIntensityRatio))
                         {
                             var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
-                            isolatedStuff.Add(new Tuple<double, int>(monoPeakMz, envelope.charge));
+                            isolatedStuff.Add((monoPeakMz, envelope.charge));
                         }
                 }
 
@@ -134,13 +134,13 @@ namespace TaskLayer
                     {
                         var precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
                         if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add(new Tuple<double, int>(precursorMZ, precursorCharge));
+                            isolatedStuff.Add((precursorMZ, precursorCharge));
                     }
                     else
                     {
                         var precursorMZ = ms2scan.SelectedIonMZ;
                         if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add(new Tuple<double, int>(precursorMZ, precursorCharge));
+                            isolatedStuff.Add((precursorMZ, precursorCharge));
                     }
                 }
 
@@ -379,9 +379,9 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private static List<Tuple<string, string>> GetModsFromString(string value)
+        private static List<(string, string)> GetModsFromString(string value)
         {
-            return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => new Tuple<string, string>(b.Split('\t').First(), b.Split('\t').Last())).ToList();
+            return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => (b.Split('\t').First(), b.Split('\t').Last())).ToList();
         }
 
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
