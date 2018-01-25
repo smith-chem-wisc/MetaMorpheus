@@ -206,12 +206,13 @@ namespace MetaMorpheusGUI
         {
             CommonParameters CommonParamsToSave = new CommonParameters();
 
-            CommonParamsToSave.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            CommonParamsToSave.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
-            CommonParamsToSave.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
-            CommonParamsToSave.DigestionParams.Protease = (Protease)proteaseComboBox.SelectedItem;
-            CommonParamsToSave.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
-            CommonParamsToSave.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            DigestionParams digestionParamsToSave = new DigestionParams();
+            digestionParamsToSave.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            digestionParamsToSave.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
+            digestionParamsToSave.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            digestionParamsToSave.Protease = (Protease)proteaseComboBox.SelectedItem;
+            digestionParamsToSave.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.DigestionParams = digestionParamsToSave;
             CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;
             CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;
             CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;

@@ -29,7 +29,6 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
-
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -43,6 +42,8 @@ namespace TaskLayer
                                 .FromToml(tmlString => GlobalEngineLevelSettings.ProteaseDictionary[tmlString.Value])))
                         .ConfigureType<ICommonParameters>(ct => ct
                             .CreateInstance(() => new CommonParameters()))
+                        .ConfigureType<IDigestionParams>(ct => ct
+                            .CreateInstance(() => new DigestionParams()))
                         .ConfigureType<List<Tuple<string, string>>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
@@ -153,6 +154,19 @@ namespace TaskLayer
             if (currentFileSpecificSettings == null)
                 return commonParams;
 
+            IDigestionParams computedDigestionParams = new DigestionParams
+            {
+                InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior,
+                MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages,
+                MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength,
+                MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength,
+                MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms,
+                Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease,
+                MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide,
+                SemiProteaseDigestion = currentFileSpecificSettings.SemiProteaseDigestion ?? commonParams.DigestionParams.SemiProteaseDigestion,
+                TerminusTypeSemiProtease = currentFileSpecificSettings.TerminusTypeSemiProtease ?? commonParams.DigestionParams.TerminusTypeSemiProtease,
+            };
+
             CommonParameters returnParams = new CommonParameters
             {
                 DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
@@ -180,15 +194,8 @@ namespace TaskLayer
                 TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks,
                 TrimMsMsPeaks = currentFileSpecificSettings.TrimMsMsPeaks ?? commonParams.TrimMsMsPeaks,
                 CalculateEValue = currentFileSpecificSettings.CalculateEValue ?? commonParams.CalculateEValue,
+                DigestionParams = computedDigestionParams,
             };
-
-            returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
-            returnParams.DigestionParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            returnParams.DigestionParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            returnParams.DigestionParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            returnParams.DigestionParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms;
-            returnParams.DigestionParams.Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease;
-            returnParams.DigestionParams.MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide;
 
             return returnParams;
         }
@@ -308,9 +315,9 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
-        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
+        protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
         {
-            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
+            HashSet<IDigestionParams> okay = new HashSet<IDigestionParams>
             {
                 commonParameters.DigestionParams
             };

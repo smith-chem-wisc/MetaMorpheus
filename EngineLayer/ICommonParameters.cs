@@ -38,7 +38,7 @@ namespace EngineLayer
 
         double ScoreCutoff { get; }
 
-        DigestionParams DigestionParams { get; }
+        IDigestionParams DigestionParams { get; }
 
         bool ReportAllAmbiguity { get; }
 

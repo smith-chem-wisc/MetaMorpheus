@@ -86,7 +86,7 @@ namespace TaskLayer
 
         public double ScoreCutoff { get; set; }
 
-        public DigestionParams DigestionParams { get; set; }
+        public IDigestionParams DigestionParams { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
 
