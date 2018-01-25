@@ -432,8 +432,7 @@ namespace MetaMorpheusGUI
                 outRichTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
 
-
-                if(messageBoxResult == MessageBoxResult.Yes)
+                if (messageBoxResult == MessageBoxResult.Yes)
                 {
                     string body = exception.Message + "%0D%0A" + exception.Data +
                        "%0D%0A" + exception.StackTrace +
@@ -447,7 +446,6 @@ namespace MetaMorpheusGUI
                     System.Diagnostics.Process.Start(mailto);
                     Console.WriteLine(body);
                 }
-                
             }
         }
 

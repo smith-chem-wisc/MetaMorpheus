@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
-using EngineLayer.Analysis;
+using EngineLayer.FdrAnalysis;
+using EngineLayer.ModificationAnalysis;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;

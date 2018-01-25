@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
-using EngineLayer.Analysis;
+using EngineLayer.FdrAnalysis;
+using EngineLayer.HistogramAnalysis;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;

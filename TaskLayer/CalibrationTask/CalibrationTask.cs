@@ -1,5 +1,4 @@
 using EngineLayer;
-using EngineLayer.Analysis;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using IO.MzML;
@@ -14,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using EngineLayer.FdrAnalysis;
 
 #if NETFRAMEWORK
 
