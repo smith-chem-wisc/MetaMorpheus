@@ -500,6 +500,7 @@ namespace Test
         {
             #region setup
 
+            List<Tuple<string, string>> listOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C"), new Tuple<string, string>("Common Fixed", "Carbamidomethyl of U") };
             //Create Search Task
             SearchTask task5 = new SearchTask
             {
@@ -507,6 +508,10 @@ namespace Test
                 {
                     WritePrunedDatabase = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                },
+                CommonParameters = new CommonParameters
+                {
+                    ListOfModsFixed = listOfModsFixed,
                 }
             };
 
@@ -550,7 +555,7 @@ namespace Test
 
             //add Fixed modifcation so can test if mod that is observed and not in DB
             fixedModifications.Add(connorMod4);
-            task5.CommonParameters.ListOfModsFixed.Add(Tuple.Create<string, string>(connorMod4.modificationType, connorMod4.id));
+            listOfModsFixed.Add(Tuple.Create<string, string>(connorMod4.modificationType, connorMod4.id));
 
             dictHere.Add(1, new List<Modification> { modToAdd });
             dictHere.Add(2, new List<Modification> { modToAdd2 }); //default

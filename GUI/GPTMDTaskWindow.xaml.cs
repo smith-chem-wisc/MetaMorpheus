@@ -274,12 +274,16 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
             CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
-            CommonParamsToSave.ListOfModsVariable = new List<Tuple<string, string>>();
+            var listOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
-                CommonParamsToSave.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
-            CommonParamsToSave.ListOfModsFixed = new List<Tuple<string, string>>();
+                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            CommonParamsToSave.ListOfModsVariable = listOfModsVariable;
+
+            var listOfModsFixed = new List<Tuple<string, string>>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
-                CommonParamsToSave.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
+
             if (localizeAllCheckBox.IsChecked.Value)
             {
                 CommonParamsToSave.ListOfModsLocalize = null;
@@ -288,9 +292,10 @@ namespace MetaMorpheusGUI
             else
             {
                 CommonParamsToSave.LocalizeAll = false;
-                CommonParamsToSave.ListOfModsLocalize = new List<Tuple<string, string>>();
+                var listOfModsLocalize = new List<Tuple<string, string>>();
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    CommonParamsToSave.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                    listOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                CommonParamsToSave.ListOfModsLocalize = listOfModsLocalize;
             }
             TheTask.GptmdParameters.ListOfModsGptmd = new List<Tuple<string, string>>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)

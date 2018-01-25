@@ -59,9 +59,9 @@ namespace TaskLayer
         public int? MaxParallelFilesToAnalyze { get; set; }
         public int MaxThreadsToUsePerFile { get; set; }
         public bool LocalizeAll { get; set; }
-        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
-        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
-        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
+        public IEnumerable<Tuple<string, string>> ListOfModsFixed { get; set; }
+        public IEnumerable<Tuple<string, string>> ListOfModsVariable { get; set; }
+        public IEnumerable<Tuple<string, string>> ListOfModsLocalize { get; set; }
 
         public bool DoPrecursorDeconvolution { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }

@@ -11,9 +11,9 @@ namespace EngineLayer
         int? MaxParallelFilesToAnalyze { get; }
         int MaxThreadsToUsePerFile { get; }
         bool LocalizeAll { get; }
-        List<Tuple<string, string>> ListOfModsFixed { get; }
-        List<Tuple<string, string>> ListOfModsVariable { get; }
-        List<Tuple<string, string>> ListOfModsLocalize { get; }
+        IEnumerable<Tuple<string, string>> ListOfModsFixed { get; }
+        IEnumerable<Tuple<string, string>> ListOfModsVariable { get; }
+        IEnumerable<Tuple<string, string>> ListOfModsLocalize { get; }
 
         bool DoPrecursorDeconvolution { get; }
         bool UseProvidedPrecursorInfo { get; }
