@@ -22,19 +22,12 @@ namespace MetaMorpheusCommandLine
         #endregion Private Fields
 
         #region Private Methods
-        private static void WriteMultiLineIndented(string toWrite)
-        {
-            string[] tokens = Regex.Split(toWrite, @"\r?\n|\r");
-            foreach (var str in tokens)
-            {
-                myWriter.WriteLine(str);
-            }
-        }
 
         private static void Main(string[] args)
         {
             Console.WriteLine("Welcome to MetaMorpheus");
-            Console.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion);
+            Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
+
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
             p.Setup(arg => arg.Tasks)
@@ -51,7 +44,7 @@ namespace MetaMorpheusCommandLine
 
             var result = p.Parse(args);
 
-            if (result.HasErrors == false)
+            if (!result.HasErrors)
             {
                 MetaMorpheusEngine.WarnHandler += WarnHandler;
                 MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
@@ -64,44 +57,38 @@ namespace MetaMorpheusCommandLine
                 MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
-                foreach (var modFile in Directory.GetFiles(GlobalEngineLevelSettings.modsLocation))
-                    GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-
-                GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
-                GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
-
                 foreach (var db in p.Object.Databases)
                     if (!Path.GetExtension(db).Equals(".fasta"))
-                        GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
+                        GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
 
-                List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>>();
+                List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 
                 for (int i = 0; i < p.Object.Tasks.Count; i++)
                 {
-                    var draggedFilePath = p.Object.Tasks[i];
+                    var filePath = p.Object.Tasks[i];
 
-                    var uhum = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                    var uhum = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
                     switch (uhum.Get<string>("TaskType"))
                     {
                         case "Search":
-                            var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "SearchTask", ye1));
+                            var ye1 = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "SearchTask", ye1));
                             break;
 
                         case "Calibrate":
-                            var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "CalibrationTask", ye2));
+                            var ye2 = Toml.ReadFile<CalibrationTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "CalibrationTask", ye2));
                             break;
 
                         case "Gptmd":
-                            var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "GptmdTask", ye3));
+                            var ye3 = Toml.ReadFile<GptmdTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "GptmdTask", ye3));
                             break;
 
                         case "XLSearch":
-                            var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "XLSearchTask", ye4));
+                            var ye4 = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(("Task" + (i + 1) + "XLSearchTask", ye4));
                             break;
 
                         default:
@@ -136,6 +123,15 @@ namespace MetaMorpheusCommandLine
             else
             {
                 Console.WriteLine("Error Text:" + result.ErrorText);
+            }
+        }
+
+        private static void WriteMultiLineIndented(string toWrite)
+        {
+            string[] tokens = Regex.Split(toWrite, @"\r?\n|\r");
+            foreach (var str in tokens)
+            {
+                myWriter.WriteLine(str);
             }
         }
 

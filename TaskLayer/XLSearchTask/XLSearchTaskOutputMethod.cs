@@ -261,7 +261,7 @@ namespace TaskLayer
                      {
                          base_name = filePathNoExtension,
                          //search_engine = pepXML.Generated.engineType.Kojak,
-                         search_engine_version = GlobalEngineLevelSettings.MetaMorpheusVersion,
+                         search_engine_version = GlobalVariables.MetaMorpheusVersion,
                          precursor_mass_type = pepXML.Generated.massType.monoisotopic,
                          fragment_mass_type = pepXML.Generated.massType.monoisotopic,
                          search_id = 1,
