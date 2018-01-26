@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using Nett;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
@@ -126,7 +125,7 @@ namespace MetaMorpheusGUI
         {
             DialogResult = false;
         }
-        
+
         #endregion Private Methods
     }
 }

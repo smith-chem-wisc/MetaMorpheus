@@ -43,7 +43,7 @@ namespace MetaMorpheusGUI
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
-            
+
             EverythingRunnerEngine.NewDbsHandler += AddNewDB;
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
             EverythingRunnerEngine.StartingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
@@ -71,7 +71,6 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
 
-
             // LOAD GUI SETTINGS
             GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
 
@@ -90,10 +89,38 @@ namespace MetaMorpheusGUI
 
         #endregion Public Constructors
 
-        #region Private Methods
-        
+        #region Public Properties
+
         public static string NewestKnownVersion { get; private set; }
+
+        #endregion Public Properties
+
+        #region Internal Properties
+
         internal GuiGlobalParams GuiGlobalParams { get; }
+
+        #endregion Internal Properties
+
+        #region Private Methods
+
+        private static void GetVersionNumbersFromWeb()
+        {
+            // Attempt to get current MetaMorpheus version
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
+
+                using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
+                {
+                    var json = response.Content.ReadAsStringAsync().Result;
+                    JObject deserialized = JObject.Parse(json);
+                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+                    if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
+                        throw new MetaMorpheusException("Necessary files do not exist!");
+                    NewestKnownVersion = deserialized["tag_name"].ToString();
+                }
+            }
+        }
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
@@ -897,25 +924,6 @@ namespace MetaMorpheusGUI
                     File.WriteAllLines(fullPathofToml[i] + ".toml", lines);
                 }
                 UpdateFileSpecificParamsDisplay(fullPathofToml);
-            }
-        }
-
-        private static void GetVersionNumbersFromWeb()
-        {
-            // Attempt to get current MetaMorpheus version
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
-
-                using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
-                {
-                    var json = response.Content.ReadAsStringAsync().Result;
-                    JObject deserialized = JObject.Parse(json);
-                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
-                    if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
-                        throw new MetaMorpheusException("Necessary files do not exist!");
-                    NewestKnownVersion = deserialized["tag_name"].ToString();
-                }
             }
         }
 

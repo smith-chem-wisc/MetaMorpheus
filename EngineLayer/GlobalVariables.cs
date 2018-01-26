@@ -25,16 +25,14 @@ namespace EngineLayer
             else
                 DataDir = AppDomain.CurrentDomain.BaseDirectory;
 
-            ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");    
-            
-            UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
+            ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
 
+            UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
 
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
             PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
-
 
             allModsKnown = new List<Modification>();
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
@@ -63,6 +61,7 @@ namespace EngineLayer
 
         // File locations
         public static string DataDir { get; }
+
         public static string ElementsLocation { get; }
 
         public static string MetaMorpheusVersion { get; }

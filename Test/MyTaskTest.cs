@@ -368,7 +368,7 @@ namespace Test
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
+                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => b.id.Equals("ok")).ToList()).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 PeptideWithSetModifications targetGood = targetDigested[0];
