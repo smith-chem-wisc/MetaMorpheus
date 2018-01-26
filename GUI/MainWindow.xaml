@@ -55,7 +55,7 @@
                         HorizontalAlignment="Stretch"
                         Background="Silver"
                         Height="5" />
-                <GroupBox Header="Datafiles" Grid.Row="2"  Name="datafilesGroupBox">
+                <GroupBox Header="Mass Spec Files" Grid.Row="2"  Name="datafilesGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
