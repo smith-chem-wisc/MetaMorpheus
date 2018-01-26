@@ -44,7 +44,6 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public static Dictionary<string, int> ModstoWritePruned { get; set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
@@ -219,6 +218,11 @@ namespace EngineLayer
         }
 
         public override string ToString()
+        {
+            return ToString(new Dictionary<string, int>());
+        }
+
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             var sb = new StringBuilder();
 

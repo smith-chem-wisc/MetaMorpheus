@@ -166,7 +166,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public virtual string EssentialSequence(Dictionary<string, int> ModstoWritePruned)
+        public virtual string EssentialSequence(IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             string essentialSequence = BaseSequence;
             if (ModstoWritePruned != null)

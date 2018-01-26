@@ -294,13 +294,13 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected static void WritePsmsToTsv(IEnumerable<Psm> items, string filePath)
+        protected static void WritePsmsToTsv(IEnumerable<Psm> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(Psm.GetTabSeparatedHeader());
                 foreach (var heh in items)
-                    output.WriteLine(heh);
+                    output.WriteLine(heh.ToString(ModstoWritePruned));
             }
         }
 
