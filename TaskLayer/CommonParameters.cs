@@ -43,7 +43,6 @@ namespace TaskLayer
             DeconvolutionMaxAssumedChargeState = 12;
             DeconvolutionMassTolerance = new PpmTolerance(4);
             ReportAllAmbiguity = true;
-            ExcelCompatible = true;
 
             TopNpeaks = 200;
             MinRatio = 0.01;
@@ -89,8 +88,7 @@ namespace TaskLayer
         public IDigestionParams DigestionParams { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
-
-        public bool ExcelCompatible { get; set; }
+        
         public int? TopNpeaks { get; set; }
         public double? MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }
