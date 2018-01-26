@@ -19,14 +19,34 @@ namespace EngineLayer
 
         static GlobalVariables()
         {
-            var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
-                DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
-            else
-                DataDir = AppDomain.CurrentDomain.BaseDirectory;
+            #region Determine MetaMorpheusVersion
+
+            MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
+
+            if (MetaMorpheusVersion.Equals("1.0.0.0"))
+            {
+#if DEBUG
+                MetaMorpheusVersion = "Not a release version. DEBUG.";
+#else
+                MetaMorpheusVersion = "Not a release version.";
+#endif
+            }
+
+            #endregion Determine MetaMorpheusVersion
+
+            #region Figure out DataDir
+
+            {
+                var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+                    DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+                else
+                    DataDir = AppDomain.CurrentDomain.BaseDirectory;
+            }
+
+            #endregion Figure out DataDir
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
-
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
 
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
@@ -37,20 +57,10 @@ namespace EngineLayer
             allModsKnown = new List<Modification>();
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-            AddMods(GlobalVariables.UnimodDeserialized.OfType<ModificationWithLocation>());
-            AddMods(GlobalVariables.UniprotDeseralized.OfType<ModificationWithLocation>());
+            AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
+            AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
 
-            MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
-
-            if (MetaMorpheusVersion.Equals("1.0.0.0"))
-            {
-#if DEBUG
-                MetaMorpheusVersion = "Not a release version. DEBUG.";
-#else
-                MetaMorpheusVersion = "Not a release version.";
-#endif
-            }
 
             ProteaseDictionary = LoadProteaseDictionary(Path.Combine(DataDir, @"Data", "proteases.tsv"));
         }
@@ -63,13 +73,12 @@ namespace EngineLayer
         public static string DataDir { get; }
 
         public static string ElementsLocation { get; }
-
         public static string MetaMorpheusVersion { get; }
         public static IGlobalSettings GlobalSettings { get; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-        public static IDictionary<string, Protease> ProteaseDictionary { get; }
+        public static IReadOnlyDictionary<string, Protease> ProteaseDictionary { get; }
         public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
 
         #endregion Public Properties

@@ -29,7 +29,6 @@ namespace EngineLayer
         double ScoreCutoff { get; }
         IDigestionParams DigestionParams { get; }
         bool ReportAllAmbiguity { get; }
-        bool ExcelCompatible { get; }
         int? TopNpeaks { get; }
         double? MinRatio { get; }
         bool TrimMs1Peaks { get; }
