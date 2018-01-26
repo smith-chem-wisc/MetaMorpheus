@@ -75,11 +75,11 @@ namespace Test
                     SearchType = SearchType.Modern,
                 }
             };
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-                new Tuple<string, MetaMorpheusTask>("task1", task1),
-                new Tuple<string, MetaMorpheusTask>("task2", task2),
-                new Tuple<string, MetaMorpheusTask>("task3", task3),
-                new Tuple<string, MetaMorpheusTask>("task4", task4),};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
+                ("task1", task1),
+                ("task2", task2),
+                ("task3", task3),
+                ("task4", task4),};
 
             #endregion Setup tasks
 
@@ -184,11 +184,11 @@ namespace Test
                     SearchType = SearchType.Modern,
                 }
             };
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-                new Tuple<string, MetaMorpheusTask>("task1", task1),
-                new Tuple<string, MetaMorpheusTask>("task2", task2),
-                new Tuple<string, MetaMorpheusTask>("task3", task3),
-                new Tuple<string, MetaMorpheusTask>("task4", task4),};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
+                ("task1", task1),
+                ("task2", task2),
+                ("task3", task3),
+                ("task4", task4),};
 
             #endregion Setup tasks
 
@@ -407,8 +407,8 @@ namespace Test
             };
 
             //add task to task list
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-               new Tuple<string, MetaMorpheusTask>("task1", task1)};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
+               ("task1", task1)};
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
@@ -521,7 +521,7 @@ namespace Test
             task5.SearchParameters.ModsToWriteSelection["missing"] = 3;
 
             //add task 1 to task list
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("task5", task5) };
+            List< (string, MetaMorpheusTask) > taskList = new List<(string, MetaMorpheusTask)> { ("task5", task5) };
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif2);
 
@@ -667,8 +667,8 @@ namespace Test
                 }
             };
 
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-               new Tuple<string, MetaMorpheusTask>("TestUnique", testUnique)};
+            List< (string, MetaMorpheusTask) > taskList = new List<(string, MetaMorpheusTask)> {
+               ("TestUnique", testUnique)};
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 

@@ -67,7 +67,7 @@ namespace MetaMorpheusCommandLine
                     if (!Path.GetExtension(db).Equals(".fasta"))
                         GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
 
-                List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>>();
+                List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 
                 for (int i = 0; i < p.Object.Tasks.Count; i++)
                 {
@@ -79,22 +79,22 @@ namespace MetaMorpheusCommandLine
                     {
                         case "Search":
                             var ye1 = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "SearchTask", ye1));
+                            taskList.Add(("Task" + (i + 1) + "SearchTask", ye1));
                             break;
 
                         case "Calibrate":
                             var ye2 = Toml.ReadFile<CalibrationTask>(filePath, MetaMorpheusTask.tomlConfig);
-                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "CalibrationTask", ye2));
+                            taskList.Add(("Task" + (i + 1) + "CalibrationTask", ye2));
                             break;
 
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(filePath, MetaMorpheusTask.tomlConfig);
-                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "GptmdTask", ye3));
+                            taskList.Add(("Task" + (i + 1) + "GptmdTask", ye3));
                             break;
 
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "XLSearchTask", ye4));
+                            taskList.Add(("Task" + (i + 1) + "XLSearchTask", ye4));
                             break;
 
                         default:
