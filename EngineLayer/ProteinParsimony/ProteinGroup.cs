@@ -146,7 +146,7 @@ namespace EngineLayer
             // list of protein names
             sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName))));
             sb.Append("\t");
-            
+
             // list of masses
             IDigestionParams digestionParams = new TDdigest();
             sb.Append(string.Join("|", new HashSet<double>(Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass))));
@@ -432,8 +432,14 @@ namespace EngineLayer
             return subsetPg;
         }
 
+        #endregion Public Methods
+
+        #region Private Classes
+
         private class TDdigest : IDigestionParams
         {
+            #region Public Properties
+
             public int MaxMissedCleavages => 0;
 
             public int? MinPeptideLength => 0;
@@ -451,8 +457,10 @@ namespace EngineLayer
             public bool SemiProteaseDigestion => false;
 
             public TerminusType TerminusTypeSemiProtease => throw new System.NotImplementedException();
+
+            #endregion Public Properties
         }
 
-        #endregion Public Methods
+        #endregion Private Classes
     }
 }

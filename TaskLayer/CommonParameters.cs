@@ -24,7 +24,7 @@ namespace TaskLayer
             TotalPartitions = 1;
             LocalizeAll = true;
 
-            ListOfModsVariable = new List<(string, string)> {  ("Common Variable", "Oxidation of M") };
+            ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             ListOfModsLocalize = null;
 

@@ -229,11 +229,11 @@ namespace MetaMorpheusGUI
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             CommonParamsToSave.ListOfModsVariable = listOfModsVariable;
-            
+
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
-           CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
+            CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
 
             if (localizeAllCheckBox.IsChecked.Value)
             {

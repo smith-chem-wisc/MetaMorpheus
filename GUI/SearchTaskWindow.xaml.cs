@@ -380,7 +380,7 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.SearchType = SearchType.Modern;
             else //if (nonSpecificSearchRadioButton.IsChecked.Value)
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
-            
+
             TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = checkBoxQuantification.IsChecked.Value;

@@ -11,9 +11,9 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Chemistry.PeriodicTable;
-using TaskLayer;
 
 namespace Test
 {

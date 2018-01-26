@@ -25,13 +25,13 @@ namespace EngineLayer
 
         public string Name { get; }
 
-        public TerminusType CleavageTerminus { get;  }
-        public IEnumerable<string> SequencesInducingCleavage { get;  }
-        public IEnumerable<string> SequencesPreventingCleavage { get;  }
-        public CleavageSpecificity CleavageSpecificity { get;  }
-        public string PsiMsAccessionNumber { get;  }
-        public string PsiMsName { get;  }
-        public string SiteRegexp { get;  }
+        public TerminusType CleavageTerminus { get; }
+        public IEnumerable<string> SequencesInducingCleavage { get; }
+        public IEnumerable<string> SequencesPreventingCleavage { get; }
+        public CleavageSpecificity CleavageSpecificity { get; }
+        public string PsiMsAccessionNumber { get; }
+        public string PsiMsName { get; }
+        public string SiteRegexp { get; }
 
         #endregion Public Properties
 

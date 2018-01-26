@@ -2,7 +2,7 @@
 
 namespace TaskLayer
 {
-    public class DigestionParams: IDigestionParams
+    public class DigestionParams : IDigestionParams
     {
         #region Public Constructors
 

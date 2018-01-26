@@ -23,7 +23,7 @@ namespace Test
             EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Environment.CurrentDirectory);
 
             a.Run();
-            
+
             var thisTaskOutputFolder = MySetUpClass.outputFolder;
 
             var peaks = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_QuantifiedPeaks.tsv");

@@ -2,6 +2,8 @@
 {
     public interface IDigestionParams
     {
+        #region Public Properties
+
         int MaxMissedCleavages { get; }
         int? MinPeptideLength { get; }
         int? MaxPeptideLength { get; }
@@ -11,5 +13,7 @@
         Protease Protease { get; }
         bool SemiProteaseDigestion { get; }
         TerminusType TerminusTypeSemiProtease { get; }
+
+        #endregion Public Properties
     }
 }
