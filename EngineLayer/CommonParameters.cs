@@ -53,8 +53,9 @@ namespace EngineLayer
 
         #endregion Public Constructors
 
-        #region Public Properties
+        #region Public Properties 
 
+        //Any new property must also be added in MetaMorpheusTask.SetAllFileSpecificCommonParams, else it be overwritten by file specific params
         public int? MaxParallelFilesToAnalyze { get; set; }
         public int MaxThreadsToUsePerFile { get; set; }
         public bool LocalizeAll { get; set; }
@@ -100,15 +101,7 @@ namespace EngineLayer
 
         #endregion Public Properties
 
-        #region Public Methods
 
-        public CommonParameters Clone(string taskDescriptor)
-        {
-            CommonParameters cpToReturn = (CommonParameters)this.MemberwiseClone();
-            cpToReturn.TaskDescriptor = taskDescriptor;
-            return cpToReturn;
-        }
 
-        #endregion Public Methods
     }
 }

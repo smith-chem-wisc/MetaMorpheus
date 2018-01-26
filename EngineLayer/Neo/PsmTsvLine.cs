@@ -20,6 +20,7 @@ namespace EngineLayer.Neo
             this.target = target;
             this.decoy = decoy;
             this.q = q;
+            neoType = null;
         }
 
         public string[] line { get; set; }
@@ -34,6 +35,9 @@ namespace EngineLayer.Neo
         public string target { get; set; }
         public string decoy { get; set; }
         public string q { get; set; }
+        public enum NeoType { Normal, Spliced, DecoySpliced};
+        public NeoType? neoType { get; set; }
+
 
         public PsmTsvLine AggregateLine(PsmTsvLine secondary)
         {
@@ -69,6 +73,8 @@ namespace EngineLayer.Neo
                 else
                     sb.Append(line[i] + '\t');
             }
+            if (neoType != null)
+                sb.Append(neoType.ToString());
             return sb.ToString();
         }
     }

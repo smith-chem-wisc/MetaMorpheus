@@ -21,7 +21,12 @@ namespace EngineLayer.Neo
                 //this.worker.ReportProgress(Convert.ToInt16((Convert.ToDouble(counter) / Convert.ToDouble(psms.Count())) * 100));
                 //counter++;
                 //preliminary filters can be removed if MassMatch calls to IonCrop are set to true.
+                if (psm.cInfo.seq.Contains("AWRRSC"))
+                { }
                 string B = IonCrop(psm.nInfo.seq, psm.expMass, 0, ProductType.B, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
+
+                if(psm.cInfo.seq.Contains("AWRRSC"))
+                { }
                 string Y = IonCrop(psm.cInfo.seq, psm.expMass, 0, ProductType.Y, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
                 for (int y = 0; y < Y.Length - ionsUsedMassVer; y++) //foreach y aa removed
                 {
@@ -105,9 +110,9 @@ namespace EngineLayer.Neo
                     if (ion == ProductType.B)
                     {
                         ionFrag = ionSequence.Substring(0, (ionSequence.Length - fragNumber));
-                        if (ionFrag.Substring(ionSequence.Length - fragNumber - 1, 1) == ")") //if end of a PTM annotation
+                        if (ionFrag.Substring(ionSequence.Length - fragNumber - 1, 1) == "]") //if end of a PTM annotation
                         {
-                            while (ionFrag.Substring(ionSequence.Length - fragNumber - 1, 1) != "(")
+                            while (ionFrag.Substring(ionSequence.Length - fragNumber - 1, 1) != "[")
                             {
                                 fragNumber++;
                                 ionFrag = ionSequence.Substring(0, (ionSequence.Length - fragNumber));
@@ -119,9 +124,9 @@ namespace EngineLayer.Neo
                     else //Ion==Y
                     {
                         ionFrag = ionSequence.Substring((0 + fragNumber), (ionSequence.Length - fragNumber));
-                        if (ionFrag.Substring(0, 1) == "(") //if start of a PTM annotation
+                        if (ionFrag.Substring(0, 1) == "[") //if start of a PTM annotation
                         {
-                            while (ionFrag.Substring(0, 1) != ")")
+                            while (ionFrag.Substring(0, 1) != "]")
                             {
                                 fragNumber++;
                                 ionFrag = ionSequence.Substring((0 + fragNumber), (ionSequence.Length - fragNumber));
@@ -193,15 +198,17 @@ namespace EngineLayer.Neo
         //If checkToRemoveExtraAA is true, additional AA will be removed to achieve a theoretical mass less than the Experimental mass
         public static string IonCrop(string ionSequence, double experimentalMass, int fragNumber, ProductType ion, bool checkToRemoveExtraAA)
         {
+            if(ionSequence.Contains("AWRRSC"))
+            { }
             do
             {
                 string ionFrag;
                 if (ion == ProductType.B)
                 {
                     ionFrag = ionSequence.Substring(0, (ionSequence.Length - fragNumber));
-                    if (ionFrag.Substring(ionSequence.Length - fragNumber - 1, 1) == ")") //if end of a PTM annotation
+                    if (ionFrag.Substring(ionSequence.Length - fragNumber - 1, 1) == "]") //if end of a PTM annotation
                     {
-                        while (ionFrag.Substring(ionSequence.Length - fragNumber - 1, 1) != "(")
+                        while (ionFrag.Substring(ionSequence.Length - fragNumber - 1, 1) != "[")
                         {
                             fragNumber++;
                             ionFrag = ionSequence.Substring(0, (ionSequence.Length - fragNumber));
@@ -213,9 +220,9 @@ namespace EngineLayer.Neo
                 else //Ion==Y
                 {
                     ionFrag = ionSequence.Substring((0 + fragNumber), (ionSequence.Length - fragNumber));
-                    if (ionFrag.Substring(0, 1) == "(") //if start of a PTM annotation
+                    if (ionFrag.Substring(0, 1) == "[") //if start of a PTM annotation
                     {
-                        while (ionFrag.Substring(0, 1) != ")")
+                        while (ionFrag.Substring(0, 1) != "]")
                         {
                             fragNumber++;
                             ionFrag = ionSequence.Substring((0 + fragNumber), (ionSequence.Length - fragNumber));

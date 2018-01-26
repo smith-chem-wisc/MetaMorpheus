@@ -23,13 +23,13 @@ namespace EngineLayer.ModernSearch
         protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
-        protected readonly double? weightIons;
+        protected readonly double weightIons;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, double? weightIons, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, double weightIons, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -111,7 +111,7 @@ namespace EngineLayer.ModernSearch
                             Array.Sort(productMasses);
 
                             double thePrecursorMass = scan.PrecursorMass;
-                            double score = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
+                            double score = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons, weightIons);
                             int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMassIncludingFixedMods);
 
                             if (score > CommonParameters.ScoreCutoff)
@@ -177,7 +177,7 @@ namespace EngineLayer.ModernSearch
                             protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
                             int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
                             int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentFloorMass;
-                            if (compFragmentFloorMass > 0)
+                            if (compFragmentFloorMass > 0 && compFragmentCeilingMass < fragmentIndex.Length)
                                 for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
                                     if (fragmentIndex[fragmentBin] != null)
                                         binsToSearch.Add(fragmentBin);
@@ -255,11 +255,11 @@ namespace EngineLayer.ModernSearch
                     if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
                         idsOfPeptidesPossiblyObserved.Add(id);
                 }
-                if(weightIons!=null)
+                if(weightIons>0)
                 {
                     for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
                     {
-                        if (j < weightIons * 1000)
+                        if (j < weightIons * fragmentBinsPerDalton)
                         {
                             int id = peptideIdsInThisBin[j];
                             scoringTable[id]++;

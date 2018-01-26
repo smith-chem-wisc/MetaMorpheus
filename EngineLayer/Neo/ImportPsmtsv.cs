@@ -30,7 +30,7 @@ namespace EngineLayer.Neo
         public static readonly string accessionHeader = "Protein Accession";
         public static readonly string proteinHeader = "Protein Name";
         public static readonly string geneHeader = "Gene Name";
-        public static readonly string DCTHeader = "Decoy / Contaminant / Target";
+        public static readonly string DCTHeader = "Decoy/Contaminant/Target";
         public static readonly string targetHeader = "Cumulative Target";
         public static readonly string decoyHeader = "Cumulative Decoy";
         public static readonly string qHeader = "QValue";
@@ -38,11 +38,9 @@ namespace EngineLayer.Neo
         public static readonly string matchedIonsHeader = "Matched Ion Masses";
         public static readonly string matchedionCountsHeader = "Matched Ion Counts";
 
-        public static List<PsmTsvLine> ImportLinesToAggregate(string[] lines)
+        public static void ParseHeader(string header)
         {
-            List<PsmTsvLine> results = new List<PsmTsvLine>();
-
-            string[] headerArray = lines[0].Split('\t');
+            string[] headerArray = header.Split('\t');
             for (int i = 0; i < headerArray.Length; i++)
             {
                 string currentHeader = headerArray[i];
@@ -51,9 +49,12 @@ namespace EngineLayer.Neo
                 else if (currentHeader.Equals(scoreHeader))
                     scoreIndex = i;
                 else if (currentHeader.Equals(baseHeader))
+                {
                     baseIndex = i;
-                else if (currentHeader.Equals(fullHeader))
-                    fullIndex = i;
+                    fullIndex = i; //workaround for open mass searches generating thousands of combinations; eventually patch
+                }
+                //else if (currentHeader.Equals(fullHeader))
+                //    fullIndex = i;
                 else if (currentHeader.Equals(accessionHeader))
                     accessionIndex = i;
                 else if (currentHeader.Equals(proteinHeader))
@@ -62,8 +63,26 @@ namespace EngineLayer.Neo
                     geneIndex = i;
                 else if (currentHeader.Equals(DCTHeader))
                     DCTIndex = i;
-
+                else if (currentHeader.Equals(targetHeader))
+                    targetIndex = i;
+                else if (currentHeader.Equals(decoyHeader))
+                    decoyIndex = i;
+                else if (currentHeader.Equals(qHeader))
+                    qIndex = i;
+                else if (currentHeader.Equals(scanPrecursorMassHeader))
+                    scanPrecursorMassIndex = i;
+                else if (currentHeader.Equals(matchedIonsHeader))
+                    matchedIonsIndex = i;
+                else if (currentHeader.Equals(matchedionCountsHeader))
+                    matchedIonCountsIndex = i;
             }
+        }
+
+        public static List<PsmTsvLine> ImportLinesToAggregate(string[] lines)
+        {
+            List<PsmTsvLine> results = new List<PsmTsvLine>();
+
+            ParseHeader(lines[0]);
             for (int i = 1; i < lines.Length; i++)
             {
                 string[] lineArray = lines[i].Split('\t');
@@ -77,24 +96,7 @@ namespace EngineLayer.Neo
             string[] nInput = File.ReadAllLines(nFileName);
             string[] cInput = File.ReadAllLines(cFileName);
             List<NeoPsm> psms = new List<NeoPsm>();
-            string[] header = nInput[0].Split('\t');
-            for (int col = 0; col < header.Length; col++)
-            {
-                if (header[col].Equals(scanNumberHeader))
-                    scanNumberIndex = col;
-                else if (header[col].Equals(scanPrecursorMassHeader))
-                    scanPrecursorMassIndex = col;
-                else if (header[col].Equals(accessionHeader))
-                    accessionIndex = col;
-                else if (header[col].Equals(baseHeader)) //"FullSequence" should be used for the detection of FPs containing PTMs and for missed cleave/nonspecific peptides containing PTMs
-                    fullIndex = col;
-                else if (header[col].Equals(matchedIonsHeader))
-                    matchedIonsIndex = col;
-                else if (header[col].Equals(matchedionCountsHeader))
-                    matchedIonCountsIndex = col;
-                else if (header[col].Equals(scoreHeader))
-                    scoreIndex = col;
-            }
+            ParseHeader(nInput[0]);
 
             List<InitialID> nAssignment = new List<InitialID>();
             List<InitialID> cAssignment = new List<InitialID>();

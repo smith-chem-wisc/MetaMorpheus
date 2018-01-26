@@ -12,13 +12,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using System.Collections.Generic;
 
 namespace MetaMorpheusGUI
 {
     internal static class NeoLoadTomls
     {
-        public static string novelAddition = @"NeoTomlFiles\";
-        public static string defaultAddition = @"EngineLayer\Neo\TomlFiles\";
+        private static string novelAddition = @"NeoTomlFiles\";
+        private static string defaultAddition = @"EngineLayer\Neo\TomlFiles\";
 
         public static void LoadTomls(NeoSearchTask ye5, ObservableCollection<PreRunTask> staticTasksObservableCollection, string draggedFilePath)
         {
@@ -34,12 +35,19 @@ namespace MetaMorpheusGUI
                 defaultFolderPath += splitPath[i] + '\\';
             defaultFolderPath += defaultAddition;
 
+            #region write TOML
+
+            var tomlFileName = Path.Combine(defaultFolderPath, ye5.GetType().Name + "config.toml");
+            Toml.WriteFile(ye5, tomlFileName, MetaMorpheusTask.tomlConfig);
+
+            #endregion write TOML
+
             if (ye5.NeoParameters.Calibrate)
             {
                 string caliFileName = "CalibrationTaskconfig.toml";
                 caliFileName = File.Exists(novelFolderPath + caliFileName) ? novelFolderPath + caliFileName : defaultFolderPath + caliFileName;
+                UpdateTomls(tomlFileName, caliFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<CalibrationTask>(caliFileName, MetaMorpheusTask.tomlConfig);
-                yeo.CommonParameters = ye5.CommonParameters.Clone(yeo.CommonParameters.TaskDescriptor);
                 AddTaskToCollection(yeo, staticTasksObservableCollection);
             }
 
@@ -47,8 +55,8 @@ namespace MetaMorpheusGUI
             {
                 string gptmdFileName = "GptmdTaskconfig.toml";
                 gptmdFileName = File.Exists(novelFolderPath + gptmdFileName) ? novelFolderPath + gptmdFileName : defaultFolderPath + gptmdFileName;
+                UpdateTomls(tomlFileName, gptmdFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<GptmdTask>(gptmdFileName, MetaMorpheusTask.tomlConfig);
-                yeo.CommonParameters = ye5.CommonParameters.Clone(yeo.CommonParameters.TaskDescriptor);
                 AddTaskToCollection(yeo, staticTasksObservableCollection);
             }
 
@@ -56,17 +64,17 @@ namespace MetaMorpheusGUI
             {
                 string targetFileName = "SearchTaskTargetconfig.toml";
                 targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
-                yeo.CommonParameters = ye5.CommonParameters.Clone(yeo.CommonParameters.TaskDescriptor);
                 AddTaskToCollection(yeo, staticTasksObservableCollection);
             }
 
             if (ye5.NeoParameters.DecoySearch)
             {
-                string targetFileName = "SearchTaskDecoyconfig.toml";
-                targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
-                var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
-                yeo.CommonParameters = ye5.CommonParameters.Clone(yeo.CommonParameters.TaskDescriptor);
+                string decoyFileName = "SearchTaskDecoyconfig.toml";
+                decoyFileName = File.Exists(novelFolderPath + decoyFileName) ? novelFolderPath + decoyFileName : defaultFolderPath + decoyFileName;
+                UpdateTomls(tomlFileName, decoyFileName, ye5.CommonParameters, TerminusType.None, false);
+                var yeo = Toml.ReadFile<SearchTask>(decoyFileName, MetaMorpheusTask.tomlConfig);
                 AddTaskToCollection(yeo, staticTasksObservableCollection);
             }
 
@@ -81,8 +89,8 @@ namespace MetaMorpheusGUI
             {
                 string targetFileName = "SearchTaskNconfig.toml";
                 targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.N, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
-                yeo.CommonParameters = ye5.CommonParameters.Clone(yeo.CommonParameters.TaskDescriptor);
                 AddTaskToCollection(yeo, staticTasksObservableCollection);
             }
 
@@ -90,8 +98,8 @@ namespace MetaMorpheusGUI
             {
                 string targetFileName = "SearchTaskCconfig.toml";
                 targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.C, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
-                yeo.CommonParameters = ye5.CommonParameters.Clone(yeo.CommonParameters.TaskDescriptor);
                 AddTaskToCollection(yeo, staticTasksObservableCollection);
             }
 
@@ -104,20 +112,26 @@ namespace MetaMorpheusGUI
 
             string cisFileName = "SearchTaskCisconfig.toml";
             cisFileName = File.Exists(novelFolderPath + cisFileName) ? novelFolderPath + cisFileName : defaultFolderPath + cisFileName;
+            UpdateTomls(tomlFileName, cisFileName, ye5.CommonParameters, TerminusType.None, true);
             var yeocis = Toml.ReadFile<SearchTask>(cisFileName, MetaMorpheusTask.tomlConfig);
-            yeocis.CommonParameters = ye5.CommonParameters.Clone(yeocis.CommonParameters.TaskDescriptor);
             AddTaskToCollection(yeocis, staticTasksObservableCollection);
 
             string transFileName = "SearchTaskTransconfig.toml";
             transFileName = File.Exists(novelFolderPath + transFileName) ? novelFolderPath + transFileName : defaultFolderPath + transFileName;
+            UpdateTomls(tomlFileName, transFileName, ye5.CommonParameters, TerminusType.None, true);
             var yeotrans = Toml.ReadFile<SearchTask>(transFileName, MetaMorpheusTask.tomlConfig);
-            yeotrans.CommonParameters = ye5.CommonParameters.Clone(yeotrans.CommonParameters.TaskDescriptor);
             AddTaskToCollection(yeotrans, staticTasksObservableCollection);
 
             var yeo5_3 = ye5.Clone();
             yeo5_3.AggregateTargetDecoyFiles = false;
             yeo5_3.AggregateNormalSplicedFiles = true;
             yeo5_3.GenerateSplicedPeptides = false;
+
+            #region DeleteTomlFile
+
+            File.Delete(tomlFileName);
+
+            #endregion DeleteTomlFile
 
             AddTaskToCollection(yeo5_3, staticTasksObservableCollection);
         }
@@ -127,6 +141,79 @@ namespace MetaMorpheusGUI
             PreRunTask teo = new PreRunTask(yeo);
             staticTasksObservableCollection.Add(teo);
             staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(teo) + 1) + "-" + yeo.CommonParameters.TaskDescriptor;
+        }
+
+        private static void UpdateTomls(string tomlFileName, string fileName, ICommonParameters ye5, TerminusType terminusType, bool spliceSearch)
+        {
+            string[] oldTomlLines = File.ReadAllLines(@fileName);
+            List<string> newTomlLines = new List<string>();
+            foreach (string line in oldTomlLines)
+            {
+                if (line.Contains("LocalizeAll"))
+                    newTomlLines.Add(GetCorrectValue("LocalizeAll", tomlFileName, line));
+                else if (line.Contains("ListOfModsFixed"))
+                    newTomlLines.Add(GetCorrectValue("ListOfModsFixed", tomlFileName, line));
+                else if (line.Contains("ListOfModsVariable"))
+                    newTomlLines.Add(GetCorrectValue("ListOfModsVariable", tomlFileName, line));
+                else if (line.Contains("BIons"))
+                {
+                    if (terminusType.Equals(TerminusType.N) || terminusType.Equals(TerminusType.None))
+                        newTomlLines.Add(GetCorrectValue("BIons", tomlFileName, line));
+                    else
+                        newTomlLines.Add("BIons = false");
+                }
+                else if (line.Contains("YIons"))
+                {
+                    if (terminusType.Equals(TerminusType.C) || terminusType.Equals(TerminusType.None))
+                        newTomlLines.Add(GetCorrectValue("YIons", tomlFileName, line));
+                    else
+                        newTomlLines.Add("YIons = false");
+                }
+                else if (line.Contains("ZdotIons"))
+                {
+                    if (terminusType.Equals(TerminusType.C) || terminusType.Equals(TerminusType.None))
+                        newTomlLines.Add(GetCorrectValue("ZdotIons", tomlFileName, line));
+                    else
+                        newTomlLines.Add("ZdotIons = false");
+                }
+                else if (line.Contains("CIons"))
+                {
+                    if (terminusType.Equals(TerminusType.N) || terminusType.Equals(TerminusType.None))
+                        newTomlLines.Add(GetCorrectValue("CIons", tomlFileName, line));
+                    else
+                        newTomlLines.Add("CIons = false");
+                }
+                else if (line.Contains("ProductMassTolerance"))
+                    newTomlLines.Add(GetCorrectValue("ProductMassTolerance", tomlFileName, line));
+                else if (line.Contains("PrecursorMassTolerance"))
+                    newTomlLines.Add(GetCorrectValue("PrecursorMassTolerance", tomlFileName, line));
+                else if (line.Contains("MaxMissedCleavages"))
+                    newTomlLines.Add(GetCorrectValue("MaxMissedCleavages", tomlFileName, line));
+                else if (line.Contains("InitiatorMethionineBehavior"))
+                    newTomlLines.Add(GetCorrectValue("InitiatorMethionineBehavior", tomlFileName, line));
+                else if (line.Contains("MinPeptideLength") && !!terminusType.Equals(TerminusType.None))
+                    newTomlLines.Add(GetCorrectValue("MinPeptideLength", tomlFileName, line));
+                else if (line.Contains("MaxModificationIsoforms"))
+                    newTomlLines.Add(GetCorrectValue("MaxModificationIsoforms", tomlFileName, line));
+                else if (line.Contains("MaxModsForPeptide"))
+                    newTomlLines.Add(GetCorrectValue("MaxModsForPeptide", tomlFileName, line));
+                else if (line.Contains("Protease") && terminusType.Equals(TerminusType.None) && !spliceSearch)
+                    newTomlLines.Add(GetCorrectValue("Protease", tomlFileName, line));
+                else
+                    newTomlLines.Add(line);
+            }
+            using (StreamWriter file = new StreamWriter(fileName))
+                foreach (string line in newTomlLines)
+                    file.WriteLine(line);
+        }
+
+        private static string GetCorrectValue(string parameter, string tomlFileName, string oldLine)
+        {
+            string[] newTomlLines = File.ReadAllLines(@tomlFileName);
+            foreach (string line in newTomlLines)
+                if (line.Contains(parameter))
+                    return line;
+            return oldLine;
         }
     }
 }

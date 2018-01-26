@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.Neo
 {
-    public class NeoExport
+    public static class NeoExport
     {
         public static string folder;
 

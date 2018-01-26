@@ -62,7 +62,7 @@ namespace EngineLayer.Neo
             string[] seqArray = seq.Split(' ');
             foreach (char amino_acid in seqArray[0]) //if there are synonymous peaks, then the sequences must be identical or possess ambiguities that will be caught later
             {
-                if (amino_acid == ')') //only occurs at end of mod
+                if (amino_acid == ']') //only occurs at end of mod
                 {
                     //ModificationOn = false;
                     //double modMass = MassCalculator.getPTMMass(ModificationName, out string e);
@@ -74,11 +74,11 @@ namespace EngineLayer.Neo
                 {
                     ModificationName += amino_acid;
                 }
-                if (amino_acid == '(') //start collecting PTM name
+                if (amino_acid == '[') //start collecting PTM name
                 {
                     ModificationOn = true;
                 }
-                if (ModificationOn == false && amino_acid != ')')
+                if (ModificationOn == false && amino_acid != ']')
                 {
                     cleanedSeq += amino_acid;
                 }

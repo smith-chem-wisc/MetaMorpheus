@@ -14,10 +14,12 @@ namespace EngineLayer.Neo
         public static double[] AVERAGE_AMINO_ACID_MASSES;
         public static DataTable ModificationsDT = new DataTable();
 
-        public static void importMasses()
+        public static void ImportMasses()
         {
             AminoAcidMasses();
-            ModificationMasses();
+            //ModificationMasses();            
+            NeoFindAmbiguity.ReadMassDictionary();
+
         }
 
         public static bool IdenticalMasses(double experimental, double theoretical, double tolerance)
@@ -40,7 +42,11 @@ namespace EngineLayer.Neo
                 AVERAGE_AMINO_ACID_MASSES[i] = double.NaN;
             }
 
-            using (StreamReader amino_acids = new StreamReader(Path.Combine(Environment.CurrentDirectory, "Data\\amino_acids.tsv"))) //file located in Morpheus folder
+            string[] pathArray = Environment.CurrentDirectory.Split('\\');
+            string pathPrefix = "";
+            for (int i = 0; i < pathArray.Length - 3; i++)
+                pathPrefix += pathArray[i] + '\\';
+            using (StreamReader amino_acids = new StreamReader(Path.Combine(pathPrefix, "EngineLayer\\Neo\\Data\\amino_acids.tsv"))) //file located in Morpheus folder
             {
                 amino_acids.ReadLine();
 
@@ -130,7 +136,7 @@ namespace EngineLayer.Neo
             string ModificationName = "";
             foreach (char amino_acid in baseSequence)
             {
-                if (amino_acid == ')') //only occurs at end of mod
+                if (amino_acid == ']') //only occurs at end of mod
                 {
                     ModificationOn = false;
                     //if (ModificationName == "oxidation of M") //annotated differently than uniprot
@@ -140,18 +146,18 @@ namespace EngineLayer.Neo
                         monoisotopic_mass += 15.99491463;
                         ModificationName = "";
                     }
-                    else
-                    {
-                        DataRow[] PTMRow = ModificationsDT.Select("Name = '" + ModificationName + "'");
-                        monoisotopic_mass += Convert.ToDouble(PTMRow[0][1]);
-                        ModificationName = "";
-                    }
+                    //else
+                    //{
+                    //    DataRow[] PTMRow = ModificationsDT.Select("Name = '" + ModificationName + "'");
+                    //    monoisotopic_mass += Convert.ToDouble(PTMRow[0][1]);
+                    //    ModificationName = "";
+                    //}
                 }
                 if (ModificationOn == true) //only occurs if "(" already found
                     ModificationName += amino_acid;
-                if (amino_acid == '(') //start collecting PTM name
+                if (amino_acid == '[') //start collecting PTM name
                     ModificationOn = true;
-                if (ModificationOn == false && amino_acid != ')')
+                if (ModificationOn == false && amino_acid != ']')
                     monoisotopic_mass += GetMonoisotopicMass(amino_acid, baseSequence); //something making it here after (
             }
             return monoisotopic_mass;

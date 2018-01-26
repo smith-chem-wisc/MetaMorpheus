@@ -231,11 +231,14 @@ namespace EngineLayer.Neo
             foundIons[0] = true;//|A|B|C|D|E|F|K where the whole peptide peak is always placed arbitrarily at the n term
         }
 
-        private static void ReadMassDictionary()
+        public static void ReadMassDictionary()
         {
             List<double> tempKeys = new List<double>();
-
-            using (StreamReader masses = new StreamReader(Environment.CurrentDirectory + @"\Data\Dictionary" + maxMissingConsecutivePeaks + ".txt")) //file located in Morpheus folder
+            string[] pathArray = Environment.CurrentDirectory.Split('\\');
+            string pathPrefix = "";
+            for (int i = 0; i < pathArray.Length - 3; i++)
+                pathPrefix += pathArray[i] + '\\';
+            using (StreamReader masses = new StreamReader(pathPrefix + @"EngineLayer\\Neo\\Data\Dictionary" + maxMissingConsecutivePeaks + ".txt")) //file located in Morpheus folder
             {
                 while (masses.Peek() != -1)
                 {

@@ -287,6 +287,14 @@ namespace MetaMorpheusGUI
             neoParameters.MaxDistanceAllowed = int.Parse(maxCisLengthTextBox.Text);
             neoParameters.NormalCis = searchNormalCis.IsChecked.Value;
             neoParameters.ReverseCis = searchReverseCis.IsChecked.Value;
+            if (!searchTarget.IsChecked.Value)
+                neoParameters.TargetFilePath = targetPath.Text;
+            if (!searchDecoy.IsChecked.Value)
+                neoParameters.DecoyFilePath = decoyPath.Text;
+            if (!searchN.IsChecked.Value)
+                neoParameters.NFilePath = NPath.Text;
+            if (!searchC.IsChecked.Value)
+                neoParameters.CFilePath = CPath.Text;
 
             CommonParamsToSave.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             CommonParamsToSave.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
