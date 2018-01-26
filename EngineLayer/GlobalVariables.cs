@@ -1,121 +1,80 @@
 ﻿using Nett;
-using Newtonsoft.Json.Linq;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 
 namespace EngineLayer
 {
-    public static class GlobalEngineLevelSettings
+    public static class GlobalVariables
     {
-        #region Public Fields
-
-        public static readonly string elementsLocation;
-        public static readonly string modsLocation;
-        public static readonly string settingsTomlLocation;
-        public static readonly string unimodLocation;
-        public static readonly string dataDir;
-
-        #endregion Public Fields
-
         #region Private Fields
 
-        private static readonly string uniprotLocation;
-        private static readonly string psiModLocation;
-        private static readonly string proteasesLocation;
+        private static List<Modification> allModsKnown;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        static GlobalEngineLevelSettings()
+        static GlobalVariables()
         {
             var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
-            {
-                dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
-            }
+                DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
             else
-            {
-                dataDir = AppDomain.CurrentDomain.BaseDirectory;
-            }
-            elementsLocation = Path.Combine(dataDir, @"Data", @"elements.dat");
-            unimodLocation = Path.Combine(dataDir, @"Data", @"unimod.xml");
-            uniprotLocation = Path.Combine(dataDir, @"Data", @"ptmlist.txt");
-            psiModLocation = Path.Combine(dataDir, @"Data", @"PSI-MOD.obo.xml");
-            settingsTomlLocation = Path.Combine(dataDir, @"settings.toml");
-            proteasesLocation = Path.Combine(dataDir, @"Data", "proteases.tsv");
-            modsLocation = Path.Combine(dataDir, @"Mods");
+                DataDir = AppDomain.CurrentDomain.BaseDirectory;
 
-            // No exceptions to be caught here, since we are just reading these files!
-            UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-            UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
-            PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(psiModLocation);
+            ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
+
+            UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
+
+            UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
+            PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
-            UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation, formalChargesDictionary).ToList();
+            UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
-            MetaMorpheusVersion = typeof(GlobalEngineLevelSettings).Assembly.GetName().Version.ToString();
+            allModsKnown = new List<Modification>();
+            foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
+                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+            AddMods(GlobalVariables.UnimodDeserialized.OfType<ModificationWithLocation>());
+            AddMods(GlobalVariables.UniprotDeseralized.OfType<ModificationWithLocation>());
+
+            MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
+            GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
+
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
             {
-                AskAboutUpdating = false;
 #if DEBUG
                 MetaMorpheusVersion = "Not a release version. DEBUG.";
 #else
                 MetaMorpheusVersion = "Not a release version.";
 #endif
             }
-            else
-                AskAboutUpdating = Toml.ReadFile(settingsTomlLocation).Get<bool>("AskAboutUpdating");
 
-            ProteaseDictionary = LoadProteaseDictionary();
-            AllModsKnown = new List<Modification>();
+            ProteaseDictionary = LoadProteaseDictionary(Path.Combine(DataDir, @"Data", "proteases.tsv"));
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public static bool AskAboutUpdating { get; }
+        // File locations
+        public static string DataDir { get; }
+
+        public static string ElementsLocation { get; }
 
         public static string MetaMorpheusVersion { get; }
-
+        public static IGlobalSettings GlobalSettings { get; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
-
         public static IEnumerable<Modification> UniprotDeseralized { get; }
-
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-
-        public static Dictionary<string, Protease> ProteaseDictionary { get; }
-
-        public static List<Modification> AllModsKnown { get; }
-
-        public static string NewestKnownVersion { get; private set; }
+        public static IDictionary<string, Protease> ProteaseDictionary { get; }
+        public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
 
         #endregion Public Properties
 
         #region Public Methods
-
-        public static void GetVersionNumbersFromWeb()
-        {
-            // Attempt to get current MetaMorpheus version
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
-
-                using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
-                {
-                    var json = response.Content.ReadAsStringAsync().Result;
-                    JObject deserialized = JObject.Parse(json);
-                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
-                    if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
-                        throw new MetaMorpheusException("Necessary files do not exist!");
-                    NewestKnownVersion = deserialized["tag_name"].ToString();
-                }
-            }
-        }
 
         public static void AddMods(IEnumerable<Modification> enumerable)
         {
@@ -128,7 +87,7 @@ namespace EngineLayer
                 else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
                     continue;
                 else
-                    AllModsKnown.Add(ye);
+                    allModsKnown.Add(ye);
             }
         }
 
@@ -136,7 +95,7 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private static Dictionary<string, Protease> LoadProteaseDictionary()
+        private static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
         {
             Dictionary<string, Protease> dict = new Dictionary<string, Protease>();
             using (StreamReader proteases = new StreamReader(proteasesLocation))

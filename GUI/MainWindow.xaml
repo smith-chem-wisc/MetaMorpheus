@@ -17,7 +17,6 @@
             </MenuItem>
             <MenuItem Header="Data">
                 <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
-                <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
             </MenuItem>
         </Menu>
         <Grid>
@@ -56,7 +55,7 @@
                         HorizontalAlignment="Stretch"
                         Background="Silver"
                         Height="5" />
-                <GroupBox Header="Datafiles" Grid.Row="2"  Name="datafilesGroupBox">
+                <GroupBox Header="Mass Spectra Files" Grid.Row="2"  Name="datafilesGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />

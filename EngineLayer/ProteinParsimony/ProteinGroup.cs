@@ -452,7 +452,7 @@ namespace EngineLayer
 
             public int MaxModsForPeptide => 0;
 
-            public Protease Protease => GlobalEngineLevelSettings.ProteaseDictionary["top-down"];
+            public Protease Protease => GlobalVariables.ProteaseDictionary["top-down"];
 
             public bool SemiProteaseDigestion => false;
 

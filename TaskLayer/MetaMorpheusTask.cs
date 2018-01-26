@@ -39,7 +39,7 @@ namespace TaskLayer
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => GlobalEngineLevelSettings.ProteaseDictionary[tmlString.Value])))
+                                .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
                         .ConfigureType<ICommonParameters>(ct => ct
                             .CreateInstance(() => new CommonParameters()))
                         .ConfigureType<IDigestionParams>(ct => ct
@@ -238,7 +238,7 @@ namespace TaskLayer
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
-                    file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                    file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
                     file.Write(myTaskResults.ToString());
                 }
                 SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
@@ -250,7 +250,7 @@ namespace TaskLayer
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
-                    file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                    file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
                     file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
                     file.Write("e: " + e);
                     file.Write("e.Message: " + e.Message);
@@ -268,7 +268,7 @@ namespace TaskLayer
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
-                    file.Write("The data analysis was performed using MetaMorpheus Version: " + GlobalEngineLevelSettings.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
+                    file.Write("The data analysis was performed using MetaMorpheus Version: " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
                     file.Write(proseCreatedWhileRunning.ToString());
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
                     file.WriteLine("The total time to perform " + this.TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");

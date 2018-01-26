@@ -100,7 +100,7 @@ namespace TaskLayer
             {
                 id = "AS_MetaMorpheus",
                 name = "MetaMorpheus",
-                version = GlobalEngineLevelSettings.MetaMorpheusVersion,
+                version = GlobalVariables.MetaMorpheusVersion,
                 uri = "https://github.com/smith-chem-wisc/MetaMorpheus",
                 SoftwareName = new mzIdentML110.Generated.ParamType()
                 {
@@ -273,7 +273,7 @@ namespace TaskLayer
                         {
                             UsefulProteomicsDatabases.Generated.oboTerm psimod = null;
                             string name;
-                            if (mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")) psimod = GlobalEngineLevelSettings.PsiModDeserialized.Items.OfType<UsefulProteomicsDatabases.Generated.oboTerm>().Where(m => m.id == mod.Value.linksToOtherDbs["PSI-MOD"].First()).FirstOrDefault();
+                            if (mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")) psimod = GlobalVariables.PsiModDeserialized.Items.OfType<UsefulProteomicsDatabases.Generated.oboTerm>().Where(m => m.id == mod.Value.linksToOtherDbs["PSI-MOD"].First()).FirstOrDefault();
                             name = psimod != null ? psimod.name : mod.Value.id;
 
                             _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML110.Generated.ModificationType()
@@ -723,13 +723,13 @@ namespace TaskLayer
 
             #region Load modifications
 
-            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
             if (CommonParameters.LocalizeAll)
-                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+                localizeableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
-                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains((b.modificationType, b.id))).ToList();
+                localizeableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains((b.modificationType, b.id))).ToList();
 
             #endregion Load modifications
 
@@ -953,7 +953,7 @@ namespace TaskLayer
                 Status("Quantifying...", taskId);
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
 
-                if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
+                if (!FlashLfqEngine.ReadPeriodicTable(GlobalVariables.ElementsLocation))
                     throw new MetaMorpheusException("Quantification error - could not find periodic table file");
 
                 if (!FlashLfqEngine.ParseArgs(new string[] {
@@ -1193,11 +1193,11 @@ namespace TaskLayer
                 foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {
                     if (modType.Value == 1) // Write if observed and in database
-                        modificationsToWriteIfBoth.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        modificationsToWriteIfBoth.AddRange(GlobalVariables.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                     if (modType.Value == 2) // Write if in database
-                        modificationsToWriteIfInDatabase.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        modificationsToWriteIfInDatabase.AddRange(GlobalVariables.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                     if (modType.Value == 3) // Write if observed
-                        modificationsToWriteIfObserved.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        modificationsToWriteIfObserved.AddRange(GlobalVariables.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                 }
 
                 foreach (var protein in proteinList)

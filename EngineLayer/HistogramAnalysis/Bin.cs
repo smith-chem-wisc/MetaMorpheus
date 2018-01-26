@@ -138,7 +138,7 @@ namespace EngineLayer.HistogramAnalysis
         public void IdentifyUniprotBins(double v)
         {
             var ok = new HashSet<string>();
-            foreach (var hm in GlobalEngineLevelSettings.UniprotDeseralized)
+            foreach (var hm in GlobalVariables.UniprotDeseralized)
             {
                 if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
                     ok.Add(hm.id);
@@ -177,7 +177,7 @@ namespace EngineLayer.HistogramAnalysis
             var ok = new HashSet<string>();
             var okformula = new HashSet<string>();
             var okDiff = new HashSet<double>();
-            foreach (var hm in GlobalEngineLevelSettings.UnimodDeserialized)
+            foreach (var hm in GlobalVariables.UnimodDeserialized)
             {
                 var theMod = hm as ModificationWithMassAndCf;
                 if (Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
