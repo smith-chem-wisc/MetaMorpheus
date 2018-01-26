@@ -971,6 +971,18 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(GlobalVariables.DataDir);
         }
 
+        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+            Application.Current.Shutdown();
+        }
+
+        private void MenuItem_Click_7(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            Application.Current.Shutdown();
+        }
+
         #endregion Private Methods
     }
 }
