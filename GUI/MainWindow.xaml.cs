@@ -411,7 +411,7 @@ namespace MetaMorpheusGUI
 
             outRichTextBox.Document.Blocks.Clear();
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
             var t = new Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
@@ -432,8 +432,7 @@ namespace MetaMorpheusGUI
                 outRichTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
 
-
-                if(messageBoxResult == MessageBoxResult.Yes)
+                if (messageBoxResult == MessageBoxResult.Yes)
                 {
                     string body = exception.Message + "%0D%0A" + exception.Data +
                        "%0D%0A" + exception.StackTrace +
@@ -447,7 +446,6 @@ namespace MetaMorpheusGUI
                     System.Diagnostics.Process.Start(mailto);
                     Console.WriteLine(body);
                 }
-                
             }
         }
 

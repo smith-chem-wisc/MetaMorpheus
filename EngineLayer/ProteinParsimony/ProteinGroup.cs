@@ -147,13 +147,8 @@ namespace EngineLayer
             sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName))));
             sb.Append("\t");
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                Protease = GlobalEngineLevelSettings.ProteaseDictionary["top-down"],
-                MinPeptideLength = 0
-            };
             // list of masses
+            IDigestionParams digestionParams = new TDdigest();
             sb.Append(string.Join("|", new HashSet<double>(Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass))));
             sb.Append("\t");
 
@@ -438,5 +433,34 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
+
+        #region Private Classes
+
+        private class TDdigest : IDigestionParams
+        {
+            #region Public Properties
+
+            public int MaxMissedCleavages => 0;
+
+            public int? MinPeptideLength => 0;
+
+            public int? MaxPeptideLength => null;
+
+            public InitiatorMethionineBehavior InitiatorMethionineBehavior => InitiatorMethionineBehavior.Retain;
+
+            public int MaxModificationIsoforms => 1;
+
+            public int MaxModsForPeptide => 0;
+
+            public Protease Protease => GlobalEngineLevelSettings.ProteaseDictionary["top-down"];
+
+            public bool SemiProteaseDigestion => false;
+
+            public TerminusType TerminusTypeSemiProtease => throw new System.NotImplementedException();
+
+            #endregion Public Properties
+        }
+
+        #endregion Private Classes
     }
 }
