@@ -29,7 +29,7 @@ namespace MetaMorpheusGUI
             InitList = new ObservableCollection<string>();
             ProductMassToleranceList = new ObservableCollection<string>();
 
-            foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
+            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
                 ProtList.Add(protease);
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 InitList.Add(initiatior_methionine_behavior);

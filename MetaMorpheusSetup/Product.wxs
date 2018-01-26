@@ -134,6 +134,9 @@
       <Component Id="src_settings.toml">
         <File Id="src_settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
       </Component>
+      <Component Id="src_GUIsettings.toml">
+        <File Id="src_GUIsettings.toml" Name="GUIsettings.toml" Source="$(var.GUI_TargetDir)GUIsettings.toml" />
+      </Component>
       <Component Id="src_Newtonsoft.Json.dll">
         <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
       </Component>

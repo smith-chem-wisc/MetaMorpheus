@@ -1,12 +1,14 @@
 using EngineLayer;
 using MzLibUtil;
 using Nett;
+using Newtonsoft.Json.Linq;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -36,26 +38,12 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
+            Title = "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
-
-            try
-            {
-                foreach (var modFile in Directory.GetFiles(GlobalEngineLevelSettings.modsLocation))
-                    GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                Application.Current.Shutdown();
-            }
-
-            GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
-            GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
-
+            
             EverythingRunnerEngine.NewDbsHandler += AddNewDB;
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
             EverythingRunnerEngine.StartingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
@@ -83,9 +71,16 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
 
+
+            // LOAD GUI SETTINGS
+            GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+
+            if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
+                GuiGlobalParams.AskAboutUpdating = false;
+
             try
             {
-                GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+                GetVersionNumbersFromWeb();
             }
             catch (Exception e)
             {
@@ -96,10 +91,13 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+        
+        public static string NewestKnownVersion { get; private set; }
+        internal GuiGlobalParams GuiGlobalParams { get; }
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (GlobalEngineLevelSettings.NewestKnownVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+            if (NewestKnownVersion != null && !GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion) && GuiGlobalParams.AskAboutUpdating)
             {
                 try
                 {
@@ -343,7 +341,7 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
                             }
                             catch (Exception ee)
                             {
@@ -439,7 +437,7 @@ namespace MetaMorpheusGUI
                        "%0D%0A" + exception.Source +
                        "%0D%0A %0D%0A %0D%0A %0D%0A SYSTEM INFO: %0D%0A " +
                         SystemInfo.CompleteSystemInfo() +
-                       "%0D%0A%0D%0A MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
+                       "%0D%0A%0D%0A MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
 
                     body = body.Replace('&', ' ');
                     string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
@@ -902,11 +900,30 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private static void GetVersionNumbersFromWeb()
+        {
+            // Attempt to get current MetaMorpheus version
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
+
+                using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
+                {
+                    var json = response.Content.ReadAsStringAsync().Result;
+                    JObject deserialized = JObject.Parse(json);
+                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+                    if (!assets.Contains("MetaMorpheusInstaller.msi") || !assets.Contains("MetaMorpheusGuiDotNetFrameworkAppveyor.zip"))
+                        throw new MetaMorpheusException("Necessary files do not exist!");
+                    NewestKnownVersion = deserialized["tag_name"].ToString();
+                }
+            }
+        }
+
         private void MenuItem_Click_2(object sender, RoutedEventArgs e)
         {
             try
             {
-                GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+                GetVersionNumbersFromWeb();
             }
             catch (Exception ex)
             {
@@ -914,7 +931,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion))
+            if (GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion))
                 MessageBox.Show("You have the most updated version!");
             else
             {
@@ -943,7 +960,7 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(GlobalEngineLevelSettings.dataDir);
+            System.Diagnostics.Process.Start(GlobalVariables.DataDir);
         }
 
         #endregion Private Methods
