@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.CrosslinkSearch;
 using MzLibUtil;
 using System;
 using System.Collections.Generic;
@@ -112,7 +113,7 @@ namespace MetaMorpheusGUI
             //cbbXLBetaprecusorMsTl.Items.Add("Absolute");
             //cbbXLBetaprecusorMsTl.Items.Add("ppm");
 
-            foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
+            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
 
@@ -125,7 +126,7 @@ namespace MetaMorpheusGUI
             //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
             //    productMassToleranceComboBox.Items.Add(toleranceUnit);
 
-            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 fixedModTypeForTreeViewObservableCollection.Add(theModType);
@@ -133,7 +134,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 variableModTypeForTreeViewObservableCollection.Add(theModType);
@@ -141,7 +142,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 localizeModTypeForTreeViewObservableCollection.Add(theModType);
@@ -312,12 +313,16 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             CommonParamsToSave.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
-            CommonParamsToSave.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            CommonParamsToSave.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
-            CommonParamsToSave.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
-            CommonParamsToSave.DigestionParams.Protease = (Protease)proteaseComboBox.SelectedItem;
-            CommonParamsToSave.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
-            CommonParamsToSave.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+
+            DigestionParams digestionParamsToSave = new DigestionParams();
+            digestionParamsToSave.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            digestionParamsToSave.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
+            digestionParamsToSave.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            digestionParamsToSave.Protease = (Protease)proteaseComboBox.SelectedItem;
+            digestionParamsToSave.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            digestionParamsToSave.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            CommonParamsToSave.DigestionParams = digestionParamsToSave;
+
             if (productMassToleranceComboBox.SelectedIndex == 0)
                 CommonParamsToSave.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             else
@@ -339,12 +344,16 @@ namespace MetaMorpheusGUI
             else
                 CommonParamsToSave.TaskDescriptor = "XLSearchTask";
 
-            CommonParamsToSave.ListOfModsVariable = new List<Tuple<string, string>>();
+            var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
-                CommonParamsToSave.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
-            CommonParamsToSave.ListOfModsFixed = new List<Tuple<string, string>>();
+                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            CommonParamsToSave.ListOfModsVariable = listOfModsVariable;
+
+            var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
-                CommonParamsToSave.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
+
             if (localizeAllCheckBox.IsChecked.Value)
             {
                 CommonParamsToSave.ListOfModsLocalize = null;
@@ -353,9 +362,10 @@ namespace MetaMorpheusGUI
             else
             {
                 CommonParamsToSave.LocalizeAll = false;
-                CommonParamsToSave.ListOfModsLocalize = new List<Tuple<string, string>>();
+                var listOfModsLocalize = new List<(string, string)>();
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    CommonParamsToSave.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                    listOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+                CommonParamsToSave.ListOfModsLocalize = listOfModsLocalize;
             }
 
             TheTask.CommonParameters = CommonParamsToSave;

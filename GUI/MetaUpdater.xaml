@@ -14,6 +14,5 @@
         <Button Content="Download and run installer" FontSize="13" Margin="5" Click="InstallerClicked" />
         <Button Content="Download and open portable version .zip " FontSize="13" Margin="5" Click="PortableClicked" />
         <Button Content="Not interested" FontSize="13" Margin="5" Click="NoClicked" />
-        <CheckBox Content="Do Not Remind Me" Margin="5" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" />
     </StackPanel>
 </Window>

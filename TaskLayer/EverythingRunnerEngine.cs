@@ -13,7 +13,7 @@ namespace TaskLayer
     {
         #region Private Fields
 
-        private readonly List<Tuple<string, MetaMorpheusTask>> taskList;
+        private readonly List<(string, MetaMorpheusTask)> taskList;
         private string outputFolder;
         private List<string> currentRawDataFilenameList;
         private List<DbForTask> currentXmlDbFilenameList;
@@ -22,7 +22,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<Tuple<string, MetaMorpheusTask>> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
+        public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
             this.taskList = taskList;
             this.outputFolder = outputFolder;
@@ -110,7 +110,7 @@ namespace TaskLayer
             var resultsFileName = Path.Combine(outputFolder, "allResults.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
-                file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
                 file.WriteLine("Total time: " + stopWatch.Elapsed);
                 file.Write(allResultsText.ToString());
             }

@@ -116,7 +116,7 @@ namespace EngineLayer.ModernSearch
                             {
                                 if (globalPsms[i] == null)
                                 {
-                                    globalPsms[i] = new Psm(peptide, notch, score, i, scan, CommonParameters.ExcelCompatible);
+                                    globalPsms[i] = new Psm(peptide, notch, score, i, scan);
                                     if (CommonParameters.CalculateEValue)
                                     {
                                         List<int> AllScores = new List<int>(new int[maxInitialScore + 1]);

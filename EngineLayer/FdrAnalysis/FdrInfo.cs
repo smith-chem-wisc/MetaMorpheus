@@ -1,4 +1,4 @@
-﻿namespace EngineLayer
+﻿namespace EngineLayer.FdrAnalysis
 {
     public class FdrInfo
     {

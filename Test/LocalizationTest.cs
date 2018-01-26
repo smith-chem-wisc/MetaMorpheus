@@ -1,11 +1,13 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.Localization;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -17,7 +19,7 @@ namespace Test
         [Test]
         public static void TestNonSpecific()
         {
-            Protease p = GlobalEngineLevelSettings.ProteaseDictionary["non-specific"];
+            Protease p = GlobalVariables.ProteaseDictionary["non-specific"];
             Protein prot = new Protein("MABCDEFGH", null);
 
             DigestionParams digestionParams = new DigestionParams

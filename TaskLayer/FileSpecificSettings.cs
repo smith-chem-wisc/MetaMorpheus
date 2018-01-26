@@ -128,6 +128,8 @@ namespace TaskLayer
         public bool? TrimMs1Peaks { get; set; }
         public double? MinRatio { get; set; }
         public int? TopNpeaks { get; set; }
+        public bool? SemiProteaseDigestion { get; set; }
+        public TerminusType? TerminusTypeSemiProtease { get; set; }
 
         #endregion Public Properties
     }
