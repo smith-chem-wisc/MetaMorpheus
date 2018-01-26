@@ -1,5 +1,4 @@
 ﻿using MzLibUtil;
-using System;
 using System.Collections.Generic;
 
 namespace EngineLayer
@@ -11,9 +10,9 @@ namespace EngineLayer
         int? MaxParallelFilesToAnalyze { get; }
         int MaxThreadsToUsePerFile { get; }
         bool LocalizeAll { get; }
-        List<Tuple<string, string>> ListOfModsFixed { get; }
-        List<Tuple<string, string>> ListOfModsVariable { get; }
-        List<Tuple<string, string>> ListOfModsLocalize { get; }
+        IEnumerable<(string, string)> ListOfModsFixed { get; }
+        IEnumerable<(string, string)> ListOfModsVariable { get; }
+        IEnumerable<(string, string)> ListOfModsLocalize { get; }
 
         bool DoPrecursorDeconvolution { get; }
         bool UseProvidedPrecursorInfo { get; }
@@ -38,7 +37,7 @@ namespace EngineLayer
 
         double ScoreCutoff { get; }
 
-        DigestionParams DigestionParams { get; }
+        IDigestionParams DigestionParams { get; }
 
         bool ReportAllAmbiguity { get; }
 
