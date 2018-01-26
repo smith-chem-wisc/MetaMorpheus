@@ -105,7 +105,7 @@ namespace EngineLayer
                 return sequence;
             }
         }
-
+        
         public int NumMods
         {
             get

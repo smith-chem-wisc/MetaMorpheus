@@ -202,11 +202,11 @@ namespace EngineLayer
             }
         }
 
-        public static double CalculatePeptideScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static MatchQualityFeatures CalculatePeptideScore(Ms2ScanWithSpecificMass thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
-                return 0;
+                return new MatchQualityFeatures();
             int MatchingProductsHere = 0;
             double MatchingIntensityHere = 0;
 
@@ -219,15 +219,15 @@ namespace EngineLayer
             } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sortedTheoreticalProductMassesForThisPeptide.Length - 1);
 
             if (double.IsNaN(currentTheoreticalMass))
-                return 0;
+                return new MatchQualityFeatures();
 
             double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
             int testTheoreticalIndex;
             double testTheoreticalMz;
 
             // speed optimizations
-            double[] experimental_mzs = thisScan.MassSpectrum.XArray;
-            double[] experimental_intensities = thisScan.MassSpectrum.YArray;
+            double[] experimental_mzs = thisScan.TheScan.MassSpectrum.XArray;
+            double[] experimental_intensities = thisScan.TheScan.MassSpectrum.YArray;
             int numExperimentalPeaks = experimental_mzs.Length;
 
             // Loop over all experimental indices
@@ -350,7 +350,8 @@ namespace EngineLayer
                     }
                 }
             }
-            return (MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent);
+            return new MatchQualityFeatures(new double[] { MatchingProductsHere, MatchingIntensityHere / thisScan.TotalIonCurrent, thisScan.IntensityFraction });
+            // return new MatchQualityFeatures(new double[] { MatchingProductsHere, MatchingIntensityHere / thisScan.TotalIonCurrent, MatchingIntensityHere / ExpectedIntensityHere, MatchingProductsHere/ ((double)(TotalProductsHere)) });
         }
 
         public MetaMorpheusEngineResults Run()

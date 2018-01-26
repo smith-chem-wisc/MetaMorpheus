@@ -16,13 +16,13 @@ namespace EngineLayer
         private const double tolForDoubleResolution = 1e-6;
         private const double tolForScoreDifferentiation = 1e-9;
 
-        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+        private Dictionary<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, MatchQualityFeatures)> compactPeptides = new Dictionary<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, MatchQualityFeatures)>();
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
+        public Psm(CompactPeptideBase peptide, int notch, MatchQualityFeatures features, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -34,13 +34,13 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch, true);
+            AddCompactPeptide(peptide, features, notch, true);
             this.ExcelCompatible = true;
             this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
             this.AllScores[AllScores.Count - 1]++;
         }
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, score, scanIndex, scan)
+        public Psm(CompactPeptideBase peptide, int notch, MatchQualityFeatures features, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, features, scanIndex, scan)
         {
             this.ExcelCompatible = excelCompatible;
         }
@@ -61,7 +61,7 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
-        public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
+        public IEnumerable<KeyValuePair<CompactPeptideBase, (int, HashSet<PeptideWithSetModifications>, MatchQualityFeatures)>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
@@ -163,65 +163,30 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
+        public void AddCompactPeptide(CompactPeptideBase compactPeptide, MatchQualityFeatures features, int notch, bool reportAllAmbiguity)
         {
-            if (score - Score > tolForScoreDifferentiation) //if new score beat the old score, overwrite it
-            {
-                compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
-                {
-                    { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
-                };
-                Score = score;
-            }
-            else if (score - Score > -tolForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
-            {
-                compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
-            }
+            compactPeptides[compactPeptide] = (notch, null, features);
         }
 
         public void CompactCompactPeptides()
         {
-            List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
-            foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in compactPeptides)
-            {
-                //Change CPWM to reflect actual CP
-                Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
-                if (!cps.Contains(tempTuple))
-                    cps.Add(tempTuple);
-            }
-            compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
-            foreach (Tuple<CompactPeptideBase, int> cp in cps)
-                compactPeptides[cp.Item1] = new Tuple<int, HashSet<PeptideWithSetModifications>>(cp.Item2, null);
+            //List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
+            //foreach (KeyValuePair<CompactPeptideBase, (int, Features, HashSet<PeptideWithSetModifications>)> kvp in compactPeptides)
+            //{
+            //    //Change CPWM to reflect actual CP
+            //    Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
+            //    if (!cps.Contains(tempTuple))
+            //        cps.Add(tempTuple);
+            //}
+            //compactPeptides = new Dictionary<CompactPeptideBase, (int, Features, HashSet<PeptideWithSetModifications>)>();
+            //foreach (Tuple<CompactPeptideBase, int> cp in cps)
+            //    compactPeptides[cp.Item1] = (cp.Item1, cp.Item2,null);
         }
 
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var cpKey in compactPeptides.Keys.ToList())
-                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matching[cpKey]);
-
-            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
-
-            FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
-
-            BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
-
-            PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
-
-            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
-
-            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
-
-            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
-
-            PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
-
-            ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
-
-            ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
-
-            ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
-
-            Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
+                compactPeptides[cpKey] = (compactPeptides[cpKey].Item1, matching[cpKey], compactPeptides[cpKey].Item3);
         }
 
         public bool CompactPeptidesContainsKey(CompactPeptideBase key)
@@ -390,7 +355,7 @@ namespace EngineLayer
         internal void AddOrReplace(Psm psmParent, bool reportAllAmbiguity)
         {
             foreach (var kvp in psmParent.compactPeptides)
-                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
+                AddCompactPeptide(kvp.Key, kvp.Value.Item3, kvp.Value.Item1, reportAllAmbiguity);
         }
 
         internal void SumAllScores(Psm psmParent)
@@ -518,6 +483,98 @@ namespace EngineLayer
                 var possibleReturn = string.Join(" or ", list);
                 return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
             }
+        }
+
+        public void ScoreAndPrune(Func<double[], double> scoringFunction)
+        {
+            Score = CompactPeptides.Select(b => scoringFunction(GetFeatures(b.Value))).Max();
+
+            compactPeptides = CompactPeptides.Where(b => Math.Abs(scoringFunction(GetFeatures(b.Value)) - Score) < 1e-9).ToDictionary(i => i.Key, i => i.Value);
+
+            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
+
+            FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
+
+            BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
+
+            PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
+
+            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
+
+            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
+
+            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
+
+            PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
+
+            ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
+
+            ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
+
+            ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
+
+            Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
+        }
+
+        public static (Dictionary<Protein, HashSet<string>>, Dictionary<Protein, HashSet<Psm>>) fff;
+
+        public double[] GetFeatures((int, HashSet<PeptideWithSetModifications>, MatchQualityFeatures) value)
+        {
+            var protStuff = GetProteinInferenceStuff(fff, value.Item2);
+
+            //return new double[]{value.Item3.arr[0], value.Item3.arr[1], protStuff.Item1};
+            return new double[] { value.Item3.arr[0], value.Item3.arr[1]};
+
+
+            //new double[]{
+            //    asdfj.Value.Item3.arr[0],
+            //    asdfj.Value.Item3.arr[1],
+            //asdfj.Value.Item3.arr[2],
+            //protStuff.Item1,
+            //protStuff.Item2,
+            //protStuff.Item3,
+            //protStuff.Item4,
+            //protStuff.Item5,
+            //protStuff.Item6,
+            //allPsms[i].CompactPeptides.Count(),
+            //allPsms[i].ScanPrecursorMass - asdfj.Key.MonoisotopicMassIncludingFixedMods,
+            //allPsms[i].ScanPrecursorMass,
+            //allPsms[i].ScanPrecursorCharge,
+            //allPsms[i].ScanPrecursorMonoisotopicPeakMz,
+            //allPsms[i].ScanRetentionTime,
+            //allPsms[i].TotalIonCurrent,
+            //};
+
+            //input[j] = new double[]{
+            //    asdfj.Value.Item3.arr[0],
+            //    asdfj.Value.Item3.arr[1],
+            //    asdfj.Value.Item3.arr[2],
+            //    protStuff.Item1,
+            //    protStuff.Item2,
+            //    protStuff.Item3,
+            //    protStuff.Item4,
+            //    protStuff.Item5,
+            //    protStuff.Item6,
+            //    allPsms[i].CompactPeptides.Count(),
+            //    allPsms[i].ScanPrecursorMass - asdfj.Key.MonoisotopicMassIncludingFixedMods,
+            //    allPsms[i].ScanPrecursorMass,
+            //    allPsms[i].ScanPrecursorCharge,
+            //    allPsms[i].ScanPrecursorMonoisotopicPeakMz,
+            //    allPsms[i].ScanRetentionTime,
+            //    allPsms[i].TotalIonCurrent,
+            //};
+
+        }
+
+
+        private static (int, int, int, int, int, int) GetProteinInferenceStuff((Dictionary<Protein, HashSet<string>>, Dictionary<Protein, HashSet<Psm>>) fff, HashSet<PeptideWithSetModifications> item2)
+        {
+            return (item2.Max(b => fff.Item1[b.Protein].Count),
+             item2.Max(b => fff.Item2[b.Protein].Count),
+             item2.Max(b => b.NumVariableMods),
+             item2.Max(b => b.NumMods),
+             item2.Max(b => b.missedCleavages.Value),
+             item2.Max(b => b.Length));
         }
 
         #endregion Private Methods

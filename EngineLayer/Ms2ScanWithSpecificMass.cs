@@ -7,12 +7,13 @@ namespace EngineLayer
     {
         #region Public Constructors
 
-        public Ms2ScanWithSpecificMass(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath)
+        public Ms2ScanWithSpecificMass(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, double intensityFraction)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
             PrecursorCharge = precursorCharge;
             PrecursorMass = PrecursorMonoisotopicPeakMz.ToMass(precursorCharge);
             FullFilePath = fullFilePath;
+            IntensityFraction = intensityFraction;
 
             TheScan = mzLibScan;
         }
@@ -26,6 +27,7 @@ namespace EngineLayer
         public double PrecursorMass { get; }
         public int PrecursorCharge { get; }
         public string FullFilePath { get; }
+        public double IntensityFraction { get; }
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
 

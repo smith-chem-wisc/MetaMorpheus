@@ -28,7 +28,7 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Constructors
 
-        public PsmCross(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(theBestPeptide, notch, score, scanIndex, scan)
+        public PsmCross(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(theBestPeptide, notch, null, scanIndex, scan)
         {
             compactPeptide = theBestPeptide;
         }

@@ -109,10 +109,10 @@ namespace EngineLayer.ModernSearch
                             Array.Sort(productMasses);
 
                             double thePrecursorMass = scan.PrecursorMass;
-                            double score = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
+                            var score = CalculatePeptideScore(scan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
                             int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMassIncludingFixedMods);
 
-                            if (score > CommonParameters.ScoreCutoff)
+                            if (score.arr[0] >= CommonParameters.ScoreCutoff)
                             {
                                 if (globalPsms[i] == null)
                                 {
@@ -126,7 +126,7 @@ namespace EngineLayer.ModernSearch
                                     }
                                 }
                                 else
-                                    globalPsms[i].AddOrReplace(peptide, score, notch, CommonParameters.ReportAllAmbiguity);
+                                    globalPsms[i].AddCompactPeptide(peptide, score, notch, CommonParameters.ReportAllAmbiguity);
                             }
                         }
                     }

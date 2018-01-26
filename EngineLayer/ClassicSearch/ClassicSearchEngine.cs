@@ -106,14 +106,14 @@ namespace EngineLayer.ClassicSearch
                         foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                         {
                             double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                            var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
+                            var matchQualityFeatures = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
-                            if (score > commonParameters.ScoreCutoff || commonParameters.CalculateEValue)
+                            if (matchQualityFeatures.arr[0] >= commonParameters.ScoreCutoff || commonParameters.CalculateEValue)
                             {
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
-                                    psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
+                                    psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, matchQualityFeatures, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, commonParameters.ExcelCompatible);
                                 else
-                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                                    psms[scanWithIndexAndNotchInfo.scanIndex].AddCompactPeptide(correspondingCompactPeptide, matchQualityFeatures, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
                                 if (commonParameters.CalculateEValue)
                                     psms[scanWithIndexAndNotchInfo.scanIndex].UpdateAllScores(score);
                             }

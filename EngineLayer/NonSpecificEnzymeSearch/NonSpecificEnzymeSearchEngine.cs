@@ -117,7 +117,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 var candidatePeptide = peptideIndex[id];
                                 double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
-                                double peptideScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
+                                var peptideScore = CalculatePeptideScore(scan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, addCompIons);
                                 Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, candidatePeptide, terminusType, massDiffAcceptor);
                                 if (notchAndPrecursor.Item1 >= 0)
                                 {
@@ -126,7 +126,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (globalPsms[i] == null)
                                         globalPsms[i] = new Psm(cp, notchAndPrecursor.Item1, peptideScore, i, scan);
                                     else
-                                        globalPsms[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                        globalPsms[i].AddCompactPeptide(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
                                 }
                             }
                             if (globalPsms[i] != null)

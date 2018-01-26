@@ -153,8 +153,8 @@ namespace Test
             //The below theoretical does not accurately represent B-Y ions
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            double scoreT = MetaMorpheusEngine.CalculatePeptideScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, true);
-            double scoreF = MetaMorpheusEngine.CalculatePeptideScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, false);
+            double scoreT = MetaMorpheusEngine.CalculateMatchQualityFeatures(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, true);
+            double scoreF = MetaMorpheusEngine.CalculateMatchQualityFeatures(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, false);
             Assert.IsTrue(scoreT == scoreF * 2 && scoreT > scoreF + 1);
         }
 

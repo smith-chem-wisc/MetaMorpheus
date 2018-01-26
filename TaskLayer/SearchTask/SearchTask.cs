@@ -1,4 +1,6 @@
-﻿using Chemistry;
+﻿using Accord.Statistics.Models.Regression;
+using Accord.Statistics.Models.Regression.Fitting;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
@@ -912,6 +914,8 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
 
+            ScorePsms(allPsms, OutputFolder);
+
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             Status("Running FDR analysis...", taskId);
@@ -924,22 +928,6 @@ namespace TaskLayer
             {
                 var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, true, new List<string> { taskId }).Run();
                 proteinGroups = proteinScoringAndFdrResults.sortedAndScoredProteinGroups;
-            }
-
-            if (SearchParameters.DoLocalizationAnalysis)
-            {
-                Status("Running localization analysis...", taskId);
-                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
-                {
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                    var origDataFile = currentRawFileList[spectraFileIndex];
-                    Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
-                    var localizationEngine = new LocalizationEngine(allPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.SearchParameters.AddCompIons);
-                    localizationEngine.Run();
-                    myFileManager.DoneWithFile(origDataFile);
-                    ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
-                });
             }
 
             new ModificationAnalysisEngine(allPsms, new List<string> { taskId }).Run();
@@ -1436,6 +1424,114 @@ namespace TaskLayer
                     output.WriteLine();
                 }
             }
+        }
+
+        private void ScorePsms(List<Psm> allPsms, string outputFolder)
+        { 
+            var writtenFile = Path.Combine(@"C:\Users\stepa\Data\Yeast\beforeScoring.tsv");
+
+            Psm.fff = GetIntraSetFeatures(allPsms);
+
+            int numTrainingPoints = allPsms.Where(b => b != null).Sum(b => b.CompactPeptides.Count());
+
+            bool[] output = new bool[numTrainingPoints];
+            double[][] input = new double[numTrainingPoints][];
+
+            using (StreamWriter outputff = new StreamWriter(writtenFile))
+            {
+                outputff.WriteLine("Scan\t" +
+                                   "Decoy\t" +
+                                   "Peaks\t" +
+                                   "IntensityMatch\t" +
+                                   "MaxPep\t");
+                // +
+                //"IntensityFraction\t" +
+                //"MaxPsm\t" +
+                //"NumVarMods\t" +
+                //"NumMods\t" +
+                //"MissedCleavages\t" +
+                //"Length\t" +
+                //"CompactPeptidesCount\t" +
+                //"MassDiff\t" +
+                //"ScanPrecursorMass\t" +
+                //"ScanPrecursorCharge\t" +
+                //"ScanPrecursorMonoisotopicPeakMz\t" +
+                //"ScanRetentionTime\t" +
+                //"TotalIonCurrent");
+
+                int j = 0;
+                for (int i = 0; i < allPsms.Count; i++)
+                    if (allPsms[i] != null)
+                        foreach (var asdfj in allPsms[i].CompactPeptides)
+                        {
+                            numTrainingPoints++;
+
+                            input[j] = allPsms[i].GetFeatures(asdfj.Value);
+
+                            outputff.WriteLine(i + 
+                                "\t" + asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy) + 
+                                "\t" + string.Join("\t", input[j]));
+
+                            output[j] = asdfj.Value.Item2.Any(b => !b.Protein.IsDecoy);
+
+                            j++;
+                        }
+            }
+            
+
+            // Create a new Iterative Reweighted Least Squares algorithm
+            var learner = new IterativeReweightedLeastSquares<LogisticRegression>()
+            {
+                Tolerance = 1e-4,  // Let's set some convergence parameters
+                MaxIterations = 100,  // maximum number of iterations to perform
+                Regularization = 0
+            };
+
+            // Now, we can use the learner to finally estimate our model:
+            LogisticRegression regression = learner.Learn(input, output);
+            
+            Console.WriteLine("weights: " + string.Join("\t", regression.Weights));
+
+            // TEMPORARY DISABLE
+            //Func<double[], double> scoringFunction = (double[] a) => regression.Probability(a);
+
+            // TEMPORARY ENABLE, IGNORE LEARNED FUNCTION
+            double scoringFunction(double[] a) => a[0] + a[1];
+
+            // Actually, score!!!
+            for (int i = 0; i < allPsms.Count; i++)
+                if (allPsms[i] != null)
+                {
+                    allPsms[i].ScoreAndPrune(scoringFunction);
+                }
+        }
+
+        private (Dictionary<Protein, HashSet<string>>, Dictionary<Protein, HashSet<Psm>>) GetIntraSetFeatures(List<Psm> allPsms)
+        {
+            Dictionary<Protein, HashSet<string>> toReturnCompactPeptideBase = new Dictionary<Protein, HashSet<string>>();
+            Dictionary<Protein, HashSet<Psm>> toReturnPsm = new Dictionary<Protein, HashSet<Psm>>();
+
+            foreach (var psm in allPsms.Where(b => b != null))
+            {
+                foreach (var kvp in psm.CompactPeptides)
+                {
+                    foreach (var pwsm in kvp.Value.Item2)
+                    {
+                        if (!toReturnCompactPeptideBase.ContainsKey(pwsm.Protein))
+                            toReturnCompactPeptideBase[pwsm.Protein] = new HashSet<string>();
+                        if (!toReturnPsm.ContainsKey(pwsm.Protein))
+                            toReturnPsm[pwsm.Protein] = new HashSet<Psm>();
+
+                        // All peptides from a protein
+                        toReturnCompactPeptideBase[pwsm.Protein].Add(pwsm.BaseSequence + pwsm.OneBasedEndResidueInProtein);
+
+                        // All psms from a protein
+                        toReturnPsm[pwsm.Protein].Add(psm);
+                    }
+                }
+            }
+
+            return (toReturnCompactPeptideBase, toReturnPsm);
         }
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
