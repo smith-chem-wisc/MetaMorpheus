@@ -930,12 +930,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
-        {
-            UsefulProteomicsDatabases.Loaders.UpdateUnimod(GlobalEngineLevelSettings.unimodLocation);
-            Application.Current.Shutdown();
-        }
-
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)
         {
             string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
