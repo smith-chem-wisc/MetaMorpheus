@@ -52,11 +52,11 @@ namespace MetaMorpheusGUI
             DialogResult = true;
             using (var client = new WebClient())
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownVersion + @"/MetaMorpheusNoDependenciesInstaller.msi");
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownVersion + @"/MetaMorpheusInstaller.msi");
 
                 try
                 {
-                    var tempDownloadLocation = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MetaMorpheusNoDependenciesInstaller.msi");
+                    var tempDownloadLocation = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MetaMorpheusInstaller.msi");
                     client.DownloadFile(uri, tempDownloadLocation);
                     Process p = new Process();
                     p.StartInfo.FileName = tempDownloadLocation;
