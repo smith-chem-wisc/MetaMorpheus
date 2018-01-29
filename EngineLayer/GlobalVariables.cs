@@ -92,6 +92,7 @@ namespace EngineLayer
 
         public static void AddMods(IEnumerable<Modification> enumerable)
         {
+            HashSet<string> modTypes = new HashSet<string>();
             foreach (var ye in enumerable)
             {
                 if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
@@ -101,8 +102,12 @@ namespace EngineLayer
                 else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
                     continue;
                 else
+                {
                     allModsKnown.Add(ye);
+                    modTypes.Add(ye.modificationType);
+                }
             }
+            allModTypesKnown = modTypes.ToList();
         }
 
         #endregion Public Methods
