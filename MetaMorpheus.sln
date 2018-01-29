@@ -14,7 +14,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EngineLayer", "EngineLayer\EngineLayer.csproj", "{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}"
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "MetaMorpheusSetup", "MetaMorpheusSetup\MetaMorpheusSetup.wixproj", "{BE72541A-66A4-4958-9D19-56ACC7D3876B}"
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "MetaMorpheusSetup", "MetaMorpheusSetup\MetaMorpheusSetup.wixproj", "{BE72541A-66A4-4958-9D19-56ACC7D3876B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
