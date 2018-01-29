@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EngineLayer", "EngineLayer\
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "MetaMorpheusSetup", "MetaMorpheusSetup\MetaMorpheusSetup.wixproj", "{BE72541A-66A4-4958-9D19-56ACC7D3876B}"
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Bootstrapper1", "..\..\MetaMorpheus-master(3)\MetaMorpheus-master\Bootstrapper1\Bootstrapper1.wixproj", "{E0A5C097-DF8E-41CD-A541-804F1351D070}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Bootstrapper1", "..\..\..\Documents\GitHub\MetaMorpheus\Bootstrapper1\Bootstrapper1.wixproj", "{E0A5C097-DF8E-41CD-A541-804F1351D070}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
