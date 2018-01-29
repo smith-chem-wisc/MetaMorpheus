@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace EngineLayer
+namespace EngineLayer.ProteinScoringAndFdr
 {
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {

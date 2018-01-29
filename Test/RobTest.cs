@@ -1,5 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.ProteinParsimony;
+using EngineLayer.ProteinScoringAndFdr;
 using FlashLFQ;
 using IO.MzML;
 using MassSpectrometry;

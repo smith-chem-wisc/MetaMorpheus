@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace EngineLayer
+namespace EngineLayer.ProteinScoringAndFdr
 {
     public class ProteinScoringAndFdrResults : MetaMorpheusEngineResults
     {

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 
-namespace EngineLayer
+namespace EngineLayer.ProteinParsimony
 {
     public class ProteinParsimonyResults : MetaMorpheusEngineResults
     {

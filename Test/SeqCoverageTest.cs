@@ -1,4 +1,6 @@
 ﻿using EngineLayer;
+using EngineLayer.ProteinParsimony;
+using EngineLayer.ProteinScoringAndFdr;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;

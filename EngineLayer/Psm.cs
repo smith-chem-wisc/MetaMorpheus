@@ -44,7 +44,6 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
@@ -57,6 +56,8 @@ namespace EngineLayer
         public int ScanIndex { get; }
         public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
+
+        public ChemicalFormula ModsChemicalFormula { get; private set; }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
         public bool IsDecoy { get; private set; }
@@ -68,6 +69,7 @@ namespace EngineLayer
         public int? OneBasedEndResidueInProtein { get; private set; }
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
+
         public List<double> LocalizedScores { get; internal set; }
         public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatches { get; internal set; }
         public string ProteinAccesion { get; private set; }

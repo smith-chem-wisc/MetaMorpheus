@@ -8,6 +8,8 @@ using EngineLayer.Localization;
 using EngineLayer.ModernSearch;
 using EngineLayer.ModificationAnalysis;
 using EngineLayer.NonSpecificEnzymeSearch;
+using EngineLayer.ProteinParsimony;
+using EngineLayer.ProteinScoringAndFdr;
 using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
