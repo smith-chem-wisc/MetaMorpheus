@@ -9,7 +9,7 @@ namespace EngineLayer
     {
         #region Public Methods
 
-        public static IEnumerable<PeptideWithSetModifications> Digest(this Protein protein, DigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications, List<ModificationWithMass> variableModifications)
+        public static IEnumerable<PeptideWithSetModifications> Digest(this Protein protein, IDigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications, List<ModificationWithMass> variableModifications)
         {
             var protease = digestionParams.Protease;
             var maximumMissedCleavages = digestionParams.MaxMissedCleavages;
@@ -357,7 +357,7 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private static IEnumerable<PeptideWithSetModifications> GetThePeptides(int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein, Protein protein, int missedCleavages, string peptideString, IEnumerable<ModificationWithMass> allKnownFixedModifications, DigestionParams digestionParams, List<ModificationWithMass> variableModifications)
+        private static IEnumerable<PeptideWithSetModifications> GetThePeptides(int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein, Protein protein, int missedCleavages, string peptideString, IEnumerable<ModificationWithMass> allKnownFixedModifications, IDigestionParams digestionParams, List<ModificationWithMass> variableModifications)
         {
             int peptideLength = OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
             int maximumVariableModificationIsoforms = digestionParams.MaxModificationIsoforms;

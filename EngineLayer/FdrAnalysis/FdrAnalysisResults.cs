@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace EngineLayer.Analysis
+namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisResults : MetaMorpheusEngineResults
     {

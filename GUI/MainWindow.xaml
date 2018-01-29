@@ -9,15 +9,18 @@
         Loaded="MyWindow_Loaded">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
+            <MenuItem Header="Settings">
+                <MenuItem Header="Close MetaMorpheus and open global settings file" Click="MenuItem_Click_3"></MenuItem>
+                <MenuItem Header="Close MetaMorpheus and open GUI settings file" Click="MenuItem_Click_7"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Data">
+                <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
+            </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
                 <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" />
                 <MenuItem Header="Email Support at mm_support@chem.wisc.edu" Click="MenuItem_Click_4" />
-            </MenuItem>
-            <MenuItem Header="Data">
-                <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
-                <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
             </MenuItem>
         </Menu>
         <Grid>
@@ -56,7 +59,7 @@
                         HorizontalAlignment="Stretch"
                         Background="Silver"
                         Height="5" />
-                <GroupBox Header="Datafiles" Grid.Row="2"  Name="datafilesGroupBox">
+                <GroupBox Header="Mass Spectra Files" Grid.Row="2"  Name="datafilesGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />

@@ -1,4 +1,4 @@
-﻿namespace EngineLayer.Analysis
+﻿namespace EngineLayer.HistogramAnalysis
 {
     internal class OkBin
     {

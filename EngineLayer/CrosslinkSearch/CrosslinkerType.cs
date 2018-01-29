@@ -1,4 +1,4 @@
-﻿namespace EngineLayer
+﻿namespace EngineLayer.CrosslinkSearch
 {
     public enum CrosslinkerType
     {

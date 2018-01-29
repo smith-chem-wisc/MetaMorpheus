@@ -156,7 +156,7 @@ namespace EngineLayer.Calibration
               }
               );
         }
-    }
 
-    #endregion Private Methods
+        #endregion Private Methods
+    }
 }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace EngineLayer.Analysis
+namespace EngineLayer.HistogramAnalysis
 {
     public class Bin
     {
@@ -138,7 +138,7 @@ namespace EngineLayer.Analysis
         public void IdentifyUniprotBins(double v)
         {
             var ok = new HashSet<string>();
-            foreach (var hm in GlobalEngineLevelSettings.UniprotDeseralized)
+            foreach (var hm in GlobalVariables.UniprotDeseralized)
             {
                 if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
                     ok.Add(hm.id);
@@ -177,7 +177,7 @@ namespace EngineLayer.Analysis
             var ok = new HashSet<string>();
             var okformula = new HashSet<string>();
             var okDiff = new HashSet<double>();
-            foreach (var hm in GlobalEngineLevelSettings.UnimodDeserialized)
+            foreach (var hm in GlobalVariables.UnimodDeserialized)
             {
                 var theMod = hm as ModificationWithMassAndCf;
                 if (Math.Abs(theMod.monoisotopicMass - MassShift) <= v)

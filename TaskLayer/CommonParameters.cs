@@ -1,8 +1,9 @@
-﻿using MzLibUtil;
+﻿using EngineLayer;
+using MzLibUtil;
 using System;
 using System.Collections.Generic;
 
-namespace EngineLayer
+namespace TaskLayer
 {
     public class CommonParameters : ICommonParameters
     {
@@ -23,8 +24,8 @@ namespace EngineLayer
             TotalPartitions = 1;
             LocalizeAll = true;
 
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+            ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             ListOfModsLocalize = null;
 
             ConserveMemory = true;
@@ -42,7 +43,6 @@ namespace EngineLayer
             DeconvolutionMaxAssumedChargeState = 12;
             DeconvolutionMassTolerance = new PpmTolerance(4);
             ReportAllAmbiguity = true;
-            ExcelCompatible = true;
 
             TopNpeaks = 200;
             MinRatio = 0.01;
@@ -59,9 +59,9 @@ namespace EngineLayer
         public int? MaxParallelFilesToAnalyze { get; set; }
         public int MaxThreadsToUsePerFile { get; set; }
         public bool LocalizeAll { get; set; }
-        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
-        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
-        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
+        public IEnumerable<(string, string)> ListOfModsFixed { get; set; }
+        public IEnumerable<(string, string)> ListOfModsVariable { get; set; }
+        public IEnumerable<(string, string)> ListOfModsLocalize { get; set; }
 
         public bool DoPrecursorDeconvolution { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }
@@ -86,11 +86,10 @@ namespace EngineLayer
 
         public double ScoreCutoff { get; set; }
 
-        public DigestionParams DigestionParams { get; set; }
+        public IDigestionParams DigestionParams { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
-
-        public bool ExcelCompatible { get; set; }
+        
         public int? TopNpeaks { get; set; }
         public double? MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }
