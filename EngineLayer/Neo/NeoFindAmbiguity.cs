@@ -122,12 +122,10 @@ namespace EngineLayer.Neo
                     oldCand.foundIons[2] = false;
                     if (!oldCand.foundIons[3])
                     {
-
                         FusionCandidate fc = new FusionCandidate(oldCand.seq);
                         FindIons(fc, psm, spectrum);
                         fc.foundIons[1] = true;
                         fc.foundIons[2] = false;
-                        //fc.foundIons[3] = false;
                         if (!oldCand.foundIons[4])
                             fc.foundIons[4] = true;
                         nTermCands.Add(fc);
@@ -135,7 +133,6 @@ namespace EngineLayer.Neo
                         FindIons(fc, psm, spectrum);
                         fc.foundIons[1] = false;
                         fc.foundIons[2] = true;
-                        //fc.foundIons[3] = false;
                         nTermCands.Add(fc);
                         fc = new FusionCandidate(oldCand.seq);
                         FindIons(fc, psm, spectrum);
@@ -156,8 +153,6 @@ namespace EngineLayer.Neo
         //use ion hits to know where peaks have been found by morpheus and where there is ambiguity
         public static void FindIons(FusionCandidate fusionCandidate, NeoPsm psm, Ms2ScanWithSpecificMass spectrum)
         {
-            //double[] nPeaks = psm.nInfo.peakHits; //get peaks
-            //double[] cPeaks = psm.cInfo.peakHits;
             fusionCandidate.makeFoundIons();
             string candSeq = fusionCandidate.seq;
             bool[] foundIons = fusionCandidate.foundIons;
@@ -169,11 +164,6 @@ namespace EngineLayer.Neo
                 if (ionsUsed.Contains(ProductType.B))
                 {
                     double bTheoMass = NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS;
-                    //foreach (PTM ptm in psm.nInfo.ptms)
-                    //{
-                    //    if (ptm.index <= i)
-                    //        bTheoMass += ptm.mass;
-                    //}
                     foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
                     {
                         if (NeoMassCalculator.IdenticalMasses(expPeak, bTheoMass, productMassTolerancePpm))
@@ -184,11 +174,6 @@ namespace EngineLayer.Neo
                 if (ionsUsed.Contains(ProductType.Y))
                 {
                     double yTheoMass = NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1));
-                    //foreach (PTM ptm in psm.cInfo.ptms)
-                    //{
-                    //    if (ptm.index >= candSeq.Length - 2 - i)
-                    //        yTheoMass += ptm.mass;
-                    //}
                     foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
                     {
                         if (NeoMassCalculator.IdenticalMasses(expPeak, yTheoMass, productMassTolerancePpm))
@@ -199,11 +184,6 @@ namespace EngineLayer.Neo
                 if (ionsUsed.Contains(ProductType.C))
                 {
                     double cTheoMass = NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS + NeoConstants.nitrogenMonoisotopicMass + 3 * NeoConstants.hydrogenMonoisotopicMass;
-                    //foreach (PTM ptm in psm.nInfo.ptms)
-                    //{
-                    //    if (ptm.index <= i)
-                    //        cTheoMass += ptm.mass;
-                    //}
                     foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
                     {
                         if (NeoMassCalculator.IdenticalMasses(expPeak, cTheoMass, productMassTolerancePpm))
@@ -214,11 +194,6 @@ namespace EngineLayer.Neo
                 if (ionsUsed.Contains(ProductType.Zdot))
                 {
                     double zdotTheoMass = NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1)) - NeoConstants.nitrogenMonoisotopicMass - 2 * NeoConstants.hydrogenMonoisotopicMass;
-                    //foreach (PTM ptm in psm.cInfo.ptms)
-                    //{
-                    //    if (ptm.index >= candSeq.Length - 2 - i)
-                    //        zdotTheoMass += ptm.mass;
-                    //}
                     foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
                     {
                         if (NeoMassCalculator.IdenticalMasses(expPeak, zdotTheoMass, productMassTolerancePpm))
@@ -226,7 +201,6 @@ namespace EngineLayer.Neo
                     }
                 }
             }
-            //foundIons[0] = true; //AspN always starts with a D
             foundIons[0] = true;//|A|B|C|D|E|F|K where the whole peptide peak is always placed arbitrarily at the n term
         }
 
@@ -313,12 +287,6 @@ namespace EngineLayer.Neo
 
                         partialSequences.Clear();
 
-                        //for (int i = tempPartialSequences.Count - 1; i >= 0; i--)
-                        //{
-                        //    string seq = tempPartialSequences[i];
-                        //    if (seq.Length > 0 && !C1Position.Contains(seq[seq.Length - 1]))
-                        //        tempPartialSequences.RemoveAt(i);
-                        //}
                         if (tempPartialSequences.Count == 0)
                             break;
 
@@ -526,12 +494,9 @@ namespace EngineLayer.Neo
                 {
                     if (fc.Length < 5)
                         continue;
-                    //if(fc.Equals("TVDDKIVVQKY")||fc.Equals("AEVVVKEGL"))
-                    //{ }
+
                     string substring = fc.Substring(0, 4);
-                    //  bool translated = false;
-                    List<string> nFrag;
-                    nTermDictionary.TryGetValue(fc.Substring(0, 4), out nFrag);
+                    nTermDictionary.TryGetValue(fc.Substring(0, 4), out List<string> nFrag);
                     if (nFrag != null && nFrag.AsParallel().Any(seq => seq.Length >= fc.Length && seq.Substring(0, fc.Length).Equals(fc)))
                     {
                         psm.fusionType = FusionCandidate.FusionType.TL;
@@ -703,13 +668,7 @@ namespace EngineLayer.Neo
                         }
                     }
                 }
-
-                //if (psm.fusionType != FusionCandidate.FusionType.TS)
-                //    for (int i = psm.candidates.Count - 1; i >= 0; i--)
-                //        if (psm.candidates[i].fusionType == FusionCandidate.FusionType.TS)
-                //            psm.candidates.RemoveAt(i);
             }
-            //Old Code: Simply add all ambiguous strings to psm.candidates
             return psm.candidates.Count > 0;
         }
 
