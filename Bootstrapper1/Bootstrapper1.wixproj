@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>e0a5c097-df8e-41cd-a541-804f1351d070</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>MetatMorpheusBundle</OutputName>
+    <OutputName>MetaMorpheusInstaller</OutputName>
     <OutputType>Bundle</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
