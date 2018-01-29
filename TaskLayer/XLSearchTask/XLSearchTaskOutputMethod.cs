@@ -209,7 +209,7 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
-        private void WritePepXML_xl(List<PsmCross> items, List<DbForTask> dbFilenameList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePepXML_xl(List<PsmCross> items, List<DbForTask> dbFilenameList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
         {
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
             var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
@@ -228,7 +228,7 @@ namespace TaskLayer
             foreach (var x in CommonParameters.ListOfModsFixed) { modsFixed += x.Item2 + "."; }
             foreach (var x in CommonParameters.ListOfModsVariable) { modsVar += x.Item2 + "."; }
 
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.DecoyType, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             uint proteinTot = Convert.ToUInt32(proteinList.Count);
 

@@ -12,8 +12,25 @@ namespace EngineLayer
         #region Private Fields
 
         private static List<Modification> allModsKnown;
+        private static List<string> allModTypesKnown;
 
         #endregion Private Fields
+
+        #region Public Properties
+
+        // File locations
+        public static string DataDir { get; }
+        public static string ElementsLocation { get; }
+        public static string MetaMorpheusVersion { get; }
+        public static IGlobalSettings GlobalSettings { get; }
+        public static IEnumerable<Modification> UnimodDeserialized { get; }
+        public static IEnumerable<Modification> UniprotDeseralized { get; }
+        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
+        public static IReadOnlyDictionary<string, Protease> ProteaseDictionary { get; }
+        public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
+        public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
+
+        #endregion Public Properties
 
         #region Public Constructors
 
@@ -59,6 +76,10 @@ namespace EngineLayer
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
             AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
+            HashSet<string> modTypes = new HashSet<string>();
+            foreach (Modification mod in allModsKnown)
+                modTypes.Add(mod.modificationType);
+            allModTypesKnown = modTypes.ToList();
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
 
@@ -67,26 +88,11 @@ namespace EngineLayer
 
         #endregion Public Constructors
 
-        #region Public Properties
-
-        // File locations
-        public static string DataDir { get; }
-
-        public static string ElementsLocation { get; }
-        public static string MetaMorpheusVersion { get; }
-        public static IGlobalSettings GlobalSettings { get; }
-        public static IEnumerable<Modification> UnimodDeserialized { get; }
-        public static IEnumerable<Modification> UniprotDeseralized { get; }
-        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-        public static IReadOnlyDictionary<string, Protease> ProteaseDictionary { get; }
-        public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
-
-        #endregion Public Properties
-
         #region Public Methods
 
         public static void AddMods(IEnumerable<Modification> enumerable)
         {
+            HashSet<string> modTypes = new HashSet<string>();
             foreach (var ye in enumerable)
             {
                 if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
@@ -96,8 +102,12 @@ namespace EngineLayer
                 else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
                     continue;
                 else
+                {
                     allModsKnown.Add(ye);
+                    modTypes.Add(ye.modificationType);
+                }
             }
+            allModTypesKnown = modTypes.ToList();
         }
 
         #endregion Public Methods

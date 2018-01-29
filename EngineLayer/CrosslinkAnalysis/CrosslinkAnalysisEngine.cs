@@ -21,7 +21,6 @@ namespace EngineLayer.CrosslinkAnalysis
         private readonly List<Protein> proteinList;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ModificationWithMass> fixedModifications;
-        private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
 
         private readonly List<ProductType> lp;
         private readonly CrosslinkerTypeClass crosslinker;
@@ -34,7 +33,7 @@ namespace EngineLayer.CrosslinkAnalysis
 
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, ICommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, ICommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -42,7 +41,6 @@ namespace EngineLayer.CrosslinkAnalysis
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.lp = lp;
-            this.modsDictionary = modsDictionary;
             this.OutputFolder = OutputFolder;
             this.crosslinker = crosslinker;
             this.terminusType = terminusType;
