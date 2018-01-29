@@ -39,6 +39,7 @@
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
+      <ComponentRef Id="MetaAppGUIsettings.toml"/>
       <ComponentRef Id="RomoveApp"/>
       <ComponentRef Id="DesktopShortcut"/>
     </Feature>
@@ -72,6 +73,11 @@
             <Condition>OVERWRITEAPPDATA</Condition> 
             <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             <File Id="settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
+          </Component>
+          <Component Id="MetaAppGUIsettings.toml" Guid="9b60d7a4-a764-4ba1-8903-1733fc70618a">
+            <Condition>OVERWRITEAPPDATA</Condition>
+            <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+            <File Id="GUIsettings.toml" Name="GUIsettings.toml" Source="$(var.GUI_TargetDir)GUIsettings.toml" />
           </Component>
           <Component Id="RomoveApp" Guid="a5443b89-65b0-4855-b521-e7bcc9c5a85c">
             <RemoveFolder Id="MetaMorpheusAppFolder" On="uninstall"/>
