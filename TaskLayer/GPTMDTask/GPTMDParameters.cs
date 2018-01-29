@@ -9,7 +9,7 @@ namespace EngineLayer
 
         public GptmdParameters()
         {
-            ListOfModsGptmd = GlobalEngineLevelSettings.AllModsKnown.Where(b =>
+            ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
                 b.modificationType.Equals("N-linked glycosylation") ||
                 b.modificationType.Equals("Other glycosylation") ||
                 b.modificationType.Equals("Mod") ||

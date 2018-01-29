@@ -26,7 +26,7 @@ namespace MetaMorpheusCommandLine
         private static void Main(string[] args)
         {
             Console.WriteLine("Welcome to MetaMorpheus");
-            Console.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion);
+            Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
 
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
@@ -57,15 +57,9 @@ namespace MetaMorpheusCommandLine
                 MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
-                foreach (var modFile in Directory.GetFiles(GlobalEngineLevelSettings.modsLocation))
-                    GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-
-                GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
-                GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
-
                 foreach (var db in p.Object.Databases)
                     if (!Path.GetExtension(db).Equals(".fasta"))
-                        GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
+                        GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
 
                 List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 

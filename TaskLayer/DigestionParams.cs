@@ -12,7 +12,7 @@ namespace TaskLayer
             MinPeptideLength = 5;
             MaxPeptideLength = null;
             MaxModificationIsoforms = 4096;
-            Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"];
+            Protease = GlobalVariables.ProteaseDictionary["trypsin"];
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             MaxModsForPeptide = 3;
             SemiProteaseDigestion = false;
