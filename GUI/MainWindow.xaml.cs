@@ -115,7 +115,7 @@ namespace MetaMorpheusGUI
                     var json = response.Content.ReadAsStringAsync().Result;
                     JObject deserialized = JObject.Parse(json);
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
-                    if (!assets.Contains("MetaMorpheusNoDependenciesInstaller.msi"))
+                    if (!assets.Contains("MetaMorpheusInstaller.msi"))
                         throw new MetaMorpheusException("Necessary files do not exist!");
                     NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
