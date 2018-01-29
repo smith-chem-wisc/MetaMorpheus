@@ -1,6 +1,8 @@
-﻿namespace EngineLayer
+﻿using EngineLayer;
+
+namespace TaskLayer
 {
-    public class DigestionParams
+    public class DigestionParams : IDigestionParams
     {
         #region Public Constructors
 
@@ -10,7 +12,7 @@
             MinPeptideLength = 5;
             MaxPeptideLength = null;
             MaxModificationIsoforms = 4096;
-            Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"];
+            Protease = GlobalVariables.ProteaseDictionary["trypsin"];
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             MaxModsForPeptide = 3;
             SemiProteaseDigestion = false;
@@ -36,7 +38,7 @@
 
         public override bool Equals(object obj)
         {
-            var a = obj as DigestionParams;
+            var a = obj as IDigestionParams;
             return a != null
                 && MaxMissedCleavages.Equals(a.MaxMissedCleavages)
                 && MinPeptideLength.Equals(a.MinPeptideLength)
@@ -44,7 +46,9 @@
                 && InitiatorMethionineBehavior.Equals(a.InitiatorMethionineBehavior)
                 && MaxModificationIsoforms.Equals(a.MaxModificationIsoforms)
                 && MaxModsForPeptide.Equals(a.MaxModsForPeptide)
-                && Protease.Equals(a.Protease);
+                && Protease.Equals(a.Protease)
+                && SemiProteaseDigestion.Equals(a.SemiProteaseDigestion)
+                && TerminusTypeSemiProtease.Equals(a.TerminusTypeSemiProtease);
         }
 
         public override int GetHashCode()

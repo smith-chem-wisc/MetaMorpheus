@@ -2,7 +2,7 @@
 using SharpLearning.Containers.Matrices;
 using System.Collections.Generic;
 
-namespace EngineLayer
+namespace EngineLayer.Calibration
 {
     internal class IdentityCalibrationFunction : ILearner<double>
     {

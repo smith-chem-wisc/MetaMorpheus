@@ -1,4 +1,4 @@
-﻿namespace EngineLayer.ClassicSearch
+﻿namespace EngineLayer
 {
     internal class ScanWithIndexAndNotchInfo
     {
