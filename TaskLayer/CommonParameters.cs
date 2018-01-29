@@ -26,7 +26,7 @@ namespace TaskLayer
 
             ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
-            ListOfModTypesLocalize = null;
+            ListOfModTypesLocalize = new List<string>();
 
             ConserveMemory = true;
 
