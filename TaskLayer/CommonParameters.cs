@@ -100,7 +100,5 @@ namespace TaskLayer
 
         #endregion Public Properties
 
-
-
     }
 }

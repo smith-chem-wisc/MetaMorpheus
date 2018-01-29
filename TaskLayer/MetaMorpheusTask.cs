@@ -179,7 +179,7 @@ namespace TaskLayer
                 LocalizeAll = commonParams.LocalizeAll,
                 ListOfModsVariable = commonParams.ListOfModsVariable,
                 ListOfModsFixed = commonParams.ListOfModsFixed,
-                ListOfModsLocalize = commonParams.ListOfModsLocalize,
+                ListOfModTypesLocalize = commonParams.ListOfModTypesLocalize,
                 ConserveMemory = commonParams.ConserveMemory,
                 MaxParallelFilesToAnalyze = commonParams.MaxParallelFilesToAnalyze,
                 MaxThreadsToUsePerFile = commonParams.MaxThreadsToUsePerFile,

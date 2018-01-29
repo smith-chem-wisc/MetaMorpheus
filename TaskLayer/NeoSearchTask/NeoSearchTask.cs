@@ -116,15 +116,15 @@ namespace TaskLayer
 
                     List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
                     List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-                    List<ModificationWithMass> localizeableModifications;
+                    List<string> localizeableModificationTypes = CommonParameters.ListOfModTypesLocalize == null ? new List<string>() : CommonParameters.ListOfModTypesLocalize.ToList();
                     if (CommonParameters.LocalizeAll)
-                        localizeableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList();
+                        localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
                     else
-                        localizeableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains((b.modificationType, b.id))).ToList();
+                        localizeableModificationTypes = GlobalVariables.AllModTypesKnown.Where(b => localizeableModificationTypes.Contains(b)).ToList();
 
                     #endregion Load modifications 
 
-                    var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+                    var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
 
                     //Read N and C files
