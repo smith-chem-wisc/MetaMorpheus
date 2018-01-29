@@ -202,7 +202,7 @@ namespace EngineLayer
             }
         }
 
-        public static double CalculatePeptideScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static double CalculatePeptideScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, double weightIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -238,6 +238,8 @@ namespace EngineLayer
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
                     MatchingProductsHere++;
+                    if (weightIons > currentTheoreticalMz)
+                        MatchingProductsHere++;
                     MatchingIntensityHere += experimental_intensities[experimentalIndex];
 
                     currentTheoreticalIndex++; //prevent multi counting
@@ -308,6 +310,8 @@ namespace EngineLayer
                             if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                             {
                                 MatchingProductsHere++;
+                                if (weightIons > currentTheoreticalMass)
+                                    MatchingProductsHere++;
                                 MatchingIntensityHere += complementaryIntensities[experimentalIndex];
 
                                 currentTheoreticalIndex++;

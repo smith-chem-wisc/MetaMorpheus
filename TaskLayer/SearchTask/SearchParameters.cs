@@ -56,7 +56,7 @@ namespace TaskLayer
         public double MaxFragmentSize { get; set; }
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
-
+        public double WeightIons { get; set; } //used by Neo to improve N/C searches for termini
         #endregion Public Properties
     }
 }

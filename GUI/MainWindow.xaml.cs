@@ -385,34 +385,38 @@ namespace MetaMorpheusGUI
                     {
                         case "Search":
                             var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te1 = new PreRunTask(ye1);
-                            staticTasksObservableCollection.Add(te1);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te1) + 1) + "-" + ye1.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye1);
                             break;
 
                         case "Calibrate":
                             var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te2 = new PreRunTask(ye2);
-                            staticTasksObservableCollection.Add(te2);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te2) + 1) + "-" + ye2.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye2);
                             break;
 
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te3 = new PreRunTask(ye3);
-                            staticTasksObservableCollection.Add(te3);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te3) + 1) + "-" + ye3.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye3);
                             break;
 
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te4 = new PreRunTask(ye4);
-                            staticTasksObservableCollection.Add(te4);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te4) + 1) + "-" + ye4.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye4);
+                            break;
+
+                        case "Neo":
+                            var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            NeoLoadTomls.LoadTomls(ye5, staticTasksObservableCollection, draggedFilePath);
                             break;
                     }
                     break;
             }
+        }
+
+        private void AddTaskToCollection(MetaMorpheusTask ye)
+        {
+            PreRunTask te = new PreRunTask(ye);
+            staticTasksObservableCollection.Add(te);
+            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParameters.TaskDescriptor;
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -507,9 +511,7 @@ namespace MetaMorpheusGUI
             var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                PreRunTask task = new PreRunTask(dialog.TheTask);
-                staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                AddTaskToCollection(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
         }
@@ -519,9 +521,7 @@ namespace MetaMorpheusGUI
             var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                PreRunTask task = new PreRunTask(dialog.TheTask);
-                staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                AddTaskToCollection(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
         }
@@ -531,9 +531,7 @@ namespace MetaMorpheusGUI
             var dialog = new GptmdTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                PreRunTask task = new PreRunTask(dialog.TheTask);
-                staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                AddTaskToCollection(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
         }
@@ -543,9 +541,18 @@ namespace MetaMorpheusGUI
             var dialog = new XLSearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                PreRunTask task = new PreRunTask(dialog.TheTask);
-                staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                AddTaskToCollection(dialog.TheTask);
+                UpdateTaskGuiStuff();
+            }
+        }
+
+        private void AddNeoTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new NeoSearchTaskWindow();
+            if (dialog.ShowDialog() == true)
+            {
+                var ye5 = dialog.TheTask;
+                NeoLoadTomls.LoadTomls(ye5, staticTasksObservableCollection, "");
                 UpdateTaskGuiStuff();
             }
         }
@@ -799,6 +806,13 @@ namespace MetaMorpheusGUI
                         preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
+
+                    case MyTask.Neo:
+                        var Neodialog = new NeoSearchTaskWindow(preRunTask.metaMorpheusTask as NeoSearchTask);
+                        Neodialog.ShowDialog();
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + Neodialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
+                        return;
                 }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
@@ -984,5 +998,7 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+
     }
 }

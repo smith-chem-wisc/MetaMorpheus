@@ -37,5 +37,6 @@ namespace EngineLayer
         bool CalculateEValue { get; }
 
         #endregion Public Properties
+
     }
 }

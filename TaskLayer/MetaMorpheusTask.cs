@@ -19,7 +19,8 @@ namespace TaskLayer
         Search,
         Gptmd,
         Calibrate,
-        XLSearch
+        XLSearch,
+        Neo
     }
 
     public abstract class MetaMorpheusTask
@@ -169,26 +170,31 @@ namespace TaskLayer
 
             CommonParameters returnParams = new CommonParameters
             {
+                DigestionParams=commonParams.DigestionParams,
+                BIons = commonParams.BIons,
+                YIons = commonParams.YIons,
+                CIons = commonParams.CIons,
+                ZdotIons = commonParams.ZdotIons,
+                ReportAllAmbiguity = commonParams.ReportAllAmbiguity,
+                TotalPartitions = commonParams.TotalPartitions,
+                LocalizeAll = commonParams.LocalizeAll,
+                ListOfModsVariable = commonParams.ListOfModsVariable,
+                ListOfModsFixed = commonParams.ListOfModsFixed,
+                ListOfModsLocalize = commonParams.ListOfModsLocalize,
+                ConserveMemory = commonParams.ConserveMemory,
+                MaxParallelFilesToAnalyze = commonParams.MaxParallelFilesToAnalyze,
+                MaxThreadsToUsePerFile = commonParams.MaxThreadsToUsePerFile,
+                ScoreCutoff = commonParams.ScoreCutoff,
+                ExcelCompatible = commonParams.ExcelCompatible,
+                CalculateEValue = commonParams.CalculateEValue,
+
                 DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
-
                 UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo,
-
-                DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio,
-
+                DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio,            
                 DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState,
-
                 DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance,
-
-                TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
-
                 ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
-
                 PrecursorMassTolerance = currentFileSpecificSettings.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance,
-
-                ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
-
-                ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
-
                 TopNpeaks = currentFileSpecificSettings.TopNpeaks ?? commonParams.TopNpeaks,
                 MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio,
                 TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks,
@@ -213,7 +219,7 @@ namespace TaskLayer
             #endregion write TOML
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-            try
+           // try
             {
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
