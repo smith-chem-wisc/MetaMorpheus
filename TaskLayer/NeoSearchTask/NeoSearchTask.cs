@@ -163,15 +163,20 @@ namespace TaskLayer
                         nPath += "\\" + fileName;
                         cPath += "\\" + fileName;
                     }
+
+                    Status("Importing Search Results...", taskId);
                     List<NeoPsm> psms = ImportPsmtsv.ImportNeoPsms(nPath, cPath);
 
                     //Splice
+                    Status("Splicing Fragments...", taskId);
                     List<NeoPsm> candidates = NeoSplicePeptides.SplicePeptides(psms);
 
                     //Find Ambiguity
+                    Status("Identifying Ambiguity...", taskId);
                     NeoFindAmbiguity.FindAmbiguity(candidates, proteinList, arrayOfMs2ScansSortedByMass);
 
                     //Export Results
+                    Status("Exporting Results...", taskId);
                     NeoExport.ExportAll(candidates, arrayOfMs2ScansSortedByMass, OutputFolder);
                 });
             }

@@ -54,7 +54,6 @@ namespace EngineLayer.Neo
                         i--;
                     }
                 }
-                //this.worker.ReportProgress((int)((Convert.ToDouble(i > 0 ? i : 0) / candidates.Count()) * 100));
             }
             nTermDictionary.Clear();
             cTermDictionary.Clear();
