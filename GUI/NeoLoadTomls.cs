@@ -47,8 +47,8 @@ namespace MetaMorpheusGUI
                 string caliFileName = "CalibrationTaskconfig.toml";
                 caliFileName = File.Exists(novelFolderPath + caliFileName) ? novelFolderPath + caliFileName : defaultFolderPath + caliFileName;
                 UpdateTomls(tomlFileName, caliFileName, ye5.CommonParameters, TerminusType.None, false);
-                var yeo = Toml.ReadFile<CalibrationTask>(caliFileName, MetaMorpheusTask.tomlConfig);
-                AddTaskToCollection(yeo, staticTasksObservableCollection);
+                var yeo = Toml.ReadFile<CalibrationTask>(caliFileName, MetaMorpheusTask.tomlConfig);//FIXME, An item with the same key has already been added, dictionary in Toml.ReadFile
+                AddTaskToCollection(yeo, staticTasksObservableCollection);//multiple protease issue
             }
 
             if (ye5.NeoParameters.GPTMD)
@@ -193,11 +193,17 @@ namespace MetaMorpheusGUI
                     newTomlLines.Add(GetCorrectValue("InitiatorMethionineBehavior", tomlFileName, line));
                 else if (line.Contains("MinPeptideLength") && !!terminusType.Equals(TerminusType.None))
                     newTomlLines.Add(GetCorrectValue("MinPeptideLength", tomlFileName, line));
+                else if (line.Contains("MaxPeptideLength"))
+                    newTomlLines.Add(GetCorrectValue("MaxPeptideLength", tomlFileName, line));
                 else if (line.Contains("MaxModificationIsoforms"))
                     newTomlLines.Add(GetCorrectValue("MaxModificationIsoforms", tomlFileName, line));
                 else if (line.Contains("MaxModsForPeptide"))
                     newTomlLines.Add(GetCorrectValue("MaxModsForPeptide", tomlFileName, line));
-                else if (line.Contains("Protease") && terminusType.Equals(TerminusType.None) && !spliceSearch)
+                else if (line.Contains("SemiProteaseDigestion"))
+                    newTomlLines.Add(GetCorrectValue("SemiProteaseDigestion", tomlFileName, line));
+                else if (line.Contains("TerminusTypeSemiProtease"))
+                    newTomlLines.Add(GetCorrectValue("TerminusTypeSemiProtease", tomlFileName, line));
+                else if (line.Contains("Protease") && terminusType.Equals(TerminusType.None) && !spliceSearch) //this must be last, else other names including protease will be overwritten and crash.
                     newTomlLines.Add(GetCorrectValue("Protease", tomlFileName, line));
                 else
                     newTomlLines.Add(line);

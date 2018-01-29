@@ -36,12 +36,10 @@ TaskDescriptor = "CalibrateTask"
 CalculateEValue = false
 
 [CommonParameters.DigestionParams]
-MaxMissedCleavages = 12
+MaxMissedCleavages = 2
 InitiatorMethionineBehavior = "Variable"
-MinPeptideLength = 8
-MaxPeptideLength = 13
+MinPeptideLength = 6
+MaxPeptideLength = 50
 MaxModificationIsoforms = 4096
 MaxModsForPeptide = 3
-Protease = "non-specific"
-SemiProteaseDigestion = false
-TerminusTypeSemiProtease = "None"
+Protease = "trypsin"

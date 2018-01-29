@@ -126,36 +126,7 @@ namespace TaskLayer
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;
                     string cPath = NeoParameters.CFilePath;
-                    //if termini input
-
-                    if (nPath == null || cPath == null)
-                    {
-                        //if no termini input
-                        string taskHeader = "Task";
-                        string[] pathArray = OutputFolder.Split('\\');
-                        string basePath = "";
-                        for (int i = 0; i < pathArray.Length - 1; i++)
-                            basePath += pathArray[i] + '\\';
-                        string currentTaskNumber = pathArray[pathArray.Length - 1].Split('-')[0];
-                        currentTaskNumber = currentTaskNumber.Substring(taskHeader.Length, currentTaskNumber.Length - taskHeader.Length);
-                        string NHeader = "";
-                        string CHeader = "";
-                        if (cPath == null)
-                        {
-                            CHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 1);
-                            if (nPath == null)
-                                NHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 2);
-                        }
-                        else
-                            NHeader = taskHeader + (Convert.ToInt16(currentTaskNumber) - 1);
-                        foreach (string s in Directory.GetDirectories(basePath))
-                        {
-                            if (s.Contains(NHeader))
-                                nPath = s;
-                            else if (s.Contains(CHeader))
-                                cPath = s;
-                        }
-                    }
+                    //if termini input        
 
                     if (nPath == null || cPath == null)
                     {

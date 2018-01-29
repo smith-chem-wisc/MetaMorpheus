@@ -17,15 +17,14 @@ namespace EngineLayer.Neo
             string path = "";
             string[] temp = databaseFileName.Split('\\').ToArray();
             for (int i = 0; i < temp.Count() - 1; i++)
-            {
                 path += temp[i] + '\\';
-            }
+            
             Directory.CreateDirectory(path + folder);
             ExportCandidates(psms, spectra, path);
-            ExportFullFASTA(psms, databaseFileName, path);
+           // ExportFullFASTA(psms, databaseFileName, path);
             ExportFASTAAppendix(psms, databaseFileName, path);
 
-            ExportFilteredFusionPeptideAppendix(psms, databaseFileName, path);
+          //  ExportFilteredFusionPeptideAppendix(psms, databaseFileName, path);
             return "";
         }
 
