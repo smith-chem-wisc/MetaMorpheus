@@ -31,7 +31,7 @@ namespace Test
             Assert.AreEqual(searchTask.CommonParameters.PrecursorMassTolerance.ToString(), searchTaskLoaded.CommonParameters.PrecursorMassTolerance.ToString());
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.First().Item1, searchTaskLoaded.CommonParameters.ListOfModsFixed.First().Item1);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.First().Item2, searchTaskLoaded.CommonParameters.ListOfModsFixed.First().Item2);
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsLocalize, searchTaskLoaded.CommonParameters.ListOfModsLocalize);
+            Assert.AreEqual(searchTask.CommonParameters.ListOfModTypesLocalize, searchTaskLoaded.CommonParameters.ListOfModTypesLocalize);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.Count(), searchTaskLoaded.CommonParameters.ListOfModsFixed.Count());
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsVariable.Count(), searchTaskLoaded.CommonParameters.ListOfModsVariable.Count());
 

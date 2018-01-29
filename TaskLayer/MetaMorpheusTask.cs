@@ -307,7 +307,7 @@ namespace TaskLayer
             }
         }
 
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
+        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um)
         {
             if (Path.GetExtension(fileName).Equals(".fasta"))
             {
@@ -315,7 +315,10 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, localizeableModifications, isContaminant, new List<string>(), out um);
+            {
+                List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
+                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um);
+            }
         }
 
         protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)

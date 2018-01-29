@@ -12,7 +12,7 @@ namespace EngineLayer
         bool LocalizeAll { get; }
         IEnumerable<(string, string)> ListOfModsFixed { get; }
         IEnumerable<(string, string)> ListOfModsVariable { get; }
-        IEnumerable<(string, string)> ListOfModsLocalize { get; }
+        IEnumerable<string> ListOfModTypesLocalize { get; }
         bool DoPrecursorDeconvolution { get; }
         bool UseProvidedPrecursorInfo { get; }
         double DeconvolutionIntensityRatio { get; }
