@@ -136,23 +136,10 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var mod in task.CommonParameters.ListOfModsLocalize)
+                foreach (var mod in task.CommonParameters.ListOfModTypesLocalize)
                 {
-                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
-                    if (theModType != null)
-                    {
-                        var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
-                        if (theMod != null)
-                            theMod.Use = true;
-                        else
-                            theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
-                    }
-                    else
-                    {
-                        theModType = new ModTypeForTreeView(mod.Item1, true);
-                        localizeModTypeForTreeViewObservableCollection.Add(theModType);
-                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
-                    }
+                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod));
+                    theModType.Use = true;
                 }
             }
 
@@ -286,16 +273,13 @@ namespace MetaMorpheusGUI
 
             if (localizeAllCheckBox.IsChecked.Value)
             {
-                CommonParamsToSave.ListOfModsLocalize = null;
+                CommonParamsToSave.ListOfModTypesLocalize = null;
                 CommonParamsToSave.LocalizeAll = true;
             }
             else
             {
                 CommonParamsToSave.LocalizeAll = false;
-                var listOfModsLocalize = new List<(string, string)>();
-                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    listOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
-                CommonParamsToSave.ListOfModsLocalize = listOfModsLocalize;
+                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
             }
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
