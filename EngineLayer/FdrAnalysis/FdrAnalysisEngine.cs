@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace EngineLayer.Analysis
+namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {

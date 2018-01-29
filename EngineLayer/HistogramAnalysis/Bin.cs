@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace EngineLayer.Analysis
+namespace EngineLayer.HistogramAnalysis
 {
     public class Bin
     {

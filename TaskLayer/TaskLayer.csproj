@@ -9,7 +9,7 @@
     <PackageReference Include="Apache.Avro" Version="1.7.7.2" />
     <PackageReference Include="FlashLFQ" Version="0.1.100" />
     <PackageReference Include="MathNet.Numerics" Version="3.20.2" />
-    <PackageReference Include="mzLib" Version="1.0.268" />
+    <PackageReference Include="mzLib" Version="1.0.271" />
     <PackageReference Include="NetSerializer" Version="4.1.0" />
     <PackageReference Include="Nett" Version="0.8.0" />
     <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.7.2" />
