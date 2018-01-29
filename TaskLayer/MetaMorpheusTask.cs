@@ -306,6 +306,7 @@ namespace TaskLayer
 
         protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
         {
+
             if (Path.GetExtension(fileName).Equals(".fasta"))
             {
                 um = null;

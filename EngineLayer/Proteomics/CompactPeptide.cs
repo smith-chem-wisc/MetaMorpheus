@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Linq;
+using ZeroFormatter;
 
 namespace EngineLayer
 {
-    [Serializable]
+    [ZeroFormattable]
     public class CompactPeptide : CompactPeptideBase
     {
         #region Public Constructors
@@ -17,6 +18,11 @@ namespace EngineLayer
             if (terminusType == TerminusType.None || terminusType == TerminusType.C)
                 CTerminalMasses = ComputeFollowingFragmentMasses(peptideWithSetModifications, 0, peptideWithSetModifications.Length + 1, -1).ToArray();
             MonoisotopicMassIncludingFixedMods = peptideWithSetModifications.MonoisotopicMass;
+        }
+
+        public CompactPeptide()
+        {
+
         }
 
         #endregion Public Constructors
