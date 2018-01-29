@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>be72541a-66a4-4958-9d19-56acc7d3876b</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>MetaMorpheusNoDependenciesInstaller</OutputName>
+    <OutputName>MetaMorpheusInstaller</OutputName>
     <OutputType>Package</OutputType>
     <Name>MetaMorpheusSetup</Name>
   </PropertyGroup>
