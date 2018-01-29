@@ -32,7 +32,6 @@
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="MetaMorpheusInstaller.msi" />
     <Content Include="theme.xml" />
     <Content Include="vc_redist.x64.exe" />
   </ItemGroup>
