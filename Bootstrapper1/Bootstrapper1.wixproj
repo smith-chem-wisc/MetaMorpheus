@@ -19,7 +19,7 @@
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Bundle.wxs" />
+    <Compile Include="bootstrapper1.wxs" />
   </ItemGroup>
   <ItemGroup>
     <WixExtension Include="WixUtilExtension">
@@ -37,7 +37,7 @@
     <Content Include="vc_redist.x64.exe" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Downloads\MetaMorpheus-master%284%29\MetaMorpheus-master\MetaMorpheusSetup\MetaMorpheusSetup.wixproj">
+    <ProjectReference Include="..\MetaMorpheusSetup\MetaMorpheusSetup.wixproj">
       <Name>MetaMorpheusSetup</Name>
       <Project>{be72541a-66a4-4958-9d19-56acc7d3876b}</Project>
       <Private>True</Private>

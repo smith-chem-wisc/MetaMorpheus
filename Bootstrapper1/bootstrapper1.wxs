@@ -15,7 +15,7 @@
       DetectCondition="VCDISTINSTALLED"
       InstallCommand="/q /ACTION=Install"
       RepairCommand="/q ACTION=Repair /hideconsole" />
-      <MsiPackage DisplayInternalUI='yes' SourceFile="MetaMorpheusInstaller.msi" />
+      <MsiPackage DisplayInternalUI='yes' SourceFile="$(var.MetaMorpheusSetup.TargetPath)" />
 
     </Chain>
   </Bundle>
