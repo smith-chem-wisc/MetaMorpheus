@@ -149,11 +149,11 @@ namespace MetaMorpheusGUI
             List<string> newTomlLines = new List<string>();
             foreach (string line in oldTomlLines)
             {
-                if (line.Contains("LocalizeAll"))
+                if (line.Contains("LocalizeAll") && terminusType.Equals(TerminusType.None))
                     newTomlLines.Add(GetCorrectValue("LocalizeAll", tomlFileName, line));
                 else if (line.Contains("ListOfModsFixed"))
                     newTomlLines.Add(GetCorrectValue("ListOfModsFixed", tomlFileName, line));
-                else if (line.Contains("ListOfModsVariable"))
+                else if (line.Contains("ListOfModsVariable") && terminusType.Equals(TerminusType.None))
                     newTomlLines.Add(GetCorrectValue("ListOfModsVariable", tomlFileName, line));
                 else if (line.Contains("BIons"))
                 {

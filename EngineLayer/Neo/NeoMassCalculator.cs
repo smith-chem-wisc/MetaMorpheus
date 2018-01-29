@@ -17,9 +17,7 @@ namespace EngineLayer.Neo
         public static void ImportMasses()
         {
             AminoAcidMasses();
-            //ModificationMasses();            
             NeoFindAmbiguity.ReadMassDictionary();
-
         }
 
         public static bool IdenticalMasses(double experimental, double theoretical, double tolerance)
@@ -126,11 +124,6 @@ namespace EngineLayer.Neo
 
         public static double MonoIsoptopicMass(string baseSequence)
         {
-            //troubleshooter++;
-            //if(Convert.ToDouble(troubleshooter)==Math.Round(Convert.ToDouble(troubleshooter)/1000)*1000)
-            //{
-            //MessageBox.Show(troubleshooter.ToString() + " " + baseSequence);
-            //}
             double monoisotopic_mass = NeoConstants.WATER_MONOISOTOPIC_MASS;
             Boolean ModificationOn = false;
             string ModificationName = "";
@@ -139,19 +132,11 @@ namespace EngineLayer.Neo
                 if (amino_acid == ']') //only occurs at end of mod
                 {
                     ModificationOn = false;
-                    //if (ModificationName == "oxidation of M") //annotated differently than uniprot
-                    //if (ModificationName == "v:Oxidation of M anywhere") //annotated differently than uniprot
                     if (ModificationName == "v:Oxidation") //Added 3/6/17
                     {
                         monoisotopic_mass += 15.99491463;
                         ModificationName = "";
                     }
-                    //else
-                    //{
-                    //    DataRow[] PTMRow = ModificationsDT.Select("Name = '" + ModificationName + "'");
-                    //    monoisotopic_mass += Convert.ToDouble(PTMRow[0][1]);
-                    //    ModificationName = "";
-                    //}
                 }
                 if (ModificationOn == true) //only occurs if "(" already found
                     ModificationName += amino_acid;

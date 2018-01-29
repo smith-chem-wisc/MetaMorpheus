@@ -64,11 +64,7 @@ namespace EngineLayer.Neo
             {
                 if (amino_acid == ']') //only occurs at end of mod
                 {
-                    //ModificationOn = false;
-                    //double modMass = MassCalculator.getPTMMass(ModificationName, out string e);
-                    //error_message += e;
-                    //PTM ptm = new PTM(ModificationName, aaIndex, modMass);
-                    //this.ptms.Add(ptm);
+                    ModificationOn = false;
                 }
                 if (ModificationOn == true) //only occurs if "(" already found
                 {

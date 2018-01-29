@@ -76,13 +76,15 @@ namespace TaskLayer
             }
             else if (AggregateNormalSplicedFiles)
             {
-
+                string normalPath = "";
                 string cisPath = new DirectoryInfo(OutputFolder).Name;
                 string taskString = cisPath.Split('-')[0];
                 int taskNum = Convert.ToInt32(taskString.Substring(4, taskString.Length - 4));
                 taskNum -= 2;
                 string transPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + (taskNum + 1) + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
                 cisPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
+                AggregateSearchFiles.RecursiveNeoAggregation(normalPath, cisPath, OutputFolder,"CisResults.psmtsv");
+                AggregateSearchFiles.RecursiveNeoAggregation(normalPath, transPath, OutputFolder, "TransResults.psmtsv");
             }
             else
             {

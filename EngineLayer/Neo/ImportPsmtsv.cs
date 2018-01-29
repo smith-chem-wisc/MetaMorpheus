@@ -53,8 +53,6 @@ namespace EngineLayer.Neo
                     baseIndex = i;
                     fullIndex = i; //workaround for open mass searches generating thousands of combinations; eventually patch
                 }
-                //else if (currentHeader.Equals(fullHeader))
-                //    fullIndex = i;
                 else if (currentHeader.Equals(accessionHeader))
                     accessionIndex = i;
                 else if (currentHeader.Equals(proteinHeader))

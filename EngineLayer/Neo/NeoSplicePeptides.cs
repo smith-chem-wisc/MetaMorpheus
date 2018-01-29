@@ -21,12 +21,7 @@ namespace EngineLayer.Neo
                 //this.worker.ReportProgress(Convert.ToInt16((Convert.ToDouble(counter) / Convert.ToDouble(psms.Count())) * 100));
                 //counter++;
                 //preliminary filters can be removed if MassMatch calls to IonCrop are set to true.
-                if (psm.cInfo.seq.Contains("AWRRSC"))
-                { }
                 string B = IonCrop(psm.nInfo.seq, psm.expMass, 0, ProductType.B, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
-
-                if(psm.cInfo.seq.Contains("AWRRSC"))
-                { }
                 string Y = IonCrop(psm.cInfo.seq, psm.expMass, 0, ProductType.Y, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
                 for (int y = 0; y < Y.Length - ionsUsedMassVer; y++) //foreach y aa removed
                 {
@@ -53,30 +48,13 @@ namespace EngineLayer.Neo
         {
             double experimentalMass = psm.expMass;
             string bFrag = IonCrop(B, experimentalMass, BIndex, ProductType.B, false); //returns a B ion sequence that has a mass smaller than the experimental mass by cleaving C term AA
-            //BIndex = B.Length - BFrag.Length; //added 11/8/16 Useful first pass to record how many AA have been cleaved from C term 
             if (bFrag.Length < ionsUsedMassVer)//If the number of AA from the N-term peptide is less than desired amount, start over loop and remove a single aa from the C-term
                 return;
             string yFrag = IonCrop(Y, experimentalMass, YIndex, ProductType.Y, false); //returns a Y ion sequence that has a mass smaller than the experimental mass by cleaving N term AA
-            //YIndex = Y.Length - YFrag.Length; //added 11/8/16 Useful first pass to record how many AA have been cleaved from N term
             if (yFrag.Length < ionsUsedMassVer)//If the number of AA from the C-term peptide is less than desired amount, end recursion.
                 return;
             double theoreticalMass = NeoMassCalculator.MonoIsoptopicMass(bFrag) + NeoMassCalculator.MonoIsoptopicMass(yFrag) - NeoConstants.WATER_MONOISOTOPIC_MASS + fixedModMass; //water added once in b and once in y
 
-            //add PTM masses
-            //foreach (PTM ptm in psm.nInfo.ptms)
-            //{
-            //    if (ptm.index < bFrag.Length)
-            //    {
-            //        theoreticalMass += ptm.mass;
-            //    }
-            //}
-            //foreach (PTM ptm in psm.cInfo.ptms)
-            //{
-            //    if (Y.Length - ptm.index < yFrag.Length)
-            //    {
-            //        theoreticalMass += ptm.mass;
-            //    }
-            //}
             if (NeoMassCalculator.IdenticalMasses(experimentalMass, theoreticalMass, NeoFindAmbiguity.precursorMassTolerancePpm))//if match
             {
                 string novelSeq = bFrag + yFrag;
