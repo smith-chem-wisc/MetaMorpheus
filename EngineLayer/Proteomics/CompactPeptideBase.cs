@@ -3,10 +3,11 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ZeroFormatter;
 
 namespace EngineLayer
 {
-    [Serializable]
+    [ZeroFormattable]
     public abstract class CompactPeptideBase : IEquatable<CompactPeptideBase>
     {
         #region Protected Fields
@@ -30,10 +31,12 @@ namespace EngineLayer
         #endregion Private Fields
 
         #region Public Properties
-
-        public double[] CTerminalMasses { get; protected set; }
-        public double[] NTerminalMasses { get; protected set; }
-        public double MonoisotopicMassIncludingFixedMods { get; protected set; }
+        [Index(0)]
+        public virtual double[] CTerminalMasses { get; protected set; }
+        [Index(1)]
+        public virtual double[] NTerminalMasses { get; protected set; }
+        [Index(2)]
+        public virtual double MonoisotopicMassIncludingFixedMods { get; protected set; }
 
         #endregion Public Properties
 

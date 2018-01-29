@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 using UsefulProteomicsDatabases;
-
+using ZeroFormatter;
 
 namespace TaskLayer
 {
@@ -51,7 +51,6 @@ namespace TaskLayer
         #endregion Public Properties
 
         #region Public Methods
-
         public static void WriteMzidentml(IEnumerable<Psm> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, Tolerance productTolerance, int missedCleavages, string outputPath)
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
@@ -73,8 +72,6 @@ namespace TaskLayer
                 version = "1.1.0",
                 id = "",
             };
-
-
             _mzid.Provider = new mzIdentML110.Generated.ProviderType()
             {
                 id = "PROVIDER",
@@ -1539,21 +1536,26 @@ namespace TaskLayer
         private static void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
+            //var ser = new NetSerializer.Serializer(messageTypes);
             using (var file = File.Create(peptideIndexFile))
             {
-                ser.Serialize(file, peptideIndex);
+                //ser.Serialize(file, peptideIndex);
+                var ser = ZeroFormatterSerializer.Serialize(file);
+
             }
         }
 
         private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            //var ser = new NetSerializer.Serializer(messageTypes);
 
             using (var file = File.Create(fragmentIndexFile))
-                ser.Serialize(file, fragmentIndex);
+            {
+                var ser = ZeroFormatterSerializer.Serialize(fragmentIndex);
+            }
+            //ser.Serialize(file, fragmentIndex);
+
         }
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
@@ -1661,7 +1663,7 @@ namespace TaskLayer
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
-
+        //HEERE
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -1681,27 +1683,31 @@ namespace TaskLayer
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
-                WritePeptideIndex(peptideIndex, peptideIndexFile);
+                //WritePeptideIndex(peptideIndex, peptideIndexFile);
+                FileStream peptideStream = File.Create(peptideIndexFile);
+                ZeroFormatterSerializer.Serialize(peptideStream, peptideIndex);
                 SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
-                WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
+                //WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
+                FileStream fragmentStream = File.Create(fragmentIndexFile);
+                ZeroFormatterSerializer.Serialize(fragmentStream, fragmentIndex);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
             }
             else
             {
                 Status("Reading peptide index...", new List<string> { taskId });
-                var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-                var ser = new NetSerializer.Serializer(messageTypes);
+                //var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                //var ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                    peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
-
+                    peptideIndex = ZeroFormatterSerializer.Deserialize<List<CompactPeptide>>(file);
+                    
                 Status("Reading fragment index...", new List<string> { taskId });
-                messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                ser = new NetSerializer.Serializer(messageTypes);
+               // messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+                //ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                    fragmentIndex = (List<int>[])ser.Deserialize(file);
+                    fragmentIndex = ZeroFormatterSerializer.Deserialize<List<int>[]>(file);
             }
         }
 
