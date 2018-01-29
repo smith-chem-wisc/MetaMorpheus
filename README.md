@@ -28,7 +28,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * Environment:
   * For .NET Core versions: .NET Core 2.0.0 runtime
   * For .NET Framework versions: .NET Framework 4.7.1
-    * The .NET Framework versions have the ability to read Thermo .RAW files. Those require [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed, and at least an x64 Windows 7. For some .RAW files, minimum required MSFileReader version is 3.1.9 (3.1 SP4).
+    * The .NET Framework versions have the ability to read Thermo .RAW files. Those require [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed, and at least an x64 Windows 7, as well as Visual C++ redistributable. 
 * At least 16 GB RAM recommended
 
 
@@ -45,7 +45,7 @@ UniProt .XML or .fasta format, may be used in compressed (.gz) format.
 
 ## Test Installation (Windows GUI)
 
-1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusGuiDotNetFrameworkAppveyor.zip" using, for example, [7-Zip](http://www.7-zip.org).
+1. Download the latest MetaMorpheusInstaller.exe [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases), and install MetaMorpheus.
 2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp).
 3. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot XML database on the GUI.
 4. Add search tasks that test all of the functionality of MetaMorpheus. Drag the .toml files **IN ORDER** (Task1 - Task5) onto the application. 
