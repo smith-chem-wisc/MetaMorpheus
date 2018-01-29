@@ -221,11 +221,12 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
             TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
 
-            var listOfModsVariable = new List<(string, string)>();
             if (OutputFileNameTextBox.Text != "")
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
             else
                 CommonParamsToSave.TaskDescriptor = "CalibrateTask";
+
+            var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             CommonParamsToSave.ListOfModsVariable = listOfModsVariable;

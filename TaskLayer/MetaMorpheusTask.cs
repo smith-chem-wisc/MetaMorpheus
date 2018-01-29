@@ -170,7 +170,6 @@ namespace TaskLayer
 
             CommonParameters returnParams = new CommonParameters
             {
-                DigestionParams=commonParams.DigestionParams,
                 BIons = commonParams.BIons,
                 YIons = commonParams.YIons,
                 CIons = commonParams.CIons,
@@ -185,7 +184,6 @@ namespace TaskLayer
                 MaxParallelFilesToAnalyze = commonParams.MaxParallelFilesToAnalyze,
                 MaxThreadsToUsePerFile = commonParams.MaxThreadsToUsePerFile,
                 ScoreCutoff = commonParams.ScoreCutoff,
-                ExcelCompatible = commonParams.ExcelCompatible,
                 CalculateEValue = commonParams.CalculateEValue,
 
                 DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
@@ -199,7 +197,6 @@ namespace TaskLayer
                 MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio,
                 TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks,
                 TrimMsMsPeaks = currentFileSpecificSettings.TrimMsMsPeaks ?? commonParams.TrimMsMsPeaks,
-                CalculateEValue = currentFileSpecificSettings.CalculateEValue ?? commonParams.CalculateEValue,
                 DigestionParams = computedDigestionParams,
             };
 
@@ -219,7 +216,7 @@ namespace TaskLayer
             #endregion write TOML
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-           // try
+            try
             {
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();

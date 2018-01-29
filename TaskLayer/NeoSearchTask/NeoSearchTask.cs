@@ -22,16 +22,21 @@ namespace TaskLayer
         {
             NeoParameters = new NeoParameters();
 
+            IDigestionParams tempDigParams = new DigestionParams
+            {
+                MinPeptideLength = 8,
+                MaxPeptideLength = 13,
+                Protease = GlobalVariables.ProteaseDictionary["non-specific"],
+                MaxMissedCleavages = 12
+            };
             CommonParameters = new CommonParameters
             {
+                DigestionParams = tempDigParams,
                 DoPrecursorDeconvolution = false,
                 PrecursorMassTolerance = null,
                 ProductMassTolerance = null
             };
-            CommonParameters.DigestionParams.MinPeptideLength = 8;
-            CommonParameters.DigestionParams.MaxPeptideLength = 13;
-            CommonParameters.DigestionParams.Protease = GlobalEngineLevelSettings.ProteaseDictionary["non-specific"];
-            CommonParameters.DigestionParams.MaxMissedCleavages = 12;
+
         }
 
         #region Public Properties
@@ -67,7 +72,7 @@ namespace TaskLayer
                     taskNum--;
                     NeoParameters.TargetFilePath = OutputFolder.Substring(0, OutputFolder.Length - NeoParameters.TargetFilePath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
                 }
-                AggregateSearchFiles.Combine(NeoParameters.TargetFilePath, NeoParameters.DecoyFilePath, OutputFolder+"\\"+ Path.GetFileNameWithoutExtension(currentRawFileList[0]));
+                AggregateSearchFiles.Combine(NeoParameters.TargetFilePath, NeoParameters.DecoyFilePath, OutputFolder + "\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]));
             }
             else if (AggregateNormalSplicedFiles)
             {
@@ -75,12 +80,9 @@ namespace TaskLayer
                 string cisPath = new DirectoryInfo(OutputFolder).Name;
                 string taskString = cisPath.Split('-')[0];
                 int taskNum = Convert.ToInt32(taskString.Substring(4, taskString.Length - 4));
-                taskNum-=2;
-                string transPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + (taskNum+1) + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
+                taskNum -= 2;
+                string transPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + (taskNum + 1) + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
                 cisPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
-
-            //    AggregateSearchFiles.Combine(NeoParameters.TargetFilePath, cisPath);
-              //  AggregateSearchFiles.Combine(NeoParameters.TargetFilePath, transPath);
             }
             else
             {
@@ -110,13 +112,13 @@ namespace TaskLayer
 
                     #region Load modifications
 
-                    List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-                    List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                    List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+                    List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
                     List<ModificationWithMass> localizeableModifications;
                     if (CommonParameters.LocalizeAll)
-                        localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+                        localizeableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList();
                     else
-                        localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                        localizeableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains((b.modificationType, b.id))).ToList();
 
                     #endregion Load modifications 
 
@@ -155,7 +157,7 @@ namespace TaskLayer
                             else if (s.Contains(CHeader))
                                 cPath = s;
                         }
-                        string fileName= Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
+                        string fileName = Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
                         nPath += "\\" + fileName;
                         cPath += "\\" + fileName;
                     }
