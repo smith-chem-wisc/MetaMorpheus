@@ -11,7 +11,8 @@ namespace EngineLayer
     {
         #region Private Fields
 
-        private static List<Modification> allModsKnown;
+        private static List<Modification> allModsKnown = new List<Modification>();
+        private static HashSet<string> allModTypesKnown = new HashSet<string>();
 
         #endregion Private Fields
 
@@ -54,7 +55,6 @@ namespace EngineLayer
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
-            allModsKnown = new List<Modification>();
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
@@ -80,6 +80,7 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
         public static IReadOnlyDictionary<string, Protease> ProteaseDictionary { get; }
         public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
+        public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
 
         #endregion Public Properties
 
@@ -96,7 +97,10 @@ namespace EngineLayer
                 else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
                     continue;
                 else
+                {
                     allModsKnown.Add(ye);
+                    allModTypesKnown.Add(ye.modificationType);
+                }
             }
         }
 

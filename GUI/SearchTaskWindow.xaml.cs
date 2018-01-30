@@ -26,7 +26,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> modSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
 
         #endregion Private Fields
@@ -97,7 +97,7 @@ namespace MetaMorpheusGUI
 
         private static Boolean TextBoxIntAllowed(String Text2)
         {
-            return Array.TrueForAll<Char>(Text2.ToCharArray(),
+            return Array.TrueForAll(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
 
@@ -140,6 +140,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
+
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
@@ -148,13 +149,9 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
-            {
-                var theModType = new ModTypeForTreeView(hm.Key, false);
-                localizeModTypeForTreeViewObservableCollection.Add(theModType);
-                foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-            }
+                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
         }
 
@@ -252,35 +249,22 @@ namespace MetaMorpheusGUI
             if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    heh.Use = true;
+                    heh.Use = false;
             }
             else
             {
-                foreach (var mod in task.CommonParameters.ListOfModsLocalize)
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                 {
-                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
-                    if (theModType != null)
-                    {
-                        var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
-                        if (theMod != null)
-                            theMod.Use = true;
-                        else
-                            theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
-                    }
+                    if(task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
+                        heh.Use = true;
                     else
-                    {
-                        theModType = new ModTypeForTreeView(mod.Item1, true);
-                        localizeModTypeForTreeViewObservableCollection.Add(theModType);
-                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
-                    }
+                        heh.Use = false;
                 }
             }
 
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
             foreach (var ye in fixedModTypeForTreeViewObservableCollection)
-                ye.VerifyCheckState();
-            foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
 
             mdacExact.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Exact;
@@ -450,16 +434,13 @@ namespace MetaMorpheusGUI
 
             if (localizeAllCheckBox.IsChecked.Value)
             {
-                CommonParamsToSave.ListOfModsLocalize = null;
+                CommonParamsToSave.ListOfModTypesLocalize = null;
                 CommonParamsToSave.LocalizeAll = true;
             }
             else
             {
                 CommonParamsToSave.LocalizeAll = false;
-                var listOfModsLocalize = new List<(string, string)>();
-                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    listOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
-                CommonParamsToSave.ListOfModsLocalize = listOfModsLocalize;
+                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
             }
 
             if (mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
