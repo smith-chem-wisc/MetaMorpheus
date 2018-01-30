@@ -26,7 +26,7 @@ namespace TaskLayer
 
             ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
-            ListOfModTypesLocalize = null;
+            ListOfModTypesLocalize = new List<string>();
 
             ConserveMemory = true;
 
@@ -89,7 +89,7 @@ namespace TaskLayer
         public IDigestionParams DigestionParams { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
-        
+
         public int? TopNpeaks { get; set; }
         public double? MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }

@@ -1061,7 +1061,7 @@ namespace TaskLayer
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
                 }
             }
-            
+
             Status("Writing results...", taskId);
             {
                 if (currentRawFileList.Count > 1)
