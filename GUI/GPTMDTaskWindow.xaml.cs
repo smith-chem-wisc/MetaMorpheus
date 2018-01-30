@@ -132,14 +132,16 @@ namespace MetaMorpheusGUI
             if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    heh.Use = true;
+                    heh.Use = false;
             }
             else
             {
-                foreach (var mod in task.CommonParameters.ListOfModTypesLocalize)
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                 {
-                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod));
-                    theModType.Use = true;
+                    if (task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
+                        heh.Use = true;
+                    else
+                        heh.Use = false;
                 }
             }
 
