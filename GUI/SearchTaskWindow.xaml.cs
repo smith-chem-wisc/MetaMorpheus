@@ -22,12 +22,13 @@ namespace MetaMorpheusGUI
         #region Private Fields
 
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
+
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForGrid> modSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
-        
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -358,10 +359,11 @@ namespace MetaMorpheusGUI
             }
 
             #endregion Check Task Validity
+
             #region Save Parameters
-            
+
             CommonParameters CommonParamsToSave = new CommonParameters();
-            
+
             if (OutputFileNameTextBox.Text != "")
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
             else
