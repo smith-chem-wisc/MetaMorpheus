@@ -151,7 +151,7 @@ namespace MetaMorpheusGUI
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
-                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForTreeView(hm.Key, false));           
+                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForTreeView(hm.Key, false));
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
         }
 
@@ -440,7 +440,7 @@ namespace MetaMorpheusGUI
             else
             {
                 CommonParamsToSave.LocalizeAll = false;
-                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b=>b.Use.HasValue && b.Use.Value).Select(b=>b.DisplayName).ToList();
+                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
             }
 
             if (mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
