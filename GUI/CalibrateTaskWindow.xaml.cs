@@ -21,7 +21,7 @@ namespace MetaMorpheusGUI
 
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
 
         #endregion Private Fields
 
@@ -140,8 +140,6 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             foreach (var ye in fixedModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
-            foreach (var ye in localizeModTypeForTreeViewObservableCollection)
-                ye.VerifyCheckState();
         }
 
         private void PopulateChoices()
@@ -174,13 +172,9 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
-            {
-                var theModType = new ModTypeForTreeView(hm.Key, false);
-                localizeModTypeForTreeViewObservableCollection.Add(theModType);
-                foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-            }
+                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
         }
 
