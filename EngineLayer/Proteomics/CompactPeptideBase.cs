@@ -7,7 +7,6 @@ using ZeroFormatter;
 
 namespace EngineLayer
 {
-    [ZeroFormattable]
     public abstract class CompactPeptideBase : IEquatable<CompactPeptideBase>
     {
         #region Protected Fields

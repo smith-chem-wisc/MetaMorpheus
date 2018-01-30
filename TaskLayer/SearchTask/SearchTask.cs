@@ -1701,11 +1701,14 @@ namespace TaskLayer
             else
             {
                 Status("Reading peptide index...", new List<string> { taskId });
-                //var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
                 //var ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                    peptideIndex = ZeroFormatterSerializer.Deserialize<List<CompactPeptide>>(file);
-                    
+                //using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+               // {
+                    var a = File.ReadAllBytes(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind"));
+                    peptideIndex = ZeroFormatterSerializer.Deserialize<List<CompactPeptide>>(a);
+                //}
+
                 Status("Reading fragment index...", new List<string> { taskId });
                // messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
                 //ser = new NetSerializer.Serializer(messageTypes);
