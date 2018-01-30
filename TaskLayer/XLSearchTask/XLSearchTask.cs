@@ -59,7 +59,7 @@ namespace TaskLayer
 
             sb.AppendLine("Fixed mod lists: " + string.Join(",", CommonParameters.ListOfModsFixed));
             sb.AppendLine("Variable mod lists: " + string.Join(",", CommonParameters.ListOfModsVariable));
-            sb.AppendLine("Localized mod lists: " + string.Join(",", CommonParameters.ListOfModsLocalize));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", CommonParameters.ListOfModTypesLocalize));
             sb.AppendLine("searchDecoy: " + XlSearchParameters.DecoyType);
             sb.AppendLine("productMassTolerance: " + CommonParameters.ProductMassTolerance);
 
@@ -83,33 +83,14 @@ namespace TaskLayer
 
             #region Load modifications
 
-            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> localizeableModifications;
-            if (CommonParameters.LocalizeAll)
-                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
-            else
-                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            foreach (var mod in fixedModifications)
-                modsDictionary.Add(mod, 0);
-            int i = 1;
-            foreach (var mod in variableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)i);
-                i++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                if (!modsDictionary.ContainsKey(mod))
-                    modsDictionary.Add(mod, (ushort)i);
-                i++;
-            }
-
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
+            
             #endregion Load modifications
 
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.DecoyType, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, XlSearchParameters.DecoyType, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -139,7 +120,7 @@ namespace TaskLayer
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
             MyFileManager myFileManager = new MyFileManager(XlSearchParameters.DisposeOfFileWhenDone);
 
-            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
+            HashSet<IDigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -225,7 +206,7 @@ namespace TaskLayer
 
             Status("Crosslink analysis engine", taskId);
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
-            allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, modsDictionary, OutputFolder, crosslinker, terminusType, CommonParameters, new List<string> { taskId }).Run();
+            allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, OutputFolder, crosslinker, terminusType, CommonParameters, new List<string> { taskId }).Run();
             allPsms = allPsms.Where(p => p != null).ToList();
             if (XlSearchParameters.XlOutAll)
             {
@@ -265,7 +246,7 @@ namespace TaskLayer
                 foreach (var fullFilePath in currentRawFileList)
                 {
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
-                    WritePepXML_xl(interPsmsXLFDR_PepXML.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
+                    WritePepXML_xl(interPsmsXLFDR_PepXML.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
             }
             if (XlSearchParameters.XlOutPercolator)
@@ -298,7 +279,7 @@ namespace TaskLayer
                 foreach (var fullFilePath in currentRawFileList)
                 {
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
-                    WritePepXML_xl(intraPsmsXLFDR_PepXML.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
+                    WritePepXML_xl(intraPsmsXLFDR_PepXML.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
             }
             if (XlSearchParameters.XlOutPercolator)
