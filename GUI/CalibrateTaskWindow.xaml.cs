@@ -21,7 +21,7 @@ namespace MetaMorpheusGUI
 
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
 
         #endregion Private Fields
 
@@ -125,22 +125,22 @@ namespace MetaMorpheusGUI
             if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    heh.Use = true;
+                    heh.Use = false;
             }
             else
             {
-                foreach (var mod in task.CommonParameters.ListOfModTypesLocalize)
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                 {
-                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod));
-                    theModType.Use = true;
+                    if (task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
+                        heh.Use = true;
+                    else
+                        heh.Use = false;
                 }
             }
 
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
             foreach (var ye in fixedModTypeForTreeViewObservableCollection)
-                ye.VerifyCheckState();
-            foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
         }
 
@@ -174,13 +174,9 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
-            {
-                var theModType = new ModTypeForTreeView(hm.Key, false);
-                localizeModTypeForTreeViewObservableCollection.Add(theModType);
-                foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-            }
+                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
         }
 
