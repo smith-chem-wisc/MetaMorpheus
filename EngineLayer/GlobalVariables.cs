@@ -72,6 +72,7 @@ namespace EngineLayer
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
             allModsKnown = new List<Modification>();
+            allModTypesKnown = new List<string>();
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
@@ -107,7 +108,8 @@ namespace EngineLayer
                     modTypes.Add(ye.modificationType);
                 }
             }
-            allModTypesKnown = modTypes.ToList();
+            foreach (string type in modTypes)
+                allModTypesKnown.Add(type);
         }
 
         #endregion Public Methods

@@ -20,7 +20,6 @@ namespace EngineLayer.Neo
         private const int decimalDigitsForFragmentMassRounding = 3;
         public static Dictionary<double, string[]> massDict = new Dictionary<double, string[]>();
         public static double[] keys;
-        //public List<List<string>> fragmentSeqs = new List<List<string>>();
         public static double productMassTolerancePpm = 20; //(Ppm)
         public static double precursorMassTolerancePpm = 5; //(Ppm)
         public static List<ProductType> ionsUsed = new List<ProductType> { ProductType.B, ProductType.Y };
@@ -28,18 +27,20 @@ namespace EngineLayer.Neo
         public static List<double> singleAminoAcidMasses = new List<double>();
         public static double maxDifference;
         private static readonly double waterMonoisotopicMass = Math.Round(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass, decimalDigitsForFragmentMassRounding);
-        public static HashSet<char> N2Position = new HashSet<char> { 'A', 'E', 'F', 'H', 'I', 'L', 'Q', 'R', 'T', 'V' };
-        public static HashSet<char> C1Position = new HashSet<char> { 'F', 'I', 'L', 'M', 'W', 'Y' };
         public static Dictionary<string, List<string>> nTermDictionary = new Dictionary<string, List<string>>();
         public static Dictionary<string, List<string>> cTermDictionary = new Dictionary<string, List<string>>();
-        public static Dictionary<string, List<Parent>> protDictionary = new Dictionary<string, List<Parent>>();
+        public static Dictionary<string, List<Protein>> protDictionary = new Dictionary<string, List<Protein>>();
+        public static char[] AANames = new char[20] { 'G', 'A', 'S', 'P', 'V', 'T', 'L', 'I', 'N', 'D', 'Q', 'K', 'E', 'M', 'H', 'F', 'R', 'C', 'Y', 'W' }; //20 common AA, ordered by mass assuming carbamido
 
-        public static void FindAmbiguity(List<NeoPsm> candidates, List<Protein> theoreticalProteins, Ms2ScanWithSpecificMass[] spectra)
+        public static void FindAmbiguity(List<NeoPsm> candidates, List<Protein> theoreticalProteins, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
+            PopulateSequenceLookUpDictionaries(databaseFileName, theoreticalProteins);
             for (int i = 0; i < candidates.Count(); i++) //must be mutable while iterating
             {
                 NeoPsm psm = candidates[i];
-                Ms2ScanWithSpecificMass spectrum = spectra.Where(x=>x.OneBasedScanNumber==psm.scanNumber).ToList()[0];
+                if (psm.scanNumber == 12578)
+                { }
+                Ms2ScanWithSpecificMass spectrum = spectra.Where(x => x.OneBasedScanNumber == psm.scanNumber).ToList()[0];
                 psm.fusionType = FusionCandidate.FusionType.TS; //for some maddening reason, this is not arriving here as trans, but instead translated
                 if (IsTooMessy(psm, spectrum)) //having explosion of combinations when greater than 3 consequtive peaks producing tens of thousands of sequences ids, causes hanging
                 {
@@ -163,7 +164,7 @@ namespace EngineLayer.Neo
                 //B IONS//
                 if (ionsUsed.Contains(ProductType.B))
                 {
-                    double bTheoMass = NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS;
+                    double bTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS, 1);
                     foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
                     {
                         if (NeoMassCalculator.IdenticalMasses(expPeak, bTheoMass, productMassTolerancePpm))
@@ -173,7 +174,7 @@ namespace EngineLayer.Neo
                 //Y IONS//
                 if (ionsUsed.Contains(ProductType.Y))
                 {
-                    double yTheoMass = NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1));
+                    double yTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1)), 1);
                     foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
                     {
                         if (NeoMassCalculator.IdenticalMasses(expPeak, yTheoMass, productMassTolerancePpm))
@@ -183,7 +184,7 @@ namespace EngineLayer.Neo
                 //C IONS//
                 if (ionsUsed.Contains(ProductType.C))
                 {
-                    double cTheoMass = NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS + NeoConstants.nitrogenMonoisotopicMass + 3 * NeoConstants.hydrogenMonoisotopicMass;
+                    double cTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS + NeoConstants.nitrogenMonoisotopicMass + 3 * NeoConstants.hydrogenMonoisotopicMass, 1);
                     foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
                     {
                         if (NeoMassCalculator.IdenticalMasses(expPeak, cTheoMass, productMassTolerancePpm))
@@ -193,7 +194,7 @@ namespace EngineLayer.Neo
                 //ZDOT IONS//
                 if (ionsUsed.Contains(ProductType.Zdot))
                 {
-                    double zdotTheoMass = NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1)) - NeoConstants.nitrogenMonoisotopicMass - 2 * NeoConstants.hydrogenMonoisotopicMass;
+                    double zdotTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1)) - NeoConstants.nitrogenMonoisotopicMass - 2 * NeoConstants.hydrogenMonoisotopicMass, 1);
                     foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
                     {
                         if (NeoMassCalculator.IdenticalMasses(expPeak, zdotTheoMass, productMassTolerancePpm))
@@ -506,20 +507,20 @@ namespace EngineLayer.Neo
                     {
                         //Is it cis?
                         bool cis = false;
-                        List<Parent> otherPossibleProteins;
-                        if (protDictionary.TryGetValue(substring, out List<Parent> possibleProteins))
+                        List<Protein> otherPossibleProteins;
+                        if (protDictionary.TryGetValue(substring, out List<Protein> possibleProteins))
                         {
                             //possibleProteins.ForEach(prot => originalPossibleProteins.Add(prot));
                             for (int i = 5; i <= fc.Length; i++)
                             {
                                 string otherSubstring = fc.Substring(i - 1, fc.Length - i + 1);
                                 //get proteins containing both halves
-                                otherPossibleProteins = possibleProteins.AsParallel().Where(prot => prot.seq.Contains(otherSubstring)).ToList();
+                                otherPossibleProteins = possibleProteins.AsParallel().Where(prot => prot.BaseSequence.Contains(otherSubstring)).ToList();
 
                                 //check if both halves are the correct distance apart and are not overlapping
-                                foreach (Parent prot in otherPossibleProteins)
+                                foreach (Protein prot in otherPossibleProteins)
                                 {
-                                    string seq = prot.seq;
+                                    string seq = prot.BaseSequence;
                                     List<int> indexes = new List<int>();
                                     List<int> otherIndexes = new List<int>();
                                     int index = seq.IndexOf(substring);
@@ -582,7 +583,7 @@ namespace EngineLayer.Neo
                                     break;
 
                                 substring = fc.Substring(0, i);
-                                possibleProteins = possibleProteins.AsParallel().Where(prot => prot.seq.Contains(substring)).ToList();
+                                possibleProteins = possibleProteins.AsParallel().Where(prot => prot.BaseSequence.Contains(substring)).ToList();
                                 if (possibleProteins.Count == 0)
                                     break;
                             }
@@ -592,13 +593,13 @@ namespace EngineLayer.Neo
                             if (protDictionary.TryGetValue(fc.Substring(fc.Length - 4, 4), out otherPossibleProteins))
                             {
                                 string otherSubstring = fc.Substring(3, fc.Length - 3);
-                                otherPossibleProteins = otherPossibleProteins.Where(prot => prot.seq.Contains(otherSubstring)).ToList();
+                                otherPossibleProteins = otherPossibleProteins.Where(prot => prot.BaseSequence.Contains(otherSubstring)).ToList();
                                 for (int i = 2; i >= 0; i--)
                                 {
                                     substring = fc.Substring(0, i + 1);
-                                    foreach (Parent prot in otherPossibleProteins)
+                                    foreach (Protein prot in otherPossibleProteins)
                                     {
-                                        string seq = prot.seq;
+                                        string seq = prot.BaseSequence;
                                         List<int> indexes = new List<int>();
                                         List<int> otherIndexes = new List<int>();
                                         int index = seq.IndexOf(substring);
@@ -785,7 +786,6 @@ namespace EngineLayer.Neo
             }
             return combinations;
         }
-
 
         private static bool isViable(FusionCandidate tempCandidate) //returns if sequence could be made from one or two proteins in database and writes fusion type, parents, and junctions to fusionCandidate
         {
@@ -1038,6 +1038,110 @@ namespace EngineLayer.Neo
                 }
             }
         }
+
+        private static void PopulateSequenceLookUpDictionaries(string databaseFileName, List<Protein> proteins)
+        {
+            string[] array = databaseFileName.Split('\\');
+            string filename = databaseFileName + "_NeoIndex\\NeoIndex_" + array[array.Length - 1] + ".txt";
+            //index is ; separated with subsequence;Nsequence;Csequence;protaccession with internal delimited by _
+            //the subsequence is removed from Nsequence and Csequence to preserve memory
+            if (File.Exists(filename))
+            {
+                Dictionary<string, Protein> idToSequence = new Dictionary<string, Protein>();
+                foreach (Protein prot in proteins)
+                    idToSequence.Add(prot.Accession, prot);
+                //Load existing index
+                string[] index = File.ReadAllLines(filename);
+                Parallel.ForEach(index, s =>
+                {
+                    string[] line = s.Replace("_;", ";").Split(';').ToArray();
+                    string key = line[0];
+                    List<string> nList = line[1].Split('_').ToList();
+                    List<string> cList = line[2].Split('_').ToList();
+                    if (nList.Count > 1 || nList[0].Length != 0)
+                    {
+                        for (int i = 0; i < nList.Count; i++)
+                            nList[i] = key + nList[i];
+
+                        List<Protein> prots = new List<Protein>();
+                        foreach (string accession in line[3].Split('|').ToArray())
+                            prots.Add(idToSequence[accession]);
+                        lock (protDictionary)
+                        {
+                            protDictionary.Add(line[0], prots);
+                            nTermDictionary.Add(key, nList);
+                        }
+                    }
+                    if (cList.Count > 1 || cList[0].Length != 0)
+                    {
+                        string cKey = key[3] + key.Substring(0, 3);
+                        for (int i = 0; i < cList.Count; i++)
+                            cList[i] = cList[i] + cKey;
+                        lock (cTermDictionary)
+                            cTermDictionary.Add(cKey, cList);
+                    }
+                });
+            }
+            else
+            {
+                Directory.CreateDirectory(databaseFileName + "_NeoIndex");
+                //make a new index
+                using (StreamWriter file = new StreamWriter(filename))
+                {
+                    foreach (char aa1 in AANames)
+                        foreach (char aa2 in AANames)
+                            foreach (char aa3 in AANames)
+                            {
+                                string threeMer = aa1.ToString() + aa2.ToString() + aa3.ToString();
+                                List<string> nEntry = new List<string>();
+                                List<string> cEntry = new List<string>();
+                                List<Protein> protEntry = new List<Protein>();
+                                Parallel.ForEach(proteins, protein =>
+                                {
+                                    List<string> localNEntry = new List<string>();
+                                    List<string> localCEntry = new List<string>();
+
+                                    int index = protein.BaseSequence.IndexOf(threeMer);
+                                    while (index != -1)
+                                    {
+                                        localNEntry.Add(protein.BaseSequence.Length - index > 50 ? protein.BaseSequence.Substring(index, 50) : protein.BaseSequence.Substring(index, protein.BaseSequence.Length - index));
+                                        localCEntry.Add(index + 3 > 50 ? protein.BaseSequence.Substring(index - 47, 50) : protein.BaseSequence.Substring(0, index + 3));
+                                        index = protein.BaseSequence.IndexOf(threeMer, index + 1);
+                                    }
+                                    lock (nEntry)
+                                    {
+                                        foreach (string s in localNEntry)
+                                            nEntry.Add(s);
+                                        foreach (string s in localCEntry)
+                                            cEntry.Add(s);
+                                        if (localNEntry.Count != 0)
+                                            protEntry.Add(protein);
+                                    }
+                                });
+
+                                foreach (char aa4 in AANames)
+                                {
+                                    string nFourMer = threeMer + aa4.ToString();
+                                    string cFourMer = aa4.ToString() + threeMer;
+                                    List<string> localNEntry = nEntry.AsParallel().Where(seq => seq.Length > 3 && seq.Substring(0, 4).Equals(nFourMer)).ToList();
+                                    List<string> LocalCEntry = cEntry.AsParallel().Where(seq => seq.Length > 3 && seq.Substring(seq.Length - 4, 4).Equals(cFourMer)).ToList();
+                                    List<Protein> localProtEntry = protEntry.AsParallel().Where(prot => prot.BaseSequence.Contains(nFourMer)).ToList();
+                                    nTermDictionary.Add(nFourMer, localNEntry);
+                                    cTermDictionary.Add(cFourMer, LocalCEntry);
+                                    protDictionary.Add(nFourMer, localProtEntry);
+                                    file.Write(nFourMer + ";");
+                                    localNEntry.ForEach(s => file.Write(s.Substring(4, s.Length - 4) + "_"));
+                                    file.Write(";");
+                                    LocalCEntry.ForEach(s => file.Write(s.Substring(0, s.Length - 4) + "_"));
+                                    file.Write(";");
+                                    localProtEntry.ForEach(prot => file.Write(prot.Accession + "|"));
+                                    file.WriteLine(";");
+                                }
+                            }
+                }
+            }
+        }
+
     }
 }
 

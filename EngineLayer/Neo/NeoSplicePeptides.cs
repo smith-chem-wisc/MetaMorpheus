@@ -18,6 +18,8 @@ namespace EngineLayer.Neo
             //int counter = 0;
             foreach (NeoPsm psm in psms)
             {
+                if (psm.scanNumber == 12578)
+                { }
                 //this.worker.ReportProgress(Convert.ToInt16((Convert.ToDouble(counter) / Convert.ToDouble(psms.Count())) * 100));
                 //counter++;
                 //preliminary filters can be removed if MassMatch calls to IonCrop are set to true.

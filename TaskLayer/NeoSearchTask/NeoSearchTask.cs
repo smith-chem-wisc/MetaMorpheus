@@ -173,7 +173,7 @@ namespace TaskLayer
 
                     //Find Ambiguity
                     Status("Identifying Ambiguity...", taskId);
-                    NeoFindAmbiguity.FindAmbiguity(candidates, proteinList, arrayOfMs2ScansSortedByMass);
+                    NeoFindAmbiguity.FindAmbiguity(candidates, proteinList, arrayOfMs2ScansSortedByMass, dbFilenameList[0].FilePath);
 
                     //Export Results
                     Status("Exporting Results...", taskId);
