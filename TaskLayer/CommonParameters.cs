@@ -88,7 +88,7 @@ namespace TaskLayer
         public IDigestionParams DigestionParams { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
-        
+
         public int? TopNpeaks { get; set; }
         public double? MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }

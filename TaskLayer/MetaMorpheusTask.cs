@@ -44,6 +44,10 @@ namespace TaskLayer
                             .CreateInstance(() => new CommonParameters()))
                         .ConfigureType<IDigestionParams>(ct => ct
                             .CreateInstance(() => new DigestionParams()))
+                        .ConfigureType<List<string>>(type => type
+                             .WithConversionFor<TomlString>(convert => convert
+                                 .ToToml(custom => string.Join("\t", custom))
+                                 .FromToml(tmlString => GetModsTypesFromString(tmlString.Value))))
                         .ConfigureType<List<(string, string)>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
@@ -54,6 +58,7 @@ namespace TaskLayer
         #region Protected Fields
 
         protected readonly StringBuilder proseCreatedWhileRunning = new StringBuilder();
+
         protected MyTaskResults myTaskResults;
 
         #endregion Protected Fields
@@ -381,6 +386,11 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static List<string> GetModsTypesFromString(string value)
+        {
+            return value.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        }
 
         private static List<(string, string)> GetModsFromString(string value)
         {
