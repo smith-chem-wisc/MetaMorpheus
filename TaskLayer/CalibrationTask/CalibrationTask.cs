@@ -96,14 +96,15 @@ namespace TaskLayer
             Status("Loading modifications...", new List<string> { taskId, "Individual Spectra Files" });
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> localizeableModifications;
+
+            List<string> localizeableModificationTypes = CommonParameters.ListOfModTypesLocalize == null ? new List<string>() : CommonParameters.ListOfModTypesLocalize.ToList();
             if (CommonParameters.LocalizeAll)
-                localizeableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList();
+                localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
             else
-                localizeableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains((b.modificationType, b.id))).ToList();
+                localizeableModificationTypes = GlobalVariables.AllModTypesKnown.Where(b => localizeableModificationTypes.Contains(b)).ToList();
 
             Status("Loading proteins...", new List<string> { taskId, "Individual Spectra Files" });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, UsefulProteomicsDatabases.DecoyType.Reverse, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, UsefulProteomicsDatabases.DecoyType.Reverse, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();
 
             proseCreatedWhileRunning.Append("The following calibration settings were used: ");
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
