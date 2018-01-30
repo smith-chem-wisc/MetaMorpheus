@@ -59,6 +59,30 @@
     <None Update="Mods\tmt.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Neo\TomlFiles\CalibrationTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Neo\TomlFiles\GptmdTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Neo\TomlFiles\SearchTaskCconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Neo\TomlFiles\SearchTaskCisconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Neo\TomlFiles\SearchTaskDecoyconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Neo\TomlFiles\SearchTaskNconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Neo\TomlFiles\SearchTaskTargetconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Neo\TomlFiles\SearchTaskTransconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="settings.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

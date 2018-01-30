@@ -405,7 +405,8 @@ namespace MetaMorpheusGUI
 
                         case "Neo":
                             var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            NeoLoadTomls.LoadTomls(ye5, staticTasksObservableCollection, draggedFilePath);
+                            foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
+                                AddTaskToCollection(task);
                             break;
                     }
                     break;
@@ -552,7 +553,8 @@ namespace MetaMorpheusGUI
             if (dialog.ShowDialog() == true)
             {
                 var ye5 = dialog.TheTask;
-                NeoLoadTomls.LoadTomls(ye5, staticTasksObservableCollection, "");
+                foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
+                    AddTaskToCollection(task);
                 UpdateTaskGuiStuff();
             }
         }

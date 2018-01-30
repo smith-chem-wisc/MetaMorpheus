@@ -7,34 +7,18 @@ using Nett;
 using Proteomics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using TaskLayer;
 using System.Collections.Generic;
 
-namespace MetaMorpheusGUI
+namespace TaskLayer
 {
-    internal static class NeoLoadTomls
+    public static class NeoLoadTomls
     {
-        private static string novelAddition = @"NeoTomlFiles\";
-        private static string defaultAddition = @"EngineLayer\Neo\TomlFiles\";
-
-        public static void LoadTomls(NeoSearchTask ye5, ObservableCollection<PreRunTask> staticTasksObservableCollection, string draggedFilePath)
+        public static List<MetaMorpheusTask> LoadTomls(NeoSearchTask ye5) //tomls are located in EngineLayer//Neo//Data//TomlFiles
         {
-            string novelFolderPath = "";
-            string[] splitPath = draggedFilePath.Split('\\').ToArray();
-            for (int i = 0; i < splitPath.Length - 1; i++)
-                novelFolderPath += splitPath[i] + '\\';
-            novelFolderPath += novelAddition;
+            List<MetaMorpheusTask> novelCollection = new List<MetaMorpheusTask>();
 
-            string defaultFolderPath = "";
-            splitPath = Directory.GetCurrentDirectory().Split('\\').ToArray();
-            for (int i = 0; i < splitPath.Length - 3; i++)
-                defaultFolderPath += splitPath[i] + '\\';
-            defaultFolderPath += defaultAddition;
-
+            string defaultFolderPath = Path.Combine(GlobalVariables.DataDir, @"Neo", @"TomlFiles");
+            
             #region write TOML
 
             var tomlFileName = Path.Combine(defaultFolderPath, ye5.GetType().Name + "config.toml");
@@ -45,37 +29,37 @@ namespace MetaMorpheusGUI
             if (ye5.NeoParameters.Calibrate)
             {
                 string caliFileName = "CalibrationTaskconfig.toml";
-                caliFileName = File.Exists(novelFolderPath + caliFileName) ? novelFolderPath + caliFileName : defaultFolderPath + caliFileName;
+                caliFileName = Path.Combine(defaultFolderPath, caliFileName);
                 UpdateTomls(tomlFileName, caliFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<CalibrationTask>(caliFileName, MetaMorpheusTask.tomlConfig);//FIXME, An item with the same key has already been added, dictionary in Toml.ReadFile
-                AddTaskToCollection(yeo, staticTasksObservableCollection);//multiple protease issue
+                novelCollection.Add(yeo);//multiple protease issue
             }
 
             if (ye5.NeoParameters.GPTMD)
             {
                 string gptmdFileName = "GptmdTaskconfig.toml";
-                gptmdFileName = File.Exists(novelFolderPath + gptmdFileName) ? novelFolderPath + gptmdFileName : defaultFolderPath + gptmdFileName;
+                gptmdFileName = Path.Combine(defaultFolderPath, gptmdFileName);
                 UpdateTomls(tomlFileName, gptmdFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<GptmdTask>(gptmdFileName, MetaMorpheusTask.tomlConfig);
-                AddTaskToCollection(yeo, staticTasksObservableCollection);
+                novelCollection.Add(yeo);
             }
 
             if (ye5.NeoParameters.TargetSearch)
             {
                 string targetFileName = "SearchTaskTargetconfig.toml";
-                targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                targetFileName = Path.Combine(defaultFolderPath, targetFileName);
                 UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
-                AddTaskToCollection(yeo, staticTasksObservableCollection);
+                novelCollection.Add(yeo);
             }
 
             if (ye5.NeoParameters.DecoySearch)
             {
                 string decoyFileName = "SearchTaskDecoyconfig.toml";
-                decoyFileName = File.Exists(novelFolderPath + decoyFileName) ? novelFolderPath + decoyFileName : defaultFolderPath + decoyFileName;
+                decoyFileName = Path.Combine(defaultFolderPath, decoyFileName);
                 UpdateTomls(tomlFileName, decoyFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<SearchTask>(decoyFileName, MetaMorpheusTask.tomlConfig);
-                AddTaskToCollection(yeo, staticTasksObservableCollection);
+                novelCollection.Add(yeo);
             }
 
             var yeo5_1 = ye5.Clone();
@@ -83,24 +67,24 @@ namespace MetaMorpheusGUI
             yeo5_1.AggregateNormalSplicedFiles = false;
             yeo5_1.GenerateSplicedPeptides = false;
 
-            AddTaskToCollection(yeo5_1, staticTasksObservableCollection);
+            novelCollection.Add(yeo5_1);
 
             if (ye5.NeoParameters.SearchNTerminus)
             {
                 string targetFileName = "SearchTaskNconfig.toml";
-                targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                targetFileName = Path.Combine(defaultFolderPath, targetFileName);
                 UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.N, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
-                AddTaskToCollection(yeo, staticTasksObservableCollection);
+                novelCollection.Add(yeo);
             }
 
             if (ye5.NeoParameters.SearchCTerminus)
             {
                 string targetFileName = "SearchTaskCconfig.toml";
-                targetFileName = File.Exists(novelFolderPath + targetFileName) ? novelFolderPath + targetFileName : defaultFolderPath + targetFileName;
+                targetFileName = Path.Combine(defaultFolderPath, targetFileName);
                 UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.C, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
-                AddTaskToCollection(yeo, staticTasksObservableCollection);
+                novelCollection.Add(yeo);
             }
 
             var yeo5_2 = ye5.Clone();
@@ -108,24 +92,25 @@ namespace MetaMorpheusGUI
             yeo5_2.AggregateNormalSplicedFiles = false;
             yeo5_2.GenerateSplicedPeptides = true;
 
-            AddTaskToCollection(yeo5_2, staticTasksObservableCollection);
+            novelCollection.Add(yeo5_2);
 
             string cisFileName = "SearchTaskCisconfig.toml";
-            cisFileName = File.Exists(novelFolderPath + cisFileName) ? novelFolderPath + cisFileName : defaultFolderPath + cisFileName;
+            cisFileName = Path.Combine(defaultFolderPath, cisFileName);
             UpdateTomls(tomlFileName, cisFileName, ye5.CommonParameters, TerminusType.None, true);
             var yeocis = Toml.ReadFile<SearchTask>(cisFileName, MetaMorpheusTask.tomlConfig);
-            AddTaskToCollection(yeocis, staticTasksObservableCollection);
+            novelCollection.Add(yeocis);
 
             string transFileName = "SearchTaskTransconfig.toml";
-            transFileName = File.Exists(novelFolderPath + transFileName) ? novelFolderPath + transFileName : defaultFolderPath + transFileName;
+            transFileName = Path.Combine(defaultFolderPath, transFileName);
             UpdateTomls(tomlFileName, transFileName, ye5.CommonParameters, TerminusType.None, true);
             var yeotrans = Toml.ReadFile<SearchTask>(transFileName, MetaMorpheusTask.tomlConfig);
-            AddTaskToCollection(yeotrans, staticTasksObservableCollection);
+            novelCollection.Add(yeotrans);
 
             var yeo5_3 = ye5.Clone();
             yeo5_3.AggregateTargetDecoyFiles = false;
             yeo5_3.AggregateNormalSplicedFiles = true;
             yeo5_3.GenerateSplicedPeptides = false;
+            novelCollection.Add(yeo5_3);
 
             #region DeleteTomlFile
 
@@ -133,14 +118,7 @@ namespace MetaMorpheusGUI
 
             #endregion DeleteTomlFile
 
-            AddTaskToCollection(yeo5_3, staticTasksObservableCollection);
-        }
-
-        private static void AddTaskToCollection(MetaMorpheusTask yeo, ObservableCollection<PreRunTask> staticTasksObservableCollection)
-        {
-            PreRunTask teo = new PreRunTask(yeo);
-            staticTasksObservableCollection.Add(teo);
-            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(teo) + 1) + "-" + yeo.CommonParameters.TaskDescriptor;
+            return novelCollection;
         }
 
         private static void UpdateTomls(string tomlFileName, string fileName, ICommonParameters ye5, TerminusType terminusType, bool spliceSearch)
