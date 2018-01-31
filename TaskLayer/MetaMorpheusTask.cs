@@ -176,25 +176,15 @@ namespace TaskLayer
             returnParams = returnParams.Clone();
 
             returnParams.DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution;
-
             returnParams.UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo;
-
             returnParams.DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio;
-
             returnParams.DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState;
-
             returnParams.DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance;
-
             returnParams.TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions;
-
             returnParams.ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-
             returnParams.PrecursorMassTolerance = currentFileSpecificSettings.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-
             returnParams.ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory;
-
             returnParams.ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff;
-
             returnParams.TopNpeaks = currentFileSpecificSettings.TopNpeaks ?? commonParams.TopNpeaks;
             returnParams.MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio;
             returnParams.TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks;
