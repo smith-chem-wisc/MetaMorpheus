@@ -55,7 +55,7 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static void WriteMzidentml(IEnumerable<Psm> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, Tolerance productTolerance, int missedCleavages, string outputPath)
+        public static void WriteMzidentml(IEnumerable<Psm> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
@@ -538,6 +538,8 @@ namespace TaskLayer
                                 name = "search tolerance plus value",
                                 value = productTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
+                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             },
                             new mzIdentML110.Generated.CVParamType
@@ -557,20 +559,20 @@ namespace TaskLayer
                             {
                                 accession = "MS:1001412",
                                 name = "search tolerance plus value",
-                                value = productTolerance.Value.ToString(),
+                                value = parentTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
-                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
-                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
+                                unitAccession = parentTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = parentTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             },
                             new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS:1001413",
                                 name = "search tolerance minus value",
-                                value = productTolerance.Value.ToString(),
+                                value = parentTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
-                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
-                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
+                                unitAccession = parentTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = parentTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             }
                         },
@@ -1260,7 +1262,7 @@ namespace TaskLayer
 
                     Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                     var mzidFilePath = Path.Combine(OutputFolder, strippedFileName + ".mzid");
-                    WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.DigestionParams.Protease }, 0.01, CommonParameters.ProductMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
+                    WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.DigestionParams.Protease }, 0.01, CommonParameters.ProductMassTolerance, CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
                     SucessfullyFinishedWritingFile(mzidFilePath, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
 
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
