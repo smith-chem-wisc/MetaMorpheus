@@ -24,10 +24,6 @@ namespace EngineLayer.Neo
             //int counter = 0;
             foreach (NeoPsm psm in psms)
             {
-                if (psm.scanNumber == 12578)
-                { }
-                //this.worker.ReportProgress(Convert.ToInt16((Convert.ToDouble(counter) / Convert.ToDouble(psms.Count())) * 100));
-                //counter++;
                 //preliminary filters can be removed if MassMatch calls to IonCrop are set to true.
                 string B = IonCrop(psm.nInfo.seq, psm.expMass, 0, ProductType.B, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
                 string Y = IonCrop(psm.cInfo.seq, psm.expMass, 0, ProductType.Y, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
@@ -184,8 +180,6 @@ namespace EngineLayer.Neo
         //If checkToRemoveExtraAA is true, additional AA will be removed to achieve a theoretical mass less than the Experimental mass
         public static string IonCrop(string ionSequence, double experimentalMass, int fragNumber, ProductType ion, bool checkToRemoveExtraAA)
         {
-            if (ionSequence.Contains("AWRRSC"))
-            { }
             do
             {
                 string ionFrag;
