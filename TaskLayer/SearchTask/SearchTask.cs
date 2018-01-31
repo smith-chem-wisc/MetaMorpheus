@@ -82,7 +82,7 @@ namespace TaskLayer
                 id = "PROVIDER",
                 ContactRole = new mzIdentML110.Generated.ContactRoleType()
                 {
-                    contact_ref = "UWMadisonSmithGroupPerson",
+                    contact_ref = "UWMadisonSmithGroup",
                     Role = new mzIdentML110.Generated.RoleType()
                     {
                         cvParam = new mzIdentML110.Generated.CVParamType()
