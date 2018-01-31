@@ -82,13 +82,13 @@ namespace TaskLayer
                 id = "PROVIDER",
                 ContactRole = new mzIdentML110.Generated.ContactRoleType()
                 {
-                    contact_ref = "Lloyd_Smith_Group",
+                    contact_ref = "UWMadisonSmithGroupPerson",
                     Role = new mzIdentML110.Generated.RoleType()
                     {
                         cvParam = new mzIdentML110.Generated.CVParamType()
                         {
                             accession = "MS:1001271",
-                            name = "MetaMorpheusGroup",
+                            name = "researcher",
                             cvRef = "PSI-MS"
                         },
                     },
@@ -99,7 +99,7 @@ namespace TaskLayer
 
             _mzid.AuditCollection[0] = new mzIdentML110.Generated.PersonType()
             {
-                id = "Lloyd_Smith_Group",
+                id = "UWMadisonSmithGroupPerson",
                 cvParam = new mzIdentML110.Generated.CVParamType[2]
                 {
                     new mzIdentML110.Generated.CVParamType()
@@ -107,7 +107,7 @@ namespace TaskLayer
                         accession="MS:1000589",
                         name ="contact email",
                         cvRef ="PSI-MS",
-                        value ="someone@someuniversity.edu"
+                        value ="mm_support@chem.wisc.edu"
                     },
 
                        new mzIdentML110.Generated.CVParamType()
@@ -115,7 +115,7 @@ namespace TaskLayer
                         accession="MS:1000590",
                         name ="affiliation name",
                         cvRef ="PSI-MS",
-                        value ="UWMadisonChem"
+                        value ="UWMadisonSmithGroup"
                     }
                 }
             };
@@ -131,7 +131,7 @@ namespace TaskLayer
                         accession="MS:1000589",
                         name ="contact email",
                         cvRef ="PSI-MS",
-                        value ="someone@someuniversity.edu"
+                        value ="mm_support@chem.wisc.edu"
                     },
 
                      new mzIdentML110.Generated.CVParamType()
@@ -139,7 +139,7 @@ namespace TaskLayer
                         accession="MS:1000590",
                         name ="affiliation name",
                         cvRef ="PSI-MS",
-                        value ="UWMadisonChem"
+                        value ="UWMadisonSmithGroup"
                     }
                 }
             };
@@ -421,11 +421,11 @@ namespace TaskLayer
                         SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500],
                         cvParam = new mzIdentML110.Generated.CVParamType[1]
                         {
-                                 new mzIdentML110.Generated.CVParamType
+                            new mzIdentML110.Generated.CVParamType
                             {
-                                name = "retention time",
+                                name = "scan start time",
                                 cvRef = "PSI-MS",
-                                accession = "MS:1000894",
+                                accession = "MS:1000016",
                                 value = psm.ScanRetentionTime.ToString()
                             }
                         }
@@ -631,38 +631,7 @@ namespace TaskLayer
                     fixedMod = true,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
-                    cvParam = new mzIdentML110.Generated.CVParamType[2]
                 };
-                foreach (var tempModification in set)
-                {
-                    nameOfMod = tempModification.id.Substring(0, (tempModification.id.IndexOf(" ")));
-                    string modID;
-                    if (mod.id.Contains(" "))
-                        modID = mod.id.Substring(0, (mod.id.IndexOf(" ")));
-                    else
-                        modID = mod.id;
-                    if (nameOfMod.Equals(modID))
-                    {
-                        modification = (ModificationWithMass)tempModification;
-                        break;
-                    }
-                }
-
-                if (modification != null)
-                    _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[0] = new mzIdentML110.Generated.CVParamType()
-                    {
-                        accession = "UNIMOD:" + modification.linksToOtherDbs["Unimod"][0],
-                        name = nameOfMod,
-                        cvRef = "UNIMOD"
-                    };
-
-                _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[1] = new mzIdentML110.Generated.CVParamType()
-                {
-                    accession = "MS:1001460",
-                    name = "unknown modification",
-                    cvRef = "PSI-MS"
-                };
-
                 mod_index++;
             }
 
@@ -674,34 +643,7 @@ namespace TaskLayer
                     fixedMod = false,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
-                    cvParam = new mzIdentML110.Generated.CVParamType[2]
-                };
-
-                foreach (var tempModification in set)
-                {
-                    nameOfMod = tempModification.id.Substring(0, (tempModification.id.IndexOf(" ")));
-                    if (nameOfMod.Equals(mod.id.Substring(0, (mod.id.IndexOf(" ")))))
-                    {
-                        modification = (ModificationWithMass)tempModification;
-                        break;
-                    }
-                }
-
-                if (modification != null)
-                    _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[0] = new mzIdentML110.Generated.CVParamType()
-                    {
-                        accession = "UNIMOD:" + modification.linksToOtherDbs["Unimod"][0],
-                        name = nameOfMod,
-                        cvRef = "UNIMOD"
-                    };
-
-                _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[1] = new mzIdentML110.Generated.CVParamType()
-                {
-                    accession = "MS:1001460",
-                    name = "unknown modification",
-                    cvRef = "PSI-MS"
-                };
-
+                };                
                 mod_index++;
             }
 
