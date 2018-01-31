@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -297,7 +298,7 @@ namespace Test
 
             FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
 
-            if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
+            if (!FlashLfqEngine.ReadPeriodicTable(GlobalVariables.ElementsLocation))
                 throw new MetaMorpheusException("Quantification error - could not find periodic table file");
 
             if (!FlashLfqEngine.ParseArgs(new string[] {
@@ -424,7 +425,7 @@ namespace Test
         {
             FlashLFQEngine e = new FlashLFQEngine();
             Assert.That(e != null);
-            Assert.That(e.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation));
+            Assert.That(e.ReadPeriodicTable(GlobalVariables.ElementsLocation));
         }
 
         #endregion Public Methods

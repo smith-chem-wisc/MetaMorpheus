@@ -2,6 +2,7 @@
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
@@ -21,6 +22,10 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ProductMassTolerance = new PpmTolerance(666),
+                    ListOfModsFixed = new List<(string, string)> { ("a", "b"), ("c", "d") },
+                    ListOfModsVariable = new List<(string, string)> { ("e", "f"), ("g", "h") },
+                    ListOfModTypesLocalize = new List<string> { "i", "j" },
+                    LocalizeAll = false,
                 },
             };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
@@ -29,11 +34,16 @@ namespace Test
             Assert.AreEqual(searchTask.CommonParameters.DeconvolutionMassTolerance.ToString(), searchTaskLoaded.CommonParameters.DeconvolutionMassTolerance.ToString());
             Assert.AreEqual(searchTask.CommonParameters.ProductMassTolerance.ToString(), searchTaskLoaded.CommonParameters.ProductMassTolerance.ToString());
             Assert.AreEqual(searchTask.CommonParameters.PrecursorMassTolerance.ToString(), searchTaskLoaded.CommonParameters.PrecursorMassTolerance.ToString());
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed[0].Item1, searchTaskLoaded.CommonParameters.ListOfModsFixed[0].Item1);
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed[0].Item2, searchTaskLoaded.CommonParameters.ListOfModsFixed[0].Item2);
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsLocalize, searchTaskLoaded.CommonParameters.ListOfModsLocalize);
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.Count, searchTaskLoaded.CommonParameters.ListOfModsFixed.Count);
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsVariable.Count, searchTaskLoaded.CommonParameters.ListOfModsVariable.Count);
+
+            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.Count(), searchTaskLoaded.CommonParameters.ListOfModsFixed.Count());
+            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.First().Item1, searchTaskLoaded.CommonParameters.ListOfModsFixed.First().Item1);
+            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.First().Item2, searchTaskLoaded.CommonParameters.ListOfModsFixed.First().Item2);
+
+            Assert.AreEqual(searchTask.CommonParameters.ListOfModsVariable.Count(), searchTaskLoaded.CommonParameters.ListOfModsVariable.Count());
+
+            Assert.AreEqual(searchTask.CommonParameters.ListOfModTypesLocalize.Count(), searchTaskLoaded.CommonParameters.ListOfModTypesLocalize.Count());
+            Assert.AreEqual(searchTask.CommonParameters.ListOfModTypesLocalize.First(), searchTaskLoaded.CommonParameters.ListOfModTypesLocalize.First());
+            Assert.AreEqual(searchTask.CommonParameters.ListOfModTypesLocalize.Last(), searchTaskLoaded.CommonParameters.ListOfModTypesLocalize.Last());
 
             Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptorType, searchTaskLoaded.SearchParameters.MassDiffAcceptorType);
             Assert.AreEqual(searchTask.SearchParameters.CustomMdac, searchTaskLoaded.SearchParameters.CustomMdac);

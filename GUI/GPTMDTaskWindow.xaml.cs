@@ -21,7 +21,7 @@ namespace MetaMorpheusGUI
 
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
         #endregion Private Fields
@@ -132,27 +132,16 @@ namespace MetaMorpheusGUI
             if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    heh.Use = true;
+                    heh.Use = false;
             }
             else
             {
-                foreach (var mod in task.CommonParameters.ListOfModsLocalize)
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                 {
-                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
-                    if (theModType != null)
-                    {
-                        var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
-                        if (theMod != null)
-                            theMod.Use = true;
-                        else
-                            theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
-                    }
+                    if (task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
+                        heh.Use = true;
                     else
-                    {
-                        theModType = new ModTypeForTreeView(mod.Item1, true);
-                        localizeModTypeForTreeViewObservableCollection.Add(theModType);
-                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
-                    }
+                        heh.Use = false;
                 }
             }
 
@@ -179,15 +168,13 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             foreach (var ye in fixedModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
-            foreach (var ye in localizeModTypeForTreeViewObservableCollection)
-                ye.VerifyCheckState();
             foreach (var ye in gptmdModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
         }
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
+            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
 
@@ -199,7 +186,7 @@ namespace MetaMorpheusGUI
             precursorMassToleranceComboBox.Items.Add("Absolute");
             precursorMassToleranceComboBox.Items.Add("ppm");
 
-            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 fixedModTypeForTreeViewObservableCollection.Add(theModType);
@@ -207,7 +194,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 variableModTypeForTreeViewObservableCollection.Add(theModType);
@@ -215,16 +202,12 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
-            {
-                var theModType = new ModTypeForTreeView(hm.Key, false);
-                localizeModTypeForTreeViewObservableCollection.Add(theModType);
-                foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-            }
+
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 gptmdModTypeForTreeViewObservableCollection.Add(theModType);
@@ -243,12 +226,14 @@ namespace MetaMorpheusGUI
         {
             CommonParameters CommonParamsToSave = new CommonParameters();
 
-            CommonParamsToSave.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            CommonParamsToSave.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
-            CommonParamsToSave.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
-            CommonParamsToSave.DigestionParams.Protease = (Protease)proteaseComboBox.SelectedItem;
-            CommonParamsToSave.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
-            CommonParamsToSave.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            DigestionParams digestionParamsToSave = new DigestionParams();
+            digestionParamsToSave.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            digestionParamsToSave.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
+            digestionParamsToSave.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            digestionParamsToSave.Protease = (Protease)proteaseComboBox.SelectedItem;
+            digestionParamsToSave.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            digestionParamsToSave.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            CommonParamsToSave.DigestionParams = digestionParamsToSave;
 
             if (OutputFileNameTextBox.Text != "")
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
@@ -272,27 +257,29 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
             CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
-            CommonParamsToSave.ListOfModsVariable = new List<Tuple<string, string>>();
+            var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
-                CommonParamsToSave.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
-            CommonParamsToSave.ListOfModsFixed = new List<Tuple<string, string>>();
+                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            CommonParamsToSave.ListOfModsVariable = listOfModsVariable;
+
+            var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
-                CommonParamsToSave.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
+
             if (localizeAllCheckBox.IsChecked.Value)
             {
-                CommonParamsToSave.ListOfModsLocalize = null;
+                CommonParamsToSave.ListOfModTypesLocalize = null;
                 CommonParamsToSave.LocalizeAll = true;
             }
             else
             {
                 CommonParamsToSave.LocalizeAll = false;
-                CommonParamsToSave.ListOfModsLocalize = new List<Tuple<string, string>>();
-                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                    CommonParamsToSave.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
             }
-            TheTask.GptmdParameters.ListOfModsGptmd = new List<Tuple<string, string>>();
+            TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
-                TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+                TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
 
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;

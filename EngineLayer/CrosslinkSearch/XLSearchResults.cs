@@ -1,9 +1,8 @@
-﻿using EngineLayer.CrosslinkSearch;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace EngineLayer
+namespace EngineLayer.CrosslinkSearch
 {
     public class XLSearchResults : MetaMorpheusEngineResults
     {
