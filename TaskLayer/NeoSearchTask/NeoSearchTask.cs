@@ -14,9 +14,22 @@ namespace TaskLayer
     public class NeoSearchTask : MetaMorpheusTask
     {
 
-        public bool AggregateTargetDecoyFiles { get; set; }
-        public bool GenerateSplicedPeptides { get; set; }
-        public bool AggregateNormalSplicedFiles { get; set; }
+        #region Public Properties
+
+        public enum NeoTaskType { AggregateTargetDecoyFiles, GenerateSplicedPeptides, AggregateNormalSplicedFiles, SearchTransDb };
+        public NeoTaskType NeoType { get; set; }
+
+        public NeoParameters NeoParameters { get; set; }
+
+        #endregion Public Properties
+
+        #region Private Properties
+
+        private List<DbForTask> StoredDatabases = new List<DbForTask>();
+
+        #endregion Public Properties
+
+        #region Public Constructors
 
         public NeoSearchTask() : base(MyTask.Neo)
         {
@@ -39,15 +52,15 @@ namespace TaskLayer
 
         }
 
-        #region Public Properties
+        #endregion Public Constructors
 
-        public NeoParameters NeoParameters { get; set; }
+        #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
 
-            if (AggregateTargetDecoyFiles)
+            if (NeoType.Equals(NeoTaskType.AggregateTargetDecoyFiles))
             {
                 //getfolders
                 if (NeoParameters.DecoyFilePath == null)
@@ -74,8 +87,11 @@ namespace TaskLayer
                 }
                 AggregateSearchFiles.Combine(NeoParameters.TargetFilePath, NeoParameters.DecoyFilePath, OutputFolder + "\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]));
             }
-            else if (AggregateNormalSplicedFiles)
+            else if (NeoType.Equals(NeoTaskType.AggregateNormalSplicedFiles))
             {
+                //reset database
+                dbFilenameList = StoredDatabases;
+
                 string normalPath = "";
                 string cisPath = new DirectoryInfo(OutputFolder).Name;
                 string taskString = cisPath.Split('-')[0];
@@ -86,7 +102,7 @@ namespace TaskLayer
                 AggregateSearchFiles.RecursiveNeoAggregation(normalPath, cisPath, OutputFolder,"CisResults.psmtsv");
                 AggregateSearchFiles.RecursiveNeoAggregation(normalPath, transPath, OutputFolder, "TransResults.psmtsv");
             }
-            else
+            else if (NeoType.Equals(NeoTaskType.GenerateSplicedPeptides))
             {
                 NeoMassCalculator.ImportMasses();
 
@@ -178,17 +194,30 @@ namespace TaskLayer
                     //Export Results
                     Status("Exporting Results...", taskId);
                     NeoExport.ExportAll(candidates, arrayOfMs2ScansSortedByMass, OutputFolder);
+
+                    //Switch databases
+                    string outputFolder = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixNC.fasta";
+                    dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder, false) };
                 });
+            }
+            else //if SearchTransDb
+            {
+                string outputFolder = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixTS.fasta";
+                dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder, false) };
             }
 
             return myTaskResults;
         }
+
+        #endregion Protected Methods
+
+        #region Public Methods
 
         public NeoSearchTask Clone()
         {
             return (NeoSearchTask)this.MemberwiseClone();
         }
 
-        #endregion Public Properties
+        #endregion Public Methods
     }
 }

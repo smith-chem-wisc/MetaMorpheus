@@ -63,9 +63,7 @@ namespace TaskLayer
             }
 
             var yeo5_1 = ye5.Clone();
-            yeo5_1.AggregateTargetDecoyFiles = true;
-            yeo5_1.AggregateNormalSplicedFiles = false;
-            yeo5_1.GenerateSplicedPeptides = false;
+            yeo5_1.NeoType = NeoSearchTask.NeoTaskType.AggregateTargetDecoyFiles;
 
             novelCollection.Add(yeo5_1);
 
@@ -88,10 +86,7 @@ namespace TaskLayer
             }
 
             var yeo5_2 = ye5.Clone();
-            yeo5_2.AggregateTargetDecoyFiles = false;
-            yeo5_2.AggregateNormalSplicedFiles = false;
-            yeo5_2.GenerateSplicedPeptides = true;
-
+            yeo5_2.NeoType = NeoSearchTask.NeoTaskType.GenerateSplicedPeptides;
             novelCollection.Add(yeo5_2);
 
             string cisFileName = "SearchTaskCisconfig.toml";
@@ -100,17 +95,19 @@ namespace TaskLayer
             var yeocis = Toml.ReadFile<SearchTask>(cisFileName, MetaMorpheusTask.tomlConfig);
             novelCollection.Add(yeocis);
 
+            var yeo5_3 = ye5.Clone();
+            yeo5_3.NeoType = NeoSearchTask.NeoTaskType.SearchTransDb;
+            novelCollection.Add(yeo5_3);
+
             string transFileName = "SearchTaskTransconfig.toml";
             transFileName = Path.Combine(defaultFolderPath, transFileName);
             UpdateTomls(tomlFileName, transFileName, ye5.CommonParameters, TerminusType.None, true);
             var yeotrans = Toml.ReadFile<SearchTask>(transFileName, MetaMorpheusTask.tomlConfig);
             novelCollection.Add(yeotrans);
 
-            var yeo5_3 = ye5.Clone();
-            yeo5_3.AggregateTargetDecoyFiles = false;
-            yeo5_3.AggregateNormalSplicedFiles = true;
-            yeo5_3.GenerateSplicedPeptides = false;
-            novelCollection.Add(yeo5_3);
+            var yeo5_4 = ye5.Clone();
+            yeo5_4.NeoType = NeoSearchTask.NeoTaskType.AggregateNormalSplicedFiles;
+            novelCollection.Add(yeo5_4);
 
             #region DeleteTomlFile
 
@@ -131,7 +128,7 @@ namespace TaskLayer
                     newTomlLines.Add(GetCorrectValue("LocalizeAll", tomlFileName, line));
                 else if (line.Contains("ListOfModsFixed"))
                     newTomlLines.Add(GetCorrectValue("ListOfModsFixed", tomlFileName, line));
-                else if (line.Contains("ListOfModsVariable") && terminusType.Equals(TerminusType.None))
+                else if (line.Contains("ListOfModsVariable") && terminusType.Equals(TerminusType.None) && !spliceSearch)
                     newTomlLines.Add(GetCorrectValue("ListOfModsVariable", tomlFileName, line));
                 else if (line.Contains("BIons"))
                 {

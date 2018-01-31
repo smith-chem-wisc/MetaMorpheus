@@ -9,12 +9,13 @@ namespace EngineLayer.Neo
 {
     public static class NeoExport
     {
+        public static string path;
         public static string folder;
 
-        public static string ExportAll(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
+        public static void ExportAll(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
             folder = DateTime.Now.ToString("yyyy-MM-dd_hh-mm-ss");
-            string path = "";
+            path = "";
             string[] temp = databaseFileName.Split('\\').ToArray();
             for (int i = 0; i < temp.Count() - 1; i++)
                 path += temp[i] + '\\';
@@ -25,7 +26,6 @@ namespace EngineLayer.Neo
             ExportFASTAAppendix(psms, databaseFileName, path);
 
           //  ExportFilteredFusionPeptideAppendix(psms, databaseFileName, path);
-            return "";
         }
 
         public static void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path)
