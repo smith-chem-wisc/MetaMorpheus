@@ -19,7 +19,8 @@ namespace TaskLayer
         Search,
         Gptmd,
         Calibrate,
-        XLSearch
+        XLSearch,
+        Neo
     }
 
     public abstract class MetaMorpheusTask

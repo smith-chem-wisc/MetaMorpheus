@@ -42,7 +42,7 @@ namespace MetaMorpheusGUI
         public string DisplayName { get; }
 
         #endregion Public Properties
-        
+
         #region Protected Methods
 
         protected void RaisePropertyChanged(string name)

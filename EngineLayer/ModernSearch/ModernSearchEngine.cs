@@ -177,7 +177,7 @@ namespace EngineLayer.ModernSearch
                             protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
                             int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
                             int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentFloorMass;
-                            if (compFragmentFloorMass > 0)
+                            if (compFragmentFloorMass > 0 && compFragmentCeilingMass < fragmentIndex.Length)
                                 for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
                                     if (fragmentIndex[fragmentBin] != null)
                                         binsToSearch.Add(fragmentBin);
@@ -255,6 +255,7 @@ namespace EngineLayer.ModernSearch
                     if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
                         idsOfPeptidesPossiblyObserved.Add(id);
                 }
+
                 if (maximumMassThatFragmentIonScoreIsDoubled > 0)
                 {
                     for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
