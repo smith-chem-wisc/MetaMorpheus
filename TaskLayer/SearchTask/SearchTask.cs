@@ -24,7 +24,6 @@ using System.Xml;
 using System.Xml.Serialization;
 using UsefulProteomicsDatabases;
 
-
 namespace TaskLayer
 {
     public class SearchTask : MetaMorpheusTask
@@ -45,6 +44,7 @@ namespace TaskLayer
 
             FlashLfqEngine = new FlashLFQEngine();
         }
+
         #endregion Public Constructors
 
         #region Public Properties
@@ -77,7 +77,6 @@ namespace TaskLayer
                 id = "",
             };
 
-
             _mzid.Provider = new mzIdentML110.Generated.ProviderType()
             {
                 id = "PROVIDER",
@@ -92,12 +91,8 @@ namespace TaskLayer
                             name = "MetaMorpheusGroup",
                             cvRef = "PSI-MS"
                         },
-
-
                     },
                 },
-
-
             };
 
             _mzid.AuditCollection = new mzIdentML110.Generated.AbstractContactType[2];
@@ -123,8 +118,6 @@ namespace TaskLayer
                         value ="UWMadisonChem"
                     }
                 }
-
-
             };
 
             _mzid.AuditCollection[1] = new mzIdentML110.Generated.OrganizationType()
@@ -435,7 +428,6 @@ namespace TaskLayer
                                 accession = "MS:1000894",
                                 value = psm.ScanRetentionTime.ToString()
                             }
-
                         }
                     };
                     psm_per_scan.Add(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), scan_result_scan_item);
@@ -502,10 +494,8 @@ namespace TaskLayer
             {
                 SpectrumIdentificationProtocol = new mzIdentML110.Generated.SpectrumIdentificationProtocolType[1]
                 {
-
                     new mzIdentML110.Generated.SpectrumIdentificationProtocolType
                     {
-
                         id = "SIP",
                         analysisSoftware_ref = "AS_MetaMorpheus",
                         SearchType = new mzIdentML110.Generated.ParamType
@@ -584,7 +574,6 @@ namespace TaskLayer
                                 unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             }
-
                         },
                         Threshold = new mzIdentML110.Generated.ParamListType()
                         {
@@ -688,7 +677,6 @@ namespace TaskLayer
                     cvParam = new mzIdentML110.Generated.CVParamType[2]
                 };
 
-
                 foreach (var tempModification in set)
                 {
                     nameOfMod = tempModification.id.Substring(0, (tempModification.id.IndexOf(" ")));
@@ -699,7 +687,6 @@ namespace TaskLayer
                     }
                 }
 
-
                 if (modification != null)
                     _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[0] = new mzIdentML110.Generated.CVParamType()
                     {
@@ -707,7 +694,6 @@ namespace TaskLayer
                         name = nameOfMod,
                         cvRef = "UNIMOD"
                     };
-
 
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[1] = new mzIdentML110.Generated.CVParamType()
                 {
@@ -717,7 +703,6 @@ namespace TaskLayer
                 };
 
                 mod_index++;
-
             }
 
             _mzid.AnalysisProtocolCollection.ProteinDetectionProtocol = new mzIdentML110.Generated.ProteinDetectionProtocolType()
@@ -921,7 +906,7 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
-            
+
             #endregion Load modifications
 
             List<ProductType> ionTypes = new List<ProductType>();
@@ -1143,7 +1128,7 @@ namespace TaskLayer
                 // pass quantification parameters to FlashLFQ
                 Status("Quantifying...", taskId);
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
-                
+
                 if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm " + SearchParameters.QuantifyPpmTol,
                         "--sil true",
