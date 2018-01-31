@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace EngineLayer.Neo
 {
     public class CisParent : Parent
     {
-        public List<int> nStart { get; set; }
-        public int nLength { get; set; }
-        public List<int> cStart { get; set; }
-        public int cLength { get; set; }
-        public FusionCandidate.FusionType cisType { get; }
+        #region Public Constructors
 
         public CisParent(string id, string seq, List<int> nStart, int nLength, List<int> cStart, int cLength) : base(id, seq)
         {
@@ -25,5 +19,17 @@ namespace EngineLayer.Neo
             else
                 this.cisType = FusionCandidate.FusionType.RC;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public List<int> nStart { get; set; }
+        public int nLength { get; set; }
+        public List<int> cStart { get; set; }
+        public int cLength { get; set; }
+        public FusionCandidate.FusionType cisType { get; }
+
+        #endregion Public Properties
     }
 }

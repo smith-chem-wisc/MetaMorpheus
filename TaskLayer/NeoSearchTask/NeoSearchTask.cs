@@ -13,21 +13,11 @@ namespace TaskLayer
 {
     public class NeoSearchTask : MetaMorpheusTask
     {
-
-        #region Public Properties
-
-        public enum NeoTaskType { AggregateTargetDecoyFiles, GenerateSplicedPeptides, AggregateNormalSplicedFiles, SearchTransDb };
-        public NeoTaskType NeoType { get; set; }
-
-        public NeoParameters NeoParameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Private Properties
+        #region Private Fields
 
         private List<DbForTask> StoredDatabases = new List<DbForTask>();
 
-        #endregion Public Properties
+        #endregion Private Fields
 
         #region Public Constructors
 
@@ -49,10 +39,32 @@ namespace TaskLayer
                 PrecursorMassTolerance = null,
                 ProductMassTolerance = null
             };
-
         }
 
         #endregion Public Constructors
+
+        #region Public Enums
+
+        public enum NeoTaskType { AggregateTargetDecoyFiles, GenerateSplicedPeptides, AggregateNormalSplicedFiles, SearchTransDb };
+
+        #endregion Public Enums
+
+        #region Public Properties
+
+        public NeoTaskType NeoType { get; set; }
+
+        public NeoParameters NeoParameters { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public NeoSearchTask Clone()
+        {
+            return (NeoSearchTask)this.MemberwiseClone();
+        }
+
+        #endregion Public Methods
 
         #region Protected Methods
 
@@ -99,7 +111,7 @@ namespace TaskLayer
                 taskNum -= 2;
                 string transPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + (taskNum + 1) + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
                 cisPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
-                AggregateSearchFiles.RecursiveNeoAggregation(normalPath, cisPath, OutputFolder,"CisResults.psmtsv");
+                AggregateSearchFiles.RecursiveNeoAggregation(normalPath, cisPath, OutputFolder, "CisResults.psmtsv");
                 AggregateSearchFiles.RecursiveNeoAggregation(normalPath, transPath, OutputFolder, "TransResults.psmtsv");
             }
             else if (NeoType.Equals(NeoTaskType.GenerateSplicedPeptides))
@@ -124,7 +136,6 @@ namespace TaskLayer
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-
                     //Import Database
                     Status("Loading modifications...", taskId);
 
@@ -138,15 +149,16 @@ namespace TaskLayer
                     else
                         localizeableModificationTypes = GlobalVariables.AllModTypesKnown.Where(b => localizeableModificationTypes.Contains(b)).ToList();
 
-                    #endregion Load modifications 
+                    #endregion Load modifications
+
+
 
                     var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
-
 
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;
                     string cPath = NeoParameters.CFilePath;
-                    //if termini input        
+                    //if termini input
 
                     if (nPath == null || cPath == null)
                     {
@@ -210,14 +222,5 @@ namespace TaskLayer
         }
 
         #endregion Protected Methods
-
-        #region Public Methods
-
-        public NeoSearchTask Clone()
-        {
-            return (NeoSearchTask)this.MemberwiseClone();
-        }
-
-        #endregion Public Methods
     }
 }

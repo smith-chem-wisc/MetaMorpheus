@@ -1,24 +1,20 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Text;
-using EngineLayer;
-using MzLibUtil;
+﻿using EngineLayer;
 using Nett;
-using Proteomics;
-using System.IO;
-using System.Linq;
 using System.Collections.Generic;
+using System.IO;
 
 namespace TaskLayer
 {
     public static class NeoLoadTomls
     {
+        #region Public Methods
+
         public static List<MetaMorpheusTask> LoadTomls(NeoSearchTask ye5) //tomls are located in EngineLayer//Neo//Data//TomlFiles
         {
             List<MetaMorpheusTask> novelCollection = new List<MetaMorpheusTask>();
 
             string defaultFolderPath = Path.Combine(GlobalVariables.DataDir, @"Neo", @"TomlFiles");
-            
+
             #region write TOML
 
             var tomlFileName = Path.Combine(defaultFolderPath, ye5.GetType().Name + "config.toml");
@@ -118,6 +114,10 @@ namespace TaskLayer
             return novelCollection;
         }
 
+        #endregion Public Methods
+
+        #region Private Methods
+
         private static void UpdateTomls(string tomlFileName, string fileName, ICommonParameters ye5, TerminusType terminusType, bool spliceSearch)
         {
             string[] oldTomlLines = File.ReadAllLines(@fileName);
@@ -196,5 +196,7 @@ namespace TaskLayer
                     return line;
             return oldLine;
         }
+
+        #endregion Private Methods
     }
 }

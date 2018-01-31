@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace EngineLayer.Neo
 {
     public class NeoPsm
     {
-        public int scanNumber { get; set; }
-        public double expMass { get; set; }
-        public InitialID nInfo { get; set; }
-        public InitialID cInfo { get; set; }
-        public List<FusionCandidate> candidates { get; set; }
-        public FusionCandidate.FusionType fusionType { get; set; }
+        #region Public Constructors
 
         public NeoPsm(int scan, double expMass)
         {
@@ -29,5 +22,18 @@ namespace EngineLayer.Neo
             this.cInfo = cInfo;
             this.candidates = new List<FusionCandidate>();
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public int scanNumber { get; set; }
+        public double expMass { get; set; }
+        public InitialID nInfo { get; set; }
+        public InitialID cInfo { get; set; }
+        public List<FusionCandidate> candidates { get; set; }
+        public FusionCandidate.FusionType fusionType { get; set; }
+
+        #endregion Public Properties
     }
 }

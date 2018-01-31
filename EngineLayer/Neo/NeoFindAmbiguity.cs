@@ -1,36 +1,54 @@
-﻿using Proteomics;
+﻿using Chemistry;
+using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using Chemistry;
 using System.Threading.Tasks;
 
 namespace EngineLayer.Neo
 {
     public static class NeoFindAmbiguity
     {
+        #region Public Fields
+
         //private BackgroundWorker worker = null;
         public static List<Protein> theoreticalProteins;
+
         public static HashSet<string> notFoundSequences = new HashSet<string>();
         public static Dictionary<string, List<Protein>> foundSequences = new Dictionary<string, List<Protein>>();
-        private const int maxMissingConsecutivePeaks = 2;
-        private const int maxNumPossibleSequences = 2000;
-        private const int decimalDigitsForFragmentMassRounding = 3;
         public static Dictionary<double, string[]> massDict = new Dictionary<double, string[]>();
         public static double[] keys;
-        public static double productMassTolerancePpm = 20; //(Ppm)
-        public static double precursorMassTolerancePpm = 5; //(Ppm)
+        public static double productMassTolerancePpm = 20;
+
+        //(Ppm)
+        public static double precursorMassTolerancePpm = 5;
+
+        //(Ppm)
         public static List<ProductType> ionsUsed = new List<ProductType> { ProductType.B, ProductType.Y };
+
         public static Dictionary<double, char> massesToResidues = new Dictionary<double, char>();
         public static List<double> singleAminoAcidMasses = new List<double>();
         public static double maxDifference;
-        private static readonly double waterMonoisotopicMass = Math.Round(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass, decimalDigitsForFragmentMassRounding);
         public static Dictionary<string, List<string>> nTermDictionary = new Dictionary<string, List<string>>();
         public static Dictionary<string, List<string>> cTermDictionary = new Dictionary<string, List<string>>();
         public static Dictionary<string, List<Protein>> protDictionary = new Dictionary<string, List<Protein>>();
-        public static char[] AANames = new char[20] { 'G', 'A', 'S', 'P', 'V', 'T', 'L', 'I', 'N', 'D', 'Q', 'K', 'E', 'M', 'H', 'F', 'R', 'C', 'Y', 'W' }; //20 common AA, ordered by mass assuming carbamido
+        public static char[] AANames = new char[20] { 'G', 'A', 'S', 'P', 'V', 'T', 'L', 'I', 'N', 'D', 'Q', 'K', 'E', 'M', 'H', 'F', 'R', 'C', 'Y', 'W' };
+
+        #endregion Public Fields
+
+        #region Private Fields
+
+        private const int maxMissingConsecutivePeaks = 2;
+        private const int maxNumPossibleSequences = 2000;
+        private const int decimalDigitsForFragmentMassRounding = 3;
+        private static readonly double waterMonoisotopicMass = Math.Round(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass, decimalDigitsForFragmentMassRounding);
+
+        #endregion Private Fields
+
+        //20 common AA, ordered by mass assuming carbamido
+
+        #region Public Methods
 
         public static void FindAmbiguity(List<NeoPsm> candidates, List<Protein> theoreticalProteins, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
@@ -60,6 +78,90 @@ namespace EngineLayer.Neo
             cTermDictionary.Clear();
             protDictionary.Clear();
         }
+
+        //use ion hits to know where peaks have been found by morpheus and where there is ambiguity
+        public static void FindIons(FusionCandidate fusionCandidate, NeoPsm psm, Ms2ScanWithSpecificMass spectrum)
+        {
+            fusionCandidate.makeFoundIons();
+            string candSeq = fusionCandidate.seq;
+            bool[] foundIons = fusionCandidate.foundIons;
+
+            //find which aa have peaks
+            for (int i = 0; i < foundIons.Count() - 1; i++)
+            {
+                //B IONS//
+                if (ionsUsed.Contains(ProductType.B))
+                {
+                    double bTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS, 1);
+                    foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
+                    {
+                        if (NeoMassCalculator.IdenticalMasses(expPeak, bTheoMass, productMassTolerancePpm))
+                            foundIons[i + 1] = true;
+                    }
+                }
+                //Y IONS//
+                if (ionsUsed.Contains(ProductType.Y))
+                {
+                    double yTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1)), 1);
+                    foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
+                    {
+                        if (NeoMassCalculator.IdenticalMasses(expPeak, yTheoMass, productMassTolerancePpm))
+                            foundIons[foundIons.Count() - 1 - i] = true;
+                    }
+                }
+                //C IONS//
+                if (ionsUsed.Contains(ProductType.C))
+                {
+                    double cTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS + NeoConstants.nitrogenMonoisotopicMass + 3 * NeoConstants.hydrogenMonoisotopicMass, 1);
+                    foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
+                    {
+                        if (NeoMassCalculator.IdenticalMasses(expPeak, cTheoMass, productMassTolerancePpm))
+                            foundIons[i + 1] = true;
+                    }
+                }
+                //ZDOT IONS//
+                if (ionsUsed.Contains(ProductType.Zdot))
+                {
+                    double zdotTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1)) - NeoConstants.nitrogenMonoisotopicMass - 2 * NeoConstants.hydrogenMonoisotopicMass, 1);
+                    foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
+                    {
+                        if (NeoMassCalculator.IdenticalMasses(expPeak, zdotTheoMass, productMassTolerancePpm))
+                            foundIons[foundIons.Count() - 1 - i] = true;
+                    }
+                }
+            }
+            foundIons[0] = true;//|A|B|C|D|E|F|K where the whole peptide peak is always placed arbitrarily at the n term
+        }
+
+        public static void ReadMassDictionary()
+        {
+            List<double> tempKeys = new List<double>();
+            string[] pathArray = Environment.CurrentDirectory.Split('\\');
+            string pathPrefix = "";
+            for (int i = 0; i < pathArray.Length - 3; i++)
+                pathPrefix += pathArray[i] + '\\';
+            using (StreamReader masses = new StreamReader(pathPrefix + @"EngineLayer\\Neo\\Data\Dictionary" + maxMissingConsecutivePeaks + ".txt")) //file located in Morpheus folder
+            {
+                while (masses.Peek() != -1)
+                {
+                    string line = masses.ReadLine();
+                    string[] fields = line.Split('\t');
+                    double key = Convert.ToDouble(fields[0]);
+                    string[] sequences = fields[1].Split(';');
+                    massDict.Add(key, sequences);
+                    tempKeys.Add(key);
+                }
+            }
+            keys = new double[tempKeys.Count()];
+            for (int i = 0; i < tempKeys.Count(); i++)
+            {
+                keys[i] = tempKeys[i];
+            }
+        }
+
+        #endregion Public Methods
+
+        #region Private Methods
 
         private static bool IsTooMessy(NeoPsm psm, Ms2ScanWithSpecificMass spectrum) //return true if too messy for confident identification
         {
@@ -149,86 +251,6 @@ namespace EngineLayer.Neo
             }
             else //this might be a fusion peptide, but we won't get enough valuable information from this spectra, so discard it
                 return true;
-        }
-
-        //use ion hits to know where peaks have been found by morpheus and where there is ambiguity
-        public static void FindIons(FusionCandidate fusionCandidate, NeoPsm psm, Ms2ScanWithSpecificMass spectrum)
-        {
-            fusionCandidate.makeFoundIons();
-            string candSeq = fusionCandidate.seq;
-            bool[] foundIons = fusionCandidate.foundIons;
-
-            //find which aa have peaks
-            for (int i = 0; i < foundIons.Count() - 1; i++)
-            {
-                //B IONS//
-                if (ionsUsed.Contains(ProductType.B))
-                {
-                    double bTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS, 1);
-                    foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
-                    {
-                        if (NeoMassCalculator.IdenticalMasses(expPeak, bTheoMass, productMassTolerancePpm))
-                            foundIons[i + 1] = true;
-                    }
-                }
-                //Y IONS//
-                if (ionsUsed.Contains(ProductType.Y))
-                {
-                    double yTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1)), 1);
-                    foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
-                    {
-                        if (NeoMassCalculator.IdenticalMasses(expPeak, yTheoMass, productMassTolerancePpm))
-                            foundIons[foundIons.Count() - 1 - i] = true;
-                    }
-                }
-                //C IONS//
-                if (ionsUsed.Contains(ProductType.C))
-                {
-                    double cTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(0, 1 + i)) - NeoConstants.WATER_MONOISOTOPIC_MASS + NeoConstants.nitrogenMonoisotopicMass + 3 * NeoConstants.hydrogenMonoisotopicMass, 1);
-                    foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
-                    {
-                        if (NeoMassCalculator.IdenticalMasses(expPeak, cTheoMass, productMassTolerancePpm))
-                            foundIons[i + 1] = true;
-                    }
-                }
-                //ZDOT IONS//
-                if (ionsUsed.Contains(ProductType.Zdot))
-                {
-                    double zdotTheoMass = ClassExtensions.ToMz(NeoMassCalculator.MonoIsoptopicMass(candSeq.Substring(candSeq.Length - 1 - i, i + 1)) - NeoConstants.nitrogenMonoisotopicMass - 2 * NeoConstants.hydrogenMonoisotopicMass, 1);
-                    foreach (double expPeak in spectrum.TheScan.MassSpectrum.XArray)
-                    {
-                        if (NeoMassCalculator.IdenticalMasses(expPeak, zdotTheoMass, productMassTolerancePpm))
-                            foundIons[foundIons.Count() - 1 - i] = true;
-                    }
-                }
-            }
-            foundIons[0] = true;//|A|B|C|D|E|F|K where the whole peptide peak is always placed arbitrarily at the n term
-        }
-
-        public static void ReadMassDictionary()
-        {
-            List<double> tempKeys = new List<double>();
-            string[] pathArray = Environment.CurrentDirectory.Split('\\');
-            string pathPrefix = "";
-            for (int i = 0; i < pathArray.Length - 3; i++)
-                pathPrefix += pathArray[i] + '\\';
-            using (StreamReader masses = new StreamReader(pathPrefix + @"EngineLayer\\Neo\\Data\Dictionary" + maxMissingConsecutivePeaks + ".txt")) //file located in Morpheus folder
-            {
-                while (masses.Peek() != -1)
-                {
-                    string line = masses.ReadLine();
-                    string[] fields = line.Split('\t');
-                    double key = Convert.ToDouble(fields[0]);
-                    string[] sequences = fields[1].Split(';');
-                    massDict.Add(key, sequences);
-                    tempKeys.Add(key);
-                }
-            }
-            keys = new double[tempKeys.Count()];
-            for (int i = 0; i < tempKeys.Count(); i++)
-            {
-                keys[i] = tempKeys[i];
-            }
         }
 
         private static void ReadAminoAcids()
@@ -326,17 +348,13 @@ namespace EngineLayer.Neo
                             }
                             else
                                 partialSequences.Add(partialSeq); //keep adding stuff to it
-
                         }
                     }
                     globalIndex++;
                 }
 
-
                 foreach (string seq in partialSequences)
                     cMatchedSequences.Add(seq);
-
-
 
                 partialSequences.Clear();
                 partialSequences.Add("");
@@ -374,7 +392,7 @@ namespace EngineLayer.Neo
 
                             if (partialSeq.Length > 3)
                             {
-                                //can it be made? 
+                                //can it be made?
                                 int n = 4;
 
                                 if (nTermDictionary.TryGetValue(partialSeq.Substring(0, 4), out List<string> nEntry))
@@ -412,8 +430,7 @@ namespace EngineLayer.Neo
                 foreach (string seq in partialSequences)
                     nMatchedSequences.Add(seq);
 
-
-                //Splice surviving fragments   
+                //Splice surviving fragments
                 Parallel.ForEach(nMatchedSequences, n =>
                 {
                     double nMass = NeoMassCalculator.MonoIsoptopicMass(n);
@@ -485,7 +502,6 @@ namespace EngineLayer.Neo
                     }
                 });
             }
-
 
             psm.candidates.Clear();
             if (ambiguousCandidates.Count <= maxNumPossibleSequences)
@@ -737,7 +753,6 @@ namespace EngineLayer.Neo
             }
 
             return psm.candidates.Count() != 0; //if no candidates are left, we couldn't make the sequence with the database and we'll discard it.
-
         }
 
         private static List<string> GetCombinations(double key, double theoreticalMass, double experimentalMass)
@@ -1016,7 +1031,6 @@ namespace EngineLayer.Neo
                     fusionCandidate.fusionType = cisParent.cisType;
                 }
             }
-
         }
 
         private static void RemoveTranslatablePeptides(List<NeoPsm> psms)
@@ -1142,6 +1156,6 @@ namespace EngineLayer.Neo
             }
         }
 
+        #endregion Private Methods
     }
 }
-

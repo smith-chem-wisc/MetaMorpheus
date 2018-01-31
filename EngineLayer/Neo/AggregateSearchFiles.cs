@@ -7,6 +7,8 @@ namespace EngineLayer.Neo
 {
     public static class AggregateSearchFiles
     {
+        #region Public Methods
+
         public static void Combine(string primaryFilePath, string secondaryFilePath, string outputFilePath)
         {
             string header = "";
@@ -15,7 +17,7 @@ namespace EngineLayer.Neo
             List<PsmTsvLine> aggregatedLines = AggregateDifferentDatabaseSearches(primaryLines, secondaryLines);
             CalculateFDR(aggregatedLines);
 
-            using (StreamWriter file = new StreamWriter(@outputFilePath+"_TargetsAndDecoys.psmtsv"))
+            using (StreamWriter file = new StreamWriter(@outputFilePath + "_TargetsAndDecoys.psmtsv"))
             {
                 file.WriteLine(header);
                 foreach (PsmTsvLine psm in aggregatedLines)
@@ -29,105 +31,6 @@ namespace EngineLayer.Neo
                 foreach (PsmTsvLine psm in targets)
                     file.WriteLine(psm.ToString());
             }
-        }
-
-        private static List<PsmTsvLine> AggregateDifferentDatabaseSearches(string[] primaryLines, string[] secondaryLines)
-        {
-            List<PsmTsvLine> primaryPsms = ImportPsmtsv.ImportLinesToAggregate(primaryLines);
-            List<PsmTsvLine> secondaryPsms = ImportPsmtsv.ImportLinesToAggregate(secondaryLines);
-            List<PsmTsvLine> aggregatedLines = new List<PsmTsvLine>();
-            int p = 0;
-            int s = 0;
-            while (p < primaryPsms.Count && s < secondaryPsms.Count)
-            {
-                PsmTsvLine psmP = primaryPsms[p];
-                PsmTsvLine psmS = secondaryPsms[s];
-                if (psmP.scanNumber < psmS.scanNumber)
-                {
-                    aggregatedLines.Add(psmP);
-                    p++;
-                }
-                else if (psmP.scanNumber > psmS.scanNumber)
-                {
-                    aggregatedLines.Add(psmS);
-                    s++;
-                }
-                else
-                {
-                    if (psmP.score > psmS.score - 0.001 && psmP.score < psmS.score + 0.001)
-                        aggregatedLines.Add(psmP.AggregateLine(psmS));
-                    else if (psmP.score > psmS.score)
-                        aggregatedLines.Add(psmP);
-                    else                  
-                        aggregatedLines.Add(psmS);
-                    p++;
-                    s++;
-                }
-            }
-            while (p < primaryPsms.Count)
-            {
-                aggregatedLines.Add(primaryPsms[p]);
-                p++;
-            }
-            while (s < secondaryPsms.Count)
-            {
-                aggregatedLines.Add(primaryPsms[s]);
-                s++;
-            }
-            return aggregatedLines;
-        }
-
-        private static void CalculateFDR(List<PsmTsvLine> aggregatedLines)
-        {
-            aggregatedLines = aggregatedLines.OrderByDescending(x => x.score).ToList();
-            int targets = 0;
-            int decoys = 0;
-            foreach (PsmTsvLine line in aggregatedLines)
-            {
-                if (line.DCT.Contains("T") || line.DCT.Contains("C"))
-                    targets++;
-                else
-                    decoys++;
-
-                line.target = targets.ToString();
-                line.decoy = decoys.ToString();
-                line.q = ((1.0d * decoys) / (targets)).ToString();
-            }
-        }
-
-        private static List<PsmTsvLine> AssignFDRToTarget(string[] primaryLines, string[] secondaryLines)
-        {
-            List<PsmTsvLine> primaryPsms = ImportPsmtsv.ImportLinesToAggregate(primaryLines);
-            List<PsmTsvLine> secondaryPsms = ImportPsmtsv.ImportLinesToAggregate(secondaryLines);
-            primaryPsms = primaryPsms.OrderByDescending(x => x.score).ToList();
-            secondaryPsms = secondaryPsms.OrderByDescending(x => x.score).ToList();
-            int p = 0;
-            int s = 0;
-            int target = 0;
-            int decoy = 0;
-            double qMax = 0;
-            PsmTsvLine decoyLine = secondaryPsms[s];
-
-            while (p < primaryPsms.Count)
-            {
-                PsmTsvLine targetLine = primaryPsms[p];
-                if (targetLine.score > decoyLine.score || s == secondaryPsms.Count)
-                {
-                    target++;
-                    targetLine.target = target.ToString();
-                    targetLine.decoy = decoy.ToString();
-                    double qValue = (1.0d * decoy / target);
-                    qMax = (qMax > qValue) ? qMax : qValue;
-                    targetLine.q = qMax.ToString();
-                    p++;
-                }
-                else
-                {
-                    decoy++;
-                    s++;
-                }
-            }
-            return primaryPsms;
         }
 
         public static void RecursiveNeoAggregation(string standardFilePath, string neoResultFilePath, string outputFolder, string identifier)
@@ -186,7 +89,7 @@ namespace EngineLayer.Neo
                 foreach (PsmTsvLine line in finalAggregatedLines)
                     file.WriteLine(line.ToString());
             }
-            using (StreamWriter file = new StreamWriter(Path.Combine(outputFolder, "PercolatorInfo_"+identifier)))
+            using (StreamWriter file = new StreamWriter(Path.Combine(outputFolder, "PercolatorInfo_" + identifier)))
             {
                 file.WriteLine("Maxmimum q-Value of Gold Standards: " + oldQThreshold);
                 file.WriteLine("Minimum Score Difference for Splice Selection Over Normal: " + oldScoreDifferenceThreshold);
@@ -194,7 +97,7 @@ namespace EngineLayer.Neo
         }
 
         public static double UpdateQThreshold(List<PsmTsvLine> primaryLines, double qThreshold, bool increaseQ)
-        {       
+        {
             List<double> qValues = primaryLines.Select(x => Convert.ToDouble(x.q)).ToList(); //grab all q values
             if (increaseQ) //get next highest qValue
             {
@@ -271,7 +174,7 @@ namespace EngineLayer.Neo
             int numConfidentSpliced = 1; //prevent divide-by-zero error, subtract later
             int numDecoySpliced = 0;
             aggregatedLines = aggregatedLines.OrderByDescending(x => x.score).ToList();
-            foreach(PsmTsvLine line in aggregatedLines)
+            foreach (PsmTsvLine line in aggregatedLines)
             {
                 if ((1.0 * numDecoySpliced) / numConfidentSpliced >= 0.05)
                     break;
@@ -282,5 +185,110 @@ namespace EngineLayer.Neo
             }
             return numConfidentSpliced;
         }
+
+        #endregion Public Methods
+
+        #region Private Methods
+
+        private static List<PsmTsvLine> AggregateDifferentDatabaseSearches(string[] primaryLines, string[] secondaryLines)
+        {
+            List<PsmTsvLine> primaryPsms = ImportPsmtsv.ImportLinesToAggregate(primaryLines);
+            List<PsmTsvLine> secondaryPsms = ImportPsmtsv.ImportLinesToAggregate(secondaryLines);
+            List<PsmTsvLine> aggregatedLines = new List<PsmTsvLine>();
+            int p = 0;
+            int s = 0;
+            while (p < primaryPsms.Count && s < secondaryPsms.Count)
+            {
+                PsmTsvLine psmP = primaryPsms[p];
+                PsmTsvLine psmS = secondaryPsms[s];
+                if (psmP.scanNumber < psmS.scanNumber)
+                {
+                    aggregatedLines.Add(psmP);
+                    p++;
+                }
+                else if (psmP.scanNumber > psmS.scanNumber)
+                {
+                    aggregatedLines.Add(psmS);
+                    s++;
+                }
+                else
+                {
+                    if (psmP.score > psmS.score - 0.001 && psmP.score < psmS.score + 0.001)
+                        aggregatedLines.Add(psmP.AggregateLine(psmS));
+                    else if (psmP.score > psmS.score)
+                        aggregatedLines.Add(psmP);
+                    else
+                        aggregatedLines.Add(psmS);
+                    p++;
+                    s++;
+                }
+            }
+            while (p < primaryPsms.Count)
+            {
+                aggregatedLines.Add(primaryPsms[p]);
+                p++;
+            }
+            while (s < secondaryPsms.Count)
+            {
+                aggregatedLines.Add(primaryPsms[s]);
+                s++;
+            }
+            return aggregatedLines;
+        }
+
+        private static void CalculateFDR(List<PsmTsvLine> aggregatedLines)
+        {
+            aggregatedLines = aggregatedLines.OrderByDescending(x => x.score).ToList();
+            int targets = 0;
+            int decoys = 0;
+            foreach (PsmTsvLine line in aggregatedLines)
+            {
+                if (line.DCT.Contains("T") || line.DCT.Contains("C"))
+                    targets++;
+                else
+                    decoys++;
+
+                line.target = targets.ToString();
+                line.decoy = decoys.ToString();
+                line.q = ((1.0d * decoys) / (targets)).ToString();
+            }
+        }
+
+        private static List<PsmTsvLine> AssignFDRToTarget(string[] primaryLines, string[] secondaryLines)
+        {
+            List<PsmTsvLine> primaryPsms = ImportPsmtsv.ImportLinesToAggregate(primaryLines);
+            List<PsmTsvLine> secondaryPsms = ImportPsmtsv.ImportLinesToAggregate(secondaryLines);
+            primaryPsms = primaryPsms.OrderByDescending(x => x.score).ToList();
+            secondaryPsms = secondaryPsms.OrderByDescending(x => x.score).ToList();
+            int p = 0;
+            int s = 0;
+            int target = 0;
+            int decoy = 0;
+            double qMax = 0;
+            PsmTsvLine decoyLine = secondaryPsms[s];
+
+            while (p < primaryPsms.Count)
+            {
+                PsmTsvLine targetLine = primaryPsms[p];
+                if (targetLine.score > decoyLine.score || s == secondaryPsms.Count)
+                {
+                    target++;
+                    targetLine.target = target.ToString();
+                    targetLine.decoy = decoy.ToString();
+                    double qValue = (1.0d * decoy / target);
+                    qMax = (qMax > qValue) ? qMax : qValue;
+                    targetLine.q = qMax.ToString();
+                    p++;
+                }
+                else
+                {
+                    decoy++;
+                    s++;
+                }
+            }
+            return primaryPsms;
+        }
+
+        #endregion Private Methods
     }
 }

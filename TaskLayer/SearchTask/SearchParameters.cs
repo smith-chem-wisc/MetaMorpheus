@@ -59,6 +59,5 @@ namespace TaskLayer
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
 
         #endregion Public Properties
-        
     }
 }

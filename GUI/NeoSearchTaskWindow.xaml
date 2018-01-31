@@ -97,13 +97,13 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label4" Content="Ions to search" />
-                                            <CheckBox x:Name="bCheckBox" Content="b ions" Margin="5"/>
+                                            <CheckBox x:Name="bCheckBox" Content="b ions" Margin="5" />
                                             <CheckBox x:Name="yCheckBox" Content="y ions" Margin="5" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label24244" Content="Ions to search" Visibility="Hidden"/>
-                                            <CheckBox x:Name="cCheckBox" Content="c ions " Margin="5"/>
-                                            <CheckBox x:Name="zdotCheckBox" Content="zdot ions" Margin="5"/>
+                                            <Label x:Name="label24244" Content="Ions to search" Visibility="Hidden" />
+                                            <CheckBox x:Name="cCheckBox" Content="c ions " Margin="5" />
+                                            <CheckBox x:Name="zdotCheckBox" Content="zdot ions" Margin="5" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -211,10 +211,10 @@
                                 <Grid>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                        <CheckBox x:Name="calibrate" Content="Calibrate Files" IsChecked="True" IsEnabled="False" Height="20" Width="200" Margin="5"/>
+                                        <CheckBox x:Name="calibrate" Content="Calibrate Files" IsChecked="True" IsEnabled="False" Height="20" Width="200" Margin="5" />
                                             <StackPanel Orientation="Horizontal" Margin="5">
                                                 <Label Content="Precursor Mass Tolerance" />
-                                                <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" TextChanged="precursorMassToleranceTextBox_TextChanged"  />
+                                                <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" TextChanged="precursorMassToleranceTextBox_TextChanged" />
                                                 <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="5">
@@ -231,14 +231,14 @@
                                 <Grid>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <CheckBox x:Name="searchTarget" Content="Classic Search (Target)" IsChecked="True" IsEnabled="false" Margin="1"/>
+                                            <CheckBox x:Name="searchTarget" Content="Classic Search (Target)" IsChecked="True" IsEnabled="false" Margin="1" />
                                             <Button x:Name="addTargetSearch" Content="Load Target Search" Click="addTargetSearch_Click" Margin="10,1" />
                                             <TextBox x:Name="targetPath" Width="400" Margin="10,1" TextChanged="targetPath_TextChanged" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <CheckBox x:Name="searchDecoy" Content="Classic Search (Decoy)" IsChecked="True" IsEnabled="false" Margin="1" />
                                             <Button x:Name="addDecoySearch" Content="Load Decoy Search" Click="addDecoySearch_Click" Margin="10,1" />
-                                            <TextBox x:Name="decoyPath"  Width="400" Margin="10,1" TextChanged="decoyPath_TextChanged"/>
+                                            <TextBox x:Name="decoyPath"  Width="400" Margin="10,1" TextChanged="decoyPath_TextChanged" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -247,14 +247,14 @@
                                 <Grid>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <CheckBox x:Name="searchN" Content="Search N Ions" IsChecked="True" IsEnabled="false" Margin="1" Width="100"/>
+                                            <CheckBox x:Name="searchN" Content="Search N Ions" IsChecked="True" IsEnabled="false" Margin="1" Width="100" />
                                             <Button x:Name="addN" Content="Load N-Terminus Search" Click="addN_Click" Margin="10,1" Width="150" />
                                             <TextBox x:Name="NPath" Width="400" Margin="10,1" TextChanged="NPath_TextChanged" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <CheckBox x:Name="searchC" Content="Search C Ions" IsChecked="True" IsEnabled="false" Margin="1" Width="100" />
-                                            <Button x:Name="addC" Content="Load C-Terminus Search" Click="addC_Click" Margin="10,1" Width="150"/>
-                                            <TextBox x:Name="CPath"  Width="400" Margin="10,1" TextChanged="CPath_TextChanged"/>
+                                            <Button x:Name="addC" Content="Load C-Terminus Search" Click="addC_Click" Margin="10,1" Width="150" />
+                                            <TextBox x:Name="CPath"  Width="400" Margin="10,1" TextChanged="CPath_TextChanged" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -262,7 +262,7 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-               
+
                 <GroupBox Header="Neo" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
                         <Expander.Style>
@@ -291,7 +291,7 @@
                                             <Label x:Name="maxCandidatesPerSpectrumLabel" Content="Max Candidates Per Spectrum" Margin="2" />
                                             <TextBox x:Name="maxCandidatesPerSpectrumTextBox" PreviewTextInput="PreviewIfInt" Width="45" Margin="2" />
                                         </StackPanel>
-                                    </StackPanel>                                    
+                                    </StackPanel>
                                 </Grid>
                             </GroupBox>
                             <GroupBox Header="Cis-Spliced Parameters">
@@ -312,7 +312,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <CheckBox x:Name="searchNormalCis" Content="Search Normal Cis" IsChecked="True" Margin="2"  />
+                                            <CheckBox x:Name="searchNormalCis" Content="Search Normal Cis" IsChecked="True" Margin="2" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <CheckBox x:Name="searchReverseCis" Content="Search Reverse Cis" IsChecked="True" Margin="2" />
@@ -323,7 +323,6 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">

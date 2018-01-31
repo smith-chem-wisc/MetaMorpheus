@@ -1,18 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.IO;
-using System.Text;
 
 namespace EngineLayer.Neo
 {
-
     public class NeoMassCalculator
     {
+        #region Public Fields
+
         public static double[] MONOISOTOPIC_AMINO_ACID_MASSES;
         public static double[] AVERAGE_AMINO_ACID_MASSES;
         public static DataTable ModificationsDT = new DataTable();
+
+        #endregion Public Fields
+
+        #region Public Methods
 
         public static void ImportMasses()
         {
@@ -28,98 +31,6 @@ namespace EngineLayer.Neo
         public static bool DecoyIdenticalMasses(double experimental, double theoretical)
         {
             return (((theoretical) > (experimental - 9.5) && (theoretical) < (experimental - 4.5)) || ((theoretical) > (experimental + 5.5) && (theoretical) < (experimental + 7.5)));
-        }
-
-        private static void AminoAcidMasses()
-        {
-            MONOISOTOPIC_AMINO_ACID_MASSES = new double['Z' - 'A' + 1]; //makes array with 26 0's
-            AVERAGE_AMINO_ACID_MASSES = new double['Z' - 'A' + 1];
-            for (int i = 0; i < MONOISOTOPIC_AMINO_ACID_MASSES.Length; i++)
-            {
-                MONOISOTOPIC_AMINO_ACID_MASSES[i] = double.NaN;
-                AVERAGE_AMINO_ACID_MASSES[i] = double.NaN;
-            }
-
-            string[] pathArray = Environment.CurrentDirectory.Split('\\');
-            string pathPrefix = "";
-            for (int i = 0; i < pathArray.Length - 3; i++)
-                pathPrefix += pathArray[i] + '\\';
-            using (StreamReader amino_acids = new StreamReader(Path.Combine(pathPrefix, "EngineLayer\\Neo\\Data\\amino_acids.tsv"))) //file located in Morpheus folder
-            {
-                amino_acids.ReadLine();
-
-                while (amino_acids.Peek() != -1)
-                {
-                    string line = amino_acids.ReadLine();
-                    string[] fields = line.Split('\t');
-
-                    char one_letter_code = char.Parse(fields[0]);
-                    if (!char.IsUpper(one_letter_code))
-                    {
-                        throw new ArgumentOutOfRangeException("Invalid amino acid abbreviation: " + one_letter_code);
-                    }
-                    double monoisotopic_mass = double.Parse(fields[1], CultureInfo.InvariantCulture);
-                    MONOISOTOPIC_AMINO_ACID_MASSES[one_letter_code - 'A'] = monoisotopic_mass;
-                    double average_mass = double.Parse(fields[2], CultureInfo.InvariantCulture);
-                    AVERAGE_AMINO_ACID_MASSES[one_letter_code - 'A'] = average_mass;
-                }
-            }
-        }
-
-        private static void ModificationMasses()
-        {
-            ModificationsDT.Columns.Add("Name", typeof(string));
-            ModificationsDT.Columns.Add("MonoisotopicMass", typeof(double));
-            using (StreamReader uniprot_mods = new StreamReader(Path.Combine(Environment.CurrentDirectory, "Data\\Mods.txt")))///"ptmlist.txt")))
-            {
-                string description = null;
-                string feature_type = null;
-                double monoisotopic_mass_shift = double.NaN;
-                double average_mass_shift = double.NaN;
-                while (uniprot_mods.Peek() != -1)
-                {
-                    string line = uniprot_mods.ReadLine();
-                    if (line.Length >= 2)
-                    {
-                        switch (line.Substring(0, 2))
-                        {
-                            case "ID":
-                                description = line.Substring(5);
-                                description = RemoveNestedParentheses(description, true);
-                                description = description.Replace("'", "");
-                                break;
-                            case "FT":
-                                feature_type = line.Substring(5);
-                                break;
-                            case "TG":
-                                if (feature_type == "MOD_RES")
-                                {
-                                    string amino_acid = line.Substring(5);
-                                }
-                                break;
-                            case "PP":
-                                if (feature_type == "MOD_RES")
-                                {
-                                }
-                                break;
-                            case "MM":
-                                monoisotopic_mass_shift = double.Parse(line.Substring(5));
-                                break;
-                            case "MA":
-                                average_mass_shift = double.Parse(line.Substring(5));
-                                break;
-                            case "DR":
-                                if (line.Contains("PSI-MOD"))
-                                {
-                                }
-                                break;
-                            case "//":
-                                ModificationsDT.Rows.Add(description, monoisotopic_mass_shift);
-                                break;
-                        }
-                    }
-                }
-            }
         }
 
         public static double MonoIsoptopicMass(string baseSequence)
@@ -210,5 +121,110 @@ namespace EngineLayer.Neo
                 return 0;
             }
         }
+
+        #endregion Public Methods
+
+        #region Private Methods
+
+        private static void AminoAcidMasses()
+        {
+            MONOISOTOPIC_AMINO_ACID_MASSES = new double['Z' - 'A' + 1]; //makes array with 26 0's
+            AVERAGE_AMINO_ACID_MASSES = new double['Z' - 'A' + 1];
+            for (int i = 0; i < MONOISOTOPIC_AMINO_ACID_MASSES.Length; i++)
+            {
+                MONOISOTOPIC_AMINO_ACID_MASSES[i] = double.NaN;
+                AVERAGE_AMINO_ACID_MASSES[i] = double.NaN;
+            }
+
+            string[] pathArray = Environment.CurrentDirectory.Split('\\');
+            string pathPrefix = "";
+            for (int i = 0; i < pathArray.Length - 3; i++)
+                pathPrefix += pathArray[i] + '\\';
+            using (StreamReader amino_acids = new StreamReader(Path.Combine(pathPrefix, "EngineLayer\\Neo\\Data\\amino_acids.tsv"))) //file located in Morpheus folder
+            {
+                amino_acids.ReadLine();
+
+                while (amino_acids.Peek() != -1)
+                {
+                    string line = amino_acids.ReadLine();
+                    string[] fields = line.Split('\t');
+
+                    char one_letter_code = char.Parse(fields[0]);
+                    if (!char.IsUpper(one_letter_code))
+                    {
+                        throw new ArgumentOutOfRangeException("Invalid amino acid abbreviation: " + one_letter_code);
+                    }
+                    double monoisotopic_mass = double.Parse(fields[1], CultureInfo.InvariantCulture);
+                    MONOISOTOPIC_AMINO_ACID_MASSES[one_letter_code - 'A'] = monoisotopic_mass;
+                    double average_mass = double.Parse(fields[2], CultureInfo.InvariantCulture);
+                    AVERAGE_AMINO_ACID_MASSES[one_letter_code - 'A'] = average_mass;
+                }
+            }
+        }
+
+        private static void ModificationMasses()
+        {
+            ModificationsDT.Columns.Add("Name", typeof(string));
+            ModificationsDT.Columns.Add("MonoisotopicMass", typeof(double));
+            using (StreamReader uniprot_mods = new StreamReader(Path.Combine(Environment.CurrentDirectory, "Data\\Mods.txt")))///"ptmlist.txt")))
+            {
+                string description = null;
+                string feature_type = null;
+                double monoisotopic_mass_shift = double.NaN;
+                double average_mass_shift = double.NaN;
+                while (uniprot_mods.Peek() != -1)
+                {
+                    string line = uniprot_mods.ReadLine();
+                    if (line.Length >= 2)
+                    {
+                        switch (line.Substring(0, 2))
+                        {
+                            case "ID":
+                                description = line.Substring(5);
+                                description = RemoveNestedParentheses(description, true);
+                                description = description.Replace("'", "");
+                                break;
+
+                            case "FT":
+                                feature_type = line.Substring(5);
+                                break;
+
+                            case "TG":
+                                if (feature_type == "MOD_RES")
+                                {
+                                    string amino_acid = line.Substring(5);
+                                }
+                                break;
+
+                            case "PP":
+                                if (feature_type == "MOD_RES")
+                                {
+                                }
+                                break;
+
+                            case "MM":
+                                monoisotopic_mass_shift = double.Parse(line.Substring(5));
+                                break;
+
+                            case "MA":
+                                average_mass_shift = double.Parse(line.Substring(5));
+                                break;
+
+                            case "DR":
+                                if (line.Contains("PSI-MOD"))
+                                {
+                                }
+                                break;
+
+                            case "//":
+                                ModificationsDT.Rows.Add(description, monoisotopic_mass_shift);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion Private Methods
     }
 }

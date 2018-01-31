@@ -3,14 +3,12 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using UsefulProteomicsDatabases;
 
 namespace MetaMorpheusGUI
 {
@@ -19,12 +17,18 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class NeoSearchTaskWindow : Window
     {
+        #region Private Fields
+
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
 
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public NeoSearchTaskWindow()
         {
@@ -60,7 +64,33 @@ namespace MetaMorpheusGUI
             this.saveButton.Content = "Add the Search Tasks";
         }
 
+        #endregion Public Constructors
+
+        #region Internal Properties
+
         internal NeoSearchTask TheTask { get; private set; }
+
+        #endregion Internal Properties
+
+        #region Public Methods
+
+        public void ReadAllTomls()
+        {
+        }
+
+        public void ReadAllTomls(string filePath)
+        {
+        }
+
+        #endregion Public Methods
+
+        #region Private Methods
+
+        private static Boolean TextBoxIntAllowed(String Text2)
+        {
+            return Array.TrueForAll<Char>(Text2.ToCharArray(),
+                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
+        }
 
         private void PopulateChoices()
         {
@@ -123,7 +153,7 @@ namespace MetaMorpheusGUI
             searchNormalCis.IsChecked = task.NeoParameters.NormalCis;
             searchReverseCis.IsChecked = task.NeoParameters.ReverseCis;
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
-          
+
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -140,7 +170,7 @@ namespace MetaMorpheusGUI
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
-            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;         
+            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -214,7 +244,7 @@ namespace MetaMorpheusGUI
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             #region Check Task Validity
-       
+
             if (!int.TryParse(maxCandidatesPerSpectrumTextBox.Text, out int mcps) || mcps <= 0)
             {
                 MessageBox.Show("The number of maximum candidates per spectra contains unrecognized characters. \n You entered " + '"' + maxCandidatesPerSpectrumTextBox.Text + '"' + "\n Please enter a positive number.");
@@ -230,18 +260,18 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The number of maximum missed cleavages contains unrecognized characters. \n You entered " + '"' + maxMissedTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-           
+
             if (missedCleavagesTextBox.Text.Length == 0)
             {
                 MessageBox.Show("The number of missed cleavages was left empty. For no missed cleavages, please enter zero.");
                 return;
             }
-            if ((!double.TryParse(productMassToleranceTextBox.Text, out double pmt) || pmt <= 0)&&productMassToleranceTextBox.Text.Length!=0)
+            if ((!double.TryParse(productMassToleranceTextBox.Text, out double pmt) || pmt <= 0) && productMassToleranceTextBox.Text.Length != 0)
             {
                 MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if ((!double.TryParse(precursorMassToleranceTextBox.Text, out double premt) || premt <= 0)&& precursorMassToleranceTextBox.Text.Length != 0)
+            if ((!double.TryParse(precursorMassToleranceTextBox.Text, out double premt) || premt <= 0) && precursorMassToleranceTextBox.Text.Length != 0)
             {
                 MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + precursorMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
@@ -299,7 +329,7 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
             if (productMassToleranceComboBox.SelectedIndex == 0)
                 CommonParamsToSave.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
-            else if (productMassToleranceTextBox.Text.Length == 0 || precursorMassToleranceTextBox.Text.Length==0)
+            else if (productMassToleranceTextBox.Text.Length == 0 || precursorMassToleranceTextBox.Text.Length == 0)
                 CommonParamsToSave.ProductMassTolerance = new PpmTolerance(25);
             else
                 CommonParamsToSave.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
@@ -333,6 +363,7 @@ namespace MetaMorpheusGUI
 
             TheTask.NeoParameters = neoParameters;
             TheTask.CommonParameters = CommonParamsToSave;
+
             #endregion Save Parameters
 
             DialogResult = true;
@@ -341,12 +372,6 @@ namespace MetaMorpheusGUI
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !TextBoxIntAllowed(e.Text);
-        }
-
-        private static Boolean TextBoxIntAllowed(String Text2)
-        {
-            return Array.TrueForAll<Char>(Text2.ToCharArray(),
-                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
 
         private void addTargetSearch_Click(object sender, RoutedEventArgs e)
@@ -415,17 +440,6 @@ namespace MetaMorpheusGUI
 
         private void maxCisLengthTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-
-        }
-
-        public void ReadAllTomls()
-        {
-
-        }
-
-        public void ReadAllTomls(string filePath)
-        {
-
         }
 
         private void targetPath_TextChanged(object sender, TextChangedEventArgs e)
@@ -457,5 +471,7 @@ namespace MetaMorpheusGUI
         {
             calibrate.IsChecked = (precursorMassToleranceTextBox.Text.Length != 0 && productMassToleranceTextBox.Text.Length != 0) ? false : true;
         }
+
+        #endregion Private Methods
     }
 }

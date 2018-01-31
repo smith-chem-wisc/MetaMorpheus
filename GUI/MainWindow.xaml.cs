@@ -1000,7 +1000,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
-
     }
 }

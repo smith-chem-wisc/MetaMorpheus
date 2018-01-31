@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace EngineLayer.Neo
 {
     public class PsmTsvLine
     {
+        #region Public Constructors
+
         public PsmTsvLine(string[] line, int scanNumber, double score, string baseSequence, string fullSequence, string accession, string proteinName, string geneName, string DCT, string target, string decoy, string q)
         {
             this.line = line;
@@ -23,6 +23,16 @@ namespace EngineLayer.Neo
             neoType = null;
         }
 
+        #endregion Public Constructors
+
+        #region Public Enums
+
+        public enum NeoType { Normal, Spliced, DecoySpliced };
+
+        #endregion Public Enums
+
+        #region Public Properties
+
         public string[] line { get; set; }
         public int scanNumber { get; set; }
         public double score { get; set; }
@@ -35,9 +45,11 @@ namespace EngineLayer.Neo
         public string target { get; set; }
         public string decoy { get; set; }
         public string q { get; set; }
-        public enum NeoType { Normal, Spliced, DecoySpliced};
         public NeoType? neoType { get; set; }
 
+        #endregion Public Properties
+
+        #region Public Methods
 
         public PsmTsvLine AggregateLine(PsmTsvLine secondary)
         {
@@ -77,5 +89,7 @@ namespace EngineLayer.Neo
                 sb.Append(neoType.ToString());
             return sb.ToString();
         }
+
+        #endregion Public Methods
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,8 +8,14 @@ namespace EngineLayer.Neo
 {
     public static class NeoExport
     {
+        #region Public Fields
+
         public static string path;
         public static string folder;
+
+        #endregion Public Fields
+
+        #region Public Methods
 
         public static void ExportAll(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
@@ -19,13 +24,13 @@ namespace EngineLayer.Neo
             string[] temp = databaseFileName.Split('\\').ToArray();
             for (int i = 0; i < temp.Count() - 1; i++)
                 path += temp[i] + '\\';
-            
+
             Directory.CreateDirectory(path + folder);
             ExportCandidates(psms, spectra, path);
-           // ExportFullFASTA(psms, databaseFileName, path);
+            // ExportFullFASTA(psms, databaseFileName, path);
             ExportFASTAAppendix(psms, databaseFileName, path);
 
-          //  ExportFilteredFusionPeptideAppendix(psms, databaseFileName, path);
+            //  ExportFilteredFusionPeptideAppendix(psms, databaseFileName, path);
         }
 
         public static void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path)
@@ -125,7 +130,7 @@ namespace EngineLayer.Neo
 
                     string ambiguity = "";
                     NeoFindAmbiguity.FindIons(psm.candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
-                                                                                                                              //      mutableError_message += e;
+                                                                                                            //      mutableError_message += e;
                     bool[] foundIons = psm.candidates[indexOfFirstProbableSequence].foundIons;
                     char[] firstSeq = psm.candidates[indexOfFirstProbableSequence].seq.ToCharArray();
                     //   if(foundIons.Count()==firstSeq.Count()) //prevent crashing if something went wrong
@@ -246,7 +251,7 @@ namespace EngineLayer.Neo
 
                         string ambiguity = "";
                         NeoFindAmbiguity.FindIons(psm.candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
-                                                                                                                                  //      mutableError_message += e;
+                                                                                                                //      mutableError_message += e;
                         bool[] foundIons = psm.candidates[indexOfFirstProbableSequence].foundIons;
                         char[] firstSeq = psm.candidates[indexOfFirstProbableSequence].seq.ToCharArray();
 
@@ -305,7 +310,6 @@ namespace EngineLayer.Neo
                     }
                 });
             }
-
 
             using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesNC.txt"))
             {
@@ -365,7 +369,7 @@ namespace EngineLayer.Neo
 
                         string ambiguity = "";
                         NeoFindAmbiguity.FindIons(psm.candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
-                                                                                                                                  //      mutableError_message += e;
+                                                                                                                //      mutableError_message += e;
                         bool[] foundIons = psm.candidates[indexOfFirstProbableSequence].foundIons;
                         char[] firstSeq = psm.candidates[indexOfFirstProbableSequence].seq.ToCharArray();
 
@@ -424,7 +428,6 @@ namespace EngineLayer.Neo
                     }
                 });
             }
-
 
             using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesTS.txt"))
             {
@@ -484,7 +487,7 @@ namespace EngineLayer.Neo
 
                         string ambiguity = "";
                         NeoFindAmbiguity.FindIons(psm.candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
-                                                                                                                                  //      mutableError_message += e;
+                                                                                                                //      mutableError_message += e;
                         bool[] foundIons = psm.candidates[indexOfFirstProbableSequence].foundIons;
                         char[] firstSeq = psm.candidates[indexOfFirstProbableSequence].seq.ToCharArray();
 
@@ -544,6 +547,10 @@ namespace EngineLayer.Neo
                 });
             }
         }
+
+        #endregion Public Methods
+
+        #region Private Methods
 
         private static void ExportFullFASTA(List<NeoPsm> psms, string databaseFileName, string path)
         {
@@ -789,5 +796,7 @@ namespace EngineLayer.Neo
 
             return output;
         }
+
+        #endregion Private Methods
     }
 }

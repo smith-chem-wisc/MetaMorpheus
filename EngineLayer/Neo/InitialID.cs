@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace EngineLayer.Neo
 {
     public class InitialID : NeoPsm
     {
-        public string id { get; set; }
-        public double[] peakHits { get; set; }
-        public Boolean target { get; set; }
-        public double qValue { get; set; }
-        public string seq { get; set; }
-        public string score { get; set; }
+        #region Public Constructors
 
         public InitialID(int scan, double expMass, string id, string seq, string peaks, string scorem)
             : base(scan, expMass)
@@ -29,6 +23,21 @@ namespace EngineLayer.Neo
                 this.peakHits = temp;
             }
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public string id { get; set; }
+        public double[] peakHits { get; set; }
+        public Boolean target { get; set; }
+        public double qValue { get; set; }
+        public string seq { get; set; }
+        public string score { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public void SetPeakHits(string peakHits)
         {
@@ -81,5 +90,7 @@ namespace EngineLayer.Neo
             }
             return cleanedSeq;
         }
+
+        #endregion Public Methods
     }
 }

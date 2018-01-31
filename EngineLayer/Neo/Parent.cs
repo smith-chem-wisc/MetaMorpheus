@@ -1,18 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace EngineLayer.Neo
+﻿namespace EngineLayer.Neo
 {
     public class Parent
     {
-        public string id { get; set; }
-        public string seq { get; set; }
+        #region Public Constructors
 
         public Parent(string id, string seq)
         {
             this.id = id;
             this.seq = seq;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public string id { get; set; }
+        public string seq { get; set; }
+
+        #endregion Public Properties
     }
 }

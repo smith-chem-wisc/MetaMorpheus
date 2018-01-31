@@ -2,26 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace EngineLayer.Neo
 {
     public static class ImportPsmtsv
     {
-        public static int scanNumberIndex = -1;
-        public static int scoreIndex = -1;
-        public static int baseIndex = -1;
-        public static int fullIndex = -1;
-        public static int accessionIndex = -1;
-        public static int proteinIndex = -1;
-        public static int geneIndex = -1;
-        public static int DCTIndex = -1;
-        public static int targetIndex = -1;
-        public static int decoyIndex = -1;
-        public static int qIndex = -1;
-        public static int scanPrecursorMassIndex = -1;
-        public static int matchedIonsIndex = -1;
-        public static int matchedIonCountsIndex = -1;
+        #region Public Fields
 
         public static readonly string scanNumberHeader = "Scan Number";
         public static readonly string scoreHeader = "Score";
@@ -37,6 +23,24 @@ namespace EngineLayer.Neo
         public static readonly string scanPrecursorMassHeader = "Precursor Mass";
         public static readonly string matchedIonsHeader = "Matched Ion Masses";
         public static readonly string matchedionCountsHeader = "Matched Ion Counts";
+        public static int scanNumberIndex = -1;
+        public static int scoreIndex = -1;
+        public static int baseIndex = -1;
+        public static int fullIndex = -1;
+        public static int accessionIndex = -1;
+        public static int proteinIndex = -1;
+        public static int geneIndex = -1;
+        public static int DCTIndex = -1;
+        public static int targetIndex = -1;
+        public static int decoyIndex = -1;
+        public static int qIndex = -1;
+        public static int scanPrecursorMassIndex = -1;
+        public static int matchedIonsIndex = -1;
+        public static int matchedIonCountsIndex = -1;
+
+        #endregion Public Fields
+
+        #region Public Methods
 
         public static void ParseHeader(string header)
         {
@@ -144,5 +148,7 @@ namespace EngineLayer.Neo
 
             return psms;
         }
+
+        #endregion Public Methods
     }
 }

@@ -1,15 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace EngineLayer.Neo
 {
     public static class NeoSplicePeptides
     {
-        public static readonly int ionsUsedMassVer = 2;
-        public static double fixedModMass = 0.0; //carbamidomethyl is defaulted at 0.
+        #region Public Fields
 
+        public static readonly int ionsUsedMassVer = 2;
+        public static double fixedModMass = 0.0;
+
+        #endregion Public Fields
+
+        //carbamidomethyl is defaulted at 0.
+
+        #region Public Methods
 
         public static List<NeoPsm> SplicePeptides(List<NeoPsm> psms)
         {
@@ -178,7 +184,7 @@ namespace EngineLayer.Neo
         //If checkToRemoveExtraAA is true, additional AA will be removed to achieve a theoretical mass less than the Experimental mass
         public static string IonCrop(string ionSequence, double experimentalMass, int fragNumber, ProductType ion, bool checkToRemoveExtraAA)
         {
-            if(ionSequence.Contains("AWRRSC"))
+            if (ionSequence.Contains("AWRRSC"))
             { }
             do
             {
@@ -229,5 +235,7 @@ namespace EngineLayer.Neo
             }
             while (true);
         }
+
+        #endregion Public Methods
     }
 }
