@@ -32,15 +32,20 @@
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <ComponentGroupRef Id="src_Mods_files" />
       <ComponentGroupRef Id="src_Data_files" />
+      <ComponentGroupRef Id="src_NeoData_files" />
+      <ComponentGroupRef Id="src_NeoTomlFiles_files" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
       <!--App Data Section-->
       
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
+      <ComponentGroupRef Id="Appsrc_NeoData_files" />
+      <ComponentGroupRef Id="Appsrc_NeoTomlFiles_files" />
+      <ComponentRef Id="RemoveNeo"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
-      <ComponentRef Id="RomoveApp"/>
+      <ComponentRef Id="RemoveApp"/>
       <ComponentRef Id="DesktopShortcut"/>
     </Feature>
    
@@ -60,6 +65,10 @@
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="DataFolder" Name="Data" />
           <Directory Id="ModsFolder" Name="Mods" />
+          <Directory Id="NeoFolder" Name="Neo">
+            <Directory Id="NeoDataFolder" Name="Data" />
+            <Directory Id="NeoTomlFilesFolder" Name="TomlFiles" />
+          </Directory>
         </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder">
@@ -79,12 +88,19 @@
             <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             <File Id="GUIsettings.toml" Name="GUIsettings.toml" Source="$(var.GUI_TargetDir)GUIsettings.toml" />
           </Component>
-          <Component Id="RomoveApp" Guid="a5443b89-65b0-4855-b521-e7bcc9c5a85c">
+          <Component Id="RemoveApp" Guid="a5443b89-65b0-4855-b521-e7bcc9c5a85c">
             <RemoveFolder Id="MetaMorpheusAppFolder" On="uninstall"/>
             <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
           </Component>
           <Directory Id="MetaAppDataFolder" Name="Data" />
           <Directory Id="MetaAppModsFolder" Name="Mods" />
+          <Directory Id="NeoAppFolder" Name="Neo">
+            <Directory Id="MetaAppNeoDataFolder" Name="Data" />
+            <Directory Id="MetaAppNeoTomlFilesFolder" Name="TomlFiles" />
+            <Component Id="RemoveNeo" Guid="af5ff12f-ef0c-4945-be30-36c00ea734e9">
+              <RemoveFolder Id="NeoAppFolder" On="uninstall"/>
+              <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>          </Directory>
         </Directory>
       </Directory>
     </Directory>
@@ -329,6 +345,51 @@
     </ComponentGroup>
   </Fragment>
 
+  <!--Builds the Neo\Data folder-->
+  <Fragment>
+    <ComponentGroup Id="src_NeoData_files" Directory="NeoDataFolder">
+      <Component Id="src_Neo_combos.txt" Guid="049a0e17-3579-4ee1-8920-576ff3340e3d">
+        <File Id="src_NeoData_amino_acids.tsv" Name="amino_acids.tsv" Source="$(var.GUI_TargetDir)Neo\Data\amino_acids.tsv" />
+      </Component>
+      <Component Id="src_NeoData_Dictionary1.txt" Guid="2198170c-bc34-49f7-8202-8a07176c85ec">
+        <File Id="src_NeoData_Dictionary1.txt" Name="Dictionary1.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary1.txt" />
+      </Component>
+      <Component Id="src_NeoData_Dictionary2.txt" Guid="aa93867e-90fd-4a45-bc49-ece0bf28052b">
+        <File Id="src_NeoData_Dictionary2.txt" Name="Dictionary2.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary2.txt" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!--Builds the Neo\TomlFiles folder-->
+  <Fragment>
+    <ComponentGroup Id="src_NeoTomlFiles_files" Directory="NeoTomlFilesFolder">
+      <Component Id="src_Neo_CalibrationTaskconfig.toml" Guid="a88c4a64-74b7-4de7-9ec3-c5c3a3060fb9">
+        <File Id="src_NeoTF_CalibrationTaskconfig.toml" Name="CalibrationTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\CalibrationTaskconfig.toml" />
+      </Component>
+      <Component Id="src_Neo_GptmdTaskconfig.toml" Guid="e2f37df8-69c8-45f8-bef8-7029ac33f215">
+        <File Id="src_NeoTF_GptmdTaskconfig.toml" Name="GptmdTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\GptmdTaskconfig.toml" />
+      </Component>
+      <Component Id="src_Neo_SearchTaskCconfig.toml" Guid="d02dcedd-29d6-4e00-83c8-da8274eab1e4">
+        <File Id="src_NeoTF_SearchTaskCconfig.toml" Name="SearchTaskCconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskCconfig.toml" />
+      </Component>
+      <Component Id="src_Neo_SearchTaskNconfig.toml" Guid="f45b79f5-c2c9-4fb9-a9bb-949a8a05ef5a">
+        <File Id="src_NeoTF_SearchTaskNconfig.toml" Name="SearchTaskNconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskNconfig.toml" />
+      </Component>
+      <Component Id="src_Neo_SearchTaskCisconfig.toml" Guid="39a56967-6a90-4e9f-a06a-b689d83feceb">
+        <File Id="src_NeoTF_SearchTaskCisconfig.toml" Name="SearchTaskCisconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskCisconfig.toml" />
+      </Component>
+      <Component Id="src_Neo_SearchTaskDecoyconfig.toml" Guid="36e63f8b-4b29-408c-83ea-7c670f037c58">
+        <File Id="src_NeoTF_SearchTaskDecoyconfig.toml" Name="SearchTaskDecoyconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskDecoyconfig.toml" />
+      </Component>
+      <Component Id="src_Neo_SearchTaskTargetconfig.toml" Guid="6c4b4f72-f785-48fb-b675-b71f31d6c4d8">
+        <File Id="src_NeoTF_SearchTaskTargetconfig.toml" Name="SearchTaskTargetconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTargetconfig.toml" />
+      </Component>
+      <Component Id="src_Neo_SearchTaskTransconfig" Guid="873e68e0-fddc-475e-b6f7-dcdedb80d74b">
+        <File Id="src_NeoTF_SearchTaskTransconfig.toml" Name="SearchTaskTransconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
   <!--Build the App Mods folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Mods_files" Directory="MetaAppModsFolder">
@@ -383,7 +444,7 @@
   <!--Builds the App Data folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Data_files" Directory="MetaAppDataFolder">
-      <Component Id="RomoveData" Guid="80dd5110-5563-499a-93ee-652e351c64f9">
+      <Component Id="RemoveData" Guid="80dd5110-5563-499a-93ee-652e351c64f9">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RemoveFolder Id="MetaAppDataFolder" On="both"/>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
@@ -418,9 +479,87 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
       </Component>
-
     </ComponentGroup>
   </Fragment>
+
+  <!--Builds the App Neo\Data folder-->
+  <Fragment>      
+    <ComponentGroup Id="Appsrc_NeoData_files" Directory="MetaAppNeoDataFolder">
+      <Component Id="RemoveNeoData" Guid="a453b2c1-f11d-4953-8a21-c1cdd20e9fea">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppNeoDataFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      <Component Id="Appsrc_Neo_combos.txt" Guid="a2c2bec9-86f3-4969-a1fa-44290e98ea08">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoData_amino_acids.tsv" Name="amino_acids.tsv" Source="$(var.GUI_TargetDir)Neo\Data\amino_acids.tsv" />
+      </Component>
+      <Component Id="Appsrc_NeoData_Dictionary1.txt" Guid="88a37ee8-b6b4-47c2-8e3f-d197a28cacc1">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoData_Dictionary1.txt" Name="Dictionary1.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary1.txt" />
+      </Component>
+      <Component Id="Appsrc_NeoData_Dictionary2.txt" Guid="cd4484ee-dc05-4d92-9dff-5a61c9086478">
+                <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoData_Dictionary2.txt" Name="Dictionary2.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary2.txt" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+  
+  <!--Builds the App Neo\TomlFiles folder-->
+    <Fragment>
+    <ComponentGroup Id="Appsrc_NeoTomlFiles_files" Directory="MetaAppNeoTomlFilesFolder">
+      <Component Id="RemoveNeoTomlFiles" Guid="269e9408-f6ff-4bc8-991a-ba3abe65b212">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppNeoTomlFilesFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      <Component Id="Appsrc_NeoTF_CalibrationTaskconfig.toml" Guid="70cdcf7f-14f6-460c-9b4f-89697864c390">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoTF_CalibrationTaskconfig.toml" Name="CalibrationTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\CalibrationTaskconfig.toml" />
+      </Component>
+      <Component Id="Appsrc_NeoTF_GptmdTaskconfig.toml" Guid="6b845244-5c12-4e57-92fb-31b371e5d6e2">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoTF_GptmdTaskconfig.toml" Name="GptmdTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\GptmdTaskconfig.toml" />
+      </Component>
+      <Component Id="Appsrc_NeoTF_SearchTaskCconfig.toml" Guid="271ec25f-722f-4cda-a177-674551406703">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskCconfig.toml" Name="SearchTaskCconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskCconfig.toml" />
+      </Component>
+      <Component Id="Appsrc_NeoTF_SearchTaskNconfig.toml" Guid="3ae27d78-9759-4cc8-9efc-9efb932615c4">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskNconfig.toml" Name="SearchTaskNconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskNconfig.toml" />
+      </Component>
+      <Component Id="Appsrc_NeoTF_SearchTaskCisconfig.toml" Guid="068f3634-9287-470f-8050-b1273ae8402d">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskCisconfig.toml" Name="SearchTaskCisconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskCisconfig.toml" />
+      </Component>
+      <Component Id="Appsrc_NeoTF_SearchTaskDecoyconfig.toml" Guid="c039ffdd-3ac4-439d-ab8c-4917cb0e9dbd">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskDecoyconfig.toml" Name="SearchTaskDecoyconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskDecoyconfig.toml" />
+      </Component>
+      <Component Id="Appsrc_NeoTF_SearchTaskTargetconfig.toml" Guid="10bf577c-9bb7-4f4e-bf44-d3fb4eee7dc2">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTargetconfig.toml" Name="SearchTaskTargetconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTargetconfig.toml" />
+      </Component>
+      <Component Id="Appsrc_NeoTF_SearchTaskTransconfig" Guid="477a0f61-c449-41d4-baaf-039f568f10f6">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTransconfig.toml" Name="SearchTaskTransconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+
 
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
