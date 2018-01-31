@@ -350,7 +350,7 @@
       <Component Id="src_Neo_CalibrationTaskconfig.toml" Guid="a88c4a64-74b7-4de7-9ec3-c5c3a3060fb9">
         <File Id="src_NeoData_CalibrationTaskconfig.toml" Name="CalibrationTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\CalibrationTaskconfig.toml" />
       </Component>
-      <Component Id="src_Neo_CalibrationTaskconfig.toml" Guid="e2f37df8-69c8-45f8-bef8-7029ac33f215">
+      <Component Id="src_Neo_GptmdTaskconfig.toml" Guid="e2f37df8-69c8-45f8-bef8-7029ac33f215">
         <File Id="src_NeoData_GptmdTaskconfig.toml" Name="GptmdTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\GptmdTaskconfig.toml" />
       </Component>
       <Component Id="src_Neo_SearchTaskCconfig.toml" Guid="d02dcedd-29d6-4e00-83c8-da8274eab1e4">
