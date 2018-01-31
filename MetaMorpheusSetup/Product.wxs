@@ -95,7 +95,7 @@
           <Directory Id="MetaAppDataFolder" Name="Data" />
           <Directory Id="MetaAppModsFolder" Name="Mods" />
           <Directory Id="NeoAppFolder" Name="Neo">
-            <Directory Id="MetaAppNeoDataFolder" Name="NeoData" />
+            <Directory Id="MetaAppNeoDataFolder" Name="Data" />
             <Directory Id="MetaAppNeoTomlFilesFolder" Name="TomlFiles" />
             <Component Id="RemoveNeo" Guid="af5ff12f-ef0c-4945-be30-36c00ea734e9">
               <RemoveFolder Id="NeoAppFolder" On="uninstall"/>
