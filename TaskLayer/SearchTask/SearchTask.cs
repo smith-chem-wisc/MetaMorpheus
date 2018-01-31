@@ -620,12 +620,8 @@ namespace TaskLayer
             }
 
             int mod_index = 0;
-            var set = GlobalVariables.UnimodDeserialized.ToList();
-            ModificationWithMass modification = null;
-            string nameOfMod = "";
             foreach (ModificationWithMass mod in fixedMods)
             {
-                modification = null;
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index] = new mzIdentML110.Generated.SearchModificationType()
                 {
                     fixedMod = true,
@@ -637,7 +633,6 @@ namespace TaskLayer
 
             foreach (ModificationWithMass mod in variableMods)
             {
-                modification = null;
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index] = new mzIdentML110.Generated.SearchModificationType()
                 {
                     fixedMod = false,
