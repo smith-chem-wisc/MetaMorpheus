@@ -245,7 +245,6 @@ namespace TaskLayer
                     }
                 }
             };
-            _mzid.AnalysisCollection.SpectrumIdentification[0].InputSpectra = new mzIdentML110.Generated.InputSpectraType[filenames.Count];
             int database_index = 0;
             foreach (string database in databases)
             {
@@ -638,7 +637,7 @@ namespace TaskLayer
                     fixedMod = false,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
-                };                
+                };
                 mod_index++;
             }
 
