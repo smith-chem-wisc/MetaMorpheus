@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
@@ -61,10 +62,13 @@ namespace TaskLayer
             List<string> filenames = items.Select(i => i.FullFilePath).Distinct().ToList();
             Dictionary<string, string> database_reference = new Dictionary<string, string>();
             List<string> databases = proteins.Select(p => p.DatabaseFilePath).Distinct().ToList();
+
+            UTF8Encoding utf8EmitBOM = new UTF8Encoding(false);
             XmlWriterSettings settings = new XmlWriterSettings()
             {
                 NewLineChars = "\n",
-                Indent = true
+                Indent = true,
+                Encoding = utf8EmitBOM,
             };
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(mzIdentML110.Generated.MzIdentMLType));
             var _mzid = new mzIdentML110.Generated.MzIdentMLType()
@@ -73,8 +77,75 @@ namespace TaskLayer
                 id = "",
             };
 
+            _mzid.Provider = new mzIdentML110.Generated.ProviderType()
+            {
+                id = "PROVIDER",
+                ContactRole = new mzIdentML110.Generated.ContactRoleType()
+                {
+                    contact_ref = "UWMadisonSmithGroup",
+                    Role = new mzIdentML110.Generated.RoleType()
+                    {
+                        cvParam = new mzIdentML110.Generated.CVParamType()
+                        {
+                            accession = "MS:1001271",
+                            name = "researcher",
+                            cvRef = "PSI-MS"
+                        },
+                    },
+                },
+            };
+
+            _mzid.AuditCollection = new mzIdentML110.Generated.AbstractContactType[2];
+
+            _mzid.AuditCollection[0] = new mzIdentML110.Generated.PersonType()
+            {
+                id = "UWMadisonSmithGroupPerson",
+                cvParam = new mzIdentML110.Generated.CVParamType[2]
+                {
+                    new mzIdentML110.Generated.CVParamType()
+                    {
+                        accession="MS:1000589",
+                        name ="contact email",
+                        cvRef ="PSI-MS",
+                        value ="mm_support@chem.wisc.edu"
+                    },
+
+                       new mzIdentML110.Generated.CVParamType()
+                    {
+                        accession="MS:1000590",
+                        name ="affiliation name",
+                        cvRef ="PSI-MS",
+                        value ="UWMadisonSmithGroup"
+                    }
+                }
+            };
+
+            _mzid.AuditCollection[1] = new mzIdentML110.Generated.OrganizationType()
+            {
+                id = "UWMadisonSmithGroup",
+
+                cvParam = new mzIdentML110.Generated.CVParamType[2]
+                {
+                    new mzIdentML110.Generated.CVParamType()
+                    {
+                        accession="MS:1000589",
+                        name ="contact email",
+                        cvRef ="PSI-MS",
+                        value ="mm_support@chem.wisc.edu"
+                    },
+
+                     new mzIdentML110.Generated.CVParamType()
+                    {
+                        accession="MS:1000590",
+                        name ="affiliation name",
+                        cvRef ="PSI-MS",
+                        value ="UWMadisonSmithGroup"
+                    }
+                }
+            };
+
             //cvlist: URLs of controlled vocabularies used within the file.
-            _mzid.cvList = new mzIdentML110.Generated.cvType[3] { new mzIdentML110.Generated.cvType()
+            _mzid.cvList = new mzIdentML110.Generated.cvType[4] { new mzIdentML110.Generated.cvType()
             {
                 id = "PSI-MS",
                 fullName = "Proteomics Standards Initiative Mass Spectrometry Vocabularies",
@@ -89,6 +160,12 @@ namespace TaskLayer
                 version= "1.2"
             },
             new mzIdentML110.Generated.cvType()
+            {
+                id = "UNIMOD",
+                fullName = "UNIT-ONTOLOGY",
+                uri = "http://www.unimod.org/obo/unimod.obo"
+            },
+              new mzIdentML110.Generated.cvType()
             {
                 id = "UO",
                 fullName = "UNIT-ONTOLOGY",
@@ -110,6 +187,20 @@ namespace TaskLayer
                         accession = "MS:1002661",
                         name = "Morpheus",
                         cvRef = "PSI-MS"
+                    }
+                },
+
+                ContactRole = new mzIdentML110.Generated.ContactRoleType()
+                {
+                    contact_ref = "UWMadisonSmithGroup",
+                    Role = new mzIdentML110.Generated.RoleType()
+                    {
+                        cvParam = new mzIdentML110.Generated.CVParamType()
+                        {
+                             accession = "MS:1001267",
+                             name="software vendor",
+                             cvRef="PSI-MS"
+                        }
                     }
                 }
             }};
@@ -154,7 +245,6 @@ namespace TaskLayer
                     }
                 }
             };
-
             int database_index = 0;
             foreach (string database in databases)
             {
@@ -327,7 +417,17 @@ namespace TaskLayer
                         id = "SIR_" + scan_result_scan_item.Item1,
                         spectraData_ref = "SD_" + spectral_ids[psm.FullFilePath].ToString(),
                         spectrumID = "scan=" + psm.ScanNumber.ToString(),
-                        SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500]
+                        SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500],
+                        cvParam = new mzIdentML110.Generated.CVParamType[1]
+                        {
+                            new mzIdentML110.Generated.CVParamType
+                            {
+                                name = "scan start time",
+                                cvRef = "PSI-MS",
+                                accession = "MS:1000016",
+                                value = psm.ScanRetentionTime.ToString()
+                            }
+                        }
                     };
                     psm_per_scan.Add(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), scan_result_scan_item);
                     sir_id++;
@@ -438,7 +538,6 @@ namespace TaskLayer
                                 name = "search tolerance plus value",
                                 value = productTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
-
                                 unitCvRef = "UO"
                             },
                             new mzIdentML110.Generated.CVParamType
@@ -452,13 +551,27 @@ namespace TaskLayer
                                 unitCvRef = "UO"
                             }
                         },
-                        ParentTolerance = new mzIdentML110.Generated.CVParamType[1]
+                       ParentTolerance = new mzIdentML110.Generated.CVParamType[2]
                         {
+                              new mzIdentML110.Generated.CVParamType
+                            {
+                                accession = "MS:1001412",
+                                name = "search tolerance plus value",
+                                value = productTolerance.Value.ToString(),
+                                cvRef = "PSI-MS",
+                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
+                                unitCvRef = "UO"
+                            },
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession = "MS1001411",
-                                name = "search tolerance specification",
+                                accession = "MS:1001413",
+                                name = "search tolerance minus value",
+                                value = productTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
+                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
+                                unitCvRef = "UO"
                             }
                         },
                         Threshold = new mzIdentML110.Generated.ParamListType()
@@ -486,6 +599,7 @@ namespace TaskLayer
                     id = "E_" + protease_index,
                     name = protease.Name,
                     semiSpecific = protease.CleavageSpecificity == CleavageSpecificity.Semi,
+                    missedCleavagesSpecified = true,
                     missedCleavages = missedCleavages,
                     SiteRegexp = protease.SiteRegexp,
                     EnzymeName = new mzIdentML110.Generated.ParamListType()
@@ -515,6 +629,7 @@ namespace TaskLayer
                 };
                 mod_index++;
             }
+
             foreach (ModificationWithMass mod in variableMods)
             {
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index] = new mzIdentML110.Generated.SearchModificationType()
@@ -536,8 +651,8 @@ namespace TaskLayer
                     {
                         new mzIdentML110.Generated.CVParamType
                         {
-                            accession = "MS:1001448",
-                            name = "pep:FDR threshold",
+                            accession = "MS:1001447",
+                            name = "prot:FDR threshold",
                             cvRef = "PSI-MS",
                             value = threshold.ToString()
                         }
@@ -582,8 +697,9 @@ namespace TaskLayer
                             },
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession = "MS1002373",
+                                accession = "MS:1002373",
                                 name = "protein group-level q-value",
+                                cvRef = "PSI-MS",
                                 value = proteinGroup.QValue.ToString()
                             },
                             new mzIdentML110.Generated.CVParamType
@@ -948,7 +1064,7 @@ namespace TaskLayer
                 // pass quantification parameters to FlashLFQ
                 Status("Quantifying...", taskId);
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
-                
+
                 if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm " + SearchParameters.QuantifyPpmTol,
                         "--sil true",
