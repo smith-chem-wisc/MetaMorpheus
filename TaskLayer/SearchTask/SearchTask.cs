@@ -1672,7 +1672,6 @@ namespace TaskLayer
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             System.Diagnostics.Stopwatch s = System.Diagnostics.Stopwatch.StartNew();
 
-
             if (pathToFolderWithIndices == null)
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
