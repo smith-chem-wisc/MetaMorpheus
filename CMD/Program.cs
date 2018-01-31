@@ -34,7 +34,7 @@ namespace MetaMorpheusCommandLine
              .As('t', "tasks")
              .SetDefault(new List<string>());
 
-            p.Setup(arg => arg.Tasks)
+            p.Setup(arg => arg.MetaTasks)
              .As('m', "meta-task")
              .SetDefault(new List<string>());
 
