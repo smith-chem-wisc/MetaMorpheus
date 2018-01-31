@@ -482,6 +482,11 @@
   <!--Builds the App Neo\Data folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_NeoData_files" Directory="MetaAppNeoDataFolder">
+      <Component Id="RemoveNeoData" Guid="a453b2c1-f11d-4953-8a21-c1cdd20e9fea">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppNeoDataFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
       <Component Id="Appsrc_Neo_combos.txt" Guid="a2c2bec9-86f3-4969-a1fa-44290e98ea08">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
@@ -502,7 +507,12 @@
 
   <!--Builds the App Neo\TomlFiles folder-->
   <Fragment>
-    <ComponentGroup Id="Appsrc_NeoTomlFiles_files" Directory="NeoTomlFilesFolder">
+    <ComponentGroup Id="Appsrc_NeoTomlFiles_files" Directory="MetaAppNeoTomlFilesFolder">
+      <Component Id="RemoveNeoTomlFiles" Guid="269e9408-f6ff-4bc8-991a-ba3abe65b212">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppNeoTomlFilesFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
       <Component Id="Appsrc_NeoTF_CalibrationTaskconfig.toml" Guid="70cdcf7f-14f6-460c-9b4f-89697864c390">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
@@ -542,6 +552,17 @@
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTransconfig" Name="SearchTaskTransconfig" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!--Builds the App Neo folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_Neo_files" Directory="NeoAppFolder">
+      <Component Id="RemoveNeo" Guid="5eda1c10-145c-4417-9709-0debb569017d">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="NeoAppFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
     </ComponentGroup>
   </Fragment>

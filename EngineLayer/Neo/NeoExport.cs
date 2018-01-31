@@ -197,7 +197,6 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                double progress = 0;
                 Parallel.ForEach(psms, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.TL))
@@ -315,7 +314,6 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                double progress = 0;
                 Parallel.ForEach(psms, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.NC))
@@ -433,7 +431,6 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                double progress = 0;
                 Parallel.ForEach(psms, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.TS))
