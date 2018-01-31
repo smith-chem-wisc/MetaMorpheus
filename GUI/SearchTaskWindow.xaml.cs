@@ -255,7 +255,7 @@ namespace MetaMorpheusGUI
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                 {
-                    if(task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
+                    if (task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
                         heh.Use = true;
                     else
                         heh.Use = false;
