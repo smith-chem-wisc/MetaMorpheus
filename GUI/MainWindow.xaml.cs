@@ -289,7 +289,7 @@ namespace MetaMorpheusGUI
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
             {
-                Filter = "Database Files|*.xml;*.xml.gz;*.fasta",
+                Filter = "Database Files|*.xml;*.xml.gz;*.fasta; *.fa",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
