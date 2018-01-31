@@ -1670,6 +1670,8 @@ namespace TaskLayer
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+            System.Diagnostics.Stopwatch s = System.Diagnostics.Stopwatch.StartNew();
+
 
             if (pathToFolderWithIndices == null)
             {
@@ -1704,17 +1706,21 @@ namespace TaskLayer
                 var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
                 //var ser = new NetSerializer.Serializer(messageTypes);
                 //using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-               // {
-                    var a = File.ReadAllBytes(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind"));
-                    peptideIndex = ZeroFormatterSerializer.Deserialize<List<CompactPeptide>>(a);
+                // {
+                var a = File.ReadAllBytes(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind"));
+                peptideIndex = ZeroFormatterSerializer.Deserialize<List<CompactPeptide>>(a);
                 //}
 
                 Status("Reading fragment index...", new List<string> { taskId });
-               // messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+                // messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
                 //ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                     fragmentIndex = ZeroFormatterSerializer.Deserialize<List<int>[]>(file);
             }
+
+            s.Stop();
+            System.IO.File.WriteAllText(@"C:\tmp\test.txt",
+  String.Format("Elasped: {0} ElapsedMilliseconds: {1} ElapsedTicks: ", s.Elapsed, s.ElapsedMilliseconds));
         }
 
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
