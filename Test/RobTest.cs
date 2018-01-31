@@ -297,7 +297,7 @@ namespace Test
             FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
 
             FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
-            
+
             if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm 5",
                         "--sil true",

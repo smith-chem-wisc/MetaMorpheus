@@ -22,7 +22,6 @@ namespace MetaMorpheusGUI
         #region Private Fields
 
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
-
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
