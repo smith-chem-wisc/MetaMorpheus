@@ -382,10 +382,10 @@
         <File Id="src_NeoTF_SearchTaskDecoyconfig.toml" Name="SearchTaskDecoyconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskDecoyconfig.toml" />
       </Component>
       <Component Id="src_Neo_SearchTaskTargetconfig.toml" Guid="6c4b4f72-f785-48fb-b675-b71f31d6c4d8">
-        <File Id="src_NeoTF_SearchTaskTargetconfig" Name="SearchTaskTargetconfig" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTargetconfig.toml" />
+        <File Id="src_NeoTF_SearchTaskTargetconfig.toml" Name="SearchTaskTargetconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTargetconfig.toml" />
       </Component>
       <Component Id="src_Neo_SearchTaskTransconfig" Guid="873e68e0-fddc-475e-b6f7-dcdedb80d74b">
-        <File Id="src_NeoTF_SearchTaskTransconfig" Name="SearchTaskTransconfig" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
+        <File Id="src_NeoTF_SearchTaskTransconfig.toml" Name="SearchTaskTransconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
       </Component>
     </ComponentGroup>
   </Fragment>
@@ -549,12 +549,12 @@
       <Component Id="Appsrc_NeoTF_SearchTaskTargetconfig.toml" Guid="10bf577c-9bb7-4f4e-bf44-d3fb4eee7dc2">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTargetconfig" Name="SearchTaskTargetconfig" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTargetconfig.toml" />
+        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTargetconfig.toml" Name="SearchTaskTargetconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTargetconfig.toml" />
       </Component>
       <Component Id="Appsrc_NeoTF_SearchTaskTransconfig" Guid="477a0f61-c449-41d4-baaf-039f568f10f6">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTransconfig" Name="SearchTaskTransconfig" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
+        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTransconfig.toml" Name="SearchTaskTransconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
       </Component>
     </ComponentGroup>
   </Fragment>
