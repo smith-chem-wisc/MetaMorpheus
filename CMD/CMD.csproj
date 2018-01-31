@@ -7,9 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlashLFQ" Version="0.1.100" />
     <PackageReference Include="FluentCommandLineParser" Version="1.4.3" />
-    <PackageReference Include="mzLib" Version="1.0.273" />
+    <PackageReference Include="mzLib" Version="1.0.275" />
     <PackageReference Include="Nett" Version="0.8.0" />
   </ItemGroup>
 

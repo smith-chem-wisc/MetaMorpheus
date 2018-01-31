@@ -194,6 +194,11 @@ namespace Test
             return Scans[scanNumber - 1];
         }
 
+        public override IEnumerable<IMzmlScan> GetMS1Scans()
+        {
+            throw new System.NotImplementedException();
+        }
+
         #endregion Public Methods
     }
 }
