@@ -725,12 +725,7 @@ namespace TaskLayer
 
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-            List<string> localizeableModificationTypes = CommonParameters.ListOfModTypesLocalize == null ? new List<string>() : CommonParameters.ListOfModTypesLocalize.ToList();
-            if (CommonParameters.LocalizeAll)
-                localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
-            else
-                localizeableModificationTypes = GlobalVariables.AllModTypesKnown.Where(b => localizeableModificationTypes.Contains(b)).ToList();
-
+            List<string> localizeableModificationTypes= CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
             #endregion Load modifications
 
             List<ProductType> ionTypes = new List<ProductType>();

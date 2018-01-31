@@ -159,6 +159,7 @@
     </Compile>
     <Compile Include="ModForTreeView.cs" />
     <Compile Include="ModTypeForGrid.cs" />
+    <Compile Include="ModTypeForLoc.cs" />
     <Compile Include="ModTypeForTreeView.cs" />
     <Compile Include="OutputFileForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />

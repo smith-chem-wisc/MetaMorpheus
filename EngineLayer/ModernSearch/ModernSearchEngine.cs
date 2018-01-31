@@ -255,7 +255,8 @@ namespace EngineLayer.ModernSearch
                     if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
                         idsOfPeptidesPossiblyObserved.Add(id);
                 }
-                if(maximumMassThatFragmentIonScoreIsDoubled>0)
+
+                if (maximumMassThatFragmentIonScoreIsDoubled > 0)
                 {
                     for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
                     {
