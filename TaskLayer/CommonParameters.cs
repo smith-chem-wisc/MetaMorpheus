@@ -55,7 +55,9 @@ namespace TaskLayer
 
         #region Public Properties
 
+        //Any new property must also be added in MetaMorpheusTask.SetAllFileSpecificCommonParams, else it be overwritten by file specific params
         public int? MaxParallelFilesToAnalyze { get; set; }
+
         public int MaxThreadsToUsePerFile { get; set; }
         public bool LocalizeAll { get; set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; set; }
