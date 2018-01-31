@@ -26,7 +26,7 @@ namespace TaskLayer
 
             ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
-            ListOfModsLocalize = null;
+            ListOfModTypesLocalize = new List<string>();
 
             ConserveMemory = true;
 
@@ -60,7 +60,7 @@ namespace TaskLayer
         public bool LocalizeAll { get; set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; set; }
-        public IEnumerable<(string, string)> ListOfModsLocalize { get; set; }
+        public IEnumerable<string> ListOfModTypesLocalize { get; set; }
 
         public bool DoPrecursorDeconvolution { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }
@@ -88,7 +88,7 @@ namespace TaskLayer
         public IDigestionParams DigestionParams { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
-        
+
         public int? TopNpeaks { get; set; }
         public double? MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }

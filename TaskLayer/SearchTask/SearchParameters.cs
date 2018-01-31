@@ -56,7 +56,9 @@ namespace TaskLayer
         public double MaxFragmentSize { get; set; }
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
+        public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
 
         #endregion Public Properties
+        
     }
 }

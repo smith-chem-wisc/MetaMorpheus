@@ -374,7 +374,7 @@ namespace EngineLayer.CrosslinkSearch
 
                         foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                         {
-                            var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false);
+                            var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false, 0);
 
                             if (score > 1 && PsmCross.XlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
                             {
