@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using Nett;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
@@ -21,7 +20,7 @@ namespace MetaMorpheusGUI
         public MetaUpdater()
         {
             InitializeComponent();
-            lbl.Text = "A newer version: " + GlobalEngineLevelSettings.NewestKnownVersion + " is available!";
+            lbl.Text = "A newer version: " + MainWindow.NewestKnownVersion + " is available!";
             ReleaseHandler();
         }
 
@@ -53,7 +52,7 @@ namespace MetaMorpheusGUI
             DialogResult = true;
             using (var client = new WebClient())
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.NewestKnownVersion + @"/MetaMorpheusInstaller.msi");
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownVersion + @"/MetaMorpheusInstaller.msi");
 
                 try
                 {
@@ -81,7 +80,7 @@ namespace MetaMorpheusGUI
                 {
                     string json = response.Content.ReadAsStringAsync().Result;
                     JArray GitArray = JArray.Parse(json);
-                    var currV = GetVersionNumber(GlobalEngineLevelSettings.MetaMorpheusVersion);
+                    var currV = GetVersionNumber(GlobalVariables.MetaMorpheusVersion);
                     StringBuilder allVersionsText = new StringBuilder();
                     foreach (JObject obj in GitArray.Children<JObject>())
                     {
@@ -104,7 +103,7 @@ namespace MetaMorpheusGUI
             DialogResult = true;
             using (var client = new WebClient())
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + GlobalEngineLevelSettings.NewestKnownVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
 
                 try
                 {
@@ -125,34 +124,6 @@ namespace MetaMorpheusGUI
         private void NoClicked(object semder, RoutedEventArgs e)
         {
             DialogResult = false;
-        }
-
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                TomlTable obj = Toml.ReadFile(GlobalEngineLevelSettings.settingsTomlLocation);
-                obj.Update("AskAboutUpdating", false);
-                Toml.WriteFile(obj, GlobalEngineLevelSettings.settingsTomlLocation);
-            }
-            catch (Exception inner)
-            {
-                MessageBox.Show(inner.ToString());
-            }
-        }
-
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                TomlTable obj = Toml.ReadFile(GlobalEngineLevelSettings.settingsTomlLocation);
-                obj.Update("AskAboutUpdating", true);
-                Toml.WriteFile(obj, GlobalEngineLevelSettings.settingsTomlLocation);
-            }
-            catch (Exception inner)
-            {
-                MessageBox.Show(inner.ToString());
-            }
         }
 
         #endregion Private Methods

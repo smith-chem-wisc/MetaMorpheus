@@ -110,7 +110,7 @@ namespace TaskLayer
             var resultsFileName = Path.Combine(outputFolder, "allResults.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
-                file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
                 file.WriteLine("Total time: " + stopWatch.Elapsed);
                 file.Write(allResultsText.ToString());
             }

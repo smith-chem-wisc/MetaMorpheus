@@ -26,7 +26,7 @@ namespace TaskLayer
 
             ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
-            ListOfModsLocalize = null;
+            ListOfModTypesLocalize = new List<string>();
 
             ConserveMemory = true;
 
@@ -43,7 +43,6 @@ namespace TaskLayer
             DeconvolutionMaxAssumedChargeState = 12;
             DeconvolutionMassTolerance = new PpmTolerance(4);
             ReportAllAmbiguity = true;
-            ExcelCompatible = true;
 
             TopNpeaks = 200;
             MinRatio = 0.01;
@@ -61,7 +60,7 @@ namespace TaskLayer
         public bool LocalizeAll { get; set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; set; }
-        public IEnumerable<(string, string)> ListOfModsLocalize { get; set; }
+        public IEnumerable<string> ListOfModTypesLocalize { get; set; }
 
         public bool DoPrecursorDeconvolution { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }
@@ -90,7 +89,6 @@ namespace TaskLayer
 
         public bool ReportAllAmbiguity { get; set; }
 
-        public bool ExcelCompatible { get; set; }
         public int? TopNpeaks { get; set; }
         public double? MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }
@@ -100,5 +98,14 @@ namespace TaskLayer
         public bool CalculateEValue { get; set; }
 
         #endregion Public Properties
+
+        #region Public Methods
+
+        public CommonParameters Clone()
+        {
+            return (CommonParameters)this.MemberwiseClone();
+        }
+
+        #endregion Public Methods
     }
 }

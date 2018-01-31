@@ -36,21 +36,14 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
-            this.ExcelCompatible = true;
             this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
             this.AllScores[AllScores.Count - 1]++;
-        }
-
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, score, scanIndex, scan)
-        {
-            this.ExcelCompatible = excelCompatible;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public static Dictionary<string, int> ModstoWritePruned { get; set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
@@ -93,12 +86,6 @@ namespace EngineLayer
         }
 
         #endregion Public Properties
-
-        #region Private Properties
-
-        private bool ExcelCompatible { get; set; }
-
-        #endregion Private Properties
 
         #region Public Methods
 
@@ -231,6 +218,11 @@ namespace EngineLayer
         }
 
         public override string ToString()
+        {
+            return ToString(new Dictionary<string, int>());
+        }
+
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             var sb = new StringBuilder();
 
@@ -468,7 +460,7 @@ namespace EngineLayer
             if (notEqual)
             {
                 var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
-                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, Dictionary<string, int>>("(too many)", null) : new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
+                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, Dictionary<string, int>>("(too many)", null) : new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
             }
             else
             {
@@ -486,7 +478,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
-                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, double?>("(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
+                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, double?>("(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
             }
         }
 
@@ -501,7 +493,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
-                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, int?>("(too many)", null) : new Tuple<string, int?>(possibleReturn, null);
+                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, int?>("(too many)", null) : new Tuple<string, int?>(possibleReturn, null);
             }
         }
 
@@ -517,7 +509,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list);
-                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
+                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
             }
         }
 
