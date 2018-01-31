@@ -137,11 +137,8 @@ namespace EngineLayer.Neo
         public static void ReadMassDictionary()
         {
             List<double> tempKeys = new List<double>();
-            string[] pathArray = Environment.CurrentDirectory.Split('\\');
-            string pathPrefix = "";
-            for (int i = 0; i < pathArray.Length - 3; i++)
-                pathPrefix += pathArray[i] + '\\';
-            using (StreamReader masses = new StreamReader(pathPrefix + @"Neo\\Data\Dictionary" + maxMissingConsecutivePeaks + ".txt")) //file located in Morpheus folder
+
+            using (StreamReader masses = new StreamReader(Path.Combine(GlobalVariables.DataDir, @"Neo\\Data\Dictionary" + maxMissingConsecutivePeaks + ".txt"))) //file located in Morpheus folder
             {
                 while (masses.Peek() != -1)
                 {
@@ -1069,18 +1066,19 @@ namespace EngineLayer.Neo
                 string[] index = File.ReadAllLines(filename);
                 Parallel.ForEach(index, s =>
                 {
-                    string[] line = s.Replace("_;", ";").Split(';').ToArray();
-                    string key = line[0];
-                    List<string> nList = line[1].Split('_').ToList();
-                    List<string> cList = line[2].Split('_').ToList();
-                    if (nList.Count > 1 || nList[0].Length != 0)
-                    {
-                        for (int i = 0; i < nList.Count; i++)
-                            nList[i] = key + nList[i];
+                string[] line = s.Replace("_;", ";").Split(';').ToArray();
+                string key = line[0];
+                List<string> nList = line[1].Split('_').ToList();
+                List<string> cList = line[2].Split('_').ToList();
+                if (nList.Count > 1 || nList[0].Length != 0)
+                {
+                    for (int i = 0; i < nList.Count; i++)
+                        nList[i] = key + nList[i];
 
-                        List<Protein> prots = new List<Protein>();
-                        foreach (string accession in line[3].Split('|').ToArray())
-                            prots.Add(idToSequence[accession]);
+                    List<Protein> prots = new List<Protein>();
+                        string[] accessions = line[3].Split('|').ToArray();
+                        for(int i=0; i<accessions.Length-1; i++)
+                            prots.Add(idToSequence[accessions[i]]);
                         lock (protDictionary)
                         {
                             protDictionary.Add(line[0], prots);

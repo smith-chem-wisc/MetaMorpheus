@@ -136,11 +136,7 @@ namespace EngineLayer.Neo
                 AVERAGE_AMINO_ACID_MASSES[i] = double.NaN;
             }
 
-            string[] pathArray = Environment.CurrentDirectory.Split('\\');
-            string pathPrefix = "";
-            for (int i = 0; i < pathArray.Length - 3; i++)
-                pathPrefix += pathArray[i] + '\\';
-            using (StreamReader amino_acids = new StreamReader(Path.Combine(pathPrefix, "Neo\\Data\\amino_acids.tsv"))) //file located in Morpheus folder
+            using (StreamReader amino_acids = new StreamReader(Path.Combine(GlobalVariables.DataDir, "Neo\\Data\\amino_acids.tsv"))) //file located in Morpheus folder
             {
                 amino_acids.ReadLine();
 
