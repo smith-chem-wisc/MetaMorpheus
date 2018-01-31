@@ -628,7 +628,7 @@ namespace TaskLayer
             }
 
             int mod_index = 0;
-            var set = GlobalEngineLevelSettings.UnimodDeserialized.ToList();
+            var set = GlobalVariables.UnimodDeserialized.ToList();
             ModificationWithMass modification = null;
             string nameOfMod = "";
             foreach (ModificationWithMass mod in fixedMods)
