@@ -948,10 +948,7 @@ namespace TaskLayer
                 // pass quantification parameters to FlashLFQ
                 Status("Quantifying...", taskId);
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
-
-                if (!FlashLfqEngine.ReadPeriodicTable(GlobalVariables.ElementsLocation))
-                    throw new MetaMorpheusException("Quantification error - could not find periodic table file");
-
+                
                 if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm " + SearchParameters.QuantifyPpmTol,
                         "--sil true",

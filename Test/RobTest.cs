@@ -297,10 +297,7 @@ namespace Test
             FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
 
             FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
-
-            if (!FlashLfqEngine.ReadPeriodicTable(GlobalVariables.ElementsLocation))
-                throw new MetaMorpheusException("Quantification error - could not find periodic table file");
-
+            
             if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm 5",
                         "--sil true",
@@ -313,7 +310,7 @@ namespace Test
 
             FlashLfqEngine.ConstructIndexTemplateFromIdentifications();
 
-            FlashLfqEngine.Quantify(null, mzmlFilePath);
+            FlashLfqEngine.Quantify(Mzml.LoadAllStaticData(mzmlFilePath), mzmlFilePath);
 
             if (FlashLfqEngine.mbr)
                 FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
@@ -425,7 +422,6 @@ namespace Test
         {
             FlashLFQEngine e = new FlashLFQEngine();
             Assert.That(e != null);
-            Assert.That(e.ReadPeriodicTable(GlobalVariables.ElementsLocation));
         }
 
         #endregion Public Methods
