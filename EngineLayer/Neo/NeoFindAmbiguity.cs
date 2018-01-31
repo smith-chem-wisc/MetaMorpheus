@@ -141,7 +141,7 @@ namespace EngineLayer.Neo
             string pathPrefix = "";
             for (int i = 0; i < pathArray.Length - 3; i++)
                 pathPrefix += pathArray[i] + '\\';
-            using (StreamReader masses = new StreamReader(pathPrefix + @"EngineLayer\\Neo\\Data\Dictionary" + maxMissingConsecutivePeaks + ".txt")) //file located in Morpheus folder
+            using (StreamReader masses = new StreamReader(pathPrefix + @"Neo\\Data\Dictionary" + maxMissingConsecutivePeaks + ".txt")) //file located in Morpheus folder
             {
                 while (masses.Peek() != -1)
                 {

@@ -140,7 +140,7 @@ namespace EngineLayer.Neo
             string pathPrefix = "";
             for (int i = 0; i < pathArray.Length - 3; i++)
                 pathPrefix += pathArray[i] + '\\';
-            using (StreamReader amino_acids = new StreamReader(Path.Combine(pathPrefix, "EngineLayer\\Neo\\Data\\amino_acids.tsv"))) //file located in Morpheus folder
+            using (StreamReader amino_acids = new StreamReader(Path.Combine(pathPrefix, "Neo\\Data\\amino_acids.tsv"))) //file located in Morpheus folder
             {
                 amino_acids.ReadLine();
 
