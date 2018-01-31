@@ -98,5 +98,14 @@ namespace TaskLayer
         public bool CalculateEValue { get; set; }
 
         #endregion Public Properties
+
+        #region Public Methods
+
+        public CommonParameters Clone()
+        {
+            return (CommonParameters)this.MemberwiseClone();
+        }
+
+        #endregion Public Methods
     }
 }
