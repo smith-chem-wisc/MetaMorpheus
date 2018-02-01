@@ -384,7 +384,7 @@ namespace EngineLayer
                                         tempModIndex.Add(tempIndexInProtein);
                                         foreach (var pept in aproteinWithPsms.Value)
                                         {
-                                            if (tempIndexInProtein >= pept.OneBasedStartResidueInProtein  && tempIndexInProtein <= pept.OneBasedEndResidueInProtein )
+                                            if (tempIndexInProtein >= pept.OneBasedStartResidueInProtein - (tempIndexInProtein == 0 ? 1 : 0)  && tempIndexInProtein <= pept.OneBasedEndResidueInProtein )
                                                 tempPepNumTotal += 1; 
                                         }
                                         tempPepTotals.Add(tempPepNumTotal);
