@@ -1,11 +1,14 @@
 using EngineLayer;
+using MzLibUtil;
 using Nett;
+using Newtonsoft.Json.Linq;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,25 +38,11 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            Title = "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
+            Title = "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
-
-            try
-            {
-                foreach (var modFile in Directory.GetFiles(GlobalEngineLevelSettings.modsLocation))
-                    GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                Application.Current.Shutdown();
-            }
-
-            GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
-            GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
 
             EverythingRunnerEngine.NewDbsHandler += AddNewDB;
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
@@ -82,9 +71,15 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
 
+            // LOAD GUI SETTINGS
+            GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+
+            if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
+                GuiGlobalParams.AskAboutUpdating = false;
+
             try
             {
-                GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+                GetVersionNumbersFromWeb();
             }
             catch (Exception e)
             {
@@ -94,11 +89,42 @@ namespace MetaMorpheusGUI
 
         #endregion Public Constructors
 
+        #region Public Properties
+
+        public static string NewestKnownVersion { get; private set; }
+
+        #endregion Public Properties
+
+        #region Internal Properties
+
+        internal GuiGlobalParams GuiGlobalParams { get; }
+
+        #endregion Internal Properties
+
         #region Private Methods
+
+        private static void GetVersionNumbersFromWeb()
+        {
+            // Attempt to get current MetaMorpheus version
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
+
+                using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
+                {
+                    var json = response.Content.ReadAsStringAsync().Result;
+                    JObject deserialized = JObject.Parse(json);
+                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+                    if (!assets.Contains("MetaMorpheusInstaller.msi"))
+                        throw new MetaMorpheusException("Necessary files do not exist!");
+                    NewestKnownVersion = deserialized["tag_name"].ToString();
+                }
+            }
+        }
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (GlobalEngineLevelSettings.NewestKnownVersion != null && !GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion) && GlobalEngineLevelSettings.AskAboutUpdating)
+            if (NewestKnownVersion != null && !GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion) && GuiGlobalParams.AskAboutUpdating)
             {
                 try
                 {
@@ -342,7 +368,7 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
                             }
                             catch (Exception ee)
                             {
@@ -359,34 +385,39 @@ namespace MetaMorpheusGUI
                     {
                         case "Search":
                             var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te1 = new PreRunTask(ye1);
-                            staticTasksObservableCollection.Add(te1);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te1) + 1) + "-" + ye1.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye1);
                             break;
 
                         case "Calibrate":
                             var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te2 = new PreRunTask(ye2);
-                            staticTasksObservableCollection.Add(te2);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te2) + 1) + "-" + ye2.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye2);
                             break;
 
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te3 = new PreRunTask(ye3);
-                            staticTasksObservableCollection.Add(te3);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te3) + 1) + "-" + ye3.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye3);
                             break;
 
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            PreRunTask te4 = new PreRunTask(ye4);
-                            staticTasksObservableCollection.Add(te4);
-                            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te4) + 1) + "-" + ye4.CommonParameters.TaskDescriptor;
+                            AddTaskToCollection(ye4);
+                            break;
+
+                        case "Neo":
+                            var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
+                                AddTaskToCollection(task);
                             break;
                     }
                     break;
             }
+        }
+
+        private void AddTaskToCollection(MetaMorpheusTask ye)
+        {
+            PreRunTask te = new PreRunTask(ye);
+            staticTasksObservableCollection.Add(te);
+            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParameters.TaskDescriptor;
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -410,7 +441,7 @@ namespace MetaMorpheusGUI
 
             outRichTextBox.Document.Blocks.Clear();
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
             var t = new Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
@@ -427,8 +458,24 @@ namespace MetaMorpheusGUI
                 Exception e = obj.Exception;
                 while (e.InnerException != null) e = e.InnerException;
                 var message = "Run failed, Exception: " + e.Message;
-                MessageBox.Show(message);
+                var messageBoxResult = System.Windows.MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo);
                 outRichTextBox.AppendText(message + Environment.NewLine);
+                Exception exception = e;
+
+                if (messageBoxResult == MessageBoxResult.Yes)
+                {
+                    string body = exception.Message + "%0D%0A" + exception.Data +
+                       "%0D%0A" + exception.StackTrace +
+                       "%0D%0A" + exception.Source +
+                       "%0D%0A %0D%0A %0D%0A %0D%0A SYSTEM INFO: %0D%0A " +
+                        SystemInfo.CompleteSystemInfo() +
+                       "%0D%0A%0D%0A MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
+
+                    body = body.Replace('&', ' ');
+                    string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
+                    System.Diagnostics.Process.Start(mailto);
+                    Console.WriteLine(body);
+                }
             }
         }
 
@@ -465,9 +512,7 @@ namespace MetaMorpheusGUI
             var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                PreRunTask task = new PreRunTask(dialog.TheTask);
-                staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                AddTaskToCollection(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
         }
@@ -477,9 +522,7 @@ namespace MetaMorpheusGUI
             var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                PreRunTask task = new PreRunTask(dialog.TheTask);
-                staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                AddTaskToCollection(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
         }
@@ -489,9 +532,7 @@ namespace MetaMorpheusGUI
             var dialog = new GptmdTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                PreRunTask task = new PreRunTask(dialog.TheTask);
-                staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                AddTaskToCollection(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
         }
@@ -501,9 +542,19 @@ namespace MetaMorpheusGUI
             var dialog = new XLSearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                PreRunTask task = new PreRunTask(dialog.TheTask);
-                staticTasksObservableCollection.Add(task);
-                staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(task) + 1) + "-" + dialog.TheTask.CommonParameters.TaskDescriptor;
+                AddTaskToCollection(dialog.TheTask);
+                UpdateTaskGuiStuff();
+            }
+        }
+
+        private void AddNeoTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new NeoSearchTaskWindow();
+            if (dialog.ShowDialog() == true)
+            {
+                var ye5 = dialog.TheTask;
+                foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
+                    AddTaskToCollection(task);
                 UpdateTaskGuiStuff();
             }
         }
@@ -637,6 +688,7 @@ namespace MetaMorpheusGUI
                 addGPTMDTaskButton.IsEnabled = false;
                 addSearchTaskButton.IsEnabled = false;
                 btnAddCrosslinkSearch.IsEnabled = false;
+                addNeoTaskButton.IsEnabled = false;
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
@@ -703,6 +755,7 @@ namespace MetaMorpheusGUI
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
             btnAddCrosslinkSearch.IsEnabled = true;
+            addNeoTaskButton.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
             OutputFolderTextBox.IsEnabled = true;
 
@@ -755,6 +808,13 @@ namespace MetaMorpheusGUI
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
+                        return;
+
+                    case MyTask.Neo:
+                        var Neodialog = new NeoSearchTaskWindow(preRunTask.metaMorpheusTask as NeoSearchTask);
+                        Neodialog.ShowDialog();
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + Neodialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
                 }
@@ -889,7 +949,7 @@ namespace MetaMorpheusGUI
         {
             try
             {
-                GlobalEngineLevelSettings.GetVersionNumbersFromWeb();
+                GetVersionNumbersFromWeb();
             }
             catch (Exception ex)
             {
@@ -897,7 +957,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals(GlobalEngineLevelSettings.NewestKnownVersion))
+            if (GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion))
                 MessageBox.Show("You have the most updated version!");
             else
             {
@@ -913,12 +973,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
-        {
-            UsefulProteomicsDatabases.Loaders.UpdateUnimod(GlobalEngineLevelSettings.unimodLocation);
-            Application.Current.Shutdown();
-        }
-
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)
         {
             string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
@@ -932,7 +986,19 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(GlobalEngineLevelSettings.dataDir);
+            System.Diagnostics.Process.Start(GlobalVariables.DataDir);
+        }
+
+        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+            Application.Current.Shutdown();
+        }
+
+        private void MenuItem_Click_7(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            Application.Current.Shutdown();
         }
 
         #endregion Private Methods

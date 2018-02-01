@@ -9,6 +9,7 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -53,7 +54,7 @@ namespace Test
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
             newPsm.MatchToProteinLinkedPeptides(matching);
 
-            newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
+            newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
             allResultingIdentifications.Add(newPsm);
 
             engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, new List<string>());
@@ -96,7 +97,7 @@ namespace Test
 
             match.MatchToProteinLinkedPeptides(matching);
 
-            match.SetFdrValues(1, 0, 0, 1, 0, 0);
+            match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
             allIdentifications = new List<Psm> { match };
 
             var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, precursorMassTolerance, new List<string>());

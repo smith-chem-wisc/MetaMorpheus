@@ -1,35 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net471;netcoreapp2.0</TargetFrameworks>
     <DebugType>full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlashLFQ" Version="0.1.100" />
-    <PackageReference Include="MathNet.Numerics" Version="3.20.0" />
-    <PackageReference Include="mzLib" Version="1.0.267" />
+    <PackageReference Include="MathNet.Numerics" Version="3.20.2" />
+    <PackageReference Include="mzLib" Version="1.0.275" />
     <PackageReference Include="NetSerializer" Version="4.1.0" />
     <PackageReference Include="Nett" Version="0.8.0" />
-    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.7" />
+    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.7.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
   </ItemGroup>
 
-  
-  <PropertyGroup Condition="'$(TargetFramework)'=='net461'">
-    <DefineConstants>NET461</DefineConstants>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
+    <DefineConstants>NETFRAMEWORK</DefineConstants>
   </PropertyGroup>
 
   
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net461|AnyCPU'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 

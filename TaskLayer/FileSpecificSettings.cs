@@ -124,9 +124,12 @@ namespace TaskLayer
         public Tolerance DeconvolutionMassTolerance { get; set; }
         public int? DeconvolutionMaxAssumedChargeState { get; set; }
         public bool? TrimMsMsPeaks { get; set; }
+        public bool? CalculateEValue { get; set; }
         public bool? TrimMs1Peaks { get; set; }
         public double? MinRatio { get; set; }
         public int? TopNpeaks { get; set; }
+        public bool? SemiProteaseDigestion { get; set; }
+        public TerminusType? TerminusTypeSemiProtease { get; set; }
 
         #endregion Public Properties
     }

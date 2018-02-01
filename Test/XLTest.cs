@@ -100,7 +100,7 @@ namespace Test
                 i++;
             }
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -192,6 +192,11 @@ namespace Test
         public override IMzmlScan GetOneBasedScan(int scanNumber)
         {
             return Scans[scanNumber - 1];
+        }
+
+        public override IEnumerable<IMzmlScan> GetMS1Scans()
+        {
+            throw new System.NotImplementedException();
         }
 
         #endregion Public Methods

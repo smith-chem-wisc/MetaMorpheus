@@ -5,6 +5,7 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -228,11 +229,11 @@ namespace Test
             double score = 0;
             int notch = 0;
             Psm psm1 = new Psm(compactPeptide1, notch, score, scanIndex, scan);
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0);
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             Psm psm2 = new Psm(compactPeptide1, notch, score, scanIndex, scan);
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             Psm psm3 = new Psm(compactPeptide2, notch, score, scanIndex, scan);
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0);
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             var newPsms = new List<Psm>
             {
                 psm1,
@@ -241,7 +242,7 @@ namespace Test
             };
 
             MassDiffAcceptor massDiffAcceptors = new SinglePpmAroundZeroSearchMode(5);
-            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;

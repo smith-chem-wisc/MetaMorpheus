@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -171,7 +172,7 @@ namespace Test
             foreach (var hm in psms)
             {
                 hm.MatchToProteinLinkedPeptides(initialDictionary);
-                hm.SetFdrValues(0, 0, 0, 0, 0, 0);
+                hm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
 
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new List<string>());
@@ -297,9 +298,6 @@ namespace Test
 
             FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
 
-            if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
-                throw new MetaMorpheusException("Quantification error - could not find periodic table file");
-
             if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm 5",
                         "--sil true",
@@ -312,7 +310,7 @@ namespace Test
 
             FlashLfqEngine.ConstructIndexTemplateFromIdentifications();
 
-            FlashLfqEngine.Quantify(null, mzmlFilePath);
+            FlashLfqEngine.Quantify(Mzml.LoadAllStaticData(mzmlFilePath), mzmlFilePath);
 
             if (FlashLfqEngine.mbr)
                 FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
@@ -394,15 +392,15 @@ namespace Test
             var match1 = new Psm(peptideList.ElementAt(0).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
-            match1.SetFdrValues(0, 0, 0, 0, 0, 0);
+            match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             var match2 = new Psm(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
-            match2.SetFdrValues(0, 0, 0, 0, 0, 0);
+            match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             var match3 = new Psm(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
-            match3.SetFdrValues(0, 0, 0, 0, 0, 0);
+            match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             match1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             match2.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             match3.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
@@ -424,7 +422,6 @@ namespace Test
         {
             FlashLFQEngine e = new FlashLFQEngine();
             Assert.That(e != null);
-            Assert.That(e.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation));
         }
 
         #endregion Public Methods

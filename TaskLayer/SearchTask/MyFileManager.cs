@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using IO.MzML;
 
-#if NET461
+#if NETFRAMEWORK
 
 using IO.Thermo;
 
@@ -53,7 +53,7 @@ namespace TaskLayer
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
                 else
 
-#if NET461
+#if NETFRAMEWORK
                     myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
 #else
                     Warn("No capability for reading " + origDataFile);
