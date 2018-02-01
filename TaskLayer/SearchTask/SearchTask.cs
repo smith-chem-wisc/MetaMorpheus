@@ -183,9 +183,8 @@ namespace TaskLayer
                 {
                     Item = new mzIdentML110.Generated.CVParamType
                     {
-                        //using Morpheus's accession until we get MetaMorpheus entered
-                        accession = "MS:1002661",
-                        name = "Morpheus",
+                        accession = "MS:1002826",
+                        name = "MetaMorpheus",
                         cvRef = "PSI-MS"
                     }
                 },
@@ -455,17 +454,15 @@ namespace TaskLayer
                     {
                         new mzIdentML110.Generated.CVParamType
                         {
-                            name = "Morpheus:Morpheus score",
+                            name = "MetaMorpheus:score",
                             cvRef = "PSI-MS",
-                            accession = "MS:1002662",
+                            accession = "MS:1002827",
                             value = psm.Score.ToString()
                         },
                         new mzIdentML110.Generated.CVParamType
                         {
                             accession = "MS:1002354",
                             name = "PSM-level q-value",
-                            //accession = "MS:1002054",
-                            //name = "MS-GF:QValue",
                             cvRef = "PSI-MS",
                             value = psm.FdrInfo.QValue.ToString()
                         }
@@ -692,8 +689,8 @@ namespace TaskLayer
                             {
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession = "MS:1002663",
-                                name = "Morpheus:summed Morpheus score",
+                                accession = "MS:1002828",
+                                name = "MetaMorpheus:protein score",
                                 cvRef = "PSI-MS",
                                 value = proteinGroup.ProteinGroupScore.ToString()
                             },
