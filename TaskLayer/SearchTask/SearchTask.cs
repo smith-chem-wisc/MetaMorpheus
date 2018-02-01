@@ -360,27 +360,16 @@ namespace TaskLayer
                         int mod_id = 0;
                         foreach (KeyValuePair<int, ModificationWithMass> mod in peptide.allModsOneIsNterminus)
                         {
-                            UsefulProteomicsDatabases.Generated.oboTerm psimod = null;
-                            string name;
-                            if (mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")) psimod = GlobalVariables.PsiModDeserialized.Items.OfType<UsefulProteomicsDatabases.Generated.oboTerm>().Where(m => m.id == mod.Value.linksToOtherDbs["PSI-MOD"].First()).FirstOrDefault();
-                            name = psimod != null ? psimod.name : mod.Value.id;
-
                             _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML110.Generated.ModificationType()
                             {
                                 location = mod.Key - 1,
                                 locationSpecified = true,
                                 monoisotopicMassDelta = mod.Value.monoisotopicMass,
-                                residues = new string[1] { mod.Value.motif.ToString() },
+                                residues = new string[1] { peptide.BaseSequence[Math.Min(Math.Max(0, mod.Key - 2), peptide.Length - 1)].ToString() },
                                 monoisotopicMassDeltaSpecified = true,
                                 cvParam = new mzIdentML110.Generated.CVParamType[1]
                                 {
-                            new mzIdentML110.Generated.CVParamType()
-                            {
-                                cvRef =  mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? "PSI-MOD" : "PSI-MS",
-                                name = mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? name : "unknown modification",
-                                accession =mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? mod.Value.linksToOtherDbs["PSI-MOD"].First() : "MS:1001460",
-                                value = mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")?  "" : mod.Value.id //give id of mod if unknown modification
-                            }
+                                    GetUnimodCvParam(mod.Value)
                                 }
                             };
                             mod_id++;
@@ -625,6 +614,10 @@ namespace TaskLayer
                     fixedMod = true,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
+                    cvParam = new mzIdentML110.Generated.CVParamType[1]
+                    {
+                        GetUnimodCvParam(mod)
+                    }
                 };
                 mod_index++;
             }
@@ -636,6 +629,10 @@ namespace TaskLayer
                     fixedMod = false,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
+                    cvParam = new mzIdentML110.Generated.CVParamType[1]
+                    {
+                        GetUnimodCvParam(mod)
+                    }
                 };
                 mod_index++;
             }
@@ -1394,6 +1391,27 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static mzIdentML110.Generated.CVParamType GetUnimodCvParam(ModificationWithMass mod)
+        {
+            if (mod.linksToOtherDbs.ContainsKey("Unimod"))
+            {
+                return new mzIdentML110.Generated.CVParamType()
+                {
+                    accession = "UNIMOD:" + mod.linksToOtherDbs["Unimod"].First(),
+                    name = mod.id,
+                    cvRef = "PSI-MS",
+                };
+            }
+            else
+                return new mzIdentML110.Generated.CVParamType()
+                {
+                    accession = "MS:1001460",
+                    name = "unknown modification",
+                    cvRef = "UNIMOD",
+                    value = mod.id,
+                };
+        }
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {
