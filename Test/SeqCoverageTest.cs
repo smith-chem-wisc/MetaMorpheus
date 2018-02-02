@@ -92,12 +92,12 @@ namespace Test
             Assert.AreEqual("[mod1]-MM[mod3]KM[mod3]MK-[mod5]", firstSequenceCoverageDisplayListWithMods);
 
             var firstModInfo = fjkd.ProteinGroups.First().ModsInfo.First();
-            Assert.IsTrue(firstModInfo.Contains(@"#aa0[mod1,info:occupancy=1.00(2/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa1[mod1,info:occupancy=1.00(2/2)]"));
             Assert.IsTrue(firstModInfo.Contains(@"#aa2[mod3,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa3"));
             Assert.IsTrue(firstModInfo.Contains(@"#aa4[mod3,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa5"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa7[mod5,info:occupancy=1.00(2/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5,info:occupancy=1.00(2/2)]"));
         }
 
         #endregion Public Methods
