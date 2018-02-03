@@ -188,6 +188,41 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
+        public TestDataFile(int MS3=5) : base(MS3, new SourceFile(null, null, null, null, null))
+        {
+            var mz1 = new double[] { 50, 60, 70, 80, 90, 764.1376.ToMz(2) };
+            var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
+            var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
+
+
+            var mz2 = new double[] { 52, 62, 72, 147.0764, 257.1244, 258.127, 275.1350 };
+            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 764.1376.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, DissociationType.CID, 1, 764.1376.ToMz(2), 1, "scan=2"));
+
+            var mz3 = new double[] { 53, 63, 73, 148.0764, 258.1244, 259.127, 276.1350 };
+            var intensities3 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum3 = new MzmlMzSpectrum(mz3, intensities3, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(3, MassSpectrum3, 2, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 764.1376.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, DissociationType.ETD, 1, 764.1376.ToMz(2), 1, "scan=3"));
+
+            var mz4 = new double[] { 54, 64, 74, 149.0764, 259.1244, 260.127, 277.1350 };
+            var intensities4 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum4 = new MzmlMzSpectrum(mz4, intensities4, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(4, MassSpectrum4, 3, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 275.1350.ToMz(2), 2, 1, 275.1350.ToMz(2), 2, DissociationType.HCD, 2, 275.1350.ToMz(2), 1, "scan=4"));
+
+            var mz5 = new double[] { 55, 65, 75, 150.0764, 260.1244, 261.127, 278.1350 };
+            var intensities5 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum5 = new MzmlMzSpectrum(mz5, intensities5, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(5, MassSpectrum5, 3, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 257.1244.ToMz(2), 2, 1, 257.1244.ToMz(2), 2, DissociationType.HCD, 2, 257.1244.ToMz(2), 1, "scan=5"));
+
+            Scans = ScansHere.ToArray();
+        }
+
         #endregion Public Constructors
 
         #region Public Properties
