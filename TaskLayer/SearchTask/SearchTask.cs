@@ -183,9 +183,8 @@ namespace TaskLayer
                 {
                     Item = new mzIdentML110.Generated.CVParamType
                     {
-                        //using Morpheus's accession until we get MetaMorpheus entered
-                        accession = "MS:1002661",
-                        name = "Morpheus",
+                        accession = "MS:1002826",
+                        name = "MetaMorpheus",
                         cvRef = "PSI-MS"
                     }
                 },
@@ -361,27 +360,16 @@ namespace TaskLayer
                         int mod_id = 0;
                         foreach (KeyValuePair<int, ModificationWithMass> mod in peptide.allModsOneIsNterminus)
                         {
-                            UsefulProteomicsDatabases.Generated.oboTerm psimod = null;
-                            string name;
-                            if (mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")) psimod = GlobalVariables.PsiModDeserialized.Items.OfType<UsefulProteomicsDatabases.Generated.oboTerm>().Where(m => m.id == mod.Value.linksToOtherDbs["PSI-MOD"].First()).FirstOrDefault();
-                            name = psimod != null ? psimod.name : mod.Value.id;
-
                             _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML110.Generated.ModificationType()
                             {
                                 location = mod.Key - 1,
                                 locationSpecified = true,
                                 monoisotopicMassDelta = mod.Value.monoisotopicMass,
-                                residues = new string[1] { mod.Value.motif.ToString() },
+                                residues = new string[1] { peptide.BaseSequence[Math.Min(Math.Max(0, mod.Key - 2), peptide.Length - 1)].ToString() },
                                 monoisotopicMassDeltaSpecified = true,
                                 cvParam = new mzIdentML110.Generated.CVParamType[1]
                                 {
-                            new mzIdentML110.Generated.CVParamType()
-                            {
-                                cvRef =  mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? "PSI-MOD" : "PSI-MS",
-                                name = mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? name : "unknown modification",
-                                accession =mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? mod.Value.linksToOtherDbs["PSI-MOD"].First() : "MS:1001460",
-                                value = mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")?  "" : mod.Value.id //give id of mod if unknown modification
-                            }
+                                    GetUnimodCvParam(mod.Value)
                                 }
                             };
                             mod_id++;
@@ -455,17 +443,15 @@ namespace TaskLayer
                     {
                         new mzIdentML110.Generated.CVParamType
                         {
-                            name = "Morpheus:Morpheus score",
+                            name = "MetaMorpheus:score",
                             cvRef = "PSI-MS",
-                            accession = "MS:1002662",
+                            accession = "MS:1002827",
                             value = psm.Score.ToString()
                         },
                         new mzIdentML110.Generated.CVParamType
                         {
                             accession = "MS:1002354",
                             name = "PSM-level q-value",
-                            //accession = "MS:1002054",
-                            //name = "MS-GF:QValue",
                             cvRef = "PSI-MS",
                             value = psm.FdrInfo.QValue.ToString()
                         }
@@ -628,6 +614,10 @@ namespace TaskLayer
                     fixedMod = true,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
+                    cvParam = new mzIdentML110.Generated.CVParamType[1]
+                    {
+                        GetUnimodCvParam(mod)
+                    }
                 };
                 mod_index++;
             }
@@ -639,6 +629,10 @@ namespace TaskLayer
                     fixedMod = false,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
+                    cvParam = new mzIdentML110.Generated.CVParamType[1]
+                    {
+                        GetUnimodCvParam(mod)
+                    }
                 };
                 mod_index++;
             }
@@ -692,8 +686,8 @@ namespace TaskLayer
                             {
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession = "MS:1002663",
-                                name = "Morpheus:summed Morpheus score",
+                                accession = "MS:1002828",
+                                name = "MetaMorpheus:protein score",
                                 cvRef = "PSI-MS",
                                 value = proteinGroup.ProteinGroupScore.ToString()
                             },
@@ -1397,6 +1391,27 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static mzIdentML110.Generated.CVParamType GetUnimodCvParam(ModificationWithMass mod)
+        {
+            if (mod.linksToOtherDbs.ContainsKey("Unimod"))
+            {
+                return new mzIdentML110.Generated.CVParamType()
+                {
+                    accession = "UNIMOD:" + mod.linksToOtherDbs["Unimod"].First(),
+                    name = mod.id,
+                    cvRef = "PSI-MS",
+                };
+            }
+            else
+                return new mzIdentML110.Generated.CVParamType()
+                {
+                    accession = "MS:1001460",
+                    name = "unknown modification",
+                    cvRef = "UNIMOD",
+                    value = mod.id,
+                };
+        }
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {
