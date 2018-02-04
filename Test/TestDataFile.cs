@@ -17,8 +17,8 @@ namespace Test
             var mz1 = new double[] { 50, 60, 70, 80, 90, 402.18629720155.ToMz(2) };
             var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
-
             var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
+
             var mz2 = new double[] { 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 };
             var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
             var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
