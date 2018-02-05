@@ -30,10 +30,6 @@
       
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
-      <ComponentGroupRef Id="src_Mods_files" />
-      <ComponentGroupRef Id="src_Data_files" />
-      <ComponentGroupRef Id="src_NeoData_files" />
-      <ComponentGroupRef Id="src_NeoTomlFiles_files" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
       <!--App Data Section-->
