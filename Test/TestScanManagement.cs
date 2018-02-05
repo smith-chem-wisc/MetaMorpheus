@@ -66,9 +66,7 @@ namespace Test
                                     mz2.AddRange(x.MassSpectrum.XArray.ToList());
                                     intensities2.AddRange(x.MassSpectrum.YArray.ToList());
                                 }
-                                
                             }
-
                         }
                         var MassSpectrum2 = new MzmlMzSpectrum(mz2.ToArray(), intensities2.ToArray(), false);
                         ListOfSortedMsScans.Add(new MzmlScanWithPrecursor(ms2scan.OneBasedScanNumber, MassSpectrum2, ms2scan.MsnOrder, ms2scan.IsCentroid, Polarity.Positive, ms2scan.RetentionTime,
@@ -85,8 +83,8 @@ namespace Test
             //Using function to combine MS2MS3
             var listOfSortedms2Scans2 = MetaMorpheusTask.GetCombinedMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-
             Assert.AreEqual(5, myMsDataFile.NumSpectra);
+            Assert.AreEqual(1, listOfSortedms2Scans2.Count());
         }
 
         #endregion 

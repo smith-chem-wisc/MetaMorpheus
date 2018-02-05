@@ -107,6 +107,9 @@ namespace MetaMorpheusGUI
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
 
+            foreach (string fragmentationType in Enum.GetNames(typeof(FragmentaionType)))
+                cbFragmentation.Items.Add(fragmentationType);
+
             cbbXLprecusorMsTl.Items.Add("Absolute");
             cbbXLprecusorMsTl.Items.Add("ppm");
 
@@ -152,6 +155,7 @@ namespace MetaMorpheusGUI
         {
             //Crosslink search para
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
+            cbFragmentation.SelectedIndex = (int)task.XlSearchParameters.FragmentationType;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.CrosslinkSearchTop;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             //ckbSearchWithXLAllBeta.IsChecked = task.XlSearchParameters.CrosslinkSearchWithAllBeta;
@@ -269,6 +273,7 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             //TheTask.XlSearchParameters.CrosslinkSearchWithAllBeta = ckbSearchWithXLAllBeta.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
+            TheTask.XlSearchParameters.FragmentationType = (FragmentaionType)cbFragmentation.SelectedIndex;
             if (cbbXLprecusorMsTl.SelectedIndex == 0)
                 TheTask.XlSearchParameters.XlPrecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
             else

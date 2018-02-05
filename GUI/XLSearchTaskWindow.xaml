@@ -84,6 +84,10 @@
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
                                     <ComboBox x:Name="cbCrosslinker" />
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                                    <Label x:Name="lblFragmentation" Content="Fragmentation Type" />
+                                    <ComboBox x:Name="cbFragmentation" />
+                                </StackPanel>
                             </Grid>
                             <GroupBox>
                                 <Expander x:Name="UserDefineCrosslinker">
