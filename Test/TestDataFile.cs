@@ -223,6 +223,11 @@ namespace Test
             return Scans[scanNumber - 1];
         }
 
+        public override IEnumerable<IMzmlScan> GetMS1Scans()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion Public Methods
     }
 }

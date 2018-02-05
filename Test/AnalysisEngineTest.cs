@@ -55,7 +55,6 @@ namespace Test
             }
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
-
             var modPep = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).Last();
             HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep };
             CompactPeptide compactPeptide1 = new CompactPeptide(value1.First(), TerminusType.None);
