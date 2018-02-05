@@ -43,6 +43,9 @@
     <None Update="Mods\glyco.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Mods\fallOff.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Mods\missing.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
