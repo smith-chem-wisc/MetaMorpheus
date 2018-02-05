@@ -7,8 +7,8 @@ CF   H-1 N-1 O1
 //
 ID   Amidation
 TG   X
-PP   C-terminal.
-MT   ProteinTermMod
+PP   Peptide C-terminal.
+MT   PeptideTermMod
 CF   H1 N1 O-1
 //
 ID   Ammonia loss
@@ -66,7 +66,7 @@ MT   Mod
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F or D or E or V or H or K or N or R or C
+TG   Y or W or P or F or D or E or V or H or K or N or R or C or U or I or L or Q or S or T
 PP   Anywhere.
 MT   Mod
 CF   O1
@@ -119,6 +119,18 @@ TG   H or K
 PP   Anywhere.
 MT   Mod
 CF   H2 C2
+//
+ID   Acetald+28
+TG   X
+PP   Peptide N-terminal.
+MT   PeptideTermMod
+CF   H4 C2
+//
+ID   Acetald+28
+TG   H or K
+PP   Anywhere.
+MT   Mod
+CF   H4 C2
 //
 ID   Acetylation+Methionine
 TG   mX
@@ -284,15 +296,15 @@ MT   ProteinTermMod
 CF   H2 C
 //
 ID   Ethyl
-TG   K or E
+TG   K or E or D
 PP   Anywhere.
 MT   Mod
 CF   H4 C2
 //
 ID   Ethyl
 TG   X
-PP   N-terminal.
-MT   ProteinTermMod
+PP   Peptide N-terminal.
+MT   PeptideTermMod
 CF   H4 C2
 //
 ID   Oxidation and then loss of oxidized M side chain
@@ -415,4 +427,10 @@ TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
 CF   H2 C2 O2
+//
+ID   Decarboxylation
+TG   D or E
+PP   Anywhere.
+MT   Mod
+CF   H-2 C-1 O-1
 //
