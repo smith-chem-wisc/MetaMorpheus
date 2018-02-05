@@ -359,12 +359,12 @@ namespace MetaMorpheusGUI
                 case ".xml":
                 case ".gz":
                 case ".fasta":
-
+                case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
                     if (!ExistDa(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
-                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta"))
+                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta") || !Path.GetExtension(draggedFilePath).Equals(".fa"))
                         {
                             try
                             {
