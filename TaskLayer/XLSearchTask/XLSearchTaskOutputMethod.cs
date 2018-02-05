@@ -40,7 +40,7 @@ namespace TaskLayer
                                             + "\t" + item.CrossType.ToString()
                                             + "\t"
                                             + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                                                   + "\t" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture)
+                                            + "\t" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture)
                                             + "\t" + item.BaseSequence + "(" + item.XlPos.ToString(CultureInfo.InvariantCulture) + ")"
                                             + "\t" + item.FullSequence
                                             + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
@@ -49,7 +49,7 @@ namespace TaskLayer
                                             + "\t" + item.XlRank[0].ToString(CultureInfo.InvariantCulture)
                                             + "\t"
                                             + "\t" + item.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                                                   + "\t" + item.BetaPsmCross.XlProteinPos.ToString(CultureInfo.InvariantCulture)
+                                            + "\t" + item.BetaPsmCross.XlProteinPos.ToString(CultureInfo.InvariantCulture)
                                             + "\t" + item.BetaPsmCross.BaseSequence + "(" + item.BetaPsmCross.XlPos.ToString(CultureInfo.InvariantCulture) + ")"
                                             + "\t" + item.BetaPsmCross.FullSequence
                                             + "\t" + (item.BetaPsmCross.PeptideMonisotopicMass.HasValue ? item.BetaPsmCross.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
@@ -202,7 +202,9 @@ namespace TaskLayer
                         + "\t" + (item.BetaPsmCross.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
                         + "\t" + "-." + item.BaseSequence + item.XlPos.ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPsmCross.BaseSequence + item.BetaPsmCross.XlPos.ToString(CultureInfo.InvariantCulture) + ".-"
                         + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                               + "(" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
                         + "\t" + item.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                               + "(" + item.BetaPsmCross.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
                         );
                 }
             }

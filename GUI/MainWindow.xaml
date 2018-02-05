@@ -186,7 +186,7 @@
                             <Label Content="Output Folder:" />
                             <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" />
                         </DockPanel>
-                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="4" />
+                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="5" />
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1"

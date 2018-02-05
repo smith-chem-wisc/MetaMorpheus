@@ -30,10 +30,6 @@
       
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
-      <ComponentGroupRef Id="src_Mods_files" />
-      <ComponentGroupRef Id="src_Data_files" />
-      <ComponentGroupRef Id="src_NeoData_files" />
-      <ComponentGroupRef Id="src_NeoTomlFiles_files" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
       <!--App Data Section-->
@@ -152,12 +148,6 @@
       </Component>
       <Component Id="src_Thermo.dll">
         <File Id="src_Thermo.dll" Name="Thermo.dll" Source="$(var.GUI_TargetDir)Thermo.dll" />
-      </Component>
-      <Component Id="src_settings.toml">
-        <File Id="src_settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
-      </Component>
-      <Component Id="src_GUIsettings.toml">
-        <File Id="src_GUIsettings.toml" Name="GUIsettings.toml" Source="$(var.GUI_TargetDir)GUIsettings.toml" />
       </Component>
       <Component Id="src_Newtonsoft.Json.dll">
         <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
@@ -291,105 +281,6 @@
     </ComponentGroup>
   </Fragment>
 
-  <!--Build the Mods folder-->
-  <Fragment>
-    <ComponentGroup Id="src_Mods_files" Directory="ModsFolder">
-      <Component Id="src_Mods_aListOfmods.txt" Guid="2e7f8d26-aa92-48bd-b48c-e4992907f643">
-        <File Id="src_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
-      </Component>
-      <Component Id="src_Mods_detachers.txt" Guid="1737d141-c96b-4d8a-a045-6c3e89f852eb">
-        <File Id="src_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)Mods\detachers.txt" />
-      </Component>
-      <Component Id="src_Mods_glyco.txt" Guid="51eff892-5ccd-43b2-b5ff-e47d3bd2d5c5">
-        <File Id="src_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)Mods\glyco.txt" />
-      </Component>
-      <Component Id="src_Mods_missing.txt" Guid="044193e1-dd6d-4bf1-b1ee-fe7b9189dd7b">
-        <File Id="src_Mods_missing.txt" Name="missing.txt" Source="$(var.GUI_TargetDir)Mods\missing.txt" />
-      </Component>
-      <Component Id="src_Mods_Mods.txt" Guid="63fad17b-34ad-4382-8d04-de1e2582eb42">
-        <File Id="src_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
-      </Component>
-      <Component Id="src_Mods_substitutions.txt" Guid="981009b4-c656-42e3-9b65-d8eca7bce329">
-        <File Id="src_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)Mods\substitutions.txt" />
-      </Component>
-      <Component Id="src_Mods_surfactants.txt" Guid="8f68de4e-2ef9-48b3-af72-3763749fe96e">
-        <File Id="src_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)Mods\surfactants.txt" />
-      </Component>
-      <Component Id="src_Mods_tmt.txt" Guid="07ef6766-e057-409e-a7de-93b0614bb83a">
-        <File Id="src_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
-  <!--Builds the Data folder-->
-  <Fragment>
-    <ComponentGroup Id="src_Data_files" Directory="DataFolder">
-      <Component Id="src_Data_combos.txt" Guid="286f4e79-a9f9-4a32-acef-3837a7e773c2">
-        <File Id="src_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
-      </Component>
-      <Component Id="src_Data_PSI_MOD.obo.xml" Guid="1a15b3a0-4280-4aa3-b365-9681e10e0a32">
-        <File Id="src_Data_PSI_MOD.obo.xml" Name="PSI-MOD.obo.xml" Source="$(var.GUI_TargetDir)Data\PSI-MOD.obo.xml" />
-      </Component>
-      <Component Id="src_Data_ptmlist.txt" Guid="25c61def-762c-4523-a751-52fbf2165f1b">
-        <File Id="src_Data_ptmlist.txt" Name="ptmlist.txt" Source="$(var.GUI_TargetDir)Data\ptmlist.txt" />
-      </Component>
-      <Component Id="src_Data_unimod.xml" Guid="3d466d11-6769-4d0e-ab0b-34bd0ae7d9f7">
-        <File Id="src_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)Data\unimod.xml" />
-      </Component>
-      <Component Id="src_Data_elements.dat" Guid="2a33ba0a-1836-4d82-b4d2-5a7955517fb6">
-        <File Id="src_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
-      </Component>
-      <Component Id="src_Data_proteases.tsv" Guid="d2e5977a-f9b5-48c8-919f-97a7322d402c">
-        <File Id="src_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
-  <!--Builds the Neo\Data folder-->
-  <Fragment>
-    <ComponentGroup Id="src_NeoData_files" Directory="NeoDataFolder">
-      <Component Id="src_Neo_combos.txt" Guid="049a0e17-3579-4ee1-8920-576ff3340e3d">
-        <File Id="src_NeoData_amino_acids.tsv" Name="amino_acids.tsv" Source="$(var.GUI_TargetDir)Neo\Data\amino_acids.tsv" />
-      </Component>
-      <Component Id="src_NeoData_Dictionary1.txt" Guid="2198170c-bc34-49f7-8202-8a07176c85ec">
-        <File Id="src_NeoData_Dictionary1.txt" Name="Dictionary1.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary1.txt" />
-      </Component>
-      <Component Id="src_NeoData_Dictionary2.txt" Guid="aa93867e-90fd-4a45-bc49-ece0bf28052b">
-        <File Id="src_NeoData_Dictionary2.txt" Name="Dictionary2.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary2.txt" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
-  <!--Builds the Neo\TomlFiles folder-->
-  <Fragment>
-    <ComponentGroup Id="src_NeoTomlFiles_files" Directory="NeoTomlFilesFolder">
-      <Component Id="src_Neo_CalibrationTaskconfig.toml" Guid="a88c4a64-74b7-4de7-9ec3-c5c3a3060fb9">
-        <File Id="src_NeoTF_CalibrationTaskconfig.toml" Name="CalibrationTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\CalibrationTaskconfig.toml" />
-      </Component>
-      <Component Id="src_Neo_GptmdTaskconfig.toml" Guid="e2f37df8-69c8-45f8-bef8-7029ac33f215">
-        <File Id="src_NeoTF_GptmdTaskconfig.toml" Name="GptmdTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\GptmdTaskconfig.toml" />
-      </Component>
-      <Component Id="src_Neo_SearchTaskCconfig.toml" Guid="d02dcedd-29d6-4e00-83c8-da8274eab1e4">
-        <File Id="src_NeoTF_SearchTaskCconfig.toml" Name="SearchTaskCconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskCconfig.toml" />
-      </Component>
-      <Component Id="src_Neo_SearchTaskNconfig.toml" Guid="f45b79f5-c2c9-4fb9-a9bb-949a8a05ef5a">
-        <File Id="src_NeoTF_SearchTaskNconfig.toml" Name="SearchTaskNconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskNconfig.toml" />
-      </Component>
-      <Component Id="src_Neo_SearchTaskCisconfig.toml" Guid="39a56967-6a90-4e9f-a06a-b689d83feceb">
-        <File Id="src_NeoTF_SearchTaskCisconfig.toml" Name="SearchTaskCisconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskCisconfig.toml" />
-      </Component>
-      <Component Id="src_Neo_SearchTaskDecoyconfig.toml" Guid="36e63f8b-4b29-408c-83ea-7c670f037c58">
-        <File Id="src_NeoTF_SearchTaskDecoyconfig.toml" Name="SearchTaskDecoyconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskDecoyconfig.toml" />
-      </Component>
-      <Component Id="src_Neo_SearchTaskTargetconfig.toml" Guid="6c4b4f72-f785-48fb-b675-b71f31d6c4d8">
-        <File Id="src_NeoTF_SearchTaskTargetconfig.toml" Name="SearchTaskTargetconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTargetconfig.toml" />
-      </Component>
-      <Component Id="src_Neo_SearchTaskTransconfig" Guid="873e68e0-fddc-475e-b6f7-dcdedb80d74b">
-        <File Id="src_NeoTF_SearchTaskTransconfig.toml" Name="SearchTaskTransconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
   <!--Build the App Mods folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Mods_files" Directory="MetaAppModsFolder">
@@ -407,6 +298,11 @@
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)Mods\detachers.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_fallOff.txt" Guid="233836d8-d981-4ea9-a8fc-f62cdbc7b01a">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_fallOff.txt" Name="fallOff.txt" Source="$(var.GUI_TargetDir)Mods\fallOff.txt" />
       </Component>
       <Component Id="Appsrc_Mods_glyco.txt" Guid="1707b26b-070e-46d5-9632-f1bc8bf4d281">
         <Condition>OVERWRITEAPPDATA</Condition>
