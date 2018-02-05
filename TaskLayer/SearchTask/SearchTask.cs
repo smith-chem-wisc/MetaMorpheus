@@ -1692,9 +1692,14 @@ namespace TaskLayer
                 FileStream fragmentStream = File.Create(fragmentIndexFile);
                 ZeroFormatterSerializer.Serialize(fragmentStream, fragmentIndex);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+                s.Stop();
+                System.IO.File.WriteAllText(@"C:\tmp\ZeroSer.txt",
+      String.Format("SERIALIZE TIME: {0} ElapsedMilliseconds: {1} ElapsedTicks: ", s.Elapsed, s.ElapsedMilliseconds));
             }
+
             else
             {
+                System.Diagnostics.Stopwatch s2 = System.Diagnostics.Stopwatch.StartNew();
                 Status("Reading peptide index...", new List<string> { taskId });
                 var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
                 //var ser = new NetSerializer.Serializer(messageTypes);
@@ -1709,11 +1714,11 @@ namespace TaskLayer
                 //ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                     fragmentIndex = ZeroFormatterSerializer.Deserialize<List<int>[]>(file);
-            }
 
-            s.Stop();
-            System.IO.File.WriteAllText(@"C:\tmp\test.txt",
-  String.Format("Elasped: {0} ElapsedMilliseconds: {1} ElapsedTicks: ", s.Elapsed, s.ElapsedMilliseconds));
+                s.Stop();
+                System.IO.File.WriteAllText(@"C:\tmp\ZeroDeSer.txt",
+      String.Format("\n\nDESERIALIZE TIME: {0} ElapsedMilliseconds: {1} ElapsedTicks: ", s.Elapsed, s.ElapsedMilliseconds));
+            }
         }
 
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
