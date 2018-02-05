@@ -315,18 +315,12 @@
                                             </Style>
                                         </TreeView.Style>
                                         <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForLoc}">
+                                                <StackPanel Orientation="Horizontal">
                                                     <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </DataTemplate>
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>

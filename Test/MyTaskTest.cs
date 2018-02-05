@@ -141,7 +141,7 @@ namespace Test
                     },
                     ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },
                     ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModsLocalize = GlobalVariables.AllModsKnown.Select(b => (b.modificationType, b.id)).ToList(),
+                    ListOfModTypesLocalize = GlobalVariables.AllModTypesKnown.ToList(),
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
                 CalibrationParameters = new CalibrationParameters
@@ -621,7 +621,7 @@ namespace Test
 
             //make sure this runs correctly
             //run!
-            Console.WriteLine(task5.CommonParameters.ListOfModsLocalize);
+            Console.WriteLine(task5.CommonParameters.ListOfModTypesLocalize);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
             string outputFolderInThisTest = MySetUpClass.outputFolder;
@@ -658,7 +658,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    ListOfModsLocalize = new List<(string, string)> { ("ConnorModType", "ConnorMod") },
+                    ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
                 },
                 SearchParameters = new SearchParameters
                 {

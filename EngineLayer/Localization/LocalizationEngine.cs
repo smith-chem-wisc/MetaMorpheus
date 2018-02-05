@@ -78,7 +78,7 @@ namespace EngineLayer.Localization
 
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
-                    var score = CalculatePeptideScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons);
+                    var score = CalculatePeptideScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons, 0);
                     localizedScores.Add(score);
                 }
 
