@@ -2,7 +2,6 @@
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Gptmd;
-using EngineLayer.Localization;
 
 #if NETFRAMEWORK
 
@@ -153,18 +152,6 @@ namespace TaskLayer
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             new FdrAnalysisEngine(allPsms, searchMode.NumNotches, false, new List<string> { taskId }).Run();
-
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
-            {
-                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                var origDataFile = currentRawFileList[spectraFileIndex];
-                Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
-                var localizationEngine = new LocalizationEngine(allPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, false);
-                localizationEngine.Run();
-                myFileManager.DoneWithFile(origDataFile);
-                ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
-            });
 
             var writtenFile = Path.Combine(OutputFolder, "PSMs.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());

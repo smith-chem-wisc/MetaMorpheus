@@ -978,10 +978,10 @@ namespace TaskLayer
                     Status("Starting search...", thisId);
                     new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, massDiffAcceptor, SearchParameters.AddCompIons, combinedParams, combinedParams.ProductMassTolerance, thisId).Run();
 
-                    myFileManager.DoneWithFile(origDataFile);
-
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
+
+                myFileManager.DoneWithFile(origDataFile);
 
                 lock (psmLock)
                 {
