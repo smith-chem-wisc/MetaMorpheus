@@ -434,3 +434,9 @@ PP   Anywhere.
 MT   Mod
 CF   H-2 C-1 O-1
 //
+ID   Reduction
+TG   D or S or T
+PP   Anywhere.
+MT   Mod
+CF   O-1
+//
