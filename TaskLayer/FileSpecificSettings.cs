@@ -100,6 +100,10 @@ namespace TaskLayer
             {
                 TopNpeaks = tomlDict["TopNpeaks"].Value.Get<int?>();
             }
+            if (tomlDict.ContainsKey("ToleranceType"))
+            {
+                ToleranceType = tomlDict["ToleranceType"].Value.Get<string>();
+            }
         }
 
         #endregion Public Constructors

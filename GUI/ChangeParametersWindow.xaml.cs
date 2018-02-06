@@ -367,12 +367,11 @@ namespace MetaMorpheusGUI
             t.Value = settings.TopNpeaks;
             if (paramList[19].Different)
                 t.Value = null;
-            var v = ParameterGrid.Items.GetItemAt(0) as Parameter;
             //tolerance type
             int? index3 = paramList[20].ProductMassToleranceList.IndexOf(settings.ToleranceType);
-            var w = ParameterGrid.Items.GetItemAt(0) as Parameter;
+            var w = ParameterGrid.Items.GetItemAt(20) as Parameter;
             if (index.HasValue)
-                w.Value = index;
+                w.Value = index3;
             if (paramList[20].Different)
                 w.Value = null;
 
