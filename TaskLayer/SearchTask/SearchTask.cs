@@ -15,6 +15,7 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1600,6 +1601,7 @@ namespace TaskLayer
 
             if (pathToFolderWithIndices == null)
             {
+                Stopwatch sw = Stopwatch.StartNew();
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
@@ -1620,20 +1622,29 @@ namespace TaskLayer
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+                sw.Stop();
+                File.WriteAllText(@"C:\\tmp\\NetSer.txt", string.Format("Time taken: {0}", sw.Elapsed.TotalSeconds));
             }
             else
             {
+                Stopwatch s2 = Stopwatch.StartNew();
+
                 Status("Reading peptide index...", new List<string> { taskId });
                 var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
                 var ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                {
                     peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+                }
 
                 Status("Reading fragment index...", new List<string> { taskId });
                 messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
+
+                s2.Stop();
+                File.WriteAllText(@"C:\\tmp\\NetDes.txt", string.Format("Time taken DES: {0}", s2.Elapsed.TotalSeconds));
             }
         }
 

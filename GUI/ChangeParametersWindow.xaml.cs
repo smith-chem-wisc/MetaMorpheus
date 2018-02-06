@@ -367,28 +367,14 @@ namespace MetaMorpheusGUI
             t.Value = settings.TopNpeaks;
             if (paramList[19].Different)
                 t.Value = null;
-            var u = ParameterGrid.Items.GetItemAt(20) as Parameter;
+            var v = ParameterGrid.Items.GetItemAt(0) as Parameter;
+            //tolerance type
+            int? index3 = paramList[20].ProductMassToleranceList.IndexOf(settings.ToleranceType);
+            var w = ParameterGrid.Items.GetItemAt(0) as Parameter;
+            if (index.HasValue)
+                w.Value = index;
             if (paramList[20].Different)
-                u.Value = null;
-
-            //choosing correct tolerance type (can't use value from settings because there is no explicit tolerance type field)
-            string[] tempString = new string[2];
-            if (settings.ProductMassTolerance != null)
-            {
-                tempString = settings.ProductMassTolerance.ToString().Split(' ');
-            }
-            else if (settings.DeconvolutionMassTolerance != null)
-            {
-                tempString = settings.DeconvolutionMassTolerance.ToString().Split(' ');
-            }
-
-            if (tempString[1] != null)
-            {
-                if (tempString[1].Equals("Absolute"))
-                    u.Value = 0;
-                else if (tempString[1].Equals("PPM"))
-                    u.Value = 1;
-            }
+                w.Value = null;
 
             ParameterGrid.Items.Refresh();
         }
@@ -411,15 +397,7 @@ namespace MetaMorpheusGUI
             {
                 FileSpecificSettingsList[i] = new FileSpecificSettings();
                 int? index = paramList[0].Value as int?;
-
-                string toleranceType = "PPM";
-                if (paramList[20].Value != null)
-                {
-                    if ((int)paramList[20].Value == 0)
-                        toleranceType = "Absolute";
-                    if ((int)paramList[20].Value == 1)
-                        toleranceType = "PPM";
-                }
+               
 
                 //Cases for each Parameter:
                 //1. If one file with Changed value: write value to File settings
@@ -487,7 +465,7 @@ namespace MetaMorpheusGUI
 
                 //Product Mass Tolerance
                 if (paramList[7].Value != null)
-                    FileSpecificSettingsList[i].ProductMassTolerance = Tolerance.ParseToleranceString(paramList[7].Value + " " + toleranceType);
+                    FileSpecificSettingsList[i].ProductMassTolerance = Tolerance.ParseToleranceString(paramList[7].Value + " " + FileSpecificSettingsList[i].ToleranceType);
                 else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].ProductMassTolerance != null && FileSpecificSettingsList[i].ProductMassTolerance == null)
                     FileSpecificSettingsList[i].ProductMassTolerance = TempSettings[i].ProductMassTolerance;
 
@@ -556,7 +534,7 @@ namespace MetaMorpheusGUI
 
                 //Deconvolution Mass Tolerance
                 if (paramList[15].Value != null)
-                    FileSpecificSettingsList[i].DeconvolutionMassTolerance = Tolerance.ParseToleranceString(paramList[15].Value + " " + toleranceType);
+                    FileSpecificSettingsList[i].DeconvolutionMassTolerance = Tolerance.ParseToleranceString(paramList[15].Value + " " + FileSpecificSettingsList[i].ToleranceType);
                 else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].DeconvolutionMassTolerance != null && FileSpecificSettingsList[i].DeconvolutionMassTolerance == null)
                     FileSpecificSettingsList[i].DeconvolutionMassTolerance = TempSettings[i].DeconvolutionMassTolerance;
 
@@ -589,6 +567,18 @@ namespace MetaMorpheusGUI
                 }
                 else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].TopNpeaks != null && FileSpecificSettingsList[i].TopNpeaks == null)
                     FileSpecificSettingsList[i].TopNpeaks = TempSettings[i].TopNpeaks;
+
+                int? index2 = paramList[20].Value as int?;
+
+
+                if (index2.HasValue && index >= 0 && paramList[20].HasChanged)
+                {
+                    FileSpecificSettingsList[i].ToleranceType = paramList[20].ProductMassToleranceList[index2.Value];
+                }
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].ToleranceType != null && FileSpecificSettingsList[i].ToleranceType == null)
+                {
+                    FileSpecificSettingsList[i].ToleranceType = TempSettings[i].ToleranceType;
+                }
             }
 
             DialogResult = true;
@@ -719,6 +709,9 @@ namespace MetaMorpheusGUI
 
                         case 19:
                             b.TopNpeaks = null;
+                            break;
+                        case 20:
+                            b.ToleranceType = null;
                             break;
                     }
                 }
