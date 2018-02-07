@@ -57,7 +57,6 @@ namespace TaskLayer
 #else
                     Warn("No capability for reading " + origDataFile);
 #endif
-
             return myMsDataFiles[origDataFile];
         }
 
