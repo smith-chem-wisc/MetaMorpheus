@@ -19,7 +19,8 @@ namespace TaskLayer
         Search,
         Gptmd,
         Calibrate,
-        XLSearch
+        XLSearch,
+        Neo
     }
 
     public abstract class MetaMorpheusTask
@@ -29,7 +30,6 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
-
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -40,10 +40,16 @@ namespace TaskLayer
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => GlobalEngineLevelSettings.ProteaseDictionary[tmlString.Value])))
+                                .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
                         .ConfigureType<ICommonParameters>(ct => ct
                             .CreateInstance(() => new CommonParameters()))
-                        .ConfigureType<List<Tuple<string, string>>>(type => type
+                        .ConfigureType<IDigestionParams>(ct => ct
+                            .CreateInstance(() => new DigestionParams()))
+                        .ConfigureType<List<string>>(type => type
+                             .WithConversionFor<TomlString>(convert => convert
+                                 .ToToml(custom => string.Join("\t", custom))
+                                 .FromToml(tmlString => GetModsTypesFromString(tmlString.Value))))
+                        .ConfigureType<List<(string, string)>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
@@ -53,6 +59,7 @@ namespace TaskLayer
         #region Protected Fields
 
         protected readonly StringBuilder proseCreatedWhileRunning = new StringBuilder();
+
         protected MyTaskResults myTaskResults;
 
         #endregion Protected Fields
@@ -111,7 +118,7 @@ namespace TaskLayer
         {
             foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
             {
-                List<Tuple<double, int>> isolatedStuff = new List<Tuple<double, int>>();
+                List<(double, int)> isolatedStuff = new List<(double, int)>();
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                 {
                     var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
@@ -122,7 +129,7 @@ namespace TaskLayer
                         foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, 1, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance.Value, deconvolutionIntensityRatio))
                         {
                             var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
-                            isolatedStuff.Add(new Tuple<double, int>(monoPeakMz, envelope.charge));
+                            isolatedStuff.Add((monoPeakMz, envelope.charge));
                         }
                 }
 
@@ -133,13 +140,13 @@ namespace TaskLayer
                     {
                         var precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
                         if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add(new Tuple<double, int>(precursorMZ, precursorCharge));
+                            isolatedStuff.Add((precursorMZ, precursorCharge));
                     }
                     else
                     {
                         var precursorMZ = ms2scan.SelectedIonMZ;
                         if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add(new Tuple<double, int>(precursorMZ, precursorCharge));
+                            isolatedStuff.Add((precursorMZ, precursorCharge));
                     }
                 }
 
@@ -153,42 +160,38 @@ namespace TaskLayer
             if (currentFileSpecificSettings == null)
                 return commonParams;
 
-            CommonParameters returnParams = new CommonParameters
+            IDigestionParams computedDigestionParams = new DigestionParams
             {
-                DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
-
-                UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo,
-
-                DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio,
-
-                DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState,
-
-                DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance,
-
-                TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
-
-                ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
-
-                PrecursorMassTolerance = currentFileSpecificSettings.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance,
-
-                ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
-
-                ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
-
-                TopNpeaks = currentFileSpecificSettings.TopNpeaks ?? commonParams.TopNpeaks,
-                MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio,
-                TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks,
-                TrimMsMsPeaks = currentFileSpecificSettings.TrimMsMsPeaks ?? commonParams.TrimMsMsPeaks,
-                CalculateEValue = currentFileSpecificSettings.CalculateEValue ?? commonParams.CalculateEValue,
+                InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior,
+                MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages,
+                MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength,
+                MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength,
+                MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms,
+                Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease,
+                MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide,
+                SemiProteaseDigestion = currentFileSpecificSettings.SemiProteaseDigestion ?? commonParams.DigestionParams.SemiProteaseDigestion,
+                TerminusTypeSemiProtease = currentFileSpecificSettings.TerminusTypeSemiProtease ?? commonParams.DigestionParams.TerminusTypeSemiProtease,
             };
 
-            returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
-            returnParams.DigestionParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            returnParams.DigestionParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            returnParams.DigestionParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            returnParams.DigestionParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms;
-            returnParams.DigestionParams.Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease;
-            returnParams.DigestionParams.MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            CommonParameters returnParams = (CommonParameters)commonParams;
+            returnParams = returnParams.Clone();
+
+            returnParams.DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution;
+            returnParams.UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo;
+            returnParams.DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio;
+            returnParams.DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState;
+            returnParams.DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance;
+            returnParams.TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions;
+            returnParams.ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            returnParams.PrecursorMassTolerance = currentFileSpecificSettings.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            returnParams.ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory;
+            returnParams.ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff;
+            returnParams.TopNpeaks = currentFileSpecificSettings.TopNpeaks ?? commonParams.TopNpeaks;
+            returnParams.MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio;
+            returnParams.TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks;
+            returnParams.TrimMsMsPeaks = currentFileSpecificSettings.TrimMsMsPeaks ?? commonParams.TrimMsMsPeaks;
+            returnParams.CalculateEValue = currentFileSpecificSettings.CalculateEValue ?? commonParams.CalculateEValue;
+            returnParams.DigestionParams = computedDigestionParams;
 
             return returnParams;
         }
@@ -231,7 +234,7 @@ namespace TaskLayer
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
-                    file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                    file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
                     file.Write(myTaskResults.ToString());
                 }
                 SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
@@ -243,7 +246,7 @@ namespace TaskLayer
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
-                    file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                    file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
                     file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
                     file.Write("e: " + e);
                     file.Write("e.Message: " + e.Message);
@@ -261,7 +264,7 @@ namespace TaskLayer
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
-                    file.Write("The data analysis was performed using MetaMorpheus Version: " + GlobalEngineLevelSettings.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
+                    file.Write("The data analysis was performed using MetaMorpheus Version: " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
                     file.Write(proseCreatedWhileRunning.ToString());
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
                     file.WriteLine("The total time to perform " + this.TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
@@ -287,17 +290,17 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected static void WritePsmsToTsv(IEnumerable<Psm> items, string filePath)
+        protected static void WritePsmsToTsv(IEnumerable<Psm> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(Psm.GetTabSeparatedHeader());
                 foreach (var heh in items)
-                    output.WriteLine(heh);
+                    output.WriteLine(heh.ToString(ModstoWritePruned));
             }
         }
 
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
+        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um)
         {
             if (Path.GetExtension(fileName).Equals(".fasta"))
             {
@@ -305,12 +308,15 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, localizeableModifications, isContaminant, new List<string>(), out um);
+            {
+                List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
+                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um);
+            }
         }
 
-        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
+        protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
         {
-            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
+            HashSet<IDigestionParams> okay = new HashSet<IDigestionParams>
             {
                 commonParameters.DigestionParams
             };
@@ -372,9 +378,14 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private static List<Tuple<string, string>> GetModsFromString(string value)
+        private static List<string> GetModsTypesFromString(string value)
         {
-            return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => new Tuple<string, string>(b.Split('\t').First(), b.Split('\t').Last())).ToList();
+            return value.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        }
+
+        private static List<(string, string)> GetModsFromString(string value)
+        {
+            return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => (b.Split('\t').First(), b.Split('\t').Last())).ToList();
         }
 
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)

@@ -23,7 +23,7 @@ namespace Test
             #region Setup tasks
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalEngineLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -75,16 +75,16 @@ namespace Test
                     SearchType = SearchType.Modern,
                 }
             };
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-                new Tuple<string, MetaMorpheusTask>("task1", task1),
-                new Tuple<string, MetaMorpheusTask>("task2", task2),
-                new Tuple<string, MetaMorpheusTask>("task3", task3),
-                new Tuple<string, MetaMorpheusTask>("task4", task4),};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
+                ("task1", task1),
+                ("task2", task2),
+                ("task3", task3),
+                ("task4", task4),};
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
@@ -127,7 +127,7 @@ namespace Test
             #region Setup tasks
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalEngineLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -139,9 +139,9 @@ namespace Test
                         MinPeptideLength = null,
                         InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
                     },
-                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
-                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModTypesLocalize = GlobalVariables.AllModTypesKnown.ToList(),
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
                 CalibrationParameters = new CalibrationParameters
@@ -155,7 +155,7 @@ namespace Test
                 {
                     DigestionParams = new DigestionParams
                     {
-                        Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
+                        Protease = GlobalVariables.ProteaseDictionary["trypsin"],
                     },
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
@@ -184,16 +184,16 @@ namespace Test
                     SearchType = SearchType.Modern,
                 }
             };
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-                new Tuple<string, MetaMorpheusTask>("task1", task1),
-                new Tuple<string, MetaMorpheusTask>("task2", task2),
-                new Tuple<string, MetaMorpheusTask>("task3", task3),
-                new Tuple<string, MetaMorpheusTask>("task4", task4),};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
+                ("task1", task1),
+                ("task2", task2),
+                ("task3", task3),
+                ("task4", task4),};
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
@@ -276,7 +276,7 @@ namespace Test
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-                var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
+                var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
 
                 PeptideWithSetModifications targetGood = targetDigested.First();
 
@@ -323,7 +323,7 @@ namespace Test
 
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                GlobalEngineLevelSettings.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
+                GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
@@ -333,15 +333,15 @@ namespace Test
                         {
                             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                         },
-                        ListOfModsVariable = new List<Tuple<string, string>>(),
-                        ListOfModsFixed = new List<Tuple<string, string>>(),
+                        ListOfModsVariable = new List<(string, string)>(),
+                        ListOfModsFixed = new List<(string, string)>(),
                         ScoreCutoff = 1,
                         PrecursorMassTolerance = new AbsoluteTolerance(1)
                     },
 
                     GptmdParameters = new GptmdParameters
                     {
-                        ListOfModsGptmd = new List<Tuple<string, string>> { new Tuple<string, string>("okType", "ok") },
+                        ListOfModsGptmd = new List<(string, string)> { ("okType", "ok") },
                     }
                 };
             }
@@ -368,7 +368,7 @@ namespace Test
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
+                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => b.id.Equals("ok")).ToList()).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 PeptideWithSetModifications targetGood = targetDigested[0];
@@ -407,14 +407,14 @@ namespace Test
             };
 
             //add task to task list
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-               new Tuple<string, MetaMorpheusTask>("task1", task1)};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
+               ("task1", task1)};
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
             var connorMod = new ModificationWithMass("ConnorMod", "ConnorModType", motif, TerminusLocalization.Any, 10);
 
-            GlobalEngineLevelSettings.AddMods(new List<ModificationWithLocation>
+            GlobalVariables.AddMods(new List<ModificationWithLocation>
             {
                 connorMod
             });
@@ -424,7 +424,7 @@ namespace Test
             #region Protein and Mod Creation
 
             //create modification lists
-            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -500,6 +500,7 @@ namespace Test
         {
             #region setup
 
+            List<(string, string)> listOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             //Create Search Task
             SearchTask task5 = new SearchTask
             {
@@ -507,6 +508,10 @@ namespace Test
                 {
                     WritePrunedDatabase = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                },
+                CommonParameters = new CommonParameters
+                {
+                    ListOfModsFixed = listOfModsFixed,
                 }
             };
 
@@ -516,7 +521,7 @@ namespace Test
             task5.SearchParameters.ModsToWriteSelection["missing"] = 3;
 
             //add task 1 to task list
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("task5", task5) };
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task5", task5) };
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif2);
 
@@ -525,7 +530,7 @@ namespace Test
             var connorMod3 = new ModificationWithMass("ModToAlwaysAppear", "Glycan", motif, TerminusLocalization.Any, 10);
             var connorMod4 = new ModificationWithMass("ModObservedNotinDB", "missing", motif2, TerminusLocalization.Any, 5);
 
-            GlobalEngineLevelSettings.AddMods(new List<ModificationWithLocation>
+            GlobalVariables.AddMods(new List<ModificationWithLocation>
             {
                 connorMod,
                 connorMod2,
@@ -538,8 +543,8 @@ namespace Test
             #region Protein and Mod Creation
 
             //create modification lists
-            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -550,7 +555,7 @@ namespace Test
 
             //add Fixed modifcation so can test if mod that is observed and not in DB
             fixedModifications.Add(connorMod4);
-            task5.CommonParameters.ListOfModsFixed.Add(Tuple.Create<string, string>(connorMod4.modificationType, connorMod4.id));
+            listOfModsFixed.Add((connorMod4.modificationType, connorMod4.id));
 
             dictHere.Add(1, new List<Modification> { modToAdd });
             dictHere.Add(2, new List<Modification> { modToAdd2 }); //default
@@ -616,7 +621,7 @@ namespace Test
 
             //make sure this runs correctly
             //run!
-            Console.WriteLine(task5.CommonParameters.ListOfModsLocalize);
+            Console.WriteLine(task5.CommonParameters.ListOfModTypesLocalize);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
             string outputFolderInThisTest = MySetUpClass.outputFolder;
@@ -653,7 +658,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") },
+                    ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
                 },
                 SearchParameters = new SearchParameters
                 {
@@ -662,13 +667,13 @@ namespace Test
                 }
             };
 
-            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
-               new Tuple<string, MetaMorpheusTask>("TestUnique", testUnique)};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
+               ("TestUnique", testUnique)};
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
             var testUniqeMod = new ModificationWithMass("testUniqeMod", "mt", motif, TerminusLocalization.Any, 10);
-            GlobalEngineLevelSettings.AddMods(new List<ModificationWithLocation>
+            GlobalVariables.AddMods(new List<ModificationWithLocation>
             {
                 testUniqeMod
             });
@@ -679,7 +684,7 @@ namespace Test
 
             //create modification lists
 
-            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();

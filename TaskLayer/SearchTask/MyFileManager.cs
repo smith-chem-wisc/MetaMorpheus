@@ -52,13 +52,11 @@ namespace TaskLayer
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
                 else
-
 #if NETFRAMEWORK
                     myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
 #else
                     Warn("No capability for reading " + origDataFile);
 #endif
-
             return myMsDataFiles[origDataFile];
         }
 

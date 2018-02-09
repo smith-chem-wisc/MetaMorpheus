@@ -147,13 +147,8 @@ namespace EngineLayer
             sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName))));
             sb.Append("\t");
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                Protease = GlobalEngineLevelSettings.ProteaseDictionary["top-down"],
-                MinPeptideLength = 0
-            };
             // list of masses
+            IDigestionParams digestionParams = new TDdigest();
             sb.Append(string.Join("|", new HashSet<double>(Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass))));
             sb.Append("\t");
 
@@ -208,7 +203,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // MS1 intensity (retrieved from FlashLFQ in the SearchTask)
-            if (IntensitiesByFile != null)
+            if (IntensitiesByFile != null && FilesForQuantification != null)
             {
                 for (int i = 0; i < IntensitiesByFile.Length; i++)
                 {
@@ -369,13 +364,13 @@ namespace EngineLayer
                                 {
                                     int tempIndexInProtein;
                                     if (mod.Value.terminusLocalization.Equals(TerminusLocalization.NProt))
-                                        tempIndexInProtein = 0;
+                                        tempIndexInProtein = 1;
                                     else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.Any))
                                     {
                                         tempIndexInProtein = pep.OneBasedStartResidueInProtein + mod.Key - 2;
                                     }
                                     else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.ProtC))
-                                        tempIndexInProtein = protein.Length + 1;
+                                        tempIndexInProtein = protein.Length ;
                                     else
                                         // In case it's a peptide mod, skip!
                                         break;
@@ -389,8 +384,8 @@ namespace EngineLayer
                                         tempModIndex.Add(tempIndexInProtein);
                                         foreach (var pept in aproteinWithPsms.Value)
                                         {
-                                            if (tempIndexInProtein >= pept.OneBasedStartResidueInProtein - (tempIndexInProtein == 0 ? 1 : 0) && tempIndexInProtein <= pept.OneBasedEndResidueInProtein + (tempIndexInProtein == protein.Length + 1 ? 1 : 0))
-                                            { tempPepNumTotal += 1; }
+                                            if (tempIndexInProtein >= pept.OneBasedStartResidueInProtein - (tempIndexInProtein == 1 ? 1 : 0)  && tempIndexInProtein <= pept.OneBasedEndResidueInProtein )
+                                                tempPepNumTotal += 1; 
                                         }
                                         tempPepTotals.Add(tempPepNumTotal);
                                         tempPepModValues.Add(mod.Value.id);
@@ -438,5 +433,34 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
+
+        #region Private Classes
+
+        private class TDdigest : IDigestionParams
+        {
+            #region Public Properties
+
+            public int MaxMissedCleavages => 0;
+
+            public int? MinPeptideLength => 0;
+
+            public int? MaxPeptideLength => null;
+
+            public InitiatorMethionineBehavior InitiatorMethionineBehavior => InitiatorMethionineBehavior.Retain;
+
+            public int MaxModificationIsoforms => 1;
+
+            public int MaxModsForPeptide => 0;
+
+            public Protease Protease => GlobalVariables.ProteaseDictionary["top-down"];
+
+            public bool SemiProteaseDigestion => false;
+
+            public TerminusType TerminusTypeSemiProtease => throw new System.NotImplementedException();
+
+            #endregion Public Properties
+        }
+
+        #endregion Private Classes
     }
 }

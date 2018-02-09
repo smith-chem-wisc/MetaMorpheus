@@ -9,15 +9,18 @@
         Loaded="MyWindow_Loaded">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
+            <MenuItem Header="Settings">
+                <MenuItem Header="Close MetaMorpheus and open global settings file" Click="MenuItem_Click_3"></MenuItem>
+                <MenuItem Header="Close MetaMorpheus and open GUI settings file" Click="MenuItem_Click_7"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Data">
+                <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
+            </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
                 <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
                 <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" />
                 <MenuItem Header="Email Support at mm_support@chem.wisc.edu" Click="MenuItem_Click_4" />
-            </MenuItem>
-            <MenuItem Header="Data">
-                <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
-                <MenuItem Header="Update Unimod and close MetaMorpheus" Click="MenuItem_Click_3"></MenuItem>
             </MenuItem>
         </Menu>
         <Grid>
@@ -56,7 +59,7 @@
                         HorizontalAlignment="Stretch"
                         Background="Silver"
                         Height="5" />
-                <GroupBox Header="Datafiles" Grid.Row="2"  Name="datafilesGroupBox">
+                <GroupBox Header="Mass Spectra Files" Grid.Row="2"  Name="datafilesGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -126,6 +129,7 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="20" />
+                            <RowDefinition Height="20" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
                             <RowDefinition Height="36" />
@@ -137,7 +141,10 @@
                             <Button x:Name="addGPTMDTaskButton" Content="New GPTMD Task" Click="AddGPTMDTaskButton_Click" />
                             <Button x:Name="btnAddCrosslinkSearch" Content="New XL Task" Click="BtnAddCrosslinkSearch_Click" />
                         </StackPanel>
-                        <TreeView x:Name="tasksTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
+                            <Button x:Name="addNeoTaskButton" Content="New Neo Meta-Task" Click="AddNeoTaskButton_Click" />
+                        </StackPanel>
+                        <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.Resources>
                                 <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">
@@ -169,17 +176,17 @@
                                 </DataTemplate>
                             </TreeView.Resources>
                         </TreeView>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3">
                             <Button x:Name="LoadTaskButton" Content="Load" Click="LoadTaskButton_Click" />
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
-                        <DockPanel Margin="5" Grid.Row="3" LastChildFill="True">
+                        <DockPanel Margin="5" Grid.Row="4" LastChildFill="True">
                             <Label Content="Output Folder:" />
                             <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" />
                         </DockPanel>
-                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="4" />
+                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="5" />
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1"

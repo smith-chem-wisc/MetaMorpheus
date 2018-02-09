@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 using UsefulProteomicsDatabases;
 
 namespace Test
@@ -46,7 +47,7 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -95,7 +96,7 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
