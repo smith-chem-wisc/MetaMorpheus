@@ -81,21 +81,6 @@ namespace TaskLayer
                 id = "PROVIDER",
                 ContactRole = new mzIdentML110.Generated.ContactRoleType()
                 {
-                    contact_ref = "Lloyd_Smith_Group",
-                    Role = new mzIdentML110.Generated.RoleType()
-                    {
-                        cvParam = new mzIdentML110.Generated.CVParamType()
-                        {
-                            accession = "MS:1001271",
-                            name = "MetaMorpheusGroup",
-                            cvRef = "PSI-MS"
-                        },
-
-            _mzid.Provider = new mzIdentML110.Generated.ProviderType()
-            {
-                id = "PROVIDER",
-                ContactRole = new mzIdentML110.Generated.ContactRoleType()
-                {
                     contact_ref = "UWMadisonSmithGroup",
                     Role = new mzIdentML110.Generated.RoleType()
                     {
@@ -110,7 +95,6 @@ namespace TaskLayer
             };
 
             _mzid.AuditCollection = new mzIdentML110.Generated.AbstractContactType[2];
-
             _mzid.AuditCollection[0] = new mzIdentML110.Generated.PersonType()
             {
                 id = "UWMadisonSmithGroupPerson",
