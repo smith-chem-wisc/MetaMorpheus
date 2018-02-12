@@ -242,7 +242,7 @@ namespace EngineLayer
             if (compactPeptides.First().Value.Item2 != null)
             {
                 sb.Append("\t" + TrimStringForExcel(string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture)))));
-
+                
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.EssentialSequence(ModstoWritePruned))).Item1);
@@ -276,7 +276,6 @@ namespace EngineLayer
                 }
                 else
                     sb.Append('\t' + " " + '\t' + " ");
-
                 // Unambiguous
                 if (IsDecoy)
                     sb.Append("\t" + "D");
@@ -296,20 +295,26 @@ namespace EngineLayer
                 sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
                 //Masses
                 sb.Append('\t' + "[");
+                string returnString1 = "";
                 foreach (var kvp in MatchedIonDictOnlyMatches)
-                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                    returnString1 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];";
+                sb.Append(GlobalVariables.CheckLengthOfPSM(returnString1));
                 sb.Append("]");
 
                 //Mass error Da
                 sb.Append('\t' + "[");
+                string returnString2 = "";
                 foreach (var kvp in ProductMassErrorDa)
-                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                    returnString2 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];";
+                sb.Append(GlobalVariables.CheckLengthOfPSM(returnString2));
                 sb.Append("]");
 
                 //Mass error ppm
                 sb.Append('\t' + "[");
+                string returnString3 = "";
                 foreach (var kvp in ProductMassErrorPpm)
-                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];");
+                    returnString3 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];";
+                sb.Append(GlobalVariables.CheckLengthOfPSM(returnString3));
                 sb.Append("]");
             }
             else
@@ -319,7 +324,7 @@ namespace EngineLayer
 
             if (LocalizedScores != null)
             {
-                sb.Append('\t' + "[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]");
+                sb.Append('\t' + GlobalVariables.CheckLengthOfPSM(("[" +string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]"));
                 sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
             }
             else
@@ -431,11 +436,8 @@ namespace EngineLayer
             }
             if (!equals)
             {
-                var possibleReturn = string.Join(" or ", formulas.Select(b => b.Formula));
-                if (possibleReturn.Length > 32000)
-                    return ("too many", null);
-                else
-                    return (possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", formulas.Select(b => b.Formula)));
+                return (returnString, null);
             }
             else
             {
@@ -458,8 +460,8 @@ namespace EngineLayer
             }
             if (notEqual)
             {
-                var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, Dictionary<string, int>>("(too many)", null) : new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c)))));
+                return new Tuple<string, Dictionary<string, int>>(returnString, null);
             }
             else
             {
@@ -476,8 +478,8 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture)));
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, double?>("(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
+                return  new Tuple<string, double?>(returnString, null);
             }
         }
 
@@ -490,8 +492,8 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, double?>("(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
+                return new Tuple<string, double?>(returnString, null);
             }
         }
 
@@ -505,8 +507,8 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, int?>("(too many)", null) : new Tuple<string, int?>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture))));
+                return new Tuple<string, int?>(returnString, null);
             }
         }
 
@@ -521,8 +523,8 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list);
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", list));
+                return new Tuple<string, string>(returnString, null);
             }
         }
 

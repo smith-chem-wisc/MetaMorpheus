@@ -140,16 +140,16 @@ namespace EngineLayer
 
             // genes
             var genes = new HashSet<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
-            sb.Append(string.Join("|", genes));
+            sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", genes)));
             sb.Append("\t");
 
             // list of protein names
-            sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName))));
+            sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName)))));
             sb.Append("\t");
 
             // list of masses
             IDigestionParams digestionParams = new TDdigest();
-            sb.Append(string.Join("|", new HashSet<double>(Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass))));
+            sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", new HashSet<double>(Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass)))));
             sb.Append("\t");
 
             // number of proteins in group
@@ -158,17 +158,17 @@ namespace EngineLayer
 
             // list of unique peptides
             if (!DisplayModsOnPeptides)
-                sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence))));
+                sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence)))));
             else
-                sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.Sequence))));
+                sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.Sequence)))));
             sb.Append("\t");
 
             // list of shared peptides
             var SharedPeptides = AllPeptides.Except(UniquePeptides);
             if (!DisplayModsOnPeptides)
-                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.BaseSequence))));
+                sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.BaseSequence)))));
             else
-                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.Sequence))));
+                sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.Sequence)))));
             sb.Append("\t");
 
             // number of peptides
@@ -186,20 +186,20 @@ namespace EngineLayer
             sb.Append("\t");
 
             // sequence coverage percent
-            sb.Append(string.Join("|", SequenceCoveragePercent.Select(p => string.Format("{0:0}" + "%", (p * 100)))));
+            sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", SequenceCoveragePercent.Select(p => string.Format("{0:0}" + "%", (p * 100))))));
             sb.Append("\t");
 
             // sequence coverage
-            sb.Append(string.Join("|", SequenceCoverageDisplayList));
+            sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", SequenceCoverageDisplayList)));
             sb.Append("\t");
 
             // sequence coverage with mods
-            sb.Append(string.Join("|", SequenceCoverageDisplayListWithMods));
+            sb.Append(GlobalVariables.CheckLengthOfPSM(string.Join("|", SequenceCoverageDisplayListWithMods)));
             sb.Append("\t");
 
             //Detailed mods information list
             var modsInfoString = string.Join("|", ModsInfo);
-            sb.Append(modsInfoString.Length < 32767 ? modsInfoString : "Too many mods to display");
+            sb.Append(GlobalVariables.CheckLengthOfPSM(modsInfoString.Length < 32767 ? modsInfoString : "Too many mods to display"));
             sb.Append("\t");
 
             // MS1 intensity (retrieved from FlashLFQ in the SearchTask)

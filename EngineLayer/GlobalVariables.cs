@@ -104,6 +104,14 @@ namespace EngineLayer
             }
         }
 
+        public static string CheckLengthOfPSM(string psmString)
+        {
+            if (psmString.Length > 32000 && GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs)
+                return "too long";
+            else
+                return psmString;
+        }
+
         #endregion Public Methods
 
         #region Private Methods
