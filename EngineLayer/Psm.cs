@@ -324,7 +324,7 @@ namespace EngineLayer
 
             if (LocalizedScores != null)
             {
-                sb.Append('\t' + GlobalVariables.CheckLengthOfPSM(("[" +string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]"));
+                sb.Append('\t' + GlobalVariables.CheckLengthOfPSM(("[" +string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]")));
                 sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
             }
             else
