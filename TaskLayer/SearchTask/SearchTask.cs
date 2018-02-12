@@ -54,7 +54,8 @@ namespace TaskLayer
         #endregion Public Properties
 
         #region Public Methods
-        public static void WriteMzidentml(IEnumerable<Psm> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, Tolerance productTolerance, int missedCleavages, string outputPath)
+
+        public static void WriteMzidentml(IEnumerable<Psm> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
@@ -90,18 +91,29 @@ namespace TaskLayer
                             cvRef = "PSI-MS"
                         },
 
-
+            _mzid.Provider = new mzIdentML110.Generated.ProviderType()
+            {
+                id = "PROVIDER",
+                ContactRole = new mzIdentML110.Generated.ContactRoleType()
+                {
+                    contact_ref = "UWMadisonSmithGroup",
+                    Role = new mzIdentML110.Generated.RoleType()
+                    {
+                        cvParam = new mzIdentML110.Generated.CVParamType()
+                        {
+                            accession = "MS:1001271",
+                            name = "researcher",
+                            cvRef = "PSI-MS"
+                        },
                     },
                 },
-
-
             };
 
             _mzid.AuditCollection = new mzIdentML110.Generated.AbstractContactType[2];
 
             _mzid.AuditCollection[0] = new mzIdentML110.Generated.PersonType()
             {
-                id = "Lloyd_Smith_Group",
+                id = "UWMadisonSmithGroupPerson",
                 cvParam = new mzIdentML110.Generated.CVParamType[2]
                 {
                     new mzIdentML110.Generated.CVParamType()
@@ -109,7 +121,7 @@ namespace TaskLayer
                         accession="MS:1000589",
                         name ="contact email",
                         cvRef ="PSI-MS",
-                        value ="someone@someuniversity.edu"
+                        value ="mm_support@chem.wisc.edu"
                     },
 
                        new mzIdentML110.Generated.CVParamType()
@@ -117,11 +129,9 @@ namespace TaskLayer
                         accession="MS:1000590",
                         name ="affiliation name",
                         cvRef ="PSI-MS",
-                        value ="UWMadisonChem"
+                        value ="UWMadisonSmithGroup"
                     }
                 }
-
-
             };
 
             _mzid.AuditCollection[1] = new mzIdentML110.Generated.OrganizationType()
@@ -135,7 +145,7 @@ namespace TaskLayer
                         accession="MS:1000589",
                         name ="contact email",
                         cvRef ="PSI-MS",
-                        value ="someone@someuniversity.edu"
+                        value ="mm_support@chem.wisc.edu"
                     },
 
                      new mzIdentML110.Generated.CVParamType()
@@ -143,7 +153,7 @@ namespace TaskLayer
                         accession="MS:1000590",
                         name ="affiliation name",
                         cvRef ="PSI-MS",
-                        value ="UWMadisonChem"
+                        value ="UWMadisonSmithGroup"
                     }
                 }
             };
@@ -187,9 +197,8 @@ namespace TaskLayer
                 {
                     Item = new mzIdentML110.Generated.CVParamType
                     {
-                        //using Morpheus's accession until we get MetaMorpheus entered
-                        accession = "MS:1002661",
-                        name = "Morpheus",
+                        accession = "MS:1002826",
+                        name = "MetaMorpheus",
                         cvRef = "PSI-MS"
                     }
                 },
@@ -249,7 +258,6 @@ namespace TaskLayer
                     }
                 }
             };
-            _mzid.AnalysisCollection.SpectrumIdentification[0].InputSpectra = new mzIdentML110.Generated.InputSpectraType[filenames.Count];
             int database_index = 0;
             foreach (string database in databases)
             {
@@ -366,27 +374,16 @@ namespace TaskLayer
                         int mod_id = 0;
                         foreach (KeyValuePair<int, ModificationWithMass> mod in peptide.allModsOneIsNterminus)
                         {
-                            UsefulProteomicsDatabases.Generated.oboTerm psimod = null;
-                            string name;
-                            if (mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")) psimod = GlobalVariables.PsiModDeserialized.Items.OfType<UsefulProteomicsDatabases.Generated.oboTerm>().Where(m => m.id == mod.Value.linksToOtherDbs["PSI-MOD"].First()).FirstOrDefault();
-                            name = psimod != null ? psimod.name : mod.Value.id;
-
                             _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML110.Generated.ModificationType()
                             {
                                 location = mod.Key - 1,
                                 locationSpecified = true,
                                 monoisotopicMassDelta = mod.Value.monoisotopicMass,
-                                residues = new string[1] { mod.Value.motif.ToString() },
+                                residues = new string[1] { peptide.BaseSequence[Math.Min(Math.Max(0, mod.Key - 2), peptide.Length - 1)].ToString() },
                                 monoisotopicMassDeltaSpecified = true,
                                 cvParam = new mzIdentML110.Generated.CVParamType[1]
                                 {
-                            new mzIdentML110.Generated.CVParamType()
-                            {
-                                cvRef =  mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? "PSI-MOD" : "PSI-MS",
-                                name = mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? name : "unknown modification",
-                                accession =mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")? mod.Value.linksToOtherDbs["PSI-MOD"].First() : "MS:1001460",
-                                value = mod.Value.linksToOtherDbs.ContainsKey("PSI-MOD")?  "" : mod.Value.id //give id of mod if unknown modification
-                            }
+                                    GetUnimodCvParam(mod.Value)
                                 }
                             };
                             mod_id++;
@@ -425,14 +422,13 @@ namespace TaskLayer
                         SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500],
                         cvParam = new mzIdentML110.Generated.CVParamType[1]
                         {
-                                 new mzIdentML110.Generated.CVParamType
+                            new mzIdentML110.Generated.CVParamType
                             {
-                                name = "retention time",
+                                name = "scan start time",
                                 cvRef = "PSI-MS",
-                                accession = "MS:1000894",
+                                accession = "MS:1000016",
                                 value = psm.ScanRetentionTime.ToString()
                             }
-
                         }
                     };
                     psm_per_scan.Add(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), scan_result_scan_item);
@@ -461,17 +457,15 @@ namespace TaskLayer
                     {
                         new mzIdentML110.Generated.CVParamType
                         {
-                            name = "Morpheus:Morpheus score",
+                            name = "MetaMorpheus:score",
                             cvRef = "PSI-MS",
-                            accession = "MS:1002662",
+                            accession = "MS:1002827",
                             value = psm.Score.ToString()
                         },
                         new mzIdentML110.Generated.CVParamType
                         {
                             accession = "MS:1002354",
                             name = "PSM-level q-value",
-                            //accession = "MS:1002054",
-                            //name = "MS-GF:QValue",
                             cvRef = "PSI-MS",
                             value = psm.FdrInfo.QValue.ToString()
                         }
@@ -546,6 +540,8 @@ namespace TaskLayer
                                 name = "search tolerance plus value",
                                 value = productTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
+                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             },
                             new mzIdentML110.Generated.CVParamType
@@ -565,20 +561,20 @@ namespace TaskLayer
                             {
                                 accession = "MS:1001412",
                                 name = "search tolerance plus value",
-                                value = productTolerance.Value.ToString(),
+                                value = parentTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
-                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
-                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
+                                unitAccession = parentTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = parentTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             },
                             new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS:1001413",
                                 name = "search tolerance minus value",
-                                value = productTolerance.Value.ToString(),
+                                value = parentTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
-                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
-                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
+                                unitAccession = parentTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = parentTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             }
 
@@ -639,36 +635,10 @@ namespace TaskLayer
                     fixedMod = true,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
-                    cvParam = new mzIdentML110.Generated.CVParamType[2]
-                };
-                foreach (var tempModification in set)
-                {
-                    nameOfMod = tempModification.id.Substring(0, (tempModification.id.IndexOf(" ")));
-                    string modID;
-                    if (mod.id.Contains(" "))
-                        modID = mod.id.Substring(0, (mod.id.IndexOf(" ")));
-                    else
-                        modID = mod.id;
-                    if (nameOfMod.Equals(modID))
+                    cvParam = new mzIdentML110.Generated.CVParamType[1]
                     {
-                        modification = (ModificationWithMass)tempModification;
-                        break;
+                        GetUnimodCvParam(mod)
                     }
-                }
-
-                if (modification != null)
-                    _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[0] = new mzIdentML110.Generated.CVParamType()
-                    {
-                        accession = "UNIMOD:" + modification.linksToOtherDbs["Unimod"][0],
-                        name = nameOfMod,
-                        cvRef = "UNIMOD"
-                    };
-
-                _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[1] = new mzIdentML110.Generated.CVParamType()
-                {
-                    accession = "MS:1001460",
-                    name = "unknown modification",
-                    cvRef = "PSI-MS"
                 };
 
                 mod_index++;
@@ -682,35 +652,10 @@ namespace TaskLayer
                     fixedMod = false,
                     massDelta = (float)mod.monoisotopicMass,
                     residues = mod.motif.ToString(),
-                    cvParam = new mzIdentML110.Generated.CVParamType[2]
-                };
-
-
-                foreach (var tempModification in set)
-                {
-                    nameOfMod = tempModification.id.Substring(0, (tempModification.id.IndexOf(" ")));
-                    if (nameOfMod.Equals(mod.id.Substring(0, (mod.id.IndexOf(" ")))))
+                    cvParam = new mzIdentML110.Generated.CVParamType[1]
                     {
-                        modification = (ModificationWithMass)tempModification;
-                        break;
+                        GetUnimodCvParam(mod)
                     }
-                }
-
-
-                if (modification != null)
-                    _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[0] = new mzIdentML110.Generated.CVParamType()
-                    {
-                        accession = "UNIMOD:" + modification.linksToOtherDbs["Unimod"][0],
-                        name = nameOfMod,
-                        cvRef = "UNIMOD"
-                    };
-
-
-                _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index].cvParam[1] = new mzIdentML110.Generated.CVParamType()
-                {
-                    accession = "MS:1001460",
-                    name = "unknown modification",
-                    cvRef = "PSI-MS"
                 };
 
                 mod_index++;
@@ -766,8 +711,8 @@ namespace TaskLayer
                             {
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession = "MS:1002663",
-                                name = "Morpheus:summed Morpheus score",
+                                accession = "MS:1002828",
+                                name = "MetaMorpheus:protein score",
                                 cvRef = "PSI-MS",
                                 value = proteinGroup.ProteinGroupScore.ToString()
                             },
@@ -982,6 +927,7 @@ namespace TaskLayer
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                myFileManager.DoneWithFile(origDataFile);
 
                 var fileSpecificPsms = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
@@ -1058,11 +1004,8 @@ namespace TaskLayer
                     Status("Starting search...", thisId);
                     new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, massDiffAcceptor, SearchParameters.AddCompIons, combinedParams, combinedParams.ProductMassTolerance, thisId).Run();
 
-                    myFileManager.DoneWithFile(origDataFile);
-
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
-
                 lock (psmLock)
                 {
                     allPsms.AddRange(fileSpecificPsms);
@@ -1126,8 +1069,7 @@ namespace TaskLayer
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
-                    var localizationEngine = new LocalizationEngine(allPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.SearchParameters.AddCompIons);
-                    localizationEngine.Run();
+                    new LocalizationEngine(allPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, SearchParameters.AddCompIons).Run();
                     myFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
                 });
@@ -1140,9 +1082,6 @@ namespace TaskLayer
                 // pass quantification parameters to FlashLFQ
                 Status("Quantifying...", taskId);
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
-
-                if (!FlashLfqEngine.ReadPeriodicTable(GlobalVariables.ElementsLocation))
-                    throw new MetaMorpheusException("Quantification error - could not find periodic table file");
 
                 if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm " + SearchParameters.QuantifyPpmTol,
@@ -1339,7 +1278,7 @@ namespace TaskLayer
 
                     Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                     var mzidFilePath = Path.Combine(OutputFolder, strippedFileName + ".mzid");
-                    WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.DigestionParams.Protease }, 0.01, CommonParameters.ProductMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
+                    WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.DigestionParams.Protease }, 0.01, CommonParameters.ProductMassTolerance, CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
                     SucessfullyFinishedWritingFile(mzidFilePath, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
 
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
@@ -1474,6 +1413,27 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static mzIdentML110.Generated.CVParamType GetUnimodCvParam(ModificationWithMass mod)
+        {
+            if (mod.linksToOtherDbs.ContainsKey("Unimod"))
+            {
+                return new mzIdentML110.Generated.CVParamType()
+                {
+                    accession = "UNIMOD:" + mod.linksToOtherDbs["Unimod"].First(),
+                    name = mod.id,
+                    cvRef = "PSI-MS",
+                };
+            }
+            else
+                return new mzIdentML110.Generated.CVParamType()
+                {
+                    accession = "MS:1001460",
+                    name = "unknown modification",
+                    cvRef = "UNIMOD",
+                    value = mod.id,
+                };
+        }
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {

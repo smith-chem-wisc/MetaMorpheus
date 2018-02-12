@@ -10,7 +10,7 @@
 
 Description: Controlled vocabulary of posttranslational modifications (PTM)
 Name:        ptmlist.txt
-Release:     2017_12 of 20-Dec-2017
+Release:     2018_01 of 31-Jan-2018
 
 ---------------------------------------------------------------------------
 
@@ -4849,6 +4849,34 @@ TR   Bacteria; taxId:195064 (Ectothiorhodospira mobilis).
 DR   RESID; AA0343.
 DR   PSI-MOD; MOD:00348.
 //
+ID   S-carbamoylcysteine
+AC   PTM-0649
+FT   MOD_RES
+TG   Cysteine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C1 H1 N1 O1
+MM   43.005814
+MA   43.02
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+DR   RESID; AA0332.
+DR   PSI-MOD; MOD:00337.
+//
+ID   S-cyanocysteine
+AC   PTM-0650
+FT   MOD_RES
+TG   Cysteine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C1 H-1 N1
+MM   24.995249
+MA   25.01
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+DR   RESID; AA0333.
+DR   PSI-MOD; MOD:00338.
+//
 ID   N-D-glucuronoyl glycine
 AC   PTM-0331
 FT   MOD_RES
@@ -8578,4 +8606,3 @@ KW   Glycoprotein.
 Copyrighted by the UniProt Consortium, see http://www.uniprot.org/terms
 Distributed under the Creative Commons Attribution-NoDerivs License
 -----------------------------------------------------------------------
-
