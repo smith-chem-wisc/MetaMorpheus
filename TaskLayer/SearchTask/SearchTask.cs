@@ -1658,8 +1658,8 @@ namespace TaskLayer
                     fragmentIndex = ZeroFormatterSerializer.Deserialize<List<int>[]>(file);
 
                 s.Stop();
-                System.IO.File.WriteAllText(@"C:\tmp\ZeroDeSer.txt",
-      String.Format("\n\nDESERIALIZE TIME: {0} ElapsedMilliseconds: {1} ElapsedTicks: ", s.Elapsed, s.ElapsedMilliseconds));
+                //System.IO.File.WriteAllText(@"C:\tmp\ZeroDeSer.txt",
+      //String.Format("\n\nDESERIALIZE TIME: {0} ElapsedMilliseconds: {1} ElapsedTicks: ", s.Elapsed, s.ElapsedMilliseconds));
             }
         }
 
