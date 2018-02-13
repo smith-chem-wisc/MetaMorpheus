@@ -437,7 +437,7 @@ namespace EngineLayer
                 else
                     return (possibleReturn, null);
             }
-            else
+            else 
             {
                 return (f.Formula, f);
             }
