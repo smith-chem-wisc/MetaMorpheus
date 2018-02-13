@@ -1636,8 +1636,7 @@ namespace TaskLayer
                 ZeroFormatterSerializer.Serialize(fragmentStream, fragmentIndex);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
                 s.Stop();
-                System.IO.File.WriteAllText(@"C:\tmp\ZeroSer.txt",
-      String.Format("SERIALIZE TIME: {0} ElapsedMilliseconds: {1} ElapsedTicks: ", s.Elapsed, s.ElapsedMilliseconds));
+             
             }
 
             else
