@@ -389,7 +389,7 @@ namespace TaskLayer
 
             // Store
 
-            DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>());
+            DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>(),0,0,0,0);
 
             Tolerance bestPrecursorMassToleranceForDatapointAcquisition = initPrecTol;
             Tolerance bestProductMassToleranceForDatapointAcquisition = initProdTol;
@@ -414,6 +414,10 @@ namespace TaskLayer
                 if (currentResult.Ms1List.Count == 0 || currentResult.Ms2List.Count == 0)
                 {
                     Warn("currentResult.Ms1List.Count = " + currentResult.Ms1List.Count + " currentResult.Ms2List.Count = " + currentResult.Ms2List.Count);
+                    Warn("NumMs1MassChargeCombinationsConsidered: " + currentResult.NumMs1MassChargeCombinationsConsidered);
+                    Warn("NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + currentResult.NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+                    Warn("NumMs2MassChargeCombinationsConsidered: " + currentResult.NumMs2MassChargeCombinationsConsidered);
+                    Warn("NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + currentResult.NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
                     return (0, null, null, null);
                 }
 

@@ -47,13 +47,15 @@ namespace TaskLayer
             if (myMsDataFiles.TryGetValue(origDataFile, out IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> value) && value != null)
                 return value;
 
+            FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
+
             // By now know that need to load this file!!!
             lock (fileLoadingLock) // Lock because reading is sequential
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
-                    myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
+                    myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter);
                 else
 #if NETFRAMEWORK
-                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
+                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, filter);
 #else
                     Warn("No capability for reading " + origDataFile);
 #endif
