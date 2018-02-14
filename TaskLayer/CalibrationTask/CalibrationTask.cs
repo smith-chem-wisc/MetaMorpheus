@@ -418,6 +418,7 @@ namespace TaskLayer
                     Warn("NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + currentResult.NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
                     Warn("NumMs2MassChargeCombinationsConsidered: " + currentResult.NumMs2MassChargeCombinationsConsidered);
                     Warn("NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + currentResult.NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+                    Warn("Please validate tolerances used.");
                     return (0, null, null, null);
                 }
 
