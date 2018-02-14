@@ -356,6 +356,24 @@ PP   Anywhere.
 MT   TrypsinDigestedMod
 CF   H6 C4 N2 O2
 //
+ID   DVIEVYQEQTGG of D (SUMO-1 Site human)
+TG   Lysine
+PP   Anywhere.
+MT   AnpN_DigestedMod
+CF   C57 H88 N14 O23
+//
+ID   DVFQQQTGG of D (SUMO-2/3 Site human)
+TG   Lysine
+PP   Anywhere.
+MT   AnpN_DigestedMod
+CF   C41 H62 N12 O16
+//
+ID   EQIGG of k (sumoylation (SMT-3) Site yeast)
+TG   Lysine
+PP   Anywhere.
+MT   TrypsinDigestedMod
+CF   C20 H34 N6 O9
+//
 ID   Farnesylation
 TG   Cysteine
 PP   Anywhere.
