@@ -42,8 +42,6 @@ namespace TaskLayer
             CommonParameters = new CommonParameters();
 
             SearchParameters = new SearchParameters();
-
-            FlashLfqEngine = new FlashLFQEngine();
         }
 
         #endregion Public Constructors
@@ -71,8 +69,8 @@ namespace TaskLayer
                 Indent = true,
                 Encoding = utf8EmitBOM,
             };
-            XmlSerializer _indexedSerializer = new XmlSerializer(typeof(mzIdentML110.Generated.MzIdentMLType));
-            var _mzid = new mzIdentML110.Generated.MzIdentMLType()
+            XmlSerializer _indexedSerializer = new XmlSerializer(typeof(mzIdentML110.Generated.MzIdentMLType110));
+            var _mzid = new mzIdentML110.Generated.MzIdentMLType110()
             {
                 version = "1.1.0",
                 id = "",
@@ -831,6 +829,7 @@ namespace TaskLayer
         {
             myTaskResults = new MyTaskResults(this);
             List<Psm> allPsms = new List<Psm>();
+            FlashLFQResults flashLfqResults = null;
 
             Status("Loading modifications...", taskId);
 
@@ -1057,24 +1056,27 @@ namespace TaskLayer
             {
                 // pass quantification parameters to FlashLFQ
                 Status("Quantifying...", taskId);
-                FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
 
-                if (!FlashLfqEngine.ParseArgs(new string[] {
-                        "--ppm " + SearchParameters.QuantifyPpmTol,
-                        "--sil true",
-                        "--pau false",
-                        "--mbr " + SearchParameters.MatchBetweenRuns }
-                    ))
-                    throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
+                // construct file info for FlashLFQ
+                var rawfileinfos = new List<RawFileInfo>();
+                foreach (var file in currentRawFileList)
+                {
+                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[currentRawFileList.IndexOf(file)]);
+                    if (myFileManager.SeeIfOpen(file))
+                        rawfileinfos.Add(new RawFileInfo(file, myFileManager.LoadFile(file, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks)));
+                    else
+                        rawfileinfos.Add(new RawFileInfo(file));
+                }
 
                 // get PSMs to pass to FlashLFQ
                 var unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && p.FullSequence != null);
+                var mypsmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
                 // pass protein group info for each PSM
                 Dictionary<Psm, List<string>> psmToProteinGroupNames = new Dictionary<Psm, List<string>>();
                 if (proteinGroups != null)
                 {
-                    EngineLayer.ProteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
+                    EngineLayer.ProteinGroup.FilesForQuantification = rawfileinfos.Select(p => p.fullFilePathWithExtension).ToArray();
 
                     foreach (var proteinGroup in proteinGroups)
                     {
@@ -1102,50 +1104,39 @@ namespace TaskLayer
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                     if (!psmToProteinGroupNames.ContainsKey(psm))
                         psmToProteinGroupNames.Add(psm, new List<string>() { "" });
-
-                // pass PSMs to FlashLFQ to quantify identified peptides
-                foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
-                    FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupNames[psm]);
+                
+                // pass PSM info to FlashLFQ
+                var flashLFQIdentifications = new List<Identification>();
+                foreach (var file in mypsmsGroupedByFile)
+                {
+                    var rawfileinfo = rawfileinfos.Where(p => p.fullFilePathWithExtension.Equals(file.Key)).First();
+                    foreach (var psm in file)
+                        flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence, (double)psm.PeptideMonisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupNames[psm]));
+                }
 
                 // run FlashLFQ
-                FlashLfqEngine.ConstructIndexTemplateFromIdentifications();
-
-                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
-                {
-                    var origDataFile = currentRawFileList[spectraFileIndex];
-                    Status("Quantifying...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
-                    FlashLfqEngine.Quantify(myMsDataFile, origDataFile);
-                    myFileManager.DoneWithFile(origDataFile);
-                    GC.Collect();
-                    ReportProgress(new ProgressEventArgs(100, "Done quantifying!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
-                });
-
-                Status("Running retention time calibration...", taskId);
-                if (FlashLfqEngine.mbr)
-                    FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
-
-                // run protein quantification and get protein intensity back from FlashLFQ
+                var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns);
+                flashLfqResults = FlashLfqEngine.Run();
+                
+                // get protein intensity back from FlashLFQ
                 if (proteinGroups != null)
                 {
-                    Status("Quantifying proteins...", taskId);
-                    var flashLfqProteinGroups = FlashLfqEngine.QuantifyProteins();
-
                     Dictionary<string, EngineLayer.ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, EngineLayer.ProteinGroup>();
                     foreach (var proteinGroup in proteinGroups)
+                    {
+                        proteinGroup.IntensitiesByFile = new double[EngineLayer.ProteinGroup.FilesForQuantification.Length];
                         if (!proteinGroupNameToProteinGroup.ContainsKey(proteinGroup.ProteinGroupName))
                             proteinGroupNameToProteinGroup.Add(proteinGroup.ProteinGroupName, proteinGroup);
-
-                    foreach (var flashLfqProteinGroup in flashLfqProteinGroups)
-                    {
-                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out EngineLayer.ProteinGroup metamorpheusProteinGroup))
-                            metamorpheusProteinGroup.IntensitiesByFile = flashLfqProteinGroup.intensitiesByFile;
                     }
-
-                    foreach (var proteinGroup in proteinGroups)
-                        if (proteinGroup.IntensitiesByFile == null)
-                            proteinGroup.IntensitiesByFile = new double[EngineLayer.ProteinGroup.FilesForQuantification.Length];
+                    
+                    foreach (var flashLfqProteinGroup in flashLfqResults.proteinGroups)
+                    {
+                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.Key, out EngineLayer.ProteinGroup metamorpheusProteinGroup))
+                        {
+                            for(int i = 0; i < EngineLayer.ProteinGroup.FilesForQuantification.Length; i++)
+                                metamorpheusProteinGroup.IntensitiesByFile[i] = flashLfqProteinGroup.Value.intensities[rawfileinfos[i]];
+                        }
+                    }
                 }
             }
 
@@ -1263,22 +1254,14 @@ namespace TaskLayer
 
             if (SearchParameters.DoQuantification)
             {
-                foreach (var fullFilePath in currentRawFileList)
-                {
-                    var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
-                    var peaksForThisFile = FlashLfqEngine.allFeaturesByFile[Array.IndexOf(FlashLfqEngine.filePaths, fullFilePath)];
-
-                    WritePeakQuantificationResultsToTsv(peaksForThisFile, OutputFolder, strippedFileName + "_QuantifiedPeaks", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
-                }
+                foreach (var file in flashLfqResults.peaks)
+                    WritePeakQuantificationResultsToTsv(file.Value, OutputFolder, file.Key.filenameWithoutExtension + "_QuantifiedPeaks", new List<string> { taskId, "Individual Spectra Files", file.Key.fullFilePathWithExtension });
 
                 if (currentRawFileList.Count > 1)
-                    WritePeakQuantificationResultsToTsv(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p.Select(v => v)).ToList(), OutputFolder, "aggregateQuantifiedPeaks", new List<string> { taskId });
-
-                var summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), true);
-                WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByBaseSeq", new List<string> { taskId });
-
-                summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), false);
-                WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq", new List<string> { taskId });
+                    WritePeakQuantificationResultsToTsv(flashLfqResults.peaks.SelectMany(p => p.Value).ToList(), OutputFolder, "aggregateQuantifiedPeaks", new List<string> { taskId });
+                
+                WritePeptideQuantificationResultsToTsv(flashLfqResults.peptideBaseSequences.Select(p => p.Value).OrderBy(p => p.Sequence).ToList(), OutputFolder, "aggregateQuantifiedPeptidesByBaseSeq", new List<string> { taskId });
+                WritePeptideQuantificationResultsToTsv(flashLfqResults.peptideModifiedSequences.Select(p => p.Value).OrderBy(p => p.Sequence).ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq", new List<string> { taskId });
             }
 
             if (SearchParameters.WritePrunedDatabase)
