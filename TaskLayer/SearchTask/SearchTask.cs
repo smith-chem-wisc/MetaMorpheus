@@ -1618,6 +1618,10 @@ namespace TaskLayer
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+
+                s.Stop();
+                System.IO.File.WriteAllText(@"C:\tmp\ZeroDeSer.txt",
+      String.Format("\n\nSereialzie TIME: {0} ElapsedMilliseconds:", s.Elapsed));
             }
             else
             {
