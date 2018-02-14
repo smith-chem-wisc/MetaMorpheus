@@ -32,6 +32,11 @@ namespace TaskLayer
             this.disposeOfFileWhenDone = disposeOfFileWhenDone;
         }
 
+        public bool SeeIfOpen(string path)
+        {
+            return (myMsDataFiles.ContainsKey(path) && myMsDataFiles[path] != null);
+        }
+
         #endregion Public Constructors
 
         #region Public Events
@@ -44,6 +49,7 @@ namespace TaskLayer
 
         internal IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
         {
+            FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
             if (myMsDataFiles.TryGetValue(origDataFile, out IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> value) && value != null)
                 return value;
 
