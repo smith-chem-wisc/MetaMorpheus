@@ -251,7 +251,7 @@ namespace EngineLayer.Calibration
 
             if (ms2DataScan.MassSpectrum.Size == 0)
                 return (result, numMs2MassChargeCombinationsConsidered, numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, numFragmentsIdentified);
-            
+
             // Key: mz value, Value: error
             var addedPeaks = new Dictionary<double, double>();
 

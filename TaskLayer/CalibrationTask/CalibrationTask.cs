@@ -389,7 +389,7 @@ namespace TaskLayer
 
             // Store
 
-            DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>(),0,0,0,0);
+            DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>(), 0, 0, 0, 0);
 
             Tolerance bestPrecursorMassToleranceForDatapointAcquisition = initPrecTol;
             Tolerance bestProductMassToleranceForDatapointAcquisition = initProdTol;

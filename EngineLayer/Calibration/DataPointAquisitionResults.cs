@@ -17,7 +17,7 @@ namespace EngineLayer.Calibration
             int numMs1MassChargeCombinationsConsidered,
             int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
             int numMs2MassChargeCombinationsConsidered,
-            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks) 
+            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
             : base(dataPointAcquisitionEngine)
         {
             Ms1List = ms1List;
@@ -29,11 +29,10 @@ namespace EngineLayer.Calibration
             Ms1InfoPpm = Ms1List.Select(b => b.LabelPpm).MeanStandardDeviation();
             Ms2InfoPpm = Ms2List.Select(b => b.LabelPpm).MeanStandardDeviation();
 
-
-            NumMs1MassChargeCombinationsConsidered= numMs1MassChargeCombinationsConsidered;
-            NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks= numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
-            NumMs2MassChargeCombinationsConsidered= numMs2MassChargeCombinationsConsidered;
-            NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks= numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
+            NumMs1MassChargeCombinationsConsidered = numMs1MassChargeCombinationsConsidered;
+            NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
+            NumMs2MassChargeCombinationsConsidered = numMs2MassChargeCombinationsConsidered;
+            NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
         }
 
         #endregion Public Constructors
@@ -68,7 +67,7 @@ namespace EngineLayer.Calibration
             sb.AppendLine("Ms1th mean: " + Ms1InfoTh.Item1 + " Ms1th sd: " + Ms1InfoTh.Item2);
             sb.AppendLine("Ms2ppm mean: " + Ms2InfoPpm.Item1 + " Ms2ppm sd: " + Ms2InfoPpm.Item2);
             sb.AppendLine("Ms2th mean: " + Ms2InfoTh.Item1 + " Ms2th sd: " + Ms2InfoTh.Item2);
-            sb.AppendLine("NumMs1MassChargeCombinationsConsidered: "+ NumMs1MassChargeCombinationsConsidered);
+            sb.AppendLine("NumMs1MassChargeCombinationsConsidered: " + NumMs1MassChargeCombinationsConsidered);
             sb.AppendLine("NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
             sb.AppendLine("NumMs2MassChargeCombinationsConsidered: " + NumMs2MassChargeCombinationsConsidered);
             sb.Append("NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
