@@ -350,7 +350,7 @@ NL   O3 S1
 MT   Mod
 CF   O3 S1
 //
-ID   GG of K
+ID   GG of K (Ubiquitination Site)
 TG   Lysine
 PP   Anywhere.
 MT   TrypsinDigestedMod
