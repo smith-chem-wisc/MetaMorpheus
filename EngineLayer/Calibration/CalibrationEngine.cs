@@ -141,9 +141,9 @@ namespace EngineLayer.Calibration
                           if (!theScan.SelectedIonMonoisotopicGuessIntensity.HasValue && theScan.SelectedIonMonoisotopicGuessMz.HasValue)
                               theScan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
 
-                          Func<IPeak, double> theFunc = x => x.X - ms2predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
+                          double theFunc(IPeak x) => x.X - ms2predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
 
-                          Func<IPeak, double> theFuncForPrecursor = x => x.X - ms1predictor.Predict(x.X, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
+                          double theFuncForPrecursor(IPeak x) => x.X - ms1predictor.Predict(x.X, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
 
                           theScan.TransformMzs(theFunc, theFuncForPrecursor);
                       }
