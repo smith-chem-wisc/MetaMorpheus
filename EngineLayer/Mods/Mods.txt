@@ -5,10 +5,16 @@ PP   Anywhere.
 MT   Mod
 CF   H-1 N-1 O1
 //
+ID   Proline pyrrole to pyrrolidine six member ring
+TG   P
+PP   Anywhere.
+MT   Mod
+CF   C1
+//
 ID   Amidation
 TG   X
-PP   C-terminal.
-MT   ProteinTermMod
+PP   Peptide C-terminal.
+MT   PeptideTermMod
 CF   H1 N1 O-1
 //
 ID   Ammonia loss
@@ -66,7 +72,7 @@ MT   Mod
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F or D or E or V or H or K or N or R or C
+TG   Y or W or P or F or D or E or V or H or K or N or R or C or U or I or L or Q or S or T
 PP   Anywhere.
 MT   Mod
 CF   O1
@@ -119,6 +125,18 @@ TG   H or K
 PP   Anywhere.
 MT   Mod
 CF   H2 C2
+//
+ID   Acetald+28
+TG   X
+PP   Peptide N-terminal.
+MT   PeptideTermMod
+CF   H4 C2
+//
+ID   Acetald+28
+TG   H or K
+PP   Anywhere.
+MT   Mod
+CF   H4 C2
 //
 ID   Acetylation+Methionine
 TG   mX
@@ -284,15 +302,15 @@ MT   ProteinTermMod
 CF   H2 C
 //
 ID   Ethyl
-TG   K or E
+TG   K or E or D
 PP   Anywhere.
 MT   Mod
 CF   H4 C2
 //
 ID   Ethyl
 TG   X
-PP   N-terminal.
-MT   ProteinTermMod
+PP   Peptide N-terminal.
+MT   PeptideTermMod
 CF   H4 C2
 //
 ID   Oxidation and then loss of oxidized M side chain
@@ -338,11 +356,29 @@ NL   O3 S1
 MT   Mod
 CF   O3 S1
 //
-ID   GG of K
+ID   GG of K (Ubiquitination Site)
 TG   Lysine
 PP   Anywhere.
 MT   TrypsinDigestedMod
 CF   H6 C4 N2 O2
+//
+ID   DVIEVYQEQTGG of D (SUMO-1 Site human)
+TG   Lysine
+PP   Anywhere.
+MT   AnpN_DigestedMod
+CF   C57 H86 N14 O22
+//
+ID   DVFQQQTGG of D (SUMO-2/3 Site human)
+TG   Lysine
+PP   Anywhere.
+MT   AnpN_DigestedMod
+CF   C41 H60 N12 O15
+//
+ID   EQIGG of k (sumoylation (SMT-3) Site yeast)
+TG   Lysine
+PP   Anywhere.
+MT   TrypsinDigestedMod
+CF   C20 H32 N6 O8
 //
 ID   Farnesylation
 TG   Cysteine
@@ -415,4 +451,16 @@ TG   X
 PP   Peptide N-terminal.
 MT   PeptideTermMod
 CF   H2 C2 O2
+//
+ID   Decarboxylation
+TG   D or E
+PP   Anywhere.
+MT   Mod
+CF   H-2 C-1 O-1
+//
+ID   Reduction
+TG   D or S or T
+PP   Anywhere.
+MT   Mod
+CF   O-1
 //

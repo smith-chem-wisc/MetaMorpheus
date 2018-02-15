@@ -253,7 +253,7 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages.HasValue ? b.missedCleavages.Value.ToString(CultureInfo.InvariantCulture) : "unknown")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ScanPrecursorMass - b.MonoisotopicMass)).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1);
+                sb.Append('\t' + ResolveF2(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.FullName)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).Item1);
@@ -294,7 +294,6 @@ namespace EngineLayer
             {
                 //Count
                 sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
-
                 //Masses
                 sb.Append('\t' + "[");
                 foreach (var kvp in MatchedIonDictOnlyMatches)
@@ -310,7 +309,7 @@ namespace EngineLayer
                 //Mass error ppm
                 sb.Append('\t' + "[");
                 foreach (var kvp in ProductMassErrorPpm)
-                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];");
                 sb.Append("]");
             }
             else
@@ -465,6 +464,20 @@ namespace EngineLayer
             else
             {
                 return new Tuple<string, Dictionary<string, int>>(string.Join(" ", enumerable.First().Values.Select(c => c.id).OrderBy(c => c)), ok);
+            }
+        }
+
+        private Tuple<string, double?> ResolveF2(IEnumerable<double> enumerable)
+        {
+            var list = enumerable.ToList();
+            if (list.Max() - list.Min() < tolForDoubleResolution)
+            {
+                return new Tuple<string, double?>(list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
+            }
+            else
+            {
+                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture)));
+                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, double?>("(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
             }
         }
 
