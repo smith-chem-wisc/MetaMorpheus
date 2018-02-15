@@ -310,6 +310,7 @@ namespace EngineLayer
                                 //In the nitch case that the proteolysis product is already an index to cleave
                                 //no new peptides will be generated using this, so we will forgo i--
                                 //this makes peptides of length 0, which are not generated due to the for loop
+                                //removing this if statement will result in crashes from c-terminal proteolysis product end positions
                                 if (oneBasedIndicesToCleaveAfter[i] != proteolysisProduct.OneBasedEndPosition)
                                     i--;
                                 // End
