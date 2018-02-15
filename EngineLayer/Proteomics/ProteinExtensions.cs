@@ -304,7 +304,13 @@ namespace EngineLayer
                                 }
                                 while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition) //"<" to prevent additions if same index as residues, since i-- is below
                                     i++;
-                                if (oneBasedIndicesToCleaveAfter[i] != proteolysisProduct.OneBasedEndPosition) //only time this isn't true is to prevent double count of peptides at c-terminal if proteolysis product is c-terminal
+                                //Now that we've obtained an index to cleave after that is past the proteolysis product
+                                //we need to backtrack to get the index to cleave that is immediately before the the proteolysis product
+                                //to do this, we will do i--
+                                //In the nitch case that the proteolysis product is already an index to cleave
+                                //no new peptides will be generated using this, so we will forgo i--
+                                //this makes peptides of length 0, which are not generated due to the for loop
+                                if (oneBasedIndicesToCleaveAfter[i] != proteolysisProduct.OneBasedEndPosition)
                                     i--;
                                 // End
                                 for (int j = oneBasedIndicesToCleaveAfter[i] + 1; j < proteolysisProduct.OneBasedEndPosition.Value; j++)
