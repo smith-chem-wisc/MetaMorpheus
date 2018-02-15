@@ -370,7 +370,7 @@ namespace EngineLayer
                                         tempIndexInProtein = pep.OneBasedStartResidueInProtein + mod.Key - 2;
                                     }
                                     else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.ProtC))
-                                        tempIndexInProtein = protein.Length ;
+                                        tempIndexInProtein = protein.Length;
                                     else
                                         // In case it's a peptide mod, skip!
                                         break;
@@ -384,8 +384,8 @@ namespace EngineLayer
                                         tempModIndex.Add(tempIndexInProtein);
                                         foreach (var pept in aproteinWithPsms.Value)
                                         {
-                                            if (tempIndexInProtein >= pept.OneBasedStartResidueInProtein - (tempIndexInProtein == 1 ? 1 : 0)  && tempIndexInProtein <= pept.OneBasedEndResidueInProtein )
-                                                tempPepNumTotal += 1; 
+                                            if (tempIndexInProtein >= pept.OneBasedStartResidueInProtein - (tempIndexInProtein == 1 ? 1 : 0) && tempIndexInProtein <= pept.OneBasedEndResidueInProtein)
+                                                tempPepNumTotal += 1;
                                         }
                                         tempPepTotals.Add(tempPepNumTotal);
                                         tempPepModValues.Add(mod.Value.id);
