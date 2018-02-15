@@ -151,8 +151,6 @@ namespace TaskLayer
 
                     #endregion Load modifications
 
-
-
                     var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
                     //Read N and C files
