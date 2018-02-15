@@ -5,6 +5,12 @@ PP   Anywhere.
 MT   Mod
 CF   H-1 N-1 O1
 //
+ID   Proline pyrrole to pyrrolidine six member ring
+TG   P
+PP   Anywhere.
+MT   Mod
+CF   C1
+//
 ID   Amidation
 TG   X
 PP   Peptide C-terminal.
