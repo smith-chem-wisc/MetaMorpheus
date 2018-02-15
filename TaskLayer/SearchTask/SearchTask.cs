@@ -1108,7 +1108,7 @@ namespace TaskLayer
                 }
 
                 // run FlashLFQ
-                var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns);
+                var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns, 5.0, false, 2, false, true, true, GlobalVariables.ElementsLocation);
                 flashLfqResults = FlashLfqEngine.Run();
 
                 // get protein intensity back from FlashLFQ
