@@ -32,11 +32,6 @@ namespace TaskLayer
             this.disposeOfFileWhenDone = disposeOfFileWhenDone;
         }
 
-        public bool SeeIfOpen(string path)
-        {
-            return (myMsDataFiles.ContainsKey(path) && myMsDataFiles[path] != null);
-        }
-
         #endregion Public Constructors
 
         #region Public Events
@@ -44,6 +39,15 @@ namespace TaskLayer
         public static event EventHandler<StringEventArgs> WarnHandler;
 
         #endregion Public Events
+
+        #region Public Methods
+
+        public bool SeeIfOpen(string path)
+        {
+            return (myMsDataFiles.ContainsKey(path) && myMsDataFiles[path] != null);
+        }
+
+        #endregion Public Methods
 
         #region Internal Methods
 
