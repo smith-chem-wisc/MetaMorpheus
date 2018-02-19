@@ -29,12 +29,6 @@ namespace TaskLayer
 {
     public class SearchTask : MetaMorpheusTask
     {
-        #region Private Fields
-
-        private FlashLFQEngine FlashLfqEngine;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
         public SearchTask() : base(MyTask.Search)
@@ -1111,7 +1105,7 @@ namespace TaskLayer
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                     if (!psmToProteinGroupNames.ContainsKey(psm))
                         psmToProteinGroupNames.Add(psm, new List<string>() { "" });
-                
+
                 // pass PSM info to FlashLFQ
                 var flashLFQIdentifications = new List<Identification>();
                 foreach (var file in mypsmsGroupedByFile)
@@ -1122,9 +1116,9 @@ namespace TaskLayer
                 }
 
                 // run FlashLFQ
-                var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns);
+                var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns, 5.0, false, 2, false, true, true, GlobalVariables.ElementsLocation);
                 flashLfqResults = FlashLfqEngine.Run();
-                
+
                 // get protein intensity back from FlashLFQ
                 if (proteinGroups != null)
                 {
@@ -1135,12 +1129,12 @@ namespace TaskLayer
                         if (!proteinGroupNameToProteinGroup.ContainsKey(proteinGroup.ProteinGroupName))
                             proteinGroupNameToProteinGroup.Add(proteinGroup.ProteinGroupName, proteinGroup);
                     }
-                    
+
                     foreach (var flashLfqProteinGroup in flashLfqResults.proteinGroups)
                     {
                         if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.Key, out EngineLayer.ProteinGroup metamorpheusProteinGroup))
                         {
-                            for(int i = 0; i < EngineLayer.ProteinGroup.FilesForQuantification.Length; i++)
+                            for (int i = 0; i < EngineLayer.ProteinGroup.FilesForQuantification.Length; i++)
                                 metamorpheusProteinGroup.IntensitiesByFile[i] = flashLfqProteinGroup.Value.intensities[rawfileinfos[i]];
                         }
                     }
@@ -1266,7 +1260,7 @@ namespace TaskLayer
 
                 if (currentRawFileList.Count > 1)
                     WritePeakQuantificationResultsToTsv(flashLfqResults.peaks.SelectMany(p => p.Value).ToList(), OutputFolder, "aggregateQuantifiedPeaks", new List<string> { taskId });
-                
+
                 WritePeptideQuantificationResultsToTsv(flashLfqResults.peptideBaseSequences.Select(p => p.Value).OrderBy(p => p.Sequence).ToList(), OutputFolder, "aggregateQuantifiedPeptidesByBaseSeq", new List<string> { taskId });
                 WritePeptideQuantificationResultsToTsv(flashLfqResults.peptideModifiedSequences.Select(p => p.Value).OrderBy(p => p.Sequence).ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq", new List<string> { taskId });
             }

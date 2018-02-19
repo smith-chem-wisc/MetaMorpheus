@@ -7,14 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="mzLib" Version="1.0.278" />
+    <PackageReference Include="mzLib" Version="1.0.281" />
     <PackageReference Include="Nett" Version="0.8.0" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.7.2" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.7.3" />
     <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.7.2" />
     <PackageReference Include="SharpLearning.Metrics" Version="0.26.7.2" />
     <PackageReference Include="ZeroFormatter" Version="1.6.4" />
     <PackageReference Include="ZeroFormatter.Analyzer" Version="1.1.1" />
+
   </ItemGroup>
 
   <ItemGroup>
