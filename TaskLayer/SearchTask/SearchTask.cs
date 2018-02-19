@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 using UsefulProteomicsDatabases;
+using ZeroFormatter;
 
 namespace TaskLayer
 {
@@ -36,7 +37,6 @@ namespace TaskLayer
 
             SearchParameters = new SearchParameters();
         }
-
         #endregion Public Constructors
 
         #region Public Properties
@@ -68,7 +68,6 @@ namespace TaskLayer
                 version = "1.1.0",
                 id = "",
             };
-
             _mzid.Provider = new mzIdentML110.Generated.ProviderType()
             {
                 id = "PROVIDER",
@@ -88,7 +87,6 @@ namespace TaskLayer
             };
 
             _mzid.AuditCollection = new mzIdentML110.Generated.AbstractContactType[2];
-
             _mzid.AuditCollection[0] = new mzIdentML110.Generated.PersonType()
             {
                 id = "UWMadisonSmithGroupPerson",
@@ -471,8 +469,10 @@ namespace TaskLayer
             {
                 SpectrumIdentificationProtocol = new mzIdentML110.Generated.SpectrumIdentificationProtocolType[1]
                 {
+
                     new mzIdentML110.Generated.SpectrumIdentificationProtocolType
                     {
+
                         id = "SIP",
                         analysisSoftware_ref = "AS_MetaMorpheus",
                         SearchType = new mzIdentML110.Generated.ParamType
@@ -553,6 +553,7 @@ namespace TaskLayer
                                 unitName = parentTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             }
+
                         },
                         Threshold = new mzIdentML110.Generated.ParamListType()
                         {
@@ -599,8 +600,11 @@ namespace TaskLayer
             }
 
             int mod_index = 0;
+            var set = GlobalVariables.UnimodDeserialized.ToList();
+            ModificationWithMass modification;
             foreach (ModificationWithMass mod in fixedMods)
             {
+                modification = null;
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index] = new mzIdentML110.Generated.SearchModificationType()
                 {
                     fixedMod = true,
@@ -611,11 +615,13 @@ namespace TaskLayer
                         GetUnimodCvParam(mod)
                     }
                 };
+
                 mod_index++;
             }
 
             foreach (ModificationWithMass mod in variableMods)
             {
+                modification = null;
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].ModificationParams[mod_index] = new mzIdentML110.Generated.SearchModificationType()
                 {
                     fixedMod = false,
@@ -626,7 +632,9 @@ namespace TaskLayer
                         GetUnimodCvParam(mod)
                     }
                 };
+
                 mod_index++;
+
             }
 
             _mzid.AnalysisProtocolCollection.ProteinDetectionProtocol = new mzIdentML110.Generated.ProteinDetectionProtocolType()
@@ -1445,21 +1453,26 @@ namespace TaskLayer
         private static void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
+            //var ser = new NetSerializer.Serializer(messageTypes);
             using (var file = File.Create(peptideIndexFile))
             {
-                ser.Serialize(file, peptideIndex);
+                //ser.Serialize(file, peptideIndex);
+                var ser = ZeroFormatterSerializer.Serialize(file);
+
             }
         }
 
         private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            //var ser = new NetSerializer.Serializer(messageTypes);
 
             using (var file = File.Create(fragmentIndexFile))
-                ser.Serialize(file, fragmentIndex);
+            {
+                var ser = ZeroFormatterSerializer.Serialize(fragmentIndex);
+            }
+            //ser.Serialize(file, fragmentIndex);
+
         }
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
@@ -1567,10 +1580,11 @@ namespace TaskLayer
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
-
+        //HEERE
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+            System.Diagnostics.Stopwatch s = System.Diagnostics.Stopwatch.StartNew();
 
             if (pathToFolderWithIndices == null)
             {
@@ -1587,27 +1601,41 @@ namespace TaskLayer
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
-                WritePeptideIndex(peptideIndex, peptideIndexFile);
+                //WritePeptideIndex(peptideIndex, peptideIndexFile);
+                FileStream peptideStream = File.Create(peptideIndexFile);
+                ZeroFormatterSerializer.Serialize(peptideStream, peptideIndex);
                 SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
-
+                peptideStream.Close();
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
-                WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
+                //WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
+                FileStream fragmentStream = File.Create(fragmentIndexFile);
+                ZeroFormatterSerializer.Serialize(fragmentStream, fragmentIndex);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+                fragmentStream.Close();
+                s.Stop();
+             
             }
+
             else
             {
+                System.Diagnostics.Stopwatch s2 = System.Diagnostics.Stopwatch.StartNew();
                 Status("Reading peptide index...", new List<string> { taskId });
                 var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-                var ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                    peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
-
+                //var ser = new NetSerializer.Serializer(messageTypes);
+                //using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                // {
+                var a = File.ReadAllBytes(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind"));
+                peptideIndex = ZeroFormatterSerializer.Deserialize<List<CompactPeptide>>(a);
+                //}
                 Status("Reading fragment index...", new List<string> { taskId });
-                messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                ser = new NetSerializer.Serializer(messageTypes);
+                // messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+                //ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                    fragmentIndex = (List<int>[])ser.Deserialize(file);
+                    fragmentIndex = ZeroFormatterSerializer.Deserialize<List<int>[]>(file);
+                s.Stop();
+                //System.IO.File.WriteAllText(@"C:\tmp\ZeroDeSer.txt",
+      //String.Format("\n\nDESERIALIZE TIME: {0} ElapsedMilliseconds: {1} ElapsedTicks: ", s.Elapsed, s.ElapsedMilliseconds));
             }
         }
 

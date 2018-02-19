@@ -186,7 +186,7 @@ namespace Test
             };
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
                 ("task1", task1),
-                ("task2", task2),
+                ("taskok", task2),
                 ("task3", task3),
                 ("task4", task4),};
 
@@ -621,7 +621,7 @@ namespace Test
 
             //make sure this runs correctly
             //run!
-            Console.WriteLine(task5.CommonParameters.ListOfModTypesLocalize);
+           // Console.WriteLine(task5.CommonParameters.ListOfModsLocalize);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
             string outputFolderInThisTest = MySetUpClass.outputFolder;
