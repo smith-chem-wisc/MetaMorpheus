@@ -265,16 +265,16 @@ namespace EngineLayer
         {
             var peptidesGroupedByProtein = AllPeptides.GroupBy(p => p.Protein);
 
-            var proteinsWithPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
+            var proteinsWithPsms = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
             {
                 foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                 {
-                    if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out List<PeptideWithSetModifications> temp))
+                    if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out HashSet<PeptideWithSetModifications> temp))
                         temp.Add(pepWithSetMods);
                     else
-                        proteinsWithPsms.Add(pepWithSetMods.Protein, new List<PeptideWithSetModifications> { pepWithSetMods });
+                        proteinsWithPsms.Add(pepWithSetMods.Protein, new HashSet<PeptideWithSetModifications> { pepWithSetMods });
                 }
             }
 
