@@ -5,6 +5,12 @@ PP   Anywhere.
 MT   Mod
 CF   H-1 N-1 O1
 //
+ID   Proline pyrrole to pyrrolidine six member ring
+TG   P
+PP   Anywhere.
+MT   Mod
+CF   C1
+//
 ID   Amidation
 TG   X
 PP   Peptide C-terminal.
@@ -350,11 +356,29 @@ NL   O3 S1
 MT   Mod
 CF   O3 S1
 //
-ID   GG of K
+ID   GG of K (Ubiquitination Site)
 TG   Lysine
 PP   Anywhere.
 MT   TrypsinDigestedMod
 CF   H6 C4 N2 O2
+//
+ID   DVIEVYQEQTGG of D (SUMO-1 Site human)
+TG   Lysine
+PP   Anywhere.
+MT   AnpN_DigestedMod
+CF   C57 H86 N14 O22
+//
+ID   DVFQQQTGG of D (SUMO-2/3 Site human)
+TG   Lysine
+PP   Anywhere.
+MT   AnpN_DigestedMod
+CF   C41 H60 N12 O15
+//
+ID   EQIGG of k (sumoylation (SMT-3) Site yeast)
+TG   Lysine
+PP   Anywhere.
+MT   TrypsinDigestedMod
+CF   C20 H32 N6 O8
 //
 ID   Farnesylation
 TG   Cysteine
