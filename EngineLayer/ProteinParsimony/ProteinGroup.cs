@@ -287,7 +287,9 @@ namespace EngineLayer
 
                             // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
                             if (psm.FullSequence != null)
+                            {
                                 proteinsWithPsmsWithLocalizedMods[pepWithSetMods.Protein].Add(pepWithSetMods);
+                            }
                         }
                     }
                 }
@@ -299,8 +301,12 @@ namespace EngineLayer
 
                 // get residue numbers of each peptide in the protein and identify them as observed if the sequence is unambiguous
                 foreach (var peptide in proteinsWithUnambigSeqPsms[protein])
+                {
                     for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
+                    {
                         coveredResidues.Add(i);
+                    }
+                }
 
                 double sequenceCoverageHere = (double)coveredResidues.Count / protein.Length;
                 SequenceCoveragePercent.Add(sequenceCoverageHere);
@@ -384,7 +390,9 @@ namespace EngineLayer
                                     foreach (var pept in proteinsWithPsmsWithLocalizedMods[protein])
                                     {
                                         if (tempIndexInProtein >= pept.OneBasedStartResidueInProtein - (tempIndexInProtein == 1 ? 1 : 0) && tempIndexInProtein <= pept.OneBasedEndResidueInProtein)
+                                        {
                                             tempPepNumTotal += 1;
+                                        }
                                     }
                                     tempPepTotals.Add(tempPepNumTotal);
                                     tempPepModValues.Add(mod.Value.id);
@@ -399,7 +407,7 @@ namespace EngineLayer
                         tempModStrings += tempString;
                     }
 
-                    if(!tempModStrings.Equals(""))
+                    if(!string.IsNullOrEmpty(tempModStrings))
                         ModsInfo.Add(tempModStrings);
                 }
             }
