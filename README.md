@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5044926)
 
-Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases).
+Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases). For first-time Windows users, choose "MetaMorpheusInstaller.exe" and install MetaMorpheus.
  
 MetaMorpheus is a bottom-up proteomics database search software with integrated posttranslational modification (PTM) discovery capability.
 This program combines features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTM-D](https://github.com/smith-chem-wisc/gptmd) in a single tool.
@@ -40,7 +40,7 @@ UniProt .XML or .fasta format, may be used in compressed (.gz) format.
 
 ## Test Installation (Windows GUI)
 
-1. Download the latest MetaMorpheusInstaller.exe [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases), and install MetaMorpheus.
+1. Download the latest MetaMorpheusInstaller.exe [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases), and install MetaMorpheus. For first-time Windows users, choose "MetaMorpheusInstaller.exe" and install MetaMorpheus.
 2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp).
 3. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot XML database on the GUI.
 4. Add search tasks that test all of the functionality of MetaMorpheus. Drag the .toml files **IN ORDER** (Task1 - Task5) onto the application. 
