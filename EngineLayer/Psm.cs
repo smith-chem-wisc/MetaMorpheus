@@ -298,7 +298,7 @@ namespace EngineLayer
                 string returnString1 = "";
                 foreach (var kvp in MatchedIonDictOnlyMatches)
                     returnString1 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];";
-                sb.Append(GlobalVariables.CheckLengthOfOutput(returnString1));
+                sb.Append(GlobalVariables.CheckLengthOfPSM(returnString1));
                 sb.Append("]");
 
                 //Mass error Da
@@ -306,7 +306,7 @@ namespace EngineLayer
                 string returnString2 = "";
                 foreach (var kvp in ProductMassErrorDa)
                     returnString2 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];";
-                sb.Append(GlobalVariables.CheckLengthOfOutput(returnString2));
+                sb.Append(GlobalVariables.CheckLengthOfPSM(returnString2));
                 sb.Append("]");
 
                 //Mass error ppm
@@ -314,7 +314,7 @@ namespace EngineLayer
                 string returnString3 = "";
                 foreach (var kvp in ProductMassErrorPpm)
                     returnString3 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];";
-                sb.Append(GlobalVariables.CheckLengthOfOutput(returnString3));
+                sb.Append(GlobalVariables.CheckLengthOfPSM(returnString3));
                 sb.Append("]");
             }
             else
@@ -324,7 +324,7 @@ namespace EngineLayer
 
             if (LocalizedScores != null)
             {
-                sb.Append('\t' + GlobalVariables.CheckLengthOfOutput(("[" +string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]")));
+                sb.Append('\t' + GlobalVariables.CheckLengthOfPSM(("[" +string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]")));
                 sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
             }
             else
@@ -436,7 +436,7 @@ namespace EngineLayer
             }
             if (!equals)
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", formulas.Select(b => b.Formula)));
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", formulas.Select(b => b.Formula)));
                 return (returnString, null);
             }
             else
@@ -460,7 +460,7 @@ namespace EngineLayer
             }
             if (notEqual)
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c)))));
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c)))));
                 return new Tuple<string, Dictionary<string, int>>(returnString, null);
             }
             else
@@ -478,7 +478,7 @@ namespace EngineLayer
             }
             else
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
                 return  new Tuple<string, double?>(returnString, null);
             }
         }
@@ -492,7 +492,7 @@ namespace EngineLayer
             }
             else
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
                 return new Tuple<string, double?>(returnString, null);
             }
         }
@@ -507,7 +507,7 @@ namespace EngineLayer
             }
             else
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture))));
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture))));
                 return new Tuple<string, int?>(returnString, null);
             }
         }
@@ -523,7 +523,7 @@ namespace EngineLayer
             }
             else
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", list));
+                var returnString = GlobalVariables.CheckLengthOfPSM(string.Join(" or ", list));
                 return new Tuple<string, string>(returnString, null);
             }
         }
