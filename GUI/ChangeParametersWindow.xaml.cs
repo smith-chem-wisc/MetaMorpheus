@@ -27,6 +27,10 @@ namespace MetaMorpheusGUI
 
         #region Public Constructors
 
+
+        //Window that is opened if user wishes to change file specific settings (TOML) for 
+        //individual or multiple spectra files. Creates a toml file where settings can be
+        //viewed, loaded, and changed from it.
         public ChangeParametersWindow(ObservableCollection<RawDataForDataGrid> selectedRaw)
         {
             SelectedRaw = selectedRaw;
