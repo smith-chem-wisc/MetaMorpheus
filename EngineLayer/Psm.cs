@@ -295,26 +295,26 @@ namespace EngineLayer
                 sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
                 //Masses
                 sb.Append('\t' + "[");
-                string returnString1 = "";
+                StringBuilder sbTemp = new StringBuilder();
                 foreach (var kvp in MatchedIonDictOnlyMatches)
-                    returnString1 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];";
-                sb.Append(GlobalVariables.CheckLengthOfOutput(returnString1));
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append(GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()));
                 sb.Append("]");
 
                 //Mass error Da
                 sb.Append('\t' + "[");
-                string returnString2 = "";
+                sbTemp.Clear();
                 foreach (var kvp in ProductMassErrorDa)
-                    returnString2 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];";
-                sb.Append(GlobalVariables.CheckLengthOfOutput(returnString2));
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append(GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()));
                 sb.Append("]");
 
                 //Mass error ppm
                 sb.Append('\t' + "[");
-                string returnString3 = "";
+                sbTemp.Clear();
                 foreach (var kvp in ProductMassErrorPpm)
-                    returnString3 += "[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];";
-                sb.Append(GlobalVariables.CheckLengthOfOutput(returnString3));
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];");
+                sb.Append(GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()));
                 sb.Append("]");
             }
             else

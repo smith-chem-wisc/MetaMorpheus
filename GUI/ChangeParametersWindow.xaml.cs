@@ -43,6 +43,7 @@ namespace MetaMorpheusGUI
 
             FileSpecificSettingsList = new FileSpecificSettings[selectedRaw.Count];
 
+            //If changing settins of single file
             if (selectedRaw.Count == 1)
             {
                 string tomlFileName = System.IO.Path.ChangeExtension(SelectedRaw[0].FilePath, ".toml");
@@ -240,6 +241,11 @@ namespace MetaMorpheusGUI
                     {
                         paramList[19].Different = true;
                     }
+
+                    if (key == "ToleranceType")
+                    {
+                        paramList[20].Different = true;
+                    }
                 }
                 TempSettings = new FileSpecificSettings[selectedRaw.Count];
                 Array.Copy(paramList, tempParamList, 20);
@@ -378,6 +384,7 @@ namespace MetaMorpheusGUI
             ParameterGrid.Items.Refresh();
         }
 
+        //handle double click
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -396,7 +403,6 @@ namespace MetaMorpheusGUI
             {
                 FileSpecificSettingsList[i] = new FileSpecificSettings();
                 int? index = paramList[0].Value as int?;
-               
 
                 //Cases for each Parameter:
                 //1. If one file with Changed value: write value to File settings
@@ -567,6 +573,8 @@ namespace MetaMorpheusGUI
                 else if (FileSpecificSettingsList.Count() > 1 && TempSettings[i].TopNpeaks != null && FileSpecificSettingsList[i].TopNpeaks == null)
                     FileSpecificSettingsList[i].TopNpeaks = TempSettings[i].TopNpeaks;
 
+
+                //Tolerance Type
                 int? index2 = paramList[20].Value as int?;
 
 
@@ -588,6 +596,7 @@ namespace MetaMorpheusGUI
             e.Handled = !TextBoxIntAllowed(e.Text);
         }
 
+        //Creates Parameter List and types that will fill grid
         private Parameter[] InitializeParameterList()
         {
             paramList = new Parameter[21];
@@ -719,6 +728,7 @@ namespace MetaMorpheusGUI
             ParameterGrid.Items.Refresh();
         }
 
+        //simply exits dialog; nothing is saved
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
