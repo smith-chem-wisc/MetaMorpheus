@@ -1572,7 +1572,6 @@ namespace TaskLayer
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-            System.Diagnostics.Stopwatch s = new Stopwatch();
             s.Start();
             if (pathToFolderWithIndices == null)
             {
@@ -1596,15 +1595,9 @@ namespace TaskLayer
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
-
-                s.Stop();
-                System.IO.File.WriteAllText(@"C:\tmp\NetSer.txt",
-      String.Format("\n\nSereialzie TIME: {0} ElapsedMilliseconds:", s.Elapsed));
             }
             else
             {
-                System.Diagnostics.Stopwatch s2 = new Stopwatch();
-                s2.Start();
                 Status("Reading peptide index...", new List<string> { taskId });
                 var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
                 var ser = new NetSerializer.Serializer(messageTypes);
@@ -1618,11 +1611,6 @@ namespace TaskLayer
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
-
-                s2.Stop();
-                System.IO.File.WriteAllText(@"C:\tmp\NetDes.txt",
-      String.Format("\n\nSereialzie TIME: {0} ElapsedMilliseconds:", s2.Elapsed));
-
             }
         }
 
