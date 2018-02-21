@@ -105,7 +105,7 @@ namespace MetaMorpheusGUI
                             {
                                 if (tomlSettingsListList[j].ContainsKey(tomlSettingsListList[i][key].Key))
                                 {
-                                    //Need to convert first letter yo uppercase to match Type
+                                    //Need to convert first letter to uppercase to match Type
                                     string h = tomlSettingsListList[j][key].Value.ReadableTypeName;
                                     //convert string to appropritate format
                                     if (!string.IsNullOrEmpty(h))
