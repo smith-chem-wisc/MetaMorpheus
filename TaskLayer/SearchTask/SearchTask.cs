@@ -1572,7 +1572,6 @@ namespace TaskLayer
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-            s.Start();
             if (pathToFolderWithIndices == null)
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
