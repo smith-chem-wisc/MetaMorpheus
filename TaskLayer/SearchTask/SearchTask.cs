@@ -15,6 +15,7 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1571,7 +1572,6 @@ namespace TaskLayer
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-
             if (pathToFolderWithIndices == null)
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
@@ -1601,7 +1601,9 @@ namespace TaskLayer
                 var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
                 var ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                {
                     peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+                }
 
                 Status("Reading fragment index...", new List<string> { taskId });
                 messageTypes = GetSubclassesAndItself(typeof(List<int>[]));

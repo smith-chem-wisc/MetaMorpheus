@@ -561,6 +561,11 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void asdf_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
