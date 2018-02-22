@@ -166,7 +166,12 @@ namespace EngineLayer.ModernSearch
 
                 // prevent index out of bounds errors
                 if (obsFragmentCeilingMass >= fragmentIndex.Length)
+                {
                     obsFragmentCeilingMass = fragmentIndex.Length - 1;
+
+                    if (obsFragmentFloorMass >= fragmentIndex.Length)
+                        obsFragmentFloorMass = fragmentIndex.Length - 1;
+                }
                 if (obsFragmentFloorMass < 0)
                     obsFragmentFloorMass = 0;
 
@@ -187,7 +192,12 @@ namespace EngineLayer.ModernSearch
 
                             // prevent index out of bounds errors
                             if (compFragmentCeilingMass >= fragmentIndex.Length)
+                            {
                                 compFragmentCeilingMass = fragmentIndex.Length - 1;
+
+                                if (obsFragmentFloorMass >= fragmentIndex.Length)
+                                    obsFragmentFloorMass = fragmentIndex.Length - 1;
+                            }
                             if (compFragmentFloorMass < 0)
                                 compFragmentFloorMass = 0;
                             
