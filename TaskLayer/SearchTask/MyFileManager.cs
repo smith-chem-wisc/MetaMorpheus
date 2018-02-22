@@ -56,7 +56,7 @@ namespace TaskLayer
             FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
             if (myMsDataFiles.TryGetValue(origDataFile, out IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> value) && value != null)
                 return value;
-
+            
             // By now know that need to load this file!!!
             lock (fileLoadingLock) // Lock because reading is sequential
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
