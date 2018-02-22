@@ -57,7 +57,7 @@ namespace MetaMorpheusGUI
                     var paramFile = Toml.ReadFile(tomlFileName, MetaMorpheusTask.tomlConfig);
                     tomlSettingsList = paramFile.ToDictionary(p => p.Key);
                     FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
-                    Array.Copy(paramList, tempParamList);
+                    Array.Copy(paramList, tempParamList, paramList.Length);
                     UpdateAndPopulateFields(settings);
                 }
                 else
@@ -67,7 +67,7 @@ namespace MetaMorpheusGUI
                     settings.ConserveMemory = null;
                     settings.DoPrecursorDeconvolution = null;
                     settings.UseProvidedPrecursorInfo = null;
-                    Array.Copy(paramList, tempParamList);
+                    Array.Copy(paramList, tempParamList, paramList.Length);
                     UpdateAndPopulateFields(settings);
                 }
             }
@@ -401,7 +401,7 @@ namespace MetaMorpheusGUI
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             ParameterGrid.Items.Refresh();
-            Array.Copy(tempParamList, paramList);
+            Array.Copy(tempParamList, paramList, paramList.Length);
 
             for (int file = 0; file < FileSpecificSettingsList.Count(); file++)
             {
