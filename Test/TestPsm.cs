@@ -25,6 +25,8 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
             Psm psm = new Psm(pepWithSetMods.CompactPeptide(TerminusType.None), 1, 2, 3, scan);
 
+            var t = psm.ToString();
+            var tabsepheader = Psm.GetTabSeparatedHeader();
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>

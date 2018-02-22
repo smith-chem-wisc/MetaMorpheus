@@ -32,7 +32,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<Protein> { new Protein("MNNKNKNKQQQ", "Prot1", null, null, null, null, null, true), new Protein("MNNNKQQQ", "Prot2") };
+            var proteinList = new List<Protein> { new Protein("MNNKNKNKQQQ", "Prot1", "organism", null, null, null, null, null, true), new Protein("MNNNKQQQ", "Prot2") };
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
