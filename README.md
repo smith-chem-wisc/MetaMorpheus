@@ -24,7 +24,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * Environment:
   * For .NET Core versions: .NET Core 2.0.0 runtime
   * For .NET Framework versions: .NET Framework 4.7.1
-    * The .NET Framework versions have the ability to read Thermo .RAW files. Those require [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed, and at least an 64-bit Windows 7, as well as Visual C++ redistributable. 
+    * The .NET Framework versions have the ability to read Thermo .RAW files. Those require [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader+3.0+SP2) installed (v3.0 SP2 is recommended), and at least an 64-bit Windows 7, as well as Visual C++ redistributable. 
 * At least 16 GB RAM recommended
 
 ## Spectra Requirements
