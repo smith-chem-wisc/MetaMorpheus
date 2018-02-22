@@ -25,7 +25,7 @@ namespace Test
                 {
                     DoParsimony = true,
                     DecoyType = DecoyType.None,
-                    ModPeptidesAreUnique = false
+                    ModPeptidesAreDifferent = false
                 },
                 CommonParameters = new CommonParameters
                 {
