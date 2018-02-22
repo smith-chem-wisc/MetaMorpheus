@@ -305,7 +305,7 @@ namespace TaskLayer
             if (Path.GetExtension(fileName).Equals(".fasta") || Path.GetExtension(fileName).Equals(".fa"))
             {
                 um = null;
-                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
+                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression, ProteinDbLoader.uniprot_organism_expression);
             }
             else
             {

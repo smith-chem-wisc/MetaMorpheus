@@ -71,6 +71,7 @@ namespace EngineLayer
         public List<double> LocalizedScores { get; internal set; }
         public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatches { get; internal set; }
         public string ProteinAccesion { get; private set; }
+        public string Organism { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
         public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
@@ -120,6 +121,7 @@ namespace EngineLayer
             sb.Append('\t' + "Protein Accession");
             sb.Append('\t' + "Protein Name");
             sb.Append('\t' + "Gene Name");
+            sb.Append('\t' + "Organism Name");
             sb.Append('\t' + "Contaminant");
             sb.Append('\t' + "Decoy");
             sb.Append('\t' + "Peptide Description");
@@ -205,6 +207,8 @@ namespace EngineLayer
 
             ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
 
+            Organism = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Organism)).Item2;
+
             ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
 
             ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
@@ -257,6 +261,7 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.FullName)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Organism)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PeptideDescription)).Item1);
@@ -286,7 +291,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (MatchedIonDictOnlyMatches != null)
