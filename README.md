@@ -56,7 +56,7 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format.
 ## Typical Usage (Windows GUI)
 1. Open MetaMorpheusGUI.exe, and drag and drop your raw spectra files and protein database into the GUI.
 2. Select "New Calibrate Task" tab and enter the appropriate search parameters, using slightly liberal mass tolerances (20 ppm recommended). Then "Add the Calibration Task".
-3. Select "New GPTMD Task" tab. Use tighter parent mass tolerance than you would in your typical search (e.g. 2-5 ppm). Specify the G-PTM-D modifications that you think may be present in your sample. Many typical modifications are pre-selected. Then "Add the GPTMD Task".
+3. Select "New GPTMD Task" tab. Use the typical mass tolerance as in a typical search (e.g. 5 ppm). Specify the G-PTM-D modifications that you think may be present in your sample. Many typical modifications are pre-selected. Then "Add the GPTMD Task".
 4. Select "New Search Task" tab. Specify the search paramters. High-resolution data that has been calibrated can frequently use a parent mass tolerance of 5ppm or less. Specify the Post-Search Parameters (e.g. protein parsimony, quantification). Then "Add the Search Task".
 5. Select "Run all tasks!". This search automatically looks for PTMs uncovered in the G-PTM-D step.
 
