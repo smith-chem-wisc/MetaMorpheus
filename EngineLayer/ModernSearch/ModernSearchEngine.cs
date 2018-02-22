@@ -159,12 +159,15 @@ namespace EngineLayer.ModernSearch
 
                 // get theoretical fragment bins within mass tolerance
                 int obsFragmentFloorMass = (int)Math.Floor((CommonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
+                int obsFragmentCeilingMass = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
+
+                // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
                 if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
                     obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
-                int obsFragmentCeilingMass = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
                 obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
 
-                // prevent index out of bounds errors
+                // prevent upper-bound index out of bounds errors;
+                // lower-bound is handled by the previous "if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)" statement
                 if (obsFragmentCeilingMass >= fragmentIndex.Length)
                 {
                     obsFragmentCeilingMass = fragmentIndex.Length - 1;
@@ -172,13 +175,13 @@ namespace EngineLayer.ModernSearch
                     if (obsFragmentFloorMass >= fragmentIndex.Length)
                         obsFragmentFloorMass = fragmentIndex.Length - 1;
                 }
-                if (obsFragmentFloorMass < 0)
-                    obsFragmentFloorMass = 0;
 
+                // search mass bins within a tolerance
                 for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
                     if (fragmentIndex[fragmentBin] != null)
                         binsToSearch.Add(fragmentBin);
 
+                // add complementary ions
                 if (addCompIons)
                 {
                     //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
@@ -195,8 +198,8 @@ namespace EngineLayer.ModernSearch
                             {
                                 compFragmentCeilingMass = fragmentIndex.Length - 1;
 
-                                if (obsFragmentFloorMass >= fragmentIndex.Length)
-                                    obsFragmentFloorMass = fragmentIndex.Length - 1;
+                                if (compFragmentFloorMass >= fragmentIndex.Length)
+                                    compFragmentFloorMass = fragmentIndex.Length - 1;
                             }
                             if (compFragmentFloorMass < 0)
                                 compFragmentFloorMass = 0;
