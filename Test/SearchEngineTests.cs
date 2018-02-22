@@ -194,6 +194,44 @@ namespace Test
         }
 
         [Test]
+        public static void TestModernSearchFragmentEdges()
+        {
+            // purpose of this test is to check that fragments at the edge of the fragment index in modern search do not fall out of bounds
+            // example: fragment mass 400 when max frag mass is 400 may go over the edge of the array because of ppm tolerances
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                AddCompIons = true,
+                MaxFragmentSize = 1, // super small index
+            };
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                ProductMassTolerance = new AbsoluteTolerance(100), // super large tolerance (100 Da)
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                },
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+            };
+            
+            var proteinList = new List<Protein> { new Protein("K", null) };
+
+            var indexEngine = new IndexingEngine(proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
+            var indexResults = (IndexingResults)indexEngine.Run();
+            
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, true, true, 4, 10, new PpmTolerance(5)).OrderBy(b => b.PrecursorMass).ToArray();
+
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
+            // no assertions... just don't crash...
+        }
+        
+        [Test]
         public static void TestNonViablePSM()
         {
             //just check if it crashes or not.
