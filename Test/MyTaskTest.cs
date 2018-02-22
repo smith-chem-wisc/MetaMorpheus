@@ -650,11 +650,11 @@ namespace Test
         }
 
         [Test]
-        public static void TestUniquePeptideCount()
+        public static void TestPeptideCount()
         {
             #region setup
 
-            SearchTask testUnique = new SearchTask
+            SearchTask testPeptides = new SearchTask
             {
                 CommonParameters = new CommonParameters
                 {
@@ -668,11 +668,11 @@ namespace Test
             };
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
-               ("TestUnique", testUnique)};
+               ("TestPeptides", testPeptides)};
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
-            var testUniqeMod = new ModificationWithMass("testUniqeMod", "mt", motif, TerminusLocalization.Any, 10);
+            var testUniqeMod = new ModificationWithMass("testPeptideMod", "mt", motif, TerminusLocalization.Any, 10);
             GlobalVariables.AddMods(new List<ModificationWithLocation>
             {
                 testUniqeMod
@@ -684,7 +684,7 @@ namespace Test
 
             //create modification lists
 
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();
@@ -718,7 +718,7 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var setList1 = protein[0].Digest(testUnique.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
+            var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
 
             //Finally Write MZML file
@@ -737,11 +737,11 @@ namespace Test
             string line;
 
             bool foundD = false;
-            using (StreamReader file = new StreamReader(Path.Combine(MySetUpClass.outputFolder, "TestUnique", "results.txt")))
+            using (StreamReader file = new StreamReader(Path.Combine(MySetUpClass.outputFolder, "TestPeptides", "results.txt")))
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("Unique target peptides within 1% FDR: 4"))
+                    if (line.Contains("Target peptides within 1% FDR: 4"))
                     {
                         foundD = true;
                     }

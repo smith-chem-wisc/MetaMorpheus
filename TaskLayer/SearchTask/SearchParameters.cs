@@ -13,7 +13,7 @@ namespace TaskLayer
             AddCompIons = false;
             DoParsimony = true;
             NoOneHitWonders = false;
-            ModPeptidesAreUnique = true;
+            ModPeptidesAreDifferent = true;
             DoQuantification = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
@@ -39,7 +39,7 @@ namespace TaskLayer
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }
-        public bool ModPeptidesAreUnique { get; set; }
+        public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
         public double QuantifyPpmTol { get; set; }
