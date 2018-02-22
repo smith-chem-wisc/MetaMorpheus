@@ -792,7 +792,7 @@ namespace Test
                 ii++;
             }
             List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
-            var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, protprod) };
+            var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
             var protease = new Protease("semi-trypsin", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.Semi, null, null, null);
 
