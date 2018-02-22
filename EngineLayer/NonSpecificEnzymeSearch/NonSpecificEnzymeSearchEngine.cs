@@ -46,21 +46,19 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 byte[] scoringTable = new byte[peptideIndex.Count];
                 HashSet<int> idsOfPeptidesPossiblyObserved = new HashSet<int>();
-                HashSet<int> allBinsToSearch = new HashSet<int>();
 
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
-                    allBinsToSearch.Clear();
                     var scan = listOfSortedms2Scans[i];
 
                     //get bins to add points to
-                    GetBinsToSearch(scan, allBinsToSearch);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan);
 
-                    foreach(var bin in allBinsToSearch)
-                        fragmentIndex[bin].ForEach(id => scoringTable[id]++);
+                    for (int j = 0; j < allBinsToSearch.Count; j++)
+                        fragmentIndex[allBinsToSearch[j]].ForEach(id => scoringTable[id]++);
 
                     //populate ids of possibly observed with those containing allowed precursor masses
                     List<int> binsToSearch = new List<int>();

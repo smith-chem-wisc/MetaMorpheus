@@ -165,11 +165,9 @@ namespace EngineLayer.ModernSearch
                 int obsFragmentCeilingMass = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
 
                 // prevent array out of bounds exception
+                // lower-bound index assumed to not be a problem since lowest observed fragment typically >400 Da, not even close to 0 Da
                 if (obsFragmentCeilingMass >= fragmentIndex.Length)
                     obsFragmentCeilingMass = fragmentIndex.Length - 1;
-
-                if (obsFragmentFloorMass < 0)
-                    obsFragmentFloorMass = 0;
 
                 // look for this fragment in the index, with a mass tolerance
                 for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
@@ -192,8 +190,6 @@ namespace EngineLayer.ModernSearch
                             // prevent index out of range exception
                             if (compFragmentCeilingMass >= fragmentIndex.Length)
                                 compFragmentCeilingMass = fragmentIndex.Length - 1;
-                            if (compFragmentCeilingMass < 0)
-                                compFragmentCeilingMass = 0;
 
                             // look for this complementary ion in the index, with a mass tolerance
                             for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
