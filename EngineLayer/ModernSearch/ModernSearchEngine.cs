@@ -163,6 +163,13 @@ namespace EngineLayer.ModernSearch
                     obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
                 int obsFragmentCeilingMass = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * fragmentBinsPerDalton);
                 obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
+
+                // prevent index out of bounds errors
+                if (obsFragmentCeilingMass >= fragmentIndex.Length)
+                    obsFragmentCeilingMass = fragmentIndex.Length - 1;
+                if (obsFragmentFloorMass < 0)
+                    obsFragmentFloorMass = 0;
+
                 for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
                     if (fragmentIndex[fragmentBin] != null)
                         binsToSearch.Add(fragmentBin);
@@ -177,10 +184,16 @@ namespace EngineLayer.ModernSearch
                             protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
                             int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
                             int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentFloorMass;
-                            if (compFragmentFloorMass > 0 && compFragmentCeilingMass < fragmentIndex.Length)
-                                for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
-                                    if (fragmentIndex[fragmentBin] != null)
-                                        binsToSearch.Add(fragmentBin);
+
+                            // prevent index out of bounds errors
+                            if (compFragmentCeilingMass >= fragmentIndex.Length)
+                                compFragmentCeilingMass = fragmentIndex.Length - 1;
+                            if (compFragmentFloorMass < 0)
+                                compFragmentFloorMass = 0;
+                            
+                            for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                                if (fragmentIndex[fragmentBin] != null)
+                                    binsToSearch.Add(fragmentBin);
                         }
                         else
                             throw new NotImplementedException();
