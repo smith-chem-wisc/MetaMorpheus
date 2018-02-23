@@ -106,8 +106,8 @@ namespace EngineLayer
 
         public static string CheckLengthOfOutput(string psmString)
         {
-            if (psmString.Length > 32000 && GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs)
-                return "too long";
+            if (psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs)
+                return "Output too long for Excel";
             else
                 return psmString;
         }

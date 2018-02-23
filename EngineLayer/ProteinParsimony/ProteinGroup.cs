@@ -99,6 +99,7 @@ namespace EngineLayer
             var sb = new StringBuilder();
             sb.Append("Protein Accession" + '\t');
             sb.Append("Gene" + '\t');
+            sb.Append("Organism" + '\t');
             sb.Append("Protein Full Name" + '\t');
             sb.Append("Unmodified Mass" + '\t');
             sb.Append("Number of Proteins in Group" + '\t');
@@ -142,7 +143,12 @@ namespace EngineLayer
             var genes = new HashSet<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", genes)));
             sb.Append("\t");
-            
+
+            // organisms
+            var organisms = new HashSet<string>(Proteins.Select(p => p.Organism));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", organisms)));
+            sb.Append("\t");
+
             // list of protein names
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName)))));
             sb.Append("\t");
@@ -198,8 +204,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             //Detailed mods information list
-            var modsInfoString = string.Join("|", ModsInfo);
-            sb.Append(GlobalVariables.CheckLengthOfOutput(modsInfoString.Length < 32767 ? modsInfoString : "Too many mods to display"));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ModsInfo)));
             sb.Append("\t");
 
             // MS1 intensity (retrieved from FlashLFQ in the SearchTask)
