@@ -425,7 +425,9 @@ namespace EngineLayer
             this.UniquePeptides.UnionWith(other.UniquePeptides);
             this.AllPsmsBelowOnePercentFDR.UnionWith(other.AllPsmsBelowOnePercentFDR);
             other.ProteinGroupScore = 0;
-            ProteinGroupName = string.Join("|", new HashSet<string>(Proteins.Select(p => p.Accession)));
+            HashSet<string> proteinGroups = new HashSet<string>(Proteins.Select(p => p.Accession));
+            proteinGroups.OrderBy(s => s);
+            ProteinGroupName = string.Join("|", proteinGroups);
         }
 
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
