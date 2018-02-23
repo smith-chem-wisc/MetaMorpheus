@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TaskLayer;
 
@@ -385,6 +386,28 @@ namespace Test
             f.Run();
 
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
+        }
+
+        [Test]
+        public static void TestProteinGroupsAccessionOutputOrder()
+        {
+            // make protein A
+            // make protein B
+            var p = new HashSet<Protein>();
+            List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
+            p.Add(new Protein("-----F----*", "B", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
+            p.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
+            //var prot = new HashSet<Protein>();
+            //prot.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
+
+
+            // add protein B to group
+            // add protein A to group
+            ProteinGroup testGroup = new ProteinGroup(p, null, null);
+           
+            
+            // test order is AB and not BA
+            File.WriteAllText(@"C:\Users\rmmil\Desktop\OrderTest.txt",testGroup.ProteinGroupName);
         }
 
         #endregion Public Methods
