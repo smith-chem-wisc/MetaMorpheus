@@ -9,12 +9,13 @@ namespace TaskLayer
 
         public SearchParameters()
         {
+            // default search task parameters
             DisposeOfFileWhenDone = true;
             AddCompIons = false;
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = true;
-            DoQuantification = false;
+            DoQuantification = true;
             QuantifyPpmTol = 5;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
