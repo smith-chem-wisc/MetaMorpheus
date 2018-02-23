@@ -18,9 +18,9 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
+        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreDifferent, List<string> nestedIds) : base(nestedIds)
         {
-            this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
+            this.treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
         }
 

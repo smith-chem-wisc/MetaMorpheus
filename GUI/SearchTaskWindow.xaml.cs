@@ -165,7 +165,7 @@ namespace MetaMorpheusGUI
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
             quantPpmTolerance.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
-            modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreUnique;
+            modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
             checkBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
             histogramBinWidthTextBox.Text = task.SearchParameters.HistogramBinTolInDaltons.ToString(CultureInfo.InvariantCulture);
             checkBoxTarget.IsChecked = task.SearchParameters.SearchTarget;
@@ -367,7 +367,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = checkBoxQuantification.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
-            TheTask.SearchParameters.ModPeptidesAreUnique = modPepsAreUnique.IsChecked.Value;
+            TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
             if (checkBoxDecoy.IsChecked.Value)
@@ -561,6 +561,11 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
+        private void asdf_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

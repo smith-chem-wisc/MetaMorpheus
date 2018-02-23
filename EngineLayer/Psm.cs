@@ -71,6 +71,7 @@ namespace EngineLayer
         public List<double> LocalizedScores { get; internal set; }
         public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatches { get; internal set; }
         public string ProteinAccesion { get; private set; }
+        public string Organism { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
         public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
@@ -120,6 +121,7 @@ namespace EngineLayer
             sb.Append('\t' + "Protein Accession");
             sb.Append('\t' + "Protein Name");
             sb.Append('\t' + "Gene Name");
+            sb.Append('\t' + "Organism Name");
             sb.Append('\t' + "Contaminant");
             sb.Append('\t' + "Decoy");
             sb.Append('\t' + "Peptide Description");
@@ -205,6 +207,8 @@ namespace EngineLayer
 
             ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
 
+            Organism = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Organism)).Item2;
+
             ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
 
             ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
@@ -242,7 +246,7 @@ namespace EngineLayer
             if (compactPeptides.First().Value.Item2 != null)
             {
                 sb.Append("\t" + TrimStringForExcel(string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture)))));
-
+                
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.EssentialSequence(ModstoWritePruned))).Item1);
@@ -253,10 +257,11 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages.HasValue ? b.missedCleavages.Value.ToString(CultureInfo.InvariantCulture) : "unknown")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ScanPrecursorMass - b.MonoisotopicMass)).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1);
+                sb.Append('\t' + ResolveF2(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.FullName)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Organism)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.PeptideDescription)).Item1);
@@ -276,7 +281,6 @@ namespace EngineLayer
                 }
                 else
                     sb.Append('\t' + " " + '\t' + " ");
-
                 // Unambiguous
                 if (IsDecoy)
                     sb.Append("\t" + "D");
@@ -287,30 +291,35 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (MatchedIonDictOnlyMatches != null)
             {
                 //Count
                 sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
-
                 //Masses
                 sb.Append('\t' + "[");
+                StringBuilder sbTemp = new StringBuilder();
                 foreach (var kvp in MatchedIonDictOnlyMatches)
-                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append(GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()));
                 sb.Append("]");
 
                 //Mass error Da
                 sb.Append('\t' + "[");
+                sbTemp.Clear();
                 foreach (var kvp in ProductMassErrorDa)
-                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append(GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()));
                 sb.Append("]");
 
                 //Mass error ppm
                 sb.Append('\t' + "[");
+                sbTemp.Clear();
                 foreach (var kvp in ProductMassErrorPpm)
-                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];");
+                sb.Append(GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()));
                 sb.Append("]");
             }
             else
@@ -320,7 +329,7 @@ namespace EngineLayer
 
             if (LocalizedScores != null)
             {
-                sb.Append('\t' + "[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]");
+                sb.Append('\t' + GlobalVariables.CheckLengthOfOutput(("[" +string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]")));
                 sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
             }
             else
@@ -432,11 +441,8 @@ namespace EngineLayer
             }
             if (!equals)
             {
-                var possibleReturn = string.Join(" or ", formulas.Select(b => b.Formula));
-                if (possibleReturn.Length > 32000)
-                    return ("too many", null);
-                else
-                    return (possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", formulas.Select(b => b.Formula)));
+                return (returnString, null);
             }
             else
             {
@@ -459,12 +465,26 @@ namespace EngineLayer
             }
             if (notEqual)
             {
-                var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, Dictionary<string, int>>("(too many)", null) : new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c)))));
+                return new Tuple<string, Dictionary<string, int>>(returnString, null);
             }
             else
             {
                 return new Tuple<string, Dictionary<string, int>>(string.Join(" ", enumerable.First().Values.Select(c => c.id).OrderBy(c => c)), ok);
+            }
+        }
+
+        private Tuple<string, double?> ResolveF2(IEnumerable<double> enumerable)
+        {
+            var list = enumerable.ToList();
+            if (list.Max() - list.Min() < tolForDoubleResolution)
+            {
+                return new Tuple<string, double?>(list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
+            }
+            else
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
+                return  new Tuple<string, double?>(returnString, null);
             }
         }
 
@@ -477,8 +497,8 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, double?>("(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
+                return new Tuple<string, double?>(returnString, null);
             }
         }
 
@@ -492,8 +512,8 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, int?>("(too many)", null) : new Tuple<string, int?>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture))));
+                return new Tuple<string, int?>(returnString, null);
             }
         }
 
@@ -508,8 +528,8 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list);
-                return (GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join(" or ", list));
+                return new Tuple<string, string>(returnString, null);
             }
         }
 

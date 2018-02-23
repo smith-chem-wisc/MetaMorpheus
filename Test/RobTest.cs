@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-using FlashLFQ;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
@@ -8,7 +7,6 @@ using NUnit.Framework;
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using TaskLayer;
 
@@ -42,10 +40,10 @@ namespace Test
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), gn, new Dictionary<int, List<Modification>>()));
-            p.Add(new Protein("-----F----*", "D1", gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
-            p.Add(new Protein("-----F----**", "C1", gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
-            p.Add(new Protein("----E----**", "C2", gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
+            p.Add(new Protein("-----F----*", "D1", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
+            p.Add(new Protein("-----F----**", "C1", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
+            p.Add(new Protein("----E----**", "C2", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
 
             DigestionParams digestionParams = new DigestionParams
             {
@@ -291,34 +289,6 @@ namespace Test
         }
 
         [Test]
-        public static void TestQuantification()
-        {
-            string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
-            FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
-
-            FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
-
-            if (!FlashLfqEngine.ParseArgs(new string[] {
-                        "--ppm 5",
-                        "--sil true",
-                        "--pau false",
-                        "--mbr true" }
-                ))
-                throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
-
-            FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, new List<string> { "P34223" });
-
-            FlashLfqEngine.ConstructIndexTemplateFromIdentifications();
-
-            FlashLfqEngine.Quantify(Mzml.LoadAllStaticData(mzmlFilePath), mzmlFilePath);
-
-            if (FlashLfqEngine.mbr)
-                FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
-
-            Assert.That(FlashLfqEngine.allFeaturesByFile[0].First().intensity > 0);
-        }
-
-        [Test]
         public static void TestPTMOutput()
         {
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
@@ -415,13 +385,6 @@ namespace Test
             f.Run();
 
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
-        }
-
-        [Test]
-        public static void TestFlashLfq()
-        {
-            FlashLFQEngine e = new FlashLFQEngine();
-            Assert.That(e != null);
         }
 
         #endregion Public Methods

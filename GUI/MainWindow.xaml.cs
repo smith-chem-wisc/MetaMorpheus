@@ -289,7 +289,7 @@ namespace MetaMorpheusGUI
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
             {
-                Filter = "Database Files|*.xml;*.xml.gz;*.fasta",
+                Filter = "Database Files|*.xml;*.xml.gz;*.fasta;*.fa",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
@@ -359,12 +359,12 @@ namespace MetaMorpheusGUI
                 case ".xml":
                 case ".gz":
                 case ".fasta":
-
+                case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
                     if (!ExistDa(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
-                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta"))
+                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta")&& !Path.GetExtension(draggedFilePath).Equals(".fa"))
                         {
                             try
                             {
