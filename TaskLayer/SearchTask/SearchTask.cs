@@ -1110,10 +1110,11 @@ namespace TaskLayer
 
                 // run FlashLFQ
                 var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns, 5.0, false, 2, false, true, true, GlobalVariables.ElementsLocation);
-                flashLfqResults = FlashLfqEngine.Run();
+                if(flashLFQIdentifications.Any())
+                    flashLfqResults = FlashLfqEngine.Run();
 
                 // get protein intensity back from FlashLFQ
-                if (proteinGroups != null)
+                if (proteinGroups != null && flashLfqResults != null)
                 {
                     Dictionary<string, EngineLayer.ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, EngineLayer.ProteinGroup>();
                     foreach (var proteinGroup in proteinGroups)
@@ -1246,7 +1247,7 @@ namespace TaskLayer
                 }
             }
 
-            if (SearchParameters.DoQuantification)
+            if (SearchParameters.DoQuantification && flashLfqResults != null)
             {
                 foreach (var file in flashLfqResults.peaks)
                     WritePeakQuantificationResultsToTsv(file.Value, OutputFolder, file.Key.filenameWithoutExtension + "_QuantifiedPeaks", new List<string> { taskId, "Individual Spectra Files", file.Key.fullFilePathWithExtension });
