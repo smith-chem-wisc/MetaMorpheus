@@ -297,7 +297,13 @@ namespace MetaMorpheusGUI
             if (openPicker.ShowDialog() == true)
                 foreach (var filepath in openPicker.FileNames)
                 {
-                    AddAFile(filepath);
+                    FileInfo info = new FileInfo(filepath);
+                    if (info.Length <= 0)
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Cannot Add an Empty Database", null));
+                    }
+                    else
+                        AddAFile(filepath);
                 }
             dataGridXMLs.Items.Refresh();
         }
@@ -364,7 +370,7 @@ namespace MetaMorpheusGUI
                     if (!ExistDa(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
-                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta")&& !Path.GetExtension(draggedFilePath).Equals(".fa"))
+                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta") && !Path.GetExtension(draggedFilePath).Equals(".fa"))
                         {
                             try
                             {
