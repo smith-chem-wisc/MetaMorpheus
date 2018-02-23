@@ -21,7 +21,8 @@ namespace EngineLayer
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
             Proteins = proteins;
-            ProteinGroupName = string.Join("|", Proteins.Select(p => p.Accession).Distinct());
+            ListOfProteinsOrderedByAccession = Proteins.OrderBy(p => p.Accession).ToList();
+            ProteinGroupName = string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Accession));
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
             AllPsmsBelowOnePercentFDR = new HashSet<Psm>();
@@ -147,21 +148,21 @@ namespace EngineLayer
             sb.Append("\t");
 
             // genes
-            var genes = new HashSet<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
+            var genes = new HashSet<string>(ListOfProteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", genes)));
             sb.Append("\t");
 
             // organisms
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", Proteins.Select(p => p.Organism).Distinct())));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Organism).Distinct())));
             sb.Append("\t");
 
             // list of protein names
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", Proteins.Select(p => p.FullName).Distinct())));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.FullName).Distinct())));
             sb.Append("\t");
 
             // list of masses
             IDigestionParams digestionParams = new TDdigest();
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", Proteins.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass).Distinct())));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass).Distinct())));
             sb.Append("\t");
 
             // number of proteins in group
@@ -431,7 +432,10 @@ namespace EngineLayer
             this.UniquePeptides.UnionWith(other.UniquePeptides);
             this.AllPsmsBelowOnePercentFDR.UnionWith(other.AllPsmsBelowOnePercentFDR);
             other.ProteinGroupScore = 0;
-            ProteinGroupName = string.Join("|", Proteins.Select(p => p.Accession));
+
+            ListOfProteinsOrderedByAccession = Proteins.OrderBy(p => p.Accession).ToList();
+
+            ProteinGroupName = string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Accession));
         }
 
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
