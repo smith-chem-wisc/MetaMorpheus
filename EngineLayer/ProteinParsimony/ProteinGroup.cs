@@ -431,9 +431,7 @@ namespace EngineLayer
             this.UniquePeptides.UnionWith(other.UniquePeptides);
             this.AllPsmsBelowOnePercentFDR.UnionWith(other.AllPsmsBelowOnePercentFDR);
             other.ProteinGroupScore = 0;
-
             ListOfProteinsOrderedByAccession = Proteins.OrderBy(p => p.Accession).ToList();
-
             ProteinGroupName = string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Accession));
         }
 
