@@ -148,8 +148,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // genes
-            var genes = new HashSet<string>(ListOfProteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", genes)));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()))));
             sb.Append("\t");
 
             // organisms
@@ -307,7 +306,7 @@ namespace EngineLayer
                 }
             }
 
-            foreach (var protein in Proteins)
+            foreach (var protein in ListOfProteinsOrderedByAccession)
             {
                 HashSet<int> coveredResidues = new HashSet<int>();
 
