@@ -181,7 +181,7 @@ namespace TaskLayer
                         new RegressionAbsoluteLossGradientBoostLearner(maximumTreeDepth: 9, iterations: 1000),
                     };
 
-                (int count, DataPointAquisitionResults datapointAcquisitionResult, Tolerance precTol, Tolerance prodTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
+                (int thisRoundCount, DataPointAquisitionResults datapointAcquisitionResult, Tolerance thisRoundPrecursorTol, Tolerance thisRoundProductTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
 
                 if (datapointAcquisitionResult == null)
                 {
@@ -200,20 +200,20 @@ namespace TaskLayer
                     WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "init", new List<string> { taskId, "Individual Spectra Files", currentDataFile });
                 }
 
-                int prevCount;
-                Tolerance prevPrecTol;
-                Tolerance prevProdTol;
+                int bestCount;
+                Tolerance bestPrecursorTol;
+                Tolerance bestProductTol;
                 string bestFilePath = null;
                 var round = 1;
                 do
                 {
                     new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, initLearners, "mz", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-                    prevCount = count;
-                    prevPrecTol = precTol;
-                    prevProdTol = prodTol;
+                    bestCount = thisRoundCount;
+                    bestPrecursorTol = thisRoundPrecursorTol;
+                    bestProductTol = thisRoundProductTol;
 
-                    (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, precTol, prodTol);
+                    (thisRoundCount, datapointAcquisitionResult, thisRoundPrecursorTol, thisRoundProductTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, thisRoundPrecursorTol, thisRoundProductTol);
 
                     if (datapointAcquisitionResult == null)
                     {
@@ -227,7 +227,7 @@ namespace TaskLayer
                         return;
                     }
 
-                    if (round >= 3 && !ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count, precTol, prodTol))
+                    if (round >= 3 && !ImprovGlobal(bestPrecursorTol, bestProductTol, bestCount, thisRoundCount, thisRoundPrecursorTol, thisRoundProductTol))
                     {
                         break;
                     }
@@ -253,11 +253,11 @@ namespace TaskLayer
                 {
                     new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, mzSepLearners, "mzRtTicInj", new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-                    prevCount = count;
-                    prevPrecTol = precTol;
-                    prevProdTol = prodTol;
+                    bestCount = thisRoundCount;
+                    bestPrecursorTol = thisRoundPrecursorTol;
+                    bestProductTol = thisRoundProductTol;
 
-                    (count, datapointAcquisitionResult, precTol, prodTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, precTol, prodTol);
+                    (thisRoundCount, datapointAcquisitionResult, thisRoundPrecursorTol, thisRoundProductTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, currentDataFile, variableModifications, fixedModifications, proteinList, taskId, combinedParams, thisRoundPrecursorTol, thisRoundProductTol);
 
                     if (datapointAcquisitionResult == null)
                     {
@@ -271,7 +271,7 @@ namespace TaskLayer
                         return;
                     }
 
-                    if (!ImprovGlobal(prevPrecTol, prevProdTol, prevCount, count, precTol, prodTol))
+                    if (!ImprovGlobal(bestPrecursorTol, bestProductTol, bestCount, thisRoundCount, thisRoundPrecursorTol, thisRoundProductTol))
                         break;
 
                     if (CalibrationParameters.WriteIntermediateFiles)
@@ -296,8 +296,8 @@ namespace TaskLayer
                     var tomlFileName = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(currentDataFile) + "-calib.toml");
                     FileSpecificTolerances f = new FileSpecificTolerances
                     {
-                        PrecursorMassTolerance = precTol,
-                        ProductMassTolerance = prodTol
+                        PrecursorMassTolerance = bestPrecursorTol,
+                        ProductMassTolerance = bestProductTol
                     };
                     Toml.WriteFile(f, tomlFileName, tomlConfig);
                     SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
