@@ -381,34 +381,48 @@ namespace MetaMorpheusGUI
                     break;
 
                 case ".toml":
-                    var uhum = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                    switch (uhum.Get<string>("TaskType"))
+                    var tomlFile = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                    if (tomlFile.Keys.Contains("PrecursorMassTolerance") && tomlFile.Keys.Contains("ProductMassTolerance") && tomlFile.Keys.Count == 2)
                     {
-                        case "Search":
-                            var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            AddTaskToCollection(ye1);
-                            break;
+                        // do nothing; it's a ppm suggested tolerance toml from calibration, this gets read in elsewhere
+                    }
+                    else
+                    {
+                        try
+                        {
+                            switch (tomlFile.Get<string>("TaskType"))
+                            {
+                                case "Search":
+                                    var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye1);
+                                    break;
 
-                        case "Calibrate":
-                            var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            AddTaskToCollection(ye2);
-                            break;
+                                case "Calibrate":
+                                    var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye2);
+                                    break;
 
-                        case "Gptmd":
-                            var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            AddTaskToCollection(ye3);
-                            break;
+                                case "Gptmd":
+                                    var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye3);
+                                    break;
 
-                        case "XLSearch":
-                            var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            AddTaskToCollection(ye4);
-                            break;
+                                case "XLSearch":
+                                    var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye4);
+                                    break;
 
-                        case "Neo":
-                            var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
-                                AddTaskToCollection(task);
-                            break;
+                                case "Neo":
+                                    var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
+                                        AddTaskToCollection(task);
+                                    break;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Could not parse .toml: " + e.Message, null));
+                        }
                     }
                     break;
             }
