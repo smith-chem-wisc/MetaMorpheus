@@ -1063,6 +1063,7 @@ namespace TaskLayer
                         rawfileinfos.Add(new RawFileInfo(file, myFileManager.LoadFile(file, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks)));
                     else
                         rawfileinfos.Add(new RawFileInfo(file));
+                    myFileManager.DoneWithFile(file);
                 }
 
                 // get PSMs to pass to FlashLFQ
@@ -1137,7 +1138,7 @@ namespace TaskLayer
                     }
                 }
             }
-
+            
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             if (SearchParameters.DoHistogramAnalysis)
