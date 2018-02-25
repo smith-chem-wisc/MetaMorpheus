@@ -231,15 +231,17 @@ namespace MetaMorpheusGUI
         {
             if (rawDataObservableCollection.Any())
             {
+                // if current output folder is blank and there is a spectra file, use the spectra file's path as the output path
                 if (string.IsNullOrWhiteSpace(OutputFolderTextBox.Text))
                 {
                     var pathOfFirstSpectraFile = Path.GetDirectoryName(rawDataObservableCollection.First().FilePath);
-                    OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(pathOfFirstSpectraFile), @"$DATETIME");
+                    OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
                 }
-                // else do nothing (do not override if there is a path already there; might clear user-defined path
+                // else do nothing (do not override if there is a path already there; might clear user-defined path)
             }
             else
             {
+                // no spectra files; clear the output folder from the GUI
                 OutputFolderTextBox.Clear();
             }
         }
