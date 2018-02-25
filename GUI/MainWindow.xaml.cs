@@ -325,21 +325,28 @@ namespace MetaMorpheusGUI
             if (LoadTaskButton.IsEnabled)
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+
                 if (files != null)
+                {
                     foreach (var draggedFilePath in files)
                     {
                         if (Directory.Exists(draggedFilePath))
+                        {
                             foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
                             {
                                 AddAFile(file);
                             }
+                        }
                         else
                         {
                             AddAFile(draggedFilePath);
                         }
+                        dataGridDatafiles.CommitEdit(DataGridEditingUnit.Row, true);
+                        dataGridXMLs.CommitEdit(DataGridEditingUnit.Row, true);
                         dataGridDatafiles.Items.Refresh();
                         dataGridXMLs.Items.Refresh();
                     }
+                }
                 UpdateTaskGuiStuff();
             }
         }
