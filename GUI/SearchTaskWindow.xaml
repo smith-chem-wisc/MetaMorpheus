@@ -341,15 +341,6 @@
                             </Style>
                         </Expander.Style>
                         <StackPanel>
-                            <GroupBox Header="Filter Options">
-                                <StackPanel Orientation="Horizontal" >
-                                    <TextBox x:Name="asdf" Width="45" Text="0.01sdafasdfasdf" IsEnabled="{Binding IsChecked, ElementName=FilterQvalue}" HorizontalAlignment="Right" VerticalAlignment="Top"  />
-                                    <CheckBox x:Name="FilterQvalue" Content="Filter By q-value" Margin="0,0,583,0" Width="116">
-                                    </CheckBox>
-                                    <Label Content="adgdafgd" Width="144" />
-                                </StackPanel>
-
-                            </GroupBox>
                             <GroupBox Header="Protein Parsimony">
                                 <StackPanel>
                                     <CheckBox x:Name="checkBoxParsimony" Content="Apply protein parsimony and construct protein groups">

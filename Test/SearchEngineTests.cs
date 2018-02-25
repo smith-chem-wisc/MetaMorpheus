@@ -125,6 +125,7 @@ namespace Test
             SearchParameters SearchParameters = new SearchParameters
             {
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                SearchTarget = true,
             };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -180,6 +181,7 @@ namespace Test
 
             // Single ms2 scan
             Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray[0] != null);
 
             Assert.IsTrue(allPsmsArray[0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
@@ -298,7 +300,8 @@ namespace Test
         {
             SearchParameters SearchParameters = new SearchParameters
             {
-                MassDiffAcceptorType = MassDiffAcceptorType.Open
+                MassDiffAcceptorType = MassDiffAcceptorType.Open,
+                SearchTarget = true,
             };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -339,6 +342,7 @@ namespace Test
 
             // Single ms2 scan
             Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray[0] != null);
 
             Assert.IsTrue(allPsmsArray[0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
@@ -435,6 +439,7 @@ namespace Test
             SearchParameters SearchParameters = new SearchParameters
             {
                 AddCompIons = true,
+                SearchTarget = true,
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
             };
             var dp = new DigestionParams
@@ -496,6 +501,7 @@ namespace Test
 
             //Single ms2 scan
             Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray[0] != null);
 
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);

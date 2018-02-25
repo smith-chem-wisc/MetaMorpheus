@@ -53,11 +53,11 @@ namespace EngineLayer.Neo
 
         public PsmTsvLine AggregateLine(PsmTsvLine secondary)
         {
-            baseSequence += " or " + secondary.baseSequence;
-            fullSequence += " or " + secondary.fullSequence;
-            accession += " or " + secondary.accession;
-            proteinName += " or " + secondary.proteinName;
-            geneName += " or " + secondary.geneName;
+            baseSequence += "|" + secondary.baseSequence;
+            fullSequence += "|" + secondary.fullSequence;
+            accession += "|" + secondary.accession;
+            proteinName += "|" + secondary.proteinName;
+            geneName += "|" + secondary.geneName;
             return this;
         }
 

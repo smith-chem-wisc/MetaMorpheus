@@ -231,16 +231,17 @@ namespace MetaMorpheusGUI
         {
             if (rawDataObservableCollection.Any())
             {
-                var MatchingChars =
-                    from len in Enumerable.Range(0, rawDataObservableCollection.Select(b => b.FilePath).Min(s => s.Length)).Reverse()
-                    let possibleMatch = rawDataObservableCollection.Select(b => b.FilePath).First().Substring(0, len)
-                    where rawDataObservableCollection.Select(b => b.FilePath).All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
-                    select possibleMatch;
-
-                OutputFolderTextBox.Text = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
+                // if current output folder is blank and there is a spectra file, use the spectra file's path as the output path
+                if (string.IsNullOrWhiteSpace(OutputFolderTextBox.Text))
+                {
+                    var pathOfFirstSpectraFile = Path.GetDirectoryName(rawDataObservableCollection.First().FilePath);
+                    OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
+                }
+                // else do nothing (do not override if there is a path already there; might clear user-defined path)
             }
             else
             {
+                // no spectra files; clear the output folder from the GUI
                 OutputFolderTextBox.Clear();
             }
         }
@@ -324,21 +325,28 @@ namespace MetaMorpheusGUI
             if (LoadTaskButton.IsEnabled)
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+
                 if (files != null)
+                {
                     foreach (var draggedFilePath in files)
                     {
                         if (Directory.Exists(draggedFilePath))
+                        {
                             foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
                             {
                                 AddAFile(file);
                             }
+                        }
                         else
                         {
                             AddAFile(draggedFilePath);
                         }
+                        dataGridDatafiles.CommitEdit(DataGridEditingUnit.Row, true);
+                        dataGridXMLs.CommitEdit(DataGridEditingUnit.Row, true);
                         dataGridDatafiles.Items.Refresh();
                         dataGridXMLs.Items.Refresh();
                     }
+                }
                 UpdateTaskGuiStuff();
             }
         }
@@ -380,34 +388,48 @@ namespace MetaMorpheusGUI
                     break;
 
                 case ".toml":
-                    var uhum = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                    switch (uhum.Get<string>("TaskType"))
+                    var tomlFile = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                    if (tomlFile.Keys.Contains("PrecursorMassTolerance") && tomlFile.Keys.Contains("ProductMassTolerance") && tomlFile.Keys.Count == 2)
                     {
-                        case "Search":
-                            var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            AddTaskToCollection(ye1);
-                            break;
+                        // do nothing; it's a ppm suggested tolerance toml from calibration, this gets read in elsewhere
+                    }
+                    else
+                    {
+                        try
+                        {
+                            switch (tomlFile.Get<string>("TaskType"))
+                            {
+                                case "Search":
+                                    var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye1);
+                                    break;
 
-                        case "Calibrate":
-                            var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            AddTaskToCollection(ye2);
-                            break;
+                                case "Calibrate":
+                                    var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye2);
+                                    break;
 
-                        case "Gptmd":
-                            var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            AddTaskToCollection(ye3);
-                            break;
+                                case "Gptmd":
+                                    var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye3);
+                                    break;
 
-                        case "XLSearch":
-                            var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            AddTaskToCollection(ye4);
-                            break;
+                                case "XLSearch":
+                                    var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye4);
+                                    break;
 
-                        case "Neo":
-                            var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
-                                AddTaskToCollection(task);
-                            break;
+                                case "Neo":
+                                    var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
+                                        AddTaskToCollection(task);
+                                    break;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Could not parse .toml: " + e.Message, null));
+                        }
                     }
                     break;
             }
@@ -688,7 +710,7 @@ namespace MetaMorpheusGUI
                 addGPTMDTaskButton.IsEnabled = false;
                 addSearchTaskButton.IsEnabled = false;
                 btnAddCrosslinkSearch.IsEnabled = false;
-                addNeoTaskButton.IsEnabled = false;
+                //addNeoTaskButton.IsEnabled = false;
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
@@ -755,7 +777,7 @@ namespace MetaMorpheusGUI
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
             btnAddCrosslinkSearch.IsEnabled = true;
-            addNeoTaskButton.IsEnabled = true;
+            //addNeoTaskButton.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
             OutputFolderTextBox.IsEnabled = true;
 
