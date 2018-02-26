@@ -353,7 +353,12 @@ namespace MetaMorpheusGUI
 
         private void AddAFile(string draggedFilePath)
         {
-            var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
+            // this line is NOT used because .xml.gz (extensions with two dots) mess up with Path.GetExtension
+            //var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
+
+            var filename = Path.GetFileName(draggedFilePath);
+            var theExtension = filename.Substring(filename.IndexOf(".")).ToLowerInvariant();
+            
             switch (theExtension)
             {
                 case ".raw":
@@ -365,14 +370,15 @@ namespace MetaMorpheusGUI
                     break;
 
                 case ".xml":
-                case ".gz":
+                case ".xml.gz":
                 case ".fasta":
                 case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
+                    
                     if (!ExistDa(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
-                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta")&& !Path.GetExtension(draggedFilePath).Equals(".fa"))
+                        if (theExtension.Equals(".xml") || theExtension.Equals(".xml.gz"))
                         {
                             try
                             {
@@ -381,7 +387,8 @@ namespace MetaMorpheusGUI
                             catch (Exception ee)
                             {
                                 MessageBox.Show(ee.ToString());
-                                Application.Current.Shutdown();
+                                proteinDbObservableCollection.Remove(uu);
+                                GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
                             }
                         }
                     }
@@ -431,6 +438,9 @@ namespace MetaMorpheusGUI
                             GuiWarnHandler(null, new StringEventArgs("Could not parse .toml: " + e.Message, null));
                         }
                     }
+                    break;
+                default:
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
                     break;
             }
         }
