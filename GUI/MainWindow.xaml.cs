@@ -388,7 +388,11 @@ namespace MetaMorpheusGUI
                             {
                                 MessageBox.Show(ee.ToString());
                                 proteinDbObservableCollection.Remove(uu);
-                                GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+
+                                if (theExtension.Equals(".fasta.gz") || theExtension.Equals(".mzml.gz"))
+                                    GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
+                                else
+                                    GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
                             }
                         }
                     }
