@@ -356,6 +356,8 @@ namespace MetaMorpheusGUI
             // this line is NOT used because .xml.gz (extensions with two dots) mess up with Path.GetExtension
             //var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
 
+            // we need to get the filename before parsing out the extension because if we assume that everything after the dot
+            // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
             var filename = Path.GetFileName(draggedFilePath);
             var theExtension = filename.Substring(filename.IndexOf(".")).ToLowerInvariant();
             
@@ -367,6 +369,11 @@ namespace MetaMorpheusGUI
                     if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     UpdateOutputFolderTextbox();
+                    break;
+
+                case ".mzml.gz":  // not implemented yet
+                case ".fasta.gz": // not implemented yet
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
                     break;
 
                 case ".xml":
@@ -387,12 +394,8 @@ namespace MetaMorpheusGUI
                             catch (Exception ee)
                             {
                                 MessageBox.Show(ee.ToString());
+                                GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
                                 proteinDbObservableCollection.Remove(uu);
-
-                                if (theExtension.Equals(".fasta.gz") || theExtension.Equals(".mzml.gz"))
-                                    GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
-                                else
-                                    GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
                             }
                         }
                     }
