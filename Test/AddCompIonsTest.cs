@@ -97,7 +97,8 @@ namespace Test
 
             SearchParameters SearchParameters = new SearchParameters
             {
-                MassDiffAcceptorType = MassDiffAcceptorType.Exact
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                SearchTarget = true,
             };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -137,6 +138,8 @@ namespace Test
 
             // Single ms2 scan
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray[0] != null);
+            Assert.That(allPsmsArray2[0] != null);
 
             Assert.IsTrue(allPsmsArray2[0].Score > 1);
 

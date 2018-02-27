@@ -988,18 +988,21 @@ namespace TaskLayer
             // Group and order psms
             Status("Matching peptides to proteins...", taskId);
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-            if (SearchParameters.SearchType == SearchType.NonSpecific)
+            if (proteinList.Any())
             {
-                List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
-                MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
-                foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
-                    new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, allPsms, proteinList, fixedModifications, variableModifications, terminusSpecificIons, ListOfDigestionParams, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string> { taskId }).Run();
-            }
-            else
-            {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, new List<string> { taskId });
-                var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-                compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+                if (SearchParameters.SearchType == SearchType.NonSpecific)
+                {
+                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
+                    MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+                    foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
+                        new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, allPsms, proteinList, fixedModifications, variableModifications, terminusSpecificIons, ListOfDigestionParams, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string> { taskId }).Run();
+                }
+                else
+                {
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, new List<string> { taskId });
+                    var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
+                    compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+                }
             }
 
             ProteinParsimonyResults proteinAnalysisResults = null;
@@ -1060,6 +1063,7 @@ namespace TaskLayer
                         rawfileinfos.Add(new RawFileInfo(file, myFileManager.LoadFile(file, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks)));
                     else
                         rawfileinfos.Add(new RawFileInfo(file));
+                    myFileManager.DoneWithFile(file);
                 }
 
                 // get PSMs to pass to FlashLFQ
@@ -1110,10 +1114,11 @@ namespace TaskLayer
 
                 // run FlashLFQ
                 var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns, 5.0, false, 2, false, true, true, GlobalVariables.ElementsLocation);
-                flashLfqResults = FlashLfqEngine.Run();
+                if(flashLFQIdentifications.Any())
+                    flashLfqResults = FlashLfqEngine.Run();
 
                 // get protein intensity back from FlashLFQ
-                if (proteinGroups != null)
+                if (proteinGroups != null && flashLfqResults != null)
                 {
                     Dictionary<string, EngineLayer.ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, EngineLayer.ProteinGroup>();
                     foreach (var proteinGroup in proteinGroups)
@@ -1133,7 +1138,7 @@ namespace TaskLayer
                     }
                 }
             }
-
+            
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             if (SearchParameters.DoHistogramAnalysis)
@@ -1246,7 +1251,7 @@ namespace TaskLayer
                 }
             }
 
-            if (SearchParameters.DoQuantification)
+            if (SearchParameters.DoQuantification && flashLfqResults != null)
             {
                 foreach (var file in flashLfqResults.peaks)
                     WritePeakQuantificationResultsToTsv(file.Value, OutputFolder, file.Key.filenameWithoutExtension + "_QuantifiedPeaks", new List<string> { taskId, "Individual Spectra Files", file.Key.fullFilePathWithExtension });

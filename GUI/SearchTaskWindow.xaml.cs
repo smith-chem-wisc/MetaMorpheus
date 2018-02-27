@@ -200,10 +200,10 @@ namespace MetaMorpheusGUI
             DeconvolutionMassToleranceInPpmTextBox.Text = task.CommonParameters.DeconvolutionMassTolerance.Value.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             eValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
-            trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
-            trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
-            TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
-            MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
+            //trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
+            //trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            //TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
+            //MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
@@ -351,10 +351,10 @@ namespace MetaMorpheusGUI
             else
                 CommonParamsToSave.TaskDescriptor = "SearchTask";
 
-            CommonParamsToSave.TrimMs1Peaks = trimMs1.IsChecked.Value;
-            CommonParamsToSave.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
-            CommonParamsToSave.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
-            CommonParamsToSave.MinRatio = double.TryParse(MinRatioCheckBox.Text, out double MinRatio) ? (double?)MinRatio : null;
+            //CommonParamsToSave.TrimMs1Peaks = trimMs1.IsChecked.Value;
+            //CommonParamsToSave.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
+            //CommonParamsToSave.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
+            //CommonParamsToSave.MinRatio = double.TryParse(MinRatioCheckBox.Text, out double MinRatio) ? (double?)MinRatio : null;
 
             if (classicSearchRadioButton.IsChecked.Value)
                 TheTask.SearchParameters.SearchType = SearchType.Classic;
@@ -561,11 +561,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
-        private void asdf_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

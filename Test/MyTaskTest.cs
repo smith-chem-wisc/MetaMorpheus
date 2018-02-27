@@ -60,6 +60,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
+                    SearchTarget = true,
                     SearchType = SearchType.Modern
                 }
             };
@@ -170,6 +171,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
+                    SearchTarget = true,
                     SearchType = SearchType.Modern,
                 }
             };
@@ -398,6 +400,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,
+                    SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                     ModsToWriteSelection = new Dictionary<string, int>
                     {
@@ -507,6 +510,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,
+                    SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
                 CommonParameters = new CommonParameters
@@ -663,6 +667,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,
+                    SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact
                 }
             };
