@@ -32,11 +32,6 @@ namespace TaskLayer
             this.disposeOfFileWhenDone = disposeOfFileWhenDone;
         }
 
-        public bool SeeIfOpen(string path)
-        {
-            return (myMsDataFiles.ContainsKey(path) && myMsDataFiles[path] != null);
-        }
-
         #endregion Public Constructors
 
         #region Public Events
@@ -45,21 +40,30 @@ namespace TaskLayer
 
         #endregion Public Events
 
+        #region Public Methods
+
+        public bool SeeIfOpen(string path)
+        {
+            return (myMsDataFiles.ContainsKey(path) && myMsDataFiles[path] != null);
+        }
+
+        #endregion Public Methods
+
         #region Internal Methods
 
         internal IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
         {
-            FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
+            //FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
             if (myMsDataFiles.TryGetValue(origDataFile, out IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> value) && value != null)
                 return value;
-
+            
             // By now know that need to load this file!!!
             lock (fileLoadingLock) // Lock because reading is sequential
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
-                    myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter);
+                    myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile);
                 else
 #if NETFRAMEWORK
-                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, filter);
+                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile);
 #else
                     Warn("No capability for reading " + origDataFile);
 #endif

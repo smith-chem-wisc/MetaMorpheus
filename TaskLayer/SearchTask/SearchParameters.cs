@@ -9,12 +9,13 @@ namespace TaskLayer
 
         public SearchParameters()
         {
+            // default search task parameters
             DisposeOfFileWhenDone = true;
             AddCompIons = false;
             DoParsimony = true;
             NoOneHitWonders = false;
-            ModPeptidesAreUnique = true;
-            DoQuantification = false;
+            ModPeptidesAreDifferent = true;
+            DoQuantification = true;
             QuantifyPpmTol = 5;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
@@ -39,7 +40,7 @@ namespace TaskLayer
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }
-        public bool ModPeptidesAreUnique { get; set; }
+        public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
         public double QuantifyPpmTol { get; set; }
