@@ -14,7 +14,7 @@ namespace TaskLayer
             AddCompIons = false;
             DoParsimony = true;
             NoOneHitWonders = false;
-            ModPeptidesAreDifferent = true;
+            ModPeptidesAreDifferent = false;
             DoQuantification = true;
             QuantifyPpmTol = 5;
             SearchTarget = true;
