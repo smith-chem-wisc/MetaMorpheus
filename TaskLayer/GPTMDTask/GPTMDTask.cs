@@ -211,18 +211,18 @@ namespace TaskLayer
             }
         }
 
-        private IEnumerable<double> GetAcceptableMassShifts(List<ModificationWithMass> fixedMods, List<ModificationWithMass> variableMods, List<ModificationWithMass> gptmdMods, IEnumerable<Tuple<double, double>> combos)
+        private static IEnumerable<double> GetAcceptableMassShifts(List<ModificationWithMass> fixedMods, List<ModificationWithMass> variableMods, List<ModificationWithMass> gptmdMods, IEnumerable<Tuple<double, double>> combos)
         {
             IEnumerable<double> gptmdNotches = gptmdMods.Select(b => b.monoisotopicMass);
             IEnumerable<double> gptmdMinusOtherModsNotches = GetObservedMasses(variableMods.Concat(fixedMods), gptmdMods);
             IEnumerable<double> multipleGptmdNotches = combos.Select(b => b.Item1 + b.Item2);
             IEnumerable<double> zeroNotch = new List<double> { 0 };
 
-            IEnumerable<double> allNotches = gptmdNotches.Concat(gptmdNotches).Concat(multipleGptmdNotches).Concat(zeroNotch);
+            IEnumerable<double> allNotches = gptmdNotches.Concat(gptmdMinusOtherModsNotches).Concat(multipleGptmdNotches).Concat(zeroNotch);
             return allNotches.GroupBy(b => Math.Round(b, 5)).Select(b => b.FirstOrDefault()).OrderBy(b => b);
         }
 
-        private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
+        private static IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
         {
             foreach (var modOnPeptide in enumerable)
             {
