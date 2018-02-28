@@ -298,12 +298,6 @@ namespace MetaMorpheusGUI
             if (openPicker.ShowDialog() == true)
                 foreach (var filepath in openPicker.FileNames)
                 {
-                    /*FileInfo info = new FileInfo(filepath);
-                    if (info.Length <= 0)
-                    {
-                        GuiWarnHandler(null, new StringEventArgs("Cannot Add an Empty Database", null));
-                    }
-                    else*/
                     AddAFile(filepath);
                 }
             dataGridXMLs.Items.Refresh();
