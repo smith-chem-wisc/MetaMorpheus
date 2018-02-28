@@ -353,7 +353,14 @@ namespace MetaMorpheusGUI
 
         private void AddAFile(string draggedFilePath)
         {
-            var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
+            // this line is NOT used because .xml.gz (extensions with two dots) mess up with Path.GetExtension
+            //var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
+
+            // we need to get the filename before parsing out the extension because if we assume that everything after the dot
+            // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
+            var filename = Path.GetFileName(draggedFilePath);
+            var theExtension = filename.Substring(filename.IndexOf(".")).ToLowerInvariant();
+            
             switch (theExtension)
             {
                 case ".raw":
@@ -364,15 +371,21 @@ namespace MetaMorpheusGUI
                     UpdateOutputFolderTextbox();
                     break;
 
+                case ".mzml.gz":  // not implemented yet
+                case ".fasta.gz": // not implemented yet
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
+                    break;
+
                 case ".xml":
-                case ".gz":
+                case ".xml.gz":
                 case ".fasta":
                 case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
+                    
                     if (!ExistDa(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
-                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta")&& !Path.GetExtension(draggedFilePath).Equals(".fa"))
+                        if (theExtension.Equals(".xml") || theExtension.Equals(".xml.gz"))
                         {
                             try
                             {
@@ -381,7 +394,8 @@ namespace MetaMorpheusGUI
                             catch (Exception ee)
                             {
                                 MessageBox.Show(ee.ToString());
-                                Application.Current.Shutdown();
+                                GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                                proteinDbObservableCollection.Remove(uu);
                             }
                         }
                     }
@@ -431,6 +445,9 @@ namespace MetaMorpheusGUI
                             GuiWarnHandler(null, new StringEventArgs("Could not parse .toml: " + e.Message, null));
                         }
                     }
+                    break;
+                default:
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
                     break;
             }
         }
