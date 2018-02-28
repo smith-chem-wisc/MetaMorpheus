@@ -342,6 +342,7 @@ namespace EngineLayer
                 var coverageArray = sequenceCoverageDisplay.ToCharArray();
                 foreach (var obsResidueLocation in coveredOneBasedResidues)
                     coverageArray[obsResidueLocation - 1] = char.ToUpper(coverageArray[obsResidueLocation - 1]);
+                sequenceCoverageDisplay = new string(coverageArray);
 
                 // check to see if there was an errored result; if not, add the coverage display
                 if(!errorResult)
