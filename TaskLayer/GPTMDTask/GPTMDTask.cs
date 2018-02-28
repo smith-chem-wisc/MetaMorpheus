@@ -77,6 +77,7 @@ namespace TaskLayer
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um = null;
+            //Decoys are currently not being searched with DecoyType.None
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out um)).ToList();
 
             var numRawFiles = currentRawFileList.Count;
