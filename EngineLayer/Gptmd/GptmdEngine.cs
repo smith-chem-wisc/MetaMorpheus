@@ -66,8 +66,6 @@ namespace EngineLayer.Gptmd
             var Mods = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
 
             int modsAdded = 0;
-            // Look at all confident identifications (with notch q value less than 0.01)
-            // Of those only targets (do not add modifications for decoy peptides)
             foreach (var psm in allIdentifications)
                 foreach (var peptide in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                     foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
