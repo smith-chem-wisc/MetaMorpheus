@@ -98,7 +98,8 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("G-PTM-D modifications count = " + gptmdModifications.Count + "; ");
-            MassDiffAcceptor tempSearchMode = new DotMassDiffAcceptor("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).GroupBy(b => Math.Round(b, 5)).Select(b => b.FirstOrDefault()).OrderBy(b => b), CommonParameters.PrecursorMassTolerance);
+            //puppet searchmode for writing files. Actual searchmode is filespecific
+            MassDiffAcceptor tempSearchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
@@ -118,7 +119,7 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).GroupBy(b => Math.Round(b, 5)).Select(b => b.FirstOrDefault()).OrderBy(b => b), combinedParams.PrecursorMassTolerance);
+                MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -207,6 +208,17 @@ namespace TaskLayer
                         yield return new Tuple<double, double>(mass1, mass2);
                 }
             }
+        }
+
+        private IEnumerable<double> GetAcceptableMassShifts(List<ModificationWithMass> fixedMods, List<ModificationWithMass> variableMods, List<ModificationWithMass> gptmdMods, IEnumerable<Tuple<double, double>> combos)
+        {
+            IEnumerable<double> gptmdNotches = gptmdMods.Select(b => b.monoisotopicMass);
+            IEnumerable<double> gptmdMinusOtherModsNotches = GetObservedMasses(variableMods.Concat(fixedMods), gptmdMods);
+            IEnumerable<double> multipleGptmdNotches = combos.Select(b => b.Item1 + b.Item2);
+            IEnumerable<double> zeroNotch = new List<double> { 0 };
+
+            IEnumerable<double> allNotches = gptmdNotches.Concat(gptmdNotches).Concat(multipleGptmdNotches).Concat(zeroNotch);
+            return allNotches.GroupBy(b => Math.Round(b, 5)).Select(b => b.FirstOrDefault()).OrderBy(b => b);
         }
 
         private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)

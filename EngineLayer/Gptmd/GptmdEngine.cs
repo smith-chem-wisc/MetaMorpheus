@@ -66,6 +66,8 @@ namespace EngineLayer.Gptmd
             var Mods = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
 
             int modsAdded = 0;
+            //foreach peptide in each psm and for each modification that matches the notch, 
+            //add that modification to every allowed residue
             foreach (var psm in allIdentifications)
                 foreach (var peptide in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                     foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
