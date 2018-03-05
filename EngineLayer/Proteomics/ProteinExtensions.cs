@@ -287,44 +287,42 @@ namespace EngineLayer
                         // Also digest using the proteolysis product start/end indices
                         //This should only be things where the proteolysis is not K/R and the 
                         foreach (var proteolysisProduct in protein.ProteolysisProducts)
-                            if (proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue)
+                            if (proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue
+                                && (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length))
                             {
-                                if (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length) //if at least one side is not a terminus
+                                int i = 0;
+                                while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedBeginPosition)//"<" to prevent additions if same index as residues
+                                    i++; //can't possibly crash, as last position in protein is an index to cleave after
+                                         // Start peptide
+                                for (int j = proteolysisProduct.OneBasedBeginPosition.Value; j < oneBasedIndicesToCleaveAfter[i]; j++)
                                 {
-                                    int i = 0;
-                                    while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedBeginPosition)//"<" to prevent additions if same index as residues
-                                        i++; //can't possibly crash, as last position in protein is an index to cleave after
-                                             // Start peptide
-                                    for (int j = proteolysisProduct.OneBasedBeginPosition.Value; j < oneBasedIndicesToCleaveAfter[i]; j++)
+                                    if ((!minPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 >= minPeptidesLength) &&
+                                        (!maxPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 <= maxPeptidesLength))
                                     {
-                                        if ((!minPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 >= minPeptidesLength) &&
-                                            (!maxPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 <= maxPeptidesLength))
-                                        {
-                                            foreach (PeptideWithSetModifications p in GetThePeptides(proteolysisProduct.OneBasedBeginPosition.Value, j, protein, j - proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.Type + " start", allKnownFixedModifications, digestionParams, variableModifications))
-                                                yield return p;
-                                        }
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(proteolysisProduct.OneBasedBeginPosition.Value, j, protein, j - proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.Type + " start", allKnownFixedModifications, digestionParams, variableModifications))
+                                            yield return p;
                                     }
-                                    while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition) //"<" to prevent additions if same index as residues, since i-- is below
-                                        i++;
-                                    //Now that we've obtained an index to cleave after that is past the proteolysis product
-                                    //we need to backtrack to get the index to cleave that is immediately before the the proteolysis product
-                                    //to do this, we will do i--
-                                    //In the nitch case that the proteolysis product is already an index to cleave
-                                    //no new peptides will be generated using this, so we will forgo i--
-                                    //this makes peptides of length 0, which are not generated due to the for loop
-                                    //removing this if statement will result in crashes from c-terminal proteolysis product end positions
-                                    if (oneBasedIndicesToCleaveAfter[i] != proteolysisProduct.OneBasedEndPosition)
-                                        i--;
-                                    // End
+                                }
+                                while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition) //"<" to prevent additions if same index as residues, since i-- is below
+                                    i++;
+                                //Now that we've obtained an index to cleave after that is past the proteolysis product
+                                //we need to backtrack to get the index to cleave that is immediately before the the proteolysis product
+                                //to do this, we will do i--
+                                //In the nitch case that the proteolysis product is already an index to cleave
+                                //no new peptides will be generated using this, so we will forgo i--
+                                //this makes peptides of length 0, which are not generated due to the for loop
+                                //removing this if statement will result in crashes from c-terminal proteolysis product end positions
+                                if (oneBasedIndicesToCleaveAfter[i] != proteolysisProduct.OneBasedEndPosition)
+                                    i--;
+                                // End
 
-                                    for (int j = oneBasedIndicesToCleaveAfter[i] + 1; j < proteolysisProduct.OneBasedEndPosition.Value; j++)
+                                for (int j = oneBasedIndicesToCleaveAfter[i] + 1; j < proteolysisProduct.OneBasedEndPosition.Value; j++)
+                                {
+                                    if ((!minPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 >= minPeptidesLength) &&
+                                        (!maxPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 <= maxPeptidesLength))
                                     {
-                                        if ((!minPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 >= minPeptidesLength) &&
-                                            (!maxPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 <= maxPeptidesLength))
-                                        {
-                                            foreach (PeptideWithSetModifications p in GetThePeptides(j, proteolysisProduct.OneBasedEndPosition.Value, protein, proteolysisProduct.OneBasedEndPosition.Value - j, proteolysisProduct.Type + " end", allKnownFixedModifications, digestionParams, variableModifications))
-                                                yield return p;
-                                        }
+                                        foreach (PeptideWithSetModifications p in GetThePeptides(j, proteolysisProduct.OneBasedEndPosition.Value, protein, proteolysisProduct.OneBasedEndPosition.Value - j, proteolysisProduct.Type + " end", allKnownFixedModifications, digestionParams, variableModifications))
+                                            yield return p;
                                     }
                                 }
                             }
