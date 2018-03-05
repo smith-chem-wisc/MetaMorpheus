@@ -502,9 +502,15 @@ namespace MetaMorpheusGUI
                 Exception exception = e;
                 //Find Output Folder
                 string outputFolder = e.Data["folder"].ToString();
-                var toml = Directory.GetFiles(outputFolder, "*.toml");
-                //will only be 1 toml per task
-                string tomlText = File.ReadAllText(toml[0]);
+                string tomlText = "";
+                if (!Directory.Exists(outputFolder))
+                {
+                    var toml = Directory.GetFiles(outputFolder, "*.toml");
+                    //will only be 1 toml per task
+                    if (toml.Any())
+                        tomlText = File.ReadAllText(toml[0]);
+                }
+
                 if (messageBoxResult == MessageBoxResult.Yes)
                 {
                     string body = exception.Message + "%0D%0A" + exception.Data +
