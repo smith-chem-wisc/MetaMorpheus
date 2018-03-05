@@ -132,7 +132,7 @@ namespace EngineLayer
             sb.Append("Protein Cumulative Decoy" + '\t');
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
-            sb.Append("Best Peptide QValue");
+            sb.Append("Best Peptide Notch QValue");
             return sb.ToString();
         }
 
