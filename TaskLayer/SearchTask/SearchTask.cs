@@ -1062,7 +1062,7 @@ namespace TaskLayer
                 }
 
                 // get PSMs to pass to FlashLFQ
-                var unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && p.FullSequence != null);
+                var unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p => p.FdrInfo.QValue < SearchParameters.QValueFilter && !p.IsDecoy && p.FullSequence != null);
                 var mypsmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
                 // pass protein group info for each PSM
@@ -1137,7 +1137,7 @@ namespace TaskLayer
 
             if (SearchParameters.DoHistogramAnalysis)
             {
-                var limitedpsms_with_fdr = allPsms.Where(b => (b.FdrInfo.QValue <= 0.01)).ToList();
+                var limitedpsms_with_fdr = allPsms.Where(b => (b.FdrInfo.QValue <= SearchParameters.QValueFilter)).ToList();
                 if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
                 {
                     Status("Running histogram analysis...", new List<string> { taskId });
