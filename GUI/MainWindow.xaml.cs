@@ -503,14 +503,17 @@ namespace MetaMorpheusGUI
                 //Find Output Folder
                 string outputFolder = e.Data["folder"].ToString();
                 string tomlText = "";
-                if (!Directory.Exists(outputFolder))
+                if (Directory.Exists(outputFolder))
                 {
-                    var toml = Directory.GetFiles(outputFolder, "*.toml");
+                    var tomls = Directory.GetFiles(outputFolder, "*.toml");
                     //will only be 1 toml per task
-                    if (toml.Any())
-                        tomlText = File.ReadAllText(toml[0]);
+                    foreach (var tomlFile in tomls)
+                        tomlText += "\n" + File.ReadAllText(tomlFile);
+                    if (!tomls.Any())
+                        tomlText = "TOML not found";
                 }
-
+                else
+                    tomlText = "Directory not found";
                 if (messageBoxResult == MessageBoxResult.Yes)
                 {
                     string body = exception.Message + "%0D%0A" + exception.Data +
