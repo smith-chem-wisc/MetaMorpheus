@@ -108,7 +108,7 @@ namespace EngineLayer
             sb.Append("Gene" + '\t');
             sb.Append("Organism" + '\t');
             sb.Append("Protein Full Name" + '\t');
-            sb.Append("Unmodified Mass" + '\t');
+            sb.Append("Protein Unmodified Mass" + '\t');
             sb.Append("Number of Proteins in Group" + '\t');
             sb.Append("Unique Peptides" + '\t');
             sb.Append("Shared Peptides" + '\t');
@@ -127,15 +127,12 @@ namespace EngineLayer
                     sb.Append("Intensity" + '\t');
             }
             sb.Append("Number of PSMs" + '\t');
-            sb.Append("Summed Score" + '\t');
-
-            sb.Append("Decoy/Contaminant/Target" + '\t');
-            sb.Append("Cumulative Target" + '\t');
-            sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("QValue" + '\t');
-
+            sb.Append("Protein Decoy/Contaminant/Target" + '\t');
+            sb.Append("Protein Cumulative Target" + '\t');
+            sb.Append("Protein Cumulative Decoy" + '\t');
+            sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
-            sb.Append("Best Peptide QValue");
+            sb.Append("Best Peptide Notch QValue");
             return sb.ToString();
         }
 
@@ -229,11 +226,7 @@ namespace EngineLayer
             // number of PSMs for listed peptides
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
-
-            // summed metamorpheus score
-            sb.Append(ProteinGroupScore);
-            sb.Append("\t");
-
+            
             // isDecoy
             if (isDecoy)
                 sb.Append("D");
@@ -266,6 +259,8 @@ namespace EngineLayer
             return sb.ToString();
         }
 
+        // this method is only used internally, to make protein grouping faster
+        // this is NOT an output and is NOT used for protein FDR calculations
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
