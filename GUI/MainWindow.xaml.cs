@@ -360,7 +360,7 @@ namespace MetaMorpheusGUI
             // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
             var filename = Path.GetFileName(draggedFilePath);
             var theExtension = filename.Substring(filename.IndexOf(".")).ToLowerInvariant();
-            
+
             switch (theExtension)
             {
                 case ".raw":
@@ -381,7 +381,7 @@ namespace MetaMorpheusGUI
                 case ".fasta":
                 case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
-                    
+
                     if (!ExistDa(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
@@ -447,7 +447,7 @@ namespace MetaMorpheusGUI
                     }
                     break;
                 default:
-                    GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                    GuiWarnHandler(null, new StringEventArgs("Unrecognized file type: " + theExtension, null));
                     break;
             }
         }
@@ -500,7 +500,20 @@ namespace MetaMorpheusGUI
                 var messageBoxResult = System.Windows.MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo);
                 outRichTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
-
+                //Find Output Folder
+                string outputFolder = e.Data["folder"].ToString();
+                string tomlText = "";
+                if (Directory.Exists(outputFolder))
+                {
+                    var tomls = Directory.GetFiles(outputFolder, "*.toml");
+                    //will only be 1 toml per task
+                    foreach (var tomlFile in tomls)
+                        tomlText += "\n" + File.ReadAllText(tomlFile);
+                    if (!tomls.Any())
+                        tomlText = "TOML not found";
+                }
+                else
+                    tomlText = "Directory not found";
                 if (messageBoxResult == MessageBoxResult.Yes)
                 {
                     string body = exception.Message + "%0D%0A" + exception.Data +
@@ -508,9 +521,12 @@ namespace MetaMorpheusGUI
                        "%0D%0A" + exception.Source +
                        "%0D%0A %0D%0A %0D%0A %0D%0A SYSTEM INFO: %0D%0A " +
                         SystemInfo.CompleteSystemInfo() +
-                       "%0D%0A%0D%0A MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
-
+                       "%0D%0A%0D%0A MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion
+                       + "%0D%0A %0D%0A %0D%0A %0D%0A TOML: %0D%0A " +
+                       tomlText;
                     body = body.Replace('&', ' ');
+                    body = body.Replace("\n", "%0D%0A");
+                    body = body.Replace("\r", "%0D%0A");
                     string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
                     System.Diagnostics.Process.Start(mailto);
                     Console.WriteLine(body);
