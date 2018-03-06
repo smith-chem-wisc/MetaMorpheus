@@ -303,10 +303,12 @@ namespace TaskLayer
 
         protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um)
         {
+            List<string> dbErrors = new List<string>();
+
             if (Path.GetExtension(fileName).Equals(".fasta") || Path.GetExtension(fileName).Equals(".fa"))
             {
                 um = null;
-                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression, ProteinDbLoader.uniprot_organism_expression);
+                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression, ProteinDbLoader.uniprot_organism_expression, out dbErrors);
             }
             else
             {

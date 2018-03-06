@@ -78,7 +78,7 @@ namespace TaskLayer
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um = null;
             //Decoys are currently not being searched with DecoyType.None
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, b.IsContaminant, out um)).ToList();
 
             var numRawFiles = currentRawFileList.Count;
 
@@ -156,7 +156,7 @@ namespace TaskLayer
 
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, false, new List<string> { taskId }).Run();
 
-            var writtenFile = Path.Combine(OutputFolder, "PSMs.psmtsv");
+            var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
             SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
 
@@ -164,7 +164,17 @@ namespace TaskLayer
 
             if (dbFilenameList.Any(b => !b.IsContaminant))
             {
-                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
+                // do NOT use this code (Path.GetFilenameWithoutExtension) because GPTMD on .xml.gz will result in .xml.xml file type being written
+                //string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
+                
+                List<string> databaseNames = new List<string>();
+                foreach (var nonContaminantDb in dbFilenameList.Where(p => !p.IsContaminant))
+                {
+                    var dbName = Path.GetFileName(nonContaminantDb.FilePath);
+                    int indexOfFirstDot = dbName.IndexOf(".");
+                    databaseNames.Add(dbName.Substring(0, indexOfFirstDot));
+                }
+                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
@@ -177,7 +187,16 @@ namespace TaskLayer
             }
             if (dbFilenameList.Any(b => b.IsContaminant))
             {
-                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
+                // do NOT use this code (Path.GetFilenameWithoutExtension) because GPTMD on .xml.gz will result in .xml.xml file type being written
+                //string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
+                List<string> databaseNames = new List<string>();
+                foreach (var contaminantDb in dbFilenameList.Where(p => p.IsContaminant))
+                {
+                    var dbName = Path.GetFileName(contaminantDb.FilePath);
+                    int indexOfFirstDot = dbName.IndexOf(".");
+                    databaseNames.Add(dbName.Substring(0, indexOfFirstDot));
+                }
+                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 

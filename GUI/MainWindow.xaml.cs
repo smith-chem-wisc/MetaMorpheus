@@ -447,7 +447,7 @@ namespace MetaMorpheusGUI
                     }
                     break;
                 default:
-                    GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                    GuiWarnHandler(null, new StringEventArgs("Unrecognized file type: " + theExtension, null));
                     break;
             }
         }
