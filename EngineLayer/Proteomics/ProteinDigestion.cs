@@ -70,7 +70,7 @@ namespace EngineLayer
                     if (Protease.OkayLength(oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i], MinPeptidesLength, MaxPeptidesLength))
                     {
                         intervals.Add(new ProteinInterval(oneBasedIndicesToCleaveAfter[lastIndex - i] + 1, oneBasedIndicesToCleaveAfter[lastIndex],
-                            protein, oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i], "semi"));
+                            protein, oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i], "semiN"));
                     }
                 }
                 else //TerminusType.C
@@ -78,7 +78,7 @@ namespace EngineLayer
                     if (Protease.OkayLength(oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0], MinPeptidesLength, MaxPeptidesLength))
                     {
                         intervals.Add(new ProteinInterval(oneBasedIndicesToCleaveAfter[0] + 1, oneBasedIndicesToCleaveAfter[i],
-                            protein, oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0], "semi"));
+                            protein, oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0], "semiC"));
                     }
                 }
             }

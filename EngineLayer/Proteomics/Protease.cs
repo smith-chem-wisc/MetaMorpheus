@@ -323,7 +323,8 @@ namespace EngineLayer
             // This should only be things where the proteolysis is not K/R and the
             foreach (var proteolysisProduct in protein.ProteolysisProducts)
             {
-                if (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length) //if at least one side is not a terminus
+                if (proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue
+                    && (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length)) //if at least one side is not a terminus
                 {
                     int i = 0;
                     while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedBeginPosition)//"<" to prevent additions if same index as residues
