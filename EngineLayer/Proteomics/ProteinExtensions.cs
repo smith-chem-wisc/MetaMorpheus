@@ -287,12 +287,13 @@ namespace EngineLayer
                         // Also digest using the proteolysis product start/end indices
                         //This should only be things where the proteolysis is not K/R and the 
                         foreach (var proteolysisProduct in protein.ProteolysisProducts)
-                            if (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length) //if at least one side is not a terminus
+                            if (proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue
+                                && (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length))
                             {
                                 int i = 0;
                                 while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedBeginPosition)//"<" to prevent additions if same index as residues
                                     i++; //can't possibly crash, as last position in protein is an index to cleave after
-                                // Start peptide
+                                         // Start peptide
                                 for (int j = proteolysisProduct.OneBasedBeginPosition.Value; j < oneBasedIndicesToCleaveAfter[i]; j++)
                                 {
                                     if ((!minPeptidesLength.HasValue || j - proteolysisProduct.OneBasedBeginPosition + 1 >= minPeptidesLength) &&
@@ -314,6 +315,7 @@ namespace EngineLayer
                                 if (oneBasedIndicesToCleaveAfter[i] != proteolysisProduct.OneBasedEndPosition)
                                     i--;
                                 // End
+
                                 for (int j = oneBasedIndicesToCleaveAfter[i] + 1; j < proteolysisProduct.OneBasedEndPosition.Value; j++)
                                 {
                                     if ((!minPeptidesLength.HasValue || proteolysisProduct.OneBasedEndPosition - j + 1 >= minPeptidesLength) &&
