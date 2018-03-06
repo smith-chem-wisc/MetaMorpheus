@@ -156,7 +156,7 @@ namespace TaskLayer
 
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, false, new List<string> { taskId }).Run();
 
-            var writtenFile = Path.Combine(OutputFolder, "PSMs.psmtsv");
+            var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
             SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
 
