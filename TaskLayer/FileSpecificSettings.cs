@@ -100,6 +100,10 @@ namespace TaskLayer
             {
                 TopNpeaks = tomlDict["TopNpeaks"].Value.Get<int?>();
             }
+            if (tomlDict.ContainsKey("ToleranceType"))
+            {
+                ToleranceType = tomlDict["ToleranceType"].Value.Get<string>();
+            }
         }
 
         #endregion Public Constructors
@@ -130,7 +134,7 @@ namespace TaskLayer
         public int? TopNpeaks { get; set; }
         public bool? SemiProteaseDigestion { get; set; }
         public TerminusType? TerminusTypeSemiProtease { get; set; }
-
+        public string ToleranceType { get; set; }
         #endregion Public Properties
     }
 }

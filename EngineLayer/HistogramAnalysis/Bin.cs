@@ -127,7 +127,7 @@ namespace EngineLayer.HistogramAnalysis
             foreach (var hm in ok)
                 if (Math.Abs(hm.Item1 + hm.Item2 - MassShift) <= v && CountTarget < hm.Item3)
                     okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture) + " and " + Math.Max(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture));
-            Combos = string.Join(" or ", okk);
+            Combos = string.Join("|", okk);
         }
 
         public double ComputeZ(double v)
@@ -143,7 +143,7 @@ namespace EngineLayer.HistogramAnalysis
                 if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
                     ok.Add(hm.id);
             }
-            UniprotID = string.Join(" or ", ok);
+            UniprotID = string.Join("|", ok);
         }
 
         public void IdentifyAA(double v)
@@ -169,7 +169,7 @@ namespace EngineLayer.HistogramAnalysis
                     }
                 }
             }
-            AA = string.Join(" or ", ok);
+            AA = string.Join("|", ok);
         }
 
         public void IdentifyUnimodBins(double v)
@@ -187,9 +187,9 @@ namespace EngineLayer.HistogramAnalysis
                     okDiff.Add(theMod.monoisotopicMass - MassShift);
                 }
             }
-            UnimodId = string.Join(" or ", ok);
-            UnimodFormulas = string.Join(" or ", okformula);
-            UnimodDiffs = string.Join(" or ", okDiff);
+            UnimodId = string.Join("|", ok);
+            UnimodFormulas = string.Join("|", okformula);
+            UnimodDiffs = string.Join("|", okDiff);
         }
 
         #endregion Public Methods
