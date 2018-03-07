@@ -1114,7 +1114,7 @@ namespace TaskLayer
 
                 // run FlashLFQ
                 var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns, 5.0, false, 2, false, true, true, GlobalVariables.ElementsLocation);
-                if(flashLFQIdentifications.Any())
+                if (flashLFQIdentifications.Any())
                     flashLfqResults = FlashLfqEngine.Run();
 
                 // get protein intensity back from FlashLFQ
@@ -1138,12 +1138,12 @@ namespace TaskLayer
                     }
                 }
             }
-            
+
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             if (SearchParameters.DoHistogramAnalysis)
             {
-                var limitedpsms_with_fdr = allPsms.Where(b => (b.FdrInfo.QValue <= SearchParameters.QValueFilter)).ToList();
+                var limitedpsms_with_fdr = allPsms.Where(b => (b.FdrInfo.QValue <= 0.01)).ToList();
                 if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
                 {
                     Status("Running histogram analysis...", new List<string> { taskId });
@@ -1159,8 +1159,9 @@ namespace TaskLayer
             {
                 if (currentRawFileList.Count > 1)
                 {
+                    var psmsWithFilterOutputToTsv = allPsms.Where(b => (b.FdrInfo.QValue <= SearchParameters.QValueFilter)).ToList();
                     var writtenFile = Path.Combine(OutputFolder, "aggregatePSMs.psmtsv");
-                    WritePsmsToTsv(allPsms, writtenFile, SearchParameters.ModsToWriteSelection);
+                    WritePsmsToTsv(psmsWithFilterOutputToTsv, writtenFile, SearchParameters.ModsToWriteSelection);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
 
                     var writtenFileForPercolator = Path.Combine(OutputFolder, "forPercolator.tsv");

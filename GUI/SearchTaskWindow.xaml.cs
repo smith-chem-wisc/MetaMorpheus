@@ -172,6 +172,7 @@ namespace MetaMorpheusGUI
             checkBoxDecoy.IsChecked = task.SearchParameters.DecoyType != DecoyType.None;
             radioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
             radioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
+            qValueFilter.Text = task.SearchParameters.QValueFilter.ToString();
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -324,6 +325,11 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The deconvolution intensity ratio contains unrecognized characters. \n You entered " + '"' + DeconvolutionIntensityRatioTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
+            if (!double.TryParse(qValueFilter.Text, out double qfil) || qfil <= 0)
+            {
+                MessageBox.Show("The QValue Filter contains unrecognized characters. \n You entered " + '"' + qValueFilter.Text + '"' + "\n Please enter a positive number.");
+                return;
+            }
             if (!double.TryParse(DeconvolutionMassToleranceInPpmTextBox.Text, out double dmtip) || dmtip <= 0)
             {
                 MessageBox.Show("The deconvolution mass tolerance (in ppm) contains unrecognized characters. \n You entered " + '"' + DeconvolutionMassToleranceInPpmTextBox.Text + '"' + "\n Please enter a positive number.");
@@ -370,6 +376,8 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
+            if (QValueCheck.IsChecked.Value)
+                TheTask.SearchParameters.QValueFilter = Double.Parse(qValueFilter.Text);
             if (checkBoxDecoy.IsChecked.Value)
             {
                 if (radioButtonReverseDecoy.IsChecked.Value)

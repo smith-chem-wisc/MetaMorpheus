@@ -118,10 +118,10 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <CheckBox x:Name="QValue" Content="QValue"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />
+                                        <CheckBox x:Name="QValueCheck" Content="QValue"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
-                                        <TextBox Text=".01" HorizontalAlignment="Left" x:Name="QValueInput"  IsEnabled="{Binding IsChecked, ElementName=QValue}" Margin="10,0,0,1" Width="35" RenderTransformOrigin="0.195,0.556" />
+                                        <TextBox Text=".01" HorizontalAlignment="Left" x:Name="qValueFilter"  IsEnabled="{Binding IsChecked, ElementName=QValueCheck}" Margin="10,0,0,1" Width="35" RenderTransformOrigin="0.195,0.556" />
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
