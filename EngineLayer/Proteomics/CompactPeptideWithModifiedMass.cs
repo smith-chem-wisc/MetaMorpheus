@@ -6,68 +6,39 @@ namespace EngineLayer
     [Serializable]
     internal class CompactPeptideWithModifiedMass : CompactPeptideBase
     {
-        #region Public Constructors
-
-        public CompactPeptideWithModifiedMass(CompactPeptideBase cp, double MonoisotopicMassIncludingFixedMods)
+        public CompactPeptideWithModifiedMass(CompactPeptideBase cp, double monoisotopicMassIncludingFixedMods)
         {
-            this.CTerminalMasses = cp.CTerminalMasses;
-            this.NTerminalMasses = cp.NTerminalMasses;
-            this.MonoisotopicMassIncludingFixedMods = cp.MonoisotopicMassIncludingFixedMods;
-            this.ModifiedMass = MonoisotopicMassIncludingFixedMods;
+            CTerminalMasses = cp.CTerminalMasses;
+            NTerminalMasses = cp.NTerminalMasses;
+            MonoisotopicMassIncludingFixedMods = cp.MonoisotopicMassIncludingFixedMods;
+            ModifiedMass = monoisotopicMassIncludingFixedMods;
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public double ModifiedMass { get; set; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public void SwapMonoisotopicMassWithModifiedMass()
         {
-            double tempDouble = this.MonoisotopicMassIncludingFixedMods;
-            this.MonoisotopicMassIncludingFixedMods = this.ModifiedMass;
-            this.ModifiedMass = tempDouble;
+            double tempDouble = MonoisotopicMassIncludingFixedMods;
+            MonoisotopicMassIncludingFixedMods = ModifiedMass;
+            ModifiedMass = tempDouble;
         }
 
         public void CropTerminalMasses(TerminusType terminusType)
         {
             List<double> tempList = new List<double>();
-            if (terminusType == TerminusType.N)
+            double[] masses = terminusType == TerminusType.N ? NTerminalMasses : CTerminalMasses;
+            for (int i = 0; i < masses.Length; i++)
             {
-                for (int i = 0; i < NTerminalMasses.Length; i++)
+                if (masses[i] < MonoisotopicMassIncludingFixedMods)
                 {
-                    if (NTerminalMasses[i] < MonoisotopicMassIncludingFixedMods)
-                    {
-                        tempList.Add(NTerminalMasses[i]);
-                    }
-                    else
-                    {
-                        NTerminalMasses = tempList.ToArray();
-                        break;
-                    }
+                    tempList.Add(masses[i]);
                 }
-            }
-            else
-            {
-                for (int i = 0; i < CTerminalMasses.Length; i++)
+                else
                 {
-                    if (CTerminalMasses[i] < MonoisotopicMassIncludingFixedMods)
-                    {
-                        tempList.Add(CTerminalMasses[i]);
-                    }
-                    else
-                    {
-                        CTerminalMasses = tempList.ToArray();
-                        break;
-                    }
+                    masses = tempList.ToArray();
+                    break;
                 }
             }
         }
-
-        #endregion Public Methods
     }
 }

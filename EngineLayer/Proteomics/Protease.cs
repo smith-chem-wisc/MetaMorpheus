@@ -95,8 +95,11 @@ namespace EngineLayer
         /// <returns></returns>
         private bool SequenceInducesCleavage(string proteinSequence, int proteinSequenceIndex, string sequenceInducingCleavage)
         {
-            return (CleavageTerminus != TerminusType.N && proteinSequenceIndex - sequenceInducingCleavage.Length + 1 >= 0 && proteinSequence.Substring(proteinSequenceIndex - sequenceInducingCleavage.Length + 1, sequenceInducingCleavage.Length).Equals(sequenceInducingCleavage, StringComparison.OrdinalIgnoreCase))
-                || (CleavageTerminus == TerminusType.N && proteinSequenceIndex + 1 + sequenceInducingCleavage.Length <= proteinSequence.Length && proteinSequence.Substring(proteinSequenceIndex + 1, sequenceInducingCleavage.Length).Equals(sequenceInducingCleavage, StringComparison.OrdinalIgnoreCase));
+            return (CleavageTerminus != TerminusType.N 
+                    && proteinSequenceIndex - sequenceInducingCleavage.Length + 1 >= 0 
+                    && proteinSequence.Substring(proteinSequenceIndex - sequenceInducingCleavage.Length + 1, sequenceInducingCleavage.Length).Equals(sequenceInducingCleavage, StringComparison.OrdinalIgnoreCase))
+                || (CleavageTerminus == TerminusType.N && proteinSequenceIndex + 1 + sequenceInducingCleavage.Length <= proteinSequence.Length 
+                    && proteinSequence.Substring(proteinSequenceIndex + 1, sequenceInducingCleavage.Length).Equals(sequenceInducingCleavage, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
@@ -108,8 +111,12 @@ namespace EngineLayer
         /// <returns></returns>
         private bool SequencePreventsCleavage(string proteinSequence, int proteinSequenceIndex, string sequencePreventingCleavage)
         {
-            return (CleavageTerminus != TerminusType.N && proteinSequenceIndex + 1 + sequencePreventingCleavage.Length <= proteinSequence.Length && proteinSequence.Substring(proteinSequenceIndex + 1, sequencePreventingCleavage.Length).Equals(sequencePreventingCleavage, StringComparison.OrdinalIgnoreCase))
-                || (CleavageTerminus == TerminusType.N && proteinSequenceIndex - sequencePreventingCleavage.Length + 1 >= 0 && proteinSequence.Substring(proteinSequenceIndex - sequencePreventingCleavage.Length + 1, sequencePreventingCleavage.Length).Equals(sequencePreventingCleavage, StringComparison.OrdinalIgnoreCase));
+            return (CleavageTerminus != TerminusType.N 
+                    && proteinSequenceIndex + 1 + sequencePreventingCleavage.Length <= proteinSequence.Length 
+                    && proteinSequence.Substring(proteinSequenceIndex + 1, sequencePreventingCleavage.Length).Equals(sequencePreventingCleavage, StringComparison.OrdinalIgnoreCase))
+                || (CleavageTerminus == TerminusType.N 
+                    && proteinSequenceIndex - sequencePreventingCleavage.Length + 1 >= 0 
+                    && proteinSequence.Substring(proteinSequenceIndex - sequencePreventingCleavage.Length + 1, sequencePreventingCleavage.Length).Equals(sequencePreventingCleavage, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
@@ -121,10 +128,10 @@ namespace EngineLayer
         /// <param name="minPeptidesLength"></param>
         /// <param name="maxPeptidesLength"></param>
         /// <returns></returns>
-        internal List<ProteinInterval> GetDigestionIntervals(Protein protein, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior,
+        internal List<Peptide> GetDigestionIntervals(Protein protein, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior,
             int? minPeptidesLength, int? maxPeptidesLength)
         {
-            List<ProteinInterval> intervals = new List<ProteinInterval>();
+            List<Peptide> intervals = new List<Peptide>();
 
             // proteolytic cleavage in one spot
             if (CleavageSpecificity == CleavageSpecificity.SingleN || CleavageSpecificity == CleavageSpecificity.SingleC)
@@ -133,12 +140,12 @@ namespace EngineLayer
                 {
                     if (CleavageSpecificity == CleavageSpecificity.SingleN && OkayMinLength(protein.Length - proteinStart + 1, minPeptidesLength))
                     {
-                        intervals.Add(new ProteinInterval(proteinStart, Math.Min(protein.Length, proteinStart + (maxPeptidesLength ?? 50)), protein, 0, "SingleN"));
+                        intervals.Add(new Peptide(protein, proteinStart, Math.Min(protein.Length, proteinStart + (maxPeptidesLength ?? 50)), 0, "SingleN"));
                     }
 
                     if (CleavageSpecificity == CleavageSpecificity.SingleC && OkayMinLength(proteinStart, minPeptidesLength))
                     {
-                        intervals.Add(new ProteinInterval(Math.Max(1, proteinStart - (maxPeptidesLength ?? 50)), proteinStart, protein, 0, "SingleC"));
+                        intervals.Add(new Peptide(protein, Math.Max(1, proteinStart - (maxPeptidesLength ?? 50)), proteinStart, 0, "SingleC"));
                     }
                 }
             }
@@ -147,13 +154,13 @@ namespace EngineLayer
                 // retain methionine
                 if ((initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M') && OkayLength(protein.Length, minPeptidesLength, maxPeptidesLength))
                 {
-                    intervals.Add(new ProteinInterval(1, protein.Length, protein, 0, "full"));
+                    intervals.Add(new Peptide(protein, 1, protein.Length, 0, "full"));
                 }
 
                 // cleave methionine
                 if ((initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M') && OkayLength(protein.Length - 1, minPeptidesLength, maxPeptidesLength))
                 {
-                    intervals.Add(new ProteinInterval(2, protein.Length, protein, 0, "full:M cleaved"));
+                    intervals.Add(new Peptide(protein, 2, protein.Length, 0, "full:M cleaved"));
                 }
 
                 // Also digest using the proteolysis product start/end indices
@@ -162,7 +169,7 @@ namespace EngineLayer
                     .Where(proteolysisProduct => proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue
                         && OkayLength(proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1, minPeptidesLength, maxPeptidesLength))
                     .Select(proteolysisProduct =>
-                        new ProteinInterval(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type)));
+                        new Peptide(protein, proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, 0, proteolysisProduct.Type)));
             }
 
             // Full proteolytic cleavage
@@ -193,7 +200,7 @@ namespace EngineLayer
         /// <param name="minPeptidesLength"></param>
         /// <param name="maxPeptidesLength"></param>
         /// <returns></returns>
-        private IEnumerable<ProteinInterval> FullDigestion(Protein protein, InitiatorMethionineBehavior initiatorMethionineBehavior,
+        private IEnumerable<Peptide> FullDigestion(Protein protein, InitiatorMethionineBehavior initiatorMethionineBehavior,
             int maximumMissedCleavages, int? minPeptidesLength, int? maxPeptidesLength)
         {
             List<int> oneBasedIndicesToCleaveAfter = GetDigestionSiteIndices(protein.BaseSequence);
@@ -204,14 +211,14 @@ namespace EngineLayer
                     if (Retain(i, initiatorMethionineBehavior, protein[0])
                         && OkayLength(oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i], minPeptidesLength, maxPeptidesLength))
                     {
-                        yield return new ProteinInterval(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1],
-                            protein, missed_cleavages, "full");
+                        yield return new Peptide(protein, oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1],
+                            missed_cleavages, "full");
                     }
                     if (Cleave(i, initiatorMethionineBehavior, protein[0])
                         && OkayLength(oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - 1, minPeptidesLength, maxPeptidesLength))
                     {
-                        yield return new ProteinInterval(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1],
-                            protein, missed_cleavages, "full:M cleaved");
+                        yield return new Peptide(protein, 2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1],
+                            missed_cleavages, "full:M cleaved");
                     }
                 }
 
@@ -232,8 +239,8 @@ namespace EngineLayer
                             && OkayLength(oneBasedIndicesToCleaveAfter[i + missed_cleavages] - proteolysisProduct.OneBasedBeginPosition.Value + 1, minPeptidesLength, maxPeptidesLength);
                         if (startPeptide)
                         {
-                            yield return new ProteinInterval(proteolysisProduct.OneBasedBeginPosition.Value, oneBasedIndicesToCleaveAfter[i + missed_cleavages],
-                                protein, missed_cleavages, proteolysisProduct.Type + " start");
+                            yield return new Peptide(protein, proteolysisProduct.OneBasedBeginPosition.Value, oneBasedIndicesToCleaveAfter[i + missed_cleavages],
+                                missed_cleavages, proteolysisProduct.Type + " start");
                         }
 
                         while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition)
@@ -247,8 +254,8 @@ namespace EngineLayer
                             && OkayLength(proteolysisProduct.OneBasedEndPosition.Value - oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1 - 1, minPeptidesLength, maxPeptidesLength);
                         if (end)
                         {
-                            yield return new ProteinInterval(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, proteolysisProduct.OneBasedEndPosition.Value,
-                                protein, missed_cleavages, proteolysisProduct.Type + " end");
+                            yield return new Peptide(protein, oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, proteolysisProduct.OneBasedEndPosition.Value,
+                                missed_cleavages, proteolysisProduct.Type + " end");
                         }
                     }
                 }
@@ -264,10 +271,10 @@ namespace EngineLayer
         /// <param name="minPeptidesLength"></param>
         /// <param name="maxPeptidesLength"></param>
         /// <returns></returns>
-        private IEnumerable<ProteinInterval> SemiProteolyticDigestion(Protein protein, InitiatorMethionineBehavior initiatorMethionineBehavior,
+        private IEnumerable<Peptide> SemiProteolyticDigestion(Protein protein, InitiatorMethionineBehavior initiatorMethionineBehavior,
             int maximumMissedCleavages, int? minPeptidesLength, int? maxPeptidesLength)
         {
-            List<ProteinInterval> intervals = new List<ProteinInterval>();
+            List<Peptide> intervals = new List<Peptide>();
             List<int> oneBasedIndicesToCleaveAfter = GetDigestionSiteIndices(protein.BaseSequence);
             for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - maximumMissedCleavages - 1; i++)
             {
@@ -299,7 +306,7 @@ namespace EngineLayer
                 {
                     if (OkayLength(j - nTerminusProtein, minPeptidesLength, maxPeptidesLength))
                     {
-                        intervals.Add(new ProteinInterval(nTerminusProtein + 1, j, protein, j - nTerminusProtein, "semiN"));
+                        intervals.Add(new Peptide(protein, nTerminusProtein + 1, j, j - nTerminusProtein, "semiN"));
                     }
                 }
             }
@@ -314,7 +321,7 @@ namespace EngineLayer
                 {
                     if (OkayLength(cTerminusProtein - j, minPeptidesLength, maxPeptidesLength))
                     {
-                        intervals.Add(new ProteinInterval(j + 1, cTerminusProtein, protein, cTerminusProtein - j, "semiC"));
+                        intervals.Add(new Peptide(protein, j + 1, cTerminusProtein, cTerminusProtein - j, "semiC"));
                     }
                 }
             }
@@ -337,8 +344,8 @@ namespace EngineLayer
                     {
                         if (OkayLength(j - proteolysisProduct.OneBasedBeginPosition + 1, minPeptidesLength, maxPeptidesLength))
                         {
-                            intervals.Add(new ProteinInterval(proteolysisProduct.OneBasedBeginPosition.Value, j,
-                                protein, j - proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.Type + " start"));
+                            intervals.Add(new Peptide(protein, proteolysisProduct.OneBasedBeginPosition.Value, j,
+                                j - proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.Type + " start"));
                         }
                     }
                     while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition) //"<" to prevent additions if same index as residues, since i-- is below
@@ -363,8 +370,8 @@ namespace EngineLayer
                     {
                         if (OkayLength(proteolysisProduct.OneBasedEndPosition - j + 1, minPeptidesLength, maxPeptidesLength))
                         {
-                            intervals.Add(new ProteinInterval(j, proteolysisProduct.OneBasedEndPosition.Value,
-                                protein, proteolysisProduct.OneBasedEndPosition.Value - j, proteolysisProduct.Type + " end"));
+                            intervals.Add(new Peptide(protein, j, proteolysisProduct.OneBasedEndPosition.Value,
+                                proteolysisProduct.OneBasedEndPosition.Value - j, proteolysisProduct.Type + " end"));
                         }
                     }
                 }
@@ -382,25 +389,25 @@ namespace EngineLayer
         /// <param name="minPeptidesLength"></param>
         /// <param name="maxPeptidesLength"></param>
         /// <returns></returns>
-        private static IEnumerable<ProteinInterval> FixedTermini(int nTerminusProtein, int cTerminusProtein, Protein protein, bool cleave, int? minPeptidesLength, int? maxPeptidesLength)
+        private static IEnumerable<Peptide> FixedTermini(int nTerminusProtein, int cTerminusProtein, Protein protein, bool cleave, int? minPeptidesLength, int? maxPeptidesLength)
         {
-            List<ProteinInterval> intervals = new List<ProteinInterval>();
+            List<Peptide> intervals = new List<Peptide>();
             if (OkayLength(cTerminusProtein - nTerminusProtein, minPeptidesLength, maxPeptidesLength))
             {
-                intervals.Add(new ProteinInterval(nTerminusProtein + 1, cTerminusProtein,
-                    protein, cTerminusProtein - nTerminusProtein, "semi" + (cleave ? ":M cleaved" : ""))); // Maximum sequence length
+                intervals.Add(new Peptide(protein, nTerminusProtein + 1, cTerminusProtein,
+                    cTerminusProtein - nTerminusProtein, "semi" + (cleave ? ":M cleaved" : ""))); // Maximum sequence length
             }
 
             // Fixed termini at each internal index
             IEnumerable<int> internalIndices = Enumerable.Range(nTerminusProtein + 1, cTerminusProtein - nTerminusProtein - 1);
-            IEnumerable<ProteinInterval> fixedCTermIntervals =
+            IEnumerable<Peptide> fixedCTermIntervals =
                 internalIndices
                 .Where(j => OkayLength(cTerminusProtein - j, minPeptidesLength, maxPeptidesLength))
-                .Select(j => new ProteinInterval(j + 1, cTerminusProtein, protein, cTerminusProtein - j, "semiC" + (cleave ? ":M cleaved" : "")));
-            IEnumerable<ProteinInterval> fixedNTermIntervals =
+                .Select(j => new Peptide(protein, j + 1, cTerminusProtein, cTerminusProtein - j, "semiC" + (cleave ? ":M cleaved" : "")));
+            IEnumerable<Peptide> fixedNTermIntervals =
                 internalIndices
                 .Where(j => OkayLength(j - nTerminusProtein, minPeptidesLength, maxPeptidesLength))
-                .Select(j => new ProteinInterval(nTerminusProtein + 1, j, protein, j - nTerminusProtein, "semiN" + (cleave ? ":M cleaved" : "")));
+                .Select(j => new Peptide(protein, nTerminusProtein + 1, j, j - nTerminusProtein, "semiN" + (cleave ? ":M cleaved" : "")));
 
             return intervals.Concat(fixedCTermIntervals).Concat(fixedNTermIntervals);
         }

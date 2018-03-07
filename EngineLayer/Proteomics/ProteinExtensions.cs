@@ -16,7 +16,7 @@ namespace EngineLayer
         public static IEnumerable<PeptideWithSetModifications> Digest(this Protein protein, IDigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications, List<ModificationWithMass> variableModifications)
         {
             ProteinDigestion digestion = new ProteinDigestion(digestionParams, allKnownFixedModifications, variableModifications);
-            return digestionParams.SemiProteaseDigestion ? digestion.NonSpecificDigestion(protein) : digestion.Digestion(protein);
+            return digestionParams.SemiProteaseDigestion ? digestion.SemiSpecificDigestion(protein) : digestion.Digestion(protein);
         }
     }
 }
