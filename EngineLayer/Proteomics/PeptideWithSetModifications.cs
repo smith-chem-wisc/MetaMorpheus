@@ -54,7 +54,7 @@ namespace EngineLayer
 
         public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, 
             Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int? missedCleavages = null) 
-            : base(protein, proteinOneBasedStart, proteinOneBasedEnd, missedCleavages)
+            : base(protein, proteinOneBasedStart, proteinOneBasedEnd, missedCleavages, null)
         {
             this.numFixedMods = numFixedMods;
             this.allModsOneIsNterminus = allModsOneIsNterminus ?? new Dictionary<int, ModificationWithMass>();

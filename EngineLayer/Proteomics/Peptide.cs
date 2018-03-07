@@ -103,8 +103,7 @@ namespace EngineLayer
             foreach (ModificationWithMass variableModification in variableModifications)
             {
                 // Check if can be a n-term mod
-                if (Gptmd.GptmdEngine.ModFits(variableModification, Protein, 1, peptideLength, OneBasedStartResidueInProtein)
-                    && (variableModification.terminusLocalization == TerminusLocalization.NProt || variableModification.terminusLocalization == TerminusLocalization.NPep))
+                if (CanBeNTerminalMod(variableModification, peptideLength))
                 {
                     pepNTermVariableMods.Add(variableModification);
                 }
@@ -126,8 +125,7 @@ namespace EngineLayer
                     }
                 }
                 // Check if can be a c-term mod
-                if (Gptmd.GptmdEngine.ModFits(variableModification, Protein, peptideLength, peptideLength, OneBasedStartResidueInProtein + peptideLength - 1)
-                    && (variableModification.terminusLocalization == TerminusLocalization.ProtC || variableModification.terminusLocalization == TerminusLocalization.PepC))
+                if (CanBeCTerminalMod(variableModification, peptideLength))
                 {
                     pepCTermVariableMods.Add(variableModification);
                 }
@@ -148,10 +146,7 @@ namespace EngineLayer
                     if (modWithMass is ModificationWithMass variableModification)
                     {
                         // Check if can be a n-term mod
-                        if (locInPeptide == 1
-                            && Gptmd.GptmdEngine.ModFits(variableModification, Protein, 1, peptideLength, OneBasedStartResidueInProtein)
-                            && (variableModification.terminusLocalization == TerminusLocalization.NProt || variableModification.terminusLocalization == TerminusLocalization.NPep)
-                            && !Protein.IsDecoy)
+                        if (locInPeptide == 1 && CanBeNTerminalMod(variableModification, peptideLength) && !Protein.IsDecoy)
                         {
                             pepNTermVariableMods.Add(variableModification);
                         }
@@ -175,10 +170,7 @@ namespace EngineLayer
                             }
                         }
                         // Check if can be a c-term mod
-                        if (locInPeptide == peptideLength
-                            && Gptmd.GptmdEngine.ModFits(variableModification, Protein, peptideLength, peptideLength, OneBasedStartResidueInProtein + peptideLength - 1)
-                            && (variableModification.terminusLocalization == TerminusLocalization.ProtC || variableModification.terminusLocalization == TerminusLocalization.PepC)
-                            && !Protein.IsDecoy)
+                        if (locInPeptide == peptideLength && CanBeCTerminalMod(variableModification, peptideLength) && !Protein.IsDecoy)
                         {
                             pepCTermVariableMods.Add(variableModification);
                         }
@@ -207,6 +199,30 @@ namespace EngineLayer
                     yield break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Determines whether given modification can be an N-terminal modification
+        /// </summary>
+        /// <param name="variableModification"></param>
+        /// <param name="peptideLength"></param>
+        /// <returns></returns>
+        private bool CanBeNTerminalMod(ModificationWithMass variableModification, int peptideLength)
+        {
+            return Gptmd.GptmdEngine.ModFits(variableModification, Protein, 1, peptideLength, OneBasedStartResidueInProtein)
+                && (variableModification.terminusLocalization == TerminusLocalization.NProt || variableModification.terminusLocalization == TerminusLocalization.NPep);
+        }
+
+        /// <summary>
+        /// Determines whether given modification can be a C-terminal modification
+        /// </summary>
+        /// <param name="variableModification"></param>
+        /// <param name="peptideLength"></param>
+        /// <returns></returns>
+        private bool CanBeCTerminalMod(ModificationWithMass variableModification, int peptideLength)
+        {
+            return Gptmd.GptmdEngine.ModFits(variableModification, Protein, peptideLength, peptideLength, OneBasedStartResidueInProtein + peptideLength - 1)
+                    && (variableModification.terminusLocalization == TerminusLocalization.ProtC || variableModification.terminusLocalization == TerminusLocalization.PepC);
         }
 
         private static IEnumerable<Dictionary<int, ModificationWithMass>> GetVariableModificationPatterns(Dictionary<int, List<ModificationWithMass>> possibleVariableModifications, int maxModsForPeptide, int peptideLength)
@@ -327,6 +343,9 @@ namespace EngineLayer
                             fixedModsOneIsNterminus[peptideLength + 2] = mod;
                         }
                         break;
+
+                    default:
+                        throw new NotSupportedException("This terminus localization is not supported.");
                 }
             }
             return fixedModsOneIsNterminus;

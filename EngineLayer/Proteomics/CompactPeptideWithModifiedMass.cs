@@ -33,9 +33,14 @@ namespace EngineLayer
                 {
                     tempList.Add(masses[i]);
                 }
+                else if (terminusType == TerminusType.N)
+                {
+                    NTerminalMasses = tempList.ToArray();
+                    break;
+                }
                 else
                 {
-                    masses = tempList.ToArray();
+                    CTerminalMasses = tempList.ToArray();
                     break;
                 }
             }
