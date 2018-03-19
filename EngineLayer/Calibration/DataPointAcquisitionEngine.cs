@@ -136,7 +136,11 @@ namespace EngineLayer.Calibration
 
             return new DataPointAquisitionResults(this,
                 Ms1List,
-                Ms2List
+                Ms2List,
+                numMs1MassChargeCombinationsConsidered,
+                numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
+                numMs2MassChargeCombinationsConsidered,
+                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks
             );
         }
 
@@ -200,10 +204,10 @@ namespace EngineLayer.Calibration
                         }
 
                         var closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
-                        var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex];
+                        var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex.Value];
 
                         highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                        trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), theMZ, null));
+                        trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex.Value]), theMZ, null));
                     }
                     // If started adding and suddnely stopped, go to next one, no need to look at higher charges
                     if (trainingPointsToAverage.Count == 0 && startingToAddCharges)
@@ -244,6 +248,10 @@ namespace EngineLayer.Calibration
             int numMs2MassChargeCombinationsConsidered = 0;
             int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
             int numFragmentsIdentified = 0;
+
+            if (ms2DataScan.MassSpectrum.Size == 0)
+                return (result, numMs2MassChargeCombinationsConsidered, numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, numFragmentsIdentified);
+
             // Key: mz value, Value: error
             var addedPeaks = new Dictionary<double, double>();
 
@@ -271,7 +279,7 @@ namespace EngineLayer.Calibration
                         break;
                     var closestPeakMZ = ms2DataScan.MassSpectrum.GetClosestPeakXvalue(monoisotopicMZ);
 
-                    if (mzToleranceForMs2Search.Within(closestPeakMZ, monoisotopicMZ) && !computedIsotopologues)
+                    if (mzToleranceForMs2Search.Within(closestPeakMZ.Value, monoisotopicMZ) && !computedIsotopologues)
                     {
                         var dist = IsotopicDistribution.GetDistribution(fragment.ThisChemicalFormula, fineResolutionForIsotopeDistCalculation, 0.001);
 
@@ -314,12 +322,12 @@ namespace EngineLayer.Calibration
                             }
 
                             var closestPeakIndex = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theMZ);
-                            var closestPeakMZ = ms2DataScan.MassSpectrum.XArray[closestPeakIndex];
+                            var closestPeakMZ = ms2DataScan.MassSpectrum.XArray[closestPeakIndex.Value];
 
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
-                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(ms2DataScan.MassSpectrum.YArray[closestPeakIndex]), theMZ, null));
+                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(ms2DataScan.MassSpectrum.YArray[closestPeakIndex.Value]), theMZ, null));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges

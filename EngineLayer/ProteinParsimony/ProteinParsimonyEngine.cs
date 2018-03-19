@@ -1,4 +1,5 @@
 ﻿using Proteomics;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -18,9 +19,9 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
+        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreDifferent, List<string> nestedIds) : base(nestedIds)
         {
-            this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
+            this.treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
         }
 
@@ -49,25 +50,50 @@ namespace EngineLayer
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
             if (!treatModPeptidesAsDifferentPeptides)
             {
-                Dictionary<string, List<PeptideWithSetModifications>> baseSeqToPeptideMatch = new Dictionary<string, List<PeptideWithSetModifications>>();
+                Dictionary<string, HashSet<PeptideWithSetModifications>> baseSeqToProteinMatch = new Dictionary<string, HashSet<PeptideWithSetModifications>>();
                 foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
                 {
-                    if (baseSeqToPeptideMatch.TryGetValue(peptide.BaseSequence, out List<PeptideWithSetModifications> value))
+                    if (baseSeqToProteinMatch.TryGetValue(peptide.BaseSequence, out HashSet<PeptideWithSetModifications> value))
                         value.Add(peptide);
                     else
-                        baseSeqToPeptideMatch[peptide.BaseSequence] = new List<PeptideWithSetModifications> { peptide };
+                        baseSeqToProteinMatch[peptide.BaseSequence] = new HashSet<PeptideWithSetModifications> { peptide };
                 }
 
-                foreach (var ok in compactPeptideToProteinPeptideMatching)
-                    foreach (var modsFromThisOne in ok.Value.ToList())
-                        foreach (var peptideToAdd in baseSeqToPeptideMatch[modsFromThisOne.BaseSequence])
+                var blah = new Dictionary<PeptideWithSetModifications, List<CompactPeptideBase>>();
+                // where to store results
+                foreach (var pep in compactPeptideToProteinPeptideMatching)
+                {
+                    foreach (var pepWithSetMods in pep.Value)
+                    {
+                        if (blah.TryGetValue(pepWithSetMods, out List<CompactPeptideBase> list))
+                            list.Add(pep.Key);
+                        else
+                            blah.Add(pepWithSetMods, new List<CompactPeptideBase> { pep.Key });
+                    }
+                }
+
+                foreach (var baseSequence in baseSeqToProteinMatch)
+                {
+                    if (baseSequence.Value.Count > 1 && baseSequence.Value.Any(p => p.NumMods > 0))
+                    {
+                        // list of proteins along with start/end residue in protein and the # missed cleavages
+                        var peptideInProteinInfo = new List<Tuple<Protein, int, int, int>>();
+                        foreach (var peptide in baseSequence.Value)
+                            peptideInProteinInfo.Add(new Tuple<Protein, int, int, int>(peptide.Protein, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.missedCleavages));
+
+                        foreach (var peptide in baseSequence.Value)
                         {
-                            ok.Value.Add(peptideToAdd);
-                            var anotherPeptideToAdd = new PeptideWithSetModifications(modsFromThisOne, peptideToAdd);
-                            ok.Value.Add(anotherPeptideToAdd);
-                            var anotherPeptideToAdd2 = new PeptideWithSetModifications(peptideToAdd, modsFromThisOne);
-                            ok.Value.Add(anotherPeptideToAdd2);
+                            foreach (var proteinInfo in peptideInProteinInfo)
+                            {
+                                var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, peptide.PeptideDescription, proteinInfo.Item4, peptide.allModsOneIsNterminus, peptide.numFixedMods);
+                                foreach (var compactPeptide in blah[peptide])
+                                {
+                                    compactPeptideToProteinPeptideMatching[compactPeptide].Add(pep);
+                                }
+                            }
                         }
+                    }
+                }
             }
 
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptideBase>>();

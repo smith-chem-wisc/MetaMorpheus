@@ -7,12 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="mzLib" Version="1.0.275" />
+    <PackageReference Include="mzLib" Version="1.0.287" />
     <PackageReference Include="Nett" Version="0.8.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.7.2" />
-    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.7.2" />
-    <PackageReference Include="SharpLearning.Metrics" Version="0.26.7.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.8.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +41,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Mods\glyco.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\fallOff.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Mods\missing.txt">
