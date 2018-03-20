@@ -138,12 +138,44 @@ namespace EngineLayer
                     proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
             }
 
-            // order protein groups by score
-            var sortedProteinGroups = proteinGroups.OrderByDescending(b => b.ProteinGroupScore).ToList();
+            // pair decoys and targets by accession
+            // then use the best peptide notch-QValue as the score for the protein group
+            Dictionary<string, List<ProteinGroup>> accessionToProteinGroup = new Dictionary<string, List<ProteinGroup>>();
+            foreach (var pg in proteinGroups)
+            {
+                foreach (var protein in pg.Proteins)
+                {
+                    string stippedAccession = StripDecoyIdentifier(protein.Accession);
 
-            // do fdr
+                    if (accessionToProteinGroup.TryGetValue(stippedAccession, out List<ProteinGroup> groups))
+                        groups.Add(pg);
+                    else
+                        accessionToProteinGroup.Add(stippedAccession, new List<ProteinGroup> { pg });
+                }
+
+                pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
+                pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValueNotch);
+            }
+
+            // pick the best notch-QValue for each paired accession
+            foreach(var accession in accessionToProteinGroup)
+            {
+                if (accession.Value.Count > 1)
+                {
+                    var pgList = accession.Value.OrderBy(p => p.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+                    var pgToUse = pgList.First(); // pick lowest notch QValue and remove the rest
+                    pgList.Remove(pgToUse);
+                    proteinGroups = proteinGroups.Except(pgList).ToList();
+                }
+            }
+            
+            // order protein groups by notch-QValue
+            var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+
+            // calculate protein QValues
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
+            
             foreach (var proteinGroup in sortedProteinGroups)
             {
                 if (proteinGroup.isDecoy)
@@ -154,29 +186,8 @@ namespace EngineLayer
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
-                proteinGroup.BestPeptideScore = proteinGroup.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
-                proteinGroup.BestPeptideQValue = proteinGroup.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValue);
             }
             
-            /*
-            // do fdr for top-picked method
-            sortedProteinGroups = proteinGroups.OrderByDescending(b => b.BestPeptideScore).GroupBy(b => StripDecoyIdentifier(b.ProteinGroupName)).Select(b => b.First()).ToList();
-
-            cumulativeTarget = 0;
-            cumulativeDecoy = 0;
-            foreach (var proteinGroup in sortedProteinGroups)
-            {
-                if (proteinGroup.isDecoy)
-                    cumulativeDecoy++;
-                else
-                    cumulativeTarget++;
-
-                proteinGroup.CumulativeTarget = cumulativeTarget;
-                proteinGroup.CumulativeDecoy = cumulativeDecoy;
-                proteinGroup.BestPeptideQValue = (double)cumulativeDecoy / cumulativeTarget;
-            }
-            */
-
             return sortedProteinGroups;
         }
 

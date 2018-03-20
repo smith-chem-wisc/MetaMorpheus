@@ -402,12 +402,11 @@ namespace MetaMorpheusGUI
         {
             ParameterGrid.Items.Refresh();
             Array.Copy(tempParamList, paramList, paramList.Length);
-
             for (int file = 0; file < FileSpecificSettingsList.Count(); file++)
             {
                 FileSpecificSettingsList[file] = new FileSpecificSettings();
                 int? index = paramList[0].Value as int?;
-
+                int? index2 = paramList[20].Value as int?;
                 //Cases for each Parameter:
                 //1. If one file with Changed value: write value to File settings
                 //2. If one file with unchanged Value: Do nothing; will be null
@@ -416,6 +415,22 @@ namespace MetaMorpheusGUI
                 from Temporary Settings. If this parameter is changed, then it will be the same so going to temp settings
                 is Not necesarry
                 */
+                
+                
+                //Tolerance Type
+                if (index2.HasValue && index2 >= 0)
+                {
+                    FileSpecificSettingsList[file].ToleranceType = paramList[20].ProductMassToleranceList[index2.Value];
+                }
+                else if ((index2 == -1 || !index2.HasValue) && (paramList[7].Value != null || paramList[15].Value != null))
+                {
+                    MessageBox.Show("Please Select a Tolerance Type", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Hand);
+                    return;
+                }
+                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[file].ToleranceType != null && FileSpecificSettingsList[file].ToleranceType == null)
+                {
+                    FileSpecificSettingsList[file].ToleranceType = TempSettings[file].ToleranceType;
+                }
 
                 //Protease
                 if (index.HasValue && index >= 0 && paramList[0].HasChanged)
@@ -427,18 +442,7 @@ namespace MetaMorpheusGUI
                     FileSpecificSettingsList[file].Protease = TempSettings[file].Protease;
                 }
 
-                //Tolerance Type
-                int? index2 = paramList[20].Value as int?;
-
-
-                if (index2.HasValue && index >= 0)
-                {
-                    FileSpecificSettingsList[file].ToleranceType = paramList[20].ProductMassToleranceList[index2.Value];
-                }
-                else if (FileSpecificSettingsList.Count() > 1 && TempSettings[file].ToleranceType != null && FileSpecificSettingsList[file].ToleranceType == null)
-                {
-                    FileSpecificSettingsList[file].ToleranceType = TempSettings[file].ToleranceType;
-                }
+                
 
                 //Conserve Memory
                 if (paramList[1].Value != null)
