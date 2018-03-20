@@ -52,6 +52,9 @@
     <None Update="Mods\Mods.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Mods\RNA.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Mods\substitutions.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
