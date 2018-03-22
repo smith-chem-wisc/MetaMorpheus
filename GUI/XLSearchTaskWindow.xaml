@@ -340,8 +340,8 @@
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbPercolator" Content="Output for Percolator" />
                             <CheckBox x:Name="ckbPepXML" Content="Output for pepXML" />
-                            <CheckBox x:Name="ckbCrosslink" Content="Output for crosslink group" />
-                            <CheckBox x:Name="ckbAllResults" Content="Output for AllResults include Normal, Loop, Deadend" />
+                            <CheckBox x:Name="ckbCrosslink" Content="Output for inter-crosslink and intra-crosslink" />
+                            <CheckBox x:Name="ckbAllResults" Content="Output for all, Single, Loop, Deadend peptides" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>

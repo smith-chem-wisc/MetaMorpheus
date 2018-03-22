@@ -225,7 +225,14 @@ namespace TaskLayer
             allPsms = allPsms.Where(p => p != null).ToList();
             if (XlSearchParameters.XlOutAll)
             {
-                WriteAllToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
+                try
+                {
+                    WriteAllToTsv(allPsms, OutputFolder, "allPsms", new List<string> { taskId });
+                }
+                catch (Exception)
+                {
+                    throw;
+                }              
             }
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= CommonParameters.ScoreCutoff && p.BetaPsmCross.XLBestScore >= CommonParameters.ScoreCutoff).ToList();
             foreach (var item in allPsmsXL)
@@ -330,6 +337,7 @@ namespace TaskLayer
                 allPsmsFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
                 allPsmsFDR.AddRange(singlePsmsFDR.Where(p => p.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
                 allPsmsFDR.AddRange(loopPsmsFDR.Where(p => p.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+                allPsmsFDR.AddRange(deadendPsmsFDR.Where(p => p.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
                 allPsmsFDR = allPsmsFDR.OrderBy(p => p.ScanNumber).ToList();
                 foreach (var fullFilePath in currentRawFileList)
                 {
@@ -338,7 +346,7 @@ namespace TaskLayer
                 }
             }
             
-            if (XlSearchParameters.XlOutCrosslink)
+            if (XlSearchParameters.XlOutAll)
             {
                 List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
                 allPsmsXLFDR.AddRange(intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());

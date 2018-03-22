@@ -37,6 +37,9 @@
     <None Update="Mods\aListOfmods.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Mods\Crosslink.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Mods\detachers.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

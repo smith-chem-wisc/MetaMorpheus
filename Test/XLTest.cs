@@ -10,6 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Nett;
+using System;
+using System.IO;
 
 namespace Test
 {
@@ -134,6 +137,19 @@ namespace Test
 
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 35);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz[26], 2312.21985342336);
+        }
+
+        [Test]
+        public static void XLTest_BSA_DSS()
+        {
+            var x = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\XLSearchTaskconfig_BSA_DSS_23747.toml");
+            var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
+
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\BSA.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\BSA_DSS_23747.mzML");
+            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Environment.CurrentDirectory);
+
+            a.Run();
         }
 
         #endregion Public Methods
