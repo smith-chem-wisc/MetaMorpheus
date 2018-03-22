@@ -109,10 +109,14 @@ namespace TaskLayer
             {
                 crosslinker.CrosslinkerName = XlSearchParameters.UdXLkerName;
                 crosslinker.Cleavable = XlSearchParameters.UdXLkerCleavable;
-                crosslinker.TotalMass = (double)XlSearchParameters.UdXLkerTotalMass;
-                crosslinker.CleaveMassShort = (double)XlSearchParameters.UdXLkerShortMass;
-                crosslinker.CleaveMassLong = (double)XlSearchParameters.UdXLkerLongMass;
+                crosslinker.TotalMass = XlSearchParameters.UdXLkerTotalMass.HasValue ? (double)XlSearchParameters.UdXLkerTotalMass : 9999;
+                crosslinker.CleaveMassShort = XlSearchParameters.UdXLkerShortMass.HasValue ? (double)XlSearchParameters.UdXLkerShortMass : 9999;
+                crosslinker.CleaveMassLong = XlSearchParameters.UdXLkerShortMass.HasValue ? (double)XlSearchParameters.UdXLkerLongMass : 9999;
                 crosslinker.CrosslinkerModSite = XlSearchParameters.UdXLkerResidue;
+                crosslinker.LoopMass = XlSearchParameters.UdXLkerLoopMass.HasValue ? (double)XlSearchParameters.UdXLkerLoopMass : 9999;
+                crosslinker.DeadendMassH2O = XlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassH2O : 9999;
+                crosslinker.DeadendMassNH2 = XlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassNH2 : 9999;
+                crosslinker.DeadendMassTris = XlSearchParameters.UdXLkerDeadendMassTris.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassTris : 9999;
             }
 
             ParallelOptions parallelOptions = new ParallelOptions();
@@ -251,15 +255,7 @@ namespace TaskLayer
             {
                 WriteCrosslinkToTsv(interPsmsXLFDR, OutputFolder, "xl_inter_fdr", new List<string> { taskId });
             }
-            if (XlSearchParameters.XlOutPepXML && interPsmsXLFDR.Count != 0)
-            {
-                var interPsmsXLFDR_PepXML = interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
-                foreach (var fullFilePath in currentRawFileList)
-                {
-                    string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
-                    WritePepXML_xl(interPsmsXLFDR_PepXML.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
-                }
-            }
+
             if (XlSearchParameters.XlOutPercolator)
             {
                 var interPsmsXLPercolator = interPsmsXL.Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).OrderBy(p => p.ScanNumber).ToList();
@@ -284,15 +280,7 @@ namespace TaskLayer
             {
                 WriteCrosslinkToTsv(intraPsmsXLFDR, OutputFolder, "xl_intra_fdr", new List<string> { taskId });
             }
-            if (XlSearchParameters.XlOutPepXML && intraPsmsXLFDR.Count != 0)
-            {
-                var intraPsmsXLFDR_PepXML = intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList();
-                foreach (var fullFilePath in currentRawFileList)
-                {
-                    string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
-                    WritePepXML_xl(intraPsmsXLFDR_PepXML.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
-                }
-            }
+
             if (XlSearchParameters.XlOutPercolator)
             {
                 var intraPsmsXLPercolator = intraPsmsXL.Where(p => p.XLBestScore >= 2 && p.BetaPsmCross.XLBestScore >= 2).OrderBy(p => p.ScanNumber).ToList();
@@ -343,6 +331,22 @@ namespace TaskLayer
             }
 
             #endregion deadend peptide
+
+            
+            if (XlSearchParameters.XlOutPepXML)
+            {
+                List<PsmCross> allPsmsFDR = new List<PsmCross>();
+                allPsmsFDR.AddRange(intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+                allPsmsFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+                allPsmsFDR.AddRange(singlePsmsFDR.Where(p => p.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+                allPsmsFDR.AddRange(loopPsmsFDR.Where(p => p.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+                allPsmsFDR = allPsmsFDR.OrderBy(p => p.ScanNumber).ToList();
+                foreach (var fullFilePath in currentRawFileList)
+                {
+                    string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
+                    WritePepXML_xl(allPsmsFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
+                }
+            }
 
             return myTaskResults;
         }
