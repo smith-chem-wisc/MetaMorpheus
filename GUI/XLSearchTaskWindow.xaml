@@ -340,7 +340,7 @@
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbPercolator" Content="Output for Percolator" />
                             <CheckBox x:Name="ckbPepXML" Content="Output for pepXML" />
-                            <CheckBox x:Name="ckbCrosslink" Content="Output for Crosslink" />
+                            <CheckBox x:Name="ckbCrosslink" Content="Output for crosslink group" />
                             <CheckBox x:Name="ckbAllResults" Content="Output for AllResults include Normal, Loop, Deadend" />
                         </StackPanel>
                     </Expander>

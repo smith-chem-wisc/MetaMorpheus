@@ -33,7 +33,7 @@ namespace TaskLayer
             XlQuench_Tris = true;
 
             XlOutAll = true;
-            XlOutCrosslink = true;
+            XlOutCrosslink = false;
             XlOutPercolator = false;
             XlOutPepXML = false;
 

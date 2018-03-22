@@ -289,16 +289,6 @@ namespace TaskLayer
 
             #endregion Intra Cross-link
 
-            List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
-            allPsmsXLFDR.AddRange(intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
-            allPsmsXLFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
-            allPsmsXLFDR = allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore).ToList();
-            var allPsmsXLFDRGroup = FindCrosslinks(allPsmsXLFDR);
-            if (XlSearchParameters.XlOutCrosslink)
-            {
-                WriteCrosslinkToTsv(allPsmsXLFDRGroup, OutputFolder, "allPsmsXLFDRGroup", new List<string> { taskId });
-            }
-
             #region Single peptide
 
             var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe).OrderByDescending(p => p.Score).ToList();
@@ -346,6 +336,23 @@ namespace TaskLayer
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
                     WritePepXML_xl(allPsmsFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
+            }
+            
+            if (XlSearchParameters.XlOutCrosslink)
+            {
+                List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
+                allPsmsXLFDR.AddRange(intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
+                allPsmsXLFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());                
+                try
+                {
+                    allPsmsXLFDR = allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+                    var allPsmsXLFDRGroup = FindCrosslinks(allPsmsXLFDR);
+                    WriteCrosslinkToTsv(allPsmsXLFDRGroup, OutputFolder, "allPsmsXLFDRGroup", new List<string> { taskId });
+                }
+                catch (Exception)
+                {
+                    throw;
+                }          
             }
 
             return myTaskResults;
