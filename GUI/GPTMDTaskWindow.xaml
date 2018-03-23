@@ -96,11 +96,11 @@
                             </Grid>
                             <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
+                                <Label x:Name="ff" Content="Files to analyze in parallel" />
                                 <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
+                                <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                         </StackPanel>
