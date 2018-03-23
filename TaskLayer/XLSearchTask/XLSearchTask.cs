@@ -524,22 +524,26 @@ namespace TaskLayer
             List<string> allString = new List<string>();
             foreach (var item in items)
             {
-                string st;
-                if (item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) > 0)
+                if (item.ProteinAccesion!= null && item.BetaPsmCross.ProteinAccesion!=null)
                 {
-                    st = item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")" + item.ProteinAccesion + "(" + item.XlProteinPos + ")";
-                }
-                else if (item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) == 0 && item.XlProteinPos.CompareTo(item.BetaPsmCross.XlProteinPos) > 0)
-                {
-                    st = item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")" + item.ProteinAccesion + "(" + item.XlProteinPos + ")";
-                }
-                else { st = item.ProteinAccesion + "(" + item.XlProteinPos + ")" + item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")"; }
+                    string st;
+                    if (item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) > 0)
+                    {
+                        st = item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")" + item.ProteinAccesion + "(" + item.XlProteinPos + ")";
+                    }
+                    else if (item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) == 0 && item.XlProteinPos.CompareTo(item.BetaPsmCross.XlProteinPos) > 0)
+                    {
+                        st = item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")" + item.ProteinAccesion + "(" + item.XlProteinPos + ")";
+                    }
+                    else { st = item.ProteinAccesion + "(" + item.XlProteinPos + ")" + item.BetaPsmCross.ProteinAccesion + "(" + item.BetaPsmCross.XlProteinPos + ")"; }
 
-                if (!allString.Contains(st))
-                {
-                    allString.Add(st);
-                    psmCrossCrosslinks.Add(item);
+                    if (!allString.Contains(st))
+                    {
+                        allString.Add(st);
+                        psmCrossCrosslinks.Add(item);
+                    }
                 }
+            
             }
             return psmCrossCrosslinks;
         }
