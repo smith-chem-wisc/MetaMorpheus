@@ -161,7 +161,8 @@ namespace EngineLayer.CrosslinkSearch
                         var possiblePsmCross = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, i);
                         if (possiblePsmCross != null)
                         {
-                            globalPsmsCross.Add(possiblePsmCross);
+                            lock(globalPsmsCross)
+                                globalPsmsCross.Add(possiblePsmCross);
                         }
                     }
                     // report search progress
