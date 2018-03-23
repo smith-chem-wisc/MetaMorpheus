@@ -143,11 +143,11 @@ namespace Test
         public static void XLTest_BSA_DSS()
         {
             var x = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\XLSearchTaskconfig_BSA_DSS_23747.toml");
-            var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
+            var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\BSA.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\BSA_DSS_23747.mzML");
-            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Environment.CurrentDirectory);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TestData"));
 
             a.Run();
         }
