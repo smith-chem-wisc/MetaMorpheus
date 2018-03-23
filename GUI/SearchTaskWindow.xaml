@@ -50,18 +50,18 @@
                                 <StackPanel>
                                     <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
                                     <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
-                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                    <!--<StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Deconvolution Intensity Ratio " />
                                         <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
-                                    </StackPanel>
+                                    </StackPanel>-->
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Deconvolution Max Assumed Charge State" />
                                         <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                    <!--<StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Deconvolution Mass Tolerance in PPM" />
                                         <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
-                                    </StackPanel>
+                                    </StackPanel>-->
                                 </StackPanel>
                             </GroupBox>
                             <!--<GroupBox Header="Peak Trimming">
@@ -78,7 +78,7 @@
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>-->
-                            <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
+                            <!--<CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />-->
                         </StackPanel>
                     </Expander>
                 </GroupBox>
@@ -170,7 +170,7 @@
                                             <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
+                                            <Label x:Name="lbMaxModNum" Content="Max mods per peptide" />
                                             <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
@@ -224,17 +224,17 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <StackPanel Orientation="Horizontal" Margin="1">
-                                            <CheckBox x:Name="allAmbiguity" Content="Report All Ambiguity (might be slow)" Margin="5" />
+                                            <CheckBox x:Name="allAmbiguity" Content="Report PSM ambiguity" Margin="5" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
+                                <Label x:Name="ff" Content="Files to analyze in parallel" />
                                 <TextBox x:Name="maxDegreesOfParallelism" PreviewTextInput="PreviewIfInt" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
+                                <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
