@@ -68,7 +68,7 @@ namespace EngineLayer.Gptmd
             int modsAdded = 0;
             //foreach peptide in each psm and for each modification that matches the notch, 
             //add that modification to every allowed residue
-            foreach (var psm in allIdentifications)
+            foreach (var psm in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy))
                 foreach (var peptide in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                     foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
                     {

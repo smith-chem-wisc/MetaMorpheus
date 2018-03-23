@@ -78,7 +78,7 @@ namespace TaskLayer
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um = null;
             //Decoys are currently not being searched with DecoyType.None
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, b.IsContaminant, out um)).ToList();
 
             var numRawFiles = currentRawFileList.Count;
 
@@ -156,7 +156,7 @@ namespace TaskLayer
 
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, false, new List<string> { taskId }).Run();
 
-            var writtenFile = Path.Combine(OutputFolder, "PSMs.psmtsv");
+            var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
             SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
 
