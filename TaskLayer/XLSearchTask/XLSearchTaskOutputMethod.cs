@@ -182,30 +182,33 @@ namespace TaskLayer
                     "\tPeptide\tProtein");
                 foreach (var item in items)
                 {
-                    string x = "T"; int label = 1;
-                    if (item.IsDecoy || item.BetaPsmCross.IsDecoy)
+                    if (item.BaseSequence!=null && item.BetaPsmCross.BaseSequence != null && item.ProteinAccesion != null && item.BetaPsmCross.ProteinAccesion!= null)
                     {
-                        x = "D"; label = -1;
-                    }
-                    output.WriteLine(
-                        x + "-" + item.ScanNumber.ToString(CultureInfo.InvariantCulture) + "-" + item.ScanRetentionTime.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + label.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.DScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.XlRank[0] + item.XlRank[1]).ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPsmCross.PeptideMonisotopicMass.HasValue) ? ((item.ScanPrecursorMass - item.BetaPsmCross.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value - crosslinker.TotalMass) / item.ScanPrecursorMass * 1E6).ToString(CultureInfo.InvariantCulture) : "---")
-                        + "\t" + item.BetaPsmCross.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.BetaPsmCross.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
-                        + "\t" + "-." + item.BaseSequence + item.XlPos.ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPsmCross.BaseSequence + item.BetaPsmCross.XlPos.ToString(CultureInfo.InvariantCulture) + ".-"
-                        + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                               + "(" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
-                        + "\t" + item.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                               + "(" + item.BetaPsmCross.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
-                        );
+                        string x = "T"; int label = 1;
+                        if (item.IsDecoy || item.BetaPsmCross.IsDecoy)
+                        {
+                            x = "D"; label = -1;
+                        }
+                        output.WriteLine(
+                            x + "-" + item.ScanNumber.ToString(CultureInfo.InvariantCulture) + "-" + item.ScanRetentionTime.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + label.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.DScore.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + (item.XlRank[0] + item.XlRank[1]).ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPsmCross.PeptideMonisotopicMass.HasValue) ? ((item.ScanPrecursorMass - item.BetaPsmCross.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value - crosslinker.TotalMass) / item.ScanPrecursorMass * 1E6).ToString(CultureInfo.InvariantCulture) : "---")
+                            + "\t" + item.BetaPsmCross.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + (item.BetaPsmCross.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
+                            + "\t" + "-." + item.BaseSequence + item.XlPos.ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPsmCross.BaseSequence + item.BetaPsmCross.XlPos.ToString(CultureInfo.InvariantCulture) + ".-"
+                            + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                                   + "(" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
+                            + "\t" + item.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                                   + "(" + item.BetaPsmCross.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
+                            );
+                    }        
                 }
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
