@@ -51,24 +51,39 @@ namespace EngineLayer
             bool containsZdot = productTypes.Contains(ProductType.Zdot);
 
             if (containsAdot)
+            {
                 throw new NotImplementedException();
+            }
             if (containsBnoB1)
+            {
                 massLen += NTerminalMasses.Length - 1;
+            }
             else if (containsB)
+            {
                 massLen += NTerminalMasses.Length;
+            }
             if (containsC)
+            {
                 massLen += NTerminalMasses.Length;
+            }
             if (containsX)
+            {
                 throw new NotImplementedException();
+            }
             if (containsY)
+            {
                 massLen += CTerminalMasses.Length;
+            }
             if (containsZdot)
+            {
                 massLen += CTerminalMasses.Length;
+            }
 
             double[] massesToReturn = new double[massLen];
 
             int i = 0;
             if (NTerminalMasses != null)
+            {
                 for (int j = 0; j < NTerminalMasses.Length; j++)
                 {
                     var hm = NTerminalMasses[j];
@@ -83,7 +98,9 @@ namespace EngineLayer
                         i++;
                     }
                 }
+            }
             if (CTerminalMasses != null)
+            {
                 foreach (double hm in CTerminalMasses)
                 {
                     if (containsY)
@@ -97,6 +114,7 @@ namespace EngineLayer
                         i++;
                     }
                 }
+            }
             return massesToReturn;
         }
 
@@ -115,20 +133,22 @@ namespace EngineLayer
         {
             unchecked
             {
+                var result = 0;
+                if (CTerminalMasses == null)
                 {
-                    var result = 0;
-                    if (CTerminalMasses == null)
+                    foreach (double b in NTerminalMasses)
                     {
-                        foreach (double b in NTerminalMasses)
-                            result = (result * 31) ^ b.GetHashCode();
+                        result = (result * 31) ^ b.GetHashCode();
                     }
-                    else
-                    {
-                        foreach (double b in CTerminalMasses)
-                            result = (result * 31) ^ b.GetHashCode();
-                    }
-                    return result;
                 }
+                else
+                {
+                    foreach (double b in CTerminalMasses)
+                    {
+                        result = (result * 31) ^ b.GetHashCode();
+                    }
+                }
+                return result;
             }
         }
 
@@ -139,7 +159,9 @@ namespace EngineLayer
                 if (NTerminalMasses != null && cp.NTerminalMasses != null) //neither series is nulll
                 {
                     return (
-                        ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                        ((double.IsNaN(MonoisotopicMassIncludingFixedMods) 
+                            && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) 
+                            || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
                         && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
                         && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
                         );
@@ -147,7 +169,9 @@ namespace EngineLayer
                 else //No N-terminal ions
                 {
                     return (
-                        ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                        ((double.IsNaN(MonoisotopicMassIncludingFixedMods) 
+                            && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) 
+                            || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
                         && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
                         );
                 }
@@ -155,7 +179,9 @@ namespace EngineLayer
             else if (NTerminalMasses != null && cp.NTerminalMasses != null) //No C-terminal ions
             {
                 return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) 
+                        && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) 
+                        || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
                     && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
                     );
             }
@@ -175,7 +201,9 @@ namespace EngineLayer
             do
             {
                 if (oneBasedIndexToLookAt != 0 && oneBasedIndexToLookAt != yyy.Length + 1)
+                {
                     prevMass += Residue.ResidueMonoisotopicMass[yyy[oneBasedIndexToLookAt - 1]];
+                }
 
                 // If modification exists
                 if (yyy.allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out currentModification))
@@ -191,11 +219,17 @@ namespace EngineLayer
                         {
                             var theMass = prevMass + currentModification.monoisotopicMass - nl;
                             if (oneBasedIndexToLookAt != 0 && oneBasedIndexToLookAt != yyy.Length + 1)
+                            {
                                 yield return Math.Round(theMass, digitsForRoundingMasses);
+                            }
                             if ((direction == 1 && oneBasedIndexToLookAt + direction < yyy.Length) ||
                                 (direction == -1 && oneBasedIndexToLookAt + direction > 1))
+                            {
                                 foreach (var nextMass in ComputeFollowingFragmentMasses(yyy, theMass, oneBasedIndexToLookAt + direction, direction))
+                                {
                                     yield return Math.Round(nextMass, digitsForRoundingMasses);
+                                }
+                            }
                         }
                         break;
                     }

@@ -1,0 +1,62 @@
+TaskType = "XLSearch"
+
+[XlSearchParameters]
+FragmentationType = "MS2_HCD"
+DecoyType = "Reverse"
+DoLocalizationAnalysis = false
+CrosslinkerType = "DSS"
+CrosslinkSearchTop = false
+CrosslinkSearchTopNum = 300
+CrosslinkSearchWithAllBeta = false
+UdXLkerCleavable = false
+UdXLkerResidue = 75
+XlPrecusorMsTl = "±10.0000 PPM"
+XlBetaPrecusorMsTl = "±10.0000 PPM"
+DisposeOfFileWhenDone = false
+XlOutPercolator = true
+XlOutAll = true
+XlOutPepXML = true
+XlOutCrosslink = true
+XlQuench_H2O = true
+XlQuench_Tris = true
+XlQuench_NH2 = false
+XlCharge_2_3 = true
+XlCharge_2_3_PrimeFragment = false
+
+[CommonParameters]
+MaxParallelFilesToAnalyze = 1
+MaxThreadsToUsePerFile = 7
+LocalizeAll = true
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl of C\t\tCommon Fixed\tCarbamidomethyl of U"
+ListOfModsVariable = "Common Variable\tOxidation of M"
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionIntensityRatio = 3.0
+DeconvolutionMaxAssumedChargeState = 12
+DeconvolutionMassTolerance = "±4.0000 PPM"
+TotalPartitions = 1
+BIons = true
+YIons = true
+ZdotIons = false
+CIons = false
+ProductMassTolerance = "±20.0000 PPM"
+PrecursorMassTolerance = "±5.0000 PPM"
+ConserveMemory = true
+ScoreCutoff = 5.0
+ReportAllAmbiguity = true
+TopNpeaks = 200
+MinRatio = 0.01
+TrimMs1Peaks = false
+TrimMsMsPeaks = true
+TaskDescriptor = "XLSearchTask"
+CalculateEValue = false
+
+[CommonParameters.DigestionParams]
+MaxMissedCleavages = 2
+InitiatorMethionineBehavior = "Variable"
+MinPeptideLength = 5
+MaxModificationIsoforms = 4096
+MaxModsForPeptide = 3
+Protease = "trypsin"
+SemiProteaseDigestion = false
+TerminusTypeSemiProtease = "None"

@@ -12,7 +12,6 @@ namespace EngineLayer
 
         public readonly int numFixedMods;
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
-        public readonly int? missedCleavages;
 
         #endregion Public Fields
 
@@ -30,29 +29,33 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public PeptideWithSetModifications(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription, int missedCleavages, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-            : base(protein, oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, peptideDescription)
+        public PeptideWithSetModifications(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription, int? missedCleavages, 
+            Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
+            : base(protein, oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, peptideDescription)
         {
-            this.missedCleavages = missedCleavages;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
             this.numFixedMods = numFixedMods;
         }
 
-        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein, everythingElseFromThisOne.PeptideDescription)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) 
+            : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein,
+                  everythingElseFromThisOne.MissedCleavages, everythingElseFromThisOne.PeptideDescription)
         {
-            this.missedCleavages = everythingElseFromThisOne.missedCleavages;
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
             this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
-        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, modsFromThisOne.PeptideDescription)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) 
+            : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, null, modsFromThisOne.PeptideDescription)
         {
-            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
+            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) 
+            && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
         }
 
-        public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int? missedCleavages = null) : base(protein, proteinOneBasedStart, proteinOneBasedEnd)
+        public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, 
+            Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int? missedCleavages = null) 
+            : base(protein, proteinOneBasedStart, proteinOneBasedEnd, missedCleavages, null)
         {
-            this.missedCleavages = missedCleavages;
             this.numFixedMods = numFixedMods;
             this.allModsOneIsNterminus = allModsOneIsNterminus ?? new Dictionary<int, ModificationWithMass>();
         }
@@ -127,9 +130,13 @@ namespace EngineLayer
                     if (allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                     {
                         if (pep_n_term_variable_mod is ModificationWithMassAndCf jj)
+                        {
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
+                        }
                         else
+                        {
                             return null;
+                        }
                     }
 
                     for (int r = 0; r < Length; r++)
@@ -139,9 +146,13 @@ namespace EngineLayer
                         if (allModsOneIsNterminus.TryGetValue(r + 2, out ModificationWithMass residue_variable_mod))
                         {
                             if (residue_variable_mod is ModificationWithMassAndCf jj)
+                            {
                                 sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
+                            }
                             else
+                            {
                                 return null;
+                            }
                         }
                     }
 
@@ -149,9 +160,13 @@ namespace EngineLayer
                     if (allModsOneIsNterminus.TryGetValue(Length + 2, out ModificationWithMass pep_c_term_variable_mod))
                     {
                         if (pep_c_term_variable_mod is ModificationWithMassAndCf jj)
+                        {
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
+                        }
                         else
+                        {
                             return null;
+                        }
                     }
 
                     sequenceWithChemicalFormulas = sbsequence.ToString();
@@ -221,7 +236,7 @@ namespace EngineLayer
             }
 
             vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod));
-            var hm = new PeptideWithSetModifications(numFixedMods, Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein, vvv, missedCleavages);
+            var hm = new PeptideWithSetModifications(numFixedMods, Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein, vvv, MissedCleavages);
 
             return hm;
         }
@@ -232,7 +247,7 @@ namespace EngineLayer
             return q != null
                 && q.Sequence.Equals(Sequence)
                 && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein
-                && q.Protein.Accession.Equals(Protein.Accession);
+                && (q.Protein.Accession == null && Protein.Accession == null || q.Protein.Accession.Equals(Protein.Accession));
         }
 
         public override int GetHashCode()
