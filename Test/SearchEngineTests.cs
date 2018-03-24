@@ -642,7 +642,9 @@ namespace Test
             var localizeableModifications = new List<ModificationWithMass>();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -706,8 +708,12 @@ namespace Test
             new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
