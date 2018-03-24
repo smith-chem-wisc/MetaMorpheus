@@ -4,8 +4,6 @@
     {
         DSSO,
         DSS,
-        DTSSP,
-        BuUrBu,
         DisulfideBond,
         UserDefined
     }
@@ -50,15 +48,6 @@
                 DeadendMassTris = 279.0777;
                 /*Residue.TryGetResidue("K", out CrosslinkerModSite)*/
             }
-            if (name == CrosslinkerType.BuUrBu)
-            {
-                CrosslinkerName = "BuUrBu";
-                Cleavable = true;
-                TotalMass = 197.0926;
-                CleaveMassShort = 111.0320;
-                CleaveMassLong = 85.05276;
-                CrosslinkerModSite = 'K';
-            }
             if (name == CrosslinkerType.DisulfideBond)
             {
                 CrosslinkerName = "DisulfideBond";
@@ -78,13 +67,6 @@
                 DeadendMassH2O = 156.0786;
                 DeadendMassNH2 = 155.0946;
                 DeadendMassTris = 259.142;
-            }
-            if (name == CrosslinkerType.DTSSP)
-            {
-                CrosslinkerName = "DTSSP";
-                Cleavable = false;
-                TotalMass = 138.06808;
-                CrosslinkerModSite = 'K';
             }
 
             return this;

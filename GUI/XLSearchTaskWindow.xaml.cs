@@ -107,6 +107,9 @@ namespace MetaMorpheusGUI
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
 
+            //foreach (string fragmentationType in Enum.GetNames(typeof(FragmentaionType)))
+            //    cbFragmentation.Items.Add(fragmentationType);
+
             cbbXLprecusorMsTl.Items.Add("Absolute");
             cbbXLprecusorMsTl.Items.Add("ppm");
 
@@ -152,15 +155,23 @@ namespace MetaMorpheusGUI
         {
             //Crosslink search para
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
+            //cbFragmentation.SelectedIndex = (int)task.XlSearchParameters.FragmentationType;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.CrosslinkSearchTop;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
+            ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
+            ckbQuenchNH2.IsChecked = task.XlSearchParameters.XlQuench_NH2;
+            ckbQuenchTris.IsChecked = task.XlSearchParameters.XlQuench_Tris;
             //ckbSearchWithXLAllBeta.IsChecked = task.XlSearchParameters.CrosslinkSearchWithAllBeta;
             txtUdXLKerName.Text = task.XlSearchParameters.UdXLkerName;
             ckbUdXLkerCleavable.IsChecked = task.XlSearchParameters.UdXLkerCleavable;
             txtUdXLkerTotalMs.Text = task.XlSearchParameters.UdXLkerTotalMass.HasValue ? task.XlSearchParameters.UdXLkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerShortMass.Text = task.XlSearchParameters.UdXLkerShortMass.HasValue ? task.XlSearchParameters.UdXLkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerLongMass.Text = task.XlSearchParameters.UdXLkerLongMass.HasValue ? task.XlSearchParameters.UdXLkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerLoopMass.Text = task.XlSearchParameters.UdXLkerLoopMass.HasValue ? task.XlSearchParameters.UdXLkerLoopMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerAminoAcid.Text = task.XlSearchParameters.UdXLkerResidue.ToString();
+            txtUdXLkerDeadendH2O.Text = task.XlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? task.XlSearchParameters.UdXLkerDeadendMassH2O.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerDeadendNH2.Text = task.XlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? task.XlSearchParameters.UdXLkerDeadendMassNH2.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerDeadendTris.Text = task.XlSearchParameters.UdXLkerDeadendMassTris.HasValue ? task.XlSearchParameters.UdXLkerDeadendMassTris.Value.ToString(CultureInfo.InvariantCulture) : "";
             cbbXLprecusorMsTl.SelectedIndex = task.XlSearchParameters.XlPrecusorMsTl is AbsoluteTolerance ? 0 : 1;
             txtXLPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
             //cbbXLBetaprecusorMsTl.SelectedIndex = task.XlSearchParameters.XlPrecusorMsTl is AbsoluteTolerance ? 0 : 1;
@@ -269,12 +280,16 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             //TheTask.XlSearchParameters.CrosslinkSearchWithAllBeta = ckbSearchWithXLAllBeta.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
+            //TheTask.XlSearchParameters.FragmentationType = (FragmentaionType)cbFragmentation.SelectedIndex;
             if (cbbXLprecusorMsTl.SelectedIndex == 0)
                 TheTask.XlSearchParameters.XlPrecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
             else
                 TheTask.XlSearchParameters.XlPrecusorMsTl = new PpmTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
             TheTask.XlSearchParameters.XlCharge_2_3 = ckbCharge_2_3.IsChecked.Value;
             TheTask.XlSearchParameters.XlCharge_2_3_PrimeFragment = ckbCharge_2_3_PrimeFragments.IsChecked.Value;
+            TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
+            TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
+            TheTask.XlSearchParameters.XlQuench_Tris = ckbQuenchTris.IsChecked.Value;
             //if (cbbXLBetaprecusorMsTl.SelectedIndex == 0)
             //    TheTask.XlSearchParameters.XlBetaPrecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLBetaPrecusorMsTl.Text, CultureInfo.InvariantCulture));
             //else
@@ -284,9 +299,13 @@ namespace MetaMorpheusGUI
             {
                 TheTask.XlSearchParameters.UdXLkerName = txtUdXLKerName.Text;
                 TheTask.XlSearchParameters.UdXLkerCleavable = ckbUdXLkerCleavable.IsChecked.Value;
-                TheTask.XlSearchParameters.UdXLkerLongMass = double.Parse(txtUdXLkerLongMass.Text, CultureInfo.InvariantCulture);
-                TheTask.XlSearchParameters.UdXLkerShortMass = double.Parse(txtUdXLkerShortMass.Text, CultureInfo.InvariantCulture);
-                TheTask.XlSearchParameters.UdXLkerTotalMass = double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.UdXLkerLongMass = string.IsNullOrEmpty(txtUdXLkerLongMass.Text) ? (double?)null : double.Parse(txtUdXLkerLongMass.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.UdXLkerShortMass = string.IsNullOrEmpty(txtUdXLkerShortMass.Text) ? (double?)null : double.Parse(txtUdXLkerShortMass.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.UdXLkerTotalMass = string.IsNullOrEmpty(txtUdXLkerTotalMs.Text) ? (double?)null : double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.UdXLkerLoopMass = string.IsNullOrEmpty(txtUdXLkerLoopMass.Text) ? (double?)null : double.Parse(txtUdXLkerLoopMass.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.UdXLkerDeadendMassH2O = string.IsNullOrEmpty(txtUdXLkerDeadendH2O.Text) ? (double?)null : double.Parse(txtUdXLkerDeadendH2O.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.UdXLkerDeadendMassNH2 = string.IsNullOrEmpty(txtUdXLkerDeadendNH2.Text) ? (double?)null : double.Parse(txtUdXLkerDeadendNH2.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.UdXLkerDeadendMassTris = string.IsNullOrEmpty(txtUdXLkerDeadendTris.Text) ? (double?)null : double.Parse(txtUdXLkerDeadendTris.Text, CultureInfo.InvariantCulture);
             }
             CommonParamsToSave.TrimMs1Peaks = trimMs1.IsChecked.Value;
             CommonParamsToSave.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
