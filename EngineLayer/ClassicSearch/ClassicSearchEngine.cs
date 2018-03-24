@@ -15,7 +15,7 @@ namespace EngineLayer.ClassicSearch
 
         private readonly MassDiffAcceptor searchMode;
 
-        private readonly List<Protein> proteinList;
+        private readonly List<Protein> proteins;
 
         private readonly List<ModificationWithMass> fixedModifications;
 
@@ -47,7 +47,7 @@ namespace EngineLayer.ClassicSearch
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
-            this.proteinList = proteinList;
+            this.proteins = proteinList;
             this.searchMode = searchMode;
             this.lp = lp;
             this.addCompIons = addCompIons;
@@ -63,96 +63,91 @@ namespace EngineLayer.ClassicSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In classic search engine!");
-
-            int totalProteins = proteinList.Count;
-
+            
             var observedPeptides = new HashSet<CompactPeptide>();
 
             Status("Getting ms2 scans...");
-
-            var lockObject = new object();
-            int proteinsSeen = 0;
-            int old_progress = 0;
+            
+            double proteinsSearched = 0;
+            int oldPercentProgress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-            Status("Starting classic search...");
-            if (totalProteins > 0)
+            Status("Performing classic search...");
+
+            // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
+            var myLocks = new object[globalPsms.Length];
+            for(int i = 0; i < myLocks.Length; i++)
             {
-                Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
+                myLocks[i] = new object();
+            }
+
+            if (proteins.Any())
+            {
+                Parallel.ForEach(Partitioner.Create(0, proteins.Count), partitionRange =>
                 {
-                    var psms = new Psm[arrayOfSortedMS2Scans.Length];
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
-                        var protein = proteinList[i];
-                        var digestedList = protein.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
-                        foreach (var yyy in digestedList)
+                        // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
+                        foreach (var peptide in proteins[i].Digest(commonParameters.DigestionParams, fixedModifications, variableModifications))
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
-                            if (!commonParameters.ConserveMemory)
-                            {
-                                var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
-                                if (peptideWasObserved)
-                                    continue;
-                                lock (observedPeptides)
-                                {
-                                    peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
-                                    if (peptideWasObserved)
-                                        continue;
-                                    observedPeptides.Add(correspondingCompactPeptide);
-                                }
-                            }
-
-                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                            var compactPeptide = peptide.CompactPeptide(terminusType);
+                            
+                            var productMasses = compactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                             Array.Sort(productMasses);
-
-                            var searchMode = this.searchMode;
-                            foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
+                            
+                            foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(compactPeptide.MonoisotopicMassIncludingFixedMods, searchMode))
                             {
-                                double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons, 0);
+                                double scanPrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
+                                
+                                var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
 
                                 if (score > commonParameters.ScoreCutoff || commonParameters.CalculateEValue)
                                 {
-                                    if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
-                                        psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                    else
-                                        psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
-                                    if (commonParameters.CalculateEValue)
-                                        psms[scanWithIndexAndNotchInfo.scanIndex].UpdateAllScores(score);
+                                    // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
+                                    lock (myLocks[scanWithIndexAndNotchInfo.scanIndex])
+                                    {
+                                        if (globalPsms[scanWithIndexAndNotchInfo.scanIndex] == null)
+                                        {
+                                            globalPsms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(compactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                        }
+                                        else 
+                                        {
+                                            globalPsms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(compactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                                        }
+
+                                        if (commonParameters.CalculateEValue)
+                                        {
+                                            globalPsms[scanWithIndexAndNotchInfo.scanIndex].AddThisScoreToScoreDistribution(score);
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                    lock (lockObject)
-                    {
-                        for (int i = 0; i < globalPsms.Length; i++)
-                            if (psms[i] != null)
-                            {
-                                if (globalPsms[i] == null)
-                                    globalPsms[i] = psms[i];
-                                else
-                                {
-                                    if (commonParameters.CalculateEValue)
-                                        globalPsms[i].SumAllScores(psms[i]);
-                                    globalPsms[i].AddOrReplace(psms[i], commonParameters.ReportAllAmbiguity);
-                                }
-                            }
-                        proteinsSeen += partitionRange.Item2 - partitionRange.Item1;
-                        var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
-                        if (new_progress > old_progress)
+
+                        // report search progress (proteins searched so far out of total proteins in database)
+                        proteinsSearched++;
+                        var percentProgress = (int)((proteinsSearched / proteins.Count) * 100);
+
+                        if (percentProgress > oldPercentProgress)
                         {
-                            ReportProgress(new ProgressEventArgs(new_progress, "Performing classic search...", nestedIds));
-                            old_progress = new_progress;
+                            oldPercentProgress = percentProgress;
+                            ReportProgress(new ProgressEventArgs(percentProgress, "Performing classic search... ", nestedIds));
                         }
                     }
                 });
             }
+
+            // remove peptides below the score cutoff that were stored to calculate expectation values
             if (commonParameters.CalculateEValue)
-                Parallel.ForEach(Partitioner.Create(0, globalPsms.Length), partitionRange =>
-                 {
-                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
-                         if (globalPsms[i] != null && globalPsms[i].Score < commonParameters.ScoreCutoff)
-                             globalPsms[i] = null;
-                 });
+            {
+                for (int i = 0; i < globalPsms.Length; i++)
+                {
+                    if (globalPsms[i] != null && globalPsms[i].Score < commonParameters.ScoreCutoff)
+                    {
+                        globalPsms[i] = null;
+                    }
+                }
+            }
+
             return new MetaMorpheusEngineResults(this);
         }
 

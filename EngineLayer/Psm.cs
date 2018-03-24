@@ -377,8 +377,9 @@ namespace EngineLayer
             };
         }
 
-        public void UpdateAllScores(double score)
+        public void AddThisScoreToScoreDistribution(double score)
         {
+            // creates a distribution of scores for this PSM
             int roundScore = (int)Math.Floor(score);
             while (AllScores.Count <= roundScore)
                 AllScores.Add(0);
@@ -393,14 +394,6 @@ namespace EngineLayer
         {
             foreach (var kvp in psmParent.compactPeptides)
                 AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
-        }
-
-        internal void SumAllScores(Psm psmParent)
-        {
-            while (psmParent.AllScores.Count > AllScores.Count)
-                AllScores.Add(0);
-            for (int score = 0; score < psmParent.AllScores.Count; score++)
-                AllScores[score] += psmParent.AllScores[score];
         }
 
         #endregion Internal Methods

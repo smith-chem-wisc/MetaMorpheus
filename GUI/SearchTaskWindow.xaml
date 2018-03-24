@@ -120,7 +120,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" />
-                                        <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />
+                                        <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />-->
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" />
@@ -300,7 +300,7 @@
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2">
+                                <!--<StackPanel Grid.Column="2">
                                     <Label Content="Database Localized" />
                                     <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
                                     <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
@@ -323,7 +323,7 @@
                                             </HierarchicalDataTemplate>
                                         </TreeView.Resources>
                                     </TreeView>
-                                </StackPanel>
+                                </StackPanel>-->
                             </Grid>
                         </StackPanel>
                     </Expander>
