@@ -1366,6 +1366,7 @@ namespace TaskLayer
                 //writes only detected proteins
                 if (dbFilenameList.Any(b => !b.IsContaminant))
                 {
+                    //comment
                     string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
 
                     ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentPsms.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
