@@ -292,16 +292,16 @@ namespace TaskLayer
 
                 SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
 
-                {
-                    var tomlFileName = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "-calib.toml");
-                    FileSpecificTolerances f = new FileSpecificTolerances
-                    {
-                        PrecursorMassTolerance = bestPrecursorTol,
-                        ProductMassTolerance = bestProductTol
-                    };
-                    Toml.WriteFile(f, tomlFileName, tomlConfig);
-                    SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                }
+                //{
+                //    var tomlFileName = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "-calib.toml");
+                //    FileSpecificTolerances f = new FileSpecificTolerances
+                //    {
+                //        PrecursorMassTolerance = bestPrecursorTol,
+                //        ProductMassTolerance = bestProductTol
+                //    };
+                //    Toml.WriteFile(f, tomlFileName, tomlConfig);
+                //    SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+                //}
 
                 myTaskResults.newSpectra.Add(calibratedFilePath);
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath }));

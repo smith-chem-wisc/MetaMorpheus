@@ -192,7 +192,7 @@ namespace MetaMorpheusGUI
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
+            //maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
             //disposeOfFilesWhenDone.IsChecked = task.SearchParameters.DisposeOfFileWhenDone;
             allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             //DeconvolutionIntensityRatioTextBox.Text = task.CommonParameters.DeconvolutionIntensityRatio.ToString();
@@ -467,8 +467,8 @@ namespace MetaMorpheusGUI
 
             SetModSelectionForPrunedDB();
 
-            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
+            //if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+            //    CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
 
             TheTask.CommonParameters = CommonParamsToSave;
 

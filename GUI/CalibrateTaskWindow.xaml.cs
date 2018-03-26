@@ -73,7 +73,7 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
-            maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
+            //maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
 
@@ -240,8 +240,8 @@ namespace MetaMorpheusGUI
             else
                 CommonParamsToSave.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
-            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
+            //if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+            //    CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
 
             TheTask.CommonParameters = CommonParamsToSave;
 
