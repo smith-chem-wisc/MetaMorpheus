@@ -1265,7 +1265,25 @@ namespace TaskLayer
                 List<Modification> modificationsToWriteIfInDatabase = new List<Modification>();
                 List<Modification> modificationsToWriteIfObserved = new List<Modification>();
 
-                var goodPsmsForEachProtein = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
+                var check = allPsms.Where(p => p.ProteinAccesion == null).ToList();
+
+                var confidentPsms = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null).ToList();
+                var proteinToConfidentPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
+
+                // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
+                foreach (Psm psm in confidentPsms)
+                {
+                    var myPepsWithSetMods = psm.CompactPeptides.SelectMany(p => p.Value.Item2);
+
+                    foreach (var peptide in myPepsWithSetMods)
+                    {
+                        if (proteinToConfidentPsms.TryGetValue(peptide.Protein, out var myPepList))
+                            myPepList.Add(peptide);
+                        else
+                            proteinToConfidentPsms.Add(peptide.Protein, new List<PeptideWithSetModifications> { peptide });
+                    }
+                }
+
                 // Add user mod selection behavours to Pruned DB
                 foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {
@@ -1277,14 +1295,13 @@ namespace TaskLayer
                         modificationsToWriteIfObserved.AddRange(GlobalVariables.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                 }
 
-                foreach (var protein in proteinList)
+                foreach (var proteinEntry in proteinToConfidentPsms)
                 {
-                    if (!protein.IsDecoy)
+                    if (!proteinEntry.Key.IsDecoy)
                     {
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
-                        if (goodPsmsForEachProtein.ContainsKey(protein))
-                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.CompactPeptides.First().Value.Item2.First()), c.Value))));
-
+                        modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentPsms[proteinEntry.Key].SelectMany(b => b.allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
+                        //tried to easilty adapt this but compact peptide not a property of peptides with set modifications
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
 
                         foreach (var observedMod in modsObservedOnThisProtein)
@@ -1303,7 +1320,7 @@ namespace TaskLayer
                         }
 
                         // Add if in database (two cases: always or if observed)
-                        foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
+                        foreach (var modd in proteinEntry.Key.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
@@ -1317,9 +1334,9 @@ namespace TaskLayer
                                 }
                             }
 
-                        protein.OneBasedPossibleLocalizedModifications.Clear();
+                        proteinEntry.Key.OneBasedPossibleLocalizedModifications.Clear();
                         foreach (var kvp in modsToWrite)
-                            protein.OneBasedPossibleLocalizedModifications.Add(kvp);
+                            proteinEntry.Key.OneBasedPossibleLocalizedModifications.Add(kvp);
                     }
                 }
 
@@ -1346,7 +1363,7 @@ namespace TaskLayer
                 {
                     string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
 
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), goodPsmsForEachProtein.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentPsms.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
                     SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
                 }
@@ -1354,7 +1371,7 @@ namespace TaskLayer
                 {
                     string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
 
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), goodPsmsForEachProtein.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentPsms.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
                     SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
                 }
