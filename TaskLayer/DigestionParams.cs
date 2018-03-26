@@ -11,7 +11,7 @@ namespace TaskLayer
             MaxMissedCleavages = 2;
             MinPeptideLength = 5;
             MaxPeptideLength = null;
-            MaxModificationIsoforms = 4096;
+            MaxModificationIsoforms = 1024;
             Protease = GlobalVariables.ProteaseDictionary["trypsin"];
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             MaxModsForPeptide = 3;

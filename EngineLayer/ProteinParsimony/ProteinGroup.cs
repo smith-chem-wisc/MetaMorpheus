@@ -25,7 +25,7 @@ namespace EngineLayer
             ProteinGroupName = string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Accession));
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
-            AllPsmsBelowOnePercentFDR = new HashSet<Psm>();
+            AllPsmsBelowOnePercentFDR = new HashSet<PeptideSpectralMatch>();
             SequenceCoveragePercent = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
@@ -68,7 +68,7 @@ namespace EngineLayer
 
         public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
 
-        public HashSet<Psm> AllPsmsBelowOnePercentFDR { get; set; }
+        public HashSet<PeptideSpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
 
         public List<double> SequenceCoveragePercent { get; private set; }
 
@@ -454,7 +454,7 @@ namespace EngineLayer
 
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
-            var allPsmsForThisFile = new HashSet<Psm>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
+            var allPsmsForThisFile = new HashSet<PeptideSpectralMatch>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
             var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.CompactPeptides.SelectMany(b => b.Value.Item2)));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
 

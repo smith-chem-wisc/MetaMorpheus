@@ -48,7 +48,7 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static void WriteMzidentml(IEnumerable<Psm> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
+        public static void WriteMzidentml(IEnumerable<PeptideSpectralMatch> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
@@ -335,7 +335,7 @@ namespace TaskLayer
 
             var unambiguousPsms = items.Where(psm => psm.FullSequence != null);
 
-            foreach (Psm psm in unambiguousPsms)
+            foreach (PeptideSpectralMatch psm in unambiguousPsms)
             {
                 foreach (PeptideWithSetModifications peptide in psm.CompactPeptides.SelectMany(c => c.Value.Item2).Distinct())
                 {
@@ -822,7 +822,7 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
-            List<Psm> allPsms = new List<Psm>();
+            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
             FlashLFQResults flashLfqResults = null;
 
             Status("Loading modifications...", taskId);
@@ -898,7 +898,7 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
 
-                var fileSpecificPsms = new Psm[arrayOfMs2ScansSortedByMass.Length];
+                var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
@@ -1071,7 +1071,7 @@ namespace TaskLayer
                 var mypsmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
                 // pass protein group info for each PSM
-                Dictionary<Psm, List<string>> psmToProteinGroupNames = new Dictionary<Psm, List<string>>();
+                Dictionary<PeptideSpectralMatch, List<string>> psmToProteinGroupNames = new Dictionary<PeptideSpectralMatch, List<string>>();
                 if (proteinGroups != null)
                 {
                     EngineLayer.ProteinGroup.FilesForQuantification = rawfileinfos.Select(p => p.fullFilePathWithExtension).ToArray();
@@ -1227,7 +1227,7 @@ namespace TaskLayer
                 // individual protein group files (local protein fdr, global parsimony, global psm fdr)
                 foreach (var fullFilePath in currentRawFileList)
                 {
-                    List<Psm> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
+                    List<PeptideSpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
 
                     var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
@@ -1515,7 +1515,7 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
-        private void WritePsmsForPercolator(List<Psm> psmList, string writtenFileForPercolator)
+        private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
