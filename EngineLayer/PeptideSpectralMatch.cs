@@ -15,11 +15,16 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-        private const double tolForScoreDifferentiation = 1e-9;
-
+        
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
+
+        #region Public Fields
+
+        public const double tolForScoreDifferentiation = 1e-9;
+
+        #endregion Public Fields
 
         #region Public Constructors
 

@@ -95,25 +95,29 @@ namespace EngineLayer.ClassicSearch
                             {
                                 double scanPrecursorMass = scan.theScan.PrecursorMass;
                                 
-                                var score = CalculatePeptideScore(scan.theScan.TheScan, productMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
+                                var thisScore = CalculatePeptideScore(scan.theScan.TheScan, productMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
+                                bool meetsScoreCutoff = thisScore > commonParameters.ScoreCutoff;
+                                bool scoreImprovement = peptideSpectralMatches[scan.scanIndex] == null || (peptideSpectralMatches[scan.scanIndex].Score - PeptideSpectralMatch.tolForScoreDifferentiation) <= thisScore;
 
-                                if (score > commonParameters.ScoreCutoff || commonParameters.CalculateEValue)
+                                // this is thread-safe because even if the score improves from another thread writing to this PSM,
+                                // the lock combined with AddOrReplace method will ensure thread safety
+                                if ((meetsScoreCutoff && scoreImprovement) || commonParameters.CalculateEValue)
                                 {
                                     // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
                                     lock (myLocks[scan.scanIndex])
                                     {
                                         if (peptideSpectralMatches[scan.scanIndex] == null)
                                         {
-                                            peptideSpectralMatches[scan.scanIndex] = new PeptideSpectralMatch(compactPeptide, scan.notch, score, scan.scanIndex, scan.theScan);
+                                            peptideSpectralMatches[scan.scanIndex] = new PeptideSpectralMatch(compactPeptide, scan.notch, thisScore, scan.scanIndex, scan.theScan);
                                         }
                                         else 
                                         {
-                                            peptideSpectralMatches[scan.scanIndex].AddOrReplace(compactPeptide, score, scan.notch, commonParameters.ReportAllAmbiguity);
+                                            peptideSpectralMatches[scan.scanIndex].AddOrReplace(compactPeptide, thisScore, scan.notch, commonParameters.ReportAllAmbiguity);
                                         }
 
                                         if (commonParameters.CalculateEValue)
                                         {
-                                            peptideSpectralMatches[scan.scanIndex].AddThisScoreToScoreDistribution(score);
+                                            peptideSpectralMatches[scan.scanIndex].AddThisScoreToScoreDistribution(thisScore);
                                         }
                                     }
                                 }
