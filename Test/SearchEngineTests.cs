@@ -125,6 +125,7 @@ namespace Test
             SearchParameters SearchParameters = new SearchParameters
             {
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                SearchTarget = true,
             };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -180,6 +181,7 @@ namespace Test
 
             // Single ms2 scan
             Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray[0] != null);
 
             Assert.IsTrue(allPsmsArray[0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
@@ -298,7 +300,8 @@ namespace Test
         {
             SearchParameters SearchParameters = new SearchParameters
             {
-                MassDiffAcceptorType = MassDiffAcceptorType.Open
+                MassDiffAcceptorType = MassDiffAcceptorType.Open,
+                SearchTarget = true,
             };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -339,6 +342,7 @@ namespace Test
 
             // Single ms2 scan
             Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray[0] != null);
 
             Assert.IsTrue(allPsmsArray[0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
@@ -435,6 +439,7 @@ namespace Test
             SearchParameters SearchParameters = new SearchParameters
             {
                 AddCompIons = true,
+                SearchTarget = true,
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
             };
             var dp = new DigestionParams
@@ -496,6 +501,7 @@ namespace Test
 
             //Single ms2 scan
             Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray[0] != null);
 
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
@@ -636,7 +642,9 @@ namespace Test
             var localizeableModifications = new List<ModificationWithMass>();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -700,8 +708,12 @@ namespace Test
             new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List<Psm> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }

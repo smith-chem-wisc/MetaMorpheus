@@ -1,0 +1,211 @@
+﻿RNA crosslink modifications
+ID   U
+TG   X
+PP   Anywhere.
+MM   324.0358665366
+MT   RNA
+CF   C-9 H-13 N-2 O-9 P-1
+//
+ID   U-H2O1
+TG   X
+PP   Anywhere.
+MM   306.0253018503
+MT   RNA
+CF   C-9 H-11 N-2 O-8 P-1
+//
+ID   UU-H2O1
+TG   X
+PP   Anywhere.
+MM   612.0506037006
+MT   RNA
+CF   C-18 H-22 N-4 O-16 P-2
+//
+ID   CU-H2O1
+TG   X
+PP   Anywhere.
+MM   611.0665881158
+MT   RNA
+CF   C-18 H-23 N-5 O-15 P-2
+//
+ID   UU
+TG   X
+PP   Anywhere.
+MM   630.0611683869
+MT   RNA
+CF   C-18 H-24 N-4 O-17 P-2
+//
+ID   CU
+TG   X
+PP   Anywhere.
+MM   629.0771528021
+MT   RNA
+CF   C-18 H-25 N-5 O-16 P-2
+//
+ID   AU-H2O1
+TG   X
+PP   Anywhere.
+MM   635.0778215041
+MT   RNA
+CF   C-19 H-23 N-7 O-14 P-2
+//
+ID   GU-H2O1
+TG   X
+PP   Anywhere.
+MM   651.0727361262
+MT   RNA
+CF   C-19 H-23 N-7 O-15 P-2
+//
+ID   AU
+TG   X
+PP   Anywhere.
+MM   653.0883861904
+MT   RNA
+CF   C-19 H-25 N-7 O-15 P-2
+//
+ID   GU
+TG   X
+PP   Anywhere.
+MM   669.0833008125
+MT   RNA
+CF   C-19 H-25 N-7 O-16 P-2
+//
+ID   UUU-H2O1
+TG   X
+PP   Anywhere.
+MM   918.0759055509
+MT   RNA
+CF   C-27 H-33 N-6 O-24 P-3
+//
+ID   CUU-H2O1
+TG   X
+PP   Anywhere.
+MM   917.0918899661
+MT   RNA
+CF   C-27 H-34 N-7 O-23 P-3
+//
+ID   UUU
+TG   X
+PP   Anywhere.
+MM   936.0864702372
+MT   RNA
+CF   C-27 H-35 N-6 O-25 P-3
+//
+ID   CCU-H2O1
+TG   X
+PP   Anywhere.
+MM   916.1078743813
+MT   RNA
+CF   C-27 H-35 N-8 O-22 P-3
+//
+ID   CUU
+TG   X
+PP   Anywhere.
+MM   935.1024546524
+MT   RNA
+CF   C-27 H-36 N-7 O-24 P-3
+//
+ID   CCU
+TG   X
+PP   Anywhere.
+MM   934.1184390676
+MT   RNA
+CF   C-27 H-37 N-8 O-23 P-3
+//
+ID   AUU-H2O1
+TG   X
+PP   Anywhere.
+MM   941.1031233544
+MT   RNA
+CF   C-28 H-34 N-9 O-22 P-3
+//
+ID   GUU-H2O1
+TG   X
+PP   Anywhere.
+MM   957.0980379765
+MT   RNA
+CF   C-28 H-34 N-9 O-23 P-3
+//
+ID   ACU-H2O1
+TG   X
+PP   Anywhere.
+MM   940.119
+MT   RNA
+CF   C-28 H-35 N-10 O-21 P-3
+//
+ID   CGU-H2O1
+TG   X
+PP   Anywhere.
+MM   956.1140223917
+MT   RNA
+CF   C-28 H-35 N-10 O-22 P-3
+//
+ID   AUU
+TG   X
+PP   Anywhere.
+MM   959.1136880407
+MT   RNA
+CF   C-28 H-36 N-9 O-23 P-3
+//
+ID   GUU
+TG   X
+PP   Anywhere.
+MM   975.1086026628
+MT   RNA
+CF   C-28 H-36 N-9 O-24 P-3
+//
+ID   ACU
+TG   X
+PP   Anywhere.
+MM   958.1296724559
+MT   RNA
+CF   C-28 H-37 N-10 O-22 P-3
+//
+ID   CGU
+TG   X
+PP   Anywhere.
+MM   974.1245870780
+MT   RNA
+CF   C-28 H-37 N-10 O-23 P-3
+//
+ID   AAU-H2O1
+TG   X
+PP   Anywhere.
+MM   964.1303411579
+MT   RNA
+CF   C-29 H-35 N-12 O-20 P-3
+//
+ID   AGU-H2O1
+TG   X
+PP   Anywhere.
+MM   980.1252557800
+MT   RNA
+CF   C-29 H-35 N-12 O-21 P-3
+//
+ID   GGU-H2O1
+TG   X
+PP   Anywhere.
+MM   996.1201704021
+MT   RNA
+CF   C-29 H-35 N-12 O-22 P-3
+//
+ID   AAU
+TG   X
+PP   Anywhere.
+MM   982.1409058442
+MT   RNA
+CF   C-29 H-37 N-12 O-21 P-3
+//
+ID   AGU
+TG   X
+PP   Anywhere.
+MM   998.1358204663
+MT   RNA
+CF   C-29 H-37 N-12 O-22 P-3
+//
+ID   GGU
+TG   X
+PP   Anywhere.
+MM   1014.1307350884
+MT   RNA
+CF   C-29 H-37 N-12 O-23 P-3
+//
