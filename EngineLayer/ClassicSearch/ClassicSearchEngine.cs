@@ -21,7 +21,7 @@ namespace EngineLayer.ClassicSearch
 
         private readonly List<ModificationWithMass> variableModifications;
 
-        private readonly Psm[] globalPsms;
+        private readonly PeptideSpectralMatch[] peptideSpectralMatches;
 
         private readonly Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans;
 
@@ -40,9 +40,9 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, bool addCompIons, ICommonParameters CommonParameters, Tolerance productMassTolerance, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, bool addCompIons, ICommonParameters CommonParameters, Tolerance productMassTolerance, List<string> nestedIds) : base(nestedIds)
         {
-            this.globalPsms = globalPsms;
+            this.peptideSpectralMatches = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             this.variableModifications = variableModifications;
@@ -62,24 +62,21 @@ namespace EngineLayer.ClassicSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In classic search engine!");
-            
-            var observedPeptides = new HashSet<CompactPeptide>();
-
             Status("Getting ms2 scans...");
             
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-            Status("Performing classic search...");
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
-            var myLocks = new object[globalPsms.Length];
-            for(int i = 0; i < myLocks.Length; i++)
+            var myLocks = new object[peptideSpectralMatches.Length];
+            for (int i = 0; i < myLocks.Length; i++)
             {
                 myLocks[i] = new object();
             }
 
+            Status("Performing classic search...");
+            
             if (proteins.Any())
             {
                 Parallel.ForEach(Partitioner.Create(0, proteins.Count), partitionRange =>
@@ -94,29 +91,29 @@ namespace EngineLayer.ClassicSearch
                             var productMasses = compactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                             Array.Sort(productMasses);
                             
-                            foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(compactPeptide.MonoisotopicMassIncludingFixedMods, searchMode))
+                            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(compactPeptide.MonoisotopicMassIncludingFixedMods, searchMode))
                             {
-                                double scanPrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
+                                double scanPrecursorMass = scan.theScan.PrecursorMass;
                                 
-                                var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
+                                var score = CalculatePeptideScore(scan.theScan.TheScan, productMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
 
                                 if (score > commonParameters.ScoreCutoff || commonParameters.CalculateEValue)
                                 {
                                     // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
-                                    lock (myLocks[scanWithIndexAndNotchInfo.scanIndex])
+                                    lock (myLocks[scan.scanIndex])
                                     {
-                                        if (globalPsms[scanWithIndexAndNotchInfo.scanIndex] == null)
+                                        if (peptideSpectralMatches[scan.scanIndex] == null)
                                         {
-                                            globalPsms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(compactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                            peptideSpectralMatches[scan.scanIndex] = new PeptideSpectralMatch(compactPeptide, scan.notch, score, scan.scanIndex, scan.theScan);
                                         }
                                         else 
                                         {
-                                            globalPsms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(compactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
+                                            peptideSpectralMatches[scan.scanIndex].AddOrReplace(compactPeptide, score, scan.notch, commonParameters.ReportAllAmbiguity);
                                         }
 
                                         if (commonParameters.CalculateEValue)
                                         {
-                                            globalPsms[scanWithIndexAndNotchInfo.scanIndex].AddThisScoreToScoreDistribution(score);
+                                            peptideSpectralMatches[scan.scanIndex].AddThisScoreToScoreDistribution(score);
                                         }
                                     }
                                 }
@@ -139,11 +136,11 @@ namespace EngineLayer.ClassicSearch
             // remove peptides below the score cutoff that were stored to calculate expectation values
             if (commonParameters.CalculateEValue)
             {
-                for (int i = 0; i < globalPsms.Length; i++)
+                for (int i = 0; i < peptideSpectralMatches.Length; i++)
                 {
-                    if (globalPsms[i] != null && globalPsms[i].Score < commonParameters.ScoreCutoff)
+                    if (peptideSpectralMatches[i] != null && peptideSpectralMatches[i].Score < commonParameters.ScoreCutoff)
                     {
-                        globalPsms[i] = null;
+                        peptideSpectralMatches[i] = null;
                     }
                 }
             }

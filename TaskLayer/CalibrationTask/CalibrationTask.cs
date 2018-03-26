@@ -57,7 +57,7 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputFolder, fileName + ".ms2dptsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeader + "\t" + Psm.GetTabSeparatedHeader());
+                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeader + "\t" + PeptideSpectralMatch.GetTabSeparatedHeader());
                 foreach (var dp in items)
                 {
                     output.Write(dp.Values());
@@ -72,7 +72,7 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputFolder, fileName + ".ms1dptsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeader + "\t" + Psm.GetTabSeparatedHeader());
+                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeader + "\t" + PeptideSpectralMatch.GetTabSeparatedHeader());
                 foreach (var dp in items)
                 {
                     output.Write(dp.Values());
@@ -350,7 +350,7 @@ namespace TaskLayer
 
             var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters.DoPrecursorDeconvolution, combinedParameters.UseProvidedPrecursorInfo, combinedParameters.DeconvolutionIntensityRatio, combinedParameters.DeconvolutionMaxAssumedChargeState, combinedParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             List<ProductType> lp = new List<ProductType>();
             if (combinedParameters.BIons)
@@ -367,7 +367,7 @@ namespace TaskLayer
 
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, false, combinedParameters, initProdTol, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-            List<Psm> allPsms = allPsmsArray.ToList();
+            List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<IDigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run()).CompactPeptideToProteinPeptideMatching;
 
@@ -379,7 +379,7 @@ namespace TaskLayer
 
             new FdrAnalysisEngine(allPsms, searchMode.NumNotches, false, new List<string> { taskId, "Individual Spectra Files", currentDataFile }).Run();
 
-            List<Psm> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
+            List<PeptideSpectralMatch> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
             if (!goodIdentifications.Any())
             {

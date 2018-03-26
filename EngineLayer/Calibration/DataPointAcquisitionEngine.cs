@@ -16,7 +16,7 @@ namespace EngineLayer.Calibration
 
         private const double fineResolutionForIsotopeDistCalculation = 0.1;
 
-        private readonly List<Psm> goodIdentifications;
+        private readonly List<PeptideSpectralMatch> goodIdentifications;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly int numFragmentsNeededForEveryIdentification;
         private readonly Tolerance mzToleranceForMs1Search;
@@ -30,7 +30,7 @@ namespace EngineLayer.Calibration
         #region Public Constructors
 
         public DataPointAcquisitionEngine(
-            List<Psm> goodIdentifications,
+            List<PeptideSpectralMatch> goodIdentifications,
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile,
             Tolerance mzToleranceForMs1Search,
             Tolerance mzToleranceForMs2Search,
@@ -78,7 +78,7 @@ namespace EngineLayer.Calibration
             {
                 for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
                 {
-                    Psm identification = goodIdentifications[matchIndex];
+                    PeptideSpectralMatch identification = goodIdentifications[matchIndex];
 
                     // Each identification has an MS2 spectrum attached to it.
                     int ms2scanNumber = identification.ScanNumber;
@@ -148,7 +148,7 @@ namespace EngineLayer.Calibration
 
         #region Private Methods
 
-        private (List<LabeledMs1DataPoint>, int, int) SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, Psm identification)
+        private (List<LabeledMs1DataPoint>, int, int) SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, PeptideSpectralMatch identification)
         {
             List<LabeledMs1DataPoint> result = new List<LabeledMs1DataPoint>();
             int numMs1MassChargeCombinationsConsidered = 0;
@@ -242,7 +242,7 @@ namespace EngineLayer.Calibration
             return (result, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
         }
 
-        private (List<LabeledMs2DataPoint>, int, int, int) SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, Psm identification)
+        private (List<LabeledMs2DataPoint>, int, int, int) SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, PeptideSpectralMatch identification)
         {
             List<LabeledMs2DataPoint> result = new List<LabeledMs2DataPoint>();
             int numMs2MassChargeCombinationsConsidered = 0;

@@ -13,13 +13,13 @@
 
         public readonly double expectedMZ;
 
-        public readonly Psm identification;
+        public readonly PeptideSpectralMatch identification;
 
         #endregion Public Fields
 
         #region Protected Constructors
 
-        protected LabeledDataPoint(double mz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double expectedMZ, Psm identification)
+        protected LabeledDataPoint(double mz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double expectedMZ, PeptideSpectralMatch identification)
         {
             this.mz = mz;
             this.rt = rt;

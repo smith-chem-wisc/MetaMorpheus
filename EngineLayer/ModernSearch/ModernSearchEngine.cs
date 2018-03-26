@@ -14,7 +14,7 @@ namespace EngineLayer.ModernSearch
 
         protected const int fragmentBinsPerDalton = 1000;
         protected readonly List<int>[] fragmentIndex;
-        protected readonly Psm[] globalPsms;
+        protected readonly PeptideSpectralMatch[] globalPsms;
         protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
         protected readonly List<CompactPeptide> peptideIndex;
         protected readonly List<ProductType> lp;
@@ -29,7 +29,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -118,7 +118,7 @@ namespace EngineLayer.ModernSearch
                             {
                                 if (globalPsms[i] == null)
                                 {
-                                    globalPsms[i] = new Psm(peptide, notch, score, i, scan);
+                                    globalPsms[i] = new PeptideSpectralMatch(peptide, notch, score, i, scan);
                                     if (CommonParameters.CalculateEValue)
                                     {
                                         List<int> AllScores = new List<int>(new int[maxInitialScore + 1]);
