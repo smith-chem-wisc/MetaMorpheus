@@ -14,7 +14,7 @@ namespace TaskLayer
             MaxModificationIsoforms = 1024;
             Protease = GlobalVariables.ProteaseDictionary["trypsin"];
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            MaxModsForPeptide = 3;
+            MaxModsForPeptide = 2;
             SemiProteaseDigestion = false;
         }
 
