@@ -308,7 +308,8 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams
             {
                 Protease = protease,
-                MinPeptideLength = 1
+                MinPeptideLength = 1,
+                MaxModsForPeptide = 3
             };
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
