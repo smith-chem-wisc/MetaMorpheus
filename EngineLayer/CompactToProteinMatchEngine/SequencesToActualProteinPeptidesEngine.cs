@@ -80,19 +80,19 @@ namespace EngineLayer
                 {
                     foreach (var digestionParam in collectionOfDigestionParams)
                     {
-                        foreach (var peptideWithSetModifications in proteins[i].Digest(digestionParam, fixedModifications, variableModifications).ToList())
+                        foreach (var peptide in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
                         {
-                            var compactPeptide = peptideWithSetModifications.CompactPeptide(terminusType);
+                            var compactPeptide = peptide.CompactPeptide(terminusType);
 
-                            if (compactPeptideToProteinPeptideMatching.ContainsKey(compactPeptide))
+                            if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out var peptidesWithSetMods))
                             {
-                                lock (compactPeptideToProteinPeptideMatching[compactPeptide])
-                                    compactPeptideToProteinPeptideMatching[compactPeptide].Add(peptideWithSetModifications);
+                                lock (peptidesWithSetMods)
+                                    peptidesWithSetMods.Add(peptide);
                             }
                         }
                     }
 
-                    // report search progress (proteins searched so far out of total proteins in database)
+                    // report progress (proteins matched so far out of total proteins in database)
                     proteinsMatched++;
                     var percentProgress = (int)((proteinsMatched / proteins.Count) * 100);
 
