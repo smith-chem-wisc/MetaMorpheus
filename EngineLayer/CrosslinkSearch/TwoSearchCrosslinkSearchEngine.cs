@@ -350,9 +350,7 @@ namespace EngineLayer.CrosslinkSearch
                 var psms = new PsmCross[selectedScan.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
-                    var protein = proteinList[i];
-                    var digestedList = protein.Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
-                    foreach (var yyy in digestedList)
+                    foreach (var yyy in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications))
                     {
                         var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
                         if (!conserveMemory)
@@ -372,7 +370,7 @@ namespace EngineLayer.CrosslinkSearch
                         var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                         Array.Sort(productMasses);
 
-                        foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
+                        foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan))
                         {
                             var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, yyy.MonoisotopicMass, new List<DissociationType>(), false, 0);
 

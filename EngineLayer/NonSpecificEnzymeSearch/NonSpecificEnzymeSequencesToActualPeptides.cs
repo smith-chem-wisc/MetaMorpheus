@@ -72,7 +72,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key as CompactPeptideBase, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                         foreach (var digestionParam in collectionOfDigestionParams)
-                            foreach (var peptideWithSetModifications in proteins[i].Digest(digestionParam, fixedModifications, variableModifications).ToList())
+                            foreach (var peptideWithSetModifications in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
                                 if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
                                     v.Add(peptideWithSetModifications);
 
@@ -170,7 +170,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                         foreach (var digestionParam in collectionOfDigestionParams)
-                            foreach (var peptideWithSetModifications in proteins[i].Digest(digestionParam, fixedModifications, variableModifications).ToList())
+                            foreach (var peptideWithSetModifications in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
                                 if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
                                     v.Add(peptideWithSetModifications);
 
