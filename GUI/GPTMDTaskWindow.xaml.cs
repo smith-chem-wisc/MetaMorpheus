@@ -128,22 +128,22 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
-            if (task.CommonParameters.LocalizeAll)
+            //localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
+            //if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                     heh.Use = false;
             }
-            else
-            {
-                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                {
-                    if (task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
-                        heh.Use = true;
-                    else
-                        heh.Use = false;
-                }
-            }
+            //else
+            //{
+            //    foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+            //    {
+            //        if (task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
+            //            heh.Use = true;
+            //        else
+            //            heh.Use = false;
+            //    }
+            //}
 
             foreach (var mod in task.GptmdParameters.ListOfModsGptmd)
             {
@@ -203,9 +203,9 @@ namespace MetaMorpheusGUI
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
-                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
-            localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
+            //foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            //    localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
+            //localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
@@ -267,16 +267,16 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
 
-            if (localizeAllCheckBox.IsChecked.Value)
+            //if (localizeAllCheckBox.IsChecked.Value)
             {
                 CommonParamsToSave.ListOfModTypesLocalize = null;
                 CommonParamsToSave.LocalizeAll = true;
             }
-            else
-            {
-                CommonParamsToSave.LocalizeAll = false;
-                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
-            }
+            //else
+            //{
+            //    CommonParamsToSave.LocalizeAll = false;
+            //    CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
+            //}
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
                 TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));

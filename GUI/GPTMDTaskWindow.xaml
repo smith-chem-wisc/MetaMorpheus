@@ -163,7 +163,7 @@
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2">
+                                <!--<StackPanel Grid.Column="2">
                                     <Label Content="Database Localized" />
                                     <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
                                     <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
@@ -186,7 +186,7 @@
                                             </HierarchicalDataTemplate>
                                         </TreeView.Resources>
                                     </TreeView>
-                                </StackPanel>
+                                </StackPanel>-->
                             </Grid>
                         </StackPanel>
                     </Expander>
