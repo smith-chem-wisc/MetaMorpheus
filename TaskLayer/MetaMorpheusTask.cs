@@ -291,11 +291,11 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected static void WritePsmsToTsv(IEnumerable<Psm> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                output.WriteLine(Psm.GetTabSeparatedHeader());
+                output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
                 foreach (var heh in items)
                     output.WriteLine(heh.ToString(ModstoWritePruned));
             }

@@ -10,20 +10,25 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public class Psm
+    public class PeptideSpectralMatch
     {
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-        private const double tolForScoreDifferentiation = 1e-9;
-
+        
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
 
+        #region Public Fields
+
+        public const double tolForScoreDifferentiation = 1e-9;
+
+        #endregion Public Fields
+
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
+        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -377,8 +382,9 @@ namespace EngineLayer
             };
         }
 
-        public void UpdateAllScores(double score)
+        public void AddThisScoreToScoreDistribution(double score)
         {
+            // creates a distribution of scores for this PSM
             int roundScore = (int)Math.Floor(score);
             while (AllScores.Count <= roundScore)
                 AllScores.Add(0);
@@ -389,18 +395,10 @@ namespace EngineLayer
 
         #region Internal Methods
 
-        internal void AddOrReplace(Psm psmParent, bool reportAllAmbiguity)
+        internal void AddOrReplace(PeptideSpectralMatch psmParent, bool reportAllAmbiguity)
         {
             foreach (var kvp in psmParent.compactPeptides)
                 AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
-        }
-
-        internal void SumAllScores(Psm psmParent)
-        {
-            while (psmParent.AllScores.Count > AllScores.Count)
-                AllScores.Add(0);
-            for (int score = 0; score < psmParent.AllScores.Count; score++)
-                AllScores[score] += psmParent.AllScores[score];
         }
 
         #endregion Internal Methods
