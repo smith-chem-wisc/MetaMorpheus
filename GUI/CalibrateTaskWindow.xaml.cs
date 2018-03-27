@@ -79,7 +79,7 @@ namespace MetaMorpheusGUI
 
             //conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
 
-            writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
+            //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -202,7 +202,7 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
             //CommonParamsToSave.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
             CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
-            TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
+            //TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
 
             if (OutputFileNameTextBox.Text != "")
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;

@@ -191,13 +191,13 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
+                <!--<GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="CalibrationExpander">
                         <StackPanel>
                             <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write Intermediate Files" />
                         </StackPanel>
                     </Expander>
-                </GroupBox>
+                </GroupBox>-->
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
