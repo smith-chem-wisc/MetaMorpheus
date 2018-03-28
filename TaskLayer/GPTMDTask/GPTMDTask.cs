@@ -63,7 +63,7 @@ namespace TaskLayer
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
-            List<Psm> allPsms = new List<Psm>();
+            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -130,7 +130,7 @@ namespace TaskLayer
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
-                Psm[] allPsmsArray = new Psm[arrayOfMs2ScansSortedByMass.Length];
+                PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                 new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, searchMode, false, combinedParams, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
                 lock (lock2)
                 {
