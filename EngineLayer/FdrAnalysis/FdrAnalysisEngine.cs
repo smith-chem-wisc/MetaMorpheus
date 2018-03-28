@@ -59,9 +59,13 @@ namespace EngineLayer.FdrAnalysis
                 {
                     item.AllScores[item.AllScores.Count - 1]--; //remove top scoring peptide
                     while (combinedAllScores.Count < item.AllScores.Count) //expand array if neccessary
+                    {
                         combinedAllScores.Add(0);
+                    }
                     for (int score = 0; score < item.AllScores.Count; score++) //add scores
+                    {
                         combinedAllScores[score] += item.AllScores[score];
+                    }
                 }
                 for (int i = 0; i < combinedAllScores.Count; i++)
                 {
@@ -73,7 +77,9 @@ namespace EngineLayer.FdrAnalysis
             }
             var ids = new List<Psm>();
             foreach (Psm item in items)
+            {
                 ids.Add(item);
+            }
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
@@ -87,14 +93,22 @@ namespace EngineLayer.FdrAnalysis
                 var isDecoy = item.IsDecoy;
                 int notch = item.Notch ?? massDiffAcceptorNumNotches;
                 if (isDecoy)
+                {
                     cumulative_decoy++;
+                }
                 else
+                {
                     cumulative_target++;
+                }
 
                 if (isDecoy)
+                {
                     cumulative_decoy_per_notch[notch]++;
+                }
                 else
+                {
                     cumulative_target_per_notch[notch]++;
+                }
 
                 double temp_q_value = (double)cumulative_decoy / cumulative_target;
                 double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / cumulative_target_per_notch[notch];
@@ -115,21 +129,31 @@ namespace EngineLayer.FdrAnalysis
             double min_q_value = double.PositiveInfinity;
             double[] min_q_value_notch = new double[massDiffAcceptorNumNotches + 1];
             for (int i = 0; i < massDiffAcceptorNumNotches + 1; i++)
+            {
                 min_q_value_notch[i] = double.PositiveInfinity;
+            }
 
             for (int i = ids.Count - 1; i >= 0; i--)
             {
                 Psm id = ids[i];
                 if (id.FdrInfo.QValue > min_q_value)
+                {
                     id.FdrInfo.QValue = min_q_value;
+                }
                 else if (id.FdrInfo.QValue < min_q_value)
+                {
                     min_q_value = id.FdrInfo.QValue;
+                }
 
                 int notch = id.Notch ?? massDiffAcceptorNumNotches;
                 if (id.FdrInfo.QValueNotch > min_q_value_notch[notch])
+                {
                     id.FdrInfo.QValueNotch = min_q_value_notch[notch];
+                }
                 else if (id.FdrInfo.QValueNotch < min_q_value_notch[notch])
+                {
                     min_q_value_notch[notch] = id.FdrInfo.QValueNotch;
+                }
             }
 
             return ids;
@@ -138,7 +162,9 @@ namespace EngineLayer.FdrAnalysis
         private static (int sum, int count) GetSumAndCount(List<int> allScores)
         {
             if (!allScores.Any(x => x != 0))
+            {
                 return (0, 0);
+            }
             else
             {
                 int count = 0;
@@ -163,11 +189,17 @@ namespace EngineLayer.FdrAnalysis
             double preValue; // this is the cumulative distribution for the poisson at each score up to but not including the score of the winner. This is the probability that the winner has of getting that score at random by matching against a SINGLE spectrum
 
             if (score == 0)
+            {
                 preValue = 1;
+            }
             else if (maximumLikelihood == 0)
+            {
                 preValue = SpecialFunctions.GammaLowerRegularized(globalMeanScore, (score - 1));
+            }
             else
+            {
                 preValue = SpecialFunctions.GammaLowerRegularized(maximumLikelihood, (score - 1));
+            }
 
             // Now the probability of getting the winner's score goes up for each spectrum match. We multiply the preValue by the number of theoretical spectrum within the tolerance to get this new probability.
             if (count > 0)
