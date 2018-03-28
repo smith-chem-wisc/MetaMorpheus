@@ -379,7 +379,7 @@ namespace EngineLayer.CrosslinkSearch
                             if (score > 1 && PsmCross.XlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
                             {
                                 var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, scanWithIndexAndNotchInfo.theScan.PrecursorMass - psm.compactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, true, false);
+                                PsmCross.XLLocalization(scanWithIndexAndNotchInfo.theScan, psm, scanWithIndexAndNotchInfo.theScan.PrecursorMass - psm.compactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, true, false);
                                 double currentBestPsmLocalScore = 0;
                                 if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
                                 {
@@ -433,7 +433,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (outerPsms[i] != null && PsmCross.XlPosCal(selectedPsmParent[i].compactPeptide, crosslinker).Count != 0)
                 {
-                    PsmCross.XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i], selectedScan[i].PrecursorMass - selectedPsmParent[i].compactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, true, false);
+                    PsmCross.XLLocalization(selectedScan[i], selectedPsmParent[i], selectedScan[i].PrecursorMass - selectedPsmParent[i].compactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, true, false);
                     selectedPsmParent[i].XLTotalScore = selectedPsmParent[i].XLBestScore + outerPsms[i].XLBestScore;
                     selectedPsmParent[i].BetaPsmCross = outerPsms[i];
                     selectedPsmParent[i].CrossType = PsmCrossType.Cross;

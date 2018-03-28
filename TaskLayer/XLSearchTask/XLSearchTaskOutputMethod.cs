@@ -147,7 +147,7 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass\tCross-link type" +
-                    "\tPep1\tPep1 Protein Access(Protein link site)\tPep1 Base sequence(crosslink site)\tPep1 Full sequence\tPep1 mass\tPep1 Score\tPep1 XLBestScore\tPep1 Rank" +
+                    "\tPep1\tPep1 Protein Access(Protein link site)\tPep1 Base sequence(crosslink site)\tPep1 Full sequence\tPep1 mass\tPep1 Score\tPep1 XLTotalScore\tPep1 Rank" +
                     "\tQValue");
                 foreach (var item in items)
                 {
@@ -164,7 +164,7 @@ namespace TaskLayer
                         + "\t" + item.FullSequence
                         + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
                         + "\t" + item.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.XLBestScore.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
                         + "\t" + (item.XlRank != null ? item.XlRank[0].ToString(CultureInfo.InvariantCulture) : "-")
                         + "\t" + (item.FdrInfo != null ? item.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture) : "-")
                     );
@@ -339,7 +339,7 @@ namespace TaskLayer
                     mods.Add(mod);
                 }
 
-                if (items[i].CrossType == PsmCrossType.DeadEnd || items[i].CrossType == PsmCrossType.Singe)
+                if (items[i].CrossType == PsmCrossType.Singe)
                 {
                     var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                     {
@@ -359,6 +359,46 @@ namespace TaskLayer
                                         new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     },                       
+                    };
+                    searchHits.Add(searchHit);
+                }
+                if (items[i].CrossType == PsmCrossType.DeadEnd || items[i].CrossType == PsmCrossType.DeadEndH2O || items[i].CrossType == PsmCrossType.DeadEndNH2 || items[i].CrossType == PsmCrossType.DeadEndTris)
+                {
+                    double crosslinkerDeadEndMass = 0;
+                    switch (items[i].CrossType)
+                    {
+                        case PsmCrossType.DeadEndH2O:
+                            crosslinkerDeadEndMass = crosslinker.DeadendMassH2O;
+                            break;
+                        case PsmCrossType.DeadEndNH2:
+                            crosslinkerDeadEndMass = crosslinker.DeadendMassNH2;
+                            break;
+                        case PsmCrossType.DeadEndTris:
+                            crosslinkerDeadEndMass = crosslinker.DeadendMassTris;
+                            break;
+                        default:
+                            break;
+                    }
+                    var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass { mass = crosslinkerDeadEndMass, position = items[i].XlPos.ToString() };
+                    mods.Add(mod);
+                    var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
+                    {
+                        hit_rank = 1,
+                        peptide = items[i].BaseSequence,
+                        peptide_prev_aa = items[i].CompactPeptides.First().Value.Item2.First().PreviousAminoAcid.ToString(),
+                        peptide_next_aa = items[i].CompactPeptides.First().Value.Item2.First().NextAminoAcid.ToString(),
+                        protein = items[i].CompactPeptides.First().Value.Item2.First().Protein.Accession,
+                        num_tot_proteins = 1,
+                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
+                        massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value).ToString(),
+                        xlink_typeSpecified = true,
+                        xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.na,
+                        modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
+                        search_score = new pepXML.Generated.nameValueType[]
+                                    {
+                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
+                                    },
                     };
                     searchHits.Add(searchHit);
                 }
@@ -443,7 +483,8 @@ namespace TaskLayer
                     {
                         xlink_score = new pepXML.Generated.nameValueType[]
                                                 {
-                                                    new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLBestScore.ToString() },
+                                                    new pepXML.Generated.nameValueType{ name = "link", value = items[i].XlPos.ToString() },
+                                                    new pepXML.Generated.nameValueType{ name = "link", value = items[i].XlPos2.ToString() }
                                                 }
                     };
                     var cross = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide[1] { thePeptide };

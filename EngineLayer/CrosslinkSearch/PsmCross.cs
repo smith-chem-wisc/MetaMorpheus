@@ -47,6 +47,7 @@ namespace EngineLayer.CrosslinkSearch
         public double XLTotalScore { get; set; }
         public double XLQvalueTotalScore { get; set; }
         public int XlPos { get; set; }
+        public int XlPos2 { get; set; }
         public int XlProteinPos { get; set; }
         public int[] XlRank { get; set; }
         public string ParentIonExist { get; set; }
@@ -61,7 +62,7 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Methods
 
-        //Compute matched ions
+        //Calculate score based on Product Masses.
         public static double XLMatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, string[] sorted_theoretical_product_name_for_this_peptide, MatchedIonInfo matchedIonMassesListPositiveIsMatch)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
@@ -154,7 +155,7 @@ namespace EngineLayer.CrosslinkSearch
             return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
         }
 
-        //Compute if crosslink amino acid exist and return its position based on compactPeptide
+        //Calculate if crosslink amino acid exist and return its position based on compactPeptide
         public static List<int> XlPosCal(CompactPeptide compactPeptide, CrosslinkerTypeClass crosslinker)
         {
             Tolerance tolerance = new PpmTolerance(1);
@@ -177,6 +178,7 @@ namespace EngineLayer.CrosslinkSearch
             return xlpos;
         }
 
+        //Calculate All possible Products Masses based on ModMass and linkPos
         public static List<ProductMassesMightHave> XLCalculateTotalProductMasses(PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, bool Charge_2_3, bool Charge_2_3_PrimeFragment)
         {
             int length = psmCross.compactPeptide.NTerminalMasses.Length;
@@ -268,7 +270,7 @@ namespace EngineLayer.CrosslinkSearch
                         }
                     }
 
-                    if (cr == 'c' && nm >= ipos)
+                    if (cr == 'c' && nm >= ipos + 1 )
                     {
                         x.Add(pmmh.ProductMz[i] + modMass);
                         y.Add("t1c" + nm.ToString());
@@ -342,7 +344,8 @@ namespace EngineLayer.CrosslinkSearch
             return pmmhList;
         }
 
-        public static void XLCalculateTotalProductMassesMightHave(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment)
+        //Calculate score based on All possible Products Masses for inter- or intra- crosslinks and deadend.
+        public static void XLLocalization(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment)
         {
             bool CalculateHighCharge = true;
 
@@ -409,7 +412,104 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        //public static void XLCalculateTotalProductMassesMightHaveDeadend(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, Double modMass)
+        //Calculate All possible Products Masses based on ModMass and linkPos
+        public static List<ProductMassesMightHave> XLCalculateTotalProductMassesForLoopCrosslink(PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, List<int> linkPos)
+        {
+            int length = psmCross.compactPeptide.NTerminalMasses.Length;
+            var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+            ProductMassesMightHave pmmhTop = new ProductMassesMightHave();
+
+            List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
+
+            if (linkPos.Count() >= 2)
+            {
+                for (int ipos = 0; ipos < linkPos.Count() - 1; ipos++)
+                {
+                    for (int jpos = ipos + 1; jpos < linkPos.Count(); jpos++)
+                    {
+                        var pmmhCurr = new ProductMassesMightHave();
+                        pmmhCurr.XlPos = linkPos[ipos];
+                        pmmhCurr.XlPos2 = linkPos[jpos];
+                        List<double> x = new List<double>();
+                        List<string> y = new List<string>();
+
+                        for (int i = 0; i < pmmh.ProductMz.Length; i++)
+                        {
+                            var cr = pmmh.ProductName[i][0];
+                            //get the position of amino acid
+                            var nm = Int32.Parse(System.Text.RegularExpressions.Regex.Match(pmmh.ProductName[i], @"\d+").Value);
+                            if ((cr == 'b' || cr == 'c') && nm < linkPos[ipos] + 1)
+                            {
+                                x.Add(pmmh.ProductMz[i]);
+                                y.Add(pmmh.ProductName[i]);
+
+                            }
+                            if ((cr == 'y' || cr == 'z') && nm < length - linkPos[jpos] + 1 )
+                            {
+                                x.Add(pmmh.ProductMz[i]);
+                                y.Add(pmmh.ProductName[i]);
+
+                            }
+                            if (cr == 'b' && nm >= linkPos[jpos] + 1)
+                            {
+                                x.Add(pmmh.ProductMz[i] + modMass);
+                                y.Add("t1b" + nm.ToString());
+
+                            }
+
+                            if (cr == 'c' && nm >= linkPos[jpos] + 1)
+                            {
+                                x.Add(pmmh.ProductMz[i] + modMass);
+                                y.Add("t1c" + nm.ToString());
+
+                            }
+
+                            if (cr == 'y' && (nm >= length - linkPos[ipos] + 1))
+                            {
+                                x.Add(pmmh.ProductMz[i] + modMass);
+                                y.Add("t1y" + nm.ToString());
+
+
+                            }
+
+                            if (cr == 'z' && (nm >= length - linkPos[ipos] + 1))
+                            {
+                                x.Add(pmmh.ProductMz[i] + modMass);
+                                y.Add("t1z" + nm.ToString());
+
+                            }
+                        }
+                        pmmhCurr.ProductMz = x.ToArray();
+                        pmmhCurr.ProductName = y.ToArray();
+                        Array.Sort(pmmhCurr.ProductMz, pmmhCurr.ProductName);
+                        pmmhList.Add(pmmhCurr);
+
+                    }
+                }
+            }
+            return pmmhList;
+        }
+
+        //Calculate score based on All possible Products Masses for inter- or intra- crosslinks and deadend.
+        public static void XLLocalizationForLoopCrosslink(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, List<int> linkPos)
+        {
+            var pmmhList = PsmCross.XLCalculateTotalProductMassesForLoopCrosslink(psmCross, modMass, crosslinker, lp, linkPos);
+
+            List<double> scoreList = new List<double>();
+            List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
+            foreach (var pmm in pmmhList)
+            {
+                var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
+                double pmmScore = PsmCross.XLMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+                miil.Add(matchedIonMassesListPositiveIsMatch);
+                scoreList.Add(pmmScore);
+            }
+
+            psmCross.XLBestScore = scoreList.Max();
+            psmCross.MatchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
+            psmCross.XlPos = pmmhList[scoreList.IndexOf(scoreList.Max())].XlPos + 1;
+            psmCross.XlPos2 = pmmhList[scoreList.IndexOf(scoreList.Max())].XlPos2 + 1;
+        }
 
         public static int[] GenerateIntensityRanks(double[] experimental_mzs, double[] experimental_intensities)
         {
