@@ -179,15 +179,13 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Calculate All possible Products Masses based on ModMass and linkPos
-        public static List<ProductMassesMightHave> XLCalculateTotalProductMasses(PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, bool Charge_2_3, bool Charge_2_3_PrimeFragment)
+        public static List<ProductMassesMightHave> XLCalculateTotalProductMasses(PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, bool Charge_2_3, bool Charge_2_3_PrimeFragment, List<int> linkPos)
         {
             int length = psmCross.compactPeptide.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
             ProductMassesMightHave pmmhTop = new ProductMassesMightHave();
 
             List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
-
-            var linkPos = PsmCross.XlPosCal(psmCross.compactPeptide, crosslinker);
 
             foreach (var ipos in linkPos)
             {
@@ -345,11 +343,11 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Calculate score based on All possible Products Masses for inter- or intra- crosslinks and deadend.
-        public static void XLLocalization(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment)
+        public static void XLLocalization(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment, List<int> linkPos)
         {
             bool CalculateHighCharge = true;
 
-            var pmmhList = PsmCross.XLCalculateTotalProductMasses(psmCross, modMass, crosslinker, lp, Charge_2_3, Charge_2_3_PrimeFragment);
+            var pmmhList = PsmCross.XLCalculateTotalProductMasses(psmCross, modMass, crosslinker, lp, Charge_2_3, Charge_2_3_PrimeFragment, linkPos);
 
             List<double> scoreList = new List<double>();
             List<MatchedIonInfo> miil = new List<MatchedIonInfo>();

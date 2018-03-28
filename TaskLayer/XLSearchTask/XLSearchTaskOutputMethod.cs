@@ -390,7 +390,7 @@ namespace TaskLayer
                         protein = items[i].CompactPeptides.First().Value.Item2.First().Protein.Accession,
                         num_tot_proteins = 1,
                         calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
-                        massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value).ToString(),
+                        massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value - crosslinkerDeadEndMass).ToString(),
                         xlink_typeSpecified = true,
                         xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.na,
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
