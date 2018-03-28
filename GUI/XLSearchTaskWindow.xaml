@@ -84,6 +84,16 @@
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
                                     <ComboBox x:Name="cbCrosslinker" />
                                 </StackPanel>
+                                <!--<StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                                    <Label x:Name="lblFragmentation" Content="Fragmentation Type" />
+                                    <ComboBox x:Name="cbFragmentation" />
+                                </StackPanel>-->
+                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                                    <Label x:Name="lblQuenchMethods" Content="Quench Methods" />
+                                    <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" />
+                                    <CheckBox x:Name="ckbQuenchTris"  VerticalAlignment="Center" Content="Tris" />
+                                    <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" />
+                                </StackPanel>
                             </Grid>
                             <GroupBox>
                                 <Expander x:Name="UserDefineCrosslinker">
@@ -100,6 +110,10 @@
                                                 <RowDefinition Height="1*" />
                                                 <RowDefinition Height="1*" />
                                                 <RowDefinition Height="1*" />
+                                                <RowDefinition Height="1*" />
+                                                <RowDefinition Height="1*" />
+                                                <RowDefinition Height="1*" />
+                                                <RowDefinition Height="1*" />
                                             </Grid.RowDefinitions>
                                             <Label x:Name="lblUdXLkerName" Content="Crosslinker Name" Grid.Column="0" Grid.Row="0" />
                                             <TextBox x:Name="txtUdXLKerName" Width="60" Grid.Column="1" Grid.Row="0" />
@@ -110,8 +124,16 @@
                                             <TextBox x:Name="txtUdXLkerShortMass" Width="60" Grid.Column="1" Grid.Row="3" />
                                             <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" Grid.Column="0" Grid.Row="4" />
                                             <TextBox x:Name="txtUdXLkerLongMass" Width="60" Grid.Column="1" Grid.Row="4" />
-                                            <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acid" Grid.Column="0" Grid.Row="5" />
-                                            <TextBox x:Name="txtUdXLkerAminoAcid" Width="60" Grid.Column="1" Grid.Row="5" />
+                                            <Label x:Name="lblUdXLkerLoopMass" Content="Crosslinker Loop Mass" Grid.Column="0" Grid.Row="5" />
+                                            <TextBox x:Name="txtUdXLkerLoopMass" Width="60" Grid.Column="1" Grid.Row="5" />
+                                            <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acid" Grid.Column="0" Grid.Row="6" />
+                                            <TextBox x:Name="txtUdXLkerAminoAcid" Width="60" Grid.Column="1" Grid.Row="6" />
+                                            <Label x:Name="lblUdXLkerDeadendH2O" Content="Crosslinker Deadend H2O" Grid.Column="0" Grid.Row="7" />
+                                            <TextBox x:Name="txtUdXLkerDeadendH2O" Width="60" Grid.Column="1" Grid.Row="7" />
+                                            <Label x:Name="lblUdXLkerDeadendNH2" Content="Crosslinker Deadend NH2" Grid.Column="0" Grid.Row="8" />
+                                            <TextBox x:Name="txtUdXLkerDeadendNH2" Width="60" Grid.Column="1" Grid.Row="8" />
+                                            <Label x:Name="lblUdXLkerDeadendTris" Content="Crosslinker Deadend Tris" Grid.Column="0" Grid.Row="9" />
+                                            <TextBox x:Name="txtUdXLkerDeadendTris" Width="60" Grid.Column="1" Grid.Row="9" />
                                         </Grid>
                                     </StackPanel>
                                 </Expander>
@@ -318,8 +340,8 @@
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbPercolator" Content="Output for Percolator" />
                             <CheckBox x:Name="ckbPepXML" Content="Output for pepXML" />
-                            <CheckBox x:Name="ckbCrosslink" Content="Output for Crosslink" />
-                            <CheckBox x:Name="ckbAllResults" Content="Output for AllResults include Normal, Loop, Deadend" />
+                            <CheckBox x:Name="ckbCrosslink" Content="Output for inter-crosslink and intra-crosslink" />
+                            <CheckBox x:Name="ckbAllResults" Content="Output for all, Single, Loop, Deadend peptides" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>

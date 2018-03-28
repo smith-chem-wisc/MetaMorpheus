@@ -89,7 +89,7 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithSetModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList())
+                    foreach (var peptideWithSetModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications))
                         if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
                             v.Add(peptideWithSetModifications);
 

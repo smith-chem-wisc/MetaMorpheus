@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace EngineLayer.CrosslinkSearch
 {
-    public class PsmCross : Psm
+    public class PsmCross : PeptideSpectralMatch
     {
         #region Public Fields
 

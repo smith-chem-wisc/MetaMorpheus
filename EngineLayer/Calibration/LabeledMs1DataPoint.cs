@@ -4,7 +4,7 @@
     {
         #region Public Constructors
 
-        public LabeledMs1DataPoint(double mz, double rt, double LOGtotalIonCurrent, double LOGinjectionTime, double LOGintensity, double expectedMz, Psm identification)
+        public LabeledMs1DataPoint(double mz, double rt, double LOGtotalIonCurrent, double LOGinjectionTime, double LOGintensity, double expectedMz, PeptideSpectralMatch identification)
             : base(mz, rt, LOGtotalIonCurrent, LOGinjectionTime, LOGintensity, expectedMz, identification)
         {
         }

@@ -252,7 +252,7 @@ namespace MetaMorpheusGUI
                     }
                 }
                 TempSettings = new FileSpecificSettings[selectedRaw.Count];
-                Array.Copy(paramList, tempParamList, 20);
+                Array.Copy(paramList, tempParamList, paramList.Length);
                 for (int i = 0; i < tomlSettingsListList.Count(); i++)
                 {
                     TempSettings[i] = new FileSpecificSettings(tomlSettingsListList[i]);

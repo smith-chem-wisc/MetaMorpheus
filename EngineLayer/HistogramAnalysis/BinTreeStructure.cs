@@ -22,7 +22,7 @@ namespace EngineLayer.HistogramAnalysis
 
         #region Public Methods
 
-        public void GenerateBins(List<Psm> targetAndDecoyMatches, double dc)
+        public void GenerateBins(List<PeptideSpectralMatch> targetAndDecoyMatches, double dc)
         {
             List<double> listOfMassShifts = targetAndDecoyMatches.Where(b => b.PeptideMonisotopicMass.HasValue).Select(b => b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();

@@ -62,13 +62,13 @@ namespace Test
             PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(0, protein1, 1, 9, allModsOneIsNterminus4);
             CompactPeptideBase pep4 = new CompactPeptide(pwsm4, TerminusType.None);
 
-            var newPsms = new List<Psm>
+            var newPsms = new List<PeptideSpectralMatch>
             {
-                new Psm(pep1, 0,10,0,scan),
-                new Psm(pep1, 0,10,0,scan),
-                new Psm(pep2, 0,10,0,scan),
-                new Psm(pep3, 0,10,0,scan),
-                new Psm(pep4, 0,10,0,scan),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan),
+                new PeptideSpectralMatch(pep2, 0,10,0,scan),
+                new PeptideSpectralMatch(pep3, 0,10,0,scan),
+                new PeptideSpectralMatch(pep4, 0,10,0,scan),
             };
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
@@ -138,10 +138,10 @@ namespace Test
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
-            var newPsms = new List<Psm>
+            var newPsms = new List<PeptideSpectralMatch>
             {
-                new Psm(pep1, 0,10,0,scan),
-                new Psm(pep3, 0,10,0,scan),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan),
+                new PeptideSpectralMatch(pep3, 0,10,0,scan),
             };
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
