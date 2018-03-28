@@ -246,7 +246,7 @@ namespace Test
 
         #region Private Methods
 
-        private static Tuple<List<Psm>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
+        private static Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -312,13 +312,13 @@ namespace Test
             int scanIndex = 0;
             double score = 0;
             int notch = 0;
-            Psm psm1 = new Psm(compactPeptide1, notch, score, scanIndex, scan);
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(compactPeptide1, notch, score, scanIndex, scan);
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            Psm psm2 = new Psm(compactPeptide1, notch, score, scanIndex, scan);
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(compactPeptide1, notch, score, scanIndex, scan);
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            Psm psm3 = new Psm(compactPeptide2, notch, score, scanIndex, scan);
+            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(compactPeptide2, notch, score, scanIndex, scan);
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            var newPsms = new List<Psm>
+            var newPsms = new List<PeptideSpectralMatch>
             {
                 psm1,
                 psm2,
@@ -337,7 +337,7 @@ namespace Test
 
             bool noOneHitWonders = false;
 
-            return new Tuple<List<Psm>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase>
+            return new Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase>
             (
                 newPsms, compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );

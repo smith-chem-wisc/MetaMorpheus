@@ -14,7 +14,7 @@ namespace EngineLayer.CrosslinkSearch
 
         protected const int fragmentBinsPerDalton = 1000;
         protected readonly List<int>[] fragmentIndex;
-        protected readonly Psm[] globalPsms;
+        protected readonly PeptideSpectralMatch[] globalPsms;
         protected readonly List<PsmCross> globalPsmsCross;
         protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
         protected readonly List<CompactPeptide> peptideIndex;

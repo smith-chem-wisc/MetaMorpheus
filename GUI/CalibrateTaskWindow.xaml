@@ -94,11 +94,11 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
-                            <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />-->
+                            <!--<StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="ff" Content="Files to analyze in parallel" />
                                 <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
-                            </StackPanel>
+                            </StackPanel>-->
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
@@ -163,7 +163,7 @@
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2">
+                                <!--<StackPanel Grid.Column="2">
                                     <Label Content="Database Localized" />
                                     <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
                                     <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
@@ -186,18 +186,18 @@
                                             </HierarchicalDataTemplate>
                                         </TreeView.Resources>
                                     </TreeView>
-                                </StackPanel>
+                                </StackPanel>-->
                             </Grid>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
+                <!--<GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="CalibrationExpander">
                         <StackPanel>
                             <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write Intermediate Files" />
                         </StackPanel>
                     </Expander>
-                </GroupBox>
+                </GroupBox>-->
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
