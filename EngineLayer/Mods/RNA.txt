@@ -18,42 +18,42 @@ TG   X
 PP   Anywhere.
 MM   323.051851
 MT   RNA
-CF   C-9 H-13 N-2 O-9 P-1
+CF   C-9 H-14 N-3 O-8 P-1
 //
 ID   C-H2O1
 TG   X
 PP   Anywhere.
 MM   305.041287
 MT   RNA
-CF   C-9 H-11 N-2 O-8 P-1
+CF   C-9 H-12 N-3 O-7 P-1
 //
 ID   G
 TG   X
 PP   Anywhere.
 MM   363.057999
 MT   RNA
-CF   C-9 H-13 N-2 O-9 P-1
+CF   C-10 H-14 N-5 O-8 P-1
 //
 ID   G-H2O1
 TG   X
 PP   Anywhere.
 MM   345.047435
 MT   RNA
-CF   C-9 H-11 N-2 O-8 P-1
+CF   C-10 H-12 N-5 O-7 P-1
 //
 ID   A
 TG   X
 PP   Anywhere.
 MM   347.063085
 MT   RNA
-CF   C-9 H-13 N-2 O-9 P-1
+CF   C-10 H-14 N-5 O-7 P-1
 //
 ID   A-H2O1
 TG   X
 PP   Anywhere.
 MM   329.05252
 MT   RNA
-CF   C-9 H-11 N-2 O-8 P-1
+CF   C-10 H-12 N-5 O-6 P-1
 //
 ID   UU
 TG   X
@@ -95,7 +95,7 @@ TG   X
 PP   Anywhere.
 MM   651.0727361262
 MT   RNA
-CF   C-19 H-23 N-7 O-15 P
+CF   C-19 H-23 N-7 O-15 P-2
 //
 ID   AU
 TG   X
@@ -116,84 +116,84 @@ TG   X
 PP   Anywhere.
 MM   628.093138
 MT   RNA
-CF   C-19 H-25 N-7 O-15 P-2
+CF   C-18 H-26 N-6 O-15 P-2
 //
 ID   CC-H2O1
 TG   X
 PP   Anywhere.
 MM   610.082573
 MT   RNA
-CF   C-19 H-23 N-7 O-14 P-2
+CF   C-19 H-24 N-6 O-14 P-2
 //
 ID   GC
 TG   X
 PP   Anywhere.
 MM   668.099286
 MT   RNA
-CF   C-19 H-25 N-7 O-15 P-2
+CF   C-19 H-26 N-8 O-15 P-2
 //
 ID   GC-H2O1
 TG   X
 PP   Anywhere.
 MM   650.088721
 MT   RNA
-CF   C-19 H-23 N-7 O-14 P-2
+CF   C-19 H-24 N-8 O-14 P-2
 //
 ID   AC
 TG   X
 PP   Anywhere.
 MM   652.104372
 MT   RNA
-CF   C-19 H-25 N-7 O-15 P-2
+CF   C-19 H-26 N-8 O-14 P-2
 //
 ID   AC-H2O1
 TG   X
 PP   Anywhere.
 MM   634.093807
 MT   RNA
-CF   C-19 H-23 N-7 O-14 P-2
+CF   C-19 H-24 N-8 O-13 P-2
 //
 ID   GG
 TG   X
 PP   Anywhere.
 MM   708.105434
 MT   RNA
-CF   C-19 H-25 N-7 O-15 P-2
+CF   C-20 H-26 N-10 O-15 P-2
 //
 ID   GG-H2O1
 TG   X
 PP   Anywhere.
 MM   690.094869
 MT   RNA
-CF   C-19 H-23 N-7 O-14 P-2
+CF   C-20 H-24 N-10 O-14 P-2
 //
 ID   AG
 TG   X
 PP   Anywhere.
 MM   692.11052
 MT   RNA
-CF   C-19 H-25 N-7 O-15 P-2
+CF   C-20 H-26 N-10 O-14 P-2
 //
 ID   AG-H2O1
 TG   X
 PP   Anywhere.
 MM   674.099955
 MT   RNA
-CF   C-19 H-23 N-7 O-14 P-2
+CF   C-20 H-24 N-10 O-13 P-2
 //
 ID   AA
 TG   X
 PP   Anywhere.
 MM   676.115605
 MT   RNA
-CF   C-19 H-25 N-7 O-15 P-2
+CF   C-20 H-26 N-10 O-13 P-2
 //
 ID   AA-H2O1
 TG   X
 PP   Anywhere.
 MM   658.10504
 MT   RNA
-CF   C-19 H-23 N-7 O-14 P-2
+CF   C-20 H-24 N-10 O-12 P-2
 //
 ID   UUU
 TG   X
@@ -340,82 +340,82 @@ TG   X
 PP   Anywhere.
 MM   933.134425
 MT   RNA
-CF   C-29 H-37 N-12 O-21 P-3
+CF   C-27 H-38 N-9 O-22 P-3
 //
 ID   CCC-H2O1
 TG   X
 PP   Anywhere.
 MM   915.123861
 MT   RNA
-CF   C-29 H-35 N-12 O-20 P-3
+CF   C-27 H-36 N-9 O-21 P-3
 //
 ID   GCC
 TG   X
 PP   Anywhere.
 MM   973.140573
 MT   RNA
-CF   C-29 H-37 N-12 O-21 P-3
+CF   C-28 H-38 N-11 O-22 P-3
 //
 ID   GCC-H2O1
 TG   X
 PP   Anywhere.
 MM   955.130009
 MT   RNA
-CF   C-29 H-35 N-12 O-20 P-3
+CF   C-28 H-36 N-11 O-21 P-3
 //
 ID   ACC
 TG   X
 PP   Anywhere.
 MM   957.145658
 MT   RNA
-CF   C-29 H-37 N-12 O-21 P-3
+CF   C-28 H-38 N-11 O-21 P-3
 //
 ID   ACC-H2O1
 TG   X
 PP   Anywhere.
 MM   939.135094
 MT   RNA
-CF   C-29 H-35 N-12 O-20 P-3
+CF   C-28 H-36 N-11 O-20 P-3
 //
 ID   GGC
 TG   X
 PP   Anywhere.
 MM   1013.14672
 MT   RNA
-CF   C-29 H-37 N-12 O-21 P-3
+CF   C-29 H-38 N-13 O-22 P-3
 //
 ID   GGC-H2O1
 TG   X
 PP   Anywhere.
 MM   995.136156
 MT   RNA
-CF   C-29 H-35 N-12 O-20 P-3
+CF   C-29 H-36 N-13 O-21 P-3
 //
 ID   AGC
 TG   X
 PP   Anywhere.
 MM   997.151806
 MT   RNA
-CF   C-29 H-37 N-12 O-21 P-3
+CF   C-29 H-38 N-13 O-21 P-3
 //
 ID   AGC-H2O1
 TG   X
 PP   Anywhere.
 MM   979.141242
 MT   RNA
-CF   C-29 H-35 N-12 O-20 P-3
+CF   C-29 H-36 N-13 O-20 P-3
 //
 ID   AAC
 TG   X
 PP   Anywhere.
 MM   981.156892
 MT   RNA
-CF   C-29 H-37 N-12 O-21 P-3
+CF   C-29 H-38 N-13 O-20 P-3
 //
 ID   AAC-H2O1
 TG   X
 PP   Anywhere.
 MM   963.146328
 MT   RNA
-CF   C-29 H-35 N-12 O-20 P-3
+CF   C-29 H-36 N-13 O-29 P-3
 //
