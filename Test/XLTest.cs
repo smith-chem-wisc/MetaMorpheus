@@ -73,7 +73,7 @@ namespace Test
         }
 
         [Test]
-        public static void XLTestCalculateTotalProductMassesMightHave()
+        public static void XLTestLocalization()
         {
             var CommonParameters = new CommonParameters();
             var proteinList = new List<Protein> { new Protein("CASIQKFGERLCVLHEKTPVSEK", null) };
@@ -132,11 +132,78 @@ namespace Test
 
             //Another method to calculate modification mass of cross-linked peptides
             //var modMassAlpha2 = listOfSortedms2Scans[0].PrecursorMass - psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods;
+            var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker);
 
-            var productMassesAlphaList = PsmCross.XLCalculateTotalProductMasses(psmCrossAlpha, modMassAlpha1, crosslinker, lp, true, false);
+            var productMassesAlphaList = PsmCross.XLCalculateTotalProductMasses(psmCrossAlpha, modMassAlpha1, crosslinker, lp, true, false, linkPos);
 
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 35);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz[26], 2312.21985342336);
+        }
+
+        [Test]
+        public static void XLTestLocalizationLoop()
+        {
+            var CommonParameters = new CommonParameters();
+            var proteinList = new List<Protein> { new Protein("KDELPKVMAGLGIAVVSTSK", null) };
+
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
+            ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
+
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            ModificationWithMass mod2 = new ModificationWithMass("Carbamidomethyl of C", "Common Fixed", motif2, TerminusLocalization.Any, 57.02146372068994);
+            var variableModifications = new List<ModificationWithMass>() { mod1 };
+            var fixedModifications = new List<ModificationWithMass>() { mod2 };
+            var localizeableModifications = new List<ModificationWithMass>();
+
+            var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int i = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+
+            var results = (IndexingResults)engine.Run();
+
+            var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+
+            foreach (var fdfd in digestedList)
+            {
+                fdfd.CompactPeptide(TerminusType.None);
+                //Assert.Contains(fdfd.CompactPeptide(TerminusType.None), results.PeptideIndex);
+            }
+
+            var productMasses = digestedList[6].CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.BnoB1ions, ProductType.Y });
+            Assert.AreEqual(productMasses.Count(), 37);
+            CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
+            crosslinker.SelectCrosslinker(CrosslinkerType.DSSO);
+            var x = PsmCross.XlPosCal(digestedList[6].CompactPeptide(TerminusType.None), crosslinker).ToArray();
+            Assert.AreEqual(x[0], 0);
+
+            var myMsDataFile = new XLTestDataFile();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+            var psmCrossLoop = new PsmCross(digestedList[6].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
+
+            var modMass = crosslinker.LoopMass;
+
+            //Another method to calculate modification mass of cross-linked peptides
+            //var modMassAlpha2 = listOfSortedms2Scans[0].PrecursorMass - psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods;
+            var linkPos = PsmCross.XlPosCal(psmCrossLoop.compactPeptide, crosslinker);
+
+            var productMassLoopList = PsmCross.XLCalculateTotalProductMassesForLoopCrosslink(psmCrossLoop, modMass, crosslinker, lp, linkPos);
+
+            Assert.AreEqual(productMassLoopList[0].ProductMz.Length, 28);
         }
 
         [Test]

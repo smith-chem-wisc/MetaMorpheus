@@ -35,13 +35,10 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Public Constructors
 
-        //public CompactPeptide CompactPeptide { get { return compactPeptide; } set { compactPeptide = value; } }
 
         #region Public Properties
 
-        //public ProductMassesMightHave pmmh { get; set; }
         public double PeptideMass { get; set; }
-
         public double XLBestScore { get; set; }
         public MatchedIonInfo MatchedIonInfo { get; set; }
         public double XLTotalScore { get; set; }
