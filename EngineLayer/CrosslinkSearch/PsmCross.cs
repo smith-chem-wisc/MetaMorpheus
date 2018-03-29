@@ -60,7 +60,7 @@ namespace EngineLayer.CrosslinkSearch
         #region Public Methods
 
         //Calculate score based on Product Masses.
-        public static double XLMatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, string[] sorted_theoretical_product_name_for_this_peptide, MatchedIonInfo matchedIonMassesListPositiveIsMatch)
+        public static double XlMatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, string[] sorted_theoretical_product_name_for_this_peptide, MatchedIonInfo matchedIonMassesListPositiveIsMatch)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
             if (TotalProductsHere == 0)
@@ -176,7 +176,8 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Calculate All possible Products Masses based on ModMass and linkPos
-        public static List<ProductMassesMightHave> XLCalculateTotalProductMasses(PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, bool Charge_2_3, bool Charge_2_3_PrimeFragment, List<int> linkPos)
+        public static List<ProductMassesMightHave> XlCalculateTotalProductMasses(PsmCross psmCross, double modMass, 
+            CrosslinkerTypeClass crosslinker, List<ProductType> lp, bool Charge_2_3, bool Charge_2_3_PrimeFragment, List<int> linkPos)
         {
             int length = psmCross.compactPeptide.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
@@ -340,16 +341,17 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Calculate score based on All possible Products Masses for inter- or intra- crosslinks and deadend.
-        public static void XLLocalization(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment, List<int> linkPos)
+        public static void XlLocalization(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, 
+            CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment, List<int> linkPos)
         {
-            var pmmhList = PsmCross.XLCalculateTotalProductMasses(psmCross, modMass, crosslinker, lp, Charge_2_3, Charge_2_3_PrimeFragment, linkPos);
+            var pmmhList = PsmCross.XlCalculateTotalProductMasses(psmCross, modMass, crosslinker, lp, Charge_2_3, Charge_2_3_PrimeFragment, linkPos);
 
             List<double> scoreList = new List<double>();
             List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
             foreach (var pmm in pmmhList)
             {
                 var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
-                double pmmScore = PsmCross.XLMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+                double pmmScore = PsmCross.XlMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
                 miil.Add(matchedIonMassesListPositiveIsMatch);
                 scoreList.Add(pmmScore);
             }
@@ -406,7 +408,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Calculate All possible Products Masses based on ModMass and linkPos
-        public static List<ProductMassesMightHave> XLCalculateTotalProductMassesForLoopCrosslink(PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, List<int> linkPos)
+        public static List<ProductMassesMightHave> XlCalculateTotalProductMassesForLoopCrosslink(PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, List<int> linkPos)
         {
             int length = psmCross.compactPeptide.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
@@ -484,16 +486,16 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Calculate score based on All possible Products Masses for inter- or intra- crosslinks and deadend.
-        public static void XLLocalizationForLoopCrosslink(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, List<int> linkPos)
+        public static void XlLocalizationForLoopCrosslink(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, List<int> linkPos)
         {
-            var pmmhList = PsmCross.XLCalculateTotalProductMassesForLoopCrosslink(psmCross, modMass, crosslinker, lp, linkPos);
+            var pmmhList = PsmCross.XlCalculateTotalProductMassesForLoopCrosslink(psmCross, modMass, crosslinker, lp, linkPos);
 
             List<double> scoreList = new List<double>();
             List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
             foreach (var pmm in pmmhList)
             {
                 var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
-                double pmmScore = PsmCross.XLMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+                double pmmScore = PsmCross.XlMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
                 miil.Add(matchedIonMassesListPositiveIsMatch);
                 scoreList.Add(pmmScore);
             }

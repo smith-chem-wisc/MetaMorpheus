@@ -22,7 +22,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public static void XLTestXlPosCal()
+        public static void XlTestXlPosCal()
         {
             var prot = new Protein("MNNNKQQQQ", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
@@ -63,7 +63,7 @@ namespace Test
         }
 
         [Test]
-        public static void XLTestGenerateIntensityRanks()
+        public static void XlTestGenerateIntensityRanks()
         {
             double[] mz = new double[] { 1.0, 1.3, 1.5, 1.7, 1.9, 2.1 };
             double[] intensity = new double[] { 1.1, 1.1, 0.5, 3.2, 0.5, 6.0 };
@@ -73,7 +73,7 @@ namespace Test
         }
 
         [Test]
-        public static void XLTestLocalization()
+        public static void XlTestLocalization()
         {
             var CommonParameters = new CommonParameters();
             var proteinList = new List<Protein> { new Protein("CASIQKFGERLCVLHEKTPVSEK", null) };
@@ -134,14 +134,14 @@ namespace Test
             //var modMassAlpha2 = listOfSortedms2Scans[0].PrecursorMass - psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods;
             var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker);
 
-            var productMassesAlphaList = PsmCross.XLCalculateTotalProductMasses(psmCrossAlpha, modMassAlpha1, crosslinker, lp, true, false, linkPos);
+            var productMassesAlphaList = PsmCross.XlCalculateTotalProductMasses(psmCrossAlpha, modMassAlpha1, crosslinker, lp, true, false, linkPos);
 
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 35);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz[26], 2312.21985342336);
         }
 
         [Test]
-        public static void XLTestLocalizationLoop()
+        public static void XlTestLocalizationLoop()
         {
             var CommonParameters = new CommonParameters();
             var proteinList = new List<Protein> { new Protein("KDELPKVMAGLGIAVVSTSK", null) };
@@ -201,13 +201,13 @@ namespace Test
             //var modMassAlpha2 = listOfSortedms2Scans[0].PrecursorMass - psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods;
             var linkPos = PsmCross.XlPosCal(psmCrossLoop.compactPeptide, crosslinker);
 
-            var productMassLoopList = PsmCross.XLCalculateTotalProductMassesForLoopCrosslink(psmCrossLoop, modMass, crosslinker, lp, linkPos);
+            var productMassLoopList = PsmCross.XlCalculateTotalProductMassesForLoopCrosslink(psmCrossLoop, modMass, crosslinker, lp, linkPos);
 
             Assert.AreEqual(productMassLoopList[0].ProductMz.Length, 28);
         }
 
         [Test]
-        public static void XLTest_BSA_DSS()
+        public static void XlTest_BSA_DSS()
         {
             var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData/XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
 

@@ -367,17 +367,14 @@ namespace TaskLayer
                     double crosslinkerDeadEndMass = 0;
                     switch (items[i].CrossType)
                     {
-                        case PsmCrossType.DeadEnd:
-                            crosslinkerDeadEndMass = crosslinker.DeadendMassH2O;
-                            break;
-                        case PsmCrossType.DeadEndH2O:
-                            crosslinkerDeadEndMass = crosslinker.DeadendMassH2O;
-                            break;
                         case PsmCrossType.DeadEndNH2:
                             crosslinkerDeadEndMass = crosslinker.DeadendMassNH2;
                             break;
                         case PsmCrossType.DeadEndTris:
                             crosslinkerDeadEndMass = crosslinker.DeadendMassTris;
+                            break;
+                        default:
+                            crosslinkerDeadEndMass = crosslinker.DeadendMassH2O;
                             break;
                     }
                     var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass { mass = crosslinkerDeadEndMass, position = items[i].XlPos.ToString() };
