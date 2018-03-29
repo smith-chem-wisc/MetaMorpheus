@@ -65,7 +65,9 @@ namespace EngineLayer.Calibration
             }
 
             if (myMs1DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
+            {
                 fracForTraining = maximumDatapointsToTrainWith / myMs1DataPoints.Count;
+            }
 
             var ms1Model = GetRandomForestModel(myMs1DataPoints, fracForTraining);
 
@@ -88,7 +90,9 @@ namespace EngineLayer.Calibration
             }
 
             if (myMs2DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
+            {
                 fracForTraining = maximumDatapointsToTrainWith / myMs2DataPoints.Count;
+            }
 
             var ms2Model = GetRandomForestModel(myMs2DataPoints, fracForTraining);
             
@@ -116,7 +120,9 @@ namespace EngineLayer.Calibration
                           var precursorScan = myMsDataFile.GetOneBasedScan(ms2Scan.OneBasedPrecursorScanNumber.Value);
 
                           if (!ms2Scan.SelectedIonMonoisotopicGuessIntensity.HasValue && ms2Scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                          {
                               ms2Scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
+                          }
                           
                           double theFunc(IPeak x) => x.X - ms2predictor.Predict(new double[] { x.X, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Y) });
 

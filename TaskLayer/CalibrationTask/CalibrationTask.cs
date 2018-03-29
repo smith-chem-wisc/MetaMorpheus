@@ -222,13 +222,17 @@ namespace TaskLayer
         private bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
         {
             if (thisRoundPsmCount > prevPsmCount)
+            {
                 return true;
+            }
 
             var precRatio = thisRoundPrecTol / prevPrecTol;
             var prodRatio = thisRoundProdTol / prevProdTol;
 
             if (thisRoundPsmCount == prevPsmCount)
+            {
                 return precRatio + prodRatio < 2; // Take any improvement in ratios
+            }
 
             var countRatio = (double)thisRoundPsmCount / prevPsmCount;
             return countRatio > 0.9 && precRatio + prodRatio < 1.8;
