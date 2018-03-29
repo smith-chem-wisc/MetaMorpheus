@@ -5,11 +5,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentCommandLineParser" Version="1.4.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
     <PackageReference Include="mzLib" Version="1.0.288" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
-    <PackageReference Include="SharpLearning.AdaBoost" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Containers" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.InputOutput" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Optimization" Version="0.26.8.1" />
     <PackageReference Include="SharpLearning.RandomForest" Version="0.26.8.1" />
   </ItemGroup>
 
