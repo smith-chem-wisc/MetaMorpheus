@@ -86,9 +86,6 @@
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.288\lib\net45\Proteomics.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.AdaBoost, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.AdaBoost.0.26.8.1\lib\net461\SharpLearning.AdaBoost.dll</HintPath>
-    </Reference>
     <Reference Include="SharpLearning.Common.Interfaces, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.Common.Interfaces.0.26.8.1\lib\net461\SharpLearning.Common.Interfaces.dll</HintPath>
     </Reference>
@@ -101,17 +98,14 @@
     <Reference Include="SharpLearning.DecisionTrees, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.DecisionTrees.0.26.8.1\lib\net461\SharpLearning.DecisionTrees.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Ensemble, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Ensemble.0.26.8.1\lib\net461\SharpLearning.Ensemble.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpLearning.GradientBoost, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.GradientBoost.0.26.8.1\lib\net461\SharpLearning.GradientBoost.dll</HintPath>
-    </Reference>
     <Reference Include="SharpLearning.InputOutput, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.InputOutput.0.26.8.1\lib\net461\SharpLearning.InputOutput.dll</HintPath>
     </Reference>
     <Reference Include="SharpLearning.Metrics, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.Metrics.0.26.8.1\lib\net461\SharpLearning.Metrics.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpLearning.Optimization, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Optimization.0.26.8.1\lib\net461\SharpLearning.Optimization.dll</HintPath>
     </Reference>
     <Reference Include="SharpLearning.RandomForest, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.RandomForest.0.26.8.1\lib\net461\SharpLearning.RandomForest.dll</HintPath>
@@ -299,5 +293,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\mzLib.1.0.288\build\net45\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.288\build\net45\mzLib.targets'))" />
+    <Error Condition="!Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets'))" />
   </Target>
+  <Import Project="..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets" Condition="Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" />
 </Project>
