@@ -43,6 +43,9 @@ namespace EngineLayer
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
             this.AllScores[AllScores.Count - 1]++;
+            MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+            ProductMassErrorDa = new Dictionary<ProductType, double[]>();
+            ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
 
         #endregion Public Constructors
@@ -220,12 +223,7 @@ namespace EngineLayer
 
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
-
-        public bool CompactPeptidesContainsKey(CompactPeptideBase key)
-        {
-            return compactPeptides.ContainsKey(key);
-        }
-
+        
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
@@ -299,7 +297,7 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
-            if (MatchedIonDictOnlyMatches != null)
+            if (MatchedIonDictOnlyMatches.Any())
             {
                 //Count
                 sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
@@ -392,17 +390,7 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
-        #region Internal Methods
-
-        internal void AddOrReplace(PeptideSpectralMatch psmParent, bool reportAllAmbiguity)
-        {
-            foreach (var kvp in psmParent.compactPeptides)
-                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
-        }
-
-        #endregion Internal Methods
-
+        
         #region Private Methods
 
         private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)

@@ -1,8 +1,10 @@
 ﻿using MassSpectrometry;
-using SharpLearning.Common.Interfaces;
 using SharpLearning.Containers.Matrices;
 using SharpLearning.CrossValidation.TrainingTestSplitters;
+using SharpLearning.RandomForest.Learners;
+using SharpLearning.RandomForest.Models;
 using SharpLearning.Metrics.Regression;
+using SharpLearning.Optimization;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -16,24 +18,21 @@ namespace EngineLayer.Calibration
     {
         #region Private Fields
 
-        private const double fracForTraining = 0.75;
+        private const double maximumFracForTraining = 0.70;
+        private const double maximumDatapointsToTrainWith = 20000;
+        private const int trainingIterations = 30;
 
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-
-        private readonly List<ILearner<double>> learners;
-        private readonly string varsToUse;
         private readonly DataPointAquisitionResults datapoints;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, DataPointAquisitionResults datapoints, List<ILearner<double>> learners, string varsToUse, List<string> nestedIds) : base(nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, DataPointAquisitionResults datapoints, List<string> nestedIds) : base(nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.datapoints = datapoints;
-            this.learners = learners;
-            this.varsToUse = varsToUse;
         }
 
         #endregion Public Constructors
@@ -42,48 +41,64 @@ namespace EngineLayer.Calibration
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            var splitter = new RandomTrainingTestIndexSplitter<double>(fracForTraining);
+            double fracForTraining = maximumFracForTraining;
 
-            TrainingTestSetSplit ms1splitResult;
-            TrainingTestSetSplit ms2splitResult;
-
-            switch (varsToUse)
+            var myMs1DataPoints = new List<(double[] xValues, double yValue)>();
+            var myMs2DataPoints = new List<(double[] xValues, double yValue)>();
+            
+            // generate MS1 calibration datapoints
+            Status("Generating MS1 calibration function");
+            for (int i = 0; i < datapoints.Ms1List.Count; i++)
             {
-                case "mz":
-                    ms1splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms1List.SelectMany(b => new[] { b.mz }).ToArray(), datapoints.Ms1List.Count, 1), datapoints.Ms1List.Select(b => b.LabelTh).ToArray());
-                    ms2splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms2List.SelectMany(b => new[] { b.mz }).ToArray(), datapoints.Ms2List.Count, 1), datapoints.Ms2List.Select(b => b.LabelTh).ToArray());
-                    break;
+                // x values
+                var explanatoryVariables = new double[5];
+                explanatoryVariables[0] = datapoints.Ms1List[i].mz;
+                explanatoryVariables[1] = datapoints.Ms1List[i].rt;
+                explanatoryVariables[2] = datapoints.Ms1List[i].logTotalIonCurrent;
+                explanatoryVariables[3] = datapoints.Ms1List[i].logInjectionTime;
+                explanatoryVariables[4] = datapoints.Ms1List[i].logIntensity;
 
-                case "mzRtTicInj":
-                    ms1splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms1List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime }).ToArray(), datapoints.Ms1List.Count, 4), datapoints.Ms1List.Select(b => b.LabelTh).ToArray());
-                    ms2splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms2List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime }).ToArray(), datapoints.Ms2List.Count, 4), datapoints.Ms2List.Select(b => b.LabelTh).ToArray());
-                    break;
+                // y value
+                double mzError = datapoints.Ms1List[i].mz - datapoints.Ms1List[i].expectedMZ;
 
-                case "mzRtTicInjInt":
-                    ms1splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms1List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), datapoints.Ms1List.Count, 5), datapoints.Ms1List.Select(b => b.LabelTh).ToArray());
-                    ms2splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms2List.SelectMany(b => new[] { b.mz, b.rt, b.logTotalIonCurrent, b.logInjectionTime, b.logIntensity }).ToArray(), datapoints.Ms2List.Count, 5), datapoints.Ms2List.Select(b => b.LabelTh).ToArray());
-                    break;
-
-                case "mzInt":
-                    ms1splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms1List.SelectMany(b => new[] { b.mz, b.logIntensity }).ToArray(), datapoints.Ms1List.Count, 2), datapoints.Ms1List.Select(b => b.LabelTh).ToArray());
-                    ms2splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms2List.SelectMany(b => new[] { b.mz, b.logIntensity }).ToArray(), datapoints.Ms2List.Count, 2), datapoints.Ms2List.Select(b => b.LabelTh).ToArray());
-                    break;
-
-                case "Int":
-                    ms1splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms1List.SelectMany(b => new[] { b.logIntensity }).ToArray(), datapoints.Ms1List.Count, 1), datapoints.Ms1List.Select(b => b.LabelTh).ToArray());
-                    ms2splitResult = splitter.SplitSet(new F64Matrix(datapoints.Ms2List.SelectMany(b => new[] { b.logIntensity }).ToArray(), datapoints.Ms2List.Count, 1), datapoints.Ms2List.Select(b => b.LabelTh).ToArray());
-                    break;
-
-                default:
-                    throw new MetaMorpheusException("unknown vars to use array: " + varsToUse);
+                myMs1DataPoints.Add((explanatoryVariables, mzError));
             }
-            MS1Predictor ms1predictor = new MS1Predictor(DoStuff(ms1splitResult, learners));
 
-            MS2Predictor ms2predictor = new MS2Predictor(DoStuff(ms2splitResult, learners));
+            if (myMs1DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
+            {
+                fracForTraining = maximumDatapointsToTrainWith / myMs1DataPoints.Count;
+            }
 
-            Status("Calibrating Spectra");
+            var ms1Model = GetRandomForestModel(myMs1DataPoints, fracForTraining);
 
-            CalibrateSpectra(ms1predictor, ms2predictor);
+            // generate MS2 calibration datapoints
+            Status("Generating MS2 calibration function");
+            for (int i = 0; i < datapoints.Ms2List.Count; i++)
+            {
+                // x values
+                var explanatoryVariables = new double[5];
+                explanatoryVariables[0] = datapoints.Ms2List[i].mz;
+                explanatoryVariables[1] = datapoints.Ms2List[i].rt;
+                explanatoryVariables[2] = datapoints.Ms2List[i].logTotalIonCurrent;
+                explanatoryVariables[3] = datapoints.Ms2List[i].logInjectionTime;
+                explanatoryVariables[4] = datapoints.Ms2List[i].logIntensity;
+
+                // y value
+                double mzError = datapoints.Ms2List[i].mz - datapoints.Ms2List[i].expectedMZ;
+
+                myMs2DataPoints.Add((explanatoryVariables, mzError));
+            }
+
+            if (myMs2DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
+            {
+                fracForTraining = maximumDatapointsToTrainWith / myMs2DataPoints.Count;
+            }
+
+            var ms2Model = GetRandomForestModel(myMs2DataPoints, fracForTraining);
+            
+            Status("Calibrating spectra");
+
+            CalibrateSpectra(ms1Model, ms2Model);
 
             return new MetaMorpheusEngineResults(this);
         }
@@ -91,70 +106,125 @@ namespace EngineLayer.Calibration
         #endregion Protected Methods
 
         #region Private Methods
-
-        private static IPredictorModel<double> DoStuff(TrainingTestSetSplit splitResult, List<ILearner<double>> learners)
-        {
-            var evaluator = new MeanAbsolutErrorRegressionMetric();
-
-            var predictions = new double[splitResult.TestSet.Targets.Length];
-            IPredictorModel<double> bestModel = new IdentityCalibrationFunctionPredictorModel();
-            var bestError = evaluator.Error(splitResult.TestSet.Targets, predictions);
-
-            foreach (var learner in learners)
-            {
-                try
-                {
-                    var model = learner.Learn(splitResult.TrainingSet.Observations, splitResult.TrainingSet.Targets);
-
-                    predictions = new double[splitResult.TestSet.Targets.Length];
-                    for (int i = 0; i < splitResult.TestSet.Targets.Length; i++)
-                        predictions[i] = model.Predict(splitResult.TestSet.Observations.Row(i));
-
-                    var thisError = evaluator.Error(splitResult.TestSet.Targets, predictions);
-
-                    if (thisError < bestError)
-                    {
-                        bestError = thisError;
-                        bestModel = model;
-                    }
-                }
-                catch
-                {
-                }
-            }
-
-            return bestModel;
-        }
-
-        private void CalibrateSpectra(MS1Predictor ms1predictor, MS2Predictor ms2predictor)
+        
+        private void CalibrateSpectra(RegressionForestModel ms1predictor, RegressionForestModel ms2predictor)
         {
             Parallel.ForEach(Partitioner.Create(1, myMsDataFile.NumSpectra + 1), fff =>
               {
                   for (int i = fff.Item1; i < fff.Item2; i++)
                   {
-                      var a = myMsDataFile.GetOneBasedScan(i);
+                      var scan = myMsDataFile.GetOneBasedScan(i);
 
-                      if (a is IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> theScan)
+                      if (scan is IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2Scan)
                       {
-                          var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber.Value);
+                          var precursorScan = myMsDataFile.GetOneBasedScan(ms2Scan.OneBasedPrecursorScanNumber.Value);
 
-                          if (!theScan.SelectedIonMonoisotopicGuessIntensity.HasValue && theScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                              theScan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
+                          if (!ms2Scan.SelectedIonMonoisotopicGuessIntensity.HasValue && ms2Scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                          {
+                              ms2Scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
+                          }
+                          
+                          double theFunc(IPeak x) => x.X - ms2predictor.Predict(new double[] { x.X, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Y) });
 
-                          double theFunc(IPeak x) => x.X - ms2predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
+                          double theFuncForPrecursor(IPeak x) => x.X - ms1predictor.Predict(new double[] { x.X, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Y) });
 
-                          double theFuncForPrecursor(IPeak x) => x.X - ms1predictor.Predict(x.X, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
-
-                          theScan.TransformMzs(theFunc, theFuncForPrecursor);
+                          ms2Scan.TransformMzs(theFunc, theFuncForPrecursor);
                       }
                       else
                       {
-                          Func<IPeak, double> theFunc = x => x.X - ms1predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
-                          a.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
+                          Func<IPeak, double> theFunc = x => x.X - ms1predictor.Predict(new double[] { x.X, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Y) });
+                          scan.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
                       }
                   }
               }
               );
+        }
+
+        private RegressionForestModel GetRandomForestModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining, int randomSeed = 42)
+        {
+            // create a machine learner
+            var learner = new RegressionRandomForestLearner();
+            var metric = new MeanSquaredErrorRegressionMetric();
+
+            var splitter = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed);
+
+            // put x values into a matrix and y values into a 1D array
+            var myXValueMatrix = new F64Matrix(myInputs.Count, myInputs.First().xValues.Length);
+            for (int i = 0; i < myInputs.Count; i++)
+                for (int j = 0; j < myInputs.First().xValues.Length; j++)
+                    myXValueMatrix[i, j] = myInputs[i].xValues[j];
+
+            var myYValues = myInputs.Select(p => p.yValue).ToArray();
+
+            // split data into training set and test set
+            var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
+            var trainingSetX = splitData.TrainingSet.Observations;
+            var trainingSetY = splitData.TrainingSet.Targets;
+
+            // learn an initial model
+            var myModel = learner.Learn(trainingSetX, trainingSetY);
+
+            // parameter ranges for the optimizer 
+            var parameters = new ParameterBounds[]
+            {
+                new ParameterBounds(min: 100, max: 150, transform: Transform.Linear),
+                new ParameterBounds(min: 1, max: 5, transform: Transform.Linear),
+                new ParameterBounds(min: 500, max: 2000, transform: Transform.Linear),
+                new ParameterBounds(min: 0, max: 2, transform: Transform.Linear),
+                new ParameterBounds(min: 1e-06, max: 1e-05, transform: Transform.Logarithmic),
+                new ParameterBounds(min: 0.7, max: 1.5, transform: Transform.Linear)
+            };
+
+            var validationSplit = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed)
+                .SplitSet(myXValueMatrix, myYValues);
+
+            // define minimization metric
+            Func<double[], OptimizerResult> minimize = p =>
+            {
+                // create the candidate learner using the current optimization parameters
+                var candidateLearner = new RegressionRandomForestLearner(
+                    trees: (int)p[0],
+                    minimumSplitSize: (int)p[1],
+                    maximumTreeDepth: (int)p[2],
+                    featuresPrSplit: (int)p[3],
+                    minimumInformationGain: p[4],
+                    subSampleRatio: p[5],
+                    seed: randomSeed,
+                    runParallel: false);
+
+                var candidateModel = candidateLearner.Learn(validationSplit.TrainingSet.Observations,
+                validationSplit.TrainingSet.Targets);
+
+                var validationPredictions = candidateModel.Predict(validationSplit.TestSet.Observations);
+                var candidateError = metric.Error(validationSplit.TestSet.Targets, validationPredictions);
+
+                return new OptimizerResult(p, candidateError);
+            };
+
+            // create optimizer
+            var optimizer = new RandomSearchOptimizer(parameters, iterations: trainingIterations, runParallel: true);
+
+            // find best parameters
+            var result = optimizer.OptimizeBest(minimize);
+            var best = result.ParameterSet;
+
+            // create the final learner using the best parameters 
+            // (parameters that resulted in the model with the least error)
+            learner = new RegressionRandomForestLearner(
+                    trees: (int)best[0],
+                    minimumSplitSize: (int)best[1],
+                    maximumTreeDepth: (int)best[2],
+                    featuresPrSplit: (int)best[3],
+                    minimumInformationGain: best[4],
+                    subSampleRatio: best[5],
+                    seed: randomSeed,
+                    runParallel: true);
+
+            // learn final model with optimized parameters
+            myModel = learner.Learn(trainingSetX, trainingSetY);
+
+            // all done
+            return myModel;
         }
 
         #endregion Private Methods
