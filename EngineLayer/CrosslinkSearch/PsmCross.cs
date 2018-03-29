@@ -342,8 +342,6 @@ namespace EngineLayer.CrosslinkSearch
         //Calculate score based on All possible Products Masses for inter- or intra- crosslinks and deadend.
         public static void XLLocalization(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment, List<int> linkPos)
         {
-            bool CalculateHighCharge = true;
-
             var pmmhList = PsmCross.XLCalculateTotalProductMasses(psmCross, modMass, crosslinker, lp, Charge_2_3, Charge_2_3_PrimeFragment, linkPos);
 
             List<double> scoreList = new List<double>();
@@ -393,7 +391,7 @@ namespace EngineLayer.CrosslinkSearch
                     }
                 }
             }
-            if (CalculateHighCharge)
+            if (Charge_2_3 || Charge_2_3_PrimeFragment)
             {
                 int Charge2IonExist = 0;
                 for (int i = 0; i < psmCross.MatchedIonInfo.MatchedIonName.Length; i++)
