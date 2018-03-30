@@ -82,8 +82,20 @@ namespace TaskLayer
                     "\tSummary\tTotalScore\tMass diff\tQValue\tParentIons\tCharge2Number");
                 foreach (var item in items)
                 {
-                    if (item.CrossType != PsmCrossType.Cross)
+                    if (item.CrossType != PsmCrossType.Cross || item.CrossType != PsmCrossType.Inter || item.CrossType != PsmCrossType.Intra)
                     {
+                        string position = "";
+                        switch (item.CrossType)
+                        {
+                            case PsmCrossType.Singe:
+                                break;
+                            case PsmCrossType.Loop:
+                                position = "(" + item.XlPos.ToString(CultureInfo.InvariantCulture) + "-" + item.XlPos2.ToString(CultureInfo.InvariantCulture) + ")";
+                                break;
+                            default:
+                                position = "(" + item.XlPos.ToString(CultureInfo.InvariantCulture) + ")";
+                                break;
+                        }
                         output.WriteLine(
                             item.FullFilePath
                             + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
@@ -93,8 +105,8 @@ namespace TaskLayer
                             + "\t" + item.CrossType.ToString()
                             + "\t"
                             + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                            + "\t" + item.BaseSequence
-                            + "\t" + item.FullSequence
+                            + "\t" + item.BaseSequence + position
+                            + "\t" + item.FullSequence 
                             + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
                             + "\t" + item.Score.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.XLBestScore.ToString(CultureInfo.InvariantCulture)
@@ -151,6 +163,18 @@ namespace TaskLayer
                     "\tQValue");
                 foreach (var item in items)
                 {
+                    string position = "";
+                    switch (item.CrossType)
+                    {
+                        case PsmCrossType.Singe:
+                            break;
+                        case PsmCrossType.Loop:
+                            position = "(" + item.XlPos.ToString(CultureInfo.InvariantCulture) + "-" + item.XlPos2.ToString(CultureInfo.InvariantCulture) + ")";
+                            break;
+                        default:
+                            position = "(" + item.XlPos.ToString(CultureInfo.InvariantCulture) + ")";
+                            break;                           
+                    }
                     output.WriteLine(
                         item.FullFilePath
                         + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
@@ -160,8 +184,8 @@ namespace TaskLayer
                         + "\t" + item.CrossType.ToString()
                         + "\t"
                         + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.BaseSequence
-                        + "\t" + item.FullSequence
+                        + "\t" + item.BaseSequence + position
+                        + "\t" + item.FullSequence 
                         + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
                         + "\t" + item.Score.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
