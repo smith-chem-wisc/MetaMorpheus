@@ -63,8 +63,7 @@ namespace EngineLayer.Indexing
                 {
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        var digestedList = proteinList[i].Digest(digestionParams, fixedModifications, variableModifications).ToList();
-                        foreach (var pepWithSetMods in digestedList)
+                        foreach (var pepWithSetMods in proteinList[i].Digest(digestionParams, fixedModifications, variableModifications))
                         {
                             CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
 

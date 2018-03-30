@@ -151,7 +151,7 @@ namespace MetaMorpheusGUI
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
                 localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
-            localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
+            //localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
         }
 
         private void UpdateFieldsFromTask(SearchTask task)
@@ -188,11 +188,11 @@ namespace MetaMorpheusGUI
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
-            conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
+            //conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
+            //maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
             //disposeOfFilesWhenDone.IsChecked = task.SearchParameters.DisposeOfFileWhenDone;
             allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             //DeconvolutionIntensityRatioTextBox.Text = task.CommonParameters.DeconvolutionIntensityRatio.ToString();
@@ -244,7 +244,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
+            //localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
             if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
@@ -407,7 +407,7 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;
             CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
-            CommonParamsToSave.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
+            //CommonParamsToSave.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
             CommonParamsToSave.TotalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
 
             CommonParamsToSave.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
@@ -431,16 +431,16 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
 
-            if (localizeAllCheckBox.IsChecked.Value)
+            //if (localizeAllCheckBox.IsChecked.Value)
             {
                 CommonParamsToSave.ListOfModTypesLocalize = null;
                 CommonParamsToSave.LocalizeAll = true;
             }
-            else
-            {
-                CommonParamsToSave.LocalizeAll = false;
-                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
-            }
+            //else
+            //{
+            //    CommonParamsToSave.LocalizeAll = false;
+            //    CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
+            //}
 
             if (mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
@@ -467,8 +467,8 @@ namespace MetaMorpheusGUI
 
             SetModSelectionForPrunedDB();
 
-            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
-                CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
+            //if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+            //    CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
 
             TheTask.CommonParameters = CommonParamsToSave;
 

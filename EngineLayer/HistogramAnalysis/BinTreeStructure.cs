@@ -22,7 +22,7 @@ namespace EngineLayer.HistogramAnalysis
 
         #region Public Methods
 
-        public void GenerateBins(List<Psm> targetAndDecoyMatches, double dc)
+        public void GenerateBins(List<PeptideSpectralMatch> targetAndDecoyMatches, double dc)
         {
             List<double> listOfMassShifts = targetAndDecoyMatches.Where(b => b.PeptideMonisotopicMass.HasValue).Select(b => b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
@@ -156,7 +156,7 @@ namespace EngineLayer.HistogramAnalysis
         private void OverlappingIonSequences()
         {
             foreach (Bin bin in FinalBins)
-                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy && b.Value.Item3.MatchedIonDictOnlyMatches != null))
+                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy && b.Value.Item3.MatchedIonDictOnlyMatches.Any()))
                 {
                     var ya = hm.Value.Item3.MatchedIonDictOnlyMatches;
                     if (ya.ContainsKey(ProductType.B)

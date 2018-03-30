@@ -10,20 +10,25 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public class Psm
+    public class PeptideSpectralMatch
     {
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-        private const double tolForScoreDifferentiation = 1e-9;
-
+        
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
 
+        #region Public Fields
+
+        public const double tolForScoreDifferentiation = 1e-9;
+
+        #endregion Public Fields
+
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
+        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -38,6 +43,9 @@ namespace EngineLayer
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
             this.AllScores[AllScores.Count - 1]++;
+            MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+            ProductMassErrorDa = new Dictionary<ProductType, double[]>();
+            ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
 
         #endregion Public Constructors
@@ -215,12 +223,7 @@ namespace EngineLayer
 
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
-
-        public bool CompactPeptidesContainsKey(CompactPeptideBase key)
-        {
-            return compactPeptides.ContainsKey(key);
-        }
-
+        
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
@@ -294,7 +297,7 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
-            if (MatchedIonDictOnlyMatches != null)
+            if (MatchedIonDictOnlyMatches.Any())
             {
                 //Count
                 sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
@@ -377,8 +380,9 @@ namespace EngineLayer
             };
         }
 
-        public void UpdateAllScores(double score)
+        public void AddThisScoreToScoreDistribution(double score)
         {
+            // creates a distribution of scores for this PSM
             int roundScore = (int)Math.Floor(score);
             while (AllScores.Count <= roundScore)
                 AllScores.Add(0);
@@ -386,25 +390,7 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
-        #region Internal Methods
-
-        internal void AddOrReplace(Psm psmParent, bool reportAllAmbiguity)
-        {
-            foreach (var kvp in psmParent.compactPeptides)
-                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
-        }
-
-        internal void SumAllScores(Psm psmParent)
-        {
-            while (psmParent.AllScores.Count > AllScores.Count)
-                AllScores.Add(0);
-            for (int score = 0; score < psmParent.AllScores.Count; score++)
-                AllScores[score] += psmParent.AllScores[score];
-        }
-
-        #endregion Internal Methods
-
+        
         #region Private Methods
 
         private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)

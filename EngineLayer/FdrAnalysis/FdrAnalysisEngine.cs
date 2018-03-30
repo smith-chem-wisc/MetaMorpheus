@@ -9,7 +9,7 @@ namespace EngineLayer.FdrAnalysis
     {
         #region Private Fields
 
-        private readonly IEnumerable<Psm> newPsms;
+        private readonly IEnumerable<PeptideSpectralMatch> newPsms;
         private readonly int massDiffAcceptorNumNotches;
         private readonly bool calculateEValue;
 
@@ -17,7 +17,7 @@ namespace EngineLayer.FdrAnalysis
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<Psm> newPsms, int massDiffAcceptorNumNotches, bool calculateEValue, List<string> nestedIds) : base(nestedIds)
+        public FdrAnalysisEngine(List<PeptideSpectralMatch> newPsms, int massDiffAcceptorNumNotches, bool calculateEValue, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.massDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
@@ -44,7 +44,7 @@ namespace EngineLayer.FdrAnalysis
 
         #region Private Methods
 
-        private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, int massDiffAcceptorNumNotches, bool calculateEValue)
+        private static List<PeptideSpectralMatch> DoFalseDiscoveryRateAnalysis(IEnumerable<PeptideSpectralMatch> items, int massDiffAcceptorNumNotches, bool calculateEValue)
         {
             double globalMeanScore = 0;
             double globalMeanCount = 0;
@@ -55,7 +55,7 @@ namespace EngineLayer.FdrAnalysis
                 Int64 totalCount = 0;
                 Int64 totalSum = 0;
 
-                foreach (Psm item in items)
+                foreach (PeptideSpectralMatch item in items)
                 {
                     item.AllScores[item.AllScores.Count - 1]--; //remove top scoring peptide
                     while (combinedAllScores.Count < item.AllScores.Count) //expand array if neccessary
@@ -71,8 +71,8 @@ namespace EngineLayer.FdrAnalysis
                 globalMeanScore = totalCount != 0 ? totalSum * 1.0d / totalCount : 0;
                 globalMeanCount = totalCount * 1.0d / items.Count();
             }
-            var ids = new List<Psm>();
-            foreach (Psm item in items)
+            var ids = new List<PeptideSpectralMatch>();
+            foreach (PeptideSpectralMatch item in items)
                 ids.Add(item);
 
             int cumulative_target = 0;
@@ -119,7 +119,7 @@ namespace EngineLayer.FdrAnalysis
 
             for (int i = ids.Count - 1; i >= 0; i--)
             {
-                Psm id = ids[i];
+                PeptideSpectralMatch id = ids[i];
                 if (id.FdrInfo.QValue > min_q_value)
                     id.FdrInfo.QValue = min_q_value;
                 else if (id.FdrInfo.QValue < min_q_value)
