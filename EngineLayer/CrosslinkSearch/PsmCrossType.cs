@@ -7,6 +7,9 @@
         DeadEnd,
         Loop,
         Inter,
-        Intra
+        Intra,
+        DeadEndH2O,
+        DeadEndNH2,
+        DeadEndTris
     }
 }

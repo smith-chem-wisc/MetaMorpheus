@@ -315,7 +315,7 @@ namespace TaskLayer
 
             #region Single peptide
 
-            var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe).OrderByDescending(p => p.Score).ToList();
+            var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe && !p.FullSequence.Contains("Crosslink")).OrderByDescending(p => p.Score).ToList();
             var singlePsmsFDR = SingleFDRAnalysis(singlePsms).ToList();
             if (XlSearchParameters.XlOutAll)
             {
@@ -326,7 +326,7 @@ namespace TaskLayer
 
             #region Loop peptide
 
-            var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop).OrderByDescending(p => p.Score).ToList();
+            var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop).OrderByDescending(p => p.XLTotalScore).ToList();
             var loopPsmsFDR = SingleFDRAnalysis(loopPsms).ToList();
             if (XlSearchParameters.XlOutAll)
             {
@@ -337,7 +337,8 @@ namespace TaskLayer
 
             #region deadend peptide
 
-            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd).OrderByDescending(p => p.Score).ToList();
+            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd || p.CrossType == PsmCrossType.DeadEndH2O || p.CrossType == PsmCrossType.DeadEndNH2 || p.CrossType == PsmCrossType.DeadEndTris).OrderByDescending(p => p.XLTotalScore).ToList();
+            deadendPsms.AddRange(allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.FullSequence.Contains("Crosslink")).ToList());
             var deadendPsmsFDR = SingleFDRAnalysis(deadendPsms).ToList();
             if (XlSearchParameters.XlOutAll)
             {

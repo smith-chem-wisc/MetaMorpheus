@@ -113,6 +113,9 @@
     <Reference Include="SharpLearning.Metrics, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.Metrics.0.26.8.1\lib\net461\SharpLearning.Metrics.dll</HintPath>
     </Reference>
+    <Reference Include="SharpLearning.Optimization, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Optimization.0.26.8.1\lib\net461\SharpLearning.Optimization.dll</HintPath>
+    </Reference>
     <Reference Include="SharpLearning.RandomForest, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.RandomForest.0.26.8.1\lib\net461\SharpLearning.RandomForest.dll</HintPath>
     </Reference>
@@ -299,5 +302,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\mzLib.1.0.288\build\net45\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.288\build\net45\mzLib.targets'))" />
+    <Error Condition="!Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets'))" />
   </Target>
+  <Import Project="..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets" Condition="Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" />
 </Project>
