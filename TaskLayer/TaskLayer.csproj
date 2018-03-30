@@ -7,10 +7,17 @@
 
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="4.2.0" />
-    <PackageReference Include="mzLib" Version="1.0.287" />
+    <PackageReference Include="mzLib" Version="1.0.288" />
     <PackageReference Include="NetSerializer" Version="4.1.0" />
     <PackageReference Include="Nett" Version="0.8.0" />
-    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Containers" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.InputOutput" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.Optimization" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.RandomForest" Version="0.26.8.1" />
   </ItemGroup>
 
   <ItemGroup>

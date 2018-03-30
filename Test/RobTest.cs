@@ -141,7 +141,7 @@ namespace Test
             }
 
             // builds psm list to match to peptides
-            List<Psm> psms = new List<Psm>();
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
 
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File");
@@ -152,15 +152,15 @@ namespace Test
                 {
                     switch (peptide.BaseSequence)
                     {
-                        case "A": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan)); break;
-                        case "B": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 9, 0, scan)); break;
-                        case "C": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 8, 0, scan)); break;
-                        case "D": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 7, 0, scan)); break;
-                        case "E": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 6, 0, scan)); break;
-                        case "F": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 5, 0, scan)); break;
-                        case "G": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 4, 0, scan)); break;
-                        case "H": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 3, 0, scan)); break;
-                        case "I": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 2, 0, scan)); break;
+                        case "A": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan)); break;
+                        case "B": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 9, 0, scan)); break;
+                        case "C": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 8, 0, scan)); break;
+                        case "D": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 7, 0, scan)); break;
+                        case "E": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 6, 0, scan)); break;
+                        case "F": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 5, 0, scan)); break;
+                        case "G": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 4, 0, scan)); break;
+                        case "H": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 3, 0, scan)); break;
+                        case "I": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 2, 0, scan)); break;
                     }
                 }
             }
@@ -360,15 +360,15 @@ namespace Test
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            var match1 = new Psm(peptideList.ElementAt(0).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
+            var match1 = new PeptideSpectralMatch(peptideList.ElementAt(0).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
             match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            var match2 = new Psm(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
+            var match2 = new PeptideSpectralMatch(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
             match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            var match3 = new Psm(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
+            var match3 = new PeptideSpectralMatch(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
             match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -376,7 +376,7 @@ namespace Test
             match2.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             match3.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
-            List<Psm> psms = new List<Psm>
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {
                 match1,
                 match2,
