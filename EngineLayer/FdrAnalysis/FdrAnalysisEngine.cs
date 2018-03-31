@@ -250,7 +250,9 @@ namespace EngineLayer.FdrAnalysis
                 {
                     cumulative_decoy++;
                     if ((double)cumulative_decoy / cumulative_target >= qValueCutoff)
+                    {
                         return cumulative_target;
+                    }
                 }
                 else
                     cumulative_target++;

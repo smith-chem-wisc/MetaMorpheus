@@ -173,7 +173,7 @@ namespace Test
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
             FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
-            Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
+            Assert.IsTrue(fdrResultsModernDelta.PsmsWithin1PercentFdr == 3);
 
             CommonParameters = new CommonParameters
             {
@@ -231,10 +231,13 @@ namespace Test
             }
 
             foreach (var psm in allPsmsArray)
+            {
                 psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+            }
             foreach (var psm in allPsmsArrayModern)
+            {
                 psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-
+            }
             fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
             fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
