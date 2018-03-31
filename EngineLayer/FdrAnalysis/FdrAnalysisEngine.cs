@@ -13,6 +13,7 @@ namespace EngineLayer.FdrAnalysis
         private readonly int massDiffAcceptorNumNotches;
         private readonly bool calculateDeltaScore;
         private readonly bool calculateEValue;
+        private readonly double scoreCutoff;
 
         #endregion Private Fields
 
@@ -23,6 +24,7 @@ namespace EngineLayer.FdrAnalysis
             this.psms = psms;
             this.massDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             this.calculateDeltaScore = commonParameters.CalculateDeltaScore;
+            this.scoreCutoff = commonParameters.ScoreCutoff;
             this.calculateEValue = commonParameters.CalculateEValue;
         }
 
@@ -80,6 +82,11 @@ namespace EngineLayer.FdrAnalysis
             //determine if Score or DeltaScore performs better
             if (calculateDeltaScore)
             {
+                //Calculate delta scores for the psms
+                    foreach (PeptideSpectralMatch psm in psms)
+                        if (psm != null)
+                            psm.CalculateDeltaScore(scoreCutoff);
+
                 const double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR
 
                 List<PeptideSpectralMatch> scoreSorted = psms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();

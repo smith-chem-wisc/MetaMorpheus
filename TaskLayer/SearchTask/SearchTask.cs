@@ -1018,12 +1018,6 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
 
-            //Calculate delta scores for the psms
-            if (CommonParameters.CalculateDeltaScore)
-                foreach (PeptideSpectralMatch psm in allPsms)
-                    if (psm != null)
-                        psm.CalculateDeltaScore(CommonParameters.ScoreCutoff);
-
             Status("Running FDR analysis...", taskId);
             int massDiffAcceptorNumNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { taskId }).Run());

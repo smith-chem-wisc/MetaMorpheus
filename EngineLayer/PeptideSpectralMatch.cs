@@ -180,6 +180,8 @@ namespace EngineLayer
             {
                 compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
             }
+            else if (score > RunnerUpScore)
+                RunnerUpScore = score;
         }
 
         public void CompactCompactPeptides()
