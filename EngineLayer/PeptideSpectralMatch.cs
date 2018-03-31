@@ -254,7 +254,7 @@ namespace EngineLayer
             sb.Append('\t' + ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + Score.ToString("F3", CultureInfo.InvariantCulture));
-            sb.Append('\t' + RunnerUpScore.ToString("F3", CultureInfo.InvariantCulture));
+            sb.Append('\t' + DeltaScore.ToString("F3", CultureInfo.InvariantCulture));
             sb.Append("\t" + Resolve(compactPeptides.Select(b => b.Value.Item1)).Item1); // Notch
             sb.Append('\t' + NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture));
 
