@@ -8,6 +8,7 @@ namespace EngineLayer.FdrAnalysis
 
         public FdrAnalysisResults(FdrAnalysisEngine s) : base(s)
         {
+            DeltaScoreImprovement = false;
         }
 
         #endregion Public Constructors
@@ -26,6 +27,7 @@ namespace EngineLayer.FdrAnalysis
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
             sb.Append("PSMs within 1% fdr: " + PsmsWithin1PercentFdr);
+            sb.Append("Delta Score Improvement: " + DeltaScoreImprovement);
             return sb.ToString();
         }
 

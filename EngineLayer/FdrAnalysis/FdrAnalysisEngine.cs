@@ -37,7 +37,7 @@ namespace EngineLayer.FdrAnalysis
             FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
 
             Status("Running FDR analysis...");
-            DoFalseDiscoveryRateAnalysis();
+            DoFalseDiscoveryRateAnalysis(myAnalysisResults);
 
             myAnalysisResults.PsmsWithin1PercentFdr = psms.Count(b => b.FdrInfo.QValue < 0.01);
 
@@ -48,7 +48,7 @@ namespace EngineLayer.FdrAnalysis
 
         #region Private Methods
 
-        private List<PeptideSpectralMatch> DoFalseDiscoveryRateAnalysis()
+        private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults)
         {
             double globalMeanScore = 0;
             double globalMeanCount = 0;
@@ -98,6 +98,7 @@ namespace EngineLayer.FdrAnalysis
                 psms = (DeltaScorePSMs > ScorePSMs) ?
                     psms.Where(b => b != null).OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList() :
                     psms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
+                myAnalysisResults.DeltaScoreImprovement = DeltaScorePSMs > ScorePSMs;
             }
             else //sort by score
             {
@@ -162,8 +163,6 @@ namespace EngineLayer.FdrAnalysis
                 else if (psm.FdrInfo.QValueNotch < min_q_value_notch[notch])
                     min_q_value_notch[notch] = psm.FdrInfo.QValueNotch;
             }
-
-            return psms;
         }
 
         private static (int sum, int count) GetSumAndCount(List<int> allScores)
