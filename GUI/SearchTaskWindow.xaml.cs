@@ -200,6 +200,7 @@ namespace MetaMorpheusGUI
             //DeconvolutionMassToleranceInPpmTextBox.Text = task.CommonParameters.DeconvolutionMassTolerance.Value.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             eValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
+            deltaScoreCheckBox.IsChecked = task.CommonParameters.CalculateDeltaScore;
             //trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             //trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             //TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -415,6 +416,7 @@ namespace MetaMorpheusGUI
 
             CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
             CommonParamsToSave.CalculateEValue = eValueCheckBox.IsChecked.Value;
+            CommonParamsToSave.CalculateDeltaScore = deltaScoreCheckBox.IsChecked.Value;
             CommonParamsToSave.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
 
             //CommonParamsToSave.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);

@@ -1018,11 +1018,21 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
 
-            allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            //Calculate delta scores for the psms
+            if (CommonParameters.CalculateDeltaScore)
+                foreach (PeptideSpectralMatch psm in allPsms)
+                    psm.CalculateDeltaScore(CommonParameters.ScoreCutoff);
 
             Status("Running FDR analysis...", taskId);
             int massDiffAcceptorNumNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
-            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, CommonParameters.CalculateEValue, new List<string> { taskId }).Run();
+            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { taskId }).Run());
+
+            //sort the list of psms by the score used for fdr calculation
+            if(fdrAnalysisResults.DeltaScoreImprovement)
+                allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            else
+                allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+
 
             List<EngineLayer.ProteinGroup> proteinGroups = null;
 

@@ -67,6 +67,8 @@ namespace EngineLayer
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
+        public double DeltaScore { get; private set; }
+        public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
@@ -111,6 +113,7 @@ namespace EngineLayer
             sb.Append('\t' + "Precursor MZ");
             sb.Append('\t' + "Precursor Mass");
             sb.Append('\t' + "Score");
+            sb.Append('\t' + "Delta Score");
             sb.Append('\t' + "Notch");
             sb.Append('\t' + "Different Peak Matches");
 
@@ -169,6 +172,8 @@ namespace EngineLayer
                 {
                     { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
                 };
+                if (Score > RunnerUpScore)
+                    RunnerUpScore = Score;
                 Score = score;
             }
             else if (score - Score > -tolForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
@@ -243,6 +248,7 @@ namespace EngineLayer
             sb.Append('\t' + ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + Score.ToString("F3", CultureInfo.InvariantCulture));
+            sb.Append('\t' + RunnerUpScore.ToString("F3", CultureInfo.InvariantCulture));
             sb.Append("\t" + Resolve(compactPeptides.Select(b => b.Value.Item1)).Item1); // Notch
             sb.Append('\t' + NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture));
 
@@ -348,7 +354,6 @@ namespace EngineLayer
                 sb.Append('\t' + FdrInfo.CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture));
                 sb.Append('\t' + FdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture));
                 sb.Append('\t' + FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
-
                 if (FdrInfo.CalculateEValue)
                 {
                     sb.Append("\t" + FdrInfo.EValue.ToString("F6", CultureInfo.InvariantCulture));
@@ -361,6 +366,11 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
 
             return sb.ToString();
+        }
+
+        public void CalculateDeltaScore(double scoreCutoff)
+        {
+            DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
         public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, decimal eValue, double eScore, bool calculateEValue)

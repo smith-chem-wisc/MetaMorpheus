@@ -48,6 +48,7 @@ namespace TaskLayer
             MinRatio = 0.01;
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
+            CalculateDeltaScore = true;
             CalculateEValue = false;
         }
 
@@ -97,6 +98,7 @@ namespace TaskLayer
         public bool TrimMsMsPeaks { get; set; }
         public string TaskDescriptor { get; set; }
 
+        public bool CalculateDeltaScore { get; set; }
         public bool CalculateEValue { get; set; }
 
         #endregion Public Properties

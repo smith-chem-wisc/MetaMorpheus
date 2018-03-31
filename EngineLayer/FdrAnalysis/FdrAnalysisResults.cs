@@ -15,6 +15,7 @@ namespace EngineLayer.FdrAnalysis
         #region Public Properties
 
         public int PsmsWithin1PercentFdr { get; set; }
+        public bool DeltaScoreImprovement { get; set; }
 
         #endregion Public Properties
 

@@ -119,6 +119,17 @@ namespace EngineLayer.ModernSearch
                                 if (globalPsms[i] == null)
                                 {
                                     globalPsms[i] = new PeptideSpectralMatch(peptide, notch, score, i, scan);
+                                    if(CommonParameters.CalculateDeltaScore)
+                                    {
+                                        int runnerUp = 0;
+                                        foreach (int index in idsOfPeptidesPossiblyObserved)
+                                        {
+                                            byte currentScore = scoringTable[index];
+                                            if (currentScore > runnerUp && currentScore != maxInitialScore)
+                                                runnerUp = currentScore;
+                                        }
+                                        globalPsms[i].RunnerUpScore = runnerUp;
+                                    }
                                     if (CommonParameters.CalculateEValue)
                                     {
                                         List<int> AllScores = new List<int>(new int[maxInitialScore + 1]);

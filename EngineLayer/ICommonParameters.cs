@@ -34,6 +34,7 @@ namespace EngineLayer
         bool TrimMs1Peaks { get; }
         bool TrimMsMsPeaks { get; }
         string TaskDescriptor { get; }
+        bool CalculateDeltaScore { get; }
         bool CalculateEValue { get; }
 
         #endregion Public Properties

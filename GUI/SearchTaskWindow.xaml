@@ -238,6 +238,7 @@
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
+                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Score" />
                                 <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues" />
                             </StackPanel>
                         </StackPanel>
