@@ -173,7 +173,9 @@ namespace EngineLayer
                     { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
                 };
                 if (Score > RunnerUpScore)
+                {
                     RunnerUpScore = Score;
+                }
                 Score = score;
             }
             else if (score - Score > -tolForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
@@ -181,7 +183,9 @@ namespace EngineLayer
                 compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
             }
             else if (score > RunnerUpScore)
+            {
                 RunnerUpScore = score;
+            }
         }
 
         public void CompactCompactPeptides()

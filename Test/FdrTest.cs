@@ -163,10 +163,13 @@ namespace Test
             }
 
             foreach (var psm in allPsmsArray)
+            {
                 psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+            }
             foreach (var psm in allPsmsArrayModern)
+            {
                 psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-
+            }
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
             FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
@@ -186,16 +189,10 @@ namespace Test
 
             //check that when delta is bad, we used the score
             // Generate data for files
-            //Protein TargetProtein1 = new Protein("TIDEANTHE", "accession1");
             Protein DecoyProtein1 = new Protein("TLEDAGGTHE", "accession1d",isDecoy:true);
-            //Protein TargetProtein2 = new Protein("TIDELVE", "accession2");
             Protein DecoyProtein2 = new Protein("TLEDLVE", "accession2d", isDecoy: true);
-            //Protein TargetProtein3 = new Protein("TIDENIE", "accession3");
             Protein DecoyProtein3 = new Protein("TLEDNIE", "accession3d", isDecoy: true);
             Protein DecoyProteinShiny = new Protein("GGGGGG", "accessionShinyd", isDecoy: true);
-            //Protein TargetProteinLost = new Protein("PEPTIDEANTHE", "accession4");
-            //Protein DecoyProteinFound = new Protein("PETPLEDQGTHE", "accessiond", isDecoy: true);
-
 
             myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
             {
@@ -241,7 +238,7 @@ namespace Test
             fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
             fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
-            Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
+            Assert.IsTrue(fdrResultsModernDelta.PsmsWithin1PercentFdr == 3);
 
             CommonParameters = new CommonParameters
             {
@@ -250,7 +247,7 @@ namespace Test
 
             //check no change when using score
             fdrResultsClassic = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
-            fdrResultsModern = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
+            fdrResultsModern = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());
             Assert.IsTrue(fdrResultsClassic.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModern.PsmsWithin1PercentFdr == 3);
 

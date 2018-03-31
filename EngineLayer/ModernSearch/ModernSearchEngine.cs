@@ -126,7 +126,9 @@ namespace EngineLayer.ModernSearch
                                         {
                                             byte currentScore = scoringTable[index];
                                             if (currentScore > runnerUp && currentScore != maxInitialScore)
+                                            {
                                                 runnerUp = currentScore;
+                                            }
                                         }
                                         globalPsms[i].RunnerUpScore = runnerUp;
                                     }
