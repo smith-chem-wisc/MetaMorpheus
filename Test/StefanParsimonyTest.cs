@@ -213,7 +213,7 @@ namespace Test
             Protein protein3 = new Protein("MTASIK", "protein3");
 
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
-            DigestionParams digestionParams = new DigestionParams()
+            DigestionParams digestionParams = new DigestionParams
             {
                 MinPeptideLength = 5
             };
