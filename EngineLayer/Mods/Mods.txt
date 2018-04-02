@@ -109,7 +109,7 @@ MT   ProteinTermMod
 CF   H2 C2 O1
 //
 ID   Acetyl
-TG   S or K or C or T
+TG   S or K or T
 PP   Anywhere.
 MT   Mod
 CF   H2 C2 O1
@@ -125,18 +125,6 @@ TG   H or K
 PP   Anywhere.
 MT   Mod
 CF   H2 C2
-//
-ID   Acetald+28
-TG   X
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   H4 C2
-//
-ID   Acetald+28
-TG   H or K
-PP   Anywhere.
-MT   Mod
-CF   H4 C2
 //
 ID   Acetylation+Methionine
 TG   mX
