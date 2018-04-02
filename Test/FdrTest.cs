@@ -104,11 +104,14 @@ namespace Test
         [Test]
         public static void TestDeltaValues()
         {
-
             CommonParameters CommonParameters = new CommonParameters
             {
                 ScoreCutoff = 1,
-                CalculateDeltaScore = true
+                CalculateDeltaScore = true,
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = 5
+                }
             };
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -178,7 +181,11 @@ namespace Test
 
             CommonParameters = new CommonParameters
             {
-                CalculateDeltaScore = false
+                CalculateDeltaScore = false,
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = 5
+                }
             };
 
             //check worse when using score
@@ -217,6 +224,14 @@ namespace Test
             allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>()).Run();
 
+            CommonParameters = new CommonParameters
+            {
+                CalculateDeltaScore = true,
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = 5
+                }
+            };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
@@ -246,7 +261,11 @@ namespace Test
 
             CommonParameters = new CommonParameters
             {
-                CalculateDeltaScore = false
+                CalculateDeltaScore = false,
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = 5
+                }
             };
 
             //check no change when using score
