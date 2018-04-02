@@ -377,7 +377,7 @@ namespace MetaMorpheusGUI
                     }
                     else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.DllsNotFound))
                     {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader; a crash may result from searching this .raw file", null));
+                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader (v3.0 SP2 is preferred); a crash may result from searching this .raw file", null));
                         goto case ".mzml";
                     }
                     break;
