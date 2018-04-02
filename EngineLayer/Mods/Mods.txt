@@ -440,12 +440,6 @@ PP   Peptide N-terminal.
 MT   PeptideTermMod
 CF   C1
 //
-ID   Carboxymethyl of peptide n term
-TG   X
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   H2 C2 O2
-//
 ID   Decarboxylation
 TG   D or E
 PP   Anywhere.
