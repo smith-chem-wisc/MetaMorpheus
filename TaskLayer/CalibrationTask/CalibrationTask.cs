@@ -147,6 +147,7 @@ namespace TaskLayer
                 }
 
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
+
                 // get datapoints to fit calibration function to
                 var acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
                 
@@ -205,7 +206,7 @@ namespace TaskLayer
 
                 // write the calibrated MZML file
                 MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
-                
+
                 // all done
                 SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 myTaskResults.newSpectra.Add(calibratedFilePath);
