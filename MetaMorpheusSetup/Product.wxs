@@ -209,9 +209,6 @@
       <Component Id="src_Proteomics.dll" Guid="e0bd6f66-afa5-49fa-a17c-2a24164f600d">
         <File Id="src_Proteomics.dll" Name="Proteomics.dll" Source="$(var.GUI_TargetDir)Proteomics.dll" />
       </Component>
-      <Component Id="src_SharpLearning.AdaBoost.dll" Guid="d1a60f38-7061-4706-85ba-a3d48a50f3f4">
-        <File Id="src_SharpLearning.AdaBoost.dll" Name="SharpLearning.AdaBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.AdaBoost.dll" />
-      </Component>
       <Component Id="src_SharpLearning.Common.Interfaces.dll" Guid="62b8e7de-7965-4942-9e5b-9449c5ab7deb">
         <File Id="src_SharpLearning.Common.Interfaces.dll" Name="SharpLearning.Common.Interfaces.dll" Source="$(var.GUI_TargetDir)SharpLearning.Common.Interfaces.dll" />
       </Component>
@@ -224,12 +221,6 @@
       <Component Id="src_SharpLearning.DecisionTrees.dll" Guid="b3c202a8-795d-4198-b927-0fcd02d8ae05">
         <File Id="src_SharpLearning.DecisionTrees.dll" Name="SharpLearning.DecisionTrees.dll" Source="$(var.GUI_TargetDir)SharpLearning.DecisionTrees.dll" />
       </Component>
-      <Component Id="src_SharpLearning.Ensemble.dll" Guid="9f820a12-57bf-44b2-b143-0fd2b3617a45">
-        <File Id="src_SharpLearning.Ensemble.dll" Name="SharpLearning.Ensemble.dll" Source="$(var.GUI_TargetDir)SharpLearning.Ensemble.dll" />
-      </Component>
-      <Component Id="src_SharpLearning.GradientBoost.dll" Guid="ee43d34e-ca7c-4047-9c4e-7982d1ec0e13">
-        <File Id="src_SharpLearning.GradientBoost.dll" Name="SharpLearning.GradientBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.GradientBoost.dll" />
-      </Component>
       <Component Id="src_SharpLearning.InputOutput.dll" Guid="357e6a45-5852-474d-aceb-e05942958ae6">
         <File Id="src_SharpLearning.InputOutput.dll" Name="SharpLearning.InputOutput.dll" Source="$(var.GUI_TargetDir)SharpLearning.InputOutput.dll" />
       </Component>
@@ -238,6 +229,9 @@
       </Component>
       <Component Id="src_SharpLearning.RandomForest.dll" Guid="f86fdc0c-6a23-4e4f-803b-0012aaa418e7">
         <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)SharpLearning.RandomForest.dll" />
+      </Component>
+      <Component Id="src_SharpLearning.Optimization.dll">
+        <File Id="src_SharpLearning.Optimization.dll" Name="SharpLearning.Optimization.dll" Source="$(var.GUI_TargetDir)SharpLearning.Optimization.dll" />
       </Component>
       <Component Id="src_Spectra.dll" Guid="280ccb7f-a4f8-4df7-9f88-6cf6fa9bc15b">
         <File Id="src_Spectra.dll" Name="Spectra.dll" Source="$(var.GUI_TargetDir)Spectra.dll" />
