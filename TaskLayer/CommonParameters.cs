@@ -48,7 +48,7 @@ namespace TaskLayer
             MinRatio = 0.01;
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
-            CalculateDeltaScore = true;
+            CalculateDeltaScore = false;
             CalculateEValue = false;
         }
 
