@@ -364,6 +364,24 @@ namespace MetaMorpheusGUI
             switch (theExtension)
             {
                 case ".raw":
+                    var versionCheckerResult = MyFileManager.ValidateThermoMsFileReaderVersion();
+
+                    if(versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.CorrectVersion))
+                    {
+                        goto case ".mzml";
+                    }
+                    else if(versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.IncorrectVersion))
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Warning! Thermo MSFileReader is not version 3.0 SP2; a crash may result from searching this .raw file", null));
+                        goto case ".mzml";
+                    }
+                    else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.DllsNotFound))
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader; a crash may result from searching this .raw file", null));
+                        goto case ".mzml";
+                    }
+                    break;
+
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
