@@ -89,7 +89,7 @@ dotnet CMD/bin/Release/netcoreapp2.0/CMD.dll -t Task1SearchExample.toml Task2Cal
 
 
 ## References
-
+* [Enhanced Global Post-translational Modification Discovery with MetaMorpheus--J. Proteome Res., Article ASAP](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873)
 * [Global Post-translational Modification Discovery--J. Proteome Res., 2017, 16, 1383-1390](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034)
 
 * [Global Identification of Protein Post-translational Modifications in a Single-Pass Database Search--J. Proteome Res., 2015, 14 (11), pp 4714–4720](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.5b00599)
