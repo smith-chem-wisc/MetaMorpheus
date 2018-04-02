@@ -229,17 +229,23 @@ PP   Anywhere.
 MT   Mod
 CF   H-2 S-1
 //
-ID   Didehydro
-TG   Y or S
-PP   Anywhere.
-MT   Mod
-CF   H-2
-//
-ID   Didehydrobutyrine
-TG   T or S
+ID   Dehydroalanine from Serine
+TG   S
 PP   Anywhere.
 MT   Mod
 CF   H-2 O-1
+//
+ID   Dehydrobutyrine
+TG   T
+PP   Anywhere.
+MT   Mod
+CF   H-2 O-1
+//
+ID   Didehydro
+TG   Y
+PP   Anywhere.
+MT   Mod
+CF   H-2
 //
 ID   Formylation
 TG   X
