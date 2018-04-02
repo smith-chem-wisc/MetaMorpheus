@@ -107,7 +107,8 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                ScoreCutoff = 1
+                ScoreCutoff = 1,
+                CalculateDeltaScore = true
             };
             SearchParameters SearchParameters = new SearchParameters
             {
