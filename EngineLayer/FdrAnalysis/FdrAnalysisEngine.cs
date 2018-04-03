@@ -83,17 +83,19 @@ namespace EngineLayer.FdrAnalysis
             int cumulative_target = 0;
             int cumulative_decoy = 0;
 
+            //Calculate delta scores for the psms (regardless of if we are using them)
+            foreach (PeptideSpectralMatch psm in psms)
+            {
+                if (psm != null)
+                {
+                    psm.CalculateDeltaScore(scoreCutoff);
+                }
+            }
+
             //determine if Score or DeltaScore performs better
             if (calculateDeltaScore)
             {
-                //Calculate delta scores for the psms
-                foreach (PeptideSpectralMatch psm in psms)
-                {
-                    if (psm != null)
-                    {
-                        psm.CalculateDeltaScore(scoreCutoff);
-                    }
-                }
+
                 const double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR
 
                 List<PeptideSpectralMatch> scoreSorted = psms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();

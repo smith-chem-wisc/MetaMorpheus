@@ -119,19 +119,19 @@ namespace EngineLayer.ModernSearch
                                 if (globalPsms[i] == null)
                                 {
                                     globalPsms[i] = new PeptideSpectralMatch(peptide, notch, score, i, scan);
-                                    if(CommonParameters.CalculateDeltaScore)
+                                    
+                                    //Get runnerup score in the event that it is a lower integer than the highest score
+                                    int runnerUp = Convert.ToInt16(CommonParameters.ScoreCutoff);
+                                    foreach (int index in idsOfPeptidesPossiblyObserved)
                                     {
-                                        int runnerUp = 0;
-                                        foreach (int index in idsOfPeptidesPossiblyObserved)
+                                        byte currentScore = scoringTable[index];
+                                        if (currentScore > runnerUp && currentScore != maxInitialScore)
                                         {
-                                            byte currentScore = scoringTable[index];
-                                            if (currentScore > runnerUp && currentScore != maxInitialScore)
-                                            {
-                                                runnerUp = currentScore;
-                                            }
+                                            runnerUp = currentScore;
                                         }
-                                        globalPsms[i].RunnerUpScore = runnerUp;
                                     }
+                                    globalPsms[i].RunnerUpScore = runnerUp;
+
                                     if (CommonParameters.CalculateEValue)
                                     {
                                         List<int> AllScores = new List<int>(new int[maxInitialScore + 1]);
