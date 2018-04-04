@@ -1279,7 +1279,7 @@ namespace TaskLayer
                 var proteinToConfidentPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
 
                 // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
-                foreach (Psm psm in confidentPsms)
+                foreach (PeptideSpectralMatch psm in confidentPsms)
                 {
                     var myPepsWithSetMods = psm.CompactPeptides.SelectMany(p => p.Value.Item2);
 
@@ -1306,7 +1306,7 @@ namespace TaskLayer
                 var ModPsms = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.BaseSequence != null && b.FullSequence!=null).ToList();
                 var proteinToModPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
 
-                foreach (Psm psm in ModPsms)
+                foreach (PeptideSpectralMatch psm in ModPsms)
                 {
                     var myPepsWithSetMods = psm.CompactPeptides.SelectMany(p => p.Value.Item2);
 
