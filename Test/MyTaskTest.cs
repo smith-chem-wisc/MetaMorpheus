@@ -406,6 +406,13 @@ namespace Test
                     {
                         {"ConnorModType", 1}
                     }
+                },
+                CommonParameters = new CommonParameters
+                {
+                    DigestionParams = new DigestionParams
+                    {
+                        MinPeptideLength = 5
+                    }
                 }
             };
 
@@ -663,6 +670,10 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
+                    DigestionParams = new DigestionParams
+                    {
+                        MinPeptideLength = 5
+                    }
                 },
                 SearchParameters = new SearchParameters
                 {

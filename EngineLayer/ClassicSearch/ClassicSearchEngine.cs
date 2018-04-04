@@ -97,7 +97,7 @@ namespace EngineLayer.ClassicSearch
 
                                 var thisScore = CalculatePeptideScore(scan.theScan.TheScan, productMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
                                 bool meetsScoreCutoff = thisScore > commonParameters.ScoreCutoff;
-                                bool scoreImprovement = peptideSpectralMatches[scan.scanIndex] == null || (peptideSpectralMatches[scan.scanIndex].Score - PeptideSpectralMatch.tolForScoreDifferentiation) <= thisScore;
+                                bool scoreImprovement = peptideSpectralMatches[scan.scanIndex] == null || (peptideSpectralMatches[scan.scanIndex].RunnerUpScore - PeptideSpectralMatch.tolForScoreDifferentiation) <= thisScore;
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,
                                 // the lock combined with AddOrReplace method will ensure thread safety
