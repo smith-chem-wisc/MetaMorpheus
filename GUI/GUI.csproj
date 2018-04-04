@@ -86,9 +86,6 @@
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mzLib.1.0.288\lib\net45\Proteomics.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.AdaBoost, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.AdaBoost.0.26.8.1\lib\net461\SharpLearning.AdaBoost.dll</HintPath>
-    </Reference>
     <Reference Include="SharpLearning.Common.Interfaces, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.Common.Interfaces.0.26.8.1\lib\net461\SharpLearning.Common.Interfaces.dll</HintPath>
     </Reference>
@@ -100,12 +97,6 @@
     </Reference>
     <Reference Include="SharpLearning.DecisionTrees, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.DecisionTrees.0.26.8.1\lib\net461\SharpLearning.DecisionTrees.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpLearning.Ensemble, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Ensemble.0.26.8.1\lib\net461\SharpLearning.Ensemble.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpLearning.GradientBoost, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.GradientBoost.0.26.8.1\lib\net461\SharpLearning.GradientBoost.dll</HintPath>
     </Reference>
     <Reference Include="SharpLearning.InputOutput, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.InputOutput.0.26.8.1\lib\net461\SharpLearning.InputOutput.dll</HintPath>

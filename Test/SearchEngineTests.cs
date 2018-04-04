@@ -525,7 +525,12 @@ namespace Test
             var protease = new Protease("singleN", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915) };
-            DigestionParams digestionParams = new DigestionParams() { Protease = protease, MaxModsForPeptide = 3 };
+            DigestionParams digestionParams = new DigestionParams
+            {
+                Protease = protease,
+                MaxModsForPeptide = 3,
+                MinPeptideLength = 5
+            };
             var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
             Assert.AreEqual(ListOfModifiedPeptides.Count, 192);
 
@@ -541,7 +546,12 @@ namespace Test
             var protease = new Protease("singleC", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleC, null, null, null);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915, null) };
-            DigestionParams digestionParams = new DigestionParams() { Protease = protease, MaxModsForPeptide = 3 };
+            DigestionParams digestionParams = new DigestionParams
+            {
+                Protease = protease,
+                MaxModsForPeptide = 3,
+                MinPeptideLength = 5
+            };
             var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
             Assert.AreEqual(ListOfModifiedPeptides.Count, 132);
 
@@ -586,6 +596,7 @@ namespace Test
             };
             CommonParameters.DigestionParams = new DigestionParams
             {
+                MinPeptideLength = 5,
                 MaxMissedCleavages = 2,
                 Protease = protease,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
@@ -671,6 +682,7 @@ namespace Test
             };
             CommonParameters.DigestionParams = new DigestionParams
             {
+                MinPeptideLength = 5,
                 MaxMissedCleavages = 5,
                 Protease = protease,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,

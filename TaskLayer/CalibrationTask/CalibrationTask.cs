@@ -146,7 +146,8 @@ namespace TaskLayer
                     myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks);
                 }
 
-                Status("Aquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
+                Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
+
                 // get datapoints to fit calibration function to
                 var acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
                 
@@ -175,6 +176,7 @@ namespace TaskLayer
                 // generate calibration function and shift data points
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                 new CalibrationEngine(myMsDataFile, acquisitionResults.Item2, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }).Run();
+                myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // do another search to evaluate calibration results
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });
@@ -286,7 +288,7 @@ namespace TaskLayer
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-            new FdrAnalysisEngine(allPsms, searchMode.NumNotches, false, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null).ToList();
 
