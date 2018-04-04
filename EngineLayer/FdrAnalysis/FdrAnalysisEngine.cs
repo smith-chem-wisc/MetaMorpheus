@@ -11,7 +11,7 @@ namespace EngineLayer.FdrAnalysis
 
         private List<PeptideSpectralMatch> psms;
         private readonly int massDiffAcceptorNumNotches;
-        private readonly bool calculateDeltaScore;
+        private readonly bool UseDeltaScore;
         private readonly bool calculateEValue;
         private readonly double scoreCutoff;
 
@@ -23,7 +23,7 @@ namespace EngineLayer.FdrAnalysis
         {
             this.psms = psms;
             this.massDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
-            this.calculateDeltaScore = commonParameters.UseDeltaScore;
+            this.UseDeltaScore = commonParameters.UseDeltaScore;
             this.scoreCutoff = commonParameters.ScoreCutoff;
             this.calculateEValue = commonParameters.CalculateEValue;
         }
@@ -93,7 +93,7 @@ namespace EngineLayer.FdrAnalysis
             }
 
             //determine if Score or DeltaScore performs better
-            if (calculateDeltaScore)
+            if (UseDeltaScore)
             {
 
                 const double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR

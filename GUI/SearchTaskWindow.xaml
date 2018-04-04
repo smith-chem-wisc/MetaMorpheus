@@ -238,7 +238,17 @@
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Score" />
+                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR" ToolTipService.ShowDuration="20000">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            This allows delta scores (the difference between the top two highest scoring candidates) to be considered in q-value calculations.
+                                            <LineBreak/>
+                                            MetaMorpheus automatically checks that delta scores improve the number of PSMs at a 1% FDR. 
+                                            <LineBreak/>
+                                            If there is no improvement, then the standard score is used.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                                 <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues" />
                             </StackPanel>
                         </StackPanel>

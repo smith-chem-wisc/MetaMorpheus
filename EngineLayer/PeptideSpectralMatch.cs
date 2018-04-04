@@ -172,7 +172,7 @@ namespace EngineLayer
                 {
                     { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
                 };
-                if (Score > RunnerUpScore)
+                if (Score - RunnerUpScore > tolForScoreDifferentiation)
                 {
                     RunnerUpScore = Score;
                 }
@@ -182,7 +182,7 @@ namespace EngineLayer
             {
                 compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
             }
-            else if (score > RunnerUpScore)
+            else if (Score - RunnerUpScore > tolForScoreDifferentiation)
             {
                 RunnerUpScore = score;
             }

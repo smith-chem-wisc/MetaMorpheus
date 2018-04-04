@@ -121,7 +121,7 @@ namespace EngineLayer.ModernSearch
                                     globalPsms[i] = new PeptideSpectralMatch(peptide, notch, score, i, scan);
                                     
                                     //Get runnerup score in the event that it is a lower integer than the highest score
-                                    int runnerUp = Convert.ToInt16(CommonParameters.ScoreCutoff);
+                                    int runnerUp = (int) CommonParameters.ScoreCutoff;
                                     foreach (int index in idsOfPeptidesPossiblyObserved)
                                     {
                                         byte currentScore = scoringTable[index];
