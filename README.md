@@ -1,11 +1,9 @@
 # MetaMorpheus: Free, Open-Source PTM Discovery <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Tweet"></a>
 
 [![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
-[![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5044926)
 
-Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases). For first-time Windows users, choose "MetaMorpheusInstaller.exe" and install MetaMorpheus.
+Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases). For first-time Windows users, choose "MetaMorpheusInstaller.msi" and install MetaMorpheus.
  
 MetaMorpheus is a bottom-up proteomics database search software with integrated post-translational modification (PTM) discovery capability.
 This program combines features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTM-D](https://github.com/smith-chem-wisc/gptmd) in a single tool.
@@ -40,7 +38,7 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format.
 
 ## Test Installation (Windows GUI)
 
-1. Download the latest MetaMorpheusInstaller.exe [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases), and install MetaMorpheus.
+1. Download the latest MetaMorpheusInstaller.msi [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases), and install MetaMorpheus.
 2. Download the example spectra and database files from [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp).
 3. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot .xml database into MetaMorpheus.
 4. Add a series of Tasks to make a workflow for MetaMorpheus to follow. Drag the .toml files (these files store MetaMorpheus's search parameters) **IN ORDER** (Task1 - Task5) into the application.
@@ -63,11 +61,11 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format.
 ## Test Installation (Windows Command Line)
 
 1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusDotNetFrameworkAppveyor.zip" using, for example, [7-Zip](http://www.7-zip.org/).
-2. Download the example spectra and database files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp) to the folder with MetaMorpheusCommandLine.exe executable.
+2. Download the example spectra and database files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp) to the folder with the CMD.exe executable.
 3. Run the command:
 
 ```
-MetaMorpheusCommandLine.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExample.toml Task4GptmdExample.toml Task5SearchExample.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-3-9-2017.xml.gz
+CMD.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExample.toml Task4GptmdExample.toml Task5SearchExample.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-3-9-2017.xml.gz
 ```
 4. As the third task completes, open the results.txt files for the first and third tasks (before and after calibration). Observe the increase in the number of confident PSMs identified due to calibration.
 5. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to an addition of new plausible PTMs.
@@ -75,7 +73,7 @@ MetaMorpheusCommandLine.exe -t Task1SearchExample.toml Task2CalibrationExample.t
 ## Test Installation (.NET Core)
 
 1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract files from "MetaMorpheusDotNetCoreAppveyor.zip".
-2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp) to the folder with MetaMorpheusCommandLine.exe executable
+2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp) to the folder with the CMD.exe executable.
 3. Run the command:
 
 ```
