@@ -23,7 +23,7 @@ namespace EngineLayer.FdrAnalysis
         {
             this.psms = psms;
             this.massDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
-            this.calculateDeltaScore = commonParameters.CalculateDeltaScore;
+            this.calculateDeltaScore = commonParameters.UseDeltaScore;
             this.scoreCutoff = commonParameters.ScoreCutoff;
             this.calculateEValue = commonParameters.CalculateEValue;
         }

@@ -78,7 +78,7 @@ namespace Test
             var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
             CommonParameters cp = new CommonParameters
             {
-                CalculateDeltaScore = false,
+                UseDeltaScore = false,
                 CalculateEValue = true
             };
             FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, cp, nestedIds);
@@ -107,7 +107,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ScoreCutoff = 1,
-                CalculateDeltaScore = true,
+                UseDeltaScore = true,
                 DigestionParams = new DigestionParams
                 {
                     MinPeptideLength = 5
@@ -181,7 +181,7 @@ namespace Test
 
             CommonParameters = new CommonParameters
             {
-                CalculateDeltaScore = false,
+                UseDeltaScore = false,
                 DigestionParams = new DigestionParams
                 {
                     MinPeptideLength = 5
@@ -226,7 +226,7 @@ namespace Test
 
             CommonParameters = new CommonParameters
             {
-                CalculateDeltaScore = true,
+                UseDeltaScore = true,
                 DigestionParams = new DigestionParams
                 {
                     MinPeptideLength = 5
@@ -261,7 +261,7 @@ namespace Test
 
             CommonParameters = new CommonParameters
             {
-                CalculateDeltaScore = false,
+                UseDeltaScore = false,
                 DigestionParams = new DigestionParams
                 {
                     MinPeptideLength = 5
