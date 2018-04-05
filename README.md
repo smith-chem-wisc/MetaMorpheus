@@ -3,6 +3,8 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
 
+[![](https://github.com/smith-chem-wisc/MetaMorpheus/blob/master/GUI/MMnice.ico)](https://smith-chem-wisc.github.io/MetaMorpheus/)
+
 Download the current version [here](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest). For first-time Windows users, choose "MetaMorpheusInstaller.msi" and install MetaMorpheus.
  
 MetaMorpheus is a bottom-up proteomics database search software with integrated post-translational modification (PTM) discovery capability.
