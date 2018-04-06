@@ -41,14 +41,14 @@ namespace Test
             Assert.AreEqual(pep.BaseSequence, "MNNNK");
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
             crosslinker.SelectCrosslinker(CrosslinkerType.DSS);
-            Assert.AreEqual(crosslinker.CrosslinkerModSite, 'K');
-            Assert.AreEqual(Residue.GetResidue(crosslinker.CrosslinkerModSite).MonoisotopicMass, 128.09496301518999, 1e-9);
+            Assert.AreEqual(crosslinker.CrosslinkerModSites, "K");
+            Assert.AreEqual(Residue.GetResidue(crosslinker.CrosslinkerModSites).MonoisotopicMass, 128.09496301518999, 1e-9);
             var n = pep.CompactPeptide(TerminusType.None).NTerminalMasses;
             var c = pep.CompactPeptide(TerminusType.None).CTerminalMasses;
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c[0], 128.09496301518999, 1e-6);
-            var x = PsmCross.XlPosCal(pep.CompactPeptide(TerminusType.None), crosslinker).ToArray();
+            var x = PsmCross.XlPosCal(pep.CompactPeptide(TerminusType.None), crosslinker.CrosslinkerModSites).ToArray();
             Assert.AreEqual(x[0], 4);
 
             var pep2 = ye[2];
@@ -58,8 +58,17 @@ namespace Test
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
             Assert.AreEqual(n2[4] - n2[3], 128.09496301518999, 1e-6);
-            var x2 = PsmCross.XlPosCal(pep2.CompactPeptide(TerminusType.None), crosslinker).ToArray();
+            var x2 = PsmCross.XlPosCal(pep2.CompactPeptide(TerminusType.None), crosslinker.CrosslinkerModSites).ToArray();
             Assert.AreEqual(x2[0], 4);
+
+            //Test crosslinker with multiple types of mod
+            var protSTC = new Protein("GASTACK", null);
+            var peps = protSTC.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+            var pepSTC = peps[0];
+            Assert.AreEqual(pepSTC.BaseSequence, "GASTACK");
+            CrosslinkerTypeClass crosslinker2 = new CrosslinkerTypeClass("ST","C", "crosslinkerSTC", false, -18.01056, 0, 0, 0, 0, 0, 0);
+            string crosslinkerModSitesAll = new string((crosslinker2.CrosslinkerModSites + crosslinker2.CrosslinkerModSites2).ToCharArray().Distinct().ToArray());
+            Assert.AreEqual(crosslinkerModSitesAll, "STC");
         }
 
         [Test]
@@ -119,7 +128,7 @@ namespace Test
 
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
             crosslinker.SelectCrosslinker(CrosslinkerType.DSS);
-            var x = PsmCross.XlPosCal(digestedList[3].CompactPeptide(TerminusType.None), crosslinker).ToArray();
+            var x = PsmCross.XlPosCal(digestedList[3].CompactPeptide(TerminusType.None), crosslinker.CrosslinkerModSites).ToArray();
             Assert.AreEqual(x[0], 5);
 
             var myMsDataFile = new XLTestDataFile();
@@ -132,7 +141,7 @@ namespace Test
 
             //Another method to calculate modification mass of cross-linked peptides
             //var modMassAlpha2 = listOfSortedms2Scans[0].PrecursorMass - psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods;
-            var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker);
+            var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker.CrosslinkerModSites);
 
             var productMassesAlphaList = PsmCross.XlCalculateTotalProductMasses(psmCrossAlpha, modMassAlpha1, crosslinker, lp, true, false, linkPos);
 
@@ -187,7 +196,7 @@ namespace Test
             Assert.AreEqual(productMasses.Count(), 37);
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
             crosslinker.SelectCrosslinker(CrosslinkerType.DSSO);
-            var x = PsmCross.XlPosCal(digestedList[6].CompactPeptide(TerminusType.None), crosslinker).ToArray();
+            var x = PsmCross.XlPosCal(digestedList[6].CompactPeptide(TerminusType.None), crosslinker.CrosslinkerModSites).ToArray();
             Assert.AreEqual(x[0], 0);
 
             var myMsDataFile = new XLTestDataFile();
@@ -199,7 +208,7 @@ namespace Test
 
             //Another method to calculate modification mass of cross-linked peptides
             //var modMassAlpha2 = listOfSortedms2Scans[0].PrecursorMass - psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods;
-            var linkPos = PsmCross.XlPosCal(psmCrossLoop.compactPeptide, crosslinker);
+            var linkPos = PsmCross.XlPosCal(psmCrossLoop.compactPeptide, crosslinker.CrosslinkerModSites);
 
             var productMassLoopList = PsmCross.XlCalculateTotalProductMassesForLoopCrosslink(psmCrossLoop, modMass, crosslinker, lp, linkPos);
 

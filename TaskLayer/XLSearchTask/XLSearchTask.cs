@@ -112,7 +112,8 @@ namespace TaskLayer
                 crosslinker.TotalMass = XlSearchParameters.UdXLkerTotalMass.HasValue ? (double)XlSearchParameters.UdXLkerTotalMass : 9999;
                 crosslinker.CleaveMassShort = XlSearchParameters.UdXLkerShortMass.HasValue ? (double)XlSearchParameters.UdXLkerShortMass : 9999;
                 crosslinker.CleaveMassLong = XlSearchParameters.UdXLkerShortMass.HasValue ? (double)XlSearchParameters.UdXLkerLongMass : 9999;
-                crosslinker.CrosslinkerModSite = XlSearchParameters.UdXLkerResidue;
+                crosslinker.CrosslinkerModSites = XlSearchParameters.UdXLkerResidues;
+                crosslinker.CrosslinkerModSites2 = XlSearchParameters.UdXLkerResidues2;
                 crosslinker.LoopMass = XlSearchParameters.UdXLkerLoopMass.HasValue ? (double)XlSearchParameters.UdXLkerLoopMass : 9999;
                 crosslinker.DeadendMassH2O = XlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassH2O : 9999;
                 crosslinker.DeadendMassNH2 = XlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassNH2 : 9999;
@@ -138,7 +139,7 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName + "; ");
             proseCreatedWhileRunning.Append("crosslinker type = " + crosslinker.Cleavable + "; ");
             proseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
-            proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSite + "; ");
+            proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSites + "; ");
 
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");

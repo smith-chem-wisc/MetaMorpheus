@@ -53,8 +53,6 @@ namespace EngineLayer.CrosslinkAnalysis
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            MassDiffAcceptor XLsearchMode = new OpenSearchMode();
-
             CrosslinkAnalysisResults myAnalysisResults = new CrosslinkAnalysisResults(this);
             Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
@@ -119,9 +117,8 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 var huh = newPsms[myScanWithMassIndex];
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                if (huh != null)
                 {
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                     var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
                     if (huh1 != null)
                         huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);

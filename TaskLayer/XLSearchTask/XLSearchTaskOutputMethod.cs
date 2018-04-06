@@ -274,7 +274,7 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable", value = crosslinker.Cleavable.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable long mass", value = crosslinker.CleaveMassLong.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable short mass", value = crosslinker.CleaveMassShort.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker xl site", value = crosslinker.CrosslinkerModSite.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker xl site", value = crosslinker.CrosslinkerModSites.ToString() });
 
                 para.Add(new pepXML.Generated.nameValueType { name = "Generate decoy proteins", value = XlSearchParameters.DecoyType.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "MaxMissed Cleavages", value = CommonParameters.DigestionParams.MaxMissedCleavages.ToString() });

@@ -153,25 +153,29 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Calculate if crosslink amino acid exist and return its position based on compactPeptide
-        public static List<int> XlPosCal(CompactPeptide compactPeptide, CrosslinkerTypeClass crosslinker)
+        public static List<int> XlPosCal(CompactPeptide compactPeptide, string crosslinkerModSites)
         {
             Tolerance tolerance = new PpmTolerance(1);
             List<int> xlpos = new List<int>();
-            if (tolerance.Within(compactPeptide.NTerminalMasses[0], Residue.GetResidue(crosslinker.CrosslinkerModSite).MonoisotopicMass))
+            foreach (char item in crosslinkerModSites)
             {
-                xlpos.Add(0);
-            }
-            for (int i = 1; i < compactPeptide.NTerminalMasses.Length; i++)
-            {
-                if (tolerance.Within(compactPeptide.NTerminalMasses[i] - compactPeptide.NTerminalMasses[i - 1], Residue.GetResidue(crosslinker.CrosslinkerModSite).MonoisotopicMass))
+                if (tolerance.Within(compactPeptide.NTerminalMasses[0], Residue.GetResidue(item).MonoisotopicMass))
                 {
-                    xlpos.Add(i);
+                    xlpos.Add(0);
+                }
+                for (int i = 1; i < compactPeptide.NTerminalMasses.Length; i++)
+                {
+                    if (tolerance.Within(compactPeptide.NTerminalMasses[i] - compactPeptide.NTerminalMasses[i - 1], Residue.GetResidue(item).MonoisotopicMass))
+                    {
+                        xlpos.Add(i);
+                    }
+                }
+                if (tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue(item).MonoisotopicMass))
+                {
+                    xlpos.Add(compactPeptide.NTerminalMasses.Length);
                 }
             }
-            if (tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue(crosslinker.CrosslinkerModSite).MonoisotopicMass))
-            {
-                xlpos.Add(compactPeptide.NTerminalMasses.Length);
-            }
+            xlpos.Sort();
             return xlpos;
         }
 

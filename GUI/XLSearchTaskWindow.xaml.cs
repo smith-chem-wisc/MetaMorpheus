@@ -46,13 +46,6 @@ namespace MetaMorpheusGUI
             dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
-                //ModExpanderTitle =
-                //"fixed: "
-                //+ string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
-                //+ " variable: "
-                //+ string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
-                //+ " localize: "
-                //+ string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName)),
                 AnalysisExpanderTitle = "Some analysis properties...",
                 SearchModeExpanderTitle = "Some search properties..."
             };
@@ -70,13 +63,6 @@ namespace MetaMorpheusGUI
             dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
-                //ModExpanderTitle =
-                //"fixed: "
-                //+ string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
-                //+ " variable: "
-                //+ string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
-                //+ " localize: "
-                //+ string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName)),
                 AnalysisExpanderTitle = "Some analysis properties...",
                 SearchModeExpanderTitle = "Some search properties..."
             };
@@ -168,7 +154,8 @@ namespace MetaMorpheusGUI
             txtUdXLkerShortMass.Text = task.XlSearchParameters.UdXLkerShortMass.HasValue ? task.XlSearchParameters.UdXLkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerLongMass.Text = task.XlSearchParameters.UdXLkerLongMass.HasValue ? task.XlSearchParameters.UdXLkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerLoopMass.Text = task.XlSearchParameters.UdXLkerLoopMass.HasValue ? task.XlSearchParameters.UdXLkerLoopMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerAminoAcid.Text = task.XlSearchParameters.UdXLkerResidue.ToString();
+            txtUdXLkerAminoAcids.Text = task.XlSearchParameters.UdXLkerResidues;
+            txtUdXLkerAminoAcids2.Text = task.XlSearchParameters.UdXLkerResidues2;
             txtUdXLkerDeadendH2O.Text = task.XlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? task.XlSearchParameters.UdXLkerDeadendMassH2O.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerDeadendNH2.Text = task.XlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? task.XlSearchParameters.UdXLkerDeadendMassNH2.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerDeadendTris.Text = task.XlSearchParameters.UdXLkerDeadendMassTris.HasValue ? task.XlSearchParameters.UdXLkerDeadendMassTris.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -290,15 +277,13 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_Tris = ckbQuenchTris.IsChecked.Value;
-            //if (cbbXLBetaprecusorMsTl.SelectedIndex == 0)
-            //    TheTask.XlSearchParameters.XlBetaPrecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLBetaPrecusorMsTl.Text, CultureInfo.InvariantCulture));
-            //else
-            //    TheTask.XlSearchParameters.XlBetaPrecusorMsTl = new PpmTolerance(double.Parse(txtXLBetaPrecusorMsTl.Text, CultureInfo.InvariantCulture));
 
             if (TheTask.XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
             {
                 TheTask.XlSearchParameters.UdXLkerName = txtUdXLKerName.Text;
                 TheTask.XlSearchParameters.UdXLkerCleavable = ckbUdXLkerCleavable.IsChecked.Value;
+                TheTask.XlSearchParameters.UdXLkerResidues = txtUdXLkerAminoAcids.Text;
+                TheTask.XlSearchParameters.UdXLkerResidues2 = txtUdXLkerAminoAcids2.Text;
                 TheTask.XlSearchParameters.UdXLkerLongMass = string.IsNullOrEmpty(txtUdXLkerLongMass.Text) ? (double?)null : double.Parse(txtUdXLkerLongMass.Text, CultureInfo.InvariantCulture);
                 TheTask.XlSearchParameters.UdXLkerShortMass = string.IsNullOrEmpty(txtUdXLkerShortMass.Text) ? (double?)null : double.Parse(txtUdXLkerShortMass.Text, CultureInfo.InvariantCulture);
                 TheTask.XlSearchParameters.UdXLkerTotalMass = string.IsNullOrEmpty(txtUdXLkerTotalMs.Text) ? (double?)null : double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
@@ -375,13 +360,6 @@ namespace MetaMorpheusGUI
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
-            //dataContextForSearchTaskWindow.ModExpanderTitle =
-            //    "fixed: "
-            //    + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
-            //    + " variable: "
-            //    + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
-            //    + " localize: "
-            //    + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName));
             dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
             dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
         }

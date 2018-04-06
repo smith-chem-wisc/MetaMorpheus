@@ -110,30 +110,48 @@
                                                 <RowDefinition Height="1*" />
                                                 <RowDefinition Height="1*" />
                                                 <RowDefinition Height="1*" />
-                                                <RowDefinition Height="1*" />
-                                                <RowDefinition Height="1*" />
-                                                <RowDefinition Height="1*" />
-                                                <RowDefinition Height="1*" />
                                             </Grid.RowDefinitions>
-                                            <Label x:Name="lblUdXLkerName" Content="Crosslinker Name" Grid.Column="0" Grid.Row="0" />
-                                            <TextBox x:Name="txtUdXLKerName" Width="60" Grid.Column="1" Grid.Row="0" />
-                                            <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="0" Grid.Row="1" />
-                                            <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" Grid.Column="0" Grid.Row="2" />
-                                            <TextBox x:Name="txtUdXLkerTotalMs" Width="60" Grid.Column="1" Grid.Row="2" />
-                                            <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass" Grid.Column="0" Grid.Row="3" />
-                                            <TextBox x:Name="txtUdXLkerShortMass" Width="60" Grid.Column="1" Grid.Row="3" />
-                                            <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" Grid.Column="0" Grid.Row="4" />
-                                            <TextBox x:Name="txtUdXLkerLongMass" Width="60" Grid.Column="1" Grid.Row="4" />
-                                            <Label x:Name="lblUdXLkerLoopMass" Content="Crosslinker Loop Mass" Grid.Column="0" Grid.Row="5" />
-                                            <TextBox x:Name="txtUdXLkerLoopMass" Width="60" Grid.Column="1" Grid.Row="5" />
-                                            <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acid" Grid.Column="0" Grid.Row="6" />
-                                            <TextBox x:Name="txtUdXLkerAminoAcid" Width="60" Grid.Column="1" Grid.Row="6" />
-                                            <Label x:Name="lblUdXLkerDeadendH2O" Content="Crosslinker Deadend H2O" Grid.Column="0" Grid.Row="7" />
-                                            <TextBox x:Name="txtUdXLkerDeadendH2O" Width="60" Grid.Column="1" Grid.Row="7" />
-                                            <Label x:Name="lblUdXLkerDeadendNH2" Content="Crosslinker Deadend NH2" Grid.Column="0" Grid.Row="8" />
-                                            <TextBox x:Name="txtUdXLkerDeadendNH2" Width="60" Grid.Column="1" Grid.Row="8" />
-                                            <Label x:Name="lblUdXLkerDeadendTris" Content="Crosslinker Deadend Tris" Grid.Column="0" Grid.Row="9" />
-                                            <TextBox x:Name="txtUdXLkerDeadendTris" Width="60" Grid.Column="1" Grid.Row="9" />
+                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0">
+                                                <Label x:Name="lblUdXLkerName" Content="Crosslinker Name"  />
+                                                <TextBox x:Name="txtUdXLKerName" Width="60" />
+                                            </StackPanel>
+                                            <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="1" Grid.Row="0" />
+                                                <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="1">
+                                                    <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" />
+                                                    <TextBox x:Name="txtUdXLkerTotalMs" Width="60"/>
+                                                </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2">
+                                                <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass"  />
+                                                <TextBox x:Name="txtUdXLkerShortMass" Width="60"  />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="3">
+                                                <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" />
+                                                <TextBox x:Name="txtUdXLkerLongMass" Width="60" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="4">
+                                                <Label x:Name="lblUdXLkerLoopMass" Content="Crosslinker Loop Mass" />
+                                                <TextBox x:Name="txtUdXLkerLoopMass" Width="60" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1">
+                                                <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acids" />
+                                                <TextBox x:Name="txtUdXLkerAminoAcids" Width="60"  />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="2">
+                                                <Label x:Name="lblUdXLkerAminoAcid2" Content="Crosslinker Amino Acids 2" />
+                                                <TextBox x:Name="txtUdXLkerAminoAcids2" Width="60"  />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
+                                                <Label x:Name="lblUdXLkerDeadendH2O" Content="Crosslinker Deadend H2O"  />
+                                                <TextBox x:Name="txtUdXLkerDeadendH2O" Width="60"  />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
+                                                <Label x:Name="lblUdXLkerDeadendNH2" Content="Crosslinker Deadend NH2" />
+                                                <TextBox x:Name="txtUdXLkerDeadendNH2" Width="60" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
+                                                <Label x:Name="lblUdXLkerDeadendTris" Content="Crosslinker Deadend Tris" />
+                                                <TextBox x:Name="txtUdXLkerDeadendTris" Width="60"  />
+                                            </StackPanel>
                                         </Grid>
                                     </StackPanel>
                                 </Expander>

@@ -22,7 +22,8 @@ namespace TaskLayer
             UdXLkerLongMass = null;
             UdXLkerTotalMass = null;
             UdXLkerLoopMass = null;
-            UdXLkerResidue = 'K';
+            UdXLkerResidues = "K";
+            UdXLkerResidues2 = "K";
             UdXLkerDeadendMassH2O = null;
             UdXLkerDeadendMassNH2 = null;
             UdXLkerDeadendMassTris = null;
@@ -59,7 +60,8 @@ namespace TaskLayer
         public double? UdXLkerShortMass { get; set; }
         public double? UdXLkerLongMass { get; set; }
         public double? UdXLkerLoopMass { get; set; }
-        public char UdXLkerResidue { get; set; }
+        public string UdXLkerResidues { get; set; }
+        public string UdXLkerResidues2 { get; set; }
         public double? UdXLkerDeadendMassH2O { get; set; }
         public double? UdXLkerDeadendMassNH2 { get; set; }
         public double? UdXLkerDeadendMassTris { get; set; }
