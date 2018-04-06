@@ -64,7 +64,7 @@
                                     </StackPanel>-->
                                 </StackPanel>
                             </GroupBox>
-                            <!--<GroupBox Header="Peak Trimming">
+                            <GroupBox Header="Peak Trimming">
                                 <StackPanel>
                                     <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" />
                                     <CheckBox x:Name="trimMsMs" Content="Trim MS/MS Peaks" IsChecked="True" />
@@ -77,8 +77,8 @@
                                         <TextBox x:Name="MinRatioCheckBox" Width="45" />
                                     </StackPanel>
                                 </StackPanel>
-                            </GroupBox>-->
-                            <!--<CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />-->
+                            </GroupBox>
+                            <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
