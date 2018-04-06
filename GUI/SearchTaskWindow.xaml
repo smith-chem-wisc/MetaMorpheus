@@ -66,19 +66,35 @@
                             </GroupBox>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
-                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" />
-                                    <CheckBox x:Name="trimMsMs" Content="Trim MS/MS Peaks" IsChecked="True" />
+                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Remove low-intensity MS1 peaks using the below settings" />
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2" IsChecked="True">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Remove low-intensity MS2 peaks using the below settings" />
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
+                                        <TextBox x:Name="TopNPeaksCheckBox" Width="45">
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip Content="Use the N most intense peaks from the spectrum and remove all other peaks" />
+                                            </ToolTipService.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label Content="Minimum ratio" />
-                                        <TextBox x:Name="MinRatioCheckBox" Width="45" />
+                                        <Label Content="Minimum intensity ratio" />
+                                        <TextBox x:Name="MinRatioCheckBox" Width="45">
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip Content="Peaks must be this intense compared to the base peak" />
+                                            </ToolTipService.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
-                            <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
+                            <!--<CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />-->
                         </StackPanel>
                     </Expander>
                 </GroupBox>
