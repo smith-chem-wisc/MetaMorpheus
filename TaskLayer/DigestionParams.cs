@@ -10,7 +10,7 @@ namespace TaskLayer
         {
             MaxMissedCleavages = 2;
             MinPeptideLength = 7;
-            MaxPeptideLength = null;
+            MaxPeptideLength = int.MaxValue;
             MaxModificationIsoforms = 1024;
             Protease = GlobalVariables.ProteaseDictionary["trypsin"];
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
@@ -24,8 +24,8 @@ namespace TaskLayer
 
         public int MaxMissedCleavages { get; set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-        public int? MinPeptideLength { get; set; }
-        public int? MaxPeptideLength { get; set; }
+        public int MinPeptideLength { get; set; }
+        public int MaxPeptideLength { get; set; }
         public int MaxModificationIsoforms { get; set; }
         public int MaxModsForPeptide { get; set; }
         public Protease Protease { get; set; }
