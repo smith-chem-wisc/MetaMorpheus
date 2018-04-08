@@ -84,7 +84,13 @@ namespace Test
         [Test]
         public static void XlTestLocalization()
         {
-            var CommonParameters = new CommonParameters();
+            var CommonParameters = new CommonParameters
+            {
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = 5
+                }
+            };
             var proteinList = new List<Protein> { new Protein("CASIQKFGERLCVLHEKTPVSEK", null) };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -152,7 +158,13 @@ namespace Test
         [Test]
         public static void XlTestLocalizationLoop()
         {
-            var CommonParameters = new CommonParameters();
+            var CommonParameters = new CommonParameters
+            {
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = 5
+                }
+            };
             var proteinList = new List<Protein> { new Protein("KDELPKVMAGLGIAVVSTSK", null) };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);

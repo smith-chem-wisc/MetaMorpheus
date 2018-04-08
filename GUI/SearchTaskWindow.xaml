@@ -64,20 +64,36 @@
                                     </StackPanel>-->
                                 </StackPanel>
                             </GroupBox>
-                            <!--<GroupBox Header="Peak Trimming">
+                            <GroupBox Header="Peak Trimming">
                                 <StackPanel>
-                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" />
-                                    <CheckBox x:Name="trimMsMs" Content="Trim MS/MS Peaks" IsChecked="True" />
+                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Remove low-intensity MS1 peaks using the below settings" />
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2" IsChecked="True">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Remove low-intensity MS2 peaks using the below settings" />
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
+                                        <TextBox x:Name="TopNPeaksCheckBox" Width="45">
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip Content="Use the N most intense peaks from the spectrum and remove all other peaks" />
+                                            </ToolTipService.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label Content="Minimum ratio" />
-                                        <TextBox x:Name="MinRatioCheckBox" Width="45" />
+                                        <Label Content="Minimum intensity ratio" />
+                                        <TextBox x:Name="MinRatioCheckBox" Width="45">
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip Content="Peaks must be this intense compared to the base peak" />
+                                            </ToolTipService.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                 </StackPanel>
-                            </GroupBox>-->
+                            </GroupBox>
                             <!--<CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />-->
                         </StackPanel>
                     </Expander>
@@ -238,6 +254,17 @@
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
+                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR" ToolTipService.ShowDuration="20000">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            This allows delta scores (the difference between the top two highest scoring candidates) to be considered in q-value calculations.
+                                            <LineBreak/>
+                                            MetaMorpheus automatically checks that delta scores improve the number of PSMs at a 1% FDR. 
+                                            <LineBreak/>
+                                            If there is no improvement, then the standard score is used.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                                 <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues" />
                             </StackPanel>
                         </StackPanel>
