@@ -141,7 +141,7 @@
                                     <StackPanel Grid.Column="1">
                                         <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" />
                                         <StackPanel Orientation="Horizontal" Margin="1">
-                                            <Label x:Name="label2" Content="Number of Database Partitions" />
+                                            <Label x:Name="numerOfDatabaseSearchesLabel" Content="Number of Database Partitions" />
                                             <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
@@ -162,21 +162,21 @@
                                         <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
                                         <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label1" Content="Max Missed Cleavages" />
+                                            <Label x:Name="maxMissedCleavagesLabel" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label_Copy" Content="Protease" />
+                                            <Label x:Name="proteaseLabel" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label1_Copy" Content="Initiator Methionine" />
+                                            <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine" />
                                             <ComboBox x:Name="initiatorMethionineBehaviorComboBox" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
+                                            <Label x:Name="maxModificationIsoformsLabel" Content="Max Modification Isoforms" />
                                             <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
@@ -209,7 +209,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label4" Content="Ions to search" />
+                                            <Label x:Name="ionsToSearchLabel" Content="Ions to search" />
                                             <CheckBox x:Name="bCheckBox" Content="b ions" />
                                             <CheckBox x:Name="yCheckBox" Content="y ions" />
                                         </StackPanel>
@@ -222,13 +222,13 @@
                             </GroupBox>
                             <GroupBox Header="Mass Difference Acceptor Criterion">
                                 <StackPanel>
-                                    <RadioButton x:Name="mdacExact" Content="Exact" />
-                                    <RadioButton x:Name="mdac1mm" Content="1 Missed Monoisotopic Peak" />
-                                    <RadioButton x:Name="mdac2mm" Content="1 or 2 Missed Monoisotopic Peaks" />
-                                    <RadioButton x:Name="mdac3mm" Content="1, 2, or 3 Missed Monoisotopic Peaks" />
-                                    <RadioButton x:Name="mdac187" Content="-187 and Up" />
-                                    <RadioButton x:Name="mdacOpen" Content="Accept all" />
-                                    <RadioButton x:Name="mdacCustom" Content="Custom:" />
+                                    <RadioButton x:Name="massDiffAcceptExact" Content="Exact" />
+                                    <RadioButton x:Name="massDiffAccept1mm" Content="1 Missed Monoisotopic Peak" />
+                                    <RadioButton x:Name="massDiffAccept2mm" Content="1 or 2 Missed Monoisotopic Peaks" />
+                                    <RadioButton x:Name="massDiffAccept3mm" Content="1, 2, or 3 Missed Monoisotopic Peaks" />
+                                    <RadioButton x:Name="massDiffAccept187" Content="-187 and Up" />
+                                    <RadioButton x:Name="massDiffAcceptOpen" Content="Accept all" />
+                                    <RadioButton x:Name="massDiffAcceptCustom" Content="Custom:" />
                                     <TextBox x:Name="customkMdacTextBox" ToolTipService.ShowDuration="999999" ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" />
                                 </StackPanel>
                             </GroupBox>
@@ -250,7 +250,7 @@
                                 <TextBox x:Name="maxDegreesOfParallelism" PreviewTextInput="PreviewIfInt" Width="45" />
                             </StackPanel>-->
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ffdf" Content="Minimum score allowed:" />
+                                <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
                                 <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">

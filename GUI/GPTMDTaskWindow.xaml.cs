@@ -355,7 +355,7 @@ namespace MetaMorpheusGUI
             e.Handled = !TextBoxIntAllowed(e.Text);
         }
 
-        private static Boolean TextBoxIntAllowed(String Text2)
+        private static bool TextBoxIntAllowed(String Text2)
         {
             return Array.TrueForAll(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });

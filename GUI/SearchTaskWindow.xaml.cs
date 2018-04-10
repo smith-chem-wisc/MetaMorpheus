@@ -85,7 +85,7 @@ namespace MetaMorpheusGUI
             e.Handled = !TextBoxIntAllowed(e.Text);
         }
 
-        private static Boolean TextBoxIntAllowed(String Text2)
+        private static bool TextBoxIntAllowed(String Text2)
         {
             return Array.TrueForAll(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
@@ -272,13 +272,13 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             }
 
-            mdacExact.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Exact;
-            mdac1mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.OneMM;
-            mdac2mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.TwoMM;
-            mdac3mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ThreeMM;
-            mdac187.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen;
-            mdacOpen.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open;
-            mdacCustom.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom;
+            massDiffAcceptExact.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Exact;
+            massDiffAccept1mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.OneMM;
+            massDiffAccept2mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.TwoMM;
+            massDiffAccept3mm.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ThreeMM;
+            massDiffAccept187.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen;
+            massDiffAcceptOpen.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open;
+            massDiffAcceptCustom.IsChecked = task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom;
 
             if (task.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom)
             {
@@ -320,7 +320,7 @@ namespace MetaMorpheusGUI
                 if (!addCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
             }
-            if (!int.TryParse(DeconvolutionMaxAssumedChargeStateTextBox.Text, out int dmacs) || dmacs < 1)
+            if (!int.TryParse(DeconvolutionMaxAssumedChargeStateTextBox.Text, out int deconMaxAssumedCharge) || deconMaxAssumedCharge < 1)
             {
                 MessageBox.Show("The maximum assumed charge state for deconvolution contains unrecognized characters or was zero. \n You entered " + '"' + DeconvolutionMaxAssumedChargeStateTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
@@ -334,12 +334,12 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The Top N Peaks to be retained must be greater than zero. \n You entered " + '"' + TopNPeaksTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(MinRatioTextBox.Text, out double mr) || mr < 0 || mr > 1)
+            if (!double.TryParse(MinRatioTextBox.Text, out double minRatio) || minRatio < 0 || minRatio > 1)
             {
                 MessageBox.Show("The minimum ratio was not set to a number between zero and one. \n You entered " + '"' + MinRatioTextBox.Text + '"');
                 return;
             }
-            if (!int.TryParse(numberOfDatabaseSearchesTextBox.Text, out int nds) || nds == 0)
+            if (!int.TryParse(numberOfDatabaseSearchesTextBox.Text, out int numberOfDatabaseSearches) || numberOfDatabaseSearches == 0)
             {
                 MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
                 return;
@@ -357,22 +357,22 @@ namespace MetaMorpheusGUI
             {
                 txtMaxPeptideLength.Text = int.MaxValue.ToString();
             }
-            if (!double.TryParse(precursorMassToleranceTextBox.Text, out double premt) || premt <= 0)
+            if (!double.TryParse(precursorMassToleranceTextBox.Text, out double precursorMassTolerance) || precursorMassTolerance <= 0)
             {
                 MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + precursorMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(productMassToleranceTextBox.Text, out double pmt) || pmt <= 0)
+            if (!double.TryParse(productMassToleranceTextBox.Text, out double productMassTolerance) || productMassTolerance <= 0)
             {
                 MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 1)
+            if (!double.TryParse(minScoreAllowed.Text, out double minScore) || minScore < 1)
             {
                 MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
-            if (!int.TryParse(maxModificationIsoformsTextBox.Text, out int mmi) || mmi < 1)
+            if (!int.TryParse(maxModificationIsoformsTextBox.Text, out int maxModificationIsoforms) || maxModificationIsoforms < 1)
             {
                 MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + maxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
@@ -498,31 +498,31 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ListOfModTypesLocalize = null;
             CommonParamsToSave.LocalizeAll = true;
 
-            if (mdacExact.IsChecked.HasValue && mdacExact.IsChecked.Value)
+            if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
             }
-            if (mdac1mm.IsChecked.HasValue && mdac1mm.IsChecked.Value)
+            if (massDiffAccept1mm.IsChecked.HasValue && massDiffAccept1mm.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             }
-            if (mdac2mm.IsChecked.HasValue && mdac2mm.IsChecked.Value)
+            if (massDiffAccept2mm.IsChecked.HasValue && massDiffAccept2mm.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.TwoMM;
             }
-            if (mdac3mm.IsChecked.HasValue && mdac3mm.IsChecked.Value)
+            if (massDiffAccept3mm.IsChecked.HasValue && massDiffAccept3mm.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM;
             }
-            if (mdac187.IsChecked.HasValue && mdac187.IsChecked.Value)
+            if (massDiffAccept187.IsChecked.HasValue && massDiffAccept187.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ModOpen;
             }
-            if (mdacOpen.IsChecked.HasValue && mdacOpen.IsChecked.Value)
+            if (massDiffAcceptOpen.IsChecked.HasValue && massDiffAcceptOpen.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Open;
             }
-            if (mdacCustom.IsChecked.HasValue && mdacCustom.IsChecked.Value)
+            if (massDiffAcceptCustom.IsChecked.HasValue && massDiffAcceptCustom.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
