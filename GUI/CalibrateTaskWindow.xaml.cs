@@ -78,6 +78,10 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
 
+            //conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
+
+            //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
+
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -119,6 +123,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
+            //localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
             if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
@@ -171,6 +176,9 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+            //foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            //    localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
+            //localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -232,7 +240,9 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;
             CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            //CommonParamsToSave.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
             CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            //TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
 
             if (OutputFileNameTextBox.Text != "")
             {
@@ -257,8 +267,16 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
 
 
+            //if (localizeAllCheckBox.IsChecked.Value)
+            //{
             CommonParamsToSave.ListOfModTypesLocalize = null;
             CommonParamsToSave.LocalizeAll = true;
+            // }
+            //else
+            //{
+            //    CommonParamsToSave.LocalizeAll = false;
+            //    CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
+            //}
 
             if (productMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -276,6 +294,8 @@ namespace MetaMorpheusGUI
             else
             {
                 CommonParamsToSave.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                //if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+                //    CommonParamsToSave.MaxParallelFilesToAnalyze = jsakdf;
             }
 
             TheTask.CommonParameters = CommonParamsToSave;

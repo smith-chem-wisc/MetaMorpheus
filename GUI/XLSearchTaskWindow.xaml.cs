@@ -289,7 +289,9 @@ namespace MetaMorpheusGUI
             CommonParameters CommonParamsToSave = new CommonParameters();
             TheTask.XlSearchParameters.CrosslinkSearchTop = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
+            //TheTask.XlSearchParameters.CrosslinkSearchWithAllBeta = ckbSearchWithXLAllBeta.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
+            //TheTask.XlSearchParameters.FragmentationType = (FragmentaionType)cbFragmentation.SelectedIndex;
             if (cbbXLprecusorMsTl.SelectedIndex == 0)
             {
                 TheTask.XlSearchParameters.XlPrecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
@@ -303,6 +305,10 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_Tris = ckbQuenchTris.IsChecked.Value;
+            //if (cbbXLBetaprecusorMsTl.SelectedIndex == 0)
+            //    TheTask.XlSearchParameters.XlBetaPrecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLBetaPrecusorMsTl.Text, CultureInfo.InvariantCulture));
+            //else
+            //    TheTask.XlSearchParameters.XlBetaPrecusorMsTl = new PpmTolerance(double.Parse(txtXLBetaPrecusorMsTl.Text, CultureInfo.InvariantCulture));
 
             if (TheTask.XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
             {
@@ -352,6 +358,7 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.XlOutPepXML = ckbPepXML.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutAll = ckbAllResults.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
+            //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
             if (OutputFileNameTextBox.Text != "")
             {
@@ -395,6 +402,13 @@ namespace MetaMorpheusGUI
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
+            //dataContextForSearchTaskWindow.ModExpanderTitle =
+            //    "fixed: "
+            //    + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
+            //    + " variable: "
+            //    + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
+            //    + " localize: "
+            //    + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName));
             dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
             dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
         }
