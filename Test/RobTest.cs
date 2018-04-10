@@ -48,7 +48,7 @@ namespace Test
 
             DigestionParams digestionParams = new DigestionParams
             {
-                MinPeptideLength = null,
+                MinPeptideLength = 1,
                 Protease = protease,
             };
             foreach (var protein in p)
@@ -310,7 +310,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams
             {
                 Protease = protease,
-                MinPeptideLength = null,
+                MinPeptideLength = 1,
                 MaxMissedCleavages = 0
             };
             var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();

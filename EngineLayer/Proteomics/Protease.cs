@@ -129,23 +129,25 @@ namespace EngineLayer
         /// <param name="maxPeptidesLength"></param>
         /// <returns></returns>
         internal List<Peptide> GetDigestionIntervals(Protein protein, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior,
-            int? minPeptidesLength, int? maxPeptidesLength)
+            int minPeptidesLength, int maxPeptidesLength)
         {
             List<Peptide> intervals = new List<Peptide>();
 
             // proteolytic cleavage in one spot
             if (CleavageSpecificity == CleavageSpecificity.SingleN || CleavageSpecificity == CleavageSpecificity.SingleC)
             {
+                bool maxTooBig = protein.Length + maxPeptidesLength < 0; //when maxPeptidesLength is too large, it becomes negative and causes issues
                 for (int proteinStart = 1; proteinStart <= protein.Length; proteinStart++)
                 {
                     if (CleavageSpecificity == CleavageSpecificity.SingleN && OkayMinLength(protein.Length - proteinStart + 1, minPeptidesLength))
                     {
-                        intervals.Add(new Peptide(protein, proteinStart, Math.Min(protein.Length, proteinStart + (maxPeptidesLength ?? 50)), 0, "SingleN"));
+                        //need Math.Max if max length is int.MaxLength, since +proteinStart will make it negative
+                        intervals.Add(new Peptide(protein, proteinStart, maxTooBig ? protein.Length : Math.Min(protein.Length, proteinStart + maxPeptidesLength), 0, "SingleN"));
                     }
 
                     if (CleavageSpecificity == CleavageSpecificity.SingleC && OkayMinLength(proteinStart, minPeptidesLength))
                     {
-                        intervals.Add(new Peptide(protein, Math.Max(1, proteinStart - (maxPeptidesLength ?? 50)), proteinStart, 0, "SingleC"));
+                        intervals.Add(new Peptide(protein, Math.Max(1, proteinStart - maxPeptidesLength), proteinStart, 0, "SingleC"));
                     }
                 }
             }
@@ -201,7 +203,7 @@ namespace EngineLayer
         /// <param name="maxPeptidesLength"></param>
         /// <returns></returns>
         private IEnumerable<Peptide> FullDigestion(Protein protein, InitiatorMethionineBehavior initiatorMethionineBehavior,
-            int maximumMissedCleavages, int? minPeptidesLength, int? maxPeptidesLength)
+            int maximumMissedCleavages, int minPeptidesLength, int maxPeptidesLength)
         {
             List<int> oneBasedIndicesToCleaveAfter = GetDigestionSiteIndices(protein.BaseSequence);
             for (int missed_cleavages = 0; missed_cleavages <= maximumMissedCleavages; missed_cleavages++)
@@ -272,7 +274,7 @@ namespace EngineLayer
         /// <param name="maxPeptidesLength"></param>
         /// <returns></returns>
         private IEnumerable<Peptide> SemiProteolyticDigestion(Protein protein, InitiatorMethionineBehavior initiatorMethionineBehavior,
-            int maximumMissedCleavages, int? minPeptidesLength, int? maxPeptidesLength)
+            int maximumMissedCleavages, int minPeptidesLength, int maxPeptidesLength)
         {
             List<Peptide> intervals = new List<Peptide>();
             List<int> oneBasedIndicesToCleaveAfter = GetDigestionSiteIndices(protein.BaseSequence);
@@ -389,7 +391,7 @@ namespace EngineLayer
         /// <param name="minPeptidesLength"></param>
         /// <param name="maxPeptidesLength"></param>
         /// <returns></returns>
-        private static IEnumerable<Peptide> FixedTermini(int nTerminusProtein, int cTerminusProtein, Protein protein, bool cleave, int? minPeptidesLength, int? maxPeptidesLength)
+        private static IEnumerable<Peptide> FixedTermini(int nTerminusProtein, int cTerminusProtein, Protein protein, bool cleave, int minPeptidesLength, int maxPeptidesLength)
         {
             List<Peptide> intervals = new List<Peptide>();
             if (OkayLength(cTerminusProtein - nTerminusProtein, minPeptidesLength, maxPeptidesLength))

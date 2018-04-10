@@ -25,7 +25,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
@@ -87,7 +87,9 @@ namespace Test
             foreach (var huh in allPsmsArray)
             {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(ojdfkj.CompactPeptideToProteinPeptideMatching);
+                }
             }
 
             Assert.AreEqual("NNNK", allPsmsArray[0].BaseSequence);
