@@ -23,7 +23,7 @@ namespace EngineLayer.Calibration
 
         private const double maximumFracForTraining = 0.70;
         private const double maximumDatapointsToTrainWith = 20000;
-        private const int trainingIterations = 30;
+        private const int trainingIterations = 20;
 
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly DataPointAquisitionResults datapoints;
@@ -145,7 +145,7 @@ namespace EngineLayer.Calibration
               );
         }
 
-        private RegressionForestModel GetRandomForestModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining, int randomSeed = 42)
+        private static RegressionForestModel GetRandomForestModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining, int randomSeed = 42)
         {
             // create a machine learner
             var learner = new RegressionRandomForestLearner();
@@ -232,7 +232,7 @@ namespace EngineLayer.Calibration
             return myModel;
         }
 
-        private RegressionGradientBoostModel GetGradientBoostModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining, int randomSeed = 42)
+        private static RegressionGradientBoostModel GetGradientBoostModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining, int randomSeed = 42)
         {
             // create a machine learner
             var learner = new RegressionAbsoluteLossGradientBoostLearner();
@@ -259,7 +259,7 @@ namespace EngineLayer.Calibration
             // parameter ranges for the optimizer 
             var parameters = new ParameterBounds[]
             {
-                new ParameterBounds(min: 200, max: 500, transform: Transform.Linear),           // iterations
+                new ParameterBounds(min: 100, max: 300, transform: Transform.Linear),           // iterations
                 new ParameterBounds(min: 0.05, max: 0.15, transform: Transform.Linear),         // learningrate
                 new ParameterBounds(min: 3, max: 10, transform: Transform.Linear),              // max tree depth
                 new ParameterBounds(min: 1, max: 3, transform: Transform.Linear),               // min split size

@@ -233,15 +233,13 @@ namespace EngineLayer.Calibration
             return (result, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
         }
 
-        private List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, PeptideSpectralMatch identification)
+        private static List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, PeptideSpectralMatch identification)
         {
             List<LabeledDataPoint> result = new List<LabeledDataPoint>();
 
             if (ms2DataScan.MassSpectrum.Size == 0)
                 return result;
-
-            var compactPeptide = identification.CompactPeptides.First().Key;
-
+            
             foreach(var productType in identification.MatchedIonDictOnlyMatches)
             {
                 for (int i = 0; i < productType.Value.Length; i++)
