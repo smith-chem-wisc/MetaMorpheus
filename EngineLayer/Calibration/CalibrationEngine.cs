@@ -11,6 +11,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SharpLearning.GradientBoost.Learners;
+using SharpLearning.GradientBoost.Models;
+using SharpLearning.Common.Interfaces;
 
 namespace EngineLayer.Calibration
 {
@@ -52,14 +55,14 @@ namespace EngineLayer.Calibration
             {
                 // x values
                 var explanatoryVariables = new double[5];
-                explanatoryVariables[0] = datapoints.Ms1List[i].mz;
+                explanatoryVariables[0] = datapoints.Ms1List[i].experimentalMz;
                 explanatoryVariables[1] = datapoints.Ms1List[i].rt;
                 explanatoryVariables[2] = datapoints.Ms1List[i].logTotalIonCurrent;
                 explanatoryVariables[3] = datapoints.Ms1List[i].logInjectionTime;
                 explanatoryVariables[4] = datapoints.Ms1List[i].logIntensity;
 
                 // y value
-                double mzError = datapoints.Ms1List[i].mz - datapoints.Ms1List[i].expectedMZ;
+                double mzError = datapoints.Ms1List[i].absoluteMzError;
 
                 myMs1DataPoints.Add((explanatoryVariables, mzError));
             }
@@ -70,6 +73,7 @@ namespace EngineLayer.Calibration
             }
 
             var ms1Model = GetRandomForestModel(myMs1DataPoints, fracForTraining);
+            //var ms1Model = GetGradientBoostModel(myMs1DataPoints, fracForTraining);
 
             // generate MS2 calibration datapoints
             Status("Generating MS2 calibration function");
@@ -77,14 +81,14 @@ namespace EngineLayer.Calibration
             {
                 // x values
                 var explanatoryVariables = new double[5];
-                explanatoryVariables[0] = datapoints.Ms2List[i].mz;
+                explanatoryVariables[0] = datapoints.Ms2List[i].experimentalMz;
                 explanatoryVariables[1] = datapoints.Ms2List[i].rt;
                 explanatoryVariables[2] = datapoints.Ms2List[i].logTotalIonCurrent;
                 explanatoryVariables[3] = datapoints.Ms2List[i].logInjectionTime;
                 explanatoryVariables[4] = datapoints.Ms2List[i].logIntensity;
 
                 // y value
-                double mzError = datapoints.Ms2List[i].mz - datapoints.Ms2List[i].expectedMZ;
+                double mzError = datapoints.Ms2List[i].absoluteMzError;
 
                 myMs2DataPoints.Add((explanatoryVariables, mzError));
             }
@@ -95,7 +99,8 @@ namespace EngineLayer.Calibration
             }
 
             var ms2Model = GetRandomForestModel(myMs2DataPoints, fracForTraining);
-            
+            //var ms2Model = GetGradientBoostModel(myMs2DataPoints, fracForTraining);
+
             Status("Calibrating spectra");
 
             CalibrateSpectra(ms1Model, ms2Model);
@@ -107,7 +112,7 @@ namespace EngineLayer.Calibration
 
         #region Private Methods
         
-        private void CalibrateSpectra(RegressionForestModel ms1predictor, RegressionForestModel ms2predictor)
+        private void CalibrateSpectra(IPredictorModel<double> ms1predictor, IPredictorModel<double> ms2predictor)
         {
             Parallel.ForEach(Partitioner.Create(1, myMsDataFile.NumSpectra + 1), fff =>
               {
@@ -144,7 +149,7 @@ namespace EngineLayer.Calibration
         {
             // create a machine learner
             var learner = new RegressionRandomForestLearner();
-            var metric = new MeanSquaredErrorRegressionMetric();
+            var metric = new MeanAbsolutErrorRegressionMetric();
 
             var splitter = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed);
 
@@ -155,7 +160,7 @@ namespace EngineLayer.Calibration
                     myXValueMatrix[i, j] = myInputs[i].xValues[j];
 
             var myYValues = myInputs.Select(p => p.yValue).ToArray();
-
+            
             // split data into training set and test set
             var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
             var trainingSetX = splitData.TrainingSet.Observations;
@@ -218,6 +223,94 @@ namespace EngineLayer.Calibration
                     minimumInformationGain: best[4],
                     subSampleRatio: best[5],
                     seed: randomSeed,
+                    runParallel: true);
+
+            // learn final model with optimized parameters
+            myModel = learner.Learn(trainingSetX, trainingSetY);
+
+            // all done
+            return myModel;
+        }
+
+        private RegressionGradientBoostModel GetGradientBoostModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining, int randomSeed = 42)
+        {
+            // create a machine learner
+            var learner = new RegressionAbsoluteLossGradientBoostLearner();
+            var metric = new MeanAbsolutErrorRegressionMetric();
+
+            var splitter = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed);
+
+            // put x values into a matrix and y values into a 1D array
+            var myXValueMatrix = new F64Matrix(myInputs.Count, myInputs.First().xValues.Length);
+            for (int i = 0; i < myInputs.Count; i++)
+                for (int j = 0; j < myInputs.First().xValues.Length; j++)
+                    myXValueMatrix[i, j] = myInputs[i].xValues[j];
+
+            var myYValues = myInputs.Select(p => p.yValue).ToArray();
+            
+            // split data into training set and test set
+            var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
+            var trainingSetX = splitData.TrainingSet.Observations;
+            var trainingSetY = splitData.TrainingSet.Targets;
+
+            // learn an initial model
+            var myModel = learner.Learn(trainingSetX, trainingSetY);
+
+            // parameter ranges for the optimizer 
+            var parameters = new ParameterBounds[]
+            {
+                new ParameterBounds(min: 200, max: 500, transform: Transform.Linear),           // iterations
+                new ParameterBounds(min: 0.05, max: 0.15, transform: Transform.Linear),         // learningrate
+                new ParameterBounds(min: 3, max: 10, transform: Transform.Linear),              // max tree depth
+                new ParameterBounds(min: 1, max: 3, transform: Transform.Linear),               // min split size
+                new ParameterBounds(min: 1e-06, max: 1e-05, transform: Transform.Logarithmic),  // min info gain
+                new ParameterBounds(min: 0.8, max: 1.0, transform: Transform.Linear),           // subsample ratio
+                new ParameterBounds(min: 0, max: 1, transform: Transform.Linear)                // features per split
+            };
+
+            var validationSplit = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed)
+                .SplitSet(myXValueMatrix, myYValues);
+
+            // define minimization metric
+            Func<double[], OptimizerResult> minimize = p =>
+            {
+                // create the candidate learner using the current optimization parameters
+                var candidateLearner = new RegressionAbsoluteLossGradientBoostLearner(
+                    iterations: (int)p[0],
+                    learningRate: p[1],
+                    maximumTreeDepth: (int)p[2],
+                    minimumSplitSize: (int)p[3],
+                    minimumInformationGain: p[4],
+                    subSampleRatio: p[5],
+                    featuresPrSplit: (int)p[6],
+                    runParallel: false);
+
+                var candidateModel = candidateLearner.Learn(validationSplit.TrainingSet.Observations,
+                validationSplit.TrainingSet.Targets);
+
+                var validationPredictions = candidateModel.Predict(validationSplit.TestSet.Observations);
+                var candidateError = metric.Error(validationSplit.TestSet.Targets, validationPredictions);
+
+                return new OptimizerResult(p, candidateError);
+            };
+
+            // create optimizer
+            var optimizer = new RandomSearchOptimizer(parameters, iterations: trainingIterations, runParallel: true);
+
+            // find best parameters
+            var result = optimizer.OptimizeBest(minimize);
+            var best = result.ParameterSet;
+
+            // create the final learner using the best parameters 
+            // (parameters that resulted in the model with the least error)
+            learner = new RegressionAbsoluteLossGradientBoostLearner(
+                    iterations: (int)best[0],
+                    learningRate: best[1],
+                    maximumTreeDepth: (int)best[2],
+                    minimumSplitSize: (int)best[3],
+                    minimumInformationGain: best[4],
+                    subSampleRatio: best[5],
+                    featuresPrSplit: (int)best[6],
                     runParallel: true);
 
             // learn final model with optimized parameters

@@ -187,7 +187,7 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            CommonParameters CommonParamsToSave = new CommonParameters();
+            CommonParameters CommonParamsToSave = (TheTask.CommonParameters as CommonParameters).Clone();
 
             DigestionParams digestionParamsToSave = new DigestionParams();
             digestionParamsToSave.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);

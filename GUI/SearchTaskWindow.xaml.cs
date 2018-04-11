@@ -344,8 +344,8 @@ namespace MetaMorpheusGUI
             #endregion Check Task Validity
 
             #region Save Parameters
-
-            CommonParameters CommonParamsToSave = new CommonParameters();
+            
+            CommonParameters CommonParamsToSave = (TheTask.CommonParameters as CommonParameters).Clone();
 
             if (OutputFileNameTextBox.Text != "")
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
