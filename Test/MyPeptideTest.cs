@@ -77,7 +77,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxModificationIsoforms = int.MaxValue,
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 },
@@ -120,7 +120,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxModificationIsoforms = int.MaxValue,
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 },
@@ -161,7 +161,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxModificationIsoforms = int.MaxValue,
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 },
@@ -202,7 +202,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxModificationIsoforms = int.MaxValue,
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 },
@@ -244,7 +244,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxModificationIsoforms = int.MaxValue,
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 },
@@ -432,7 +432,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams
             {
                 Protease = protease,
-                MinPeptideLength = null,
+                MinPeptideLength = 1,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 MaxMissedCleavages = 0
             };
@@ -448,7 +448,7 @@ namespace Test
             digestionParams = new DigestionParams
             {
                 Protease = protease,
-                MinPeptideLength = null,
+                MinPeptideLength = 1,
                 MaxPeptideLength = 5,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                 MaxMissedCleavages = 0

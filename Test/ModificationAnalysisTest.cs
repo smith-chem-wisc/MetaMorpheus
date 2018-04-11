@@ -78,7 +78,7 @@ namespace Test
             {
                 DigestionParams = new DigestionParams
                 {
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxMissedCleavages = 0,
                     MaxModificationIsoforms = int.MaxValue,
                 },
@@ -89,7 +89,9 @@ namespace Test
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
+            {
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
+            }
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
@@ -151,7 +153,7 @@ namespace Test
             {
                 DigestionParams = new DigestionParams
                 {
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxMissedCleavages = 0,
                     MaxModificationIsoforms = int.MaxValue
                 },
@@ -162,7 +164,9 @@ namespace Test
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
+            {
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
+            }
 
             Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
 

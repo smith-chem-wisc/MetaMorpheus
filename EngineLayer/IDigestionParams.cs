@@ -5,8 +5,8 @@
         #region Public Properties
 
         int MaxMissedCleavages { get; }
-        int? MinPeptideLength { get; }
-        int? MaxPeptideLength { get; }
+        int MinPeptideLength { get; }
+        int MaxPeptideLength { get; }
         InitiatorMethionineBehavior InitiatorMethionineBehavior { get; }
         int MaxModificationIsoforms { get; }
         int MaxModsForPeptide { get; }

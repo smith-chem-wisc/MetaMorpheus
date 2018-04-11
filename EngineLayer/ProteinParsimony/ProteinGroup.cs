@@ -479,9 +479,9 @@ namespace EngineLayer
 
             public int MaxMissedCleavages => 0;
 
-            public int? MinPeptideLength => 0;
+            public int MinPeptideLength => 0;
 
-            public int? MaxPeptideLength => null;
+            public int MaxPeptideLength => int.MaxValue;
 
             public InitiatorMethionineBehavior InitiatorMethionineBehavior => InitiatorMethionineBehavior.Retain;
 
