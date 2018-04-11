@@ -469,8 +469,10 @@ namespace Test
             #region MZML File
 
             //now write MZML file
-            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, 
+                DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+            var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, 
+                variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
 
             //Set Peptide with 1 mod at position 3
@@ -485,7 +487,8 @@ namespace Test
             #endregion MZML File
 
             //run!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
+                new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;

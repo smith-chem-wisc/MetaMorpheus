@@ -1319,21 +1319,22 @@ namespace TaskLayer
                     }
                 }
                 //removes all annoted modifications from these proteins, will be reintroduced later on only proteins where mods are localized
-                foreach (var protein in proteinToConfidentPsms)
+                /*foreach (var proteinId in proteinToConfidentPsms)
                 {
-                    protein.Key.OneBasedPossibleLocalizedModifications.Clear();
-                }
+                    proteinId.Key.OneBasedPossibleLocalizedModifications.Clear();
+                }*/
 
                 // mods included in pruned database will only be included on protiens whose FullSequence!=null
-                foreach (var proteinEntry in proteinToModPsms)
+                foreach (var protein in proteinList)
                 {
-                    if (!proteinEntry.Key.IsDecoy)
+                    if (!protein.IsDecoy)
                     {
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
-                        
-                        modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToModPsms[proteinEntry.Key].SelectMany(b => b.allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
-
-                        
+                        if (proteinToModPsms.ContainsKey(protein))
+                        {
+                                modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToModPsms[protein].SelectMany(b => b.allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
+                        }
+                                                
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
 
                         foreach (var observedMod in modsObservedOnThisProtein)
@@ -1352,7 +1353,7 @@ namespace TaskLayer
                         }
 
                         // Add if in database (two cases: always or if observed)
-                        foreach (var modd in proteinEntry.Key.OneBasedPossibleLocalizedModifications)
+                        foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
@@ -1367,13 +1368,15 @@ namespace TaskLayer
                             }
                       
 
-                        foreach (var protein in proteinToConfidentPsms)
+                        foreach (var proteinId in proteinToConfidentPsms)
                         {
                                                        
-                            if (protein.Key.Accession == proteinEntry.Key.Accession)
+                            if (proteinId.Key.Accession == protein.Accession)
                             {
+                                proteinId.Key.OneBasedPossibleLocalizedModifications.Clear();
+
                                 foreach (var kvp in modsToWrite)
-                                    protein.Key.OneBasedPossibleLocalizedModifications.Add(kvp);
+                                    proteinId.Key.OneBasedPossibleLocalizedModifications.Add(kvp);
                             }
                             
                             
