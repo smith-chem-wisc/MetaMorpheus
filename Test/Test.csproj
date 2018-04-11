@@ -41,13 +41,13 @@
     <None Update="SlicedSearchTaskConfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\BSA.fasta">
+    <None Update="XlTestData\BSA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\BSA_DSS_23747.mzML">
+    <None Update="XlTestData\BSA_DSS_23747.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
+    <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="testFileSpecfic.toml">
@@ -56,7 +56,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="TestData\" />
+    <Folder Include="XlTestData\" />
   </ItemGroup>
 
 </Project>

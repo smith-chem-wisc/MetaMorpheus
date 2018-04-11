@@ -230,13 +230,27 @@ namespace Test
         [Test]
         public static void XlTest_BSA_DSS()
         {
-            var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData/XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
+            var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
 
-            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData/BSA.fasta"), false);
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData/BSA_DSS_23747.mzML");
-            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TestData"));
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA_DSS_23747.mzML");
+            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"XlTestData"));
 
             a.Run();
+        }
+
+        [Test]
+        public static void XlTest_GenerateUserDefinedCrosslinker()
+        {
+            XlSearchParameters xlSearchParameters = new XlSearchParameters();
+            xlSearchParameters.CrosslinkerType = CrosslinkerType.UserDefined;
+            xlSearchParameters.UdXLkerName = "CrossST-C";
+            xlSearchParameters.UdXLkerResidues = "ST";
+            xlSearchParameters.UdXLkerResidues2 = "C";
+            xlSearchParameters.UdXLkerTotalMass = -18.01056; 
+            var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
+            Assert.AreEqual(crosslinker.DeadendMassH2O, (double)9999);
+
         }
 
         #endregion Public Methods

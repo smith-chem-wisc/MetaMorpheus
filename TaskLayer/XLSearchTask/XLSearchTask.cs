@@ -38,39 +38,6 @@ namespace TaskLayer
 
         #endregion Public Properties
 
-        #region Public Methods
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("The initiator methionine behavior is set to "
-                + CommonParameters.DigestionParams.InitiatorMethionineBehavior
-                + " and the maximum number of allowed missed cleavages is "
-                + CommonParameters.DigestionParams.MaxMissedCleavages);
-            sb.AppendLine("MinPeptideLength: " + CommonParameters.DigestionParams.MinPeptideLength);
-            sb.AppendLine("MaxPeptideLength: " + CommonParameters.DigestionParams.MaxPeptideLength);
-            sb.AppendLine("maxModificationIsoforms: " + CommonParameters.DigestionParams.MaxModificationIsoforms);
-            sb.AppendLine("protease: " + CommonParameters.DigestionParams.Protease);
-            sb.AppendLine("bIons: " + CommonParameters.BIons);
-            sb.AppendLine("yIons: " + CommonParameters.YIons);
-            sb.AppendLine("cIons: " + CommonParameters.CIons);
-            sb.AppendLine("zdotIons: " + CommonParameters.ZdotIons);
-
-            sb.AppendLine("Fixed mod lists: " + string.Join(",", CommonParameters.ListOfModsFixed));
-            sb.AppendLine("Variable mod lists: " + string.Join(",", CommonParameters.ListOfModsVariable));
-            sb.AppendLine("Localized mod lists: " + string.Join(",", CommonParameters.ListOfModTypesLocalize));
-            sb.AppendLine("searchDecoy: " + XlSearchParameters.DecoyType);
-            sb.AppendLine("productMassTolerance: " + CommonParameters.ProductMassTolerance);
-
-            sb.AppendLine("Crosslink Precusor mass tolerance: " + XlSearchParameters.XlPrecusorMsTl);
-            sb.AppendLine("Beta Precusor mass tolerance: " + XlSearchParameters.XlBetaPrecusorMsTl);
-
-            return sb.ToString();
-        }
-
-        #endregion Public Methods
-
         #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
@@ -107,17 +74,7 @@ namespace TaskLayer
             crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);
             if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
             {
-                crosslinker.CrosslinkerName = XlSearchParameters.UdXLkerName;
-                crosslinker.Cleavable = XlSearchParameters.UdXLkerCleavable;
-                crosslinker.TotalMass = XlSearchParameters.UdXLkerTotalMass.HasValue ? (double)XlSearchParameters.UdXLkerTotalMass : 9999;
-                crosslinker.CleaveMassShort = XlSearchParameters.UdXLkerShortMass.HasValue ? (double)XlSearchParameters.UdXLkerShortMass : 9999;
-                crosslinker.CleaveMassLong = XlSearchParameters.UdXLkerShortMass.HasValue ? (double)XlSearchParameters.UdXLkerLongMass : 9999;
-                crosslinker.CrosslinkerModSites = XlSearchParameters.UdXLkerResidues;
-                crosslinker.CrosslinkerModSites2 = XlSearchParameters.UdXLkerResidues2;
-                crosslinker.LoopMass = XlSearchParameters.UdXLkerLoopMass.HasValue ? (double)XlSearchParameters.UdXLkerLoopMass : 9999;
-                crosslinker.DeadendMassH2O = XlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassH2O : 9999;
-                crosslinker.DeadendMassNH2 = XlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassNH2 : 9999;
-                crosslinker.DeadendMassTris = XlSearchParameters.UdXLkerDeadendMassTris.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassTris : 9999;
+                crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
             }
 
             ParallelOptions parallelOptions = new ParallelOptions
@@ -497,6 +454,25 @@ namespace TaskLayer
 
             }
             return psmCrossCrosslinks;
+        }
+
+        //Generate user defined crosslinker 
+        public static CrosslinkerTypeClass GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
+        {
+            var crosslinker = new CrosslinkerTypeClass(
+            xlSearchParameters.UdXLkerResidues,
+        xlSearchParameters.UdXLkerResidues2,
+        xlSearchParameters.UdXLkerName,
+        xlSearchParameters.UdXLkerCleavable,
+        (xlSearchParameters.UdXLkerTotalMass.HasValue ? (double)xlSearchParameters.UdXLkerTotalMass : 9999),
+        (xlSearchParameters.UdXLkerShortMass.HasValue ? (double)xlSearchParameters.UdXLkerShortMass : 9999),
+        (xlSearchParameters.UdXLkerLongMass.HasValue ? (double)xlSearchParameters.UdXLkerLongMass : 9999),
+        (xlSearchParameters.UdXLkerLoopMass.HasValue ? (double)xlSearchParameters.UdXLkerLoopMass : 9999),
+        (xlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassH2O : 9999),
+        (xlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassNH2 : 9999),
+        (xlSearchParameters.UdXLkerDeadendMassTris.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassTris : 9999)
+            );
+            return crosslinker;
         }
 
         private static void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
