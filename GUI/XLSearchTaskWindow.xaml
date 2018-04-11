@@ -216,6 +216,10 @@
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="1">
+                                            <Label x:Name="label2" Content="Number of Database Partitions" />
+                                            <TextBox x:Name="txtNumberOfDatabaseSearches" Width="45" />
+                                        </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">

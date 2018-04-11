@@ -77,30 +77,25 @@ namespace EngineLayer.CrosslinkAnalysis
                     }
                 }
             }
-            //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            int totalProteins = proteinList.Count;
+
             int proteinsSeen = 0;
             int old_progress = 0;
-            var obj = new object();
             Status("Adding possible sources to peptide dictionary...");
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), fff =>
             {
-                Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithSetModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications))
-                        if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
-                            v.Add(peptideWithSetModifications);
-
-                lock (obj)
                 {
-                    foreach (var ye in local)
+                    foreach (var peptideWithSetModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications))
                     {
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
-                            foreach (var huh in ye.Value)
-                                v.Add(huh);
+                        var compactPeptide = peptideWithSetModifications.CompactPeptide(terminusType);
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out HashSet<PeptideWithSetModifications> peptidesWithSetMods))
+                        {
+                            lock (peptidesWithSetMods)
+                                peptidesWithSetMods.Add(peptideWithSetModifications);
+                        }
                     }
                     proteinsSeen += fff.Item2 - fff.Item1;
-                    var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
+                    var new_progress = (int)((double)proteinsSeen / (proteinList.Count) * 100);
                     if (new_progress > old_progress)
                     {
                         ReportProgress(new ProgressEventArgs(new_progress, "In adding possible" +
@@ -115,13 +110,11 @@ namespace EngineLayer.CrosslinkAnalysis
             Status("Computing info about actual peptides with modifications...");
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
-                var huh = newPsms[myScanWithMassIndex];
-                if (huh != null)
+                if (newPsms[myScanWithMassIndex] != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                    var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
-                    if (huh1 != null)
-                        huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                    newPsms[myScanWithMassIndex].MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                    if (newPsms[myScanWithMassIndex].BetaPsmCross != null)
+                        newPsms[myScanWithMassIndex].BetaPsmCross.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 }
             }
 
