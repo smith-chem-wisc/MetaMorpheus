@@ -26,8 +26,8 @@ namespace EngineLayer.FdrAnalysis
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            sb.Append("PSMs within 1% fdr: " + PsmsWithin1PercentFdr);
-            sb.Append("Delta Score Used for FDR Analysis: " + DeltaScoreImprovement);
+            sb.AppendLine("PSMs within 1% fdr: " + PsmsWithin1PercentFdr);
+            sb.AppendLine("Delta Score Used for FDR Analysis: " + DeltaScoreImprovement);
             return sb.ToString();
         }
 

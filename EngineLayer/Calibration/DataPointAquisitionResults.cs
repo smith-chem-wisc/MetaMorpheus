@@ -12,8 +12,8 @@ namespace EngineLayer.Calibration
 
         public DataPointAquisitionResults(
             MetaMorpheusEngine dataPointAcquisitionEngine,
-            List<LabeledMs1DataPoint> ms1List,
-            List<LabeledMs2DataPoint> ms2List,
+            List<LabeledDataPoint> ms1List,
+            List<LabeledDataPoint> ms2List,
             int numMs1MassChargeCombinationsConsidered,
             int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
             int numMs2MassChargeCombinationsConsidered,
@@ -23,11 +23,11 @@ namespace EngineLayer.Calibration
             Ms1List = ms1List;
             Ms2List = ms2List;
 
-            Ms1InfoTh = Ms1List.Select(b => b.LabelTh).MeanStandardDeviation();
-            Ms2InfoTh = Ms2List.Select(b => b.LabelTh).MeanStandardDeviation();
+            Ms1InfoTh = Ms1List.Select(b => b.experimentalMz - b.theoreticalMz).MeanStandardDeviation();
+            Ms2InfoTh = Ms2List.Select(b => b.experimentalMz - b.theoreticalMz).MeanStandardDeviation();
 
-            Ms1InfoPpm = Ms1List.Select(b => b.LabelPpm).MeanStandardDeviation();
-            Ms2InfoPpm = Ms2List.Select(b => b.LabelPpm).MeanStandardDeviation();
+            Ms1InfoPpm = Ms1List.Select(b => (b.experimentalMz - b.theoreticalMz) / b.theoreticalMz).MeanStandardDeviation();
+            Ms2InfoPpm = Ms2List.Select(b => (b.experimentalMz - b.theoreticalMz) / b.theoreticalMz).MeanStandardDeviation();
 
             NumMs1MassChargeCombinationsConsidered = numMs1MassChargeCombinationsConsidered;
             NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
@@ -49,8 +49,8 @@ namespace EngineLayer.Calibration
         public int NumMs2MassChargeCombinationsConsidered { get; }
         public int NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks { get; }
 
-        public List<LabeledMs1DataPoint> Ms1List { get; }
-        public List<LabeledMs2DataPoint> Ms2List { get; }
+        public List<LabeledDataPoint> Ms1List { get; }
+        public List<LabeledDataPoint> Ms2List { get; }
 
         public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 
