@@ -13,11 +13,5 @@ namespace EngineLayer.CrosslinkAnalysis
         }
 
         #endregion Public Constructors
-
-        #region Public Properties
-
-        public List<Tuple<PsmCross, PsmCross>> AllResultingIdentificationFdrPairs { get; set; }
-
-        #endregion Public Properties
     }
 }

@@ -198,26 +198,6 @@ namespace EngineLayer.CrosslinkSearch
                 for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
                     if (fragmentIndex[fragmentBin] != null)
                         binsToSearch.Add(fragmentBin);
-
-                if (addCompIons)
-                {
-                    //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
-                    foreach (DissociationType dissociationType in dissociationTypes)
-                    {
-                        if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
-                        {
-                            protonMassShift = Chemistry.ClassExtensions.ToMass(protonMassShift, 1);
-                            int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentCeilingMass;
-                            int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * fragmentBinsPerDalton)) - obsFragmentFloorMass;
-                            if (compFragmentFloorMass > 0)
-                                for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
-                                    if (fragmentIndex[fragmentBin] != null)
-                                        binsToSearch.Add(fragmentBin);
-                        }
-                        else
-                            throw new NotImplementedException();
-                    }
-                }
             }
             return binsToSearch;
         }

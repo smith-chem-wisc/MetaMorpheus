@@ -174,18 +174,6 @@ namespace TaskLayer
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-                //List<Ms2ScanWithSpecificMass> arrayOfMs2ScansSortedByMass = new List<Ms2ScanWithSpecificMass>();
-                //arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToList();               
-                //Code to resolve MS3 data 
-                //if (XlSearchParameters.FragmentationType == FragmentaionType.MS2_HCD || XlSearchParameters.FragmentationType == FragmentaionType.MS2_EthCD)
-                //{
-                //    arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToList();
-                //}
-                //else
-                //{
-                //    arrayOfMs2ScansSortedByMass = GetCombinedMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToList();
-                //}
-
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
                     List<CompactPeptide> peptideIndex = null;
@@ -477,59 +465,6 @@ namespace TaskLayer
                     min_q_value = id.FdrInfo.QValue;
             }
 
-            return ids;
-        }
-
-        //Calculate the FDR of crosslinked peptide (D - 2DD) / T
-        private static List<PsmCross> CrosslinkFDRAnalysis(List<PsmCross> items)
-        {
-            var ids = new List<PsmCross>();
-            foreach (var item in items)
-            {
-                ids.Add(item);
-            }
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
-            int cumulative_decoy_decoy = 0;
-
-            for (int i = 0; i < ids.Count; i++)
-            {
-                var item1 = ids[i]; var item2 = ids[i].BetaPsmCross;
-
-                var isDecoy1 = item1.IsDecoy; var isDecoy2 = item2.IsDecoy;
-                if (isDecoy1 || isDecoy2)
-                    cumulative_decoy++;
-                else
-                    cumulative_target++;
-
-                if (isDecoy1 && isDecoy2)
-                {
-                    cumulative_decoy_decoy++;
-                }
-
-                double temp_q_value = (double)(cumulative_decoy - 2 * cumulative_decoy_decoy) / (cumulative_target + cumulative_decoy);
-                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0, 0, 0, 0, false);
-                // item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-            }
-
-            double min_q_value = double.PositiveInfinity;
-
-            for (int i = ids.Count - 1; i >= 0; i--)
-            {
-                PsmCross id = ids[i];
-                if (id.FdrInfo.QValue < 0)
-                {
-                    id.FdrInfo.QValue = 0;
-                }
-                if (id.FdrInfo.QValue > min_q_value)
-                {
-                    id.FdrInfo.QValue = min_q_value;
-                }
-                else if (id.FdrInfo.QValue < min_q_value)
-                {
-                    min_q_value = id.FdrInfo.QValue;
-                }
-            }
             return ids;
         }
 
