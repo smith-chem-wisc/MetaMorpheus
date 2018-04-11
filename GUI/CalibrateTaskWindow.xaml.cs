@@ -188,7 +188,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-
             #region Check Task Validity
 
             if (missedCleavagesTextBox.Text.Length == 0)
@@ -227,7 +226,7 @@ namespace MetaMorpheusGUI
 
             #endregion Check Task Validity
 
-            CommonParameters CommonParamsToSave = new CommonParameters();
+            CommonParameters CommonParamsToSave = (TheTask.CommonParameters as CommonParameters).Clone();
 
             DigestionParams digestionParamsToSave = new DigestionParams();
             digestionParamsToSave.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);

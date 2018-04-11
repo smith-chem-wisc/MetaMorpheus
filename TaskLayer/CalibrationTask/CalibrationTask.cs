@@ -37,6 +37,7 @@ namespace TaskLayer
                 TrimMs1Peaks = false,
                 TrimMsMsPeaks = false,
                 DoPrecursorDeconvolution = false,
+                ScoreCutoff = 10
             };
 
             CalibrationParameters = new CalibrationParameters();
@@ -49,40 +50,6 @@ namespace TaskLayer
         public CalibrationParameters CalibrationParameters { get; set; }
 
         #endregion Public Properties
-
-        #region Protected Internal Methods
-
-        protected internal void WriteMs2DataPoints(List<LabeledMs2DataPoint> items, string outputFolder, string fileName, List<string> nestedIDs)
-        {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".ms2dptsv");
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeader + "\t" + PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var dp in items)
-                {
-                    output.Write(dp.Values());
-                    output.WriteLine("\t" + dp.identification);
-                }
-            }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
-        }
-
-        protected internal void WriteMs1DataPoints(List<LabeledMs1DataPoint> items, string outputFolder, string fileName, List<string> nestedIDs)
-        {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".ms1dptsv");
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeader + "\t" + PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var dp in items)
-                {
-                    output.Write(dp.Values());
-                    output.WriteLine("\t" + dp.identification);
-                }
-            }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
-        }
-
-        #endregion Protected Internal Methods
 
         #region Protected Methods
 
@@ -154,7 +121,7 @@ namespace TaskLayer
 
                 var preCalibrationProductErrors = acquisitionResults.Item1.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
                 double preCalibrationProductIqr = Statistics.InterquartileRange(preCalibrationProductErrors);
-                
+
                 // enough data points to calibrate with?
                 if (acquisitionResults.Item2 == null)
                 {
@@ -180,9 +147,9 @@ namespace TaskLayer
                 // stats after calibration
                 int postCalibrationPsmCount = acquisitionResults.Item1.Count;
 
-                var postCalibrationPrecursorErrors = acquisitionResults.Item1.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass) / p.PeptideMonisotopicMass * 1e6).ToList();
+                var postCalibrationPrecursorErrors = acquisitionResults.Item1.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass.Value) / p.PeptideMonisotopicMass.Value * 1e6).ToList();
                 double postCalibrationPrecursorIqr = Statistics.InterquartileRange(postCalibrationPrecursorErrors);
-
+                
                 var postCalibrationProductErrors = acquisitionResults.Item1.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
                 double postCalibrationProductIqr = Statistics.InterquartileRange(postCalibrationProductErrors);
 
