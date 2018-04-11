@@ -46,7 +46,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                     MaxModsForPeptide = 1,
                     MaxModificationIsoforms = 2
@@ -87,11 +87,9 @@ namespace Test
 
             #region Generate and write the mzml
 
-            {
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
 
-                IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-            }
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             #endregion Generate and write the mzml
 

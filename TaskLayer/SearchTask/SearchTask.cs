@@ -853,15 +853,9 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
-            }
-            else
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+                "maximum peptide length = unspecified; " :
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; "); proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
@@ -869,9 +863,11 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
             proseCreatedWhileRunning.Append("report all ambiguity = " + CommonParameters.ReportAllAmbiguity + "; ");
 
-            ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+            ParallelOptions parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
+            };
+
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
             HashSet<IDigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
@@ -1023,7 +1019,7 @@ namespace TaskLayer
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { taskId }).Run());
 
             //sort the list of psms by the score used for fdr calculation
-            if(fdrAnalysisResults.DeltaScoreImprovement)
+            if (fdrAnalysisResults.DeltaScoreImprovement)
                 allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
             else
                 allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
@@ -1119,7 +1115,7 @@ namespace TaskLayer
 
                 // run FlashLFQ
                 var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns, 5.0, false, 2, false, true, true, GlobalVariables.ElementsLocation);
-                if(flashLFQIdentifications.Any())
+                if (flashLFQIdentifications.Any())
                     flashLfqResults = FlashLfqEngine.Run();
 
                 // get protein intensity back from FlashLFQ
@@ -1143,7 +1139,7 @@ namespace TaskLayer
                     }
                 }
             }
-            
+
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             if (SearchParameters.DoHistogramAnalysis)
