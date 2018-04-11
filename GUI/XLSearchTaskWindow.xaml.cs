@@ -178,8 +178,8 @@ namespace MetaMorpheusGUI
             //txtXLBetaPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
-            TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
-            MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
+            TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
+            MinRatioCheckBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
 
             ckbCharge_2_3.IsChecked = task.XlSearchParameters.XlCharge_2_3;
             ckbCharge_2_3_PrimeFragments.IsChecked = task.XlSearchParameters.XlCharge_2_3_PrimeFragment;
@@ -188,8 +188,8 @@ namespace MetaMorpheusGUI
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
+            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
@@ -215,9 +215,13 @@ namespace MetaMorpheusGUI
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
                     if (theMod != null)
+                    {
                         theMod.Use = true;
+                    }
                     else
+                    {
                         theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    }
                 }
                 else
                 {
@@ -233,9 +237,13 @@ namespace MetaMorpheusGUI
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
                     if (theMod != null)
+                    {
                         theMod.Use = true;
+                    }
                     else
+                    {
                         theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    }
                 }
                 else
                 {
@@ -249,23 +257,26 @@ namespace MetaMorpheusGUI
             if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+                {
                     heh.Use = false;
+                }
             }
             else
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                 {
-                    if (task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName))
-                        heh.Use = true;
-                    else
-                        heh.Use = false;
+                    heh.Use = task.CommonParameters.ListOfModTypesLocalize.Contains(heh.DisplayName);
                 }
             }
 
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
+            {
                 ye.VerifyCheckState();
+            }
             foreach (var ye in fixedModTypeForTreeViewObservableCollection)
+            {
                 ye.VerifyCheckState();
+            }
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -282,9 +293,13 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
             //TheTask.XlSearchParameters.FragmentationType = (FragmentaionType)cbFragmentation.SelectedIndex;
             if (cbbXLprecusorMsTl.SelectedIndex == 0)
+            {
                 TheTask.XlSearchParameters.XlPrecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
+            }
             else
+            {
                 TheTask.XlSearchParameters.XlPrecusorMsTl = new PpmTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
+            }
             TheTask.XlSearchParameters.XlCharge_2_3 = ckbCharge_2_3.IsChecked.Value;
             TheTask.XlSearchParameters.XlCharge_2_3_PrimeFragment = ckbCharge_2_3_PrimeFragments.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
@@ -309,8 +324,8 @@ namespace MetaMorpheusGUI
             }
             CommonParamsToSave.TrimMs1Peaks = trimMs1.IsChecked.Value;
             CommonParamsToSave.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
-            CommonParamsToSave.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
-            CommonParamsToSave.MinRatio = double.TryParse(MinRatioCheckBox.Text, out double MinRatio) ? (double?)MinRatio : null;
+            CommonParamsToSave.TopNpeaks = int.Parse(TopNPeaksCheckBox.Text);
+            CommonParamsToSave.MinRatio = double.Parse(MinRatioCheckBox.Text);
 
             CommonParamsToSave.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             CommonParamsToSave.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
@@ -318,17 +333,21 @@ namespace MetaMorpheusGUI
 
             DigestionParams digestionParamsToSave = new DigestionParams();
             digestionParamsToSave.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            digestionParamsToSave.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
-            digestionParamsToSave.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            digestionParamsToSave.MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            digestionParamsToSave.MaxPeptideLength = int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             digestionParamsToSave.Protease = (Protease)proteaseComboBox.SelectedItem;
             digestionParamsToSave.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             digestionParamsToSave.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             CommonParamsToSave.DigestionParams = digestionParamsToSave;
 
             if (productMassToleranceComboBox.SelectedIndex == 0)
+            {
                 CommonParamsToSave.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            }
             else
+            {
                 CommonParamsToSave.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            }
             CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;
             CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;
             CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
@@ -342,18 +361,26 @@ namespace MetaMorpheusGUI
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
             if (OutputFileNameTextBox.Text != "")
+            {
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
+            }
             else
+            {
                 CommonParamsToSave.TaskDescriptor = "XLSearchTask";
+            }
 
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
+            {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            }
             CommonParamsToSave.ListOfModsVariable = listOfModsVariable;
 
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+            {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            }
             CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
 
             if (localizeAllCheckBox.IsChecked.Value)

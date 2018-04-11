@@ -10,8 +10,8 @@ namespace EngineLayer
         public int MaximumMissedCleavages { get; set; }
         public IDigestionParams DigestionParams { get; set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-        public int? MinPeptidesLength { get; set; }
-        public int? MaxPeptidesLength { get; set; }
+        public int MinPeptidesLength { get; set; }
+        public int MaxPeptidesLength { get; set; }
         public IEnumerable<ModificationWithMass> AllKnownFixedModifications { get; set; }
         public List<ModificationWithMass> VariableModifications { get; set; }
 

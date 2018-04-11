@@ -157,7 +157,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private Tuple<int, double> Accepts(double scanPrecursorMass, CompactPeptide peptide, TerminusType terminusType, MassDiffAcceptor searchMode)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
-            int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength ?? 0;
+            int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength;
             if (terminusType == TerminusType.N)
             {
                 for (int i = localminPeptideLength; i < peptide.NTerminalMasses.Count(); i++)

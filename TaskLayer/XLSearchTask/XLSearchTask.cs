@@ -119,9 +119,11 @@ namespace TaskLayer
                 crosslinker.DeadendMassTris = XlSearchParameters.UdXLkerDeadendMassTris.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassTris : 9999;
             }
 
-            ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+            ParallelOptions parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
+            };
+
             MyFileManager myFileManager = new MyFileManager(XlSearchParameters.DisposeOfFileWhenDone);
 
             HashSet<IDigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
@@ -143,14 +145,9 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
-            }
-            else
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            }
+            proseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+                "maximum peptide length = unspecified; " :
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
 
@@ -175,7 +172,7 @@ namespace TaskLayer
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-               
+
                 //List<Ms2ScanWithSpecificMass> arrayOfMs2ScansSortedByMass = new List<Ms2ScanWithSpecificMass>();
                 //arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToList();               
                 //Code to resolve MS3 data 
@@ -233,7 +230,7 @@ namespace TaskLayer
                 catch (Exception)
                 {
                     throw;
-                }              
+                }
             }
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.XLBestScore >= CommonParameters.ScoreCutoff && p.BetaPsmCross.XLBestScore >= CommonParameters.ScoreCutoff).ToList();
             foreach (var item in allPsmsXL)
@@ -347,7 +344,7 @@ namespace TaskLayer
 
             #endregion deadend peptide
 
-            
+
             if (XlSearchParameters.XlOutPepXML)
             {
                 List<PsmCross> allPsmsFDR = new List<PsmCross>();
@@ -363,12 +360,12 @@ namespace TaskLayer
                     WritePepXML_xl(allPsmsFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
             }
-            
+
             if (XlSearchParameters.XlOutAll)
             {
                 List<PsmCross> allPsmsXLFDR = new List<PsmCross>();
                 allPsmsXLFDR.AddRange(intraPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
-                allPsmsXLFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());                
+                allPsmsXLFDR.AddRange(interPsmsXLFDR.Where(p => p.IsDecoy != true && p.BetaPsmCross.IsDecoy != true && p.FdrInfo.QValue <= 0.05).ToList());
                 try
                 {
                     allPsmsXLFDR = allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore).ToList();
@@ -378,7 +375,7 @@ namespace TaskLayer
                 catch (Exception)
                 {
                     throw;
-                }          
+                }
             }
 
             return myTaskResults;
@@ -542,7 +539,7 @@ namespace TaskLayer
             List<string> allString = new List<string>();
             foreach (var item in items)
             {
-                if (item.ProteinAccesion!= null && item.BetaPsmCross.ProteinAccesion!=null)
+                if (item.ProteinAccesion != null && item.BetaPsmCross.ProteinAccesion != null)
                 {
                     string st;
                     if (item.ProteinAccesion.CompareTo(item.BetaPsmCross.ProteinAccesion) > 0)
@@ -561,7 +558,7 @@ namespace TaskLayer
                         psmCrossCrosslinks.Add(item);
                     }
                 }
-            
+
             }
             return psmCrossCrosslinks;
         }
