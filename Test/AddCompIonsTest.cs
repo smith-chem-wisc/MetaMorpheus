@@ -45,7 +45,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxMissedCleavages = 0
                 },
                 ConserveMemory = false,
@@ -106,7 +106,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,

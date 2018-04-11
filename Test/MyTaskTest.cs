@@ -33,7 +33,7 @@ namespace Test
                     DigestionParams = new DigestionParams
                     {
                         MaxMissedCleavages = 0,
-                        MinPeptideLength = null,
+                        MinPeptideLength = 1,
                         InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
                     },
                 },
@@ -137,7 +137,7 @@ namespace Test
                     DigestionParams = new DigestionParams
                     {
                         MaxMissedCleavages = 0,
-                        MinPeptideLength = null,
+                        MinPeptideLength = 1,
                         InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
                     },
                     ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },

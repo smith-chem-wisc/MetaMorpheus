@@ -22,7 +22,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
@@ -53,12 +53,20 @@ namespace Test
             var hahf = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<PeptideSpectralMatch> { allPsmsArrayf[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArrayt)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(haht.CompactPeptideToProteinPeptideMatching);
+                }
+            }
 
             foreach (var huh in allPsmsArrayf)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(hahf.CompactPeptideToProteinPeptideMatching);
+                }
+            }
 
             Assert.AreEqual("QQQ", allPsmsArrayt[0].BaseSequence);
             Assert.AreEqual("QQQ", allPsmsArrayf[0].BaseSequence);

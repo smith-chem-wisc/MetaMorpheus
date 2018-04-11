@@ -26,7 +26,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
@@ -76,7 +76,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxMissedCleavages = 0,
                 },
                 ConserveMemory = false,
@@ -133,7 +133,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
@@ -212,17 +212,17 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            
+
             var proteinList = new List<Protein> { new Protein("K", null) };
 
             var indexEngine = new IndexingEngine(proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
-            
+
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, true, true, 4, 10, new PpmTolerance(5)).OrderBy(b => b.PrecursorMass).ToArray();
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
@@ -232,7 +232,7 @@ namespace Test
 
             // no assertions... just don't crash...
         }
-        
+
         [Test]
         public static void TestNonViablePSM()
         {
@@ -308,7 +308,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
@@ -362,7 +362,7 @@ namespace Test
             };
             DigestionParams dp = new DigestionParams
             {
-                Protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null),
+                Protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null)
             };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -378,7 +378,9 @@ namespace Test
             var localizeableModifications = new List<ModificationWithMass>();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -393,7 +395,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
-            dp.MinPeptideLength = null;
+            dp.MinPeptideLength = 1;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 100000, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -421,7 +423,7 @@ namespace Test
 
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
-            dp.MinPeptideLength = null;
+            dp.MinPeptideLength = 1;
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List<PeptideSpectralMatch> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, new List<IDigestionParams> { CommonParameters.DigestionParams }, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
@@ -474,7 +476,7 @@ namespace Test
             }
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
-            dp.MinPeptideLength = null;
+            dp.MinPeptideLength = 1;
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
 
@@ -506,14 +508,18 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
-            dp.MinPeptideLength = null;
+            dp.MinPeptideLength = 1;
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List<PeptideSpectralMatch> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, new List<IDigestionParams> { CommonParameters.DigestionParams }, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -638,8 +644,12 @@ namespace Test
             new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, new List<PeptideSpectralMatch> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -823,12 +833,19 @@ namespace Test
             var hah2 = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<PeptideSpectralMatch> { allPsmsArray2[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, digestParams2, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                }
+            }
             foreach (var huh2 in allPsmsArray2)
+            {
                 if (huh2 != null)
+                {
                     huh2.MatchToProteinLinkedPeptides(hah2.CompactPeptideToProteinPeptideMatching);
-
+                }
+            }
             Assert.AreEqual("QQQGGGG", allPsmsArray2[0].BaseSequence);
             Assert.AreEqual(allPsmsArray[0].BaseSequence, allPsmsArray2[0].BaseSequence);
         }
@@ -841,7 +858,9 @@ namespace Test
             var localizeableModifications = new List<ModificationWithMass>();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -880,12 +899,15 @@ namespace Test
             foreach (PeptideWithSetModifications PWSM in PWSMs)
             {
                 if (found.TryGetValue(PWSM.BaseSequence, out bool b))
+                {
                     found[PWSM.BaseSequence] = true;
+                }
             }
             foreach (KeyValuePair<string, bool> kvp in found)
+            {
                 Assert.IsTrue(kvp.Value);
+            }
         }
-
         #endregion Public Methods
     }
 }
