@@ -85,14 +85,10 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
-            }
-            else
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            }
+
+            proseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+                "maximum peptide length = unspecified; " :
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
 
@@ -113,9 +109,11 @@ namespace TaskLayer
 
             object lock1 = new object();
             object lock2 = new object();
-            ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+            ParallelOptions parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
+            };
+
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -166,7 +164,7 @@ namespace TaskLayer
             {
                 // do NOT use this code (Path.GetFilenameWithoutExtension) because GPTMD on .xml.gz will result in .xml.xml file type being written
                 //string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
-                
+
                 List<string> databaseNames = new List<string>();
                 foreach (var nonContaminantDb in dbFilenameList.Where(p => !p.IsContaminant))
                 {

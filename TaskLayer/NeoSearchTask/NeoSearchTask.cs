@@ -118,9 +118,11 @@ namespace TaskLayer
             {
                 NeoMassCalculator.ImportMasses();
 
-                ParallelOptions parallelOptions = new ParallelOptions();
-                if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                    parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+                ParallelOptions parallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
+                };
+
                 MyFileManager myFileManager = new MyFileManager(true);
 
                 //Import Spectra
