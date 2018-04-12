@@ -388,37 +388,34 @@
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Quantification">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="5*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Margin="5" VerticalAlignment="Top"  Grid.Column="0">
-                                        <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides/proteins with FlashLFQ">
+                                <StackPanel>
+                                    <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides/proteins with FlashLFQ">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Label-free quantification is performed with FlashLFQ" />
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox x:Name="quantPpmTolerance" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                             <ToolTipService.ToolTip>
-                                                <ToolTip Content="Label-free quantification is performed with FlashLFQ" />
-                                            </ToolTipService.ToolTip>
-                                        </CheckBox>
-                                    </StackPanel>
-                                    <StackPanel Margin="0" VerticalAlignment="Top"  Grid.Column="1">
-                                        <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                        <TextBox x:Name="quantPpmTolerance" Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
-                                            <ToolTipService.ToolTip>
-                                                <ToolTip Content="PPM tolerance for MS1 (LFQ)" />
+                                                <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" />
                                             </ToolTipService.ToolTip>
                                         </TextBox>
-                                        <CheckBox x:Name="checkBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                        <Label x:Name="quantPpmLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                    </StackPanel>
+                                    <CheckBox x:Name="checkBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" />
                                         </ToolTipService.ToolTip>
-                                    </StackPanel>
-                                </Grid>
+                                    </CheckBox>
+                                </StackPanel>
                             </GroupBox>
-                            <GroupBox Header="Mass Shift Histogram Analysis">
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Mass-difference histogram analysis" />
-                                    <Label Content="Histogram bin width (Da):" />
-                                    <TextBox x:Name="histogramBinWidthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                            <GroupBox Header="Mass Difference Histogram Analysis">
+                                <StackPanel>
+                                    <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Construct mass-difference histogram" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Histogram bin width (Da):" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                        <TextBox x:Name="histogramBinWidthTextBox" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                    </StackPanel>
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Pruned Database Writing">
