@@ -94,11 +94,11 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
             if (CommonParameters.ProductMassTolerance is PpmTolerance)
             {
-                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " ppm; ");
+                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " ppm. ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da; ");
+                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             }
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 

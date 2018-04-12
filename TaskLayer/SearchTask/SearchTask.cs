@@ -859,11 +859,11 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
             if (CommonParameters.ProductMassTolerance is PpmTolerance)
             {
-                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " ppm; ");
+                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " ppm. ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da; ");
+                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             }
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
             proseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + "; ");
