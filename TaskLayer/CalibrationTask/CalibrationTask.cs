@@ -126,8 +126,10 @@ namespace TaskLayer
                 }
                 if (acquisitionResults.Item2.Ms1List.Count < 4 || acquisitionResults.Item2.Ms2List.Count < 4)
                 {
-                    Warn("Could not find enough MS1 datapoints to calibrate (" + acquisitionResults.Item2.Ms1List.Count + " found)");
-                    Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
+                    if(acquisitionResults.Item2.Ms1List.Count < 4)
+                        Warn("Could not find enough MS1 datapoints to calibrate (" + acquisitionResults.Item2.Ms1List.Count + " found)");
+                    if(acquisitionResults.Item2.Ms2List.Count < 4)
+                        Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
                     return;
                 }
 
