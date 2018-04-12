@@ -29,7 +29,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public PeptideWithSetModifications(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription, int? missedCleavages, 
+        public PeptideWithSetModifications(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription, int missedCleavages, 
             Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
             : base(protein, oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, peptideDescription)
         {
@@ -46,14 +46,14 @@ namespace EngineLayer
         }
 
         public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) 
-            : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, null, modsFromThisOne.PeptideDescription)
+            : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, proteinOneBasedEnd- proteinOneBasedStart, modsFromThisOne.PeptideDescription)
         {
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) 
             && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
         }
 
         public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int? missedCleavages = null) 
+            Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int missedCleavages = 0) 
             : base(protein, proteinOneBasedStart, proteinOneBasedEnd, missedCleavages, null)
         {
             this.numFixedMods = numFixedMods;

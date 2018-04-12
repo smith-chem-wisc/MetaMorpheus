@@ -15,7 +15,7 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        internal Peptide(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, int? missedCleavages, string peptideDescription = null)
+        internal Peptide(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, int missedCleavages, string peptideDescription = null)
         {
             Protein = protein;
             OneBasedStartResidueInProtein = oneBasedStartResidueInProtein;
@@ -32,7 +32,7 @@ namespace EngineLayer
         public Protein Protein { get; }
         public int OneBasedStartResidueInProtein { get; }
         public int OneBasedEndResidueInProtein { get; }
-        public int? MissedCleavages { get; set; }
+        public int MissedCleavages { get; set; }
         public string PeptideDescription { get; }
         public int Length { get; }
 

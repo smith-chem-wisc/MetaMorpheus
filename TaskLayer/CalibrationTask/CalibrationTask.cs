@@ -37,6 +37,7 @@ namespace TaskLayer
                 TrimMs1Peaks = false,
                 TrimMsMsPeaks = false,
                 DoPrecursorDeconvolution = false,
+                ScoreCutoff = 10
             };
 
             CalibrationParameters = new CalibrationParameters();
@@ -49,40 +50,6 @@ namespace TaskLayer
         public CalibrationParameters CalibrationParameters { get; set; }
 
         #endregion Public Properties
-
-        #region Protected Internal Methods
-
-        protected internal void WriteMs2DataPoints(List<LabeledMs2DataPoint> items, string outputFolder, string fileName, List<string> nestedIDs)
-        {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".ms2dptsv");
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeader + "\t" + PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var dp in items)
-                {
-                    output.Write(dp.Values());
-                    output.WriteLine("\t" + dp.identification);
-                }
-            }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
-        }
-
-        protected internal void WriteMs1DataPoints(List<LabeledMs1DataPoint> items, string outputFolder, string fileName, List<string> nestedIDs)
-        {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".ms1dptsv");
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeader + "\t" + PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var dp in items)
-                {
-                    output.Write(dp.Values());
-                    output.WriteLine("\t" + dp.identification);
-                }
-            }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
-        }
-
-        #endregion Protected Internal Methods
 
         #region Protected Methods
 
@@ -105,15 +72,9 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
-            }
-            else
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+                "maximum peptide length = unspecified; " :
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; "); proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
 
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
@@ -122,9 +83,10 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             object lock1 = new object();
-            ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+            ParallelOptions parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
+            };
             var myFileManager = new MyFileManager(true);
 
             Status("Calibrating...", new List<string> { taskId });
@@ -150,7 +112,31 @@ namespace TaskLayer
 
                 // get datapoints to fit calibration function to
                 var acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
-                
+
+                // enough data points to calibrate with?
+                if (acquisitionResults.Item1.Count < 20)
+                {
+                    Warn("Could not find enough high-quality PSMs to calibrate with! Required 20, saw " + acquisitionResults.Item1.Count);
+                    return;
+                }
+                if (acquisitionResults.Item2 == null)
+                {
+                    Warn("Could not find any datapoints to calibrate with!");
+                    return;
+                }
+                if (acquisitionResults.Item2.Ms1List.Count < 4 || acquisitionResults.Item2.Ms2List.Count < 4)
+                {
+                    if (acquisitionResults.Item2.Ms1List.Count < 4)
+                    {
+                        Warn("Could not find enough MS1 datapoints to calibrate (" + acquisitionResults.Item2.Ms1List.Count + " found)");
+                    }
+                    if (acquisitionResults.Item2.Ms2List.Count < 4)
+                    {
+                        Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
+                    }
+                    return;
+                }
+
                 // stats before calibration
                 int prevPsmCount = acquisitionResults.Item1.Count;
 
@@ -159,19 +145,6 @@ namespace TaskLayer
 
                 var preCalibrationProductErrors = acquisitionResults.Item1.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
                 double preCalibrationProductIqr = Statistics.InterquartileRange(preCalibrationProductErrors);
-                
-                // enough data points to calibrate with?
-                if (acquisitionResults.Item2 == null)
-                {
-                    Warn("Could not find any datapoints to calibrate with!");
-                    return;
-                }
-                if (acquisitionResults.Item2.Ms1List.Count < 4 || acquisitionResults.Item2.Ms2List.Count < 4)
-                {
-                    Warn("Could not find enough MS1 datapoints to calibrate (" + acquisitionResults.Item2.Ms1List.Count + " found)");
-                    Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
-                    return;
-                }
 
                 // generate calibration function and shift data points
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
@@ -185,7 +158,7 @@ namespace TaskLayer
                 // stats after calibration
                 int postCalibrationPsmCount = acquisitionResults.Item1.Count;
 
-                var postCalibrationPrecursorErrors = acquisitionResults.Item1.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass) / p.PeptideMonisotopicMass * 1e6).ToList();
+                var postCalibrationPrecursorErrors = acquisitionResults.Item1.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass.Value) / p.PeptideMonisotopicMass.Value * 1e6).ToList();
                 double postCalibrationPrecursorIqr = Statistics.InterquartileRange(postCalibrationPrecursorErrors);
 
                 var postCalibrationProductErrors = acquisitionResults.Item1.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
@@ -294,7 +267,6 @@ namespace TaskLayer
 
             if (!goodIdentifications.Any())
             {
-                Warn("No PSMs below 1% FDR observed!");
                 return (new List<PeptideSpectralMatch>(), null);
             }
 

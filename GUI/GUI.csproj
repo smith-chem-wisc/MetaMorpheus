@@ -98,6 +98,9 @@
     <Reference Include="SharpLearning.DecisionTrees, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.DecisionTrees.0.26.8.1\lib\net461\SharpLearning.DecisionTrees.dll</HintPath>
     </Reference>
+    <Reference Include="SharpLearning.GradientBoost, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.GradientBoost.0.26.8.1\lib\net461\SharpLearning.GradientBoost.dll</HintPath>
+    </Reference>
     <Reference Include="SharpLearning.InputOutput, Version=0.26.8.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpLearning.InputOutput.0.26.8.1\lib\net461\SharpLearning.InputOutput.dll</HintPath>
     </Reference>
