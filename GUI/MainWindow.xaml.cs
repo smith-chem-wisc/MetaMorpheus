@@ -474,9 +474,23 @@ namespace MetaMorpheusGUI
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
+            
+            // prevent opening protein DB or spectra files if a run is in progress
+            if ((ye.DataContext is ProteinDbForDataGrid || ye.DataContext is RawDataForDataGrid) && !LoadTaskButton.IsEnabled)
             {
-                System.Diagnostics.Process.Start(hm.Text);
+                return;
+            }
+
+            if (ye.Content is TextBlock hm && hm != null && !string.IsNullOrEmpty(hm.Text))
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(hm.Text);
+                }
+                catch (Exception)
+                {
+
+                }
             }
         }
 
@@ -764,8 +778,8 @@ namespace MetaMorpheusGUI
 
                 OutputFolderTextBox.IsEnabled = false;
 
-                proteinDatabasesGroupBox.IsEnabled = false;
-                datafilesGroupBox.IsEnabled = false;
+                dataGridDatafiles.IsReadOnly = true;
+                dataGridXMLs.IsReadOnly = true;
             }
         }
 
@@ -826,8 +840,8 @@ namespace MetaMorpheusGUI
             ResetTasksButton.IsEnabled = false;
             OutputFolderTextBox.IsEnabled = true;
 
-            proteinDatabasesGroupBox.IsEnabled = true;
-            datafilesGroupBox.IsEnabled = true;
+            dataGridDatafiles.IsReadOnly = false;
+            dataGridXMLs.IsReadOnly = false;
 
             AddXML.IsEnabled = true;
             ClearXML.IsEnabled = true;
