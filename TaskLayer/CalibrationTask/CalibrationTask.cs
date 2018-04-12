@@ -123,6 +123,11 @@ namespace TaskLayer
                 double preCalibrationProductIqr = Statistics.InterquartileRange(preCalibrationProductErrors);
 
                 // enough data points to calibrate with?
+                if(acquisitionResults.Item1.Count < 20)
+                {
+                    Warn("Could not find enough high-quality PSMs to calibrate with! Required 20, saw " + acquisitionResults.Item1.Count);
+                    return;
+                }
                 if (acquisitionResults.Item2 == null)
                 {
                     Warn("Could not find any datapoints to calibrate with!");
@@ -256,7 +261,6 @@ namespace TaskLayer
 
             if (!goodIdentifications.Any())
             {
-                Warn("No PSMs below 1% FDR observed!");
                 return (new List<PeptideSpectralMatch>(), null);
             }
 
