@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using EngineLayer.FdrAnalysis;
 using MathNet.Numerics.Statistics;
 using EngineLayer.Localization;
+using UsefulProteomicsDatabases;
 
 #if NETFRAMEWORK
 
@@ -66,9 +67,20 @@ namespace TaskLayer
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
 
+            // what types of fragment ions to search for
+            List<ProductType> ionTypes = new List<ProductType>();
+            if (CommonParameters.BIons)
+                ionTypes.Add(ProductType.BnoB1ions);
+            if (CommonParameters.YIons)
+                ionTypes.Add(ProductType.Y);
+            if (CommonParameters.ZdotIons)
+                ionTypes.Add(ProductType.Zdot);
+            if (CommonParameters.CIons)
+                ionTypes.Add(ProductType.C);
+
             // load proteins
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, UsefulProteomicsDatabases.DecoyType.Reverse, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             // write prose settings
             proseCreatedWhileRunning.Append("The following calibration settings were used: ");
@@ -77,15 +89,22 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
             proseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
                 "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; "); proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
-            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
-
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
-            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
-            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
-            
+            proseCreatedWhileRunning.Append("max mods per peptide = " + CommonParameters.DigestionParams.MaxModsForPeptide + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
+            if (CommonParameters.ProductMassTolerance is PpmTolerance)
+            {
+                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " ppm; ");
+            }
+            else
+            {
+                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da; ");
+            }
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+
             // start the calibration task
             Status("Calibrating...", new List<string> { taskId });
             myTaskResults = new MyTaskResults(this)
@@ -104,12 +123,16 @@ namespace TaskLayer
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
-                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-
+                // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 var originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
                 string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + "-calib.mzml");
-                
+
+                // mark the file as in-progress
+                StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+
+                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
 
                 // load the file
@@ -193,6 +216,7 @@ namespace TaskLayer
                 // finished calibrating this file
                 SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 myTaskResults.newSpectra.Add(calibratedFilePath);
+                FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
             });
 
