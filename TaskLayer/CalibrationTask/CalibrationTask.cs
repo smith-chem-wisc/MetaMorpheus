@@ -113,15 +113,6 @@ namespace TaskLayer
                 // get datapoints to fit calibration function to
                 var acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
                 
-                // stats before calibration
-                int prevPsmCount = acquisitionResults.Item1.Count;
-
-                var preCalibrationPrecursorErrors = acquisitionResults.Item1.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass.Value) / p.PeptideMonisotopicMass.Value * 1e6).ToList();
-                double preCalibrationPrecursorIqr = Statistics.InterquartileRange(preCalibrationPrecursorErrors);
-
-                var preCalibrationProductErrors = acquisitionResults.Item1.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
-                double preCalibrationProductIqr = Statistics.InterquartileRange(preCalibrationProductErrors);
-
                 // enough data points to calibrate with?
                 if(acquisitionResults.Item1.Count < 20)
                 {
@@ -139,6 +130,15 @@ namespace TaskLayer
                     Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
                     return;
                 }
+
+                // stats before calibration
+                int prevPsmCount = acquisitionResults.Item1.Count;
+
+                var preCalibrationPrecursorErrors = acquisitionResults.Item1.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass.Value) / p.PeptideMonisotopicMass.Value * 1e6).ToList();
+                double preCalibrationPrecursorIqr = Statistics.InterquartileRange(preCalibrationPrecursorErrors);
+
+                var preCalibrationProductErrors = acquisitionResults.Item1.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
+                double preCalibrationProductIqr = Statistics.InterquartileRange(preCalibrationProductErrors);
 
                 // generate calibration function and shift data points
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
