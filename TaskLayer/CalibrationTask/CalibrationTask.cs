@@ -112,7 +112,31 @@ namespace TaskLayer
 
                 // get datapoints to fit calibration function to
                 var acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
-                
+
+                // enough data points to calibrate with?
+                if (acquisitionResults.Item1.Count < 20)
+                {
+                    Warn("Could not find enough high-quality PSMs to calibrate with! Required 20, saw " + acquisitionResults.Item1.Count);
+                    return;
+                }
+                if (acquisitionResults.Item2 == null)
+                {
+                    Warn("Could not find any datapoints to calibrate with!");
+                    return;
+                }
+                if (acquisitionResults.Item2.Ms1List.Count < 4 || acquisitionResults.Item2.Ms2List.Count < 4)
+                {
+                    if (acquisitionResults.Item2.Ms1List.Count < 4)
+                    {
+                        Warn("Could not find enough MS1 datapoints to calibrate (" + acquisitionResults.Item2.Ms1List.Count + " found)");
+                    }
+                    if (acquisitionResults.Item2.Ms2List.Count < 4)
+                    {
+                        Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
+                    }
+                    return;
+                }
+
                 // stats before calibration
                 int prevPsmCount = acquisitionResults.Item1.Count;
 
@@ -121,19 +145,6 @@ namespace TaskLayer
 
                 var preCalibrationProductErrors = acquisitionResults.Item1.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
                 double preCalibrationProductIqr = Statistics.InterquartileRange(preCalibrationProductErrors);
-
-                // enough data points to calibrate with?
-                if (acquisitionResults.Item2 == null)
-                {
-                    Warn("Could not find any datapoints to calibrate with!");
-                    return;
-                }
-                if (acquisitionResults.Item2.Ms1List.Count < 4 || acquisitionResults.Item2.Ms2List.Count < 4)
-                {
-                    Warn("Could not find enough MS1 datapoints to calibrate (" + acquisitionResults.Item2.Ms1List.Count + " found)");
-                    Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
-                    return;
-                }
 
                 // generate calibration function and shift data points
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
@@ -149,7 +160,7 @@ namespace TaskLayer
 
                 var postCalibrationPrecursorErrors = acquisitionResults.Item1.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass.Value) / p.PeptideMonisotopicMass.Value * 1e6).ToList();
                 double postCalibrationPrecursorIqr = Statistics.InterquartileRange(postCalibrationPrecursorErrors);
-                
+
                 var postCalibrationProductErrors = acquisitionResults.Item1.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
                 double postCalibrationProductIqr = Statistics.InterquartileRange(postCalibrationProductErrors);
 
@@ -256,7 +267,6 @@ namespace TaskLayer
 
             if (!goodIdentifications.Any())
             {
-                Warn("No PSMs below 1% FDR observed!");
                 return (new List<PeptideSpectralMatch>(), null);
             }
 
