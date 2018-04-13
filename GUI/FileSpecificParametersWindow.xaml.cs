@@ -44,8 +44,6 @@ namespace MetaMorpheusGUI
         // write the toml settings file on clicking "save"
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            // just using this to get variable names in case they've been renamed...
-            var temp = new CommonParameters();
             var parametersToWrite = new FileSpecificParameters();
 
             // parse the file-specific parameters to text
@@ -157,7 +155,7 @@ namespace MetaMorpheusGUI
             {
                 paramsToSaveCount++;
 
-                // don't think there's any way to mess up checkboxes... no error needed
+                // don't think there's any way to mess up checkboxes... no error message needed
                 parametersToWrite.BIons = bCheckBox.IsChecked;
                 parametersToWrite.YIons = yCheckBox.IsChecked;
                 parametersToWrite.CIons = cCheckBox.IsChecked;
@@ -196,12 +194,75 @@ namespace MetaMorpheusGUI
         private void PopulateChoices()
         {
             // use default settings to populate
-            var temp = new CommonParameters();
+            var tempCommonParams = new CommonParameters();
+            var tempDigestParams = new DigestionParams();
+
+            // do any of the selected files already have file-specific parameters specified?
+            var ok = SelectedRaw.Select(p => p.FilePath);
+            foreach(var path in ok)
+            {
+                string tomlPath = Path.Combine(Directory.GetParent(path).ToString(), Path.GetFileNameWithoutExtension(path)) + ".toml";
+                if(File.Exists(tomlPath))
+                {
+                    TomlTable tomlTable = Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig);
+                    FileSpecificParameters tempFileSpecificParams = new FileSpecificParameters(tomlTable);
+
+                    if (tempFileSpecificParams.PrecursorMassTolerance != null)
+                    {
+                        tempCommonParams.PrecursorMassTolerance = tempFileSpecificParams.PrecursorMassTolerance;
+                        fileSpecificPrecursorMassTolEnabled.IsChecked = true;
+                    }
+                    if (tempFileSpecificParams.ProductMassTolerance != null)
+                    {
+                        tempCommonParams.ProductMassTolerance = tempFileSpecificParams.ProductMassTolerance;
+                        fileSpecificProductMassTolEnabled.IsChecked = true;
+                    }
+                    if (tempFileSpecificParams.Protease != null)
+                    {
+                        tempDigestParams.Protease = tempFileSpecificParams.Protease;
+                        fileSpecificProteaseEnabled.IsChecked = true;
+                    }
+                    if (tempFileSpecificParams.MinPeptideLength != null)
+                    {
+                        tempDigestParams.MinPeptideLength = tempFileSpecificParams.MinPeptideLength.Value;
+                        fileSpecificMinPeptideLengthEnabled.IsChecked = true;
+                    }
+                    if (tempFileSpecificParams.MaxPeptideLength != null)
+                    {
+                        tempDigestParams.MaxPeptideLength = tempFileSpecificParams.MaxPeptideLength.Value;
+                        fileSpecificMaxPeptideLengthEnabled.IsChecked = true;
+                    }
+                    if (tempFileSpecificParams.MaxMissedCleavages != null)
+                    {
+                        tempDigestParams.MaxMissedCleavages = tempFileSpecificParams.MaxMissedCleavages.Value;
+                        fileSpecificMissedCleavagesEnabled.IsChecked = true;
+                    }
+                    if (tempFileSpecificParams.MaxModsForPeptide != null)
+                    {
+                        tempDigestParams.MaxModsForPeptide = tempFileSpecificParams.MaxMissedCleavages.Value;
+                        fileSpecificMaxModNumEnabled.IsChecked = true;
+                    }
+                    if (tempFileSpecificParams.BIons != null || tempFileSpecificParams.CIons != null
+                        || tempFileSpecificParams.YIons != null || tempFileSpecificParams.ZdotIons != null)
+                    {
+                        tempCommonParams.BIons = tempFileSpecificParams.BIons.Value;
+                        tempCommonParams.YIons = tempFileSpecificParams.YIons.Value;
+                        tempCommonParams.CIons = tempFileSpecificParams.CIons.Value;
+                        tempCommonParams.ZdotIons = tempFileSpecificParams.ZdotIons.Value;
+
+                        fileSpecificIonTypesEnabled.IsChecked = true;
+                    }
+                }
+            }
+
+            tempCommonParams.DigestionParams = tempDigestParams;
+            
+            // populate the GUI
             foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
             {
                 fileSpecificProtease.Items.Add(protease);
             }
-            fileSpecificProtease.SelectedIndex = 11;
+            fileSpecificProtease.SelectedItem = tempCommonParams.DigestionParams.Protease;
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
@@ -211,22 +272,22 @@ namespace MetaMorpheusGUI
             precursorMassToleranceComboBox.Items.Add("ppm");
             precursorMassToleranceComboBox.SelectedIndex = 1;
 
-            precursorMassToleranceTextBox.Text = temp.PrecursorMassTolerance.Value.ToString();
-            productMassToleranceTextBox.Text = temp.ProductMassTolerance.Value.ToString();
-            txtMinPeptideLength.Text = temp.DigestionParams.MinPeptideLength.ToString();
+            precursorMassToleranceTextBox.Text = tempCommonParams.PrecursorMassTolerance.Value.ToString();
+            productMassToleranceTextBox.Text = tempCommonParams.ProductMassTolerance.Value.ToString();
+            txtMinPeptideLength.Text = tempCommonParams.DigestionParams.MinPeptideLength.ToString();
 
-            if (int.MaxValue != temp.DigestionParams.MaxPeptideLength)
+            if (int.MaxValue != tempCommonParams.DigestionParams.MaxPeptideLength)
             {
-                txtMaxPeptideLength.Text = temp.DigestionParams.MaxPeptideLength.ToString();
+                txtMaxPeptideLength.Text = tempCommonParams.DigestionParams.MaxPeptideLength.ToString();
             }
 
-            txtMaxModNum.Text = temp.DigestionParams.MaxModsForPeptide.ToString();
-            missedCleavagesTextBox.Text = temp.DigestionParams.MaxMissedCleavages.ToString();
+            txtMaxModNum.Text = tempCommonParams.DigestionParams.MaxModsForPeptide.ToString();
+            missedCleavagesTextBox.Text = tempCommonParams.DigestionParams.MaxMissedCleavages.ToString();
 
-            yCheckBox.IsChecked = temp.YIons;
-            bCheckBox.IsChecked = temp.BIons;
-            cCheckBox.IsChecked = temp.CIons;
-            zdotCheckBox.IsChecked = temp.ZdotIons;
+            yCheckBox.IsChecked = tempCommonParams.YIons;
+            bCheckBox.IsChecked = tempCommonParams.BIons;
+            cCheckBox.IsChecked = tempCommonParams.CIons;
+            zdotCheckBox.IsChecked = tempCommonParams.ZdotIons;
         }
 
         #endregion Private Methods

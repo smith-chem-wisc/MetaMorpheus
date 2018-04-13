@@ -218,9 +218,17 @@ namespace TaskLayer
                         Warn("Warning! Could not find the file-specific toml for " + Path.GetFileName(originalUncalibratedFilePath));
                     }
                 }
-
-                fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(4.0 * postCalibrationPrecursorIqr);
-                fileSpecificParams.ProductMassTolerance = new PpmTolerance(4.0 * postCalibrationProductIqr);
+                
+                // don't write over ppm tolerances if they've been specified by the user already in the file-specific settings
+                // otherwise, suggest 4 times the interquartile range as the ppm tolerance
+                if (fileSpecificParams.PrecursorMassTolerance == null)
+                {
+                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(4.0 * postCalibrationPrecursorIqr);
+                }
+                if (fileSpecificParams.ProductMassTolerance == null)
+                {
+                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(4.0 * postCalibrationProductIqr);
+                }
 
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
                 

@@ -102,7 +102,7 @@
             </StackPanel>
         </StackPanel>
         <!-- Save/cancel buttons -->
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,5">
             <Button x:Name="Save"  Height="40" Width="300" Content="Save File-Specific Settings" Click="Save_Click" FontSize="25" Grid.Row="3" />
             <Button x:Name="Cancel" Height="40" Width="100" Content="Cancel" Click="Cancel_Click" FontSize="15" Grid.Row="3" />
         </StackPanel>

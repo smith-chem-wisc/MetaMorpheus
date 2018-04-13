@@ -26,6 +26,8 @@ namespace TaskLayer
                         MinPeptideLength = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxPeptideLength):
                         MaxPeptideLength = keyValuePair.Value.Get<int>(); break;
+                    case nameof(MaxMissedCleavages):
+                        MaxMissedCleavages = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxModsForPeptide):
                         MaxModsForPeptide = keyValuePair.Value.Get<int>(); break;
                     case nameof(BIons):
