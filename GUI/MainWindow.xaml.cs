@@ -364,6 +364,7 @@ namespace MetaMorpheusGUI
             switch (theExtension)
             {
                 case ".raw":
+                    // check for MSFileReader and display a warning if the expected DLLs are not found
                     var versionCheckerResult = MyFileManager.ValidateThermoMsFileReaderVersion();
 
                     if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.IncorrectVersion))
@@ -374,6 +375,15 @@ namespace MetaMorpheusGUI
                     {
                         GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader (v3.0 SP2 is preferred); a crash may result from searching this .raw file", null));
                     }
+
+                    // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
+                    // this is one hacky way of checking if the user has C++ redistributable installed
+                    string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
+                    if(!File.Exists(assumedManagedThermoHelperLayerDllPath))
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Warning! You may not have Microsoft Visual C++ Redistributable installed; MetaMorpheus needs this to read .raw files and may crash", null));
+                    }
+
                     goto case ".mzml";
 
                 case ".mzml":
