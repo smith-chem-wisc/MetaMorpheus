@@ -142,8 +142,8 @@
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ChangeParametersWindow.xaml.cs">
-      <DependentUpon>ChangeParametersWindow.xaml</DependentUpon>
+    <Compile Include="FileSpecificParametersWindow.xaml.cs">
+      <DependentUpon>FileSpecificParametersWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CollectionForTreeView.cs" />
     <Compile Include="ForTreeView.cs" />
@@ -186,7 +186,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="ChangeParametersWindow.xaml">
+    <Page Include="FileSpecificParametersWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -54,7 +54,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             if (CommonParameters.ScoreCutoff < 10)
             {
@@ -150,11 +150,13 @@ namespace TaskLayer
                 if (acquisitionResults.Item1.Count < 20)
                 {
                     Warn("Could not find enough high-quality PSMs to calibrate with! Required 20, saw " + acquisitionResults.Item1.Count);
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                     return;
                 }
                 if (acquisitionResults.Item2 == null)
                 {
                     Warn("Could not find any datapoints to calibrate with!");
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                     return;
                 }
                 if (acquisitionResults.Item2.Ms1List.Count < 4 || acquisitionResults.Item2.Ms2List.Count < 4)
@@ -167,6 +169,7 @@ namespace TaskLayer
                     {
                         Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
                     }
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                     return;
                 }
 
@@ -199,15 +202,31 @@ namespace TaskLayer
                 // did the data improve? (not used for anything yet...)
                 bool improvement = ImprovGlobal(preCalibrationPrecursorIqr, preCalibrationProductIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorIqr, postCalibrationProductIqr);
 
-                // write suggested tolerances for this file
-                var tomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + "-calib.toml");
-                FileSpecificTolerances f = new FileSpecificTolerances
+                // write toml settings for the calibrated file
+                var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + "-calib.toml");
+
+                var fileSpecificParams = new FileSpecificParameters();
+
+                // carry over file-specific parameters from the uncalibrated file to the calibrated one
+                if (fileSettingsList[spectraFileIndex] != null)
                 {
-                    PrecursorMassTolerance = new PpmTolerance(4.0 * postCalibrationPrecursorIqr),
-                    ProductMassTolerance = new PpmTolerance(4.0 * postCalibrationProductIqr)
-                };
-                Toml.WriteFile(f, tomlFileName, tomlConfig);
-                SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                    fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
+                }
+                
+                // don't write over ppm tolerances if they've been specified by the user already in the file-specific settings
+                // otherwise, suggest 4 * interquartile range as the ppm tolerance
+                if (fileSpecificParams.PrecursorMassTolerance == null)
+                {
+                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(4.0 * postCalibrationPrecursorIqr);
+                }
+                if (fileSpecificParams.ProductMassTolerance == null)
+                {
+                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(4.0 * postCalibrationProductIqr);
+                }
+
+                Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
+                
+                SucessfullyFinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
                 // write the calibrated mzML file
                 MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);

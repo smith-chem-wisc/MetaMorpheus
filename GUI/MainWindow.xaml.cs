@@ -70,6 +70,7 @@ namespace MetaMorpheusGUI
             UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
+            FileSpecificParameters.ValidateFileSpecificVariableNames();
 
             // LOAD GUI SETTINGS
             GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
@@ -135,6 +136,16 @@ namespace MetaMorpheusGUI
                 {
                     MessageBox.Show(ex.ToString());
                 }
+            }
+
+            // lock raw data and protein database columns for editing except "use" and "iscontaminant"
+            for(int i = 1; i < dataGridDatafiles.Columns.Count; i++)
+            {
+                dataGridDatafiles.Columns[i].IsReadOnly = true;
+            }
+            for (int i = 2; i < dataGridXMLs.Columns.Count; i++)
+            {
+                dataGridXMLs.Columns[i].IsReadOnly = true;
             }
         }
 
@@ -424,11 +435,21 @@ namespace MetaMorpheusGUI
                     break;
 
                 case ".toml":
-                    var tomlFile = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                    TomlTable tomlFile = null;
+                    try
+                    {
+                        tomlFile = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                    }
+                    catch (Exception)
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                        break;
+                    }
                     if (tomlFile.Keys.Contains("PrecursorMassTolerance") && tomlFile.Keys.Contains("ProductMassTolerance") && tomlFile.Keys.Count == 2)
                     {
                         // do nothing; it's a ppm suggested tolerance toml from calibration, this gets read in elsewhere
                     }
+                    // need to check for file-specific parameters toml here... right now it's displaying a warning
                     else
                     {
                         try
@@ -944,7 +965,26 @@ namespace MetaMorpheusGUI
                 {
                     if (Path.GetFileNameWithoutExtension(file.FileName) == Path.GetFileNameWithoutExtension(fullPathofTomls[j]))
                     {
-                        file.Parameters = File.ReadAllText(fullPathofTomls[j] + ".toml");
+                        if (File.Exists(fullPathofTomls[j]))
+                        {
+                            TomlTable fileSpecificSettings = Toml.ReadFile(fullPathofTomls[j], MetaMorpheusTask.tomlConfig);
+                            try
+                            {
+                                // parse to make sure toml is readable
+                                var temp = new FileSpecificParameters(fileSpecificSettings);
+
+                                // toml is ok; display the file-specific settings in the gui
+                                file.Parameters = File.ReadAllText(fullPathofTomls[j]);
+                            }
+                            catch (MetaMorpheusException e)
+                            {
+                                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(fullPathofTomls[j]) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?", null));
+                            }
+                        }
+                        else
+                        {
+                            file.Parameters = null;
+                        }
                     }
                 }
             }
@@ -953,13 +993,26 @@ namespace MetaMorpheusGUI
         }
 
         //run if data file has just been added with and checks for Existing fileSpecficParams
-        private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocations)
+        private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocation)
         {
-            string fullPathofTomls = tomlLocations;
-            for (int i = 0; i < rawDataObservableCollection.Count(); i++)
+            for (int i = 0; i < rawDataObservableCollection.Count; i++)
             {
-                if (File.Exists(fullPathofTomls) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(fullPathofTomls))
-                    rawDataObservableCollection[i].Parameters = File.ReadAllText(fullPathofTomls);
+                if (File.Exists(tomlLocation) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(tomlLocation))
+                {
+                    TomlTable fileSpecificSettings = Toml.ReadFile(tomlLocation, MetaMorpheusTask.tomlConfig);
+                    try
+                    {
+                        // parse to make sure toml is readable
+                        var temp = new FileSpecificParameters(fileSpecificSettings);
+
+                        // toml is ok; display the file-specific settings in the gui
+                        rawDataObservableCollection[i].Parameters = File.ReadAllText(tomlLocation);
+                    }
+                    catch (MetaMorpheusException e)
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(tomlLocation) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?", null));
+                    }
+                }
             }
             UpdateRawFileGuiStuff();
             dataGridDatafiles.Items.Refresh();
@@ -1009,30 +1062,11 @@ namespace MetaMorpheusGUI
 
         private void ChangeFileParameters_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new ChangeParametersWindow(SelectedRawFiles);
+            var dialog = new FileSpecificParametersWindow(SelectedRawFiles);
             if (dialog.ShowDialog() == true)
             {
-                string[] fullPathofToml = new string[dialog.FileSpecificSettingsList.Count()];
-                for (int i = 0; i < dialog.FileSpecificSettingsList.Count(); i++)
-                {
-                    string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
-                    string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
-                    fullPathofToml[i] = Path.Combine(directory, fileName);
-                    //REMOVE DEFAULT INIT METHONINE:
-
-                    string badLine = "InitiatorMethionineBehavior = \"Undefined\"";
-
-                    Toml.WriteFile(dialog.FileSpecificSettingsList[i], fullPathofToml[i] + ".toml", MetaMorpheusTask.tomlConfig);
-                    string[] lineArray = File.ReadAllLines(fullPathofToml[i] + ".toml");
-                    List<string> lines = lineArray.ToList();
-                    foreach (string line in lineArray)
-                    {
-                        if (line.Equals(badLine))
-                            lines.Remove(line);
-                    }
-                    File.WriteAllLines(fullPathofToml[i] + ".toml", lines);
-                }
-                UpdateFileSpecificParamsDisplay(fullPathofToml);
+                var tomlPathsForSelectedFiles = SelectedRawFiles.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
+                UpdateFileSpecificParamsDisplay(tomlPathsForSelectedFiles.ToArray());
             }
         }
 
