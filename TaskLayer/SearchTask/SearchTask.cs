@@ -1080,7 +1080,6 @@ namespace TaskLayer
                 var rawfileinfos = new List<RawFileInfo>();
                 foreach (var file in currentRawFileList)
                 {
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[currentRawFileList.IndexOf(file)]);
                     if (myFileManager.SeeIfOpen(file))
                         rawfileinfos.Add(new RawFileInfo(file, myFileManager.LoadFile(file, null, null, false, false)));
                     else
