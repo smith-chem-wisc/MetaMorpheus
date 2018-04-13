@@ -329,7 +329,7 @@ namespace MetaMorpheusGUI
             {
                 TopNPeaksTextBox.Text = int.MaxValue.ToString();
             }
-            if (int.Parse(TopNPeaksTextBox.Text) == 0)
+            if (!int.TryParse(TopNPeaksTextBox.Text, out int numPeaks) || numPeaks < 1)
             {
                 MessageBox.Show("The Top N Peaks to be retained must be greater than zero. \n You entered " + '"' + TopNPeaksTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
@@ -344,16 +344,16 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
                 return;
             }
-            if (missedCleavagesTextBox.Text.Length == 0)
+            if (string.IsNullOrEmpty(missedCleavagesTextBox.Text))
             {
                 missedCleavagesTextBox.Text = int.MaxValue.ToString();
             }
-            if (txtMinPeptideLength.Text.Length == 0)
+            if (!int.TryParse(txtMinPeptideLength.Text, out int minPeptideLength) || minPeptideLength < 1)
             {
                 MessageBox.Show("The minimum peptide length must be a positive integer");
                 return;
             }
-            if (txtMaxPeptideLength.Text.Length == 0)
+            if (string.IsNullOrEmpty(txtMaxPeptideLength.Text))
             {
                 txtMaxPeptideLength.Text = int.MaxValue.ToString();
             }
