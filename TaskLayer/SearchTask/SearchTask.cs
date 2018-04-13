@@ -1082,7 +1082,7 @@ namespace TaskLayer
                 {
                     ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[currentRawFileList.IndexOf(file)]);
                     if (myFileManager.SeeIfOpen(file))
-                        rawfileinfos.Add(new RawFileInfo(file, myFileManager.LoadFile(file, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks)));
+                        rawfileinfos.Add(new RawFileInfo(file, myFileManager.LoadFile(file, null, null, false, false)));
                     else
                         rawfileinfos.Add(new RawFileInfo(file));
                     myFileManager.DoneWithFile(file);
