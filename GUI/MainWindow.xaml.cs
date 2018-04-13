@@ -415,7 +415,16 @@ namespace MetaMorpheusGUI
                     break;
 
                 case ".toml":
-                    var tomlFile = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                    TomlTable tomlFile = null;
+                    try
+                    {
+                        tomlFile = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                    }
+                    catch (Exception)
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                        break;
+                    }
                     if (tomlFile.Keys.Contains("PrecursorMassTolerance") && tomlFile.Keys.Contains("ProductMassTolerance") && tomlFile.Keys.Count == 2)
                     {
                         // do nothing; it's a ppm suggested tolerance toml from calibration, this gets read in elsewhere
@@ -937,7 +946,19 @@ namespace MetaMorpheusGUI
                     {
                         if (File.Exists(fullPathofTomls[j]))
                         {
-                            file.Parameters = File.ReadAllText(fullPathofTomls[j]);
+                            TomlTable fileSpecificSettings = Toml.ReadFile(fullPathofTomls[j], MetaMorpheusTask.tomlConfig);
+                            try
+                            {
+                                // parse to make sure toml is readable
+                                var temp = new FileSpecificParameters(fileSpecificSettings);
+
+                                // toml is ok; display the file-specific settings in the gui
+                                file.Parameters = File.ReadAllText(fullPathofTomls[j]);
+                            }
+                            catch (MetaMorpheusException e)
+                            {
+                                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(fullPathofTomls[j]) + "; " + e.Message + " is the toml from an older version of MetaMorpheus?", null));
+                            }
                         }
                         else
                         {
@@ -951,13 +972,26 @@ namespace MetaMorpheusGUI
         }
 
         //run if data file has just been added with and checks for Existing fileSpecficParams
-        private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocations)
+        private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocation)
         {
-            string fullPathofTomls = tomlLocations;
-            for (int i = 0; i < rawDataObservableCollection.Count(); i++)
+            for (int i = 0; i < rawDataObservableCollection.Count; i++)
             {
-                if (File.Exists(fullPathofTomls) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(fullPathofTomls))
-                    rawDataObservableCollection[i].Parameters = File.ReadAllText(fullPathofTomls);
+                if (File.Exists(tomlLocation) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(tomlLocation))
+                {
+                    TomlTable fileSpecificSettings = Toml.ReadFile(tomlLocation, MetaMorpheusTask.tomlConfig);
+                    try
+                    {
+                        // parse to make sure toml is readable
+                        var temp = new FileSpecificParameters(fileSpecificSettings);
+
+                        // toml is ok; display the file-specific settings in the gui
+                        rawDataObservableCollection[i].Parameters = File.ReadAllText(tomlLocation);
+                    }
+                    catch (MetaMorpheusException e)
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(tomlLocation) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?", null));
+                    }
+                }
             }
             UpdateRawFileGuiStuff();
             dataGridDatafiles.Items.Refresh();
