@@ -218,7 +218,7 @@ namespace TaskLayer
                         {
                             // file-specific toml has already been validated in the GUI when the spectra files were added, so...
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
-                            Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + " is the toml from an older version of MetaMorpheus?");
+                            Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
                         }
                     }
                 }

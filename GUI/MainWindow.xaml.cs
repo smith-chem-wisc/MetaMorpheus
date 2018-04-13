@@ -429,6 +429,7 @@ namespace MetaMorpheusGUI
                     {
                         // do nothing; it's a ppm suggested tolerance toml from calibration, this gets read in elsewhere
                     }
+                    // need to check for file-specific parameters toml here... right now it's displaying a warning
                     else
                     {
                         try
@@ -957,7 +958,7 @@ namespace MetaMorpheusGUI
                             }
                             catch (MetaMorpheusException e)
                             {
-                                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(fullPathofTomls[j]) + "; " + e.Message + " is the toml from an older version of MetaMorpheus?", null));
+                                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(fullPathofTomls[j]) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?", null));
                             }
                         }
                         else
