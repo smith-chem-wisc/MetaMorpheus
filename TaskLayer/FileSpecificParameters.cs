@@ -37,7 +37,7 @@ namespace TaskLayer
                     case nameof(ZdotIons):
                         ZdotIons = keyValuePair.Value.Get<bool>(); break;
                     default:
-                        throw new MetaMorpheusException("Unrecognized parameter in file-specific parameters toml");
+                        throw new MetaMorpheusException("Unrecognized parameter \"" + keyValuePair.Key + "\" in file-specific parameters toml");
                 }
             }
         }
