@@ -190,9 +190,9 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
-            productMassToleranceComboBox.Items.Add("Absolute");
+            productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
-            precursorMassToleranceComboBox.Items.Add("Absolute");
+            precursorMassToleranceComboBox.Items.Add("Da");
             precursorMassToleranceComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))

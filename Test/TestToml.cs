@@ -70,7 +70,7 @@ namespace Test
             Assert.IsFalse(tomlSettingsList.ContainsKey("MaxMissedCleavages"));
             Assert.IsFalse(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
 
-            FileSpecificSettings f = new FileSpecificSettings(tomlSettingsList);
+            FileSpecificParameters f = new FileSpecificParameters(tomlSettingsList);
 
             Assert.AreEqual("Asp-N", f.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
