@@ -137,6 +137,16 @@ namespace MetaMorpheusGUI
                     MessageBox.Show(ex.ToString());
                 }
             }
+
+            // lock raw data and protein database columns for editing except "use" and "iscontaminant"
+            for(int i = 1; i < dataGridDatafiles.Columns.Count; i++)
+            {
+                dataGridDatafiles.Columns[i].IsReadOnly = true;
+            }
+            for (int i = 2; i < dataGridXMLs.Columns.Count; i++)
+            {
+                dataGridXMLs.Columns[i].IsReadOnly = true;
+            }
         }
 
         private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
