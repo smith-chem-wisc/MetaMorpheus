@@ -101,6 +101,11 @@ namespace TaskLayer
                 throw new MetaMorpheusException("C ion variable name is inconsistent");
         }
 
+        public FileSpecificParameters Clone()
+        {
+            return (FileSpecificParameters)this.MemberwiseClone();
+        }
+
         #endregion Public Methods
     }
 }

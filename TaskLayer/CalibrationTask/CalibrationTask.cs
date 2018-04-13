@@ -207,26 +207,10 @@ namespace TaskLayer
 
                 var fileSpecificParams = new FileSpecificParameters();
 
+                // carry over file-specific parameters from the uncalibrated file to the calibrated one
                 if (fileSettingsList[spectraFileIndex] != null)
                 {
-                    // carry over file-specific parameters from the uncalibrated file to the calibrated one
-                    string tomlPathForUncalibratedFile = Path.Combine(Directory.GetParent(originalUncalibratedFilePath).ToString(), originalUncalibratedFilenameWithoutExtension + ".toml");
-                    if (File.Exists(tomlPathForUncalibratedFile))
-                    {
-                        try
-                        {
-                            TomlTable tomlTableForUncalibratedFile = Toml.ReadFile(tomlPathForUncalibratedFile, tomlConfig);
-                            fileSpecificParams = new FileSpecificParameters(tomlTableForUncalibratedFile);
-                        }
-                        catch(Exception e)
-                        {
-                            Warn("Warning! Problem parsing toml file: " + tomlPathForUncalibratedFile + "; " + e.Message);
-                        }
-                    }
-                    else
-                    {
-                        Warn("Warning! Could not find the file-specific toml for " + Path.GetFileName(originalUncalibratedFilePath));
-                    }
+                    fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
                 }
                 
                 // don't write over ppm tolerances if they've been specified by the user already in the file-specific settings
