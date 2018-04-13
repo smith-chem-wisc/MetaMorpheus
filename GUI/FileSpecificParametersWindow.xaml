@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="File-Specific Parameters" Height="400" Width="500" WindowStartupLocation="CenterScreen">
+        Title="File-Specific Parameters" Height="350" Width="500" WindowStartupLocation="CenterScreen">
     <StackPanel>
         <Label Content="Enabled?">
             <ToolTipService.ToolTip>
@@ -85,7 +85,7 @@
             <TextBox x:Name="txtMaxModNum" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
         </StackPanel>
         <!-- File-specific Ion Types -->
-        <StackPanel Grid.Column="1" Margin="10,0,0,8">
+        <!--<StackPanel Grid.Column="1" Margin="10,0,0,8">
             <StackPanel Orientation="Horizontal" Margin="0">
                 <CheckBox x:Name="fileSpecificIonTypesEnabled" Margin="10,0,0,0" VerticalAlignment="Center" IsChecked="False">
                     <ToolTipService.ToolTip>
@@ -100,7 +100,7 @@
                 <CheckBox x:Name="cCheckBox" VerticalAlignment="Center" Width="70" Content="c ions" IsEnabled="{Binding IsChecked, ElementName=fileSpecificIonTypesEnabled}" />
                 <CheckBox x:Name="zdotCheckBox" VerticalAlignment="Center" Width="70" Content="zdot ions" IsEnabled="{Binding IsChecked, ElementName=fileSpecificIonTypesEnabled}" />
             </StackPanel>
-        </StackPanel>
+        </StackPanel>-->
         <!-- Save/cancel buttons -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,5">
             <Button x:Name="Save"  Height="40" Width="300" Content="Save File-Specific Settings" Click="Save_Click" FontSize="25" Grid.Row="3" />

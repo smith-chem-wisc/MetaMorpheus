@@ -826,9 +826,20 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
-           
-            
 
+            // what types of fragment ions to search for
+            List<ProductType> ionTypes = new List<ProductType>();
+            if (CommonParameters.BIons && SearchParameters.AddCompIons)
+                ionTypes.Add(ProductType.B);
+            else if (CommonParameters.BIons)
+                ionTypes.Add(ProductType.BnoB1ions);
+            if (CommonParameters.YIons)
+                ionTypes.Add(ProductType.Y);
+            if (CommonParameters.ZdotIons)
+                ionTypes.Add(ProductType.Zdot);
+            if (CommonParameters.CIons)
+                ionTypes.Add(ProductType.C);
+            
             // load proteins
             Status("Loading proteins...", new List<string> { taskId });
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
@@ -886,19 +897,6 @@ namespace TaskLayer
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-
-                // what types of fragment ions to search for
-                List<ProductType> ionTypes = new List<ProductType>();
-                if (combinedParams.BIons && SearchParameters.AddCompIons)
-                    ionTypes.Add(ProductType.B);
-                else if (combinedParams.BIons)
-                    ionTypes.Add(ProductType.BnoB1ions);
-                if (combinedParams.YIons)
-                    ionTypes.Add(ProductType.Y);
-                if (combinedParams.ZdotIons)
-                    ionTypes.Add(ProductType.Zdot);
-                if (combinedParams.CIons)
-                    ionTypes.Add(ProductType.C);
                 
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -1006,22 +1004,6 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (proteinList.Any())
             {
-                // TODO: this is not compatible with file-specific settings; leaving this comment as a todo
-                //ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-
-                // what types of fragment ions to search for
-                List<ProductType> ionTypes = new List<ProductType>();
-                if (CommonParameters.BIons && SearchParameters.AddCompIons)
-                    ionTypes.Add(ProductType.B);
-                else if (CommonParameters.BIons)
-                    ionTypes.Add(ProductType.BnoB1ions);
-                if (CommonParameters.YIons)
-                    ionTypes.Add(ProductType.Y);
-                if (CommonParameters.ZdotIons)
-                    ionTypes.Add(ProductType.Zdot);
-                if (CommonParameters.CIons)
-                    ionTypes.Add(ProductType.C);
-
                 if (SearchParameters.SearchType == SearchType.NonSpecific)
                 {
                     List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
@@ -1078,20 +1060,7 @@ namespace TaskLayer
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-
-                    // what types of fragment ions to search for
-                    List<ProductType> ionTypes = new List<ProductType>();
-                    if (combinedParams.BIons && SearchParameters.AddCompIons)
-                        ionTypes.Add(ProductType.B);
-                    else if (combinedParams.BIons)
-                        ionTypes.Add(ProductType.BnoB1ions);
-                    if (combinedParams.YIons)
-                        ionTypes.Add(ProductType.Y);
-                    if (combinedParams.ZdotIons)
-                        ionTypes.Add(ProductType.Zdot);
-                    if (combinedParams.CIons)
-                        ionTypes.Add(ProductType.C);
-
+                    
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);

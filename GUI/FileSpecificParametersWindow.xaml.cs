@@ -146,16 +146,16 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
-            if (fileSpecificIonTypesEnabled.IsChecked.Value)
-            {
-                paramsToSaveCount++;
+            //if (fileSpecificIonTypesEnabled.IsChecked.Value)
+            //{
+            //    paramsToSaveCount++;
 
-                // don't think there's any way to mess up checkboxes... no error message needed
-                parametersToWrite.BIons = bCheckBox.IsChecked;
-                parametersToWrite.YIons = yCheckBox.IsChecked;
-                parametersToWrite.CIons = cCheckBox.IsChecked;
-                parametersToWrite.ZdotIons = zdotCheckBox.IsChecked;
-            }
+            //    // don't think there's any way to mess up checkboxes... no error message needed
+            //    parametersToWrite.BIons = bCheckBox.IsChecked;
+            //    parametersToWrite.YIons = yCheckBox.IsChecked;
+            //    parametersToWrite.CIons = cCheckBox.IsChecked;
+            //    parametersToWrite.ZdotIons = zdotCheckBox.IsChecked;
+            //}
 
             // write parameters to toml files for the selected spectra files
             var tomlPathsForSelectedFiles = SelectedRaw.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
@@ -237,16 +237,16 @@ namespace MetaMorpheusGUI
                         tempDigestParams.MaxModsForPeptide = tempFileSpecificParams.MaxMissedCleavages.Value;
                         fileSpecificMaxModNumEnabled.IsChecked = true;
                     }
-                    if (tempFileSpecificParams.BIons != null || tempFileSpecificParams.CIons != null
-                        || tempFileSpecificParams.YIons != null || tempFileSpecificParams.ZdotIons != null)
-                    {
-                        tempCommonParams.BIons = tempFileSpecificParams.BIons.Value;
-                        tempCommonParams.YIons = tempFileSpecificParams.YIons.Value;
-                        tempCommonParams.CIons = tempFileSpecificParams.CIons.Value;
-                        tempCommonParams.ZdotIons = tempFileSpecificParams.ZdotIons.Value;
+                    //if (tempFileSpecificParams.BIons != null || tempFileSpecificParams.CIons != null
+                    //    || tempFileSpecificParams.YIons != null || tempFileSpecificParams.ZdotIons != null)
+                    //{
+                    //    tempCommonParams.BIons = tempFileSpecificParams.BIons.Value;
+                    //    tempCommonParams.YIons = tempFileSpecificParams.YIons.Value;
+                    //    tempCommonParams.CIons = tempFileSpecificParams.CIons.Value;
+                    //    tempCommonParams.ZdotIons = tempFileSpecificParams.ZdotIons.Value;
 
-                        fileSpecificIonTypesEnabled.IsChecked = true;
-                    }
+                    //    fileSpecificIonTypesEnabled.IsChecked = true;
+                    //}
                 }
             }
 
@@ -279,10 +279,10 @@ namespace MetaMorpheusGUI
             txtMaxModNum.Text = tempCommonParams.DigestionParams.MaxModsForPeptide.ToString();
             missedCleavagesTextBox.Text = tempCommonParams.DigestionParams.MaxMissedCleavages.ToString();
 
-            yCheckBox.IsChecked = tempCommonParams.YIons;
-            bCheckBox.IsChecked = tempCommonParams.BIons;
-            cCheckBox.IsChecked = tempCommonParams.CIons;
-            zdotCheckBox.IsChecked = tempCommonParams.ZdotIons;
+            //yCheckBox.IsChecked = tempCommonParams.YIons;
+            //bCheckBox.IsChecked = tempCommonParams.BIons;
+            //cCheckBox.IsChecked = tempCommonParams.CIons;
+            //zdotCheckBox.IsChecked = tempCommonParams.ZdotIons;
         }
 
         #endregion Private Methods
