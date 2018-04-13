@@ -150,11 +150,13 @@ namespace TaskLayer
                 if (acquisitionResults.Item1.Count < 20)
                 {
                     Warn("Could not find enough high-quality PSMs to calibrate with! Required 20, saw " + acquisitionResults.Item1.Count);
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                     return;
                 }
                 if (acquisitionResults.Item2 == null)
                 {
                     Warn("Could not find any datapoints to calibrate with!");
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                     return;
                 }
                 if (acquisitionResults.Item2.Ms1List.Count < 4 || acquisitionResults.Item2.Ms2List.Count < 4)
@@ -167,6 +169,7 @@ namespace TaskLayer
                     {
                         Warn("Could not find enough MS2 datapoints to calibrate (" + acquisitionResults.Item2.Ms2List.Count + " found)");
                     }
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                     return;
                 }
 
@@ -210,8 +213,15 @@ namespace TaskLayer
                     string tomlPathForUncalibratedFile = Path.Combine(Directory.GetParent(originalUncalibratedFilePath).ToString(), originalUncalibratedFilenameWithoutExtension + ".toml");
                     if (File.Exists(tomlPathForUncalibratedFile))
                     {
-                        TomlTable tomlTableForUncalibratedFile = Toml.ReadFile(tomlPathForUncalibratedFile, tomlConfig);
-                        fileSpecificParams = new FileSpecificParameters(tomlTableForUncalibratedFile);
+                        try
+                        {
+                            TomlTable tomlTableForUncalibratedFile = Toml.ReadFile(tomlPathForUncalibratedFile, tomlConfig);
+                            fileSpecificParams = new FileSpecificParameters(tomlTableForUncalibratedFile);
+                        }
+                        catch(Exception e)
+                        {
+                            Warn("Warning! Problem parsing toml file: " + tomlPathForUncalibratedFile + "; " + e.Message);
+                        }
                     }
                     else
                     {
@@ -220,7 +230,7 @@ namespace TaskLayer
                 }
                 
                 // don't write over ppm tolerances if they've been specified by the user already in the file-specific settings
-                // otherwise, suggest 4 times the interquartile range as the ppm tolerance
+                // otherwise, suggest 4 * interquartile range as the ppm tolerance
                 if (fileSpecificParams.PrecursorMassTolerance == null)
                 {
                     fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(4.0 * postCalibrationPrecursorIqr);
