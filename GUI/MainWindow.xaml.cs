@@ -498,6 +498,31 @@ namespace MetaMorpheusGUI
             staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParameters.TaskDescriptor;
         }
 
+        private void InsertTaskToCollectionAtPosition(MetaMorpheusTask ye, int index, out int actualIndexInserted)
+        {
+            PreRunTask te = new PreRunTask(ye);
+            if (index < 0)
+            {
+                index = 0;
+            }
+
+            if (staticTasksObservableCollection.Count == 0)
+            {
+                AddTaskToCollection(ye);
+                actualIndexInserted = 0;
+                return;
+            }
+
+            if (index > staticTasksObservableCollection.Count - 1)
+            {
+                index = staticTasksObservableCollection.Count - 1;
+            }
+
+            actualIndexInserted = index;
+            staticTasksObservableCollection.Insert(index, te);
+            staticTasksObservableCollection[index].DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParameters.TaskDescriptor;
+        }
+
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -688,12 +713,43 @@ namespace MetaMorpheusGUI
         // handles keyboard input in the main window
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            // delete selected task
-            var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
-            if (e.Key == Key.Delete || e.Key == Key.Back && selectedTask != null)
+            if (LoadTaskButton.IsEnabled)
             {
-                DeleteSelectedTask(sender, e);
-                e.Handled = true;
+                // delete selected task
+                var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
+                if (e.Key == Key.Delete || e.Key == Key.Back && selectedTask != null)
+                {
+                    DeleteSelectedTask(sender, e);
+                    e.Handled = true;
+                }
+
+                if (((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) && selectedTask != null)
+                {
+                    if (Keyboard.IsKeyDown(Key.C)) // ctrl + c
+                    {
+                        // duplicate task
+                        PreRunTask duplicatedTask = selectedTask.Clone();
+                        AddTaskToCollection(duplicatedTask.metaMorpheusTask);
+                    }
+                    //if (Keyboard.IsKeyDown(Key.Down)) // ctrl + down
+                    //{
+                    //    // move task down
+                    //    var temp = selectedTask.metaMorpheusTask;
+                    //    int insertIndex = staticTasksObservableCollection.IndexOf(selectedTask) + 1;
+                    //    int newIndex;
+                    //    InsertTaskToCollectionAtPosition(temp, insertIndex, out newIndex);
+                    //    DeleteSelectedTask(sender, e);
+                    //}
+                    //else if (Keyboard.IsKeyDown(Key.Up)) // ctrl + up
+                    //{
+                    //    // move task up
+                    //    var temp = selectedTask.metaMorpheusTask;
+                    //    int insertIndex = staticTasksObservableCollection.IndexOf(selectedTask) - 1;
+                    //    int newIndex;
+                    //    InsertTaskToCollectionAtPosition(temp, insertIndex, out newIndex);
+                    //    DeleteSelectedTask(sender, e);
+                    //}
+                }
             }
         }
 
