@@ -138,6 +138,8 @@ namespace MetaMorpheusGUI
                 }
             }
 
+            this.KeyDown += new KeyEventHandler(Window_KeyDown);
+
             // hide the "InProgress" column
             dataGridXMLs.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
             dataGridDatafiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
@@ -596,14 +598,14 @@ namespace MetaMorpheusGUI
             if (staticTasksObservableCollection.Count == 0)
             {
                 RunTasksButton.IsEnabled = false;
-                RemoveLastTaskButton.IsEnabled = false;
+                DeleteSelectedTaskButton.IsEnabled = false;
                 ClearTasksButton.IsEnabled = false;
                 ResetTasksButton.IsEnabled = false;
             }
             else
             {
                 RunTasksButton.IsEnabled = true;
-                RemoveLastTaskButton.IsEnabled = true;
+                DeleteSelectedTaskButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
             }
         }
@@ -665,10 +667,26 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void RemoveLastTask_Click(object sender, RoutedEventArgs e)
+        private void DeleteSelectedTask(object sender, RoutedEventArgs e)
         {
-            staticTasksObservableCollection.RemoveAt(staticTasksObservableCollection.Count - 1);
-            UpdateTaskGuiStuff();
+            var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
+            if (selectedTask != null)
+            {
+                staticTasksObservableCollection.Remove(selectedTask);
+                UpdateTaskGuiStuff();
+            }
+        }
+
+        // handles keyboard input in the main window
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            // delete selected task
+            var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
+            if (e.Key == Key.Delete || e.Key == Key.Back && selectedTask != null)
+            {
+                DeleteSelectedTask(sender, e);
+                e.Handled = true;
+            }
         }
 
         private void NewCollectionHandler(object sender, StringEventArgs s)
@@ -786,7 +804,7 @@ namespace MetaMorpheusGUI
                 dataGridDatafiles.Items.Refresh();
 
                 ClearTasksButton.IsEnabled = false;
-                RemoveLastTaskButton.IsEnabled = false;
+                DeleteSelectedTaskButton.IsEnabled = false;
                 RunTasksButton.IsEnabled = false;
                 LoadTaskButton.IsEnabled = false;
 
@@ -855,7 +873,7 @@ namespace MetaMorpheusGUI
         {
             tasksGroupBox.IsEnabled = true;
             ClearTasksButton.IsEnabled = true;
-            RemoveLastTaskButton.IsEnabled = true;
+            DeleteSelectedTaskButton.IsEnabled = true;
             RunTasksButton.IsEnabled = true;
             addCalibrateTaskButton.IsEnabled = true;
             addGPTMDTaskButton.IsEnabled = true;
