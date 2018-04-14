@@ -109,7 +109,8 @@ namespace TaskLayer
             Status("Calibrating...", new List<string> { taskId });
             myTaskResults = new MyTaskResults(this)
             {
-                newSpectra = new List<string>()
+                newSpectra = new List<string>(),
+                newFileSpecificTomls = new List<string>()
             };
 
             object lock1 = new object();
@@ -235,6 +236,7 @@ namespace TaskLayer
                 // finished calibrating this file
                 SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 myTaskResults.newSpectra.Add(calibratedFilePath);
+                myTaskResults.newFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
             });
