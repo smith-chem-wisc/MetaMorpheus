@@ -179,7 +179,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3">
                             <Button x:Name="LoadTaskButton" Content="Load" Click="LoadTaskButton_Click" />
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
-                            <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
+                            <Button x:Name="DeleteSelectedTaskButton" Content="Delete Task" Click="DeleteSelectedTask" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
                         <DockPanel Margin="5" Grid.Row="4" LastChildFill="True">
