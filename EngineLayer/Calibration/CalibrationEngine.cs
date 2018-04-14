@@ -23,7 +23,7 @@ namespace EngineLayer.Calibration
 
         private const double maximumFracForTraining = 0.70;
         private const double maximumDatapointsToTrainWith = 20000;
-        private const int trainingIterations = 20;
+        private const int trainingIterations = 30;
         private readonly int randomSeed;
 
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;

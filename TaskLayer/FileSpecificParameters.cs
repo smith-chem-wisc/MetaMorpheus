@@ -53,8 +53,8 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
+        public Tolerance ProductMassTolerance { get; set; }
         public Protease Protease { get; set; }
         public int? MinPeptideLength { get; set; }
         public int? MaxPeptideLength { get; set; }
