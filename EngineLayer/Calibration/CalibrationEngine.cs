@@ -24,6 +24,7 @@ namespace EngineLayer.Calibration
         private const double maximumFracForTraining = 0.70;
         private const double maximumDatapointsToTrainWith = 20000;
         private const int trainingIterations = 20;
+        private readonly int randomSeed;
 
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly DataPointAquisitionResults datapoints;
@@ -36,6 +37,9 @@ namespace EngineLayer.Calibration
         {
             this.myMsDataFile = myMSDataFile;
             this.datapoints = datapoints;
+
+            // set the random seed based on raw file properties
+            randomSeed = myMSDataFile.NumSpectra;
         }
 
         #endregion Public Constructors
@@ -145,7 +149,7 @@ namespace EngineLayer.Calibration
               );
         }
 
-        private static RegressionForestModel GetRandomForestModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining, int randomSeed = 42)
+        private RegressionForestModel GetRandomForestModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining)
         {
             // create a machine learner
             var learner = new RegressionRandomForestLearner();
@@ -207,7 +211,7 @@ namespace EngineLayer.Calibration
             };
 
             // create optimizer
-            var optimizer = new RandomSearchOptimizer(parameters, iterations: trainingIterations, runParallel: true);
+            var optimizer = new RandomSearchOptimizer(parameters, seed: randomSeed, iterations: trainingIterations, runParallel: true);
 
             // find best parameters
             var result = optimizer.OptimizeBest(minimize);
@@ -232,7 +236,7 @@ namespace EngineLayer.Calibration
             return myModel;
         }
 
-        private static RegressionGradientBoostModel GetGradientBoostModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining, int randomSeed = 42)
+        private RegressionGradientBoostModel GetGradientBoostModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining)
         {
             // create a machine learner
             var learner = new RegressionAbsoluteLossGradientBoostLearner();
@@ -295,7 +299,7 @@ namespace EngineLayer.Calibration
             };
 
             // create optimizer
-            var optimizer = new RandomSearchOptimizer(parameters, iterations: trainingIterations, runParallel: true);
+            var optimizer = new RandomSearchOptimizer(parameters, seed: randomSeed, iterations: trainingIterations, runParallel: true);
 
             // find best parameters
             var result = optimizer.OptimizeBest(minimize);
