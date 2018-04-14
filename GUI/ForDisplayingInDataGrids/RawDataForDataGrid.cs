@@ -18,10 +18,10 @@ namespace MetaMorpheusGUI
         #region Public Properties
 
         public bool Use { get; set; }
-        public string FileName { get; set; }
-        public string Parameters { get; set; }
+        public string FileName { get; private set; }
+        public string Parameters { get; private set; }
         public bool InProgress { get; private set; }
-        public string FilePath { get; set; }
+        public string FilePath { get; private set; }
 
         #endregion Public Properties
 
@@ -34,6 +34,11 @@ namespace MetaMorpheusGUI
         public void SetInProgress(bool inProgress)
         {
             InProgress = inProgress;
+        }
+
+        public void SetParametersText(string text)
+        {
+            Parameters = text;
         }
 
         #endregion Public Methods

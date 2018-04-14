@@ -1,4 +1,5 @@
-﻿using TaskLayer;
+﻿using System.IO;
+using TaskLayer;
 
 namespace MetaMorpheusGUI
 {
@@ -6,13 +7,16 @@ namespace MetaMorpheusGUI
     {
         #region Public Constructors
 
-        public ProteinDbForDataGrid(string fileName)
+        public ProteinDbForDataGrid(string FilePath)
         {
             Use = true;
-            FilePath = fileName;
-            if (fileName.ToUpper().Contains("contaminant".ToUpper())
-                || fileName.ToUpper().Contains("CRAP"))
+            this.FilePath = FilePath;
+            if (FilePath.ToUpperInvariant().Contains("contaminant".ToUpperInvariant())
+                || FilePath.ToUpperInvariant().Contains("CRAP"))
+            {
                 Contaminant = true;
+            }
+            FileName = Path.GetFileName(FilePath);
         }
 
         public ProteinDbForDataGrid(DbForTask uu)
@@ -28,7 +32,8 @@ namespace MetaMorpheusGUI
 
         public bool Use { get; set; }
         public bool Contaminant { get; set; }
-        public string FilePath { get; }
+        public string FileName { get; private set; }
+        public string FilePath { get; private set; }
         public bool InProgress { get; private set; }
 
         #endregion Public Properties

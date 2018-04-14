@@ -110,7 +110,7 @@ namespace MetaMorpheusGUI
             //foreach (string fragmentationType in Enum.GetNames(typeof(FragmentaionType)))
             //    cbFragmentation.Items.Add(fragmentationType);
 
-            cbbXLprecusorMsTl.Items.Add("Absolute");
+            cbbXLprecusorMsTl.Items.Add("Da");
             cbbXLprecusorMsTl.Items.Add("ppm");
 
             //cbbXLBetaprecusorMsTl.Items.Add("Absolute");
@@ -123,7 +123,7 @@ namespace MetaMorpheusGUI
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
-            productMassToleranceComboBox.Items.Add("Absolute");
+            productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
 
             //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
