@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.CrosslinkSearch;
+using EngineLayer.CrosslinkAnalysis;
 using EngineLayer.Indexing;
 using IO.MzML;
 using MassSpectrometry;
@@ -88,6 +89,11 @@ namespace Test
             var commonParameters = new CommonParameters
             {
                 DoPrecursorDeconvolution = false,
+                BIons =true,
+                YIons = true,
+                CIons = true,
+                ZdotIons = true,
+                ScoreCutoff = 2,
                 DigestionParams = new DigestionParams
                 {
                     MinPeptideLength = 5
@@ -107,7 +113,7 @@ namespace Test
             var fixedModifications = new List<ModificationWithMass>() { mod2 };
             var localizeableModifications = new List<ModificationWithMass>();
 
-            var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
+            var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y, ProductType.C, ProductType.Zdot };
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             foreach (var mod in fixedModifications)
                 modsDictionary.Add(mod, 0);
@@ -141,6 +147,8 @@ namespace Test
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
+            var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
+            var fragmentIndexAll = indexResults.FragmentIndex.Select((s,j)=> new {j, s }).Where(p => p.s != null).Select(t=> t.j).ToList();
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
@@ -151,15 +159,18 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.BnoB1ions, ProductType.C, ProductType.Y, ProductType.Zdot }, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
+
+            var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            MetaMorpheusEngineResults allcrosslinkanalysisResults;
+            allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, crosslinker, TerminusType.None, commonParameters, new List<string> { }).Run();
 
             //Test PsmCross.XlCalculateTotalProductMasses.
             var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
             var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
             var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker.CrosslinkerModSites);
             var productMassesAlphaList = PsmCross.XlCalculateTotalProductMasses(psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, true, false, linkPos);
-            Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 51);
-
+            Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 99);
 
         }
 
@@ -203,8 +214,8 @@ namespace Test
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
 
-            var mz2 = new double[] { 419.213, 520.261, 633.345, 842.929, 888.958, 1043.561, 1093.544, 1278.664, 1377.733, 1490.817 };
-            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+            var mz2 = new double[] { 201.1234, 244.1656, 391.2340, 420.2201, 521.2678, 634.3519, 889.965, 1044.568, 1094.551, 1279.671, 1378.74, 1491.824 };
+            var intensities2 = new double[] {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
             var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
             ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 1.0,
                 new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 10, 1994.05.ToMz(3), 
