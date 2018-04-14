@@ -38,7 +38,10 @@ namespace Test
             var parentProtein = new Protein("NNNNN", "accession");
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            DigestionParams digestionParams = new DigestionParams();
+            DigestionParams digestionParams = new DigestionParams
+            {
+                MinPeptideLength = 5
+            };
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).First();
 
@@ -79,7 +82,10 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (651.297638557 + 21.981943 + 15.994915).ToMz(1), 1, null);
 
             var parentProtein = new Protein("NNNPPP", "accession");
-            DigestionParams digestionParams = new DigestionParams();
+            DigestionParams digestionParams = new DigestionParams
+            {
+                MinPeptideLength = 5
+            };
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).First();
 

@@ -68,7 +68,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
 
@@ -118,9 +118,11 @@ namespace TaskLayer
             {
                 NeoMassCalculator.ImportMasses();
 
-                ParallelOptions parallelOptions = new ParallelOptions();
-                if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                    parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+                ParallelOptions parallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
+                };
+
                 MyFileManager myFileManager = new MyFileManager(true);
 
                 //Import Spectra

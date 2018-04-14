@@ -33,8 +33,8 @@ namespace Test
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams { MinPeptideLength = null, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams { MinPeptideLength = null, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams { MinPeptideLength = 1, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams { MinPeptideLength = 1, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence.Equals(pep2.Sequence));
@@ -60,7 +60,9 @@ namespace Test
             Assert.That(compactPeptideToProteinPeptideMatching.First().Value.Count == 2);
             var seq = compactPeptideToProteinPeptideMatching.First().Value.First().Sequence;
             foreach (var sequence in compactPeptideToProteinPeptideMatching.First().Value)
+            {
                 Assert.That(sequence.Sequence.Equals(seq));
+            }
         }
 
         [Test]
@@ -82,8 +84,8 @@ namespace Test
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams { MinPeptideLength = null, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams { MinPeptideLength = null, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams { MinPeptideLength = 1, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams { MinPeptideLength = 1, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence.Equals(pep2.Sequence));
@@ -109,7 +111,9 @@ namespace Test
             Assert.That(compactPeptideToProteinPeptideMatching.First().Value.Count == 2);
             var seq = compactPeptideToProteinPeptideMatching.First().Value.First().Sequence;
             foreach (var sequence in compactPeptideToProteinPeptideMatching.First().Value)
+            {
                 Assert.That(sequence.Sequence.Equals(seq));
+            }
         }
 
         [Test]
@@ -131,8 +135,8 @@ namespace Test
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams { MinPeptideLength = null, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams { MinPeptideLength = null, Protease = protease }, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams { MinPeptideLength = 1, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams { MinPeptideLength = 1, Protease = protease }, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence != pep2.Sequence);
@@ -151,7 +155,9 @@ namespace Test
             // check to make sure both peptides are NOT associated with both proteins
             Assert.That(compactPeptideToProteinPeptideMatching.Count == 2);
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
+            {
                 Assert.That(kvp.Value.Count == 1);
+            }
         }
 
         [Test]
@@ -163,7 +169,7 @@ namespace Test
             var modDictionary = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
-            
+
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
 
             var protease = new Protease("kprotease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
@@ -173,8 +179,8 @@ namespace Test
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams { MinPeptideLength = null, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams { MinPeptideLength = null, Protease = protease }, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams { MinPeptideLength = 1, Protease = protease }, new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams { MinPeptideLength = 1, Protease = protease }, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence != pep2.Sequence);
@@ -198,7 +204,9 @@ namespace Test
                 var seq = kvp.Value.First().Sequence;
 
                 foreach (var peptide in kvp.Value)
+                {
                     Assert.That(peptide.Sequence.Equals(seq));
+                }
             }
             var test1 = compactPeptideToProteinPeptideMatching.First().Value.ToList();
             Assert.That(test1[0].OneBasedStartResidueInProtein != test1[1].OneBasedStartResidueInProtein);
@@ -213,7 +221,10 @@ namespace Test
             Protein protein3 = new Protein("MTASIK", "protein3");
 
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
-            DigestionParams digestionParams = new DigestionParams();
+            DigestionParams digestionParams = new DigestionParams
+            {
+                MinPeptideLength = 5
+            };
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var pep1 = protein1.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
             var pep2 = protein2.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
@@ -252,7 +263,7 @@ namespace Test
             {
                 DigestionParams = new DigestionParams
                 {
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxMissedCleavages = 0,
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                     MaxModsForPeptide = 1,

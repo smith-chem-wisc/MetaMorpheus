@@ -26,7 +26,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     MaxMissedCleavages = 0,
                     MaxModificationIsoforms = 1042,
                 },
@@ -112,7 +112,7 @@ namespace Test
                 if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, false, new List<string> { "ff" });
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string> { "ff" });
 
             engine.Run();
         }

@@ -7,7 +7,7 @@ namespace EngineLayer
     {
         #region Public Properties
 
-        int? MaxParallelFilesToAnalyze { get; }
+        int MaxParallelFilesToAnalyze { get; }
         int MaxThreadsToUsePerFile { get; }
         bool LocalizeAll { get; }
         IEnumerable<(string, string)> ListOfModsFixed { get; }
@@ -29,11 +29,12 @@ namespace EngineLayer
         double ScoreCutoff { get; }
         IDigestionParams DigestionParams { get; }
         bool ReportAllAmbiguity { get; }
-        int? TopNpeaks { get; }
-        double? MinRatio { get; }
+        int TopNpeaks { get; }
+        double MinRatio { get; }
         bool TrimMs1Peaks { get; }
         bool TrimMsMsPeaks { get; }
         string TaskDescriptor { get; }
+        bool UseDeltaScore { get; }
         bool CalculateEValue { get; }
 
         #endregion Public Properties
