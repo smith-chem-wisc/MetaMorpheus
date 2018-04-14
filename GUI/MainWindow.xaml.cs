@@ -607,6 +607,14 @@ namespace MetaMorpheusGUI
                 RunTasksButton.IsEnabled = true;
                 DeleteSelectedTaskButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
+
+                // this exists so that when a task is deleted, the remaining tasks are renamed to keep the task numbers correct
+                for(int i = 0; i < staticTasksObservableCollection.Count; i++)
+                {
+                    string newName = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor;
+                    staticTasksObservableCollection[i].DisplayName = newName;
+                }
+                tasksTreeView.Items.Refresh();
             }
         }
 
