@@ -51,14 +51,30 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
-                                        <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                        <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                            Accepted tolerance between experimental and theoretical MS1 peaks.
+                                            <LineBreak/>
+                                            This is a file specific parameter; calibration of spectra files will overwrite this value with the suggested tolerance(s).
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                         <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="productMassToleranceLabel" Content="Product Mass Tolerance" />
-                                        <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                        <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    Accepted tolerance between experimental and theoretical MS2 peaks.
+                                                    <LineBreak/>
+                                                    This is a file specific parameter; calibration of spectra files will overwrite this value with the suggested tolerance(s).
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                         <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                     </StackPanel>
                                 </StackPanel>
@@ -71,34 +87,88 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxMissedCleavageLabel" Content="Max Missed Cleavages" />
-                                        <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+                                        <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    Maximum number of missed proteolytic cleavages allowed.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="proteaseLabel" Content="Protease" />
-                                        <ComboBox x:Name="proteaseComboBox" />
+                                        <ComboBox x:Name="proteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <ComboBox.ToolTip>
+                                                <TextBlock>
+                                                        Protease used for digestion.
+                                                        <LineBreak/>
+                                                        Novel proteases can be added/modified by the user at "...MetaMorpheus\\EngineLayer\\Data\\proteases.tsv"
+                                                </TextBlock>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                        <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
+                                        <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        The minimum allowed peptide length. Must be a positive, non-zero integer. Modifications are not counted.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                         <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                        <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
+                                        <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        The maximum allowed peptide length. Leave empty for no limitation. Modifications are not counted.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="minimumScoreLabel" Content="Minimum score allowed:" />
-                                        <TextBox x:Name="minScoreAllowed" Width="45" />
+                                        <TextBox x:Name="minScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The minimum MetaMorpheus score allowed for a PSM to be reportable.
+                                                    <LineBreak/>
+                                                    Decreasing this number increases search time.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine" />
-                                        <ComboBox x:Name="initiatorMethionineBehaviorComboBox" />
+                                        <ComboBox x:Name="initiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <ComboBox.ToolTip>
+                                                <TextBlock>
+                                                        Handles the Methionine presented at the beginning of most proteins (start codon).
+                                                </TextBlock>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxModificationIsoformsLabel" Content="Max Modification Isoforms" />
-                                        <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+                                        <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        The maximum number of isoforms (sequences with modifications) allowed from a given unmodified "base-sequence". 
+                                                        <LineBreak/>
+                                                        This prevents highly ambiguous regions from greatly expanding the search space.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="ionsToSearchLabel" Content="Ions to search" />
+                                        <Label x:Name="ionsToSearchLabel" Content="Ions to search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <Label.ToolTip>
+                                                <TextBlock>
+                                                        The expected product ions produced by fragmentation.
+                                                </TextBlock>
+                                            </Label.ToolTip>
+                                        </Label>
                                         <CheckBox x:Name="bCheckBox" Content="b ions" />
                                         <CheckBox x:Name="yCheckBox" Content="y ions" />
                                     </StackPanel>
@@ -116,8 +186,13 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="Modifications" DockPanel.Dock="Top">
-                    <Expander x:Name="ModExpander" IsExpanded="False">
+                <GroupBox Header="Modifications" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                    <GroupBox.ToolTip>
+                        <TextBlock>
+                            Use for fixed and variable modifications that are induced by sample handeling (Limit to a few mods)
+                        </TextBlock>
+                    </GroupBox.ToolTip>
+                    <Expander x:Name="ModExpander" IsExpanded="False" HorizontalAlignment="Right" Margin="0,0,0.333,0" Width="733">
                         <Expander.Style>
                             <Style TargetType="Expander">
                                 <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
@@ -201,7 +276,12 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="G-PTM-D Modifications" DockPanel.Dock="Top">
+                <GroupBox Header="G-PTM-D Modifications" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                    <GroupBox.ToolTip>
+                        <TextBlock>
+                            Use for all mods that are possibly occuring in vivo (the more the merrier!)
+                        </TextBlock>
+                    </GroupBox.ToolTip>
                     <Expander>
                         <TreeView x:Name="gptmdModsTreeView" ItemsSource="{Binding}">
                             <TreeView.Resources>
