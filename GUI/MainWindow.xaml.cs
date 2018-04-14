@@ -725,12 +725,14 @@ namespace MetaMorpheusGUI
 
                 if (((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) && selectedTask != null)
                 {
-                    if (Keyboard.IsKeyDown(Key.C)) // ctrl + c
-                    {
-                        // duplicate task
-                        PreRunTask duplicatedTask = selectedTask.Clone();
-                        AddTaskToCollection(duplicatedTask.metaMorpheusTask);
-                    }
+                    //if (Keyboard.IsKeyDown(Key.C)) // ctrl + c
+                    //{
+                    //    // duplicate task
+
+
+                    //    PreRunTask duplicatedTask = selectedTask.Clone();
+                    //    AddTaskToCollection(duplicatedTask.metaMorpheusTask);
+                    //}
                     //if (Keyboard.IsKeyDown(Key.Down)) // ctrl + down
                     //{
                     //    // move task down
