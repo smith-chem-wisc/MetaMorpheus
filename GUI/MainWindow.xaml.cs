@@ -138,15 +138,9 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            // lock raw data and protein database columns for editing except "use" and "iscontaminant"
-            for(int i = 1; i < dataGridDatafiles.Columns.Count; i++)
-            {
-                dataGridDatafiles.Columns[i].IsReadOnly = true;
-            }
-            for (int i = 2; i < dataGridXMLs.Columns.Count; i++)
-            {
-                dataGridXMLs.Columns[i].IsReadOnly = true;
-            }
+            // hide the "InProgress" column
+            dataGridXMLs.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
+            dataGridDatafiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
         }
 
         private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
@@ -974,7 +968,7 @@ namespace MetaMorpheusGUI
                                 var temp = new FileSpecificParameters(fileSpecificSettings);
 
                                 // toml is ok; display the file-specific settings in the gui
-                                file.Parameters = File.ReadAllText(fullPathofTomls[j]);
+                                file.SetParametersText(File.ReadAllText(fullPathofTomls[j]));
                             }
                             catch (MetaMorpheusException e)
                             {
@@ -983,7 +977,7 @@ namespace MetaMorpheusGUI
                         }
                         else
                         {
-                            file.Parameters = null;
+                            file.SetParametersText(null);
                         }
                     }
                 }
@@ -1006,7 +1000,7 @@ namespace MetaMorpheusGUI
                         var temp = new FileSpecificParameters(fileSpecificSettings);
 
                         // toml is ok; display the file-specific settings in the gui
-                        rawDataObservableCollection[i].Parameters = File.ReadAllText(tomlLocation);
+                        rawDataObservableCollection[i].SetParametersText(File.ReadAllText(tomlLocation));
                     }
                     catch (MetaMorpheusException e)
                     {
