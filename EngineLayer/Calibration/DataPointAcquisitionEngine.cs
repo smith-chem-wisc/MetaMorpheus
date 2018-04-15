@@ -127,6 +127,7 @@ namespace EngineLayer.Calibration
 
             // datapoints are ordered because they were acquired in a parallized search and we want repeatable results
             return new DataPointAquisitionResults(this,
+                goodIdentifications,
                 Ms1List.OrderBy(p => p.rt).ThenBy(p => p.experimentalMz).ToList(),
                 Ms2List.OrderBy(p => p.rt).ThenBy(p => p.experimentalMz).ToList(),
                 numMs1MassChargeCombinationsConsidered,
