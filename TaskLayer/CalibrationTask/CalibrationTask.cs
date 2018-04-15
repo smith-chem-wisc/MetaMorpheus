@@ -148,15 +148,10 @@ namespace TaskLayer
                 var acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
                 
                 // enough data points to calibrate with?
-                if (acquisitionResults.Psms.Count < 20)
+                if (acquisitionResults == null || acquisitionResults.Psms.Count < 20)
                 {
-                    Warn("Could not find enough high-quality PSMs to calibrate with! Required 20, saw " + acquisitionResults.Psms.Count);
-                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                    return;
-                }
-                if (acquisitionResults == null)
-                {
-                    Warn("Could not find any datapoints to calibrate with!");
+                    int psmCount = acquisitionResults == null ? 0 : acquisitionResults.Psms.Count;
+                    Warn("Could not find enough high-quality PSMs to calibrate with! Required 20, saw " + psmCount);
                     FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                     return;
                 }
