@@ -46,6 +46,7 @@ namespace MetaMorpheusGUI
 
             EverythingRunnerEngine.NewDbsHandler += AddNewDB;
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
+            EverythingRunnerEngine.NewFileSpecificTomlHandler += AddNewFileSpecificToml;
             EverythingRunnerEngine.StartingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
             EverythingRunnerEngine.WarnHandler += GuiWarnHandler;
@@ -231,6 +232,21 @@ namespace MetaMorpheusGUI
                 foreach (var newRawData in e.StringList)
                     rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
                 UpdateOutputFolderTextbox();
+            }
+        }
+
+        private void AddNewFileSpecificToml(object sender, StringListEventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => AddNewFileSpecificToml(sender, e)));
+            }
+            else
+            {
+                foreach (var path in e.StringList)
+                {
+                    UpdateFileSpecificParamsDisplayJustAdded(path);
+                }
             }
         }
 
@@ -645,7 +661,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateRawFileGuiStuff()
         {
-            ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0;
+            ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0 && LoadTaskButton.IsEnabled;
         }
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
@@ -960,6 +976,7 @@ namespace MetaMorpheusGUI
             LoadTaskButton.IsEnabled = true;
 
             tasksTreeView.DataContext = staticTasksObservableCollection;
+            UpdateRawFileGuiStuff();
         }
 
         private void TasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
