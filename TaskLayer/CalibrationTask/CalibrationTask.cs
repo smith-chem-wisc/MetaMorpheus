@@ -350,19 +350,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
-        #region Private Classes
-
-        private class FileSpecificTolerances
-        {
-            #region Public Properties
-
-            public Tolerance PrecursorMassTolerance { get; set; }
-            public Tolerance ProductMassTolerance { get; set; }
-
-            #endregion Public Properties
-        }
-
-        #endregion Private Classes
     }
 }
