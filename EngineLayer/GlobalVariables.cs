@@ -32,6 +32,19 @@ namespace EngineLayer
                 MetaMorpheusVersion = "Not a release version.";
 #endif
             }
+            else
+            {
+                // as of 0.0.277, AppVeyor appends the build number 
+                // this is intentional; it's to avoid conflicting AppVeyor build numbers
+                // trim the build number off the version number for displaying/checking versions, etc
+                var foundIndexes = new List<int>();
+                for (int i = 0; i < MetaMorpheusVersion.Length; i++)
+                {
+                    if (MetaMorpheusVersion[i] == '.')
+                        foundIndexes.Add(i);
+                }
+                MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
+            }
 
             #endregion Determine MetaMorpheusVersion
 
