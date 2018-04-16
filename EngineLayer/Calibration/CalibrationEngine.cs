@@ -55,7 +55,8 @@ namespace EngineLayer.Calibration
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            double fracForTraining = maximumFracForTraining;
+            double ms1fracForTraining = maximumFracForTraining;
+            double ms2fracForTraining = maximumFracForTraining;
 
             var myMs1DataPoints = new List<(double[] xValues, double yValue)>();
             var myMs2DataPoints = new List<(double[] xValues, double yValue)>();
@@ -77,11 +78,6 @@ namespace EngineLayer.Calibration
                 myMs1DataPoints.Add((explanatoryVariables, mzError));
             }
             
-            if (myMs1DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
-            {
-                fracForTraining = maximumDatapointsToTrainWith / myMs1DataPoints.Count;
-            }
-            
             // generate MS2 calibration datapoints
             for (int i = 0; i < datapoints.Ms2List.Count; i++)
             {
@@ -99,18 +95,23 @@ namespace EngineLayer.Calibration
                 myMs2DataPoints.Add((explanatoryVariables, mzError));
             }
 
+            if (myMs1DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
+            {
+                ms1fracForTraining = maximumDatapointsToTrainWith / myMs1DataPoints.Count;
+            }
+
             if (myMs2DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
             {
-                fracForTraining = maximumDatapointsToTrainWith / myMs2DataPoints.Count;
+                ms2fracForTraining = maximumDatapointsToTrainWith / myMs2DataPoints.Count;
             }
 
             Status("Generating MS1 calibration function");
-            var ms1Model = GetRandomForestModel(myMs1DataPoints, fracForTraining);
-            //var ms1Model = GetGradientBoostModel(myMs1DataPoints, fracForTraining);
+            var ms1Model = GetRandomForestModel(myMs1DataPoints, ms1fracForTraining);
+            //var ms1Model = GetGradientBoostModel(myMs1DataPoints, ms1fracForTraining);
 
             Status("Generating MS2 calibration function");
-            var ms2Model = GetRandomForestModel(myMs2DataPoints, fracForTraining);
-            //var ms2Model = GetGradientBoostModel(myMs2DataPoints, fracForTraining);
+            var ms2Model = GetRandomForestModel(myMs2DataPoints, ms2fracForTraining);
+            //var ms2Model = GetGradientBoostModel(myMs2DataPoints, ms2fracForTraining);
 
             Status("Calibrating spectra");
 
@@ -180,19 +181,16 @@ namespace EngineLayer.Calibration
             var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
             var trainingSetX = splitData.TrainingSet.Observations;
             var trainingSetY = splitData.TrainingSet.Targets;
-
-            // learn an initial model
-            var myModel = learner.Learn(trainingSetX, trainingSetY);
-
+            
             // parameter ranges for the optimizer 
             var parameters = new ParameterBounds[]
             {
-                new ParameterBounds(min: 100, max: 150, transform: Transform.Linear),
-                new ParameterBounds(min: 1, max: 5, transform: Transform.Linear),
-                new ParameterBounds(min: 500, max: 2000, transform: Transform.Linear),
-                new ParameterBounds(min: 0, max: 2, transform: Transform.Linear),
-                new ParameterBounds(min: 1e-06, max: 1e-05, transform: Transform.Logarithmic),
-                new ParameterBounds(min: 0.7, max: 1.5, transform: Transform.Linear)
+                new ParameterBounds(min: 100, max: 200, transform: Transform.Linear),           // trees
+                new ParameterBounds(min: 1, max: 5, transform: Transform.Linear),               // min split size
+                new ParameterBounds(min: 2000, max: 4000, transform: Transform.Linear),          // max tree depth
+                new ParameterBounds(min: 0, max: 2, transform: Transform.Linear),               // featuresPrSplit
+                new ParameterBounds(min: 1e-06, max: 1e-05, transform: Transform.Logarithmic),  // min info gain
+                new ParameterBounds(min: 0.7, max: 1.5, transform: Transform.Linear)            // subsample ratio
             };
 
             var validationSplit = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed)
@@ -241,7 +239,7 @@ namespace EngineLayer.Calibration
                     runParallel: true);
 
             // learn final model with optimized parameters
-            myModel = learner.Learn(trainingSetX, trainingSetY);
+            var myModel = learner.Learn(trainingSetX, trainingSetY);
 
             // all done
             return myModel;
