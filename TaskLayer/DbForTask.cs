@@ -4,10 +4,11 @@
     {
         #region Public Constructors
 
-        public DbForTask(string fileName, bool isContaminant)
+        public DbForTask(string filePath, bool isContaminant)
         {
-            FilePath = fileName;
+            FilePath = filePath;
             IsContaminant = isContaminant;
+            FileName = System.IO.Path.GetFileName(filePath);
         }
 
         #endregion Public Constructors
@@ -16,6 +17,7 @@
 
         public string FilePath { get; }
         public bool IsContaminant { get; }
+        public string FileName { get; }
 
         #endregion Public Properties
     }
