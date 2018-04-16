@@ -298,7 +298,7 @@
                                             <ComboBox x:Name="initiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                                 <ComboBox.ToolTip>
                                                     <TextBlock>
-                                                        Handles the Methionine presented at the beginning of most proteins (start codon).
+                                                        Assumed cleavage of the initiator Methionine present at the beginning of most proteins (start codon).
                                                     </TextBlock>
                                                 </ComboBox.ToolTip>
                                             </ComboBox>
@@ -320,7 +320,7 @@
                                             <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
-                                                        The minimum allowed peptide length. Must be a positive, non-zero integer. Modifications are not counted.
+                                                        The minimum allowed peptide length. Must be a positive, non-zero integer.
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
                                             </TextBox>
