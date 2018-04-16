@@ -39,7 +39,7 @@ namespace EngineLayer.Calibration
             this.datapoints = datapoints;
 
             // set the random seed based on raw file properties
-            if (myMsDataFile.SourceFile != null && myMsDataFile.SourceFile.CheckSum != null)
+            if (myMsDataFile.SourceFile != null && !string.IsNullOrEmpty(myMsDataFile.SourceFile.CheckSum))
             {
                 randomSeed = myMsDataFile.SourceFile.CheckSum.GetHashCode();
             }
