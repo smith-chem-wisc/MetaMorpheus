@@ -60,7 +60,7 @@ namespace TaskLayer
             {
                 Warn("The score cutoff for calibration is less than 10; calibration will continue but may give poor results");
             }
-            
+
             // load modifications
             Status("Loading modifications...", new List<string> { taskId });
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
@@ -142,68 +142,64 @@ namespace TaskLayer
                 {
                     myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks);
                 }
-                
+
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResults = null;
-
-                int numRequiredPsms = 20;
-                int numRequiredMs1Datapoints = 50;
-                int numRequiredMs2Datapoints = 100;
-                for (int i = 0; i < 5; i++)
+                
+                for (int i = 1; i <= 5; i++)
                 {
-                    if (i != 0)
-                    {
-                        // not enough datapoints seen; open the tolerance and try again
-                        var newParameters = ((CommonParameters)CommonParameters).Clone();
-                        
-                        if (i == 1)
-                        {
-                            newParameters.PrecursorMassTolerance = new PpmTolerance(20);
-                            newParameters.ProductMassTolerance = new PpmTolerance(50);
-                        }
-                        else if (i == 2)
-                        {
-                            newParameters.PrecursorMassTolerance = new PpmTolerance(30);
-                            newParameters.ProductMassTolerance = new PpmTolerance(100);
-                        }
-                        else if (i == 3)
-                        {
-                            newParameters.PrecursorMassTolerance = new PpmTolerance(40);
-                            newParameters.ProductMassTolerance = new PpmTolerance(150);
-                        }
-                        else if (i == 4)
-                        {
-                            if (acquisitionResults.Psms.Count < numRequiredPsms)
-                            {
-                                Warn("Could not find enough high-quality PSMs to calibrate with! Required " + numRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
-                            }
-                            if (acquisitionResults.Ms1List.Count < numRequiredMs1Datapoints)
-                            {
-                                Warn("Could not find enough MS1 datapoints to calibrate with! Required " + numRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
-                            }
-                            if (acquisitionResults.Ms2List.Count < numRequiredMs2Datapoints)
-                            {
-                                Warn("Could not find enough MS2 datapoints to calibrate with! Required " + numRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
-                            }
-                            FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                            return;
-                        }
-
-                        CommonParameters = newParameters;
-
-                        Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
-                        Math.Round(CommonParameters.PrecursorMassTolerance.Value, 2) + " ppm precursor and " +
-                        Math.Round(CommonParameters.ProductMassTolerance.Value, 2) + " ppm product");
-                    }
-
                     acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
 
                     // enough data points to calibrate?
                     if (acquisitionResults.Psms.Count >= numRequiredPsms && acquisitionResults.Ms1List.Count > numRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > numRequiredMs2Datapoints)
+                    {
                         break;
+                    }
+
+                    // not enough datapoints seen; open the tolerance and try again
+                    var newParameters = ((CommonParameters)CommonParameters).Clone();
+
+                    if (i == 1) // failed round 1
+                    {
+                        newParameters.PrecursorMassTolerance = new PpmTolerance(20);
+                        newParameters.ProductMassTolerance = new PpmTolerance(50);
+                    }
+                    else if (i == 2) // failed round 2
+                    {
+                        newParameters.PrecursorMassTolerance = new PpmTolerance(30);
+                        newParameters.ProductMassTolerance = new PpmTolerance(100);
+                    }
+                    else if (i == 3) // failed round 3
+                    {
+                        newParameters.PrecursorMassTolerance = new PpmTolerance(40);
+                        newParameters.ProductMassTolerance = new PpmTolerance(150);
+                    }
+                    else // failed round 4
+                    {
+                        if (acquisitionResults.Psms.Count < numRequiredPsms)
+                        {
+                            Warn("Calibration failure! Could not find enough high-quality PSMs. Required " + numRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
+                        }
+                        if (acquisitionResults.Ms1List.Count < numRequiredMs1Datapoints)
+                        {
+                            Warn("Calibration failure! Could not find enough MS1 datapoints. Required " + numRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
+                        }
+                        if (acquisitionResults.Ms2List.Count < numRequiredMs2Datapoints)
+                        {
+                            Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + numRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
+                        }
+                        FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+                        return;
+                    }
+
+                    CommonParameters = newParameters;
+
+                    Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
+                    Math.Round(CommonParameters.PrecursorMassTolerance.Value, 2) + " ppm precursor and " +
+                    Math.Round(CommonParameters.ProductMassTolerance.Value, 2) + " ppm product");
                 }
-                
+
                 // stats before calibration
                 int prevPsmCount = acquisitionResults.Psms.Count;
                 double preCalibrationPrecursorErrorIqr = acquisitionResults.PsmPrecursorIqrPpmError;
@@ -212,7 +208,7 @@ namespace TaskLayer
                 // generate calibration function and shift data points
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                 new CalibrationEngine(myMsDataFile, acquisitionResults, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }).Run();
-                
+
                 // do another search to evaluate calibration results
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });
                 acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
@@ -235,7 +231,7 @@ namespace TaskLayer
                 {
                     fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
                 }
-                
+
                 // don't write over ppm tolerances if they've been specified by the user already in the file-specific settings
                 // otherwise, suggest 4 * interquartile range as the ppm tolerance
                 if (fileSpecificParams.PrecursorMassTolerance == null)
@@ -248,7 +244,7 @@ namespace TaskLayer
                 }
 
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
-                
+
                 SucessfullyFinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
                 // write the calibrated mzML file
@@ -270,6 +266,14 @@ namespace TaskLayer
         }
 
         #endregion Protected Methods
+
+        #region Private Fields
+
+        private int numRequiredPsms = 20;
+        private int numRequiredMs1Datapoints = 50;
+        private int numRequiredMs2Datapoints = 100;
+
+        #endregion Private Fields
 
         #region Private Methods
 
