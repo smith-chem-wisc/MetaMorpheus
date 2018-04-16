@@ -148,6 +148,7 @@ namespace Test
 
             var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
             var fragmentIndexAll = indexResults.FragmentIndex.Select((s,j)=> new {j, s }).Where(p => p.s != null).Select(t=> t.j).ToList();
+            Assert.IsTrue(fragmentIndexAll.Count() > 0 );
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
@@ -161,8 +162,8 @@ namespace Test
             new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
 
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-            MetaMorpheusEngineResults allcrosslinkanalysisResults;
-            allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, crosslinker, TerminusType.None, commonParameters, new List<string> { }).Run();
+
+            new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, crosslinker, TerminusType.None, commonParameters, new List<string> { }).Run();
             foreach (var item in newPsms)
             {
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -323,8 +324,8 @@ namespace Test
 
             var mz4 = new double[] { 100, 201.1234, 244.1656, 391.2340 };
             var intensities4 = new double[] { 100, 1, 1, 1 };
-            var MassSpectrum4 = new MzmlMzSpectrum(mz3, intensities4, false);
-            ScansHere.Add(new MzmlScanWithPrecursor(4, MassSpectrum3, 2, true, Polarity.Positive, 1.0,
+            var MassSpectrum4 = new MzmlMzSpectrum(mz4, intensities4, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(4, MassSpectrum4, 2, true, Polarity.Positive, 1.0,
                 new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1005.498.ToMz(1),
                 1, 1, 1005.498.ToMz(1), 2, DissociationType.HCD, 1, 1005.498.ToMz(1), 1.0, "scan=4"));
 
