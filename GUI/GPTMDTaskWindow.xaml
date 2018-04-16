@@ -120,7 +120,7 @@
                                         <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
-                                                        The maximum allowed peptide length. Leave empty for no limitation. Modifications are not counted.
+                                                        The maximum allowed peptide length. Leave empty for no limitation.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
@@ -189,7 +189,7 @@
                 <GroupBox Header="Modifications" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                     <GroupBox.ToolTip>
                         <TextBlock>
-                            Use for fixed and variable modifications that are induced by sample handeling (Limit to a few mods)
+                            Use for fixed and variable modifications in the sample (Limit to a few mods)
                         </TextBlock>
                     </GroupBox.ToolTip>
                     <Expander x:Name="ModExpander" IsExpanded="False" HorizontalAlignment="Right" Margin="0,0,0.333,0" Width="733">
@@ -280,6 +280,8 @@
                     <GroupBox.ToolTip>
                         <TextBlock>
                             Use for all mods that are possibly occuring in vivo (the more the merrier!)
+                            <LineBreak/>
+                            G-PTM-D uses unmodified fragment ions and characteristic precursor mass shifts to identify these.
                         </TextBlock>
                     </GroupBox.ToolTip>
                     <Expander>

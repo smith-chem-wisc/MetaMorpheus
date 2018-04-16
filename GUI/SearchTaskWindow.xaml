@@ -50,18 +50,15 @@
                                 <StackPanel>
                                     <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <CheckBox.ToolTip>
-
                                             <TextBlock>
-                                                Use the charge states and precursor masses determined by the mass spectrometer.
+                                                Use the charge states and precursor masses determined by the instrument controller.
                                             </TextBlock>
                                         </CheckBox.ToolTip>
                                     </CheckBox>
                                     <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <CheckBox.ToolTip>
                                             <TextBlock>
-                                                Allow MetaMorpheus to deconvolute charge states and precursor masses.
-                                                <LineBreak/>
-                                                Additionally looks for coisolation and allows for multiple peptides to be identified from a single MS2.
+                                                Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
                                             </TextBlock>
                                         </CheckBox.ToolTip>
                                     </CheckBox>
@@ -74,7 +71,7 @@
                                         <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
-                                                    The maximum charge state that deconvolution should allow. Minimum is fixed at 1.
+                                                    The maximum charge state that deconvolution should allow. Minimum is 1.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
@@ -238,14 +235,14 @@
                                         <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                             <CheckBox.ToolTip>
                                                 <TextBlock>
-                                                    Search the forward sequences present in the database. Mutable to allow for separate target/decoy searching.
+                                                    Search the forward sequences present in the database. Uncheck this to allow for separate target/decoy searching.
                                                 </TextBlock>
                                             </CheckBox.ToolTip>
                                         </CheckBox>
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                             <CheckBox.ToolTip>
                                                 <TextBlock>
-                                                    Search decoy sequences by transformation of the database. Mutable to allow for separate target/decoy searching.
+                                                    Search decoy sequences by transformation of the database. Uncheck this to allow for separate target/decoy searching.
                                                 </TextBlock>
                                             </CheckBox.ToolTip>
                                         </CheckBox>
@@ -328,7 +325,7 @@
                                             <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
-                                                        The maximum allowed peptide length. Leave empty for no limitation. Modifications are not counted.
+                                                        The maximum allowed peptide length. Leave empty for no limitation.
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
                                             </TextBox>
@@ -369,7 +366,9 @@
                                             <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
-                                                        Indexed Search Only: Limits the maximum MS2 fragment mass to improve RAM efficiency.
+                                                        Indexed Search Only: Limits the maximum MS2 fragment mass to avoid rare crashes.
+                                                        <LineBreak/>
+                                                        A very high value (e.g. 30000) does not impact performance.
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
                                             </TextBox>
@@ -399,16 +398,15 @@
                                     <RadioButton x:Name="massDiffAcceptExact" Content="Exact" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
-                                                    Basic search where the precursor mass must match between the experimental and theoretical.
+                                                Basic search where the observed and theoretical precursor masses must be equal (~0 Da precursor mass-difference).
+                                                This search type assumes that there are no monoisotopic errors.
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
                                     <RadioButton x:Name="massDiffAccept1mm" Content="1 Missed Monoisotopic Peak" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
-                                                The reported precursor mass is not always corrected, because of missed monoisotopic errors.
-                                                <LineBreak/>
-                                                This places notches around +/- 1 Da, such that the issue is accomodated if the difference is slightly off.
+                                                Basic search where the observed and theoretical precursor masses are allowed to disagree by 1 Da to allow for a 1 Da monisotopic mass error.
                                                 <LineBreak/>
                                                 Example: A spectrum with a reported precursor mass of 1000 at 0.1 Da tolerance can match to theoreticals with masses of 998.9-999.1, 999.9-1000.1, and 1000.9-1001.1.
                                             </TextBlock>
@@ -417,38 +415,36 @@
                                     <RadioButton x:Name="massDiffAccept2mm" Content="1 or 2 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
-                                                The reported precursor mass is not always corrected, because of missed monoisotopic errors.
-                                                <LineBreak/>
-                                                This places notches around +/- 1 and 2 Da, such that the issue is accomodated if the difference is slightly off.
+                                                Basic search where the observed and theoretical precursor masses are allowed to disagree by 1 or 2 Da to allow for a 1 or 2 Da monisotopic mass error.
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
                                     <RadioButton x:Name="massDiffAccept3mm" Content="1, 2, or 3 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
-                                                The reported precursor mass is not always corrected, because of missed monoisotopic errors.
-                                                <LineBreak/>
-                                                This places notches around +/- 1, 2, and 3 Da, such that the issue is accomodated if the difference is slightly off.
+                                                Basic search where the observed and theoretical precursor masses are allowed to disagree by 1, 2, or 3 Da to allow for a 1, 2, or 3 Da monisotopic mass error.
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
                                     <RadioButton x:Name="massDiffAccept187" Content="-187 and Up" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
-                                                Most modifications increase the mass of a peptide, but some decrease it.
+                                                An "open-mass" search that allows mass-differences between observed and theoretical precursor masses of -187 to infinity (observed can be infinitely more massive than the theoretical).
                                                 <LineBreak/>
-                                                This is a custom setting for capturing most modifications, where the theoretical mass must be greater than 187 Da less than the experimental.
+                                                The purpose of this search type is to detect mass-differences corresponding to PTMs, amino acid variants, sample handling artifiacts, etc.
                                                 <LineBreak/>
-                                                Please use "Modern Search" when using this function.
+                                                Please use "Modern Search" mode when using this search type.
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
                                     <RadioButton x:Name="massDiffAcceptOpen" Content="Accept all" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
-                                                The precursor tolerance is ignored and all theoreticals are searched against all experimentals.
+                                                An "open-mass" search that allows mass-differences between observed and theoretical precursor masses of -infinity to infinity.
                                                 <LineBreak/>
-                                                Please use "Modern Search" when using this function.
+                                                The purpose of this search type is to detect mass-differences corresponding to PTMs, amino acid variants, sample handling artifiacts, etc.
+                                                <LineBreak/>
+                                                Please use "Modern Search" mode when using this search type.
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
@@ -467,9 +463,11 @@
                                             <CheckBox x:Name="allAmbiguity" Content="Report PSM ambiguity" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
-                                                        Database searching occasionally cannot discriminate between multiple sequences (such as XXIXX and XXLXX).
+                                                        Multiple sequences are reported when the identification is ambiguous.
                                                         <LineBreak/>
-                                                        This reports multiple theoreticals in the event of a tie. Without it, a coin flip decides which to report.
+                                                        Example: "PEPTIDE and PEPTLDE"
+                                                        <LineBreak/>
+                                                        If this is unchecked, a random coin flip is used to to break ties.
                                                     </TextBlock>
                                                 </CheckBox.ToolTip>
                                             </CheckBox>
@@ -494,7 +492,7 @@
                                 </TextBox>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                     <CheckBox.ToolTip>
                                         <TextBlock>
                                             This allows delta scores (the difference between the top two highest scoring candidates) to be considered in q-value calculations.
@@ -505,12 +503,12 @@
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>
-                                <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                     <CheckBox.ToolTip>
                                         <TextBlock>
-                                            This calculates the eValue (the probability of a PSM randomly obtaining its given score) for each PSM and outputs it in the PSM file.
+                                            This calculates the expectation value (eValue) for each PSM, which is the probability of a PSM obtaining its given score by random chance.
                                             <LineBreak/>
-                                            There is a significant increase in search time, because eValue calculations require MetaMorpheus to save every score calculated (not just the highest scoring).
+                                            There is a significant increase in search time.
                                             <LineBreak/>
                                             eValues are not used for FDR and are only calculated for the user's review.
                                         </TextBlock>
@@ -564,7 +562,9 @@
                                             <TextBlock>
                                                 Only use this for highly prevelant modifications (>10% of peptides).
                                                 <LineBreak/>
-                                                All PTMs that are annotated in the database (GPTMD does annotation!) will be automatically searched.
+                                                All PTMs that are annotated in the database (e.g. with G-PTM-D) will be automatically searched.
+                                                <LineBreak/>
+                                                Do not check annotated PTMs here.
                                             </TextBlock>
                                         </Label.ToolTip>
                                     </Label>
@@ -682,9 +682,19 @@
                             </GroupBox>
                             <GroupBox Header="Pruned Database Writing">
                                 <StackPanel>
-                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)">
+                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <ToolTipService.ToolTip>
-                                            <ToolTip Content="Writes two databases one retains all proteins but only keeps modifications that were found at a 1% FDR while the other removes proteins not found at a 1% FDR." ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
+                                            <TextBlock>
+                                                This is very uncommon and not recommended for the typical user.
+                                                <LineBreak/>
+                                                This option writes two databases: 
+                                                <LineBreak/>
+                                                1) Retain all proteins but only keeps modifications found at a 1% FDR.
+                                                <LineBreak/>
+                                                2) Retain only proteins and modifications found at a 1% FDR.
+                                                <LineBreak/>
+                                                This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data.
+                                            </TextBlock>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=writePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">

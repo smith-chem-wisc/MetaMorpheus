@@ -120,7 +120,7 @@
                                         <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
-                                                        The maximum allowed peptide length. Leave empty for no limitation. Modifications are not counted.
+                                                        The maximum allowed peptide length. Leave empty for no limitation.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
