@@ -15,6 +15,7 @@ using Nett;
 using System;
 using System.IO;
 
+
 namespace Test
 {
     [TestFixture]
@@ -83,7 +84,7 @@ namespace Test
         }
 
         [Test]
-        public static void XlTestLocalization()
+        public static void XlTest_BSA_DSSO()
         {
             //Generate parameters
             var commonParameters = new CommonParameters
@@ -103,7 +104,7 @@ namespace Test
             var xlSearchParameters = new XlSearchParameters { };
 
             //Create databases contain two protein. 
-            var proteinList = new List<Protein> { new Protein("EKVLTSSAR", null), new Protein("LSQKFPK", null) };
+            var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
@@ -164,6 +165,20 @@ namespace Test
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, crosslinker, TerminusType.None, commonParameters, new List<string> { }).Run();
+            foreach (var item in newPsms)
+            {
+                item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            }
+            //Test newPsms
+            Assert.AreEqual(newPsms.Count(), 3);
+
+            //Test Output
+
+            var task = new XLSearchTask();
+            task.WriteAllToTsv(newPsms, TestContext.CurrentContext.TestDirectory, "allPsms", new List<string> { });
+            task.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", new List<string> { });
+            task.WriteSingleToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Singe).ToList(), TestContext.CurrentContext.TestDirectory, "singlePsms", new List<string> { });
+
 
             //Test PsmCross.XlCalculateTotalProductMasses.
             var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
@@ -175,7 +190,7 @@ namespace Test
         }
 
         [Test]
-        public static void XlTest_BSA_DSS()
+        public static void XlTest_BSA_DSS_file()
         {
             var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
 
@@ -209,7 +224,7 @@ namespace Test
         //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match. 
         public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
-            var mz1 = new double[] { 1994.05.ToMz(3), 1093.544.ToMz(1), 1043.561.ToMz(1) };
+            var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1005.498.ToMz(1), 1093.544.ToMz(1), 1043.561.ToMz(1) };
             var intensities1 = new double[] { 1, 1, 1};
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
@@ -220,6 +235,20 @@ namespace Test
             ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 1.0,
                 new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 10, 1994.05.ToMz(3), 
                 3, 1, 1994.05.ToMz(3), 2, DissociationType.HCD, 1, 1994.05.ToMz(3), 1.0, "scan=2"));
+
+            var mz3 = new double[] { 201.1234, 244.1656, 391.2340 };
+            var intensities3 = new double[] { 1, 1, 1 };
+            var MassSpectrum3 = new MzmlMzSpectrum(mz3, intensities3, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(3, MassSpectrum3, 2, true, Polarity.Positive, 1.0,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 10, 846.4963.ToMz(1),
+                1, 1, 846.4963.ToMz(1), 2, DissociationType.HCD, 1, 846.4963.ToMz(1), 1.0, "scan=3"));
+
+            var mz4 = new double[] { 201.1234, 244.1656, 391.2340 };
+            var intensities4 = new double[] { 1, 1, 1 };
+            var MassSpectrum4 = new MzmlMzSpectrum(mz3, intensities4, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(4, MassSpectrum3, 2, true, Polarity.Positive, 1.0,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 10, 1005.498.ToMz(1),
+                1, 1, 1005.498.ToMz(1), 2, DissociationType.HCD, 1, 1005.498.ToMz(1), 1.0, "scan=4"));
 
             Scans = ScansHere.ToArray();
         }
