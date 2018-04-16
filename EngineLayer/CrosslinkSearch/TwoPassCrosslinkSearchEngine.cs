@@ -423,11 +423,6 @@ namespace EngineLayer.CrosslinkSearch
         {
             PsmCross psmCross = null;
 
-            var psmCrossAlpha1 = psmCrossAlpha;
-            var psmCrossAlpha2 = psmCrossAlpha;
-            var psmCrossBeta1 = psmCrossBeta;
-            var psmCrossBeta2 = psmCrossBeta;
-
             var xlPosAlpha1 = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker.CrosslinkerModSites);
             var xlPosBeta1 = PsmCross.XlPosCal(psmCrossBeta.compactPeptide, crosslinker.CrosslinkerModSites);
             var xlPosAlpha2 = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker.CrosslinkerModSites2);
@@ -435,28 +430,30 @@ namespace EngineLayer.CrosslinkSearch
 
             if ((xlPosAlpha1.Count() >= 1 && xlPosBeta2.Count() >= 1) || (xlPosAlpha2.Count() >= 1 && xlPosBeta1.Count() >= 1))
             {
+
                 if (xlPosAlpha2.Count() < 1 || xlPosBeta1.Count() < 1)
                 {
-                    PsmCross.XlLocalization(theScan, psmCrossAlpha1, psmCrossBeta2.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosAlpha1);
-                    PsmCross.XlLocalization(theScan, psmCrossBeta2, psmCrossAlpha1.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosBeta2);
-                    psmCrossAlpha = psmCrossAlpha1;
-                    psmCrossBeta = psmCrossBeta2;
+                    PsmCross.XlLocalization(theScan, psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosAlpha1);
+                    PsmCross.XlLocalization(theScan, psmCrossBeta, psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosBeta2);
                 }
 
                 if (xlPosAlpha1.Count() < 1 || xlPosBeta2.Count() < 1)
                 {
-                    PsmCross.XlLocalization(theScan, psmCrossAlpha2, psmCrossBeta1.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosAlpha2);
-                    PsmCross.XlLocalization(theScan, psmCrossBeta1, psmCrossAlpha2.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosBeta1);
-                    psmCrossAlpha = psmCrossAlpha2;
-                    psmCrossBeta = psmCrossBeta1;
+                    PsmCross.XlLocalization(theScan, psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosAlpha2);
+                    PsmCross.XlLocalization(theScan, psmCrossBeta, psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosBeta1);
                 }
 
                 if ((xlPosAlpha1.Count() >= 1 && xlPosBeta2.Count() >= 1) && (xlPosAlpha2.Count() >= 1 && xlPosBeta1.Count() >= 1))
                 {
-                    PsmCross.XlLocalization(theScan, psmCrossAlpha1, psmCrossBeta2.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosAlpha1);
-                    PsmCross.XlLocalization(theScan, psmCrossBeta2, psmCrossAlpha1.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosBeta2);
-                    PsmCross.XlLocalization(theScan, psmCrossAlpha2, psmCrossBeta1.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosAlpha2);
-                    PsmCross.XlLocalization(theScan, psmCrossBeta1, psmCrossAlpha2.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosBeta1);
+                    var psmCrossAlpha1 = psmCrossAlpha;
+                    var psmCrossAlpha2 = psmCrossAlpha;
+                    var psmCrossBeta1 = psmCrossBeta;
+                    var psmCrossBeta2 = psmCrossBeta;
+
+                    PsmCross.XlLocalization(theScan, psmCrossAlpha1, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosAlpha1);
+                    PsmCross.XlLocalization(theScan, psmCrossBeta2, psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosBeta2);
+                    PsmCross.XlLocalization(theScan, psmCrossAlpha2, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosAlpha2);
+                    PsmCross.XlLocalization(theScan, psmCrossBeta1, psmCrossAlpha.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, CommonParameters.ProductMassTolerance, charge_2_3, charge_2_3_PrimeFragment, xlPosBeta1);
                     if (psmCrossAlpha1.XLBestScore + psmCrossBeta2.XLBestScore > psmCrossAlpha2.XLBestScore + psmCrossBeta1.XLBestScore)
                     {
                         psmCrossAlpha = psmCrossAlpha1;

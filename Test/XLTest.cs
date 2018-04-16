@@ -195,9 +195,8 @@ namespace Test
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA_DSS_23747.mzML");
-            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"XlTestData"));
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"XlTestData")).Run();
 
-            a.Run();
         }
 
         [Test]
@@ -243,7 +242,7 @@ namespace Test
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
             var variableModifications = new List<ModificationWithMass>() { mod1 };
-            var fixedModifications = new List<ModificationWithMass>() {  };
+            var fixedModifications = new List<ModificationWithMass>();
             var localizeableModifications = new List<ModificationWithMass>();
 
             var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y};
@@ -279,8 +278,6 @@ namespace Test
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
-            var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
-            var fragmentIndexAll = indexResults.FragmentIndex.Select((s, j) => new { j, s }).Where(p => p.s != null).Select(t => t.j).ToList();
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFileDiffSite();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
