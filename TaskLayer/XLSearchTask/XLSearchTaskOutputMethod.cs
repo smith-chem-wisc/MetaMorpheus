@@ -356,7 +356,7 @@ namespace TaskLayer
                     var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                     {
                         mass = items[i].CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Values.Select(p => p.monoisotopicMass).ToList()[j],
-                        position = items[i].CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Keys.ToList()[j].ToString()
+                        position = (items[i].CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Keys.ToList()[j]-1).ToString()
                     };
                     mods.Add(mod);
                 }
