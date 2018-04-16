@@ -24,6 +24,7 @@ namespace MetaMorpheusGUI
             Use = true;
             Contaminant = uu.IsContaminant;
             FilePath = uu.FilePath;
+            FileName = uu.FileName;
         }
 
         #endregion Public Constructors
