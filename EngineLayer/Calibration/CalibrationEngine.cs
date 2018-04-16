@@ -39,7 +39,14 @@ namespace EngineLayer.Calibration
             this.datapoints = datapoints;
 
             // set the random seed based on raw file properties
-            randomSeed = myMSDataFile.NumSpectra;
+            if (myMsDataFile.SourceFile != null && myMsDataFile.SourceFile.CheckSum != null)
+            {
+                randomSeed = myMsDataFile.SourceFile.CheckSum.GetHashCode();
+            }
+            else
+            {
+                randomSeed = myMsDataFile.NumSpectra;
+            }
         }
 
         #endregion Public Constructors
