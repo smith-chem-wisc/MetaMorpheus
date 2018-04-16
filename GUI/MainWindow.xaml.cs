@@ -214,6 +214,7 @@ namespace MetaMorpheusGUI
                     uu.Use = false;
                 foreach (var uu in e.newDatabases)
                     proteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu));
+                dataGridXMLs.Items.Refresh();
             }
         }
 
@@ -1090,9 +1091,12 @@ namespace MetaMorpheusGUI
         //run if data file has just been added with and checks for Existing fileSpecficParams
         private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocation)
         {
+            string assumedPathOfSpectraFileWithoutExtension = Path.Combine(Directory.GetParent(tomlLocation).ToString(), Path.GetFileNameWithoutExtension(tomlLocation));
+
             for (int i = 0; i < rawDataObservableCollection.Count; i++)
             {
-                if (File.Exists(tomlLocation) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(tomlLocation))
+                string thisFilesPathWihoutExtension = Path.Combine(Directory.GetParent(rawDataObservableCollection[i].FilePath).ToString(), Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FilePath));
+                if (File.Exists(tomlLocation) && assumedPathOfSpectraFileWithoutExtension.Equals(thisFilesPathWihoutExtension))
                 {
                     TomlTable fileSpecificSettings = Toml.ReadFile(tomlLocation, MetaMorpheusTask.tomlConfig);
                     try
