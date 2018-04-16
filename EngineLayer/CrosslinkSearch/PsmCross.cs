@@ -38,7 +38,6 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Properties
 
-        public double PeptideMass { get; set; }
         public double XLBestScore { get; set; }
         public MatchedIonInfo MatchedIonInfo { get; set; }
         public double XLTotalScore { get; set; }

@@ -90,8 +90,6 @@ namespace Test
             var commonParameters = new CommonParameters
             {
                 DoPrecursorDeconvolution = false,
-                BIons =true,
-                YIons = true,
                 CIons = true,
                 ZdotIons = true,
                 ScoreCutoff = 2,
@@ -101,7 +99,7 @@ namespace Test
                 }
             };
 
-            var xlSearchParameters = new XlSearchParameters { };
+            var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
 
             //Create databases contain two protein. 
             var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
@@ -215,6 +213,86 @@ namespace Test
 
         }
 
+        [Test]
+        public static void XlTest_DiffCrosslinkSites()
+        {
+            //Generate parameters
+            var commonParameters = new CommonParameters
+            {
+                DoPrecursorDeconvolution = false,
+                ScoreCutoff = 1,
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = 4
+                }
+            };
+
+            var xlSearchParameters = new XlSearchParameters
+            {
+                CrosslinkerType = CrosslinkerType.UserDefined,
+                UdXLkerName = "CrossST-C",
+                UdXLkerResidues = "ST",
+                UdXLkerResidues2 = "C",
+                UdXLkerTotalMass = -18.01056
+            };
+
+            //Create databases contain two protein. 
+            var proteinList = new List<Protein> { new Protein("VLTAR", "Fake01"), new Protein("LCQK", "Fake02") };
+
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
+            ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
+            var variableModifications = new List<ModificationWithMass>() { mod1 };
+            var fixedModifications = new List<ModificationWithMass>() {  };
+            var localizeableModifications = new List<ModificationWithMass>();
+
+            var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y};
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+
+            int i = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+
+            //Generate digested peptide lists.
+            List<PeptideWithSetModifications> digestedList = new List<PeptideWithSetModifications>();
+            foreach (var item in proteinList)
+            {
+                var digested = item.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+                digestedList.AddRange(digested);
+            }
+
+            foreach (var fdfd in digestedList)
+            {
+                fdfd.CompactPeptide(TerminusType.None);
+            }
+
+            //Run index engine
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<IDigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+
+            var indexResults = (IndexingResults)indexEngine.Run();
+
+            var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
+            var fragmentIndexAll = indexResults.FragmentIndex.Select((s, j) => new { j, s }).Where(p => p.s != null).Select(t => t.j).ToList();
+            //Get MS2 scans.
+            var myMsDataFile = new XLTestDataFileDiffSite();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+            //Generate crosslinker, which is UserDefined here.
+            var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
+
+            //TwoPassCrosslinkSearchEngine.Run().
+            List<PsmCross> newPsms = new List<PsmCross>();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
+            Assert.AreEqual(newPsms.Count(), 1);
+        }
+
         #endregion Public Methods
     }
 
@@ -225,29 +303,29 @@ namespace Test
         public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
             var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1005.498.ToMz(1), 1093.544.ToMz(1), 1043.561.ToMz(1) };
-            var intensities1 = new double[] { 1, 1, 1};
+            var intensities1 = new double[] { 1, 1, 1, 1, 1};
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
 
-            var mz2 = new double[] { 201.1234, 244.1656, 391.2340, 420.2201, 521.2678, 634.3519, 889.965, 1044.568, 1094.551, 1279.671, 1378.74, 1491.824 };
-            var intensities2 = new double[] {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+            var mz2 = new double[] { 100, 201.1234, 244.1656, 391.2340, 420.2201, 521.2678, 634.3519, 889.965, 1044.568, 1094.551, 1279.671, 1378.74, 1491.824 };
+            var intensities2 = new double[] {100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
             var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
             ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 1.0,
-                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 10, 1994.05.ToMz(3), 
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 112, 1994.05.ToMz(3), 
                 3, 1, 1994.05.ToMz(3), 2, DissociationType.HCD, 1, 1994.05.ToMz(3), 1.0, "scan=2"));
 
-            var mz3 = new double[] { 201.1234, 244.1656, 391.2340 };
-            var intensities3 = new double[] { 1, 1, 1 };
+            var mz3 = new double[] { 100, 201.1234, 244.1656, 391.2340 };
+            var intensities3 = new double[] { 100, 1, 1, 1 };
             var MassSpectrum3 = new MzmlMzSpectrum(mz3, intensities3, false);
             ScansHere.Add(new MzmlScanWithPrecursor(3, MassSpectrum3, 2, true, Polarity.Positive, 1.0,
-                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 10, 846.4963.ToMz(1),
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 846.4963.ToMz(1),
                 1, 1, 846.4963.ToMz(1), 2, DissociationType.HCD, 1, 846.4963.ToMz(1), 1.0, "scan=3"));
 
-            var mz4 = new double[] { 201.1234, 244.1656, 391.2340 };
-            var intensities4 = new double[] { 1, 1, 1 };
+            var mz4 = new double[] { 100, 201.1234, 244.1656, 391.2340 };
+            var intensities4 = new double[] { 100, 1, 1, 1 };
             var MassSpectrum4 = new MzmlMzSpectrum(mz3, intensities4, false);
             ScansHere.Add(new MzmlScanWithPrecursor(4, MassSpectrum3, 2, true, Polarity.Positive, 1.0,
-                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 10, 1005.498.ToMz(1),
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1005.498.ToMz(1),
                 1, 1, 1005.498.ToMz(1), 2, DissociationType.HCD, 1, 1005.498.ToMz(1), 1.0, "scan=4"));
 
             Scans = ScansHere.ToArray();
@@ -270,6 +348,70 @@ namespace Test
             get
             {
                 return "XLTestDataFile";
+            }
+        }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public void ReplaceFirstScanArrays(double[] mz, double[] intensities)
+        {
+            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
+            Scans[0] = new MzmlScan(Scans[0].OneBasedScanNumber, massSpectrum, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, Scans[0].NativeId);
+        }
+
+        public override IMzmlScan GetOneBasedScan(int scanNumber)
+        {
+            return Scans[scanNumber - 1];
+        }
+
+        public override IEnumerable<IMzmlScan> GetMS1Scans()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        #endregion Public Methods
+    }
+
+    internal class XLTestDataFileDiffSite : MsDataFile<IMzmlScan>
+    {
+        #region Public Constructors
+        //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match. 
+        public XLTestDataFileDiffSite() : base(2, new SourceFile(null, null, null, null, null))
+        {
+            var mz1 = new double[] { 100, 1030.5956.ToMz(1) };
+            var intensities1 = new double[] { 100, 1 };
+            var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
+            var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, "scan=1") };
+
+            var mz2 = new double[] { 100, 147.1128, 175.119, 213.1598, 246.1561, 275.1714, 757.4388, 786.4541, 819.4504, 857.4912, 885.4974, 918.5189, 932.5345 };
+            var intensities2 = new double[] { 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 1.0,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 112, 1030.5956.ToMz(1),
+                1, 1, 1030.5956.ToMz(1), 2, DissociationType.HCD, 1, 1030.5956.ToMz(1), 1.0, "scan=2"));
+
+            Scans = ScansHere.ToArray();
+        }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public string FilePath
+        {
+            get
+            {
+                return "XLTestDataFileDiffSite";
+            }
+        }
+
+        public string Name
+        {
+            get
+            {
+                return "XLTestDataFileDiffSite";
             }
         }
 
