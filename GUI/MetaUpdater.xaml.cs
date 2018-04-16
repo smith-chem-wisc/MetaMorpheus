@@ -30,12 +30,11 @@ namespace MetaMorpheusGUI
 
         public (int, int, int) GetVersionNumber(string VersionNode)
         {
-            string pattern = @"(\d+)\.(\d+)\.(\d+).(\d+)";
             try
             {
-                return (Int32.Parse(Regex.Match(VersionNode, pattern).Groups[1].Value)
-                    , Int32.Parse(Regex.Match(VersionNode, pattern).Groups[2].Value)
-                    , Int32.Parse(Regex.Match(VersionNode, pattern).Groups[3].Value));
+                var split = VersionNode.Split('.');
+
+                return (int.Parse(split[0]), int.Parse(split[1]), int.Parse(split[2]));
             }
             catch (FormatException)
             {
