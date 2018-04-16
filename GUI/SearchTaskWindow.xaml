@@ -92,7 +92,7 @@
                                             <ToolTip Content="Remove low-intensity MS1 peaks using the below settings" />
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
-                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="Remove low-intensity MS2 peaks using the below settings" />
                                         </ToolTipService.ToolTip>
@@ -646,41 +646,38 @@
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Quantification">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="5*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Margin="5" VerticalAlignment="Top"  Grid.Column="0">
-                                        <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides/proteins">
+                                <StackPanel>
+                                    <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides/proteins with FlashLFQ">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox x:Name="quantPpmTolerance" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                             <ToolTipService.ToolTip>
-                                                <ToolTip Content="Label-free quantification is performed unless the TMT modification is detected"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
-                                            </ToolTipService.ToolTip>
-                                        </CheckBox>
-                                    </StackPanel>
-                                    <StackPanel Margin="0" VerticalAlignment="Top"  Grid.Column="1">
-                                        <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                        <TextBox x:Name="quantPpmTolerance" Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
-                                            <ToolTipService.ToolTip>
-                                                <ToolTip Content="PPM tolerance for MS1 (LFQ) or diagnostic ions (TMT)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
+                                                <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000" />
                                             </ToolTipService.ToolTip>
                                         </TextBox>
-                                        <CheckBox x:Name="checkBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                        <Label x:Name="quantPpmLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                    </StackPanel>
+                                    <CheckBox x:Name="checkBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
                                         </ToolTipService.ToolTip>
-                                    </StackPanel>
-                                </Grid>
+                                    </CheckBox>
+                                </StackPanel>
                             </GroupBox>
-                            <GroupBox Header="Mass Shift Histogram Analysis">
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis">
+                            <GroupBox Header="Mass Difference Histogram Analysis">
+                                <StackPanel>
+                                  <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Construct mass-difference histogram" >
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="For wide precursor tolerances, find which mass differences are most common." ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
-                                        </ToolTipService.ToolTip>
-                                    </CheckBox>
-                                    <Label Content="Histogram bin width (Da):" />
-                                    <TextBox x:Name="histogramBinWidthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                        </ToolTipService.ToolTip>  
+                                  </CheckBox>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Histogram bin width (Da):" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                        <TextBox x:Name="histogramBinWidthTextBox" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                    </StackPanel>
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Pruned Database Writing">

@@ -12,6 +12,7 @@ namespace EngineLayer.Calibration
 
         public DataPointAquisitionResults(
             MetaMorpheusEngine dataPointAcquisitionEngine,
+            List<PeptideSpectralMatch> psms,
             List<LabeledDataPoint> ms1List,
             List<LabeledDataPoint> ms2List,
             int numMs1MassChargeCombinationsConsidered,
@@ -20,6 +21,8 @@ namespace EngineLayer.Calibration
             int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
             : base(dataPointAcquisitionEngine)
         {
+            this.Psms = psms;
+
             Ms1List = ms1List;
             Ms2List = ms2List;
 
@@ -33,6 +36,14 @@ namespace EngineLayer.Calibration
             NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
             NumMs2MassChargeCombinationsConsidered = numMs2MassChargeCombinationsConsidered;
             NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
+
+            var precursorErrors = psms.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass.Value) / p.PeptideMonisotopicMass.Value * 1e6).ToList();
+            PsmPrecursorIqrPpmError = Statistics.InterquartileRange(precursorErrors);
+            PsmPrecursorMedianPpmError = Statistics.Median(precursorErrors);
+
+            var productErrors = psms.SelectMany(p => p.ProductMassErrorPpm.SelectMany(v => v.Value)).ToList();
+            PsmProductIqrPpmError = Statistics.InterquartileRange(productErrors);
+            PsmProductMedianPpmError = Statistics.Median(productErrors);
         }
 
         #endregion Public Constructors
@@ -52,6 +63,12 @@ namespace EngineLayer.Calibration
         public List<LabeledDataPoint> Ms1List { get; }
         public List<LabeledDataPoint> Ms2List { get; }
 
+        public readonly double PsmPrecursorMedianPpmError;
+        public readonly double PsmProductMedianPpmError;
+        public readonly double PsmPrecursorIqrPpmError;
+        public readonly double PsmProductIqrPpmError;
+        public readonly List<PeptideSpectralMatch> Psms;
+
         public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 
         #endregion Public Properties
@@ -62,15 +79,13 @@ namespace EngineLayer.Calibration
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            sb.AppendLine("Ms1List.Count: " + Ms1List.Count + " Ms2List.Count: " + Ms2List.Count);
-            sb.AppendLine("Ms1ppm mean: " + Ms1InfoPpm.Item1 + " Ms1ppm sd: " + Ms1InfoPpm.Item2);
-            sb.AppendLine("Ms1th mean: " + Ms1InfoTh.Item1 + " Ms1th sd: " + Ms1InfoTh.Item2);
-            sb.AppendLine("Ms2ppm mean: " + Ms2InfoPpm.Item1 + " Ms2ppm sd: " + Ms2InfoPpm.Item2);
-            sb.AppendLine("Ms2th mean: " + Ms2InfoTh.Item1 + " Ms2th sd: " + Ms2InfoTh.Item2);
-            sb.AppendLine("NumMs1MassChargeCombinationsConsidered: " + NumMs1MassChargeCombinationsConsidered);
-            sb.AppendLine("NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
-            sb.AppendLine("NumMs2MassChargeCombinationsConsidered: " + NumMs2MassChargeCombinationsConsidered);
-            sb.Append("NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            sb.AppendLine("MS1 calibration datapoint count: " + Ms1List.Count);
+            sb.AppendLine("MS1 ppm error median: " + Math.Round(PsmPrecursorMedianPpmError, 3));
+            sb.AppendLine("MS1 ppm error interquartile range: " + Math.Round(PsmPrecursorIqrPpmError, 3));
+
+            sb.AppendLine("MS2 calibration datapoint count: " + Ms2List.Count);
+            sb.AppendLine("MS2 ppm error median: " + Math.Round(PsmProductMedianPpmError, 3));
+            sb.AppendLine("MS2 ppm error interquartile range: " + Math.Round(PsmProductIqrPpmError, 3));
             return sb.ToString();
         }
 
