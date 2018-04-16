@@ -9,8 +9,9 @@ namespace TaskLayer
     {
         #region Public Fields
 
-        public List<string> newSpectra;
-        public List<DbForTask> newDatabases;
+        public List<string> newSpectra; // calibration writes new calibrated spectra
+        public List<DbForTask> newDatabases; // gptmd writes new annotated databases
+        public List<string> newFileSpecificTomls; // calibration writes suggested ppm tolerances
         public TimeSpan Time;
 
         #endregion Public Fields
