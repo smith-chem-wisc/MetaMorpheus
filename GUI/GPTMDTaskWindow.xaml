@@ -281,7 +281,7 @@
                         <TextBlock>
                             Use for all mods that are possibly occuring in vivo (the more the merrier!)
                             <LineBreak/>
-                            G-PTM-D uses uninformed fragment ions and characteristic precursor mass shifts to identify novel PTMs.
+                            G-PTM-D will search the database and use characteristic precursor mass-differences to identify these PTMs.
                         </TextBlock>
                     </GroupBox.ToolTip>
                     <Expander>
