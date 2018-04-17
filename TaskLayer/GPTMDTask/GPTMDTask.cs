@@ -134,7 +134,6 @@ namespace TaskLayer
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 
-
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -170,8 +169,23 @@ namespace TaskLayer
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
             SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
 
-            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, CommonParameters.PrecursorMassTolerance, new List<string> { taskId }).Run();
+            // get file-specific precursor mass tolerances for the GPTMD engine
+            var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
+            for(int i = 0; i < currentRawFileList.Count; i++)
+            {
+                string filePath = currentRawFileList[i];
+                Tolerance fileTolerance = CommonParameters.PrecursorMassTolerance;
+                if (fileSettingsList[i] != null && fileSettingsList[i].PrecursorMassTolerance != null)
+                {
+                    fileTolerance = fileSettingsList[i].PrecursorMassTolerance;
+                }
+                filePathToPrecursorMassTolerance.Add(filePath, fileTolerance);
+            }
 
+            // run GPTMD engine
+            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, new List<string> { taskId }).Run();
+
+            // write GPTMD databases
             if (dbFilenameList.Any(b => !b.IsContaminant))
             {
                 // do NOT use this code (Path.GetFilenameWithoutExtension) because GPTMD on .xml.gz will result in .xml.xml file type being written
