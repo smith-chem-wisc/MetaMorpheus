@@ -13,18 +13,18 @@ namespace EngineLayer.Gptmd
         private readonly List<PeptideSpectralMatch> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<ModificationWithMass> gptmdModifications;
-        private readonly Tolerance precursorMassTolerance;
+        private readonly Dictionary<string, Tolerance> filePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance, List<string> nestedIds) : base(nestedIds)
+        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, List<string> nestedIds) : base(nestedIds)
         {
             this.allIdentifications = allIdentifications;
             this.gptmdModifications = gptmdModifications;
             this.combos = combos;
-            this.precursorMassTolerance = precursorMassTolerance;
+            this.filePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
         }
 
         #endregion Public Constructors
@@ -69,26 +69,41 @@ namespace EngineLayer.Gptmd
             //foreach peptide in each psm and for each modification that matches the notch, 
             //add that modification to every allowed residue
             foreach (var psm in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy))
-                foreach (var peptide in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
-                    foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
+            {
+                // get file-specific precursor tolerance
+                Tolerance precursorMassTolerance = filePathToPrecursorMassTolerance[psm.FullFilePath];
+
+                // get mods to annotate database with
+                foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
+                {
+                    foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, pepWithSetMods))
                     {
-                        var proteinAcession = peptide.Protein.Accession;
-                        for (int i = 0; i < peptide.Length; i++)
+                        var proteinAccession = pepWithSetMods.Protein.Accession;
+
+                        for (int i = 0; i < pepWithSetMods.Length; i++)
                         {
-                            int indexInProtein = peptide.OneBasedStartResidueInProtein + i;
-                            if (ModFits(mod, peptide.Protein, i + 1, peptide.Length, indexInProtein))
+                            int indexInProtein = pepWithSetMods.OneBasedStartResidueInProtein + i;
+
+                            if (ModFits(mod, pepWithSetMods.Protein, i + 1, pepWithSetMods.Length, indexInProtein))
                             {
-                                if (!Mods.ContainsKey(proteinAcession))
-                                    Mods[proteinAcession] = new HashSet<Tuple<int, Modification>>();
-                                var theTuple = new Tuple<int, Modification>(indexInProtein, mod);
-                                if (!Mods[proteinAcession].Contains(theTuple))
+                                if (!Mods.ContainsKey(proteinAccession))
                                 {
-                                    Mods[proteinAcession].Add(theTuple);
+                                    Mods[proteinAccession] = new HashSet<Tuple<int, Modification>>();
+                                }
+
+                                var modWithIndexInProtein = new Tuple<int, Modification>(indexInProtein, mod);
+
+                                if (!Mods[proteinAccession].Contains(modWithIndexInProtein))
+                                {
+                                    Mods[proteinAccession].Add(modWithIndexInProtein);
                                     modsAdded++;
                                 }
                             }
                         }
                     }
+                }
+            }
+
             return new GptmdResults(this, Mods, modsAdded);
         }
 
