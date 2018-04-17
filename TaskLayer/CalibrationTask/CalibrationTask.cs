@@ -153,6 +153,7 @@ namespace TaskLayer
 
                     // enough data points to calibrate?
                     if (acquisitionResults.Psms.Count >= numRequiredPsms && acquisitionResults.Ms1List.Count > numRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > numRequiredMs2Datapoints)
+
                     {
                         break;
                     }
