@@ -320,7 +320,7 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
-                foreach (var filepath in openPicker.FileNames)
+                foreach (var filepath in openPicker.FileNames.OrderBy(p => p))
                 {
                     AddAFile(filepath);
                 }
@@ -337,7 +337,7 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
-                foreach (var rawDataFromSelected in openFileDialog1.FileNames)
+                foreach (var rawDataFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(rawDataFromSelected);
                 }
@@ -348,7 +348,7 @@ namespace MetaMorpheusGUI
         {
             if (LoadTaskButton.IsEnabled)
             {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
 
                 if (files != null)
                 {
@@ -727,47 +727,58 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void MoveSelectedTask(object sender, RoutedEventArgs e, bool moveTaskUp)
+        {
+            var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
+            if (selectedTask == null)
+            {
+                return;
+            }
+            
+            int indexOfSelected = staticTasksObservableCollection.IndexOf(selectedTask);
+            int indexToMoveTo = indexOfSelected - 1;
+            if(moveTaskUp)
+            {
+                indexToMoveTo = indexOfSelected + 1;
+            }
+
+            if (indexToMoveTo >= 0 && indexToMoveTo < staticTasksObservableCollection.Count)
+            {
+                var temp = staticTasksObservableCollection[indexToMoveTo];
+                staticTasksObservableCollection[indexToMoveTo] = selectedTask;
+                staticTasksObservableCollection[indexOfSelected] = temp;
+
+                UpdateTaskGuiStuff();
+
+                var item = tasksTreeView.ItemContainerGenerator.ContainerFromItem(selectedTask);
+                ((TreeViewItem)item).IsSelected = true;
+            }
+        }
+
         // handles keyboard input in the main window
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (LoadTaskButton.IsEnabled)
             {
                 // delete selected task
-                var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
-                if (e.Key == Key.Delete || e.Key == Key.Back && selectedTask != null)
+                if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
                     DeleteSelectedTask(sender, e);
                     e.Handled = true;
                 }
 
-                if (((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) && selectedTask != null)
+                // move task up
+                if(e.Key == Key.Add)
                 {
-                    //if (Keyboard.IsKeyDown(Key.C)) // ctrl + c
-                    //{
-                    //    // duplicate task
+                    MoveSelectedTask(sender, e, true);
+                    e.Handled = true;
+                }
 
-
-                    //    PreRunTask duplicatedTask = selectedTask.Clone();
-                    //    AddTaskToCollection(duplicatedTask.metaMorpheusTask);
-                    //}
-                    //if (Keyboard.IsKeyDown(Key.Down)) // ctrl + down
-                    //{
-                    //    // move task down
-                    //    var temp = selectedTask.metaMorpheusTask;
-                    //    int insertIndex = staticTasksObservableCollection.IndexOf(selectedTask) + 1;
-                    //    int newIndex;
-                    //    InsertTaskToCollectionAtPosition(temp, insertIndex, out newIndex);
-                    //    DeleteSelectedTask(sender, e);
-                    //}
-                    //else if (Keyboard.IsKeyDown(Key.Up)) // ctrl + up
-                    //{
-                    //    // move task up
-                    //    var temp = selectedTask.metaMorpheusTask;
-                    //    int insertIndex = staticTasksObservableCollection.IndexOf(selectedTask) - 1;
-                    //    int newIndex;
-                    //    InsertTaskToCollectionAtPosition(temp, insertIndex, out newIndex);
-                    //    DeleteSelectedTask(sender, e);
-                    //}
+                // move task down
+                if (e.Key == Key.Subtract)
+                {
+                    MoveSelectedTask(sender, e, false);
+                    e.Handled = true;
                 }
             }
         }
@@ -1043,7 +1054,7 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
-                foreach (var tomlFromSelected in openFileDialog1.FileNames)
+                foreach (var tomlFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(tomlFromSelected);
                 }
