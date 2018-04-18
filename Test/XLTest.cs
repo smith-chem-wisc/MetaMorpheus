@@ -76,9 +76,8 @@ namespace Test
         [Test]
         public static void XlTestGenerateIntensityRanks()
         {
-            double[] mz = new double[] { 1.0, 1.3, 1.5, 1.7, 1.9, 2.1 };
             double[] intensity = new double[] { 1.1, 1.1, 0.5, 3.2, 0.5, 6.0 };
-            int[] rank = PsmCross.GenerateIntensityRanks(mz, intensity);
+            int[] rank = PsmCross.GenerateIntensityRanks(intensity);
             int[] Rank = new int[] { 4, 3, 6, 2, 5, 1 };
             Assert.AreEqual(rank, Rank);
         }

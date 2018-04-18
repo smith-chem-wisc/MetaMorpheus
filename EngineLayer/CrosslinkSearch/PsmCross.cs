@@ -35,7 +35,6 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Public Constructors
 
-
         #region Public Properties
 
         public double XLBestScore { get; set; }
@@ -70,7 +69,7 @@ namespace EngineLayer.CrosslinkSearch
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
-            int[] experimental_intensities_rank = GenerateIntensityRanks(experimental_mzs, experimental_intensities);
+            int[] experimental_intensities_rank = GenerateIntensityRanks(experimental_intensities);
             int num_experimental_peaks = experimental_mzs.Length;
 
             int currentTheoreticalIndex = -1;
@@ -509,11 +508,11 @@ namespace EngineLayer.CrosslinkSearch
             psmCross.XlPos2 = pmmhList[scoreList.IndexOf(scoreList.Max())].XlPos2 + 1;
         }
 
-        public static int[] GenerateIntensityRanks(double[] experimental_mzs, double[] experimental_intensities)
+        public static int[] GenerateIntensityRanks(double[] experimental_intensities)
         {
-            var x = experimental_mzs;
-            var y = experimental_intensities;
-            Array.Sort(experimental_intensities, experimental_mzs);
+            var y = experimental_intensities.ToArray();
+            var x = Enumerable.Range(1, y.Length).OrderBy(p => p).ToArray();
+            Array.Sort(y, x);
             var experimental_intensities_rank = Enumerable.Range(1, y.Length).OrderByDescending(p => p).ToArray();
             Array.Sort(x, experimental_intensities_rank);
             return experimental_intensities_rank;
