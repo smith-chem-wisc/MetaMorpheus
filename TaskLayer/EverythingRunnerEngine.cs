@@ -45,6 +45,8 @@ namespace TaskLayer
 
         public static event EventHandler<StringListEventArgs> NewSpectrasHandler;
 
+        public static event EventHandler<StringListEventArgs> NewFileSpecificTomlHandler;
+
         public static event EventHandler<StringEventArgs> WarnHandler;
 
         #endregion Public Events
@@ -104,6 +106,10 @@ namespace TaskLayer
                     currentRawDataFilenameList = myTaskResults.newSpectra;
                     NewSpectras(myTaskResults.newSpectra);
                 }
+                if(myTaskResults.newFileSpecificTomls != null)
+                {
+                    NewFileSpecificToml(myTaskResults.newFileSpecificTomls);
+                }
                 allResultsText.AppendLine(Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + myTaskResults.ToString());
             }
             stopWatch.Stop();
@@ -140,6 +146,11 @@ namespace TaskLayer
         private void NewSpectras(List<string> newSpectra)
         {
             NewSpectrasHandler?.Invoke(this, new StringListEventArgs(newSpectra));
+        }
+
+        private void NewFileSpecificToml(List<string> newFileSpecificTomls)
+        {
+            NewFileSpecificTomlHandler?.Invoke(this, new StringListEventArgs(newFileSpecificTomls));
         }
 
         private void NewDBs(List<DbForTask> newDatabases)

@@ -46,6 +46,7 @@ namespace MetaMorpheusGUI
 
             EverythingRunnerEngine.NewDbsHandler += AddNewDB;
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
+            EverythingRunnerEngine.NewFileSpecificTomlHandler += AddNewFileSpecificToml;
             EverythingRunnerEngine.StartingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
             EverythingRunnerEngine.WarnHandler += GuiWarnHandler;
@@ -213,6 +214,7 @@ namespace MetaMorpheusGUI
                     uu.Use = false;
                 foreach (var uu in e.newDatabases)
                     proteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu));
+                dataGridXMLs.Items.Refresh();
             }
         }
 
@@ -231,6 +233,21 @@ namespace MetaMorpheusGUI
                 foreach (var newRawData in e.StringList)
                     rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
                 UpdateOutputFolderTextbox();
+            }
+        }
+
+        private void AddNewFileSpecificToml(object sender, StringListEventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => AddNewFileSpecificToml(sender, e)));
+            }
+            else
+            {
+                foreach (var path in e.StringList)
+                {
+                    UpdateFileSpecificParamsDisplayJustAdded(path);
+                }
             }
         }
 
@@ -303,7 +320,7 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
-                foreach (var filepath in openPicker.FileNames)
+                foreach (var filepath in openPicker.FileNames.OrderBy(p => p))
                 {
                     AddAFile(filepath);
                 }
@@ -320,7 +337,7 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
-                foreach (var rawDataFromSelected in openFileDialog1.FileNames)
+                foreach (var rawDataFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(rawDataFromSelected);
                 }
@@ -331,7 +348,7 @@ namespace MetaMorpheusGUI
         {
             if (LoadTaskButton.IsEnabled)
             {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
 
                 if (files != null)
                 {
@@ -645,7 +662,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateRawFileGuiStuff()
         {
-            ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0;
+            ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0 && LoadTaskButton.IsEnabled;
         }
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
@@ -710,47 +727,58 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void MoveSelectedTask(object sender, RoutedEventArgs e, bool moveTaskUp)
+        {
+            var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
+            if (selectedTask == null)
+            {
+                return;
+            }
+            
+            int indexOfSelected = staticTasksObservableCollection.IndexOf(selectedTask);
+            int indexToMoveTo = indexOfSelected - 1;
+            if(moveTaskUp)
+            {
+                indexToMoveTo = indexOfSelected + 1;
+            }
+
+            if (indexToMoveTo >= 0 && indexToMoveTo < staticTasksObservableCollection.Count)
+            {
+                var temp = staticTasksObservableCollection[indexToMoveTo];
+                staticTasksObservableCollection[indexToMoveTo] = selectedTask;
+                staticTasksObservableCollection[indexOfSelected] = temp;
+
+                UpdateTaskGuiStuff();
+
+                var item = tasksTreeView.ItemContainerGenerator.ContainerFromItem(selectedTask);
+                ((TreeViewItem)item).IsSelected = true;
+            }
+        }
+
         // handles keyboard input in the main window
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (LoadTaskButton.IsEnabled)
             {
                 // delete selected task
-                var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
-                if (e.Key == Key.Delete || e.Key == Key.Back && selectedTask != null)
+                if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
                     DeleteSelectedTask(sender, e);
                     e.Handled = true;
                 }
 
-                if (((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) && selectedTask != null)
+                // move task up
+                if(e.Key == Key.Add)
                 {
-                    //if (Keyboard.IsKeyDown(Key.C)) // ctrl + c
-                    //{
-                    //    // duplicate task
+                    MoveSelectedTask(sender, e, true);
+                    e.Handled = true;
+                }
 
-
-                    //    PreRunTask duplicatedTask = selectedTask.Clone();
-                    //    AddTaskToCollection(duplicatedTask.metaMorpheusTask);
-                    //}
-                    //if (Keyboard.IsKeyDown(Key.Down)) // ctrl + down
-                    //{
-                    //    // move task down
-                    //    var temp = selectedTask.metaMorpheusTask;
-                    //    int insertIndex = staticTasksObservableCollection.IndexOf(selectedTask) + 1;
-                    //    int newIndex;
-                    //    InsertTaskToCollectionAtPosition(temp, insertIndex, out newIndex);
-                    //    DeleteSelectedTask(sender, e);
-                    //}
-                    //else if (Keyboard.IsKeyDown(Key.Up)) // ctrl + up
-                    //{
-                    //    // move task up
-                    //    var temp = selectedTask.metaMorpheusTask;
-                    //    int insertIndex = staticTasksObservableCollection.IndexOf(selectedTask) - 1;
-                    //    int newIndex;
-                    //    InsertTaskToCollectionAtPosition(temp, insertIndex, out newIndex);
-                    //    DeleteSelectedTask(sender, e);
-                    //}
+                // move task down
+                if (e.Key == Key.Subtract)
+                {
+                    MoveSelectedTask(sender, e, false);
+                    e.Handled = true;
                 }
             }
         }
@@ -960,6 +988,7 @@ namespace MetaMorpheusGUI
             LoadTaskButton.IsEnabled = true;
 
             tasksTreeView.DataContext = staticTasksObservableCollection;
+            UpdateRawFileGuiStuff();
         }
 
         private void TasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -1025,7 +1054,7 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
-                foreach (var tomlFromSelected in openFileDialog1.FileNames)
+                foreach (var tomlFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(tomlFromSelected);
                 }
@@ -1073,9 +1102,12 @@ namespace MetaMorpheusGUI
         //run if data file has just been added with and checks for Existing fileSpecficParams
         private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocation)
         {
+            string assumedPathOfSpectraFileWithoutExtension = Path.Combine(Directory.GetParent(tomlLocation).ToString(), Path.GetFileNameWithoutExtension(tomlLocation));
+
             for (int i = 0; i < rawDataObservableCollection.Count; i++)
             {
-                if (File.Exists(tomlLocation) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(tomlLocation))
+                string thisFilesPathWihoutExtension = Path.Combine(Directory.GetParent(rawDataObservableCollection[i].FilePath).ToString(), Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FilePath));
+                if (File.Exists(tomlLocation) && assumedPathOfSpectraFileWithoutExtension.Equals(thisFilesPathWihoutExtension))
                 {
                     TomlTable fileSpecificSettings = Toml.ReadFile(tomlLocation, MetaMorpheusTask.tomlConfig);
                     try
