@@ -403,9 +403,11 @@ namespace MetaMorpheusGUI
                     // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
                     // this is one hacky way of checking if the user has C++ redistributable installed
                     string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
-                    if(!File.Exists(assumedManagedThermoHelperLayerDllPath))
+                    if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
                     {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! You may not have Microsoft Visual C++ Redistributable installed; MetaMorpheus needs this to read .raw files and may crash", null));
+                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; " +
+                            "a crash may result from searching this .raw file. If you have just installed the C++ redistributable, " +
+                            "please uninstall and reinstall MetaMorpheus", null));
                     }
 
                     goto case ".mzml";
@@ -440,7 +442,7 @@ namespace MetaMorpheusGUI
                             catch (Exception ee)
                             {
                                 MessageBox.Show(ee.ToString());
-                                GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                                GuiWarnHandler(null, new StringEventArgs("Cannot parse modification info from: " + draggedFilePath, null));
                                 proteinDbObservableCollection.Remove(uu);
                             }
                         }
@@ -455,15 +457,11 @@ namespace MetaMorpheusGUI
                     }
                     catch (Exception)
                     {
-                        GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                        GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + draggedFilePath, null));
                         break;
                     }
-                    if (tomlFile.Keys.Contains("PrecursorMassTolerance") && tomlFile.Keys.Contains("ProductMassTolerance") && tomlFile.Keys.Count == 2)
-                    {
-                        // do nothing; it's a ppm suggested tolerance toml from calibration, this gets read in elsewhere
-                    }
-                    // need to check for file-specific parameters toml here... right now it's displaying a warning
-                    else
+
+                    if (tomlFile.ContainsKey("TaskType"))
                     {
                         try
                         {
@@ -498,10 +496,11 @@ namespace MetaMorpheusGUI
                         }
                         catch (Exception e)
                         {
-                            GuiWarnHandler(null, new StringEventArgs("Could not parse .toml: " + e.Message, null));
+                            GuiWarnHandler(null, new StringEventArgs("Cannot read task toml: " + e.Message, null));
                         }
                     }
                     break;
+
                 default:
                     GuiWarnHandler(null, new StringEventArgs("Unrecognized file type: " + theExtension, null));
                     break;
@@ -543,7 +542,7 @@ namespace MetaMorpheusGUI
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            
+
             // prevent opening protein DB or spectra files if a run is in progress
             if ((ye.DataContext is ProteinDbForDataGrid || ye.DataContext is RawDataForDataGrid) && !LoadTaskButton.IsEnabled)
             {
@@ -565,6 +564,22 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
+            if (!staticTasksObservableCollection.Any())
+            {
+                GuiWarnHandler(null, new StringEventArgs("You need to add at least one task!", null));
+                return;
+            }
+            if (!rawDataObservableCollection.Any())
+            {
+                GuiWarnHandler(null, new StringEventArgs("You need to add at least one spectra file!", null));
+                return;
+            }
+            if (!proteinDbObservableCollection.Any())
+            {
+                GuiWarnHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
+                return;
+            }
+
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
@@ -651,7 +666,7 @@ namespace MetaMorpheusGUI
                 ClearTasksButton.IsEnabled = true;
 
                 // this exists so that when a task is deleted, the remaining tasks are renamed to keep the task numbers correct
-                for(int i = 0; i < staticTasksObservableCollection.Count; i++)
+                for (int i = 0; i < staticTasksObservableCollection.Count; i++)
                 {
                     string newName = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor;
                     staticTasksObservableCollection[i].DisplayName = newName;
@@ -734,10 +749,10 @@ namespace MetaMorpheusGUI
             {
                 return;
             }
-            
+
             int indexOfSelected = staticTasksObservableCollection.IndexOf(selectedTask);
             int indexToMoveTo = indexOfSelected - 1;
-            if(moveTaskUp)
+            if (moveTaskUp)
             {
                 indexToMoveTo = indexOfSelected + 1;
             }
@@ -768,14 +783,14 @@ namespace MetaMorpheusGUI
                 }
 
                 // move task up
-                if(e.Key == Key.Add)
+                if (e.Key == Key.Add || e.Key == Key.OemPlus)
                 {
                     MoveSelectedTask(sender, e, true);
                     e.Handled = true;
                 }
-
+                
                 // move task down
-                if (e.Key == Key.Subtract)
+                if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
                 {
                     MoveSelectedTask(sender, e, false);
                     e.Handled = true;
