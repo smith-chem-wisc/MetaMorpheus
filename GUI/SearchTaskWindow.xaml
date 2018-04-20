@@ -735,6 +735,14 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
+                <GroupBox Header="Output Choose" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                    <Expander x:Name="OutputExpander">
+                        <StackPanel Orientation="Vertical">
+                            <CheckBox x:Name="ckbMzId" Content="Output for .mzid" />
+                            <CheckBox x:Name="ckbPepXML" Content="Output for .pep.xml" />
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
