@@ -71,8 +71,25 @@ namespace TaskLayer
 
             // load proteins
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
-            
+            int emptyProteinEntries = 0;
+            List<Protein> proteinList = new List<Protein>();
+            foreach (var db in dbFilenameList)
+            {
+                int emptyProteinEntriesForThisDb = 0;
+                var dbProteinList = LoadProteinDb(db.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
+
+                proteinList = proteinList.Concat(dbProteinList).ToList();
+                emptyProteinEntries += emptyProteinEntriesForThisDb;
+            }
+            if (!proteinList.Any())
+            {
+                Warn("Warning: No protein entries were found in the database");
+            }
+            else if (emptyProteinEntries > 0)
+            {
+                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
+            }
+
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
             
             var numRawFiles = currentRawFileList.Count;
@@ -93,17 +110,10 @@ namespace TaskLayer
             // temporary search type for writing prose
             // the actual search type is technically file-specific but we don't allow file-specific notches, so it's safe to do this
             MassDiffAcceptor tempSearchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
-            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
+            proseCreatedWhileRunning.Append("precursor mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
 
-            if (CommonParameters.ProductMassTolerance is PpmTolerance)
-            {
-                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " ppm. ");
-            }
-            else
-            {
-                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
-            }
-            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             // start the G-PTM-D task
             Status("Running G-PTM-D...", new List<string> { taskId });
