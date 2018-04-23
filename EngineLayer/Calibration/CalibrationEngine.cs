@@ -39,7 +39,14 @@ namespace EngineLayer.Calibration
             this.datapoints = datapoints;
 
             // set the random seed based on raw file properties
-            randomSeed = myMSDataFile.NumSpectra;
+            if (myMsDataFile.SourceFile != null && !string.IsNullOrEmpty(myMsDataFile.SourceFile.CheckSum))
+            {
+                randomSeed = myMsDataFile.SourceFile.CheckSum.GetHashCode();
+            }
+            else
+            {
+                randomSeed = myMsDataFile.NumSpectra;
+            }
         }
 
         #endregion Public Constructors
@@ -48,13 +55,13 @@ namespace EngineLayer.Calibration
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            double fracForTraining = maximumFracForTraining;
+            double ms1fracForTraining = maximumFracForTraining;
+            double ms2fracForTraining = maximumFracForTraining;
 
             var myMs1DataPoints = new List<(double[] xValues, double yValue)>();
             var myMs2DataPoints = new List<(double[] xValues, double yValue)>();
             
             // generate MS1 calibration datapoints
-            Status("Generating MS1 calibration function");
             for (int i = 0; i < datapoints.Ms1List.Count; i++)
             {
                 // x values
@@ -70,17 +77,8 @@ namespace EngineLayer.Calibration
 
                 myMs1DataPoints.Add((explanatoryVariables, mzError));
             }
-
-            if (myMs1DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
-            {
-                fracForTraining = maximumDatapointsToTrainWith / myMs1DataPoints.Count;
-            }
-
-            var ms1Model = GetRandomForestModel(myMs1DataPoints, fracForTraining);
-            //var ms1Model = GetGradientBoostModel(myMs1DataPoints, fracForTraining);
-
+            
             // generate MS2 calibration datapoints
-            Status("Generating MS2 calibration function");
             for (int i = 0; i < datapoints.Ms2List.Count; i++)
             {
                 // x values
@@ -97,18 +95,28 @@ namespace EngineLayer.Calibration
                 myMs2DataPoints.Add((explanatoryVariables, mzError));
             }
 
-            if (myMs2DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
+            if (myMs1DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
             {
-                fracForTraining = maximumDatapointsToTrainWith / myMs2DataPoints.Count;
+                ms1fracForTraining = maximumDatapointsToTrainWith / myMs1DataPoints.Count;
             }
 
-            var ms2Model = GetRandomForestModel(myMs2DataPoints, fracForTraining);
-            //var ms2Model = GetGradientBoostModel(myMs2DataPoints, fracForTraining);
+            if (myMs2DataPoints.Count * maximumFracForTraining > maximumDatapointsToTrainWith)
+            {
+                ms2fracForTraining = maximumDatapointsToTrainWith / myMs2DataPoints.Count;
+            }
+
+            Status("Generating MS1 calibration function");
+            var ms1Model = GetRandomForestModel(myMs1DataPoints, ms1fracForTraining);
+            //var ms1Model = GetGradientBoostModel(myMs1DataPoints, ms1fracForTraining);
+
+            Status("Generating MS2 calibration function");
+            var ms2Model = GetRandomForestModel(myMs2DataPoints, ms2fracForTraining);
+            //var ms2Model = GetGradientBoostModel(myMs2DataPoints, ms2fracForTraining);
 
             Status("Calibrating spectra");
 
             CalibrateSpectra(ms1Model, ms2Model);
-
+            
             return new MetaMorpheusEngineResults(this);
         }
 
@@ -160,8 +168,12 @@ namespace EngineLayer.Calibration
             // put x values into a matrix and y values into a 1D array
             var myXValueMatrix = new F64Matrix(myInputs.Count, myInputs.First().xValues.Length);
             for (int i = 0; i < myInputs.Count; i++)
+            {
                 for (int j = 0; j < myInputs.First().xValues.Length; j++)
+                {
                     myXValueMatrix[i, j] = myInputs[i].xValues[j];
+                }
+            }
 
             var myYValues = myInputs.Select(p => p.yValue).ToArray();
             
@@ -169,19 +181,16 @@ namespace EngineLayer.Calibration
             var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
             var trainingSetX = splitData.TrainingSet.Observations;
             var trainingSetY = splitData.TrainingSet.Targets;
-
-            // learn an initial model
-            var myModel = learner.Learn(trainingSetX, trainingSetY);
-
+            
             // parameter ranges for the optimizer 
             var parameters = new ParameterBounds[]
             {
-                new ParameterBounds(min: 100, max: 150, transform: Transform.Linear),
-                new ParameterBounds(min: 1, max: 5, transform: Transform.Linear),
-                new ParameterBounds(min: 500, max: 2000, transform: Transform.Linear),
-                new ParameterBounds(min: 0, max: 2, transform: Transform.Linear),
-                new ParameterBounds(min: 1e-06, max: 1e-05, transform: Transform.Logarithmic),
-                new ParameterBounds(min: 0.7, max: 1.5, transform: Transform.Linear)
+                new ParameterBounds(min: 100, max: 200, transform: Transform.Linear),           // trees
+                new ParameterBounds(min: 1, max: 5, transform: Transform.Linear),               // min split size
+                new ParameterBounds(min: 2000, max: 4000, transform: Transform.Linear),          // max tree depth
+                new ParameterBounds(min: 0, max: 2, transform: Transform.Linear),               // featuresPrSplit
+                new ParameterBounds(min: 1e-06, max: 1e-05, transform: Transform.Logarithmic),  // min info gain
+                new ParameterBounds(min: 0.7, max: 1.5, transform: Transform.Linear)            // subsample ratio
             };
 
             var validationSplit = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed)
@@ -230,7 +239,7 @@ namespace EngineLayer.Calibration
                     runParallel: true);
 
             // learn final model with optimized parameters
-            myModel = learner.Learn(trainingSetX, trainingSetY);
+            var myModel = learner.Learn(trainingSetX, trainingSetY);
 
             // all done
             return myModel;
@@ -247,8 +256,12 @@ namespace EngineLayer.Calibration
             // put x values into a matrix and y values into a 1D array
             var myXValueMatrix = new F64Matrix(myInputs.Count, myInputs.First().xValues.Length);
             for (int i = 0; i < myInputs.Count; i++)
+            {
                 for (int j = 0; j < myInputs.First().xValues.Length; j++)
+                {
                     myXValueMatrix[i, j] = myInputs[i].xValues[j];
+                }
+            }
 
             var myYValues = myInputs.Select(p => p.yValue).ToArray();
             
@@ -274,7 +287,7 @@ namespace EngineLayer.Calibration
 
             var validationSplit = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed)
                 .SplitSet(myXValueMatrix, myYValues);
-
+            
             // define minimization metric
             Func<double[], OptimizerResult> minimize = p =>
             {
@@ -288,7 +301,7 @@ namespace EngineLayer.Calibration
                     subSampleRatio: p[5],
                     featuresPrSplit: (int)p[6],
                     runParallel: false);
-
+                
                 var candidateModel = candidateLearner.Learn(validationSplit.TrainingSet.Observations,
                 validationSplit.TrainingSet.Targets);
 
@@ -304,7 +317,7 @@ namespace EngineLayer.Calibration
             // find best parameters
             var result = optimizer.OptimizeBest(minimize);
             var best = result.ParameterSet;
-
+            
             // create the final learner using the best parameters 
             // (parameters that resulted in the model with the least error)
             learner = new RegressionAbsoluteLossGradientBoostLearner(

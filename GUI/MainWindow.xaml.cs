@@ -24,7 +24,7 @@ namespace MetaMorpheusGUI
     {
         #region Private Fields
 
-        private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
+        private readonly ObservableCollection<RawDataForDataGrid> spectraFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
@@ -40,8 +40,8 @@ namespace MetaMorpheusGUI
 
             Title = "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
 
-            dataGridXMLs.DataContext = proteinDbObservableCollection;
-            dataGridDatafiles.DataContext = rawDataObservableCollection;
+            dataGridProteinDatabases.DataContext = proteinDbObservableCollection;
+            dataGridSpectraFiles.DataContext = spectraFilesObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
 
             EverythingRunnerEngine.NewDbsHandler += AddNewDB;
@@ -68,7 +68,7 @@ namespace MetaMorpheusGUI
 
             MyFileManager.WarnHandler += GuiWarnHandler;
 
-            UpdateRawFileGuiStuff();
+            UpdateSpectraFileGuiStuff();
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
             FileSpecificParameters.ValidateFileSpecificVariableNames();
@@ -142,8 +142,8 @@ namespace MetaMorpheusGUI
             this.KeyDown += new KeyEventHandler(Window_KeyDown);
 
             // hide the "InProgress" column
-            dataGridXMLs.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
-            dataGridDatafiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
+            dataGridProteinDatabases.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
+            dataGridSpectraFiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
         }
 
         private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
@@ -168,8 +168,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                outRichTextBox.AppendText(e.S);
-                outRichTextBox.AppendText(Environment.NewLine);
+                warningsTextBox.AppendText(e.S);
+                warningsTextBox.AppendText(Environment.NewLine);
             }
         }
 
@@ -181,10 +181,10 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.S));
+                var huh = spectraFilesObservableCollection.First(b => b.FilePath.Equals(s.S));
                 huh.SetInProgress(false);
 
-                dataGridDatafiles.Items.Refresh();
+                dataGridSpectraFiles.Items.Refresh();
             }
         }
 
@@ -196,9 +196,9 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.S));
+                var huh = spectraFilesObservableCollection.First(b => b.FilePath.Equals(s.S));
                 huh.SetInProgress(true);
-                dataGridDatafiles.Items.Refresh();
+                dataGridSpectraFiles.Items.Refresh();
             }
         }
 
@@ -214,6 +214,7 @@ namespace MetaMorpheusGUI
                     uu.Use = false;
                 foreach (var uu in e.newDatabases)
                     proteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu));
+                dataGridProteinDatabases.Items.Refresh();
             }
         }
 
@@ -225,12 +226,12 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var uu in rawDataObservableCollection)
+                foreach (var uu in spectraFilesObservableCollection)
                 {
                     uu.Use = false;
                 }
                 foreach (var newRawData in e.StringList)
-                    rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
+                    spectraFilesObservableCollection.Add(new RawDataForDataGrid(newRawData));
                 UpdateOutputFolderTextbox();
             }
         }
@@ -252,12 +253,12 @@ namespace MetaMorpheusGUI
 
         private void UpdateOutputFolderTextbox()
         {
-            if (rawDataObservableCollection.Any())
+            if (spectraFilesObservableCollection.Any())
             {
                 // if current output folder is blank and there is a spectra file, use the spectra file's path as the output path
                 if (string.IsNullOrWhiteSpace(OutputFolderTextBox.Text))
                 {
-                    var pathOfFirstSpectraFile = Path.GetDirectoryName(rawDataObservableCollection.First().FilePath);
+                    var pathOfFirstSpectraFile = Path.GetDirectoryName(spectraFilesObservableCollection.First().FilePath);
                     OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
                 }
                 // else do nothing (do not override if there is a path already there; might clear user-defined path)
@@ -280,8 +281,8 @@ namespace MetaMorpheusGUI
                 var theTask = dynamicTasksObservableCollection.First(b => b.DisplayName.Equals(s.DisplayName));
                 theTask.Status = "Starting...";
 
-                dataGridDatafiles.Items.Refresh();
-                dataGridXMLs.Items.Refresh();
+                dataGridSpectraFiles.Items.Refresh();
+                dataGridProteinDatabases.Items.Refresh();
             }
         }
 
@@ -298,18 +299,18 @@ namespace MetaMorpheusGUI
                 theTask.Progress = 100;
                 theTask.Status = "Done!";
 
-                dataGridDatafiles.Items.Refresh();
-                dataGridXMLs.Items.Refresh();
+                dataGridSpectraFiles.Items.Refresh();
+                dataGridProteinDatabases.Items.Refresh();
             }
         }
 
-        private void ClearRaw_Click(object sender, RoutedEventArgs e)
+        private void ClearSpectraFiles_Click(object sender, RoutedEventArgs e)
         {
-            rawDataObservableCollection.Clear();
+            spectraFilesObservableCollection.Clear();
             UpdateOutputFolderTextbox();
         }
 
-        private void AddXML_Click(object sender, RoutedEventArgs e)
+        private void AddProteinDatabase_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
             {
@@ -319,14 +320,14 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
-                foreach (var filepath in openPicker.FileNames)
+                foreach (var filepath in openPicker.FileNames.OrderBy(p => p))
                 {
                     AddAFile(filepath);
                 }
-            dataGridXMLs.Items.Refresh();
+            dataGridProteinDatabases.Items.Refresh();
         }
 
-        private void AddRaw_Click(object sender, RoutedEventArgs e)
+        private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
@@ -336,18 +337,18 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
-                foreach (var rawDataFromSelected in openFileDialog1.FileNames)
+                foreach (var rawDataFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(rawDataFromSelected);
                 }
-            dataGridDatafiles.Items.Refresh();
+            dataGridSpectraFiles.Items.Refresh();
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
             if (LoadTaskButton.IsEnabled)
             {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
 
                 if (files != null)
                 {
@@ -364,10 +365,10 @@ namespace MetaMorpheusGUI
                         {
                             AddAFile(draggedFilePath);
                         }
-                        dataGridDatafiles.CommitEdit(DataGridEditingUnit.Row, true);
-                        dataGridXMLs.CommitEdit(DataGridEditingUnit.Row, true);
-                        dataGridDatafiles.Items.Refresh();
-                        dataGridXMLs.Items.Refresh();
+                        dataGridSpectraFiles.CommitEdit(DataGridEditingUnit.Row, true);
+                        dataGridProteinDatabases.CommitEdit(DataGridEditingUnit.Row, true);
+                        dataGridSpectraFiles.Items.Refresh();
+                        dataGridProteinDatabases.Items.Refresh();
                     }
                 }
                 UpdateTaskGuiStuff();
@@ -402,16 +403,18 @@ namespace MetaMorpheusGUI
                     // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
                     // this is one hacky way of checking if the user has C++ redistributable installed
                     string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
-                    if(!File.Exists(assumedManagedThermoHelperLayerDllPath))
+                    if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
                     {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! You may not have Microsoft Visual C++ Redistributable installed; MetaMorpheus needs this to read .raw files and may crash", null));
+                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; " +
+                            "a crash may result from searching this .raw file. If you have just installed the C++ redistributable, " +
+                            "please uninstall and reinstall MetaMorpheus", null));
                     }
 
                     goto case ".mzml";
 
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
-                    if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
+                    if (!SpectraFileExists(spectraFilesObservableCollection, zz)) { spectraFilesObservableCollection.Add(zz); }
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
@@ -427,7 +430,7 @@ namespace MetaMorpheusGUI
                 case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
 
-                    if (!ExistDa(proteinDbObservableCollection, uu))
+                    if (!DatabaseExists(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
                         if (theExtension.Equals(".xml") || theExtension.Equals(".xml.gz"))
@@ -439,7 +442,7 @@ namespace MetaMorpheusGUI
                             catch (Exception ee)
                             {
                                 MessageBox.Show(ee.ToString());
-                                GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                                GuiWarnHandler(null, new StringEventArgs("Cannot parse modification info from: " + draggedFilePath, null));
                                 proteinDbObservableCollection.Remove(uu);
                             }
                         }
@@ -454,15 +457,11 @@ namespace MetaMorpheusGUI
                     }
                     catch (Exception)
                     {
-                        GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
+                        GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + draggedFilePath, null));
                         break;
                     }
-                    if (tomlFile.Keys.Contains("PrecursorMassTolerance") && tomlFile.Keys.Contains("ProductMassTolerance") && tomlFile.Keys.Count == 2)
-                    {
-                        // do nothing; it's a ppm suggested tolerance toml from calibration, this gets read in elsewhere
-                    }
-                    // need to check for file-specific parameters toml here... right now it's displaying a warning
-                    else
+
+                    if (tomlFile.ContainsKey("TaskType"))
                     {
                         try
                         {
@@ -497,10 +496,11 @@ namespace MetaMorpheusGUI
                         }
                         catch (Exception e)
                         {
-                            GuiWarnHandler(null, new StringEventArgs("Could not parse .toml: " + e.Message, null));
+                            GuiWarnHandler(null, new StringEventArgs("Cannot read task toml: " + e.Message, null));
                         }
                     }
                     break;
+
                 default:
                     GuiWarnHandler(null, new StringEventArgs("Unrecognized file type: " + theExtension, null));
                     break;
@@ -514,41 +514,18 @@ namespace MetaMorpheusGUI
             staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParameters.TaskDescriptor;
         }
 
-        private void InsertTaskToCollectionAtPosition(MetaMorpheusTask ye, int index, out int actualIndexInserted)
-        {
-            PreRunTask te = new PreRunTask(ye);
-            if (index < 0)
-            {
-                index = 0;
-            }
-
-            if (staticTasksObservableCollection.Count == 0)
-            {
-                AddTaskToCollection(ye);
-                actualIndexInserted = 0;
-                return;
-            }
-
-            if (index > staticTasksObservableCollection.Count - 1)
-            {
-                index = staticTasksObservableCollection.Count - 1;
-            }
-
-            actualIndexInserted = index;
-            staticTasksObservableCollection.Insert(index, te);
-            staticTasksObservableCollection[index].DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParameters.TaskDescriptor;
-        }
-
+        // handles double-clicking on a data grid row
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            
+
             // prevent opening protein DB or spectra files if a run is in progress
             if ((ye.DataContext is ProteinDbForDataGrid || ye.DataContext is RawDataForDataGrid) && !LoadTaskButton.IsEnabled)
             {
                 return;
             }
 
+            // open the file with the default process for this file format
             if (ye.Content is TextBlock hm && hm != null && !string.IsNullOrEmpty(hm.Text))
             {
                 try
@@ -564,6 +541,22 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
+            if (!staticTasksObservableCollection.Any())
+            {
+                GuiWarnHandler(null, new StringEventArgs("You need to add at least one task!", null));
+                return;
+            }
+            if (!spectraFilesObservableCollection.Any())
+            {
+                GuiWarnHandler(null, new StringEventArgs("You need to add at least one spectra file!", null));
+                return;
+            }
+            if (!proteinDbObservableCollection.Any())
+            {
+                GuiWarnHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
+                return;
+            }
+
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
@@ -572,9 +565,9 @@ namespace MetaMorpheusGUI
             }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            outRichTextBox.Document.Blocks.Clear();
+            warningsTextBox.Document.Blocks.Clear();
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(), spectraFilesObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
             var t = new Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
@@ -592,7 +585,7 @@ namespace MetaMorpheusGUI
                 while (e.InnerException != null) e = e.InnerException;
                 var message = "Run failed, Exception: " + e.Message;
                 var messageBoxResult = System.Windows.MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo);
-                outRichTextBox.AppendText(message + Environment.NewLine);
+                warningsTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
                 //Find Output Folder
                 string outputFolder = e.Data["folder"].ToString();
@@ -650,7 +643,7 @@ namespace MetaMorpheusGUI
                 ClearTasksButton.IsEnabled = true;
 
                 // this exists so that when a task is deleted, the remaining tasks are renamed to keep the task numbers correct
-                for(int i = 0; i < staticTasksObservableCollection.Count; i++)
+                for (int i = 0; i < staticTasksObservableCollection.Count; i++)
                 {
                     string newName = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor;
                     staticTasksObservableCollection[i].DisplayName = newName;
@@ -659,7 +652,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void UpdateRawFileGuiStuff()
+        private void UpdateSpectraFileGuiStuff()
         {
             ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0 && LoadTaskButton.IsEnabled;
         }
@@ -716,6 +709,7 @@ namespace MetaMorpheusGUI
             }
         }
 
+        // deletes the selected task
         private void DeleteSelectedTask(object sender, RoutedEventArgs e)
         {
             var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
@@ -726,47 +720,59 @@ namespace MetaMorpheusGUI
             }
         }
 
+        // move the task up or down in the GUI
+        private void MoveSelectedTask(object sender, RoutedEventArgs e, bool moveTaskUp)
+        {
+            var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
+            if (selectedTask == null)
+            {
+                return;
+            }
+
+            int indexOfSelected = staticTasksObservableCollection.IndexOf(selectedTask);
+            int indexToMoveTo = indexOfSelected - 1;
+            if (moveTaskUp)
+            {
+                indexToMoveTo = indexOfSelected + 1;
+            }
+
+            if (indexToMoveTo >= 0 && indexToMoveTo < staticTasksObservableCollection.Count)
+            {
+                var temp = staticTasksObservableCollection[indexToMoveTo];
+                staticTasksObservableCollection[indexToMoveTo] = selectedTask;
+                staticTasksObservableCollection[indexOfSelected] = temp;
+
+                UpdateTaskGuiStuff();
+
+                var item = tasksTreeView.ItemContainerGenerator.ContainerFromItem(selectedTask);
+                ((TreeViewItem)item).IsSelected = true;
+            }
+        }
+
         // handles keyboard input in the main window
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (LoadTaskButton.IsEnabled)
             {
                 // delete selected task
-                var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
-                if (e.Key == Key.Delete || e.Key == Key.Back && selectedTask != null)
+                if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
                     DeleteSelectedTask(sender, e);
                     e.Handled = true;
                 }
 
-                if (((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) && selectedTask != null)
+                // move task up
+                if (e.Key == Key.Add || e.Key == Key.OemPlus)
                 {
-                    //if (Keyboard.IsKeyDown(Key.C)) // ctrl + c
-                    //{
-                    //    // duplicate task
-
-
-                    //    PreRunTask duplicatedTask = selectedTask.Clone();
-                    //    AddTaskToCollection(duplicatedTask.metaMorpheusTask);
-                    //}
-                    //if (Keyboard.IsKeyDown(Key.Down)) // ctrl + down
-                    //{
-                    //    // move task down
-                    //    var temp = selectedTask.metaMorpheusTask;
-                    //    int insertIndex = staticTasksObservableCollection.IndexOf(selectedTask) + 1;
-                    //    int newIndex;
-                    //    InsertTaskToCollectionAtPosition(temp, insertIndex, out newIndex);
-                    //    DeleteSelectedTask(sender, e);
-                    //}
-                    //else if (Keyboard.IsKeyDown(Key.Up)) // ctrl + up
-                    //{
-                    //    // move task up
-                    //    var temp = selectedTask.metaMorpheusTask;
-                    //    int insertIndex = staticTasksObservableCollection.IndexOf(selectedTask) - 1;
-                    //    int newIndex;
-                    //    InsertTaskToCollectionAtPosition(temp, insertIndex, out newIndex);
-                    //    DeleteSelectedTask(sender, e);
-                    //}
+                    MoveSelectedTask(sender, e, true);
+                    e.Handled = true;
+                }
+                
+                // move task down
+                if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
+                {
+                    MoveSelectedTask(sender, e, false);
+                    e.Handled = true;
                 }
             }
         }
@@ -831,6 +837,7 @@ namespace MetaMorpheusGUI
             }
         }
 
+        // update progress bar for task/file
         private void NewoutProgressBar(object sender, ProgressEventArgs s)
         {
             if (!Dispatcher.CheckAccess())
@@ -839,8 +846,6 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                // Find the task or the collection!!!
-
                 ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
 
                 foreach (var hm in s.nestedIDs.Skip(1))
@@ -870,8 +875,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                dataGridDatafiles.Items.Refresh();
-                dataGridXMLs.Items.Refresh();
+                dataGridSpectraFiles.Items.Refresh();
+                dataGridProteinDatabases.Items.Refresh();
             }
         }
 
@@ -883,7 +888,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                dataGridDatafiles.Items.Refresh();
+                dataGridSpectraFiles.Items.Refresh();
 
                 ClearTasksButton.IsEnabled = false;
                 DeleteSelectedTaskButton.IsEnabled = false;
@@ -903,8 +908,8 @@ namespace MetaMorpheusGUI
 
                 OutputFolderTextBox.IsEnabled = false;
 
-                dataGridDatafiles.IsReadOnly = true;
-                dataGridXMLs.IsReadOnly = true;
+                dataGridSpectraFiles.IsReadOnly = true;
+                dataGridProteinDatabases.IsReadOnly = true;
             }
         }
 
@@ -918,7 +923,7 @@ namespace MetaMorpheusGUI
             {
                 ResetTasksButton.IsEnabled = true;
 
-                dataGridDatafiles.Items.Refresh();
+                dataGridSpectraFiles.Items.Refresh();
             }
         }
 
@@ -965,8 +970,8 @@ namespace MetaMorpheusGUI
             ResetTasksButton.IsEnabled = false;
             OutputFolderTextBox.IsEnabled = true;
 
-            dataGridDatafiles.IsReadOnly = false;
-            dataGridXMLs.IsReadOnly = false;
+            dataGridSpectraFiles.IsReadOnly = false;
+            dataGridProteinDatabases.IsReadOnly = false;
 
             AddXML.IsEnabled = true;
             ClearXML.IsEnabled = true;
@@ -976,7 +981,7 @@ namespace MetaMorpheusGUI
             LoadTaskButton.IsEnabled = true;
 
             tasksTreeView.DataContext = staticTasksObservableCollection;
-            UpdateRawFileGuiStuff();
+            UpdateSpectraFileGuiStuff();
         }
 
         private void TasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -1042,7 +1047,7 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
-                foreach (var tomlFromSelected in openFileDialog1.FileNames)
+                foreach (var tomlFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(tomlFromSelected);
                 }
@@ -1083,16 +1088,19 @@ namespace MetaMorpheusGUI
                     }
                 }
             }
-            UpdateRawFileGuiStuff();
-            dataGridDatafiles.Items.Refresh();
+            UpdateSpectraFileGuiStuff();
+            dataGridSpectraFiles.Items.Refresh();
         }
 
         //run if data file has just been added with and checks for Existing fileSpecficParams
         private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocation)
         {
-            for (int i = 0; i < rawDataObservableCollection.Count; i++)
+            string assumedPathOfSpectraFileWithoutExtension = Path.Combine(Directory.GetParent(tomlLocation).ToString(), Path.GetFileNameWithoutExtension(tomlLocation));
+
+            for (int i = 0; i < spectraFilesObservableCollection.Count; i++)
             {
-                if (File.Exists(tomlLocation) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(tomlLocation))
+                string thisFilesPathWihoutExtension = Path.Combine(Directory.GetParent(spectraFilesObservableCollection[i].FilePath).ToString(), Path.GetFileNameWithoutExtension(spectraFilesObservableCollection[i].FilePath));
+                if (File.Exists(tomlLocation) && assumedPathOfSpectraFileWithoutExtension.Equals(thisFilesPathWihoutExtension))
                 {
                     TomlTable fileSpecificSettings = Toml.ReadFile(tomlLocation, MetaMorpheusTask.tomlConfig);
                     try
@@ -1101,7 +1109,7 @@ namespace MetaMorpheusGUI
                         var temp = new FileSpecificParameters(fileSpecificSettings);
 
                         // toml is ok; display the file-specific settings in the gui
-                        rawDataObservableCollection[i].SetParametersText(File.ReadAllText(tomlLocation));
+                        spectraFilesObservableCollection[i].SetParametersText(File.ReadAllText(tomlLocation));
                     }
                     catch (MetaMorpheusException e)
                     {
@@ -1109,25 +1117,25 @@ namespace MetaMorpheusGUI
                     }
                 }
             }
-            UpdateRawFileGuiStuff();
-            dataGridDatafiles.Items.Refresh();
+            UpdateSpectraFileGuiStuff();
+            dataGridSpectraFiles.Items.Refresh();
         }
 
-        private void AddSelectedRaw(object sender, RoutedEventArgs e)
+        private void AddSelectedSpectra(object sender, RoutedEventArgs e)
         {
             DataGridRow obj = (DataGridRow)sender;
 
             RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
             SelectedRawFiles.Add(ok);
-            UpdateRawFileGuiStuff();
+            UpdateSpectraFileGuiStuff();
         }
 
-        private void RemoveSelectedRaw(object sender, RoutedEventArgs e)
+        private void RemoveSelectedSpectra(object sender, RoutedEventArgs e)
         {
             DataGridRow obj = (DataGridRow)sender;
             RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
             SelectedRawFiles.Remove(ok);
-            UpdateRawFileGuiStuff();
+            UpdateSpectraFileGuiStuff();
         }
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
@@ -1141,14 +1149,14 @@ namespace MetaMorpheusGUI
             globalSettingsDialog.ShowDialog();
         }
 
-        private bool ExistDa(ObservableCollection<ProteinDbForDataGrid> pDOC, ProteinDbForDataGrid uuu)
+        private bool DatabaseExists(ObservableCollection<ProteinDbForDataGrid> pDOC, ProteinDbForDataGrid uuu)
         {
             foreach (ProteinDbForDataGrid pdoc in pDOC)
                 if (pdoc.FilePath == uuu.FilePath) { return true; }
             return false;
         }
 
-        private bool ExistRaw(ObservableCollection<RawDataForDataGrid> rDOC, RawDataForDataGrid zzz)
+        private bool SpectraFileExists(ObservableCollection<RawDataForDataGrid> rDOC, RawDataForDataGrid zzz)
         {
             foreach (RawDataForDataGrid rdoc in rDOC)
                 if (rdoc.FileName == zzz.FileName) { return true; }
@@ -1160,7 +1168,7 @@ namespace MetaMorpheusGUI
             var dialog = new FileSpecificParametersWindow(SelectedRawFiles);
             if (dialog.ShowDialog() == true)
             {
-                var tomlPathsForSelectedFiles = SelectedRawFiles.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
+                var tomlPathsForSelectedFiles = SelectedRawFiles.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml").ToList();
                 UpdateFileSpecificParamsDisplay(tomlPathsForSelectedFiles.ToArray());
             }
         }

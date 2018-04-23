@@ -38,39 +38,6 @@ namespace TaskLayer
 
         #endregion Public Properties
 
-        #region Public Methods
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("The initiator methionine behavior is set to "
-                + CommonParameters.DigestionParams.InitiatorMethionineBehavior
-                + " and the maximum number of allowed missed cleavages is "
-                + CommonParameters.DigestionParams.MaxMissedCleavages);
-            sb.AppendLine("MinPeptideLength: " + CommonParameters.DigestionParams.MinPeptideLength);
-            sb.AppendLine("MaxPeptideLength: " + CommonParameters.DigestionParams.MaxPeptideLength);
-            sb.AppendLine("maxModificationIsoforms: " + CommonParameters.DigestionParams.MaxModificationIsoforms);
-            sb.AppendLine("protease: " + CommonParameters.DigestionParams.Protease);
-            sb.AppendLine("bIons: " + CommonParameters.BIons);
-            sb.AppendLine("yIons: " + CommonParameters.YIons);
-            sb.AppendLine("cIons: " + CommonParameters.CIons);
-            sb.AppendLine("zdotIons: " + CommonParameters.ZdotIons);
-
-            sb.AppendLine("Fixed mod lists: " + string.Join(",", CommonParameters.ListOfModsFixed));
-            sb.AppendLine("Variable mod lists: " + string.Join(",", CommonParameters.ListOfModsVariable));
-            sb.AppendLine("Localized mod lists: " + string.Join(",", CommonParameters.ListOfModTypesLocalize));
-            sb.AppendLine("searchDecoy: " + XlSearchParameters.DecoyType);
-            sb.AppendLine("productMassTolerance: " + CommonParameters.ProductMassTolerance);
-
-            sb.AppendLine("Crosslink Precusor mass tolerance: " + XlSearchParameters.XlPrecusorMsTl);
-            sb.AppendLine("Beta Precusor mass tolerance: " + XlSearchParameters.XlBetaPrecusorMsTl);
-
-            return sb.ToString();
-        }
-
-        #endregion Public Methods
-
         #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
@@ -107,16 +74,7 @@ namespace TaskLayer
             crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);
             if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
             {
-                crosslinker.CrosslinkerName = XlSearchParameters.UdXLkerName;
-                crosslinker.Cleavable = XlSearchParameters.UdXLkerCleavable;
-                crosslinker.TotalMass = XlSearchParameters.UdXLkerTotalMass.HasValue ? (double)XlSearchParameters.UdXLkerTotalMass : 9999;
-                crosslinker.CleaveMassShort = XlSearchParameters.UdXLkerShortMass.HasValue ? (double)XlSearchParameters.UdXLkerShortMass : 9999;
-                crosslinker.CleaveMassLong = XlSearchParameters.UdXLkerShortMass.HasValue ? (double)XlSearchParameters.UdXLkerLongMass : 9999;
-                crosslinker.CrosslinkerModSite = XlSearchParameters.UdXLkerResidue;
-                crosslinker.LoopMass = XlSearchParameters.UdXLkerLoopMass.HasValue ? (double)XlSearchParameters.UdXLkerLoopMass : 9999;
-                crosslinker.DeadendMassH2O = XlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassH2O : 9999;
-                crosslinker.DeadendMassNH2 = XlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassNH2 : 9999;
-                crosslinker.DeadendMassTris = XlSearchParameters.UdXLkerDeadendMassTris.HasValue ? (double)XlSearchParameters.UdXLkerDeadendMassTris : 9999;
+                crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
             }
 
             ParallelOptions parallelOptions = new ParallelOptions
@@ -140,7 +98,7 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName + "; ");
             proseCreatedWhileRunning.Append("crosslinker type = " + crosslinker.Cleavable + "; ");
             proseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
-            proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSite + "; ");
+            proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSites + "; ");
 
             proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
@@ -172,18 +130,6 @@ namespace TaskLayer
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-                //List<Ms2ScanWithSpecificMass> arrayOfMs2ScansSortedByMass = new List<Ms2ScanWithSpecificMass>();
-                //arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToList();               
-                //Code to resolve MS3 data 
-                //if (XlSearchParameters.FragmentationType == FragmentaionType.MS2_HCD || XlSearchParameters.FragmentationType == FragmentaionType.MS2_EthCD)
-                //{
-                //    arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToList();
-                //}
-                //else
-                //{
-                //    arrayOfMs2ScansSortedByMass = GetCombinedMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToList();
-                //}
 
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
@@ -358,7 +304,7 @@ namespace TaskLayer
                 foreach (var fullFilePath in currentRawFileList)
                 {
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
-                    WritePepXML_xl(allPsmsFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
+                    WritePepXML_xl(allPsmsFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), proteinList, dbFilenameList[0].FilePath, variableModifications, fixedModifications, localizeableModificationTypes, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
             }
 
@@ -480,59 +426,6 @@ namespace TaskLayer
             return ids;
         }
 
-        //Calculate the FDR of crosslinked peptide (D - 2DD) / T
-        private static List<PsmCross> CrosslinkFDRAnalysis(List<PsmCross> items)
-        {
-            var ids = new List<PsmCross>();
-            foreach (var item in items)
-            {
-                ids.Add(item);
-            }
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
-            int cumulative_decoy_decoy = 0;
-
-            for (int i = 0; i < ids.Count; i++)
-            {
-                var item1 = ids[i]; var item2 = ids[i].BetaPsmCross;
-
-                var isDecoy1 = item1.IsDecoy; var isDecoy2 = item2.IsDecoy;
-                if (isDecoy1 || isDecoy2)
-                    cumulative_decoy++;
-                else
-                    cumulative_target++;
-
-                if (isDecoy1 && isDecoy2)
-                {
-                    cumulative_decoy_decoy++;
-                }
-
-                double temp_q_value = (double)(cumulative_decoy - 2 * cumulative_decoy_decoy) / (cumulative_target + cumulative_decoy);
-                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0, 0, 0, 0, false);
-                // item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-            }
-
-            double min_q_value = double.PositiveInfinity;
-
-            for (int i = ids.Count - 1; i >= 0; i--)
-            {
-                PsmCross id = ids[i];
-                if (id.FdrInfo.QValue < 0)
-                {
-                    id.FdrInfo.QValue = 0;
-                }
-                if (id.FdrInfo.QValue > min_q_value)
-                {
-                    id.FdrInfo.QValue = min_q_value;
-                }
-                else if (id.FdrInfo.QValue < min_q_value)
-                {
-                    min_q_value = id.FdrInfo.QValue;
-                }
-            }
-            return ids;
-        }
-
         //Find crosslinks
         private static List<PsmCross> FindCrosslinks(List<PsmCross> items)
         {
@@ -562,6 +455,25 @@ namespace TaskLayer
 
             }
             return psmCrossCrosslinks;
+        }
+
+        //Generate user defined crosslinker 
+        public static CrosslinkerTypeClass GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
+        {
+            var crosslinker = new CrosslinkerTypeClass(
+            xlSearchParameters.UdXLkerResidues,
+        xlSearchParameters.UdXLkerResidues2,
+        xlSearchParameters.UdXLkerName,
+        xlSearchParameters.UdXLkerCleavable,
+        (xlSearchParameters.UdXLkerTotalMass.HasValue ? (double)xlSearchParameters.UdXLkerTotalMass : 9999),
+        (xlSearchParameters.UdXLkerShortMass.HasValue ? (double)xlSearchParameters.UdXLkerShortMass : 9999),
+        (xlSearchParameters.UdXLkerLongMass.HasValue ? (double)xlSearchParameters.UdXLkerLongMass : 9999),
+        (xlSearchParameters.UdXLkerLoopMass.HasValue ? (double)xlSearchParameters.UdXLkerLoopMass : 9999),
+        (xlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassH2O : 9999),
+        (xlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassNH2 : 9999),
+        (xlSearchParameters.UdXLkerDeadendMassTris.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassTris : 9999)
+            );
+            return crosslinker;
         }
 
         private static void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
