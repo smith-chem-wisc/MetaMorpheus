@@ -12,7 +12,7 @@ namespace EngineLayer.HistogramAnalysis
 
         public string AA = "-";
         public Dictionary<char, int> residueCount;
-        public Dictionary<string, Tuple<string, string, Psm>> uniquePSMs;
+        public Dictionary<string, Tuple<string, string, PeptideSpectralMatch>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
 
         #endregion Public Fields
@@ -22,7 +22,7 @@ namespace EngineLayer.HistogramAnalysis
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            uniquePSMs = new Dictionary<string, Tuple<string, string, Psm>>();
+            uniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
         }
 
         #endregion Public Constructors
@@ -196,7 +196,7 @@ namespace EngineLayer.HistogramAnalysis
 
         #region Internal Methods
 
-        internal void Add(Psm ok)
+        internal void Add(PeptideSpectralMatch ok)
         {
             if (ok.FullSequence != null)
             {
@@ -204,10 +204,10 @@ namespace EngineLayer.HistogramAnalysis
                 {
                     var current = uniquePSMs[ok.FullSequence];
                     if (current.Item3.Score < ok.Score)
-                        uniquePSMs[ok.FullSequence] = new Tuple<string, string, Psm>(ok.BaseSequence, ok.FullSequence, ok);
+                        uniquePSMs[ok.FullSequence] = new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok);
                 }
                 else
-                    uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, Psm>(ok.BaseSequence, ok.FullSequence, ok));
+                    uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
             }
         }
 

@@ -60,17 +60,17 @@ namespace Test
             };
 
             IScan scan = new ThisTestScan();
-            var psm1 = new Psm(pwsm1.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
+            var psm1 = new PeptideSpectralMatch(pwsm1.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             psm1.MatchToProteinLinkedPeptides(matching);
-            var psm2 = new Psm(pwsm2.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
+            var psm2 = new PeptideSpectralMatch(pwsm2.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             psm2.MatchToProteinLinkedPeptides(matching);
-            var psm3 = new Psm(pwsm3.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
+            var psm3 = new PeptideSpectralMatch(pwsm3.CompactPeptide(TerminusType.None), 0, 1, 0, scan);
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             psm3.MatchToProteinLinkedPeptides(matching);
 
-            List<Psm> newPsms = new List<Psm>
+            List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
             {
                 psm1,
                 psm2,

@@ -68,7 +68,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
 
@@ -118,9 +118,11 @@ namespace TaskLayer
             {
                 NeoMassCalculator.ImportMasses();
 
-                ParallelOptions parallelOptions = new ParallelOptions();
-                if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                    parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+                ParallelOptions parallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
+                };
+
                 MyFileManager myFileManager = new MyFileManager(true);
 
                 //Import Spectra
@@ -151,7 +153,26 @@ namespace TaskLayer
 
                     #endregion Load modifications
 
-                    var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+                    // load proteins
+                    Status("Loading proteins...", new List<string> { taskId });
+                    int emptyProteinEntries = 0;
+                    List<Protein> proteinList = new List<Protein>();
+                    foreach (var db in dbFilenameList)
+                    {
+                        int emptyProteinEntriesForThisDb = 0;
+                        var dbProteinList = LoadProteinDb(db.FilePath, true, DecoyType.None, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
+
+                        proteinList = proteinList.Concat(dbProteinList).ToList();
+                        emptyProteinEntries += emptyProteinEntriesForThisDb;
+                    }
+                    if (!proteinList.Any())
+                    {
+                        Warn("Warning: No protein entries were found in the database");
+                    }
+                    else if (emptyProteinEntries > 0)
+                    {
+                        Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
+                    }
 
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;

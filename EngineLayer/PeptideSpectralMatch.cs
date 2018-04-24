@@ -10,20 +10,25 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public class Psm
+    public class PeptideSpectralMatch
     {
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-        private const double tolForScoreDifferentiation = 1e-9;
-
+        
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
 
+        #region Public Fields
+
+        public const double tolForScoreDifferentiation = 1e-9;
+
+        #endregion Public Fields
+
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
+        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -38,6 +43,9 @@ namespace EngineLayer
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
             this.AllScores[AllScores.Count - 1]++;
+            MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+            ProductMassErrorDa = new Dictionary<ProductType, double[]>();
+            ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
 
         #endregion Public Constructors
@@ -59,6 +67,8 @@ namespace EngineLayer
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
+        public double DeltaScore { get; private set; }
+        public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
@@ -103,6 +113,7 @@ namespace EngineLayer
             sb.Append('\t' + "Precursor MZ");
             sb.Append('\t' + "Precursor Mass");
             sb.Append('\t' + "Score");
+            sb.Append('\t' + "Delta Score");
             sb.Append('\t' + "Notch");
             sb.Append('\t' + "Different Peak Matches");
 
@@ -161,11 +172,19 @@ namespace EngineLayer
                 {
                     { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
                 };
+                if (Score - RunnerUpScore > tolForScoreDifferentiation)
+                {
+                    RunnerUpScore = Score;
+                }
                 Score = score;
             }
             else if (score - Score > -tolForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
                 compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
+            }
+            else if (Score - RunnerUpScore > tolForScoreDifferentiation)
+            {
+                RunnerUpScore = score;
             }
         }
 
@@ -215,12 +234,7 @@ namespace EngineLayer
 
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
-
-        public bool CompactPeptidesContainsKey(CompactPeptideBase key)
-        {
-            return compactPeptides.ContainsKey(key);
-        }
-
+        
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
@@ -240,6 +254,7 @@ namespace EngineLayer
             sb.Append('\t' + ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + Score.ToString("F3", CultureInfo.InvariantCulture));
+            sb.Append('\t' + DeltaScore.ToString("F3", CultureInfo.InvariantCulture));
             sb.Append("\t" + Resolve(compactPeptides.Select(b => b.Value.Item1)).Item1); // Notch
             sb.Append('\t' + NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture));
 
@@ -254,7 +269,7 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => string.Join("|", b.allModsOneIsNterminus.OrderBy(c => c.Key).Where(c => c.Value is ModificationWithMassAndCf).Select(c => (c.Value as ModificationWithMassAndCf).chemicalFormula.Formula)))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NumVariableMods)).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages.HasValue ? b.missedCleavages.Value.ToString(CultureInfo.InvariantCulture) : "unknown")).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ScanPrecursorMass - b.MonoisotopicMass)).Item1);
                 sb.Append('\t' + ResolveF2(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1);
@@ -294,7 +309,7 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
-            if (MatchedIonDictOnlyMatches != null)
+            if (MatchedIonDictOnlyMatches.Any())
             {
                 //Count
                 sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
@@ -345,7 +360,6 @@ namespace EngineLayer
                 sb.Append('\t' + FdrInfo.CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture));
                 sb.Append('\t' + FdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture));
                 sb.Append('\t' + FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
-
                 if (FdrInfo.CalculateEValue)
                 {
                     sb.Append("\t" + FdrInfo.EValue.ToString("F6", CultureInfo.InvariantCulture));
@@ -358,6 +372,11 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
 
             return sb.ToString();
+        }
+
+        public void CalculateDeltaScore(double scoreCutoff)
+        {
+            DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
         public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, decimal eValue, double eScore, bool calculateEValue)
@@ -377,8 +396,9 @@ namespace EngineLayer
             };
         }
 
-        public void UpdateAllScores(double score)
+        public void AddThisScoreToScoreDistribution(double score)
         {
+            // creates a distribution of scores for this PSM
             int roundScore = (int)Math.Floor(score);
             while (AllScores.Count <= roundScore)
                 AllScores.Add(0);
@@ -386,25 +406,7 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
-        #region Internal Methods
-
-        internal void AddOrReplace(Psm psmParent, bool reportAllAmbiguity)
-        {
-            foreach (var kvp in psmParent.compactPeptides)
-                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
-        }
-
-        internal void SumAllScores(Psm psmParent)
-        {
-            while (psmParent.AllScores.Count > AllScores.Count)
-                AllScores.Add(0);
-            for (int score = 0; score < psmParent.AllScores.Count; score++)
-                AllScores[score] += psmParent.AllScores[score];
-        }
-
-        #endregion Internal Methods
-
+        
         #region Private Methods
 
         private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)

@@ -34,6 +34,10 @@ namespace MetaMorpheusCommandLine
              .As('t', "tasks")
              .SetDefault(new List<string>());
 
+            p.Setup(arg => arg.OutputFolder)
+             .As('o', "outputFolder")
+             .SetDefault(null);
+
             p.Setup(arg => arg.MetaTasks)
              .As('m', "meta-task")
              .SetDefault(new List<string>());
@@ -143,15 +147,14 @@ namespace MetaMorpheusCommandLine
 
                     List<string> startingRawFilenameList = p.Object.Spectra.Select(b => Path.GetFullPath(b)).ToList();
                     List<DbForTask> startingXmlDbFilenameList = p.Object.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
-
-                    var MatchingChars =
-                        from len in Enumerable.Range(0, startingRawFilenameList.Min(s => s.Length)).Reverse()
-                        let possibleMatch = startingRawFilenameList.First().Substring(0, len)
-                        where startingRawFilenameList.All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
-                        select possibleMatch;
-
-                    string outputFolder = Path.Combine(Path.GetDirectoryName(MatchingChars.First()), @"$DATETIME");
-
+                    
+                    string outputFolder = p.Object.OutputFolder;
+                    if(outputFolder == null)
+                    {
+                        var pathOfFirstSpectraFile = Path.GetDirectoryName(startingRawFilenameList.First());
+                        outputFolder = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
+                    }
+                    
                     EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, outputFolder);
 
                     try
@@ -272,6 +275,7 @@ namespace MetaMorpheusCommandLine
             public List<string> Databases { get; set; }
             public List<string> Spectra { get; set; }
             public List<string> MetaTasks { get; set; }
+            public string OutputFolder { get; set; }
 
             #endregion Public Properties
         }

@@ -27,6 +27,7 @@ namespace Test
                     DigestionParams = new DigestionParams
                     {
                         InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                        MinPeptideLength = 5
                     },
                     ConserveMemory = false,
                 },
@@ -90,7 +91,8 @@ namespace Test
                     DigestionParams = new DigestionParams
                     {
                         InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                        MaxMissedCleavages = 0
+                        MaxMissedCleavages = 0,
+                        MinPeptideLength = 5
                     },
                     ConserveMemory = false,
                 },

@@ -33,7 +33,7 @@ namespace Test
                     DigestionParams = new DigestionParams
                     {
                         MaxMissedCleavages = 0,
-                        MinPeptideLength = null,
+                        MinPeptideLength = 1,
                         InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
                     },
                 },
@@ -137,7 +137,7 @@ namespace Test
                     DigestionParams = new DigestionParams
                     {
                         MaxMissedCleavages = 0,
-                        MinPeptideLength = null,
+                        MinPeptideLength = 1,
                         InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
                     },
                     ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },
@@ -406,6 +406,13 @@ namespace Test
                     {
                         {"ConnorModType", 1}
                     }
+                },
+                CommonParameters = new CommonParameters
+                {
+                    DigestionParams = new DigestionParams
+                    {
+                        MinPeptideLength = 5
+                    }
                 }
             };
 
@@ -663,6 +670,10 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
+                    DigestionParams = new DigestionParams
+                    {
+                        MinPeptideLength = 5
+                    }
                 },
                 SearchParameters = new SearchParameters
                 {

@@ -79,7 +79,7 @@ namespace EngineLayer
                         // list of proteins along with start/end residue in protein and the # missed cleavages
                         var peptideInProteinInfo = new List<Tuple<Protein, int, int, int>>();
                         foreach (var peptide in baseSequence.Value)
-                            peptideInProteinInfo.Add(new Tuple<Protein, int, int, int>(peptide.Protein, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.missedCleavages));
+                            peptideInProteinInfo.Add(new Tuple<Protein, int, int, int>(peptide.Protein, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
 
                         foreach (var peptide in baseSequence.Value)
                         {

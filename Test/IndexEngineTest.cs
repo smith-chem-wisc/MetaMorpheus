@@ -42,7 +42,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
@@ -72,7 +72,9 @@ namespace Test
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
             int i = 1;
             foreach (var mod in variableModifications)
             {
@@ -90,7 +92,7 @@ namespace Test
                 DigestionParams = new DigestionParams
                 {
                     Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
+                    MinPeptideLength = 1,
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
                 },
                 ConserveMemory = false,

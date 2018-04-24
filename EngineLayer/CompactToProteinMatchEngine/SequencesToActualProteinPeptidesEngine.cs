@@ -12,8 +12,8 @@ namespace EngineLayer
 
         protected readonly List<ModificationWithMass> fixedModifications;
         protected readonly List<ModificationWithMass> variableModifications;
-        protected readonly List<Psm> allPsms;
-        protected readonly List<Protein> proteinList;
+        protected readonly List<PeptideSpectralMatch> allPsms;
+        protected readonly List<Protein> proteins;
         protected readonly TerminusType terminusType;
         protected readonly IEnumerable<IDigestionParams> collectionOfDigestionParams;
         protected readonly bool reportAllAmbiguity;
@@ -22,9 +22,9 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<IDigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<IDigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
         {
-            this.proteinList = proteinList;
+            this.proteins = proteinList;
             this.allPsms = allPsms;
             this.fixedModifications = fixedModifications;
             this.variableModifications = variableModifications;
@@ -59,44 +59,47 @@ namespace EngineLayer
 
             #region Match Sequences to PeptideWithSetModifications
 
-            //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            //Status("Adding observed peptides to dictionary...", new List<string> { taskId });
-
             foreach (var psm in allPsms)
+            {
                 if (psm != null)
                 {
-                    foreach (var cp in psm.CompactPeptides)
-                        if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
-                            compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
-                }
-            //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            int totalProteins = proteinList.Count;
-            int proteinsSeen = 0;
-            int old_progress = 0;
-            var obj = new object();
-            //Status("Adding possible sources to peptide dictionary...", new List<string> { taskId });
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
-            {
-                Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
-                for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var digestionParam in collectionOfDigestionParams)
-                        foreach (var peptideWithSetModifications in proteinList[i].Digest(digestionParam, fixedModifications, variableModifications).ToList())
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
-                                v.Add(peptideWithSetModifications);
-                lock (obj)
-                {
-                    foreach (var ye in local)
+                    foreach (var compactPeptide in psm.CompactPeptides)
                     {
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
-                            foreach (var huh in ye.Value)
-                                v.Add(huh);
+                        if (!compactPeptideToProteinPeptideMatching.ContainsKey(compactPeptide.Key))
+                            compactPeptideToProteinPeptideMatching.Add(compactPeptide.Key, new HashSet<PeptideWithSetModifications>());
                     }
-                    proteinsSeen += fff.Item2 - fff.Item1;
-                    var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
-                    if (new_progress > old_progress)
+                }
+            }
+
+            double proteinsMatched = 0;
+            int oldPercentProgress = 0;
+
+            Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
+            {
+                for (int i = fff.Item1; i < fff.Item2; i++)
+                {
+                    foreach (var digestionParam in collectionOfDigestionParams)
                     {
-                        //ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
-                        old_progress = new_progress;
+                        foreach (var peptide in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
+                        {
+                            var compactPeptide = peptide.CompactPeptide(terminusType);
+
+                            if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out var peptidesWithSetMods))
+                            {
+                                lock (peptidesWithSetMods)
+                                    peptidesWithSetMods.Add(peptide);
+                            }
+                        }
+                    }
+
+                    // report progress (proteins matched so far out of total proteins in database)
+                    proteinsMatched++;
+                    var percentProgress = (int)((proteinsMatched / proteins.Count) * 100);
+
+                    if (percentProgress > oldPercentProgress)
+                    {
+                        oldPercentProgress = percentProgress;
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", nestedIds));
                     }
                 }
             });

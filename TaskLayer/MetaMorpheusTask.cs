@@ -155,43 +155,30 @@ namespace TaskLayer
             }
         }
 
-        public static ICommonParameters SetAllFileSpecificCommonParams(ICommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
+        public static ICommonParameters SetAllFileSpecificCommonParams(ICommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
-            if (currentFileSpecificSettings == null)
+            if (fileSpecificParams == null)
                 return commonParams;
 
-            IDigestionParams computedDigestionParams = new DigestionParams
-            {
-                InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior,
-                MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages,
-                MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength,
-                MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength,
-                MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms,
-                Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease,
-                MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide,
-                SemiProteaseDigestion = currentFileSpecificSettings.SemiProteaseDigestion ?? commonParams.DigestionParams.SemiProteaseDigestion,
-                TerminusTypeSemiProtease = currentFileSpecificSettings.TerminusTypeSemiProtease ?? commonParams.DigestionParams.TerminusTypeSemiProtease,
-            };
+            // clone the common parameters as a template for the file-specific params to override certain values
+            CommonParameters returnParams = ((CommonParameters)commonParams).Clone();
+            DigestionParams fileSpecificDigestionParams = ((DigestionParams)commonParams.DigestionParams).Clone();
 
-            CommonParameters returnParams = (CommonParameters)commonParams;
-            returnParams = returnParams.Clone();
+            // set file-specific digestion parameters
+            fileSpecificDigestionParams.Protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
+            fileSpecificDigestionParams.MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+            fileSpecificDigestionParams.MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+            fileSpecificDigestionParams.MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            fileSpecificDigestionParams.MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            returnParams.DigestionParams = fileSpecificDigestionParams;
 
-            returnParams.DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution;
-            returnParams.UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo;
-            returnParams.DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio;
-            returnParams.DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState;
-            returnParams.DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance;
-            returnParams.TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions;
-            returnParams.ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            returnParams.PrecursorMassTolerance = currentFileSpecificSettings.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            returnParams.ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory;
-            returnParams.ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff;
-            returnParams.TopNpeaks = currentFileSpecificSettings.TopNpeaks ?? commonParams.TopNpeaks;
-            returnParams.MinRatio = currentFileSpecificSettings.MinRatio ?? commonParams.MinRatio;
-            returnParams.TrimMs1Peaks = currentFileSpecificSettings.TrimMs1Peaks ?? commonParams.TrimMs1Peaks;
-            returnParams.TrimMsMsPeaks = currentFileSpecificSettings.TrimMsMsPeaks ?? commonParams.TrimMsMsPeaks;
-            returnParams.CalculateEValue = currentFileSpecificSettings.CalculateEValue ?? commonParams.CalculateEValue;
-            returnParams.DigestionParams = computedDigestionParams;
+            // set the rest of the file-specific parameters
+            returnParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            returnParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            returnParams.BIons = fileSpecificParams.BIons ?? commonParams.BIons;
+            returnParams.YIons = fileSpecificParams.BIons ?? commonParams.YIons;
+            returnParams.CIons = fileSpecificParams.CIons ?? commonParams.CIons;
+            returnParams.ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
 
             return returnParams;
         }
@@ -214,17 +201,25 @@ namespace TaskLayer
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
 
-                FileSpecificSettings[] fileSettingsList = new FileSpecificSettings[currentRawDataFilepathList.Count];
+                FileSpecificParameters[] fileSettingsList = new FileSpecificParameters[currentRawDataFilepathList.Count];
                 for (int i = 0; i < currentRawDataFilepathList.Count; i++)
                 {
                     string rawFilePath = currentRawDataFilepathList[i];
-                    var fileSpecificToml = Directory.GetFiles(Directory.GetParent(rawFilePath).ToString(), Path.GetFileNameWithoutExtension(rawFilePath) + ".toml");
-                    //Will only enter if Toml file exists with same name
-                    if (fileSpecificToml.Length == 1)
+                    string directory = Directory.GetParent(rawFilePath).ToString();
+                    string fileSpecificTomlPath = Path.Combine(directory, Path.GetFileNameWithoutExtension(rawFilePath)) + ".toml";
+                    if (File.Exists(fileSpecificTomlPath))
                     {
-                        TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
-                        var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
-                        fileSettingsList[i] = new FileSpecificSettings(tomlSettingsList);
+                        TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
+                        try
+                        {
+                            fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
+                        }
+                        catch(MetaMorpheusException e)
+                        {
+                            // file-specific toml has already been validated in the GUI when the spectra files were added, so...
+                            // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
+                            Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
+                        }
                     }
                 }
 
@@ -265,10 +260,10 @@ namespace TaskLayer
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
-                    file.Write("The data analysis was performed using MetaMorpheus Version: " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
+                    file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
                     file.Write(proseCreatedWhileRunning.ToString());
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
-                    file.WriteLine("The total time to perform " + this.TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
+                    file.WriteLine("The total time to perform the " + this.TaskType.ToString().ToLowerInvariant() + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
 
@@ -291,30 +286,34 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected static void WritePsmsToTsv(IEnumerable<Psm> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                output.WriteLine(Psm.GetTabSeparatedHeader());
+                output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
                 foreach (var heh in items)
                     output.WriteLine(heh.ToString(ModstoWritePruned));
             }
         }
 
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um)
+        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um, out int emptyEntriesCount)
         {
             List<string> dbErrors = new List<string>();
+            List<Protein> proteinList = new List<Protein>();
 
             if (Path.GetExtension(fileName).Equals(".fasta") || Path.GetExtension(fileName).Equals(".fa"))
             {
                 um = null;
-                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression, ProteinDbLoader.uniprot_organism_expression, out dbErrors);
+                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression, ProteinDbLoader.uniprot_organism_expression, out dbErrors);
             }
             else
             {
                 List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                return ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um);
+                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um);
             }
+
+            emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
+            return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
         protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
@@ -335,7 +334,7 @@ namespace TaskLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList);
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
 
         protected void SucessfullyFinishedWritingFile(string path, List<string> nestedIDs)
         {
