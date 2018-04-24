@@ -1327,7 +1327,7 @@ namespace TaskLayer
                             protein.OneBasedPossibleLocalizedModifications.Add(kvp);
                     }
                 }
-
+                
                 //writes all proteins
                 if (dbFilenameList.Any(b => !b.IsContaminant))
                 {
