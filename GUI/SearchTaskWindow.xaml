@@ -213,12 +213,11 @@
                                                 <TextBlock>
                                                     A novel indexed search designed for semi-specific and non-specific digestion.
                                                     <LineBreak/>
-                                                    This search requires the user to select ions from a single termini only. The choice does not matter. 
+                                                    This search requires the user to select ions from a single terminus only. The choice does not matter. 
                                                     <LineBreak/>
                                                     Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
                                                     <LineBreak/>
-                                                    Semi-Specific: Select the protease used (not semi-trypsin!).
-                                                    Non-Specific: Select the protease "SingleN" if using "b" or "c" ions OR "SingleC" if using "y" or "zdot" ions).
+                                                    Semi-Specific: Select the protease used, e.g. "LysC" becomes "semi-LysC".
                                                 </TextBlock>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
