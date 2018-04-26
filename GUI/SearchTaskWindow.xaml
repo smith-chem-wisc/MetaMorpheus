@@ -167,6 +167,7 @@
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -208,16 +209,29 @@
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <RadioButton x:Name="nonSpecificSearchRadioButton" Content="NonSpecific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
+                                        <RadioButton x:Name="semiSpecificSearchRadioButton" Content="Semi-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <RadioButton.ToolTip>
                                                 <TextBlock>
-                                                    A novel indexed search designed for semi-specific and non-specific digestion.
+                                                    A novel indexed search designed for semi-specific digestion.
                                                     <LineBreak/>
                                                     This search requires the user to select ions from a single terminus only. The choice does not matter. 
                                                     <LineBreak/>
                                                     Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
                                                     <LineBreak/>
-                                                    Semi-Specific: Select the protease used, e.g. "LysC" becomes "semi-LysC".
+                                                    Simply select the protease used, e.g. "LysC" becomes "semi-LysC".
+                                                </TextBlock>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3">
+                                        <RadioButton x:Name="nonSpecificSearchRadioButton1" Content="Non-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
+                                            <RadioButton.ToolTip>
+                                                <TextBlock>
+                                                    A novel indexed search designed for non-specific digestion.
+                                                    <LineBreak/>
+                                                    This search requires the user to select ions from a single terminus only. The choice does not matter. 
+                                                    <LineBreak/>
+                                                    Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
                                                 </TextBlock>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
@@ -283,6 +297,8 @@
                                                         Protease used for digestion.
                                                         <LineBreak/>
                                                         Novel proteases can be added/modified by the user at "...MetaMorpheus\\EngineLayer\\Data\\proteases.tsv"
+                                                        <LineBreak/>
+                                                        For semi-specific digestions, select "Semi-Specific Search" in "Search Mode".
                                                     </TextBlock>
                                                 </ComboBox.ToolTip>
                                             </ComboBox>
@@ -321,7 +337,7 @@
                                                 </TextBox.ToolTip>
                                             </TextBox>
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The maximum allowed peptide length. Leave empty for no limitation.

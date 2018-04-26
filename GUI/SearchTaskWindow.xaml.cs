@@ -158,7 +158,8 @@ namespace MetaMorpheusGUI
         {
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific;
+            nonSpecificSearchRadioButton1.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
+            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
             txtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
@@ -297,7 +298,7 @@ namespace MetaMorpheusGUI
         {
             #region Check Task Validity
 
-            if (nonSpecificSearchRadioButton.IsChecked.Value)
+            if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
             {
                 if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                 {
@@ -310,13 +311,13 @@ namespace MetaMorpheusGUI
                     proteaseComboBox.Items.MoveCurrentToFirst();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                     if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("SingleN"))
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
                         {
                             proteaseComboBox.Items.MoveCurrentToNext();
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                         }
                     else
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("SingleC"))
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
                         {
                             proteaseComboBox.Items.MoveCurrentToNext();
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -333,7 +334,7 @@ namespace MetaMorpheusGUI
                     }
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
-                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
+                    MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
             if (!int.TryParse(DeconvolutionMaxAssumedChargeStateTextBox.Text, out int deconMaxAssumedCharge) || deconMaxAssumedCharge < 1)
             {
@@ -450,7 +451,7 @@ namespace MetaMorpheusGUI
             }
 
             DigestionParams digestionParamsToSave = new DigestionParams();
-            digestionParamsToSave.SemiProteaseDigestion = nonSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC;
+            digestionParamsToSave.SemiProteaseDigestion = semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC;
             digestionParamsToSave.TerminusTypeSemiProtease = bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C;
             digestionParamsToSave.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             digestionParamsToSave.MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
@@ -628,18 +629,42 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void NonSpecificUsingNonSpecific(object sender, SelectionChangedEventArgs e)
-        {
-            missedCleavagesTextBox.IsEnabled = !(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific") && nonSpecificSearchRadioButton.IsChecked.Value);
-        }
-
         private void NonSpecificUsingNonSpecific(object sender, RoutedEventArgs e)
         {
-            missedCleavagesTextBox.IsEnabled = !(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific") && nonSpecificSearchRadioButton.IsChecked.Value);
+            if (nonSpecificSearchRadioButton1.IsChecked.Value)
+            {
+                proteaseComboBox.Items.MoveCurrentToFirst();
+                proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                while (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                {
+                    proteaseComboBox.Items.MoveCurrentToNext();
+                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                }
+            }
+            missedCleavagesTextBox.IsEnabled = !(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"));
         }
 
         #endregion Private Methods
 
+        private void NonSpecificUsingNonSpecific(object sender, SelectionChangedEventArgs e)
+        {
+            missedCleavagesTextBox.IsEnabled = !(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"));
+        }
+
+        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        {
+            if(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                try
+                {
+                    missedCleavagesTextBox.Text = (Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString();
+                }
+                catch
+                {
+
+                }
+            }
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
