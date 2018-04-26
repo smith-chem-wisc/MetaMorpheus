@@ -299,23 +299,38 @@ namespace MetaMorpheusGUI
 
             if (nonSpecificSearchRadioButton.IsChecked.Value)
             {
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC") && (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                if((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                 {
-                    MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
-                }
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
-                {
-                    MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
+                    MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
+                    bCheckBox.IsChecked = false;
+                    cCheckBox.IsChecked = false;
                 }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    MessageBox.Show("The non-specific protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'singleN' or 'singleC'.");
-                    return;
+                    proteaseComboBox.Items.MoveCurrentToFirst();
+                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                    if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("SingleN"))
+                        {
+                            proteaseComboBox.Items.MoveCurrentToNext();
+                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                        }
+                    else
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("SingleC"))
+                        {
+                            proteaseComboBox.Items.MoveCurrentToNext();
+                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                        }
                 }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
                 {
-                    MessageBox.Show("The semi-trypsin protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'trypsin'.");
-                    return;
+                    proteaseComboBox.Items.MoveCurrentToFirst();
+                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                    while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("trypsin"))
+                    {
+                        proteaseComboBox.Items.MoveCurrentToNext();
+                        proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                    }
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
@@ -613,7 +628,18 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void NonSpecificUsingNonSpecific(object sender, SelectionChangedEventArgs e)
+        {
+            missedCleavagesTextBox.IsEnabled = !(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific") && nonSpecificSearchRadioButton.IsChecked.Value);
+        }
+
+        private void NonSpecificUsingNonSpecific(object sender, RoutedEventArgs e)
+        {
+            missedCleavagesTextBox.IsEnabled = !(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific") && nonSpecificSearchRadioButton.IsChecked.Value);
+        }
+
         #endregion Private Methods
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
