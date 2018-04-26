@@ -61,7 +61,7 @@ namespace TaskLayer
 
             if (!currentRawDataFilenameList.Any())
             {
-                Warn("No data files selected");
+                Warn("No spectra files selected");
                 FinishedAllTasks(null);
                 return;
             }
@@ -76,13 +76,13 @@ namespace TaskLayer
             {
                 if (!currentRawDataFilenameList.Any())
                 {
-                    Warn("Cannot proceed. No data files selected.");
+                    Warn("Cannot proceed. No spectra files selected.");
                     FinishedAllTasks(outputFolder);
                     return;
                 }
                 if (!currentXmlDbFilenameList.Any())
                 {
-                    Warn("Cannot proceed. No xml files selected.");
+                    Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(outputFolder);
                     return;
                 }
