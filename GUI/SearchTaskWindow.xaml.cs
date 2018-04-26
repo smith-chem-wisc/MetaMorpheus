@@ -299,7 +299,7 @@ namespace MetaMorpheusGUI
 
             if (nonSpecificSearchRadioButton.IsChecked.Value)
             {
-                if((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
+                if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                 {
                     MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
                     bCheckBox.IsChecked = false;
@@ -396,7 +396,7 @@ namespace MetaMorpheusGUI
             #endregion Check Task Validity
 
             #region Save Parameters
-            
+
             CommonParameters CommonParamsToSave = (TheTask.CommonParameters as CommonParameters).Clone();
 
             if (OutputFileNameTextBox.Text != "")

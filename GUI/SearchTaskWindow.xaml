@@ -201,7 +201,7 @@
                                                     <TextBlock>
                                                         Splits the "Modern Search" into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
                                                         <LineBreak/>
-                                                        There is no correlation between the number of partitions and the resulting search speed.                                                   
+                                                        There is no correlation between the number of partitions and the resulting search speed.
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
                                             </TextBox>
@@ -669,11 +669,11 @@
                             </GroupBox>
                             <GroupBox Header="Mass Difference Histogram Analysis">
                                 <StackPanel>
-                                  <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Construct mass-difference histogram" >
+                                    <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Construct mass-difference histogram" >
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="For wide precursor tolerances, find which mass differences are most common." ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
-                                        </ToolTipService.ToolTip>  
-                                  </CheckBox>
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Histogram bin width (Da):" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
                                         <TextBox x:Name="histogramBinWidthTextBox" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
