@@ -311,17 +311,21 @@ namespace MetaMorpheusGUI
                     proteaseComboBox.Items.MoveCurrentToFirst();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                     if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                    {
                         while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
                         {
                             proteaseComboBox.Items.MoveCurrentToNext();
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                         }
+                    }
                     else
+                    {
                         while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
                         {
                             proteaseComboBox.Items.MoveCurrentToNext();
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                         }
+                    }
                 }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
                 {
@@ -661,7 +665,7 @@ namespace MetaMorpheusGUI
                 }
                 catch
                 {
-
+                    //if not an entry, don't update the missedCleavagesTextBox.
                 }
             }
         }
