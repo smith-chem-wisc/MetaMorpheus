@@ -26,6 +26,7 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = 30000.0;
+            QValueFilter =.01;
             ModsToWriteSelection = new Dictionary<string, int>
             {
                 {"ProteinTermMod", 3},
@@ -58,7 +59,7 @@ namespace TaskLayer
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
-
+        public double QValueFilter { get; set; }
         #endregion Public Properties
     }
 }

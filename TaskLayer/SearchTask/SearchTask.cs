@@ -1102,7 +1102,7 @@ namespace TaskLayer
                 }
 
                 // get PSMs to pass to FlashLFQ
-                var unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && p.FullSequence != null);
+                var unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p => p.FdrInfo.QValue < SearchParameters.QValueFilter && !p.IsDecoy && p.FullSequence != null);
                 var mypsmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
                 // pass protein group info for each PSM
@@ -1210,8 +1210,9 @@ namespace TaskLayer
             {
                 if (currentRawFileList.Count > 1)
                 {
+                    var psmsWithFilterOutputToTsv = allPsms.Where(b => (b.FdrInfo.QValue <= SearchParameters.QValueFilter)).ToList();
                     var writtenFile = Path.Combine(OutputFolder, "aggregatePSMs.psmtsv");
-                    WritePsmsToTsv(allPsms, writtenFile, SearchParameters.ModsToWriteSelection);
+                    WritePsmsToTsv(psmsWithFilterOutputToTsv, writtenFile, SearchParameters.ModsToWriteSelection);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
 
                     var writtenFileForPercolator = Path.Combine(OutputFolder, "forPercolator.tsv");
@@ -1221,7 +1222,7 @@ namespace TaskLayer
                 myTaskResults.AddNiceText("All target PSMS within 1% FDR: " + allPsms.Count(a => a.FdrInfo.QValue < .01 && !a.IsDecoy));
             }
 
-            var peptides = allPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            var peptides = allPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).Where(b => (b.FdrInfo.QValue <= SearchParameters.QValueFilter)).ToList();
             {
                 if (currentRawFileList.Count > 1)
                 {
@@ -1242,8 +1243,7 @@ namespace TaskLayer
             // individual psm files (with global psm fdr, global parsimony)
             foreach (var group in psmsGroupedByFile)
             {
-                var psmsForThisFile = group.ToList();
-
+                var psmsForThisFile = group.Where(b => (b.FdrInfo.QValue <= SearchParameters.QValueFilter)).ToList();
                 var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
 
                 {
@@ -1265,7 +1265,7 @@ namespace TaskLayer
                 var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
 
                 {
-                    var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+                    var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).Where(b => (b.FdrInfo.QValue <= SearchParameters.QValueFilter)).ToList();
                     var writtenFile = Path.Combine(OutputFolder, strippedFileName + "_Peptides.psmtsv");
                     WritePsmsToTsv(peptidesForFile, writtenFile, SearchParameters.ModsToWriteSelection);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
@@ -1382,7 +1382,7 @@ namespace TaskLayer
                             protein.OneBasedPossibleLocalizedModifications.Add(kvp);
                     }
                 }
-
+                
                 //writes all proteins
                 if (dbFilenameList.Any(b => !b.IsContaminant))
                 {
