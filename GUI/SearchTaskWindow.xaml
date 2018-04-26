@@ -48,14 +48,14 @@
                         <StackPanel>
                             <GroupBox Header="Deisotoping">
                                 <StackPanel>
-                                    <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <CheckBox.ToolTip>
                                             <TextBlock>
                                                 Use the charge states and precursor masses determined by the instrument controller.
                                             </TextBlock>
                                         </CheckBox.ToolTip>
                                     </CheckBox>
-                                    <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <CheckBox.ToolTip>
                                             <TextBlock>
                                                 Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
@@ -68,7 +68,7 @@
                                     </StackPanel>-->
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Deconvolution Max Assumed Charge State" />
-                                        <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The maximum charge state that deconvolution should allow. Minimum is 1.
@@ -84,19 +84,19 @@
                             </GroupBox>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
-                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="Remove low-intensity MS1 peaks using the below settings" />
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
-                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="Remove low-intensity MS2 peaks using the below settings" />
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <TextBox x:Name="TopNPeaksTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Use the N most intense peaks from the spectrum and remove all other peaks" />
                                             </ToolTipService.ToolTip>
@@ -104,7 +104,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum intensity ratio" />
-                                        <TextBox x:Name="MinRatioTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <TextBox x:Name="MinRatioTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Peaks must be this intense compared to the base peak" />
                                             </ToolTipService.ToolTip>
@@ -121,7 +121,7 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Precursor Mass Tolerance" />
-                                <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS1 peaks.
@@ -134,7 +134,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Product Mass Tolerance" />
-                                <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS2 peaks.
@@ -169,7 +169,7 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <RadioButton.ToolTip>
                                                 <TextBlock>
                                                     Basic search designed for standard search spaces (tight precursor mass tolerance, strict enzyme specificity)
@@ -181,7 +181,7 @@
                                         <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />-->
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
-                                        <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <RadioButton.ToolTip>
                                                 <TextBlock>
                                                     Indexed search designed for massive search spaces (wide/open precursor mass tolerance).
@@ -196,7 +196,7 @@
                                         </RadioButton>
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="numerOfDatabaseSearchesLabel" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         Splits the "Modern Search" into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
@@ -208,7 +208,7 @@
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <RadioButton x:Name="nonSpecificSearchRadioButton" Content="NonSpecific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
+                                        <RadioButton x:Name="nonSpecificSearchRadioButton" Content="NonSpecific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
                                             <RadioButton.ToolTip>
                                                 <TextBlock>
                                                     A novel indexed search designed for semi-specific and non-specific digestion.
@@ -231,21 +231,21 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <CheckBox.ToolTip>
                                                 <TextBlock>
                                                     Search the forward sequences present in the database. Uncheck this to allow for separate target/decoy searching.
                                                 </TextBlock>
                                             </CheckBox.ToolTip>
                                         </CheckBox>
-                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <CheckBox.ToolTip>
                                                 <TextBlock>
                                                     Search decoy sequences by transformation of the database. Uncheck this to allow for separate target/decoy searching.
                                                 </TextBlock>
                                             </CheckBox.ToolTip>
                                         </CheckBox>
-                                        <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <RadioButton.ToolTip>
                                                 <TextBlock>
                                                     Generate decoy sequences by reversing the original sequences. 
@@ -254,7 +254,7 @@
                                                 </TextBlock>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
-                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <RadioButton.ToolTip>
                                                 <TextBlock>
                                                     Generate decoy sequences via a non-random shuffle of the original sequences. 
@@ -265,7 +265,7 @@
                                         </RadioButton>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxMissedCleavagesLabel" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox"  PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox x:Name="missedCleavagesTextBox"  PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                     Maximum number of missed proteolytic cleavages allowed.
@@ -277,7 +277,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="proteaseLabel" Content="Protease" />
-                                            <ComboBox x:Name="proteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000" SelectionChanged="NonSpecificUsingNonSpecific">
+                                            <ComboBox x:Name="proteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="NonSpecificUsingNonSpecific">
                                                 <ComboBox.ToolTip>
                                                     <TextBlock>
                                                         Protease used for digestion.
@@ -291,7 +291,7 @@
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine" />
-                                            <ComboBox x:Name="initiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <ComboBox x:Name="initiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <ComboBox.ToolTip>
                                                     <TextBlock>
                                                         Assumed cleavage of the initiator Methionine present at the beginning of most proteins (start codon).
@@ -301,7 +301,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxModificationIsoformsLabel" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The maximum number of isoforms (sequences with modifications) allowed from a given unmodified "base-sequence". 
@@ -313,7 +313,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The minimum allowed peptide length. Must be a positive, non-zero integer.
@@ -321,7 +321,7 @@
                                                 </TextBox.ToolTip>
                                             </TextBox>
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The maximum allowed peptide length. Leave empty for no limitation.
@@ -331,7 +331,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lbMaxModNum" Content="Max mods per peptide" />
-                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The maximum number of modifications allowed on a single isoform.
@@ -350,7 +350,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
                                                         Generates experimental (not theoretical) complementary ions for each MS2.
@@ -362,7 +362,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da)" />
-                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         Indexed Search Only: Limits the maximum MS2 fragment mass to avoid rare crashes.
@@ -375,7 +375,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="ionsToSearchLabel" Content="Ions to search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <Label x:Name="ionsToSearchLabel" Content="Ions to search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <Label.ToolTip>
                                                     <TextBlock>
                                                         The expected product ions produced by fragmentation.
@@ -394,7 +394,7 @@
                             </GroupBox>
                             <GroupBox Header="Mass Difference Acceptor Criterion">
                                 <StackPanel>
-                                    <RadioButton x:Name="massDiffAcceptExact" Content="Exact" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <RadioButton x:Name="massDiffAcceptExact" Content="Exact" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
                                                 Basic search where the observed and theoretical precursor masses must be equal (~0 Da precursor mass-difference).
@@ -402,7 +402,7 @@
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
-                                    <RadioButton x:Name="massDiffAccept1mm" Content="1 Missed Monoisotopic Peak" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <RadioButton x:Name="massDiffAccept1mm" Content="1 Missed Monoisotopic Peak" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
                                                 Basic search where the observed and theoretical precursor masses are allowed to disagree by 1 Da to allow for a 1 Da monoisotopic mass error.
@@ -411,21 +411,21 @@
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
-                                    <RadioButton x:Name="massDiffAccept2mm" Content="1 or 2 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <RadioButton x:Name="massDiffAccept2mm" Content="1 or 2 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
                                                 Basic search where the observed and theoretical precursor masses are allowed to disagree by 1 or 2 Da to allow for a 1 or 2 Da monoisotopic mass error.
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
-                                    <RadioButton x:Name="massDiffAccept3mm" Content="1, 2, or 3 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <RadioButton x:Name="massDiffAccept3mm" Content="1, 2, or 3 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
                                                 Basic search where the observed and theoretical precursor masses are allowed to disagree by 1, 2, or 3 Da to allow for a 1, 2, or 3 Da monoisotopic mass error.
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
-                                    <RadioButton x:Name="massDiffAccept187" Content="-187 and Up" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <RadioButton x:Name="massDiffAccept187" Content="-187 and Up" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
                                                 An "open-mass" search that allows mass-differences between observed and theoretical precursor masses of -187 Da to infinity (observed can be infinitely more massive than the theoretical).
@@ -436,7 +436,7 @@
                                             </TextBlock>
                                         </RadioButton.ToolTip>
                                     </RadioButton>
-                                    <RadioButton x:Name="massDiffAcceptOpen" Content="Accept all" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <RadioButton x:Name="massDiffAcceptOpen" Content="Accept all" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <RadioButton.ToolTip>
                                             <TextBlock>
                                                 An "open-mass" search that allows mass-differences between observed and theoretical precursor masses of -infinity to infinity.
@@ -459,7 +459,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <StackPanel Orientation="Horizontal" Margin="1">
-                                            <CheckBox x:Name="allAmbiguity" Content="Report PSM ambiguity" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                            <CheckBox x:Name="allAmbiguity" Content="Report PSM ambiguity" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
                                                         Multiple sequences are reported when the identification is ambiguous.
@@ -480,7 +480,7 @@
                             </StackPanel>-->
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
-                                <TextBox x:Name="minScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                <TextBox x:Name="minScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             The minimum MetaMorpheus score allowed for a PSM to be reportable.
@@ -491,7 +491,7 @@
                                 </TextBox>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <CheckBox.ToolTip>
                                         <TextBlock>
                                             This allows delta scores (the difference between the top two highest scoring candidates) to be considered in q-value calculations.
@@ -502,7 +502,7 @@
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>
-                                <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <CheckBox.ToolTip>
                                         <TextBlock>
                                             This estimates the expectation value (eValue) for each PSM, which is the probability of a PSM obtaining its given score by random chance.
@@ -556,7 +556,7 @@
                                     </TreeView>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <Label Content="Variable"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <Label Content="Variable"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <Label.ToolTip>
                                             <TextBlock>
                                                 Only use this for highly prevelant modifications (>10% of peptides).
@@ -629,17 +629,17 @@
                                 <StackPanel>
                                     <CheckBox x:Name="checkBoxParsimony" Content="Apply protein parsimony and construct protein groups">
                                         <ToolTipService.ToolTip>
-                                            <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
+                                            <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}">
                                         <ToolTipService.ToolTip>
-                                            <ToolTip Content="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000" />
+                                            <ToolTip Content="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}">
                                         <ToolTipService.ToolTip>
-                                            <ToolTip Content="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
+                                            <ToolTip Content="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                 </StackPanel>
@@ -648,20 +648,20 @@
                                 <StackPanel>
                                     <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides/proteins with FlashLFQ">
                                         <ToolTipService.ToolTip>
-                                            <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
+                                            <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBox x:Name="quantPpmTolerance" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                             <ToolTipService.ToolTip>
-                                                <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000" />
+                                                <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                             </ToolTipService.ToolTip>
                                         </TextBox>
                                         <Label x:Name="quantPpmLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
                                     </StackPanel>
                                     <CheckBox x:Name="checkBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                         <ToolTipService.ToolTip>
-                                            <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
+                                            <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                 </StackPanel>
@@ -670,7 +670,7 @@
                                 <StackPanel>
                                     <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Construct mass-difference histogram" >
                                         <ToolTipService.ToolTip>
-                                            <ToolTip Content="For wide precursor tolerances, find which mass differences are most common." ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000"/>
+                                            <ToolTip Content="For wide precursor tolerances, find which mass differences are most common." ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal">
@@ -681,7 +681,7 @@
                             </GroupBox>
                             <GroupBox Header="Pruned Database Writing">
                                 <StackPanel>
-                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="1000">
+                                    <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ToolTipService.ToolTip>
                                             <TextBlock>
                                                 This is very uncommon and not recommended for the typical user.
