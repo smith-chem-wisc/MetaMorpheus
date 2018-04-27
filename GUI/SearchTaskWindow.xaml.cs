@@ -645,14 +645,14 @@ namespace MetaMorpheusGUI
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                 }
                 proteaseComboBox.IsEnabled = false;
+                addCompIonCheckBox.IsChecked = true;
             }
             else
             {
                 proteaseComboBox.IsEnabled = true;
+                addCompIonCheckBox.IsChecked = false;
             }
         }
-
-        #endregion Private Methods
 
         private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
         {
@@ -683,9 +683,9 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void SemiSpecificUpdate(object sender, DependencyPropertyChangedEventArgs e)
+        private void SemiSpecificUpdate(object sender, DependencyPropertyChangedEventArgs e) //this is useless because the other one (RoutedEventsArgs) overrides, but it's needed to build
         {
-            if(semiDigestionRedundantCheckBox.IsChecked.Value && !semiSpecificSearchRadioButton.IsChecked.Value)
+            if (semiDigestionRedundantCheckBox.IsChecked.Value && !semiSpecificSearchRadioButton.IsChecked.Value)
             {
                 semiSpecificSearchRadioButton.IsChecked = true;
             }
@@ -705,7 +705,18 @@ namespace MetaMorpheusGUI
                     semiSpecificSearchRadioButton.IsChecked = semiDigestionRedundantCheckBox.IsChecked.Value;
                 }
             }
+            if(semiSpecificSearchRadioButton.IsChecked.Value)
+            {
+                addCompIonCheckBox.IsChecked = true;
+            }
+            else
+            {
+                addCompIonCheckBox.IsChecked = false;
+            }
         }
+    
+        #endregion Private Methods
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
