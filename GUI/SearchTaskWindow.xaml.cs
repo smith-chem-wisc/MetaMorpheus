@@ -377,6 +377,16 @@ namespace MetaMorpheusGUI
             {
                 txtMaxPeptideLength.Text = int.MaxValue.ToString();
             }
+            if (!int.TryParse(txtMaxPeptideLength.Text, out int maxPeptideLength) || maxPeptideLength < 1)
+            {
+                MessageBox.Show("The minimum peptide length must be a positive integer");
+                return;
+            }
+            if (maxPeptideLength < minPeptideLength)
+            {
+                MessageBox.Show("The maximum peptide length must be greater than or equal to the minimum peptide length.");
+                return;
+            }
             if (!double.TryParse(precursorMassToleranceTextBox.Text, out double precursorMassTolerance) || precursorMassTolerance <= 0)
             {
                 MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + precursorMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
