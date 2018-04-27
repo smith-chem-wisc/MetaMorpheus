@@ -670,9 +670,9 @@ namespace MetaMorpheusGUI
                     }
                     else //if missedCleavagesTextBox was modified
                     {
-                        if (!txtMaxPeptideLength.Text.Equals((Convert.ToInt32(txtMaxPeptideLength.Text) + 1).ToString())) //prevents infinite loops
+                        if (!txtMaxPeptideLength.Text.Equals((Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
                         {
-                            txtMaxPeptideLength.Text = (Convert.ToInt32(txtMaxPeptideLength.Text) + 1).ToString();
+                            txtMaxPeptideLength.Text = (Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString();
                         }
                     }
                 }

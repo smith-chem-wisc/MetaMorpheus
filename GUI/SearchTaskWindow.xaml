@@ -237,7 +237,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                                                     <Label x:Name="numerOfDatabaseSearchesLabel" Content="Number of Database Partitions" />
-                                                    <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
                                                         <TextBox.ToolTip>
                                                             <TextBlock>
                                                                 Splits indexed search modes (Modern, Semi-, Non-) into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
