@@ -176,9 +176,9 @@
                                                     <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
-                                                    Basic search designed for standard search spaces (tight precursor mass tolerance, strict enzyme specificity)
-                                                    <LineBreak/>
-                                                    Ideal for low RAM machines.
+                                                                  Basic search designed for standard search spaces (tight precursor mass tolerance, strict enzyme specificity)
+                                                                  <LineBreak/>
+                                                                  Ideal for low RAM machines.
                                                             </TextBlock>
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
@@ -187,29 +187,29 @@
                                                 <StackPanel Grid.Column="1">
                                                     <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <RadioButton.ToolTip>
-                                                            <TextBlock>
-                                                    Indexed search designed for massive search spaces (wide/open precursor mass tolerance).
-                                                    <LineBreak/>
-                                                    This search generates an indexed database that is saved to the folder of the original database.
-                                                    <LineBreak/>
-                                                    Subsequent "Modern Searches" are much faster after the creation of the indexed database.
-                                                    <LineBreak/>
-                                                    This search has potentially high RAM requirements, requiring database partitions.
+                                                                  <TextBlock>
+                                                                  Indexed search designed for massive search spaces (wide/open precursor mass tolerance).
+                                                                  <LineBreak/>
+                                                                  This search generates an indexed database that is saved to the folder of the original database.
+                                                                  <LineBreak/>
+                                                                  Subsequent "Modern Searches" are much faster after the creation of the indexed database.
+                                                                  <LineBreak/>
+                                                                  This search has potentially high RAM requirements, requiring database partitions.
                                                             </TextBlock>
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="2">
-                                                    <RadioButton x:Name="semiSpecificSearchRadioButton" Content="Semi-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <RadioButton x:Name="semiSpecificSearchRadioButton" Content="Semi-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" Checked="SemiSpecificUpdate" Unchecked="SemiSpecificUpdate" ToolTipService.InitialShowDelay="500" DataContextChanged="SemiSpecificUpdate">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
-                                                    A novel indexed search designed for semi-specific digestion.
-                                                    <LineBreak/>
-                                                    This search requires the user to select ions from a single terminus only. The choice does not matter. 
-                                                    <LineBreak/>
-                                                    Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
-                                                    <LineBreak/>
-                                                    Simply select the protease used, e.g. "LysC" becomes "semi-LysC".
+                                                                A novel indexed search designed for semi-specific digestion.
+                                                                <LineBreak/>
+                                                                This search requires the user to select ions from a single terminus only. The choice does not matter. 
+                                                                <LineBreak/>
+                                                                Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
+                                                                <LineBreak/>
+                                                                Simply select the protease used, e.g. "LysC" becomes "semi-LysC".
                                                             </TextBlock>
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
@@ -218,11 +218,11 @@
                                                     <RadioButton x:Name="nonSpecificSearchRadioButton1" Content="Non-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
-                                                    A novel indexed search designed for non-specific digestion.
-                                                    <LineBreak/>
-                                                    This search requires the user to select ions from a single terminus only. The choice does not matter. 
-                                                    <LineBreak/>
-                                                    Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
+                                                            A novel indexed search designed for non-specific digestion.
+                                                            <LineBreak/>
+                                                            This search requires the user to select ions from a single terminus only. The choice does not matter. 
+                                                            <LineBreak/>
+                                                            Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
                                                             </TextBlock>
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
@@ -293,7 +293,7 @@
                                         </RadioButton>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxMissedCleavagesLabel" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox"  PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox x:Name="missedCleavagesTextBox"  PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                     Maximum number of missed proteolytic cleavages allowed.
@@ -305,7 +305,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="proteaseLabel" Content="Protease" />
-                                            <ComboBox x:Name="proteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="NonSpecificUsingNonSpecific">
+                                            <ComboBox x:Name="proteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <ComboBox.ToolTip>
                                                     <TextBlock>
                                                         Protease used for digestion.
@@ -316,6 +316,15 @@
                                                     </TextBlock>
                                                 </ComboBox.ToolTip>
                                             </ComboBox>
+                                            <CheckBox x:Name="semiDigestionRedundantCheckBox" Content="Semi-Specific" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Margin="5" Checked="SemiSpecificUpdate" Unchecked="SemiSpecificUpdate" IsEnabled="{Binding IsChecked, ElementName=semiSpecificSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
+                                                        Generates experimental (not theoretical) complementary ions for each MS2.
+                                                        <LineBreak/>
+                                                        Useful for localization of modifications.
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">

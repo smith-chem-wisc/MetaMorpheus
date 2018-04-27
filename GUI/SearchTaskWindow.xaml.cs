@@ -644,16 +644,15 @@ namespace MetaMorpheusGUI
                     proteaseComboBox.Items.MoveCurrentToNext();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                 }
+                proteaseComboBox.IsEnabled = false;
             }
-            missedCleavagesTextBox.IsEnabled = !(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"));
+            else
+            {
+                proteaseComboBox.IsEnabled = true;
+            }
         }
 
         #endregion Private Methods
-
-        private void NonSpecificUsingNonSpecific(object sender, SelectionChangedEventArgs e)
-        {
-            missedCleavagesTextBox.IsEnabled = !(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"));
-        }
 
         private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
         {
@@ -661,11 +660,49 @@ namespace MetaMorpheusGUI
             {
                 try
                 {
-                    missedCleavagesTextBox.Text = (Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString();
+                    System.Windows.Controls.TextBox textBox = (TextBox)sender;
+                    if (textBox.Name.Equals("txtMaxPeptideLength")) //if maxPeptideLength was modified
+                    {
+                        if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString())) //prevents infinite loops
+                        {
+                            missedCleavagesTextBox.Text = (Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString();
+                        }
+                    }
+                    else //if missedCleavagesTextBox was modified
+                    {
+                        if (!txtMaxPeptideLength.Text.Equals((Convert.ToInt32(txtMaxPeptideLength.Text) + 1).ToString())) //prevents infinite loops
+                        {
+                            txtMaxPeptideLength.Text = (Convert.ToInt32(txtMaxPeptideLength.Text) + 1).ToString();
+                        }
+                    }
                 }
                 catch
                 {
-                    //if not an entry, don't update the missedCleavagesTextBox.
+                    //if not an entry, don't update the other box.
+                }
+            }
+        }
+
+        private void SemiSpecificUpdate(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if(semiDigestionRedundantCheckBox.IsChecked.Value && !semiSpecificSearchRadioButton.IsChecked.Value)
+            {
+                semiSpecificSearchRadioButton.IsChecked = true;
+            }
+        }
+
+        private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
+        {
+            Type type =sender.GetType();
+            if (semiSpecificSearchRadioButton.IsChecked.Value != semiDigestionRedundantCheckBox.IsChecked.Value)
+            {
+                if (type.Name.Equals("RadioButton"))
+                {
+                    semiDigestionRedundantCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
+                }
+                else
+                {
+                    semiSpecificSearchRadioButton.IsChecked = semiDigestionRedundantCheckBox.IsChecked.Value;
                 }
             }
         }
