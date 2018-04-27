@@ -302,7 +302,7 @@ namespace MetaMorpheusGUI
             {
                 if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                 {
-                    MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
+                    //MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
                     bCheckBox.IsChecked = false;
                     cCheckBox.IsChecked = false;
                 }
