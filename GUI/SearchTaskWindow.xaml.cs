@@ -683,40 +683,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void SemiSpecificUpdate(object sender, DependencyPropertyChangedEventArgs e) //this is useless because the other one (RoutedEventsArgs) overrides, but it's needed to build
-        {
-            if (semiDigestionRedundantCheckBox.IsChecked.Value && !semiSpecificSearchRadioButton.IsChecked.Value)
-            {
-                semiSpecificSearchRadioButton.IsChecked = true;
-            }
-        }
-
-        private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
-        {
-            Type type =sender.GetType();
-            if (semiSpecificSearchRadioButton.IsChecked.Value != semiDigestionRedundantCheckBox.IsChecked.Value)
-            {
-                if (type.Name.Equals("RadioButton"))
-                {
-                    semiDigestionRedundantCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
-                }
-                else
-                {
-                    semiSpecificSearchRadioButton.IsChecked = semiDigestionRedundantCheckBox.IsChecked.Value;
-                }
-            }
-            if(semiSpecificSearchRadioButton.IsChecked.Value)
-            {
-                addCompIonCheckBox.IsChecked = true;
-            }
-            else
-            {
-                addCompIonCheckBox.IsChecked = false;
-            }
-        }
-
-        #endregion Private Methods
-
         private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             const int maxLength = 25;
@@ -725,6 +691,14 @@ namespace MetaMorpheusGUI
                 txtMaxPeptideLength.Text = maxLength.ToString();
             }
         }
+
+        private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
+        {
+            addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
+        }
+
+        #endregion Private Methods
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

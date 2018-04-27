@@ -200,7 +200,7 @@
                                                     </RadioButton>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="2">
-                                                    <RadioButton x:Name="semiSpecificSearchRadioButton" Content="Semi-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" Checked="SemiSpecificUpdate" Unchecked="SemiSpecificUpdate" ToolTipService.InitialShowDelay="500" DataContextChanged="SemiSpecificUpdate">
+                                                    <RadioButton x:Name="semiSpecificSearchRadioButton" Content="Semi-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" Checked="SemiSpecificUpdate" Unchecked="SemiSpecificUpdate" ToolTipService.InitialShowDelay="500">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
                                                                 A novel indexed search designed for semi-specific digestion.
@@ -316,23 +316,6 @@
                                                     </TextBlock>
                                                 </ComboBox.ToolTip>
                                             </ComboBox>
-                                            <CheckBox x:Name="semiDigestionRedundantCheckBox" Content="Semi-Specific" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Margin="5" Checked="SemiSpecificUpdate" Unchecked="SemiSpecificUpdate" IsEnabled="{Binding IsChecked, ElementName=semiSpecificSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
-                                                <CheckBox.ToolTip>
-                                                    <TextBlock>
-                                                            <TextBlock>
-                                                                This uses a the novel indexed search designed for semi-specific digestion.
-                                                                <LineBreak/>
-                                                                This search requires the user to select ions from a single terminus only. The choice does not matter. 
-                                                                <LineBreak/>
-                                                                Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
-                                                                <LineBreak/>
-                                                                Simply select the protease used, e.g. "LysC" becomes "semi-LysC".
-                                                                <LineBreak/>
-                                                                Note: "semi-trypsin" protease does not require this feature.
-                                                            </TextBlock>
-                                                    </TextBlock>
-                                                </CheckBox.ToolTip>
-                                            </CheckBox>
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
