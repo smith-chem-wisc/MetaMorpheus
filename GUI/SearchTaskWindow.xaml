@@ -163,28 +163,31 @@
                         <StackPanel>
                             <GroupBox Header="Search Mode">
                                 <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <RadioButton.ToolTip>
-                                                <TextBlock>
+                                    <StackPanel>
+                                        <StackPanel Margin="5">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <RadioButton.ToolTip>
+                                                            <TextBlock>
                                                     Basic search designed for standard search spaces (tight precursor mass tolerance, strict enzyme specificity)
                                                     <LineBreak/>
                                                     Ideal for low RAM machines.
-                                                </TextBlock>
-                                            </RadioButton.ToolTip>
-                                        </RadioButton>
-                                        <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />-->
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <RadioButton.ToolTip>
-                                                <TextBlock>
+                                                            </TextBlock>
+                                                        </RadioButton.ToolTip>
+                                                    </RadioButton>
+                                                </StackPanel>
+                                                <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />-->
+                                                <StackPanel Grid.Column="1">
+                                                    <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <RadioButton.ToolTip>
+                                                            <TextBlock>
                                                     Indexed search designed for massive search spaces (wide/open precursor mass tolerance).
                                                     <LineBreak/>
                                                     This search generates an indexed database that is saved to the folder of the original database.
@@ -192,26 +195,14 @@
                                                     Subsequent "Modern Searches" are much faster after the creation of the indexed database.
                                                     <LineBreak/>
                                                     This search has potentially high RAM requirements, requiring database partitions.
-                                                </TextBlock>
-                                            </RadioButton.ToolTip>
-                                        </RadioButton>
-                                        <StackPanel Orientation="Horizontal" Margin="1">
-                                            <Label x:Name="numerOfDatabaseSearchesLabel" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <TextBox.ToolTip>
-                                                    <TextBlock>
-                                                        Splits the "Modern Search" into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
-                                                        <LineBreak/>
-                                                        There is no correlation between the number of partitions and the resulting search speed.
-                                                    </TextBlock>
-                                                </TextBox.ToolTip>
-                                            </TextBox>
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <RadioButton x:Name="semiSpecificSearchRadioButton" Content="Semi-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <RadioButton.ToolTip>
-                                                <TextBlock>
+                                                            </TextBlock>
+                                                        </RadioButton.ToolTip>
+                                                    </RadioButton>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2">
+                                                    <RadioButton x:Name="semiSpecificSearchRadioButton" Content="Semi-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <RadioButton.ToolTip>
+                                                            <TextBlock>
                                                     A novel indexed search designed for semi-specific digestion.
                                                     <LineBreak/>
                                                     This search requires the user to select ions from a single terminus only. The choice does not matter. 
@@ -219,22 +210,45 @@
                                                     Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
                                                     <LineBreak/>
                                                     Simply select the protease used, e.g. "LysC" becomes "semi-LysC".
-                                                </TextBlock>
-                                            </RadioButton.ToolTip>
-                                        </RadioButton>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="3">
-                                        <RadioButton x:Name="nonSpecificSearchRadioButton1" Content="Non-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
-                                            <RadioButton.ToolTip>
-                                                <TextBlock>
+                                                            </TextBlock>
+                                                        </RadioButton.ToolTip>
+                                                    </RadioButton>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="3">
+                                                    <RadioButton x:Name="nonSpecificSearchRadioButton1" Content="Non-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
+                                                        <RadioButton.ToolTip>
+                                                            <TextBlock>
                                                     A novel indexed search designed for non-specific digestion.
                                                     <LineBreak/>
                                                     This search requires the user to select ions from a single terminus only. The choice does not matter. 
                                                     <LineBreak/>
                                                     Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
-                                                </TextBlock>
-                                            </RadioButton.ToolTip>
-                                        </RadioButton>
+                                                            </TextBlock>
+                                                        </RadioButton.ToolTip>
+                                                    </RadioButton>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                        <StackPanel Margin="5">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="3*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                    <Label x:Name="numerOfDatabaseSearchesLabel" Content="Number of Database Partitions" />
+                                                    <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <TextBox.ToolTip>
+                                                            <TextBlock>
+                                                                Splits indexed search modes (Modern, Semi-, Non-) into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
+                                                                <LineBreak/>
+                                                                There is no correlation between the number of partitions and the resulting search speed.
+                                                            </TextBlock>
+                                                        </TextBox.ToolTip>
+                                                    </TextBox>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
