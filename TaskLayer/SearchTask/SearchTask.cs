@@ -1002,10 +1002,27 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.Zdot);
             if (CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
-            
+
             // load proteins
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            int emptyProteinEntries = 0;
+            List<Protein> proteinList = new List<Protein>();
+            foreach (var db in dbFilenameList)
+            {
+                int emptyProteinEntriesForThisDb = 0;
+                var dbProteinList = LoadProteinDb(db.FilePath, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
+
+                proteinList = proteinList.Concat(dbProteinList).ToList();
+                emptyProteinEntries += emptyProteinEntriesForThisDb;
+            }
+            if (!proteinList.Any())
+            {
+                Warn("Warning: No protein entries were found in the database");
+            }
+            else if (emptyProteinEntries > 0)
+            {
+                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
+            }
 
             // write prose settings
             proseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -1014,23 +1031,17 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
             proseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
                 "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; "); proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("max mods per peptide = " + CommonParameters.DigestionParams.MaxModsForPeptide + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
-            if (CommonParameters.ProductMassTolerance is PpmTolerance)
-            {
-                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " ppm. ");
-            }
-            else
-            {
-                proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
-            }
-            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
-            proseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + "; ");
-
+            proseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
+            proseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+            
             // start the search task
             myTaskResults = new MyTaskResults(this);
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
@@ -1052,6 +1063,7 @@ namespace TaskLayer
             Status("Searching files...", taskId);
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
+            Dictionary<string, int> numMs2SpectraPerFile = new Dictionary<string, int>();
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -1068,6 +1080,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", thisId);
+                numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), myMsDataFile.Count(p => p.MsnOrder == 2));
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
 
@@ -1147,7 +1160,7 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, massDiffAcceptor, SearchParameters.AddCompIons, combinedParams, combinedParams.ProductMassTolerance, thisId).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, massDiffAcceptor, SearchParameters.AddCompIons, combinedParams, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
@@ -1401,6 +1414,7 @@ namespace TaskLayer
                     WritePsmsToTsv(psmsForThisFile, writtenFile, SearchParameters.ModsToWriteSelection);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
+                    myTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + numMs2SpectraPerFile[strippedFileName]);
                 }
 
                 var writtenFileForPercolator = Path.Combine(OutputFolder, strippedFileName + "_forPercolator.tsv");
