@@ -714,9 +714,17 @@ namespace MetaMorpheusGUI
                 addCompIonCheckBox.IsChecked = false;
             }
         }
-    
+
         #endregion Private Methods
 
+        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            const int maxLength = 25;
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                txtMaxPeptideLength.Text = maxLength.ToString();
+            }
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
