@@ -70,16 +70,14 @@ namespace Test
             Assert.IsFalse(tomlSettingsList.ContainsKey("MaxMissedCleavages"));
             Assert.IsFalse(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
 
-            FileSpecificSettings f = new FileSpecificSettings(tomlSettingsList);
+            FileSpecificParameters f = new FileSpecificParameters(fileSpecificToml);
 
             Assert.AreEqual("Asp-N", f.Protease.Name);
-            Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
             Assert.IsNull(f.MaxMissedCleavages);
 
             ICommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
-            Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
         }
 

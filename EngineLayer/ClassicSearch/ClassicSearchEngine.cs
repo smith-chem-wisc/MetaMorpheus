@@ -34,13 +34,12 @@ namespace EngineLayer.ClassicSearch
         private readonly ICommonParameters commonParameters;
 
         private readonly List<DissociationType> dissociationTypes;
-        private readonly Tolerance productMassTolerance;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, bool addCompIons, ICommonParameters CommonParameters, Tolerance productMassTolerance, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, bool addCompIons, ICommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.peptideSpectralMatches = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -53,7 +52,6 @@ namespace EngineLayer.ClassicSearch
             this.addCompIons = addCompIons;
             this.dissociationTypes = DetermineDissociationType(lp);
             this.commonParameters = CommonParameters;
-            this.productMassTolerance = productMassTolerance;
         }
 
         #endregion Public Constructors
@@ -95,7 +93,7 @@ namespace EngineLayer.ClassicSearch
                             {
                                 double scanPrecursorMass = scan.theScan.PrecursorMass;
 
-                                var thisScore = CalculatePeptideScore(scan.theScan.TheScan, productMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
+                                var thisScore = CalculatePeptideScore(scan.theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
                                 bool meetsScoreCutoff = thisScore > commonParameters.ScoreCutoff;
                                 bool scoreImprovement = peptideSpectralMatches[scan.scanIndex] == null || (thisScore - peptideSpectralMatches[scan.scanIndex].RunnerUpScore) > -PeptideSpectralMatch.tolForScoreDifferentiation;
 

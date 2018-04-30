@@ -190,9 +190,9 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
-            productMassToleranceComboBox.Items.Add("Absolute");
+            productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
-            precursorMassToleranceComboBox.Items.Add("Absolute");
+            precursorMassToleranceComboBox.Items.Add("Da");
             precursorMassToleranceComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
@@ -235,7 +235,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-
             #region Check Task Validity
 
             if (missedCleavagesTextBox.Text.Length == 0)
@@ -273,7 +272,6 @@ namespace MetaMorpheusGUI
             }
 
             #endregion Check Task Validity
-
 
             CommonParameters CommonParamsToSave = new CommonParameters
             {

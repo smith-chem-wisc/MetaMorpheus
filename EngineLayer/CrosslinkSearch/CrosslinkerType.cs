@@ -10,14 +10,28 @@
 
     public class CrosslinkerTypeClass
     {
-        #region Public Fields
+        public CrosslinkerTypeClass(string crosslinkerModSites, string crosslinkerModSites2, string crosslinkerName, bool cleavable, double totalMass, 
+            double cleaveMassShort, double cleaveMassLong, double loopMass, double deadendMassH2O, double deadendMassNH2, double deadendMassTris)
+        {
+            CrosslinkerModSites = crosslinkerModSites;
+            CrosslinkerModSites2 = crosslinkerModSites2;
+            CrosslinkerName = crosslinkerName;
+            Cleavable = cleavable;
+            TotalMass = totalMass;
+            CleaveMassShort = cleaveMassShort;
+            CleaveMassLong = cleaveMassLong;
+            LoopMass = loopMass;
+            DeadendMassH2O = deadendMassH2O;
+            DeadendMassNH2 = deadendMassNH2;
+            DeadendMassTris = deadendMassTris;
+        }
 
-        public char CrosslinkerModSite;
-
-        #endregion Public Fields
+        public CrosslinkerTypeClass() { }
 
         #region Public Properties
 
+        public string CrosslinkerModSites { get; set; }
+        public string CrosslinkerModSites2 { get; set; }
         public string CrosslinkerName { get; set; }
         public bool Cleavable { get; set; }
         public double TotalMass { get; set; }
@@ -41,7 +55,8 @@
                 TotalMass = 158.0038;
                 CleaveMassShort = 54.01056;
                 CleaveMassLong = 103.9932;
-                CrosslinkerModSite = 'K';
+                CrosslinkerModSites = "K";
+                CrosslinkerModSites2 = "K";
                 LoopMass = 159.0012;
                 DeadendMassH2O = 176.0143;
                 DeadendMassNH2 = 175.0303;
@@ -55,14 +70,16 @@
                 TotalMass = -2.01565;
                 CleaveMassShort = -33.98772;
                 CleaveMassLong = 31.97207;
-                CrosslinkerModSite = 'K';
+                CrosslinkerModSites = "C";
+                CrosslinkerModSites2 = "C";
             }
             if (name == CrosslinkerType.DSS)
             {
                 CrosslinkerName = "DSS";
                 Cleavable = false;
                 TotalMass = 138.06808;
-                CrosslinkerModSite = 'K';
+                CrosslinkerModSites = "K";
+                CrosslinkerModSites2 = "K";
                 LoopMass = 139.06548;
                 DeadendMassH2O = 156.0786;
                 DeadendMassNH2 = 155.0946;
