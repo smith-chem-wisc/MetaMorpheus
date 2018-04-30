@@ -49,12 +49,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\DbForPrunedDb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\PrunedDbSpectra.mzml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="testFileSpecfic.toml">
