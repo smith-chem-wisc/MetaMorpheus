@@ -14,6 +14,7 @@
     <PackageReference Include="SharpLearning.Containers" Version="0.26.8.1" />
     <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.8.1" />
     <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.8.1" />
+    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.8.1" />
     <PackageReference Include="SharpLearning.InputOutput" Version="0.26.8.1" />
     <PackageReference Include="SharpLearning.Metrics" Version="0.26.8.1" />
     <PackageReference Include="SharpLearning.Optimization" Version="0.26.8.1" />
@@ -41,11 +42,14 @@
     <None Update="SlicedSearchTaskConfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\BSA.fasta">
+    <None Update="XlTestData\BSA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\BSA_DSS_23747.mzML">
+    <None Update="XlTestData\BSA_DSS_23747.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\DbForPrunedDb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -53,16 +57,11 @@
     <None Update="TestData\PrunedDbSpectra.mzml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="testFileSpecfic.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
   <ItemGroup>
-    <Folder Include="TestData\" />
+    <Folder Include="XlTestData\" />
   </ItemGroup>
-
 </Project>

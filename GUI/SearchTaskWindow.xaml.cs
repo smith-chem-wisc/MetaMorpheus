@@ -113,10 +113,10 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
-            productMassToleranceComboBox.Items.Add("Absolute");
+            productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
 
-            precursorMassToleranceComboBox.Items.Add("Absolute");
+            precursorMassToleranceComboBox.Items.Add("Da");
             precursorMassToleranceComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
@@ -158,7 +158,8 @@ namespace MetaMorpheusGUI
         {
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific;
+            nonSpecificSearchRadioButton1.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
+            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
             txtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
@@ -297,28 +298,47 @@ namespace MetaMorpheusGUI
         {
             #region Check Task Validity
 
-            if (nonSpecificSearchRadioButton.IsChecked.Value)
+            if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
             {
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC") && (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                 {
-                    MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
-                }
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
-                {
-                    MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
+                    //MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
+                    bCheckBox.IsChecked = false;
+                    cCheckBox.IsChecked = false;
                 }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    MessageBox.Show("The non-specific protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'singleN' or 'singleC'.");
-                    return;
+                    proteaseComboBox.Items.MoveCurrentToFirst();
+                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                    if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                    {
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
+                        {
+                            proteaseComboBox.Items.MoveCurrentToNext();
+                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                        }
+                    }
+                    else
+                    {
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
+                        {
+                            proteaseComboBox.Items.MoveCurrentToNext();
+                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                        }
+                    }
                 }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
                 {
-                    MessageBox.Show("The semi-trypsin protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'trypsin'.");
-                    return;
+                    proteaseComboBox.Items.MoveCurrentToFirst();
+                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                    while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("trypsin"))
+                    {
+                        proteaseComboBox.Items.MoveCurrentToNext();
+                        proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                    }
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
-                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
+                    MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
             if (!int.TryParse(DeconvolutionMaxAssumedChargeStateTextBox.Text, out int deconMaxAssumedCharge) || deconMaxAssumedCharge < 1)
             {
@@ -329,7 +349,7 @@ namespace MetaMorpheusGUI
             {
                 TopNPeaksTextBox.Text = int.MaxValue.ToString();
             }
-            if (int.Parse(TopNPeaksTextBox.Text) == 0)
+            if (!int.TryParse(TopNPeaksTextBox.Text, out int numPeaks) || numPeaks < 1)
             {
                 MessageBox.Show("The Top N Peaks to be retained must be greater than zero. \n You entered " + '"' + TopNPeaksTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
@@ -344,18 +364,28 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
                 return;
             }
-            if (missedCleavagesTextBox.Text.Length == 0)
+            if (string.IsNullOrEmpty(missedCleavagesTextBox.Text))
             {
                 missedCleavagesTextBox.Text = int.MaxValue.ToString();
             }
-            if (txtMinPeptideLength.Text.Length == 0)
+            if (!int.TryParse(txtMinPeptideLength.Text, out int minPeptideLength) || minPeptideLength < 1)
             {
                 MessageBox.Show("The minimum peptide length must be a positive integer");
                 return;
             }
-            if (txtMaxPeptideLength.Text.Length == 0)
+            if (string.IsNullOrEmpty(txtMaxPeptideLength.Text))
             {
                 txtMaxPeptideLength.Text = int.MaxValue.ToString();
+            }
+            if (!int.TryParse(txtMaxPeptideLength.Text, out int maxPeptideLength) || maxPeptideLength < 1)
+            {
+                MessageBox.Show("The minimum peptide length must be a positive integer");
+                return;
+            }
+            if (maxPeptideLength < minPeptideLength)
+            {
+                MessageBox.Show("The maximum peptide length must be greater than or equal to the minimum peptide length.");
+                return;
             }
             if (!double.TryParse(precursorMassToleranceTextBox.Text, out double precursorMassTolerance) || precursorMassTolerance <= 0)
             {
@@ -382,7 +412,7 @@ namespace MetaMorpheusGUI
 
             #region Save Parameters
 
-            CommonParameters CommonParamsToSave = new CommonParameters();
+            CommonParameters CommonParamsToSave = (TheTask.CommonParameters as CommonParameters).Clone();
 
             if (OutputFileNameTextBox.Text != "")
             {
@@ -435,7 +465,7 @@ namespace MetaMorpheusGUI
             }
 
             DigestionParams digestionParamsToSave = new DigestionParams();
-            digestionParamsToSave.SemiProteaseDigestion = nonSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC;
+            digestionParamsToSave.SemiProteaseDigestion = semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC;
             digestionParamsToSave.TerminusTypeSemiProtease = bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C;
             digestionParamsToSave.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             digestionParamsToSave.MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
@@ -613,7 +643,72 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void NonSpecificUsingNonSpecific(object sender, RoutedEventArgs e)
+        {
+            if (nonSpecificSearchRadioButton1.IsChecked.Value)
+            {
+                proteaseComboBox.Items.MoveCurrentToFirst();
+                proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                while (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                {
+                    proteaseComboBox.Items.MoveCurrentToNext();
+                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                }
+                proteaseComboBox.IsEnabled = false;
+                addCompIonCheckBox.IsChecked = true;
+            }
+            else
+            {
+                proteaseComboBox.IsEnabled = true;
+                addCompIonCheckBox.IsChecked = false;
+            }
+        }
+
+        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        {
+            if(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                try
+                {
+                    System.Windows.Controls.TextBox textBox = (TextBox)sender;
+                    if (textBox.Name.Equals("txtMaxPeptideLength")) //if maxPeptideLength was modified
+                    {
+                        if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString())) //prevents infinite loops
+                        {
+                            missedCleavagesTextBox.Text = (Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString();
+                        }
+                    }
+                    else //if missedCleavagesTextBox was modified
+                    {
+                        if (!txtMaxPeptideLength.Text.Equals((Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
+                        {
+                            txtMaxPeptideLength.Text = (Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString();
+                        }
+                    }
+                }
+                catch
+                {
+                    //if not an entry, don't update the other box.
+                }
+            }
+        }
+
+        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            const int maxLength = 25;
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                txtMaxPeptideLength.Text = maxLength.ToString();
+            }
+        }
+
+        private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
+        {
+            addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
+        }
+
         #endregion Private Methods
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

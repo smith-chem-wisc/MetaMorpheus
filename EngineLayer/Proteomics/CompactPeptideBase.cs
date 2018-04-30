@@ -79,6 +79,9 @@ namespace EngineLayer
                 massLen += CTerminalMasses.Length;
             }
 
+            if (massLen < 0)
+                return new double[0];
+
             double[] massesToReturn = new double[massLen];
 
             int i = 0;
