@@ -13,7 +13,7 @@ using UsefulProteomicsDatabases;
 namespace Test
 {
     [TestFixture]
-    public class gptmdPrunedDbTests
+    public static class GptmdPrunedDbTests
     {
         
         // want a psm whose base sequence is not ambigous but full sequence is (ptm is not localized): make sure this does not make it in DB
@@ -176,8 +176,7 @@ namespace Test
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
-            //string[] files = Directory.GetFiles(fileAtPath);
-            //string file = fileAtPath;
+            
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
