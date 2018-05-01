@@ -182,8 +182,7 @@ namespace Test
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
             //check location (key)
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.ContainsKey(3), true);
-            List<Modification> listOfMods = new List<Modification>();
-            listOfMods = proteins[0].OneBasedPossibleLocalizedModifications[3];
+            List<Modification> listOfMods = proteins[0].OneBasedPossibleLocalizedModifications[3];
             //check Type, count, ID
             Assert.AreEqual(listOfMods[0].modificationType, "ConnorModType");
             Assert.AreEqual(listOfMods[0].id, "ConnorMod");
