@@ -58,7 +58,7 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValueNotch < 0.01)
+                if (psm.FdrInfo.QValueNotch < 0.01&& psm.FdrInfo.QValue < 0.01)
                 {
                     if((treatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!treatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
