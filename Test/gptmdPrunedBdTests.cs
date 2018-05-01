@@ -54,7 +54,6 @@ namespace Test
             string fastaName = @"TestData\DbForPrunedDb.fasta";
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
             engine.Run();
-            string outputFolderInThisTest = MySetUpClass.outputFolder;
             string final = Path.Combine(MySetUpClass.outputFolder, "task2","DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
             //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
@@ -266,7 +265,6 @@ namespace Test
             dictHere2.Add(3, new List<Modification> { modToAdd3 }); //Alway Appear
             dictHere2.Add(4, new List<Modification> { modToAdd4 });//observed
             //protein Creation (One with mod and one without)
-            Protein TestProtein = new Protein("PEPTID", "accession1");
             Protein TestProteinWithModForDB = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
             Protein TestProteinWithModObsevred = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere2);
 
