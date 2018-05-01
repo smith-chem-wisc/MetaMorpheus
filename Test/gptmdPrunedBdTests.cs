@@ -45,11 +45,7 @@ namespace Test
                     SearchType = SearchType.Classic
                 }
             };
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>
-            {
-                ("task1", task1),
-                ("task2", task2),
-            };
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2)};
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
@@ -118,7 +114,8 @@ namespace Test
             #region Protein and Mod Creation
 
             //create modification lists
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
+                (b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -128,7 +125,6 @@ namespace Test
             dictHere.Add(3, new List<Modification> { modToAdd2 });
 
             //protein Creation (One with mod and one without)
-            Protein TestProtein = new Protein("PEPTID", "accession1");
             Protein TestProteinWithMod = new Protein("PEPTID", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
 
             #endregion Protein and Mod Creation
@@ -175,7 +171,6 @@ namespace Test
                 new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
 
-            string outputFolderInThisTest = MySetUpClass.outputFolder;
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
             
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);

@@ -413,8 +413,10 @@ namespace Test
                 }
             };
 
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
-               ("TestPeptides", testPeptides)};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>
+            {
+               ("TestPeptides", testPeptides)
+            };
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
@@ -430,7 +432,8 @@ namespace Test
 
             //create modification lists
 
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
+                (b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();
