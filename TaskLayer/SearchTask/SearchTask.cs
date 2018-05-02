@@ -864,8 +864,8 @@ namespace TaskLayer
                     protein = ((items[i].CompactPeptides.First().Value.Item2.First().Protein.Accession != null) ? items[i].CompactPeptides.First().Value.Item2.First().Protein.Accession : "-"),
                     num_tot_proteins = 1,
                     calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
-                    massdiff = ((items[i].PeptideMonisotopicMass != null) ? (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value).ToString() : "-"),
-                    modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
+                    massdiff = ((items[i].PeptideMonisotopicMass != null) ? (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value).ToString() : "-"),               
+                    modification_info = (modsFixedNum == 0 ? new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() } : null),
                     search_score = new pepXML.Generated.nameValueType[]
                     {
                                         new pepXML.Generated.nameValueType{ name = "Score", value = items[i].Score.ToString()},
