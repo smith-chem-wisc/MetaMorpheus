@@ -815,7 +815,7 @@ namespace TaskLayer
                      new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summary
                      {
                          base_name = filePathNoExtension,
-                         //search_engine = pepXML.Generated.engineType.Kojak,
+                         search_engine = pepXML.Generated.engineType.XTandem,
                          search_engine_version = GlobalVariables.MetaMorpheusVersion,
                          precursor_mass_type = pepXML.Generated.massType.monoisotopic,
                          fragment_mass_type = pepXML.Generated.massType.monoisotopic,
