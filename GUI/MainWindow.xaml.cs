@@ -410,8 +410,7 @@ namespace MetaMorpheusGUI
                             "please uninstall and reinstall MetaMorpheus", null));
                     }
 
-                    goto case ".mzml" +
-                        "";
+                    goto case ".mzml";
 
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
