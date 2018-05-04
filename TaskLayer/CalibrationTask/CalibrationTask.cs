@@ -133,7 +133,7 @@ namespace TaskLayer
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 var originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + "-calib.mzml");
+                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + "-calib.mzML");
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });

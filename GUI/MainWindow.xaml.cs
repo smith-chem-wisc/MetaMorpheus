@@ -410,16 +410,16 @@ namespace MetaMorpheusGUI
                             "please uninstall and reinstall MetaMorpheus", null));
                     }
 
-                    goto case ".mzml";
+                    goto case ".mzML";
 
-                case ".mzml":
+                case ".mzML":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!SpectraFileExists(spectraFilesObservableCollection, zz)) { spectraFilesObservableCollection.Add(zz); }
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
 
-                case ".mzml.gz":  // not implemented yet
+                case ".mzML.gz":  // not implemented yet
                 case ".fasta.gz": // not implemented yet
                     GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
                     break;
