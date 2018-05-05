@@ -1252,7 +1252,7 @@ namespace TaskLayer
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
                     myTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + numMs2SpectraPerFile[strippedFileName][0]);
-                    myTaskResults.AddNiceText("Possible PSMs in " + strippedFileName + ": " + numMs2SpectraPerFile[strippedFileName][1]);
+                    myTaskResults.AddNiceText("Number of precursor species fragmented in " + strippedFileName + ": " + numMs2SpectraPerFile[strippedFileName][1]);
                 }
 
                 var writtenFileForPercolator = Path.Combine(OutputFolder, strippedFileName + "_forPercolator.tsv");
