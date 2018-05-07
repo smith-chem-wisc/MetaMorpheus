@@ -115,7 +115,7 @@ namespace EngineLayer.ModernSearch
                         bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
                         bool scoreImprovement = peptideSpectralMatches[i] == null || (thisScore - peptideSpectralMatches[i].RunnerUpScore) > -PeptideSpectralMatch.tolForScoreDifferentiation;
 
-                        if (meetsScoreCutoff && scoreImprovement)
+                        if (meetsScoreCutoff && scoreImprovement || CommonParameters.CalculateEValue)
                         {
                             if (peptideSpectralMatches[i] == null)
                             {
@@ -125,11 +125,11 @@ namespace EngineLayer.ModernSearch
                             {
                                 peptideSpectralMatches[i].AddOrReplace(compactPeptide, thisScore, notch, CommonParameters.ReportAllAmbiguity);
                             }
-                        }
 
-                        if (CommonParameters.CalculateEValue)
-                        {
-                            peptideSpectralMatches[i].AllScores.Add(thisScore);
+                            if (CommonParameters.CalculateEValue)
+                            {
+                                peptideSpectralMatches[i].AllScores.Add(thisScore);
+                            }
                         }
                     }
 
