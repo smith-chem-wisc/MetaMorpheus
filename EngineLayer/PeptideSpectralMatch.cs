@@ -363,7 +363,11 @@ namespace EngineLayer
         {
             bool pepWithModsIsNull = peptide == null || peptide.compactPeptides.First().Value.Item2 == null;
 
-            var pepsWithMods = pepWithModsIsNull ? null : peptide.compactPeptides.SelectMany(b => b.Value.Item2).ToList();
+            var pepsWithMods = pepWithModsIsNull ? null : peptide.compactPeptides.SelectMany(b => b.Value.Item2)
+                .OrderBy(p => p.Sequence)
+                .ThenBy(p => p.Protein.Accession)
+                .ThenBy(p => p.OneBasedStartResidueInProtein).ToList();
+
             s["Peptides Sharing Same Peaks"] = pepWithModsIsNull ? " " :
                 GlobalVariables.CheckLengthOfOutput(string.Join("|", peptide.compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
             s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item1;
@@ -398,15 +402,8 @@ namespace EngineLayer
             string theoreticalsSearched = " ";
             if (!pepWithModsIsNull && peptide.FdrInfo != null && peptide.FdrInfo.CalculateEValue)
             {
-                int theoreticalsSearchedCount = peptide.AllScores[0];
-                StringBuilder allScoresSb = new StringBuilder(peptide.AllScores[0].ToString());
-                for (int ii = 1; ii < peptide.AllScores.Count; ii++)
-                {
-                    allScoresSb.Append("_" + peptide.AllScores[ii]);
-                    theoreticalsSearchedCount += peptide.AllScores[ii];
-                }
-                allScores = allScoresSb.ToString();
-                theoreticalsSearched = theoreticalsSearchedCount.ToString();
+                allScores = string.Join(";", peptide.AllScores.Select(p => p.ToString("F2", CultureInfo.InvariantCulture)));
+                theoreticalsSearched = peptide.AllScores.Count.ToString();
             }
 
             s["All Scores"] = allScores;
