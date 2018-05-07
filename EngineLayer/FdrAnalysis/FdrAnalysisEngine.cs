@@ -50,6 +50,7 @@ namespace EngineLayer.FdrAnalysis
 
         private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults)
         {
+            // generate the null distribution for e-value calculations
             double globalMeanScore = 0;
             int globalMeanCount = 0;
 
@@ -185,6 +186,7 @@ namespace EngineLayer.FdrAnalysis
 
         private static double GetEValue(PeptideSpectralMatch psm, int globalMeanCount, double globalMeanScore, out double maximumLikelihood)
         {
+            // get all of the PSM's scores for all hits, sort them, then remove the last value (the best score)
             List<double> scoresWithoutBestHit = new List<double>();
             scoresWithoutBestHit.AddRange(psm.AllScores);
             scoresWithoutBestHit.Sort();
@@ -193,9 +195,14 @@ namespace EngineLayer.FdrAnalysis
             {
                 scoresWithoutBestHit.RemoveAt(scoresWithoutBestHit.Count - 1);
             }
+
+            // this is the "default" case for when there are no scores except the best hit
+            // it uses a global mean score (all scores across all PSMs) to generate the null Poisson distribution
+            // this will be overriden by the next few lines if there are enough scores in this PSM to estimate a null distribution
             double preValue = SpecialFunctions.GammaLowerRegularized(globalMeanScore, psm.Score);
             maximumLikelihood = globalMeanScore;
             
+            // calculate single-spectrum evalue if there are enough hits besides the best scoring peptide
             if (psm.Score == 0)
             {
                 preValue = 1;
