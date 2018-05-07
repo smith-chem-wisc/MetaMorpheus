@@ -21,7 +21,7 @@ namespace EngineLayer.FdrAnalysis
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, ICommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
         {
-            this.psms = psms;
+            this.psms = psms.Where(p => p != null).ToList();
             this.massDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             this.UseDeltaScore = commonParameters.UseDeltaScore;
             this.scoreCutoff = commonParameters.ScoreCutoff;
@@ -50,34 +50,37 @@ namespace EngineLayer.FdrAnalysis
 
         private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults)
         {
+            // generate the null distribution for e-value calculations
             double globalMeanScore = 0;
-            double globalMeanCount = 0;
+            int globalMeanCount = 0;
 
-            if (calculateEValue)
+            if (calculateEValue && psms.Any())
             {
-                List<Int64> combinedAllScores = new List<Int64>();
-                Int64 totalCount = 0;
-                Int64 totalSum = 0;
+                List<double> combinedScores = new List<double>();
 
                 foreach (PeptideSpectralMatch psm in psms)
                 {
-                    psm.AllScores[psm.AllScores.Count - 1]--; //remove top scoring peptide
-                    while (combinedAllScores.Count < psm.AllScores.Count) //expand array if neccessary
+                    psm.AllScores.Sort();
+                    combinedScores.AddRange(psm.AllScores);
+
+                    //remove top scoring peptide
+                    if (combinedScores.Any())
                     {
-                        combinedAllScores.Add(0);
-                    }
-                    for (int score = 0; score < psm.AllScores.Count; score++) //add scores
-                    {
-                        combinedAllScores[score] += psm.AllScores[score];
+                        combinedScores.RemoveAt(combinedScores.Count - 1);
                     }
                 }
-                for (int i = 0; i < combinedAllScores.Count; i++)
+
+                if (combinedScores.Any())
                 {
-                    totalCount += combinedAllScores[i];
-                    totalSum += combinedAllScores[i] * i;
+                    globalMeanScore = combinedScores.Average();
+                    globalMeanCount = (int)((double)combinedScores.Count / psms.Count);
                 }
-                globalMeanScore = totalCount != 0 ? totalSum * 1.0d / totalCount : 0;
-                globalMeanCount = totalCount * 1.0d / psms.Count;
+                else
+                {
+                    // should be a very rare case... if there are PSMs but each PSM only has one hit
+                    globalMeanScore = 0;
+                    globalMeanCount = 0;
+                }
             }
 
             int cumulative_target = 0;
@@ -95,7 +98,6 @@ namespace EngineLayer.FdrAnalysis
             //determine if Score or DeltaScore performs better
             if (UseDeltaScore)
             {
-
                 const double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR
 
                 List<PeptideSpectralMatch> scoreSorted = psms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
@@ -139,15 +141,14 @@ namespace EngineLayer.FdrAnalysis
                 double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / cumulative_target_per_notch[notch];
 
                 double maximumLikelihood = 0;
-                decimal eValue = 0;
+                double eValue = 0;
                 double eScore = 0;
                 if (calculateEValue)
                 {
-                    (int sum, int count) sumAndCount = GetSumAndCount(psm.AllScores);
-                    maximumLikelihood = GetMaximumLikelihood(sumAndCount.sum, sumAndCount.count);
-                    eValue = GetEValue(psm.Score, sumAndCount.count, maximumLikelihood, globalMeanCount, globalMeanScore);
-                    eScore = GetEScore(eValue);
+                    eValue = GetEValue(psm, globalMeanCount, globalMeanScore, out maximumLikelihood);
+                    eScore = -Math.Log(eValue, 10);
                 }
+
                 psm.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch, maximumLikelihood, eValue, eScore, calculateEValue);
             }
 
@@ -183,63 +184,52 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
-        private static (int sum, int count) GetSumAndCount(List<int> allScores)
+        private static double GetEValue(PeptideSpectralMatch psm, int globalMeanCount, double globalMeanScore, out double maximumLikelihood)
         {
-            if (!allScores.Any(x => x != 0))
+            // get all of the PSM's scores for all hits, sort them, then remove the last value (the best score)
+            List<double> scoresWithoutBestHit = new List<double>();
+            scoresWithoutBestHit.AddRange(psm.AllScores);
+            scoresWithoutBestHit.Sort();
+
+            if (scoresWithoutBestHit.Any())
             {
-                return (0, 0);
+                scoresWithoutBestHit.RemoveAt(scoresWithoutBestHit.Count - 1);
             }
-            else
-            {
-                int count = 0;
-                int sum = 0;
-                for (int i = 0; i < allScores.Count; i++)
-                {
-                    count += allScores[i];
-                    sum += i * allScores[i];
-                }
-                return (sum, count);
-            }
-        }
 
-        private static double GetMaximumLikelihood(int sum, int count)
-        {
-            return count == 0 ? 0 : (1.0d / count) * sum;
-        }
-
-        private static decimal GetEValue(double dScore, double count, double maximumLikelihood, double globalMeanCount, double globalMeanScore)
-        {
-            int score = (int)Math.Floor(dScore);
-            double preValue; // this is the cumulative distribution for the poisson at each score up to but not including the score of the winner. This is the probability that the winner has of getting that score at random by matching against a SINGLE spectrum
-
-            if (score == 0)
+            // this is the "default" case for when there are no scores except the best hit
+            // it uses a global mean score (all scores across all PSMs) to generate the null Poisson distribution
+            // this will be overriden by the next few lines if there are enough scores in this PSM to estimate a null distribution
+            double preValue = SpecialFunctions.GammaLowerRegularized(globalMeanScore, psm.Score);
+            maximumLikelihood = globalMeanScore;
+            
+            // calculate single-spectrum evalue if there are enough hits besides the best scoring peptide
+            if (psm.Score == 0)
             {
                 preValue = 1;
+                maximumLikelihood = 0;
             }
-            else if (maximumLikelihood == 0)
+            else if (scoresWithoutBestHit.Any())
             {
-                preValue = SpecialFunctions.GammaLowerRegularized(globalMeanScore, (score - 1));
+                maximumLikelihood = scoresWithoutBestHit.Average();
+                
+                // this is the cumulative distribution for the poisson at each score up to but not including the score of the winner. 
+                // This is the probability that the winner has of getting that score at random by matching against a SINGLE spectrum
+                if (maximumLikelihood > 0)
+                {
+                    preValue = SpecialFunctions.GammaLowerRegularized(maximumLikelihood, psm.Score);
+                }
             }
-            else
-            {
-                preValue = SpecialFunctions.GammaLowerRegularized(maximumLikelihood, (score - 1));
-            }
-            // Now the probability of getting the winner's score goes up for each spectrum match. We multiply the preValue by the number of theoretical spectrum within the tolerance to get this new probability.
-            if (count > 0)
-            {
-                double four = (1 - Math.Pow(preValue, (count)));
-                return (Convert.ToDecimal((count) * four));
-            }
-            else
-            {
-                double four = (1 - Math.Pow(preValue, (globalMeanCount)));
-                return (Convert.ToDecimal((count) * four));
-            }
-        }
 
-        private static double GetEScore(decimal eValue)
-        {
-            return (-10d * Math.Log10((double)eValue));
+            // Now the probability of getting the winner's score goes up for each spectrum match. 
+            // We multiply the preValue by the number of theoretical spectrum within the tolerance to get this new probability.
+            int count = scoresWithoutBestHit.Count;
+            if (count == 0)
+            {
+                count = globalMeanCount;
+            }
+
+            double probabilityOfScore = 1 - Math.Pow(preValue, count);
+            return count * probabilityOfScore;
         }
 
         private static int GetNumPSMsAtqValueCutoff(List<PeptideSpectralMatch> psms, double qValueCutoff)
