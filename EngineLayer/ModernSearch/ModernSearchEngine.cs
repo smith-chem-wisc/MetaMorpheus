@@ -131,11 +131,6 @@ namespace EngineLayer.ModernSearch
                                 peptideSpectralMatches[i].AllScores.Add(thisScore);
                             }
                         }
-
-                        if (CommonParameters.CalculateEValue)
-                        {
-                            peptideSpectralMatches[i].AddThisScoreToScoreDistribution(thisScore);
-                        }
                     }
 
                     // report search progress
