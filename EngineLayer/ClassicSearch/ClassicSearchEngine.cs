@@ -94,6 +94,7 @@ namespace EngineLayer.ClassicSearch
                                 double scanPrecursorMass = scan.theScan.PrecursorMass;
 
                                 var thisScore = CalculatePeptideScore(scan.theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
+
                                 bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
                                 bool scoreImprovement = peptideSpectralMatches[scan.scanIndex] == null || (thisScore - peptideSpectralMatches[scan.scanIndex].RunnerUpScore) > -PeptideSpectralMatch.tolForScoreDifferentiation;
 
