@@ -112,7 +112,7 @@ namespace EngineLayer.ModernSearch
                         var thisScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
                         int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, compactPeptide.MonoisotopicMassIncludingFixedMods);
 
-                        bool meetsScoreCutoff = thisScore > CommonParameters.ScoreCutoff;
+                        bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
                         bool scoreImprovement = peptideSpectralMatches[i] == null || (thisScore - peptideSpectralMatches[i].RunnerUpScore) > -PeptideSpectralMatch.tolForScoreDifferentiation;
 
                         if (meetsScoreCutoff && scoreImprovement)
