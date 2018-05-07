@@ -56,7 +56,7 @@ namespace EngineLayer.ModernSearch
 
             byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
             if (CommonParameters.CalculateEValue)
-                byteScoreCutoff = 1;
+                byteScoreCutoff = 0;
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
             {
@@ -129,7 +129,7 @@ namespace EngineLayer.ModernSearch
 
                         if (CommonParameters.CalculateEValue)
                         {
-                            peptideSpectralMatches[i].AddThisScoreToScoreDistribution(thisScore);
+                            peptideSpectralMatches[i].AllScores.Add(thisScore);
                         }
                     }
 

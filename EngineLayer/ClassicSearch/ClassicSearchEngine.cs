@@ -115,7 +115,7 @@ namespace EngineLayer.ClassicSearch
 
                                         if (commonParameters.CalculateEValue)
                                         {
-                                            peptideSpectralMatches[scan.scanIndex].AddThisScoreToScoreDistribution(thisScore);
+                                            peptideSpectralMatches[scan.scanIndex].AllScores.Add(thisScore);
                                         }
                                     }
                                 }

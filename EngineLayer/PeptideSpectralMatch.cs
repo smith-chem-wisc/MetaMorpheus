@@ -41,8 +41,7 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
-            this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
-            this.AllScores[AllScores.Count - 1]++;
+            this.AllScores = new List<double>();
             MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
@@ -86,7 +85,7 @@ namespace EngineLayer
         public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
 
-        public List<int> AllScores { get; set; }
+        public List<double> AllScores { get; set; }
 
         public double[] Features
         {
@@ -285,14 +284,8 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NextAminoAcid.ToString())).Item1);
                 if (FdrInfo != null && FdrInfo.CalculateEValue)
                 {
-                    int theoreticalsSearched = AllScores[0];
-                    sb.Append('\t' + AllScores[0].ToString());
-                    for (int i = 1; i < AllScores.Count; i++)
-                    {
-                        sb.Append("_" + AllScores[i]);
-                        theoreticalsSearched += AllScores[i];
-                    }
-                    sb.Append('\t' + theoreticalsSearched.ToString());
+                    sb.Append('\t' + GlobalVariables.CheckLengthOfOutput(string.Join(";", AllScores.Select(p => p.ToString("F2", CultureInfo.InvariantCulture)))));
+                    sb.Append('\t' + AllScores.Count.ToString());
                 }
                 else
                     sb.Append('\t' + " " + '\t' + " ");
@@ -379,7 +372,7 @@ namespace EngineLayer
             DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
-        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, decimal eValue, double eScore, bool calculateEValue)
+        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue)
         {
             FdrInfo = new FdrInfo
             {
@@ -394,15 +387,6 @@ namespace EngineLayer
                 EValue = eValue,
                 CalculateEValue = calculateEValue
             };
-        }
-
-        public void AddThisScoreToScoreDistribution(double score)
-        {
-            // creates a distribution of scores for this PSM
-            int roundScore = (int)Math.Floor(score);
-            while (AllScores.Count <= roundScore)
-                AllScores.Add(0);
-            AllScores[roundScore]++;
         }
 
         #endregion Public Methods
