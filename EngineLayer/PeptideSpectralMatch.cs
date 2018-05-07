@@ -41,8 +41,7 @@ namespace EngineLayer
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
-            AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
-            AllScores[AllScores.Count - 1]++;
+            this.AllScores = new List<double>();
             MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
@@ -86,7 +85,7 @@ namespace EngineLayer
         public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
 
-        public List<int> AllScores { get; set; }
+        public List<double> AllScores { get; set; }
 
         public double[] Features
         {
@@ -195,7 +194,7 @@ namespace EngineLayer
             DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
-        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, decimal eValue, double eScore, bool calculateEValue)
+        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue)
         {
             FdrInfo = new FdrInfo
             {
@@ -210,17 +209,6 @@ namespace EngineLayer
                 EValue = eValue,
                 CalculateEValue = calculateEValue
             };
-        }
-
-        public void AddThisScoreToScoreDistribution(double score)
-        {
-            // creates a distribution of scores for this PSM
-            int roundScore = (int)Math.Floor(score);
-            while (AllScores.Count <= roundScore)
-            {
-                AllScores.Add(0);
-            }
-            AllScores[roundScore]++;
         }
 
         #endregion Public Methods
@@ -375,7 +363,11 @@ namespace EngineLayer
         {
             bool pepWithModsIsNull = peptide == null || peptide.compactPeptides.First().Value.Item2 == null;
 
-            var pepsWithMods = pepWithModsIsNull ? null : peptide.compactPeptides.SelectMany(b => b.Value.Item2).ToList();
+            var pepsWithMods = pepWithModsIsNull ? null : peptide.compactPeptides.SelectMany(b => b.Value.Item2)
+                .OrderBy(p => p.Sequence)
+                .ThenBy(p => p.Protein.Accession)
+                .ThenBy(p => p.OneBasedStartResidueInProtein).ToList();
+
             s["Peptides Sharing Same Peaks"] = pepWithModsIsNull ? " " :
                 GlobalVariables.CheckLengthOfOutput(string.Join("|", peptide.compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
             s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item1;
@@ -395,7 +387,9 @@ namespace EngineLayer
             s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName)).Item1;
             s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).Item1;
             s["Sequence Variations"] = pepWithModsIsNull ? " " :
-                Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations.Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence)))).Item1;
+                Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations
+                    .Where(d => peptide.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= peptide.OneBasedEndResidueInProtein)
+                    .Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence)))).Item1;
             s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item1;
             s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1;
             s["Decoy"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1;
@@ -410,15 +404,8 @@ namespace EngineLayer
             string theoreticalsSearched = " ";
             if (!pepWithModsIsNull && peptide.FdrInfo != null && peptide.FdrInfo.CalculateEValue)
             {
-                int theoreticalsSearchedCount = peptide.AllScores[0];
-                StringBuilder allScoresSb = new StringBuilder(peptide.AllScores[0].ToString());
-                for (int ii = 1; ii < peptide.AllScores.Count; ii++)
-                {
-                    allScoresSb.Append("_" + peptide.AllScores[ii]);
-                    theoreticalsSearchedCount += peptide.AllScores[ii];
-                }
-                allScores = allScoresSb.ToString();
-                theoreticalsSearched = theoreticalsSearchedCount.ToString();
+                allScores = string.Join(";", peptide.AllScores.Select(p => p.ToString("F2", CultureInfo.InvariantCulture)));
+                theoreticalsSearched = peptide.AllScores.Count.ToString();
             }
 
             s["All Scores"] = allScores;
