@@ -56,7 +56,7 @@ namespace EngineLayer.ModernSearch
 
             byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
             if (CommonParameters.CalculateEValue)
-                byteScoreCutoff = 0;
+                byteScoreCutoff = 1;
 
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
             {
