@@ -63,7 +63,10 @@ namespace EngineLayer.FdrAnalysis
                     combinedScores.AddRange(psm.AllScores);
 
                     //remove top scoring peptide
-                    combinedScores.RemoveAt(combinedScores.Count - 1);
+                    if (combinedScores.Any())
+                    {
+                        combinedScores.RemoveAt(combinedScores.Count - 1);
+                    }
                 }
 
                 if (combinedScores.Any())
@@ -185,7 +188,11 @@ namespace EngineLayer.FdrAnalysis
             List<double> scoresWithoutBestHit = new List<double>();
             scoresWithoutBestHit.AddRange(psm.AllScores);
             scoresWithoutBestHit.Sort();
-            scoresWithoutBestHit.RemoveAt(scoresWithoutBestHit.Count - 1);
+
+            if (scoresWithoutBestHit.Any())
+            {
+                scoresWithoutBestHit.RemoveAt(scoresWithoutBestHit.Count - 1);
+            }
             double preValue = SpecialFunctions.GammaLowerRegularized(globalMeanScore, psm.Score);
             maximumLikelihood = globalMeanScore;
             
