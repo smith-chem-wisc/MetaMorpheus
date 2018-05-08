@@ -94,7 +94,8 @@ namespace EngineLayer.ClassicSearch
                                 double scanPrecursorMass = scan.theScan.PrecursorMass;
 
                                 var thisScore = CalculatePeptideScore(scan.theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
-                                bool meetsScoreCutoff = thisScore > commonParameters.ScoreCutoff;
+
+                                bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
                                 bool scoreImprovement = peptideSpectralMatches[scan.scanIndex] == null || (thisScore - peptideSpectralMatches[scan.scanIndex].RunnerUpScore) > -PeptideSpectralMatch.tolForScoreDifferentiation;
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,
@@ -115,7 +116,7 @@ namespace EngineLayer.ClassicSearch
 
                                         if (commonParameters.CalculateEValue)
                                         {
-                                            peptideSpectralMatches[scan.scanIndex].AddThisScoreToScoreDistribution(thisScore);
+                                            peptideSpectralMatches[scan.scanIndex].AllScores.Add(thisScore);
                                         }
                                     }
                                 }

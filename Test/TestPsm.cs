@@ -7,6 +7,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
+using System;
 
 namespace Test
 {
@@ -19,7 +20,16 @@ namespace Test
         public static void TestPsmHeader()
         {
             DigestionParams digestionParams = new DigestionParams();
-            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", "accession1").Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pepWithSetMods = new Protein(
+                "MQQQQQQQ",
+                "accession1",
+                "org",
+                new List<Tuple<string, string>> { new Tuple<string, string>("geneNameType", "geneName") },
+                new Dictionary<int, List<Modification>> { { 2, new List<Modification> { new Modification("mod", "mod") } } },
+                name: "name",
+                full_name: "fullName",
+                sequenceVariations: new List<SequenceVariation> { new SequenceVariation(2, "P", "Q", "changed this sequence") })
+                    .Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scann = myMsDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
@@ -45,7 +55,7 @@ namespace Test
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
-            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, false);
+            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, true);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
         }
