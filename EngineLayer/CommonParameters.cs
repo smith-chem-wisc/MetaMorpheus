@@ -14,7 +14,7 @@ namespace EngineLayer
             ProductMassTolerance = new PpmTolerance(20);
             PrecursorMassTolerance = new PpmTolerance(5);
 
-            DigestionParams = new DigestionParams();
+            DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
 
             BIons = true;
             YIons = true;

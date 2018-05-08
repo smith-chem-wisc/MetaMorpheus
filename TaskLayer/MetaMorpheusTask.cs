@@ -44,7 +44,7 @@ namespace TaskLayer
                         .ConfigureType<CommonParameters>(ct => ct
                             .CreateInstance(() => new CommonParameters()))
                         .ConfigureType<DigestionParams>(ct => ct
-                            .CreateInstance(() => new DigestionParams()))
+                            .CreateInstance(() => new DigestionParams(GlobalVariables.ProteaseDictionary[custom])))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t", custom))
@@ -165,11 +165,11 @@ namespace TaskLayer
             DigestionParams fileSpecificDigestionParams = ((DigestionParams)commonParams.DigestionParams).Clone();
 
             // set file-specific digestion parameters
-            fileSpecificDigestionParams.Protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
-            fileSpecificDigestionParams.MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            fileSpecificDigestionParams.MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            fileSpecificDigestionParams.MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            fileSpecificDigestionParams.MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            fileSpecificDigestionParams.setProtease(fileSpecificParams.Protease ?? commonParams.DigestionParams.getProtease());
+            fileSpecificDigestionParams.setMinPeptideLength(fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.getMinPeptideLength());
+            fileSpecificDigestionParams.setMaxPeptideLength(fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.getMaxPeptideLength());
+            fileSpecificDigestionParams.setMaxMissedCleavages(fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.getMaxMissedCleavages());
+            fileSpecificDigestionParams.setMaxModsForPeptide(fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.getMaxModsForPeptide());
             returnParams.DigestionParams = fileSpecificDigestionParams;
 
             // set the rest of the file-specific parameters
@@ -318,14 +318,21 @@ namespace TaskLayer
 
         protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
         {
+            
             HashSet<DigestionParams> okay = new HashSet<DigestionParams>
-            {
+            { 
                 commonParameters.DigestionParams
             };
 
             foreach (var hah in enumerable)
-                okay.Add(hah.DigestionParams);
-
+            {
+                DigestionParams p = hah.DigestionParams;
+                if (okay.Contains(p)==false)
+                {
+                    okay.Add(p);
+                }              
+            };
+                
             return okay;
         }
 
