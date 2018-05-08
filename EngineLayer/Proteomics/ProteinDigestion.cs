@@ -8,7 +8,7 @@ namespace EngineLayer
     {
         public Protease Protease { get; set; }
         public int MaximumMissedCleavages { get; set; }
-        public IDigestionParams DigestionParams { get; set; }
+        public DigestionParams DigestionParams { get; set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
         public int MinPeptidesLength { get; set; }
         public int MaxPeptidesLength { get; set; }
@@ -21,7 +21,7 @@ namespace EngineLayer
         /// <param name="digestionParams"></param>
         /// <param name="allKnownFixedModifications"></param>
         /// <param name="variableModifications"></param>
-        public ProteinDigestion(IDigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications, List<ModificationWithMass> variableModifications)
+        public ProteinDigestion(DigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications, List<ModificationWithMass> variableModifications)
         {
             DigestionParams = digestionParams;
             Protease = digestionParams.Protease;

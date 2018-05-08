@@ -87,7 +87,7 @@ namespace EngineLayer
         /// <param name="variableModifications"></param>
         /// <returns></returns>
         internal IEnumerable<PeptideWithSetModifications> GetModifiedPeptides(IEnumerable<ModificationWithMass> allKnownFixedModifications, 
-            IDigestionParams digestionParams, List<ModificationWithMass> variableModifications)
+            DigestionParams digestionParams, List<ModificationWithMass> variableModifications)
         {
             int peptideLength = OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
             int maximumVariableModificationIsoforms = digestionParams.MaxModificationIsoforms;

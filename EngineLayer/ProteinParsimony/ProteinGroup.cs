@@ -157,7 +157,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of masses
-            IDigestionParams digestionParams = new TDdigest();
+            DigestionParams digestionParams = new TDdigest();
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass).Distinct())));
             sb.Append("\t");
 
@@ -473,7 +473,7 @@ namespace EngineLayer
 
         #region Private Classes
 
-        private class TDdigest : IDigestionParams
+        private class TDdigest 
         {
             #region Public Properties
 

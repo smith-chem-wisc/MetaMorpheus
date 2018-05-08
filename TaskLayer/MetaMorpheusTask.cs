@@ -41,9 +41,9 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<ICommonParameters>(ct => ct
+                        .ConfigureType<CommonParameters>(ct => ct
                             .CreateInstance(() => new CommonParameters()))
-                        .ConfigureType<IDigestionParams>(ct => ct
+                        .ConfigureType<DigestionParams>(ct => ct
                             .CreateInstance(() => new DigestionParams()))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
@@ -101,7 +101,7 @@ namespace TaskLayer
 
         public MyTask TaskType { get; set; }
 
-        public ICommonParameters CommonParameters { get; set; }
+        public CommonParameters CommonParameters { get; set; }
 
         #endregion Public Properties
 
@@ -155,7 +155,7 @@ namespace TaskLayer
             }
         }
 
-        public static ICommonParameters SetAllFileSpecificCommonParams(ICommonParameters commonParams, FileSpecificParameters fileSpecificParams)
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
             if (fileSpecificParams == null)
                 return commonParams;
@@ -316,9 +316,9 @@ namespace TaskLayer
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
-        protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
+        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
         {
-            HashSet<IDigestionParams> okay = new HashSet<IDigestionParams>
+            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
             {
                 commonParameters.DigestionParams
             };

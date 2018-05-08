@@ -19,7 +19,7 @@ namespace EngineLayer.ModernSearch
         protected readonly List<CompactPeptide> peptideIndex;
         protected readonly List<ProductType> lp;
         protected readonly int currentPartition;
-        protected readonly ICommonParameters CommonParameters;
+        protected readonly CommonParameters CommonParameters;
         protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
@@ -29,7 +29,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, ICommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(nestedIds)
         {
             this.peptideSpectralMatches = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -119,7 +119,7 @@ namespace EngineLayer.ModernSearch
                         {
                             if (peptideSpectralMatches[i] == null)
                             {
-                                peptideSpectralMatches[i] = new PeptideSpectralMatch(compactPeptide, notch, thisScore, i, scan);
+                                peptideSpectralMatches[i] = new PeptideSpectralMatch(compactPeptide, notch, thisScore, i, scan, CommonParameters.DigestionParams);
                             }
                             else
                             {

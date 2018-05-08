@@ -75,7 +75,7 @@ namespace Test
             Assert.AreEqual("Asp-N", f.Protease.Name);
             Assert.IsNull(f.MaxMissedCleavages);
 
-            ICommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);

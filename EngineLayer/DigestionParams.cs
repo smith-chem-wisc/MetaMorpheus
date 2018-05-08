@@ -1,8 +1,8 @@
 ﻿using EngineLayer;
 
-namespace TaskLayer
+namespace EngineLayer
 {
-    public class DigestionParams : IDigestionParams
+    public class DigestionParams
     {
         #region Public Constructors
 
@@ -43,7 +43,7 @@ namespace TaskLayer
 
         public override bool Equals(object obj)
         {
-            var a = obj as IDigestionParams;
+            var a = obj as DigestionParams;
             return a != null
                 && MaxMissedCleavages.Equals(a.MaxMissedCleavages)
                 && MinPeptideLength.Equals(a.MinPeptideLength)

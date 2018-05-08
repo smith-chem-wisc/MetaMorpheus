@@ -23,11 +23,32 @@ namespace EngineLayer
         #region Public Fields
 
         public const double tolForScoreDifferentiation = 1e-9;
+        public DigestionParams digestionParams;
 
         #endregion Public Fields
 
         #region Public Constructors
 
+        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
+        {
+            this.ScanIndex = scanIndex;
+            this.FullFilePath = scan.FullFilePath;
+            this.ScanNumber = scan.OneBasedScanNumber;
+            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
+            this.ScanRetentionTime = scan.RetentionTime;
+            this.ScanExperimentalPeaks = scan.NumPeaks;
+            this.TotalIonCurrent = scan.TotalIonCurrent;
+            this.ScanPrecursorCharge = scan.PrecursorCharge;
+            this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
+            this.ScanPrecursorMass = scan.PrecursorMass;
+            AddOrReplace(peptide, score, notch, true);
+            this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
+            this.AllScores[AllScores.Count - 1]++;
+            this.digestionParams = digestionParams;
+            MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+            ProductMassErrorDa = new Dictionary<ProductType, double[]>();
+            ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
+        }
         public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
@@ -47,7 +68,6 @@ namespace EngineLayer
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
-
         #endregion Public Constructors
 
         #region Public Properties
