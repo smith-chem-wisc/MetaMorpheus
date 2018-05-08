@@ -1,5 +1,4 @@
-﻿using Chemistry;
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
@@ -15,14 +14,10 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Serialization;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -47,7 +42,7 @@ namespace TaskLayer
         #endregion Public Properties
 
         #region Public Methods
-      
+
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
             switch (massDiffAcceptorType)
@@ -164,7 +159,7 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             proseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
-            
+
             // start the search task
             myTaskResults = new MyTaskResults(this);
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
@@ -195,7 +190,7 @@ namespace TaskLayer
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                
+
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
@@ -330,7 +325,7 @@ namespace TaskLayer
                 if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             }
-            
+
             Status("Running FDR analysis...", taskId);
             int massDiffAcceptorNumNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { taskId }).Run());
@@ -359,7 +354,7 @@ namespace TaskLayer
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                    
+
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
@@ -628,7 +623,7 @@ namespace TaskLayer
                             proteinToConfidentBaseSequences.Add(peptide.Protein, new List<PeptideWithSetModifications> { peptide });
                     }
                 }
-                
+
                 // Add user mod selection behavours to Pruned DB
                 foreach (var modType in SearchParameters.ModsToWriteSelection)
                 {
@@ -640,7 +635,7 @@ namespace TaskLayer
                         modificationsToWriteIfObserved.AddRange(GlobalVariables.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
                 }
                 //generates dictionary of proteins with only localized modifications
-                var ModPsms = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && b.FdrInfo.QValue < 0.01 && !b.IsDecoy && b.BaseSequence != null && b.FullSequence!=null).ToList();
+                var ModPsms = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.01 && b.FdrInfo.QValue < 0.01 && !b.IsDecoy && b.BaseSequence != null && b.FullSequence != null).ToList();
                 var proteinToConfidentModifiedSequences = new Dictionary<Protein, List<PeptideWithSetModifications>>();
 
                 foreach (PeptideSpectralMatch psm in ModPsms)
@@ -664,9 +659,9 @@ namespace TaskLayer
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (proteinToConfidentModifiedSequences.ContainsKey(protein))
                         {
-                                modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
+                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
                         }
-                                                
+
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
 
                         foreach (var observedMod in modsObservedOnThisProtein)
@@ -698,12 +693,10 @@ namespace TaskLayer
                                         modsToWrite[modd.Key].Add(mod);
                                 }
                             }
-                      
 
-                        
-                       if (proteinToConfidentBaseSequences.TryGetValue(protein, out var peptideSequences))
-                       { 
-                            // removes all annotated mods on proteins                           
+                        if (proteinToConfidentBaseSequences.TryGetValue(protein, out var peptideSequences))
+                        {
+                            // removes all annotated mods on proteins
                             if (protein.Accession == protein.Accession)
                             {
                                 protein.OneBasedPossibleLocalizedModifications.Clear();
@@ -711,10 +704,7 @@ namespace TaskLayer
                                 foreach (var kvp in modsToWrite)
                                     protein.OneBasedPossibleLocalizedModifications.Add(kvp);
                             }
-                            
-                            
-                       }
-                        
+                        }
                     }
                 }
 

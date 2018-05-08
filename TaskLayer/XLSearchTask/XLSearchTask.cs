@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace TaskLayer
@@ -218,7 +217,6 @@ namespace TaskLayer
                 {
                     throw;
                 }
-
             }
 
             #endregion Inter Crosslink
@@ -249,7 +247,6 @@ namespace TaskLayer
                 }
                 catch (Exception)
                 {
-
                     throw;
                 }
             }
@@ -290,7 +287,6 @@ namespace TaskLayer
             }
 
             #endregion deadend peptide
-
 
             if (XlSearchParameters.XlOutPepXML)
             {
@@ -452,12 +448,11 @@ namespace TaskLayer
                         psmCrossCrosslinks.Add(item);
                     }
                 }
-
             }
             return psmCrossCrosslinks;
         }
 
-        //Generate user defined crosslinker 
+        //Generate user defined crosslinker
         public static CrosslinkerTypeClass GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
         {
             var crosslinker = new CrosslinkerTypeClass(

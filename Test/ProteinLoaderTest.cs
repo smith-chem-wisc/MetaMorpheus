@@ -13,16 +13,18 @@ namespace Test
         public void TestProteinLoad()
         {
             new ProteinLoaderTask("").Run(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta"));
+            new ProteinLoaderTask("").Run(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fa"));
             new ProteinLoaderTask("").Run(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta.gz"));
+            new ProteinLoaderTask("").Run(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fa.gz"));
         }
 
         public class ProteinLoaderTask : MetaMorpheusTask
         {
-            public ProteinLoaderTask(string x) 
+            public ProteinLoaderTask(string x)
                 : this()
             { }
 
-            protected ProteinLoaderTask() 
+            protected ProteinLoaderTask()
                 : base(MyTask.Search)
             { }
 

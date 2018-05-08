@@ -214,7 +214,7 @@ namespace TaskLayer
                         {
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
                         }
-                        catch(MetaMorpheusException e)
+                        catch (MetaMorpheusException e)
                         {
                             // file-specific toml has already been validated in the GUI when the spectra files were added, so...
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
@@ -316,7 +316,7 @@ namespace TaskLayer
             List<Protein> proteinList = new List<Protein>();
 
             string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz");
+            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
             theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
 
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))

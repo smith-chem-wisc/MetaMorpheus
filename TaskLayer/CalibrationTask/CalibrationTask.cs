@@ -12,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using EngineLayer.FdrAnalysis;
-using MathNet.Numerics.Statistics;
 using EngineLayer.Localization;
 using UsefulProteomicsDatabases;
 
@@ -134,7 +133,7 @@ namespace TaskLayer
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResults = null;
-                
+
                 for (int i = 1; i <= 5; i++)
                 {
                     acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
