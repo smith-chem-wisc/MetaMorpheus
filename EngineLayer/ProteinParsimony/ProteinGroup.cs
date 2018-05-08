@@ -157,8 +157,9 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of masses
-            DigestionParams digestionParams = new TDdigest();
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass).Distinct())));
+            var sequences = ListOfProteinsOrderedByAccession.Select(p => p.BaseSequence).Distinct();
+            var masses = sequences.Select(p => new Proteomics.Peptide(p).MonoisotopicMass);
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", masses)));
             sb.Append("\t");
 
             // number of proteins in group
@@ -471,33 +472,5 @@ namespace EngineLayer
 
         #endregion Public Methods
 
-        #region Private Classes
-
-        private class TDdigest 
-        {
-            #region Public Properties
-
-            public int MaxMissedCleavages => 0;
-
-            public int MinPeptideLength => 0;
-
-            public int MaxPeptideLength => int.MaxValue;
-
-            public InitiatorMethionineBehavior InitiatorMethionineBehavior => InitiatorMethionineBehavior.Retain;
-
-            public int MaxModificationIsoforms => 1;
-
-            public int MaxModsForPeptide => 0;
-
-            public Protease Protease => GlobalVariables.ProteaseDictionary["top-down"];
-
-            public bool SemiProteaseDigestion => false;
-
-            public TerminusType TerminusTypeSemiProtease => throw new System.NotImplementedException();
-
-            #endregion Public Properties
-        }
-
-        #endregion Private Classes
     }
 }
