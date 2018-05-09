@@ -42,8 +42,7 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
-            this.AllScores = new List<int>(new int[(int)Math.Floor(score) + 1]);
-            this.AllScores[AllScores.Count - 1]++;
+            this.AllScores = new List<double>();
             this.digestionParams = digestionParams;
             MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();

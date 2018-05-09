@@ -24,11 +24,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams
-                    {
-                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                        MinPeptideLength = 5
-                    },
+                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,5,int.MaxValue,1024, InitiatorMethionineBehavior.Retain),
                     ConserveMemory = false,
                 },
                 SearchParameters = new SearchParameters
@@ -88,12 +84,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams
-                    {
-                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                        MaxMissedCleavages = 0,
-                        MinPeptideLength = 5
-                    },
+                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,5, int.MaxValue, 1024, InitiatorMethionineBehavior.Retain),
                     ConserveMemory = false,
                 },
                 SearchParameters = new SearchParameters

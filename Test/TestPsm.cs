@@ -19,7 +19,7 @@ namespace Test
         [Test]
         public static void TestPsmHeader()
         {
-            DigestionParams digestionParams = new DigestionParams();
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
             PeptideWithSetModifications pepWithSetMods = new Protein(
                 "MQQQQQQQ",
                 "accession1",

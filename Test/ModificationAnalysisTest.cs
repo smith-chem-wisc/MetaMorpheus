@@ -76,12 +76,7 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = 1,
-                    MaxMissedCleavages = 0,
-                    MaxModificationIsoforms = int.MaxValue,
-                },
+                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1, int.MaxValue, int.MaxValue),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
@@ -151,12 +146,7 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = 1,
-                    MaxMissedCleavages = 0,
-                    MaxModificationIsoforms = int.MaxValue
-                },
+                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };

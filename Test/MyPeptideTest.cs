@@ -28,13 +28,7 @@ namespace Test
             var prot = new Protein("MNNNKQQQQ", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                MinPeptideLength = 1,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0,
-            };
+            DigestionParams digestionParams = new DigestionParams(protease, 0, 1, 2147483647, 1024, InitiatorMethionineBehavior.Retain);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
 
@@ -57,10 +51,7 @@ namespace Test
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             mods.Add(1, new List<Modification> { new ModificationWithMass("Hehe", null, motif, TerminusLocalization.NProt, 18.010565, null, null, null, null) });
             var prot = new Protein("MMMM", null, null, null, mods);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 1);
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = ye.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -74,13 +65,7 @@ namespace Test
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = 1,
-                    MaxModificationIsoforms = int.MaxValue,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                },
+                DigestionParams = new DigestionParams( GlobalVariables.ProteaseDictionary["trypsin"],0,1,2147483647,int.MaxValue,InitiatorMethionineBehavior.Retain),
                 ProductMassTolerance = new PpmTolerance(5),
                 ConserveMemory = false,
                 ScoreCutoff = 1
@@ -99,11 +84,8 @@ namespace Test
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, null, mods);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
-            var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 1);
+            PeptideWithSetModifications thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
             Array.Sort(massArray);
@@ -117,13 +99,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = 1,
-                    MaxModificationIsoforms = int.MaxValue,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                },
+                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,int.MaxValue,int.MaxValue,InitiatorMethionineBehavior.Retain),
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
@@ -140,10 +116,8 @@ namespace Test
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, null, mods);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 1);
+            digestionParams.setMinPeptideLength(1);
             var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -158,13 +132,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = 1,
-                    MaxModificationIsoforms = int.MaxValue,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                },
+                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,int.MaxValue,int.MaxValue, InitiatorMethionineBehavior.Retain),
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
@@ -181,10 +149,8 @@ namespace Test
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, null, mods);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
+            digestionParams.setMinPeptideLength(1);
             var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -199,13 +165,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = 1,
-                    MaxModificationIsoforms = int.MaxValue,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                },
+                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1, int.MaxValue, int.MaxValue, InitiatorMethionineBehavior.Retain),
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
@@ -223,10 +183,7 @@ namespace Test
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             var prot = new Protein("XMMM", null, null, null, mods);
-            DigestionParams digestionParams = new DigestionParams()
-            {
-                MinPeptideLength = 1,
-            };
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 1);
             var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
@@ -241,13 +198,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = 1,
-                    MaxModificationIsoforms = int.MaxValue,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                },
+                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,int.MaxValue,int.MaxValue, InitiatorMethionineBehavior.Retain),
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
@@ -264,10 +215,7 @@ namespace Test
             var prot = new Protein("MNNNKQQQQ", null, null, null, new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(5, 6, "lala") });
             var protease = new Protease("Custom Protease", null, null, TerminusType.None, CleavageSpecificity.None, null, null, null);
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 5
-            };
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 5);
             var ye = prot.Digest(digestionParams, fixedModifications, new List<ModificationWithMass>()).ToList();
 
             Assert.AreEqual(3, ye.Count);
@@ -279,13 +227,7 @@ namespace Test
             var prot = new Protein("MNNNKQQXQ", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            DigestionParams digestionParams = new DigestionParams()
-            {
-                MinPeptideLength = 1,
-                Protease = protease,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0,
-            };
+            DigestionParams digestionParams = new DigestionParams(protease, 0, 1, int.MaxValue, 1024, InitiatorMethionineBehavior.Retain);
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
 
             Assert.AreEqual(2, ye.Count);
@@ -308,12 +250,7 @@ namespace Test
         {
             var prot = new Protein("M", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                MinPeptideLength = 1,
-                MaxModsForPeptide = 3
-            };
+            DigestionParams digestionParams = new DigestionParams(protease, 0, 1, int.MaxValue, 1024, InitiatorMethionineBehavior.Variable, 3);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
@@ -342,10 +279,7 @@ namespace Test
             fixedMods.Add(new ModificationWithMassAndCf("PepCmod", null, motif, TerminusLocalization.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
             fixedMods.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, TerminusLocalization.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 1);
             var ok = prot.Digest(digestionParams, fixedMods, new List<ModificationWithMass>()).ToList();
 
             Assert.AreEqual(1, ok.Count);
@@ -367,13 +301,7 @@ namespace Test
             };
             var prot = new Protein("MNNNNKRRRRR", null, null, null, modDict);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0,
-                MinPeptideLength = 5
-            };
+            DigestionParams digestionParams = new DigestionParams(protease, 0, 5, int.MaxValue, 1024, InitiatorMethionineBehavior.Retain);
             var digestList = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             var ok1 = digestList[1];
             var ok2 = digestList[3];
@@ -396,13 +324,7 @@ namespace Test
             };
             var prot = new Protein("MNNNNKRRRRR", null, null, null, modDict, isDecoy: true);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0,
-                MinPeptideLength = 5
-            };
+            DigestionParams digestionParams = new DigestionParams(protease, 0, 5, int.MaxValue, 1024, InitiatorMethionineBehavior.Retain);
 
             var digestedList = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             var ok1 = digestedList[1];
@@ -429,39 +351,13 @@ namespace Test
             var prot = new Protein("MNNNKQQQQMNNNKQQQQ", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                MinPeptideLength = 1,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0
-            };
+            DigestionParams digestionParams = new DigestionParams(protease, 0, 1, 214748647, 1024, InitiatorMethionineBehavior.Retain);
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
-            digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                MinPeptideLength = 5,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0
-            };
+            digestionParams = new DigestionParams(protease, 0, 5, 2147483647, 1024, InitiatorMethionineBehavior.Retain);
             var ye1 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
-            digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                MinPeptideLength = 1,
-                MaxPeptideLength = 5,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0
-            };
+            digestionParams = new DigestionParams(protease, 0, 1, 5, 1024, InitiatorMethionineBehavior.Retain);
             var ye2 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
-            digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                MinPeptideLength = 5,
-                MaxPeptideLength = 8,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0
-            };
+            digestionParams = new DigestionParams(protease, 0, 5, 8, 1024, InitiatorMethionineBehavior.Retain);
             var ye3 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             Assert.AreEqual(3, ye.Count);
             Assert.AreEqual(2, ye1.Count);

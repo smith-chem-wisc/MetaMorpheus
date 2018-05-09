@@ -4,15 +4,15 @@ namespace EngineLayer
 {
     public class DigestionParams
     {
-        private int MaxMissedCleavages { get; set; }
-        private InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-        private int MinPeptideLength { get; set; }
-        private int MaxPeptideLength { get; set; }
-        private int MaxModificationIsoforms { get; set; }
-        private int MaxModsForPeptide { get; set; }
-        private Protease Protease { get; set; }
-        private bool SemiProteaseDigestion { get; set; } //for nonspecific searching of proteases
-        private TerminusType TerminusTypeSemiProtease { get; set; }
+        public int MaxMissedCleavages { get; private set; }
+        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; private set; }
+        public int MinPeptideLength { get; private set; }
+        public int MaxPeptideLength { get; private set; }
+        public int MaxModificationIsoforms { get; private set; }
+        public int MaxModsForPeptide { get; private set; }
+        public Protease Protease { get; private set; }
+        public bool SemiProteaseDigestion { get; private set; } //for nonspecific searching of proteases
+        public TerminusType TerminusTypeSemiProtease { get; private set; }
 
         #region Public Constructors
 
@@ -76,51 +76,7 @@ namespace EngineLayer
                 ^ MaxModsForPeptide.GetHashCode();
         }
 
-        public int getMaxMissedCleavages()
-        {
-            return MaxMissedCleavages;
-        }
-
-        public InitiatorMethionineBehavior getInitiatorMethionineBehavior()
-        {
-            return InitiatorMethionineBehavior;
-        }
         
-        public int getMinPeptideLength()
-        {
-            return MinPeptideLength;
-        }
-
-        public int getMaxPeptideLength()
-        {
-            return MaxPeptideLength;
-        }
-
-        public int getMaxModificationIsoforms()
-        {
-            return MaxModificationIsoforms;
-        }
-
-        public int getMaxModsForPeptide()
-        {
-            return MaxModsForPeptide;
-        }
-
-        public Protease getProtease()
-        {
-            return Protease;
-        }
-
-        public bool getSemiProteaseDigestion()
-        {
-            return SemiProteaseDigestion;
-        } 
-
-        public TerminusType getTerminusTypeSemiProtease()
-        {
-            return TerminusTypeSemiProtease;
-        }
-
         public void setMaxMissedCleavages( int MaxMissedCleavages)
         {
             this.MaxMissedCleavages = MaxMissedCleavages;

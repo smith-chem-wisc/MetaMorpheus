@@ -25,13 +25,8 @@ namespace TaskLayer
         {
             NeoParameters = new NeoParameters();
 
-            DigestionParams tempDigParams = new DigestionParams
-            {
-                MinPeptideLength = 8,
-                MaxPeptideLength = 13,
-                Protease = GlobalVariables.ProteaseDictionary["non-specific"],
-                MaxMissedCleavages = 12
-            };
+            DigestionParams tempDigParams = new DigestionParams(GlobalVariables.ProteaseDictionary["non-specific"], 12, 8, 13, 1024, InitiatorMethionineBehavior.Variable, 2, false, TerminusType.N);
+            
             CommonParameters = new CommonParameters
             {
                 DigestionParams = tempDigParams,
