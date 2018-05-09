@@ -1,19 +1,10 @@
-﻿using EngineLayer;
-using Proteomics;
+﻿using Chemistry;
+using EngineLayer;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace MetaMorpheusGUI
 {
@@ -25,13 +16,19 @@ namespace MetaMorpheusGUI
         public AddCustomModWindow()
         {
             InitializeComponent();
+            terminusTypeComboBox.Items.Add("Any");
+            terminusTypeComboBox.Items.Add("Peptide N-terminus");
+            terminusTypeComboBox.Items.Add("Peptide C-terminus");
+            terminusTypeComboBox.Items.Add("Protein N-terminus");
+            terminusTypeComboBox.Items.Add("Protein C-terminus");
+            terminusTypeComboBox.SelectedIndex = 0;
         }
 
         public void SaveCustomMod(object sender, RoutedEventArgs e)
         {
-            string modsDirectory = System.IO.Path.Combine(GlobalVariables.DataDir, @"Mods");
+            string modsDirectory = Path.Combine(GlobalVariables.DataDir, @"Mods");
             var modsFiles = Directory.GetFiles(modsDirectory);
-            string customModsPath = System.IO.Path.Combine(modsDirectory, @"CustomMods.txt");
+            string customModsPath = Path.Combine(modsDirectory, @"CustomMods.txt");
             List<string> customModsText = new List<string>();
 
             if(!File.Exists(customModsPath))
@@ -50,18 +47,44 @@ namespace MetaMorpheusGUI
             string neutralLossText = neutralLossTextBox.Text;
             string categoryText = categoryTextBox.Text;
 
+            string termType = "";
+            switch(terminusTypeComboBox.Text)
+            {
+                case "Any": termType = "Anywhere."; break;
+                case "Peptide N-terminus": termType = "Peptide N-terminal."; break;
+                case "Peptide C-terminus": termType = "Peptide C-terminal."; break;
+                case "Protein N-terminus": termType = "N-terminal."; break;
+                case "Protein C-terminus": termType = "C-terminal."; break;
+            }
+
+            if (ErrorsDetected(myModName, myAminoAcidMotifText, termType, modMassText, chemicalFormulaText, neutralLossText, categoryText))
+            {
+                return;
+            }
+
             // write custom mod to mods file
             customModsText.Add("ID   " + myModName);
             customModsText.Add("TG   " + myAminoAcidMotifText);
-            customModsText.Add("PP   " + "Anywhere.");
-            customModsText.Add("NL   " + neutralLossText);
-            customModsText.Add("CF   " + chemicalFormulaText);
+            customModsText.Add("PP   " + termType);
             customModsText.Add("MT   " + categoryText);
-            customModsText.Add("MM   " + modMassText);
+
+            if (!string.IsNullOrEmpty(neutralLossText))
+            {
+                customModsText.Add("NL   " + neutralLossText);
+            }
+            if (!string.IsNullOrEmpty(chemicalFormulaText))
+            {
+                customModsText.Add("CF   " + chemicalFormulaText);
+            }
+            if (!string.IsNullOrEmpty(modMassText))
+            {
+                customModsText.Add("MM   " + modMassText);
+            }
+
             customModsText.Add(@"//");
 
             // write/read temp file to make sure the mod is readable, then delete it
-            string tempPath = System.IO.Path.Combine(modsDirectory, @"temp.txt");
+            string tempPath = Path.Combine(modsDirectory, @"temp.txt");
             try
             {
                 File.WriteAllLines(tempPath, customModsText);
@@ -93,6 +116,42 @@ namespace MetaMorpheusGUI
         public void CancelCustomMod(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+        }
+
+        private bool ErrorsDetected(string myModName, string aminoAcidOrMotif, string termType, string mass, string chemFormula, string neutralLoss, string category)
+        {
+            // parse input
+            if (string.IsNullOrEmpty(myModName) || string.IsNullOrEmpty(category))
+            {
+                MessageBox.Show("Both the mod name and category need to be specified", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return true;
+            }
+            if (string.IsNullOrEmpty(mass) && string.IsNullOrEmpty(chemFormula))
+            {
+                MessageBox.Show("Either the mass or chemical formula needs to be specified", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return true;
+            }
+            if (!string.IsNullOrEmpty(mass) && !double.TryParse(mass, out double dmass))
+            {
+                MessageBox.Show("Could not parse modification mass", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return true;
+            }
+            if (!string.IsNullOrEmpty(neutralLoss) && !double.TryParse(neutralLoss, out double dNeutralLoss))
+            {
+                MessageBox.Show("Could not parse neutral loss mass", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return true;
+            }
+            try
+            {
+                ChemicalFormula cf = ChemicalFormula.ParseFormula(chemFormula);
+            }
+            catch
+            {
+                MessageBox.Show("Could not parse chemical formula", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return true;
+            }
+            
+            return false;
         }
     }
 }
