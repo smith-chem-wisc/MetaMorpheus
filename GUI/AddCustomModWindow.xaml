@@ -13,43 +13,7 @@
                 <Label Content="Modification Name" Width="190"></Label>
                 <TextBox Name="modNameTextBox" Width="155" Height="20">
                     <ToolTipService.ToolTip>
-                        <ToolTip Content="Mod name"/>
-                    </ToolTipService.ToolTip>
-                </TextBox>
-            </StackPanel>
-            <!--Amino acid/motifs-->
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Amino Acids/Motifs" Width="190"></Label>
-                <TextBox Name="aminoAcidMotifTextBox" Width="155" Height="20">
-                    <ToolTipService.ToolTip>
-                        <ToolTip Content="Amino acid/motifs"/>
-                    </ToolTipService.ToolTip>
-                </TextBox>
-            </StackPanel>
-            <!--Chemical formula-->
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Chemical Formula" Width="190"></Label>
-                <TextBox Name="chemicalFormulaTextBox" Width="155" Height="20">
-                    <ToolTipService.ToolTip>
-                        <ToolTip Content="Chemical formula"/>
-                    </ToolTipService.ToolTip>
-                </TextBox>
-            </StackPanel>
-            <!--Monoisotopic mass difference-->
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Monoisotopic Mass Difference" Width="190"></Label>
-                <TextBox Name="modMassTextBox" Width="155" Height="20">
-                    <ToolTipService.ToolTip>
-                        <ToolTip Content="Monoisotopic mass difference"/>
-                    </ToolTipService.ToolTip>
-                </TextBox>
-            </StackPanel>
-            <!--Neutral losses-->
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Neutral Losses" Width="190"></Label>
-                <TextBox Name="neutralLossTextBox" Width="155" Height="20">
-                    <ToolTipService.ToolTip>
-                        <ToolTip Content="Neutral loss"/>
+                        <ToolTip Content="Mod name, example: 'Phosphorylation'"/>
                     </ToolTipService.ToolTip>
                 </TextBox>
             </StackPanel>
@@ -58,18 +22,50 @@
                 <Label Content="Category" Width="190"></Label>
                 <TextBox Name="categoryTextBox" Width="155" Height="20">
                     <ToolTipService.ToolTip>
-                        <ToolTip Content="Category"/>
+                        <ToolTip Content="Category, example: 'MyModifications'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Amino acid/motifs-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Amino Acids Locations/Motifs" Width="190"></Label>
+                <TextBox Name="aminoAcidMotifTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Separate with ';' for example 'S;T;Y'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Chemical formula-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Chemical Formula" Width="190"></Label>
+                <TextBox Name="chemicalFormulaTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Chemical formula (optional if mass difference is specified), example: 'H1 O3 P1'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Monoisotopic mass difference-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Monoisotopic Mass Difference" Width="190"></Label>
+                <TextBox Name="modMassTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Monoisotopic mass difference (optional, if chemical formula is specified), example: '79.98'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Neutral losses-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Neutral Losses" Width="190"></Label>
+                <TextBox Name="neutralLossTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Neutral loss (optional, separate with ';') example: 'H0;H3 O4 P1'"/>
                     </ToolTipService.ToolTip>
                 </TextBox>
             </StackPanel>
             <!--Terminus Type-->
             <StackPanel Orientation="Horizontal">
                 <Label Content="Terminal Location" Width="190"></Label>
-                <ComboBox Name="terminusTypeComboBox" Width="155" Height="22">
-                    <ToolTipService.ToolTip>
-                        <ToolTip Content="Category"/>
-                    </ToolTipService.ToolTip>
-                </ComboBox>
+                <ComboBox Name="terminusTypeComboBox" Width="155" Height="22"></ComboBox>
             </StackPanel>
         </StackPanel>
         <!--Save and cancel buttons-->

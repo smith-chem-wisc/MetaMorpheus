@@ -19,18 +19,21 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            termTypeToParsableTermType = new Dictionary<string, string>();
-            termTypeToParsableTermType.Add("Any", "Anywhere.");
-            termTypeToParsableTermType.Add("Peptide N-terminus", "Peptide N-terminal.");
-            termTypeToParsableTermType.Add("Peptide C-terminus", "Peptide C-terminal.");
-            termTypeToParsableTermType.Add("Protein N-terminus", "N-terminal.");
-            termTypeToParsableTermType.Add("Protein C-terminus", "C-terminal.");
+            if (termTypeToParsableTermType == null)
+            {
+                termTypeToParsableTermType = new Dictionary<string, string>();
+                termTypeToParsableTermType.Add("Any", "Anywhere.");
+                termTypeToParsableTermType.Add("Peptide N-terminus", "Peptide N-terminal.");
+                termTypeToParsableTermType.Add("Peptide C-terminus", "Peptide C-terminal.");
+                termTypeToParsableTermType.Add("Protein N-terminus", "N-terminal.");
+                termTypeToParsableTermType.Add("Protein C-terminus", "C-terminal.");
+            }
 
-            foreach(var kvp in termTypeToParsableTermType)
+            foreach (var kvp in termTypeToParsableTermType)
             {
                 terminusTypeComboBox.Items.Add(kvp.Key);
             }
-            
+
             terminusTypeComboBox.SelectedIndex = 0;
         }
 
@@ -41,7 +44,7 @@ namespace MetaMorpheusGUI
             string customModsPath = Path.Combine(modsDirectory, @"CustomMods.txt");
             List<string> customModsText = new List<string>();
 
-            if(!File.Exists(customModsPath))
+            if (!File.Exists(customModsPath))
             {
                 customModsText.Add("Custom Modifications");
             }
@@ -98,7 +101,7 @@ namespace MetaMorpheusGUI
                 File.Delete(tempPath);
                 return;
             }
-            
+
             // delete old custom mods file, write new one
             try
             {
@@ -151,7 +154,7 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("Could not parse chemical formula", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                 return true;
             }
-            
+
             return false;
         }
     }
