@@ -63,24 +63,21 @@
                                     <TextBox x:Name="txtXLBetaPrecusorMsTl" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}" />
                                     <ComboBox x:Name="cbbXLBetaprecusorMsTl" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}" />
                                 </StackPanel>-->
-                                <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0">
-                                    <Label x:Name="lblXLprecusorMsTl"  Content="Crosslink Precusor mass tolerance" />
+                                <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
+                                    <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
                                     <TextBox x:Name="txtXLPrecusorMsTl" Width="45" />
                                     <ComboBox x:Name="cbbXLprecusorMsTl" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
-                                    <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Search Top matches" />
-                                    <Label x:Name="lblXLTopNum" Content="Top Num" />
-                                    <TextBox x:Name="txtXLTopNum" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
+                                <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
+                                    <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
+                                    <TextBox x:Name="txtXLTopNum" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
-                                    <Label x:Name="lblXLMSMS" Content="MS/MS Match" />
-                                    <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Considering Mass 2+ 3+" />
+                                <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
+                                    <Label x:Name="lblXLMSMS" Content="Crosslink MS/MS Search Properties" />
+                                    <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ fragments" />
+                                    <CheckBox x:Name="ckbCharge_2_3_PrimeFragments"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ prime fragments" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
-                                    <CheckBox x:Name="ckbCharge_2_3_PrimeFragments"  VerticalAlignment="Center" Content="Considering Mass 2+ 3+ of PrimeFragments" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
+                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
                                     <ComboBox x:Name="cbCrosslinker" />
                                 </StackPanel>
@@ -88,11 +85,11 @@
                                     <Label x:Name="lblFragmentation" Content="Fragmentation Type" />
                                     <ComboBox x:Name="cbFragmentation" />
                                 </StackPanel>-->
-                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1" Margin="5">
                                     <Label x:Name="lblQuenchMethods" Content="Quench Methods" />
-                                    <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" />
-                                    <CheckBox x:Name="ckbQuenchTris"  VerticalAlignment="Center" Content="Tris" />
-                                    <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" />
+                                    <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" Margin="2" />
+                                    <CheckBox x:Name="ckbQuenchTris"  VerticalAlignment="Center" Content="Tris" Margin="2" />
+                                    <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" Margin="2" />
                                 </StackPanel>
                             </Grid>
                             <GroupBox>
@@ -180,16 +177,16 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <StackPanel Margin="5">
-                                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
-                                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="False" />
+                                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor"/>
+                                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
-                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" />
-                                    <CheckBox x:Name="trimMsMs" Content="Trim MS/MS Peaks" IsChecked="True" />
+                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks"/>
+                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks"/>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
                                         <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
@@ -252,7 +249,7 @@
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
+                                            <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                             <TextBox x:Name="minScoreAllowed" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
@@ -357,13 +354,13 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="Output Choose" DockPanel.Dock="Top">
+                <GroupBox Header="Output Options" DockPanel.Dock="Top">
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">
-                            <CheckBox x:Name="ckbPercolator" Content="Output for Percolator" />
-                            <CheckBox x:Name="ckbPepXML" Content="Output for pepXML" />
-                            <CheckBox x:Name="ckbCrosslink" Content="Output for inter-crosslink and intra-crosslink" />
-                            <CheckBox x:Name="ckbAllResults" Content="Output for all, Single, Loop, Deadend peptides" />
+                            <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
+                            <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
+                            <CheckBox x:Name="ckbCrosslink" Content="Write inter-crosslink and intra-crosslink" />
+                            <CheckBox x:Name="ckbAllResults" Content="Write 'All', 'Single', 'Loop', 'Deadend' peptide types" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
