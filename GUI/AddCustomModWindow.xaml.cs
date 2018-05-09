@@ -13,14 +13,24 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class AddCustomModWindow : Window
     {
+        public static Dictionary<string, string> termTypeToParsableTermType;
+
         public AddCustomModWindow()
         {
             InitializeComponent();
-            terminusTypeComboBox.Items.Add("Any");
-            terminusTypeComboBox.Items.Add("Peptide N-terminus");
-            terminusTypeComboBox.Items.Add("Peptide C-terminus");
-            terminusTypeComboBox.Items.Add("Protein N-terminus");
-            terminusTypeComboBox.Items.Add("Protein C-terminus");
+
+            termTypeToParsableTermType = new Dictionary<string, string>();
+            termTypeToParsableTermType.Add("Any", "Anywhere.");
+            termTypeToParsableTermType.Add("Peptide N-terminus", "Peptide N-terminal.");
+            termTypeToParsableTermType.Add("Peptide C-terminus", "Peptide C-terminal.");
+            termTypeToParsableTermType.Add("Protein N-terminus", "N-terminal.");
+            termTypeToParsableTermType.Add("Protein C-terminus", "C-terminal.");
+
+            foreach(var kvp in termTypeToParsableTermType)
+            {
+                terminusTypeComboBox.Items.Add(kvp.Key);
+            }
+            
             terminusTypeComboBox.SelectedIndex = 0;
         }
 
@@ -46,16 +56,7 @@ namespace MetaMorpheusGUI
             string modMassText = modMassTextBox.Text;
             string neutralLossText = neutralLossTextBox.Text;
             string categoryText = categoryTextBox.Text;
-
-            string termType = "";
-            switch(terminusTypeComboBox.Text)
-            {
-                case "Any": termType = "Anywhere."; break;
-                case "Peptide N-terminus": termType = "Peptide N-terminal."; break;
-                case "Peptide C-terminus": termType = "Peptide C-terminal."; break;
-                case "Protein N-terminus": termType = "N-terminal."; break;
-                case "Protein C-terminus": termType = "C-terminal."; break;
-            }
+            string termType = termTypeToParsableTermType[terminusTypeComboBox.Text];
 
             if (ErrorsDetected(myModName, myAminoAcidMotifText, termType, modMassText, chemicalFormulaText, neutralLossText, categoryText))
             {

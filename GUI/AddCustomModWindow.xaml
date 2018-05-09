@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Add custom modification" Height="270" Width="380" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen">
+        Title="Add custom modification" Height="270" Width="380" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
             <!--Modification name-->
@@ -64,7 +64,7 @@
             </StackPanel>
             <!--Terminus Type-->
             <StackPanel Orientation="Horizontal">
-                <Label Content="Terminus Location" Width="190"></Label>
+                <Label Content="Terminal Location" Width="190"></Label>
                 <ComboBox Name="terminusTypeComboBox" Width="155" Height="22">
                     <ToolTipService.ToolTip>
                         <ToolTip Content="Category"/>
