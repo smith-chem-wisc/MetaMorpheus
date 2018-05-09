@@ -138,6 +138,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AddCustomModWindow.xaml.cs">
+      <DependentUpon>AddCustomModWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
@@ -182,6 +185,10 @@
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
+    <Page Include="AddCustomModWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="CalibrateTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

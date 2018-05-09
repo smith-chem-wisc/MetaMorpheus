@@ -16,13 +16,6 @@ using MathNet.Numerics.Statistics;
 using EngineLayer.Localization;
 using UsefulProteomicsDatabases;
 
-#if NETFRAMEWORK
-
-using IO.Thermo;
-
-#else
-#endif
-
 namespace TaskLayer
 {
     public class CalibrationTask : MetaMorpheusTask
