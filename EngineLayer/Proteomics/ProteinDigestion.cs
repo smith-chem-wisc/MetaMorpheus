@@ -85,7 +85,8 @@ namespace EngineLayer
             // Also digest using the proteolysis product start/end indices
             intervals.AddRange(
                 protein.ProteolysisProducts
-                    .Where(proteolysisProduct => proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length)
+                    .Where(proteolysisProduct => proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue &&
+                    (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length))
                     .Select(proteolysisProduct => new Peptide(protein, proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value,
                         0, proteolysisProduct.Type + " start")));
 
