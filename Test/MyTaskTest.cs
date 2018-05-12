@@ -388,8 +388,6 @@ namespace Test
             Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
         }
 
-        
-
         [Test]
         public static void TestPeptideCount()
         {

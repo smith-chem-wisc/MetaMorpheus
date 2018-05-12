@@ -286,14 +286,28 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
+        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes)
         {
-            using (StreamWriter output = new StreamWriter(filePath))
+            Status("Loading proteins...", new List<string> { taskId });
+            int emptyProteinEntries = 0;
+            List<Protein> proteinList = new List<Protein>();
+            foreach (var db in dbFilenameList)
             {
-                output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var heh in items)
-                    output.WriteLine(heh.ToString(ModstoWritePruned));
+                int emptyProteinEntriesForThisDb = 0;
+                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
+
+                proteinList = proteinList.Concat(dbProteinList).ToList();
+                emptyProteinEntries += emptyProteinEntriesForThisDb;
             }
+            if (!proteinList.Any())
+            {
+                Warn("Warning: No protein entries were found in the database");
+            }
+            else if (emptyProteinEntries > 0)
+            {
+                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
+            }
+            return proteinList;
         }
 
         protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um, out int emptyEntriesCount)
@@ -301,7 +315,11 @@ namespace TaskLayer
             List<string> dbErrors = new List<string>();
             List<Protein> proteinList = new List<Protein>();
 
-            if (Path.GetExtension(fileName).Equals(".fasta") || Path.GetExtension(fileName).Equals(".fa"))
+            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
+            bool compressed = theExtension.EndsWith("gz");
+            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
+
+            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
                 proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, out dbErrors);
@@ -314,6 +332,16 @@ namespace TaskLayer
 
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
+        }
+
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
+        {
+            using (StreamWriter output = new StreamWriter(filePath))
+            {
+                output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
+                foreach (var heh in items)
+                    output.WriteLine(heh.ToString(ModstoWritePruned));
+            }
         }
 
         protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
