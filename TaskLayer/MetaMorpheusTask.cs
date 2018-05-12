@@ -58,9 +58,9 @@ namespace TaskLayer
 
         #region Protected Fields
 
-        protected readonly StringBuilder proseCreatedWhileRunning = new StringBuilder();
+        protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
-        protected MyTaskResults myTaskResults;
+        protected MyTaskResults MyTaskResults;
 
         #endregion Protected Fields
 
@@ -225,12 +225,12 @@ namespace TaskLayer
 
                 RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
                 stopWatch.Stop();
-                myTaskResults.Time = stopWatch.Elapsed;
+                MyTaskResults.Time = stopWatch.Elapsed;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
-                    file.Write(myTaskResults.ToString());
+                    file.Write(MyTaskResults.ToString());
                 }
                 SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
@@ -261,9 +261,9 @@ namespace TaskLayer
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
                     file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
-                    file.Write(proseCreatedWhileRunning.ToString());
+                    file.Write(ProseCreatedWhileRunning.ToString());
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
-                    file.WriteLine("The total time to perform the " + this.TaskType.ToString().ToLowerInvariant() + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
+                    file.WriteLine("The total time to perform the " + this.TaskType.ToString().ToLowerInvariant() + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
 
@@ -279,7 +279,7 @@ namespace TaskLayer
             #endregion Write prose
 
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
-            return myTaskResults;
+            return MyTaskResults;
         }
 
         #endregion Public Methods
@@ -340,7 +340,9 @@ namespace TaskLayer
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
                 foreach (var heh in items)
+                {
                     output.WriteLine(heh.ToString(ModstoWritePruned));
+                }
             }
         }
 
@@ -352,7 +354,9 @@ namespace TaskLayer
             };
 
             foreach (var hah in enumerable)
+            {
                 okay.Add(hah.DigestionParams);
+            }
 
             return okay;
         }
@@ -420,7 +424,7 @@ namespace TaskLayer
 
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
         {
-            myTaskResults.AddResultText(e.ToString());
+            MyTaskResults.AddResultText(e.ToString());
         }
 
         private void FinishedSingleTask(string displayName)

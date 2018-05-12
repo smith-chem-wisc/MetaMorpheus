@@ -70,7 +70,7 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            myTaskResults = new MyTaskResults(this);
+            MyTaskResults = new MyTaskResults(this);
 
             if (NeoType.Equals(NeoTaskType.AggregateTargetDecoyFiles))
             {
@@ -118,10 +118,7 @@ namespace TaskLayer
             {
                 NeoMassCalculator.ImportMasses();
 
-                ParallelOptions parallelOptions = new ParallelOptions
-                {
-                    MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
-                };
+                ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
 
                 MyFileManager myFileManager = new MyFileManager(true);
 
@@ -219,7 +216,7 @@ namespace TaskLayer
                 dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder, false) };
             }
 
-            return myTaskResults;
+            return MyTaskResults;
         }
 
         #endregion Protected Methods

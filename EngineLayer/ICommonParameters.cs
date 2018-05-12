@@ -1,5 +1,6 @@
 ﻿using MzLibUtil;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EngineLayer
 {
@@ -38,5 +39,11 @@ namespace EngineLayer
         bool CalculateEValue { get; }
 
         #endregion Public Properties
+
+        #region Public Method
+
+        ParallelOptions ParallelOptions();
+
+        #endregion Public Method
     }
 }
