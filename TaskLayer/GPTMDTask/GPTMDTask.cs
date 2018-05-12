@@ -70,28 +70,10 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             // load proteins
-            Status("Loading proteins...", new List<string> { taskId });
-            int emptyProteinEntries = 0;
-            List<Protein> proteinList = new List<Protein>();
-            foreach (var db in dbFilenameList)
-            {
-                int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
-
-                proteinList = proteinList.Concat(dbProteinList).ToList();
-                emptyProteinEntries += emptyProteinEntriesForThisDb;
-            }
-            if (!proteinList.Any())
-            {
-                Warn("Warning: No protein entries were found in the database");
-            }
-            else if (emptyProteinEntries > 0)
-            {
-                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
-            }
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
 
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
-            
+
             var numRawFiles = currentRawFileList.Count;
 
             // write prose settings
@@ -106,7 +88,7 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("G-PTM-D modifications count = " + gptmdModifications.Count + "; ");
-            
+
             // temporary search type for writing prose
             // the actual search type is technically file-specific but we don't allow file-specific notches, so it's safe to do this
             MassDiffAcceptor tempSearchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
@@ -143,7 +125,7 @@ namespace TaskLayer
                 MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                
+
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -181,7 +163,7 @@ namespace TaskLayer
 
             // get file-specific precursor mass tolerances for the GPTMD engine
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
-            for(int i = 0; i < currentRawFileList.Count; i++)
+            for (int i = 0; i < currentRawFileList.Count; i++)
             {
                 string filePath = currentRawFileList[i];
                 Tolerance fileTolerance = CommonParameters.PrecursorMassTolerance;
@@ -198,15 +180,13 @@ namespace TaskLayer
             // write GPTMD databases
             if (dbFilenameList.Any(b => !b.IsContaminant))
             {
-                // do NOT use this code (Path.GetFilenameWithoutExtension) because GPTMD on .xml.gz will result in .xml.xml file type being written
-                //string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
-
                 List<string> databaseNames = new List<string>();
                 foreach (var nonContaminantDb in dbFilenameList.Where(p => !p.IsContaminant))
                 {
-                    var dbName = Path.GetFileName(nonContaminantDb.FilePath);
-                    int indexOfFirstDot = dbName.IndexOf(".");
-                    databaseNames.Add(dbName.Substring(0, indexOfFirstDot));
+                    var dbName = Path.GetFileNameWithoutExtension(nonContaminantDb.FilePath);
+                    var theExtension = Path.GetExtension(nonContaminantDb.FilePath).ToLowerInvariant();
+                    bool compressed = theExtension.EndsWith("gz");
+                    databaseNames.Add(compressed ? Path.GetFileNameWithoutExtension(dbName) : dbName);
                 }
                 string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 

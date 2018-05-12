@@ -12,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using EngineLayer.FdrAnalysis;
-using MathNet.Numerics.Statistics;
 using EngineLayer.Localization;
 using UsefulProteomicsDatabases;
 
@@ -74,25 +73,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             // load proteins
-            Status("Loading proteins...", new List<string> { taskId });
-            int emptyProteinEntries = 0;
-            List<Protein> proteinList = new List<Protein>();
-            foreach (var db in dbFilenameList)
-            {
-                int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
-
-                proteinList = proteinList.Concat(dbProteinList).ToList();
-                emptyProteinEntries += emptyProteinEntriesForThisDb;
-            }
-            if (!proteinList.Any())
-            {
-                Warn("Warning: No protein entries were found in the database");
-            }
-            else if (emptyProteinEntries > 0)
-            {
-                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
-            }
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
 
             // write prose settings
             proseCreatedWhileRunning.Append("The following calibration settings were used: ");
@@ -152,7 +133,7 @@ namespace TaskLayer
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResults = null;
-                
+
                 for (int i = 1; i <= 5; i++)
                 {
                     acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);

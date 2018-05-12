@@ -154,25 +154,7 @@ namespace TaskLayer
                     #endregion Load modifications
 
                     // load proteins
-                    Status("Loading proteins...", new List<string> { taskId });
-                    int emptyProteinEntries = 0;
-                    List<Protein> proteinList = new List<Protein>();
-                    foreach (var db in dbFilenameList)
-                    {
-                        int emptyProteinEntriesForThisDb = 0;
-                        var dbProteinList = LoadProteinDb(db.FilePath, true, DecoyType.None, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
-
-                        proteinList = proteinList.Concat(dbProteinList).ToList();
-                        emptyProteinEntries += emptyProteinEntriesForThisDb;
-                    }
-                    if (!proteinList.Any())
-                    {
-                        Warn("Warning: No protein entries were found in the database");
-                    }
-                    else if (emptyProteinEntries > 0)
-                    {
-                        Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
-                    }
+                    List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes);
 
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;

@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace TaskLayer
@@ -57,25 +56,7 @@ namespace TaskLayer
             #endregion Load modifications
 
             // load proteins
-            Status("Loading proteins...", new List<string> { taskId });
-            int emptyProteinEntries = 0;
-            List<Protein> proteinList = new List<Protein>();
-            foreach (var db in dbFilenameList)
-            {
-                int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, true, XlSearchParameters.DecoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
-
-                proteinList = proteinList.Concat(dbProteinList).ToList();
-                emptyProteinEntries += emptyProteinEntriesForThisDb;
-            }
-            if (!proteinList.Any())
-            {
-                Warn("Warning: No protein entries were found in the database");
-            }
-            else if (emptyProteinEntries > 0)
-            {
-                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
-            }
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes);
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -236,7 +217,6 @@ namespace TaskLayer
                 {
                     throw;
                 }
-
             }
 
             #endregion Inter Crosslink
@@ -267,7 +247,6 @@ namespace TaskLayer
                 }
                 catch (Exception)
                 {
-
                     throw;
                 }
             }
@@ -308,7 +287,6 @@ namespace TaskLayer
             }
 
             #endregion deadend peptide
-
 
             if (XlSearchParameters.XlOutPepXML)
             {
@@ -470,12 +448,11 @@ namespace TaskLayer
                         psmCrossCrosslinks.Add(item);
                     }
                 }
-
             }
             return psmCrossCrosslinks;
         }
 
-        //Generate user defined crosslinker 
+        //Generate user defined crosslinker
         public static CrosslinkerTypeClass GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
         {
             var crosslinker = new CrosslinkerTypeClass(
