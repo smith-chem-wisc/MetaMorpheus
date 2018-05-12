@@ -4,7 +4,6 @@ using Nett;
 using Newtonsoft.Json.Linq;
 using Proteomics;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -383,7 +382,9 @@ namespace MetaMorpheusGUI
             // we need to get the filename before parsing out the extension because if we assume that everything after the dot
             // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
             var filename = Path.GetFileName(draggedFilePath);
-            var theExtension = filename.Substring(filename.IndexOf(".")).ToLowerInvariant();
+            var theExtension = Path.GetExtension(filename).ToLowerInvariant();
+            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
+            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(filename)).ToLowerInvariant() : theExtension;
 
             switch (theExtension)
             {
@@ -415,27 +416,25 @@ namespace MetaMorpheusGUI
                     goto case ".mzml";
 
                 case ".mzml":
+                    if (compressed) // not implemented yet
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
+                        break;
+                    }
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!SpectraFileExists(spectraFilesObservableCollection, zz)) { spectraFilesObservableCollection.Add(zz); }
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
 
-                case ".mzml.gz":  // not implemented yet
-                case ".fasta.gz": // not implemented yet
-                    GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
-                    break;
-
                 case ".xml":
-                case ".xml.gz":
                 case ".fasta":
                 case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
-
                     if (!DatabaseExists(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
-                        if (theExtension.Equals(".xml") || theExtension.Equals(".xml.gz"))
+                        if (theExtension.Equals(".xml"))
                         {
                             try
                             {
@@ -536,7 +535,6 @@ namespace MetaMorpheusGUI
                 }
                 catch (Exception)
                 {
-
                 }
             }
         }
@@ -769,7 +767,7 @@ namespace MetaMorpheusGUI
                     MoveSelectedTask(sender, e, true);
                     e.Handled = true;
                 }
-                
+
                 // move task down
                 if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
                 {
