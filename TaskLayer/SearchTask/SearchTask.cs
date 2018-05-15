@@ -37,6 +37,7 @@ namespace TaskLayer
 
         #region Public Methods
 
+
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
             switch (massDiffAcceptorType)
@@ -74,6 +75,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             // load modifications
@@ -97,6 +99,7 @@ namespace TaskLayer
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
+
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -125,7 +128,7 @@ namespace TaskLayer
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
-            HashSet<IDigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
+            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -142,7 +145,7 @@ namespace TaskLayer
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -165,6 +168,7 @@ namespace TaskLayer
                         List<CompactPeptide> peptideIndex = null;
                         List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
+
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
@@ -173,6 +177,8 @@ namespace TaskLayer
                             GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
                         }
 
+
+
                         Status("Searching files...", taskId);
 
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
@@ -180,7 +186,6 @@ namespace TaskLayer
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
                     }
                 }
-
                 // nonspecific search
                 else if (SearchParameters.SearchType == SearchType.NonSpecific)
                 {
@@ -226,7 +231,6 @@ namespace TaskLayer
                         }
                     }
                 }
-
                 // classic search
                 else
                 {
@@ -255,7 +259,6 @@ namespace TaskLayer
             parameters.IonTypes = ionTypes;
             parameters.AllPsms = allPsms;
             parameters.FixedModifications = fixedModifications;
-            parameters.VariableModifications = variableModifications;
             parameters.ListOfDigestionParams = ListOfDigestionParams;
             parameters.CurrentRawFileList = currentRawFileList;
             parameters.MyFileManager = myFileManager;
@@ -265,20 +268,18 @@ namespace TaskLayer
             parameters.FileSettingsList = fileSettingsList;
             parameters.NumMs2SpectraPerFile = numMs2SpectraPerFile;
             parameters.DatabaseFilenameList = dbFilenameList;
-
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask();
             postProcessing.Parameters = parameters;
             return postProcessing.Run();
         }
-
         #endregion Protected Methods
 
         #region Private Methods
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
-            switch (massDiffAcceptorType)
-            {
+            switch(massDiffAcceptorType)
+            { 
                 case MassDiffAcceptorType.Exact: return 1;
                 case MassDiffAcceptorType.OneMM: return 2;
                 case MassDiffAcceptorType.TwoMM: return 3;
@@ -286,7 +287,7 @@ namespace TaskLayer
                 case MassDiffAcceptorType.ModOpen: return 1;
                 case MassDiffAcceptorType.Open: return 1;
                 case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
-
+                
                 default: throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
@@ -346,6 +347,7 @@ namespace TaskLayer
                 {
                     return true;
                 }
+                    
             }
             return false;
         }
@@ -367,9 +369,7 @@ namespace TaskLayer
             var ser = new NetSerializer.Serializer(messageTypes);
 
             using (var file = File.Create(fragmentIndexFile))
-            {
                 ser.Serialize(file, fragmentIndex);
-            }
         }
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
@@ -391,6 +391,7 @@ namespace TaskLayer
                     {
                         return possibleFolder.FullName;
                     }
+                        
                 }
             }
             return null;
@@ -407,9 +408,9 @@ namespace TaskLayer
         private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
             var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
-            Directory.CreateDirectory(folder);
+                Directory.CreateDirectory(folder);
             return folder;
-        }
+        }     
 
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
@@ -451,6 +452,7 @@ namespace TaskLayer
                 messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+
                 {
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
                 }

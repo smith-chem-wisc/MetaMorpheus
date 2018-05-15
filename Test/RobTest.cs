@@ -46,11 +46,8 @@ namespace Test
             p.Add(new Protein("-----F----**", "C1", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
             p.Add(new Protein("----E----**", "C2", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-                Protease = protease,
-            };
+            DigestionParams digestionParams = new DigestionParams(protease, 2, 1);
+            
             foreach (var protein in p)
             {
                 foreach (var peptide in protein.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
@@ -242,7 +239,7 @@ namespace Test
             for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString()));
 
-            DigestionParams digestionParams = new DigestionParams();
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
             foreach (var protein in p)
             {
                 foreach (var peptide in protein.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
@@ -279,10 +276,8 @@ namespace Test
 
             ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
             ModificationWithMass nTermAmmoniaLoss = new ModificationWithMass("ntermammonialoss", "mt", motif, TerminusLocalization.NPep, 0, neutralLosses: new List<double> { 0, -17 });
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 2,
-            };
+            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 2);
+            
             var cool = p.Digest(digestionParams, new List<ModificationWithMass> { nTermAmmoniaLoss }, new List<ModificationWithMass>()).First();
             var nice = cool.CompactPeptide(TerminusType.None);
             Assert.AreEqual(2, nice.NTerminalMasses.Length);
@@ -307,12 +302,8 @@ namespace Test
                 {variableModifications.Last(), 1 }
             };
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                MinPeptideLength = 1,
-                MaxMissedCleavages = 0
-            };
+            DigestionParams digestionParams = new DigestionParams(protease, 0, 1);
+            
             var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep };
             CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), TerminusType.None);

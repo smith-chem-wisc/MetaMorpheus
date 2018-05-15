@@ -25,13 +25,8 @@ namespace TaskLayer
         {
             NeoParameters = new NeoParameters();
 
-            IDigestionParams tempDigParams = new DigestionParams
-            {
-                MinPeptideLength = 8,
-                MaxPeptideLength = 13,
-                Protease = GlobalVariables.ProteaseDictionary["non-specific"],
-                MaxMissedCleavages = 12
-            };
+            DigestionParams tempDigParams = new DigestionParams(GlobalVariables.ProteaseDictionary["non-specific"], 12, 8, 13, 1024, InitiatorMethionineBehavior.Variable, 2, false, TerminusType.N);
+            
             CommonParameters = new CommonParameters
             {
                 DigestionParams = tempDigParams,
@@ -126,7 +121,7 @@ namespace TaskLayer
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);

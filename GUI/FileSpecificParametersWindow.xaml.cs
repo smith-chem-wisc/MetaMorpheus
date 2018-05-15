@@ -190,7 +190,7 @@ namespace MetaMorpheusGUI
         {
             // use default settings to populate
             var tempCommonParams = new CommonParameters();
-            var tempDigestParams = new DigestionParams();
+            var tempDigestParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
 
             // do any of the selected files already have file-specific parameters specified?
             var ok = SelectedRaw.Select(p => p.FilePath);
@@ -214,27 +214,27 @@ namespace MetaMorpheusGUI
                     }
                     if (tempFileSpecificParams.Protease != null)
                     {
-                        tempDigestParams.Protease = tempFileSpecificParams.Protease;
+                        tempDigestParams.setProtease(tempFileSpecificParams.Protease);
                         fileSpecificProteaseEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MinPeptideLength != null)
                     {
-                        tempDigestParams.MinPeptideLength = tempFileSpecificParams.MinPeptideLength.Value;
+                        tempDigestParams.setMinPeptideLength(tempFileSpecificParams.MinPeptideLength.Value);
                         fileSpecificMinPeptideLengthEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxPeptideLength != null)
                     {
-                        tempDigestParams.MaxPeptideLength = tempFileSpecificParams.MaxPeptideLength.Value;
+                        tempDigestParams.setMaxPeptideLength(tempFileSpecificParams.MaxPeptideLength.Value);
                         fileSpecificMaxPeptideLengthEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxMissedCleavages != null)
                     {
-                        tempDigestParams.MaxMissedCleavages = tempFileSpecificParams.MaxMissedCleavages.Value;
+                        tempDigestParams.setMaxMissedCleavages(tempFileSpecificParams.MaxMissedCleavages.Value);
                         fileSpecificMissedCleavagesEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxModsForPeptide != null)
                     {
-                        tempDigestParams.MaxModsForPeptide = tempFileSpecificParams.MaxMissedCleavages.Value;
+                        tempDigestParams.setMaxModsForPeptide(tempFileSpecificParams.MaxMissedCleavages.Value);
                         fileSpecificMaxModNumEnabled.IsChecked = true;
                     }
                     //if (tempFileSpecificParams.BIons != null || tempFileSpecificParams.CIons != null

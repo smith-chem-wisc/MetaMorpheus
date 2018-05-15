@@ -28,13 +28,7 @@ namespace Test
         {
             var prot = new Protein("MNNNKQQQQ", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 2,
-                Protease = protease,
-                MinPeptideLength = 1
-            };
+            DigestionParams digestionParams = new DigestionParams(protease,2,1, 2147483647, 1024, InitiatorMethionineBehavior.Retain,2,false,TerminusType.N);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
@@ -93,10 +87,8 @@ namespace Test
                 CIons = true,
                 ZdotIons = true,
                 ScoreCutoff = 2,
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = 5
-                }
+                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 5)
+             
             };
 
             var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
@@ -142,7 +134,7 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<IDigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -221,10 +213,8 @@ namespace Test
             {
                 DoPrecursorDeconvolution = false,
                 ScoreCutoff = 1,
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = 4
-                }
+                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,4)
+                
             };
 
             var xlSearchParameters = new XlSearchParameters
@@ -274,7 +264,7 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<IDigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 

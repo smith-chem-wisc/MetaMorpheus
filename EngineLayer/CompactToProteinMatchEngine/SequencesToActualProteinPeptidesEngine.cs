@@ -15,14 +15,14 @@ namespace EngineLayer
         protected readonly List<PeptideSpectralMatch> allPsms;
         protected readonly List<Protein> proteins;
         protected readonly TerminusType terminusType;
-        protected readonly IEnumerable<IDigestionParams> collectionOfDigestionParams;
+        protected readonly IEnumerable<DigestionParams> collectionOfDigestionParams;
         protected readonly bool reportAllAmbiguity;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<IDigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
         {
             this.proteins = proteinList;
             this.allPsms = allPsms;

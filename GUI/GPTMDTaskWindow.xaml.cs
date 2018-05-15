@@ -275,15 +275,7 @@ namespace MetaMorpheusGUI
 
             CommonParameters CommonParamsToSave = new CommonParameters
             {
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture),
-                    MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture),
-                    MaxPeptideLength = int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture),
-                    Protease = (Protease)proteaseComboBox.SelectedItem,
-                    MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture),
-                    InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex
-                }
+                DigestionParams = new DigestionParams((Protease)proteaseComboBox.SelectedItem, int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture), int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture), int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture), int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture), (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex)
             };
 
             if (OutputFileNameTextBox.Text != "")

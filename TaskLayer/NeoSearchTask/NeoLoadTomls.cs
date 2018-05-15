@@ -118,7 +118,7 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private static void UpdateTomls(string tomlFileName, string fileName, ICommonParameters ye5, TerminusType terminusType, bool spliceSearch)
+        private static void UpdateTomls(string tomlFileName, string fileName, CommonParameters ye5, TerminusType terminusType, bool spliceSearch)
         {
             string[] oldTomlLines = File.ReadAllLines(@fileName);
             List<string> newTomlLines = new List<string>();

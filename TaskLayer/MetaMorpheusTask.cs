@@ -41,10 +41,10 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<ICommonParameters>(ct => ct
+                        .ConfigureType<CommonParameters>(ct => ct
                             .CreateInstance(() => new CommonParameters()))
-                        .ConfigureType<IDigestionParams>(ct => ct
-                            .CreateInstance(() => new DigestionParams()))
+                        .ConfigureType<DigestionParams>(ct => ct
+                            .CreateInstance(() => new DigestionParams(new Protease("weird",null,null,TerminusType.C,CleavageSpecificity.Full,null,null,null))))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t", custom))
@@ -101,7 +101,7 @@ namespace TaskLayer
 
         public MyTask TaskType { get; set; }
 
-        public ICommonParameters CommonParameters { get; set; }
+        public CommonParameters CommonParameters { get; set; }
 
         #endregion Public Properties
 
@@ -155,7 +155,7 @@ namespace TaskLayer
             }
         }
 
-        public static ICommonParameters SetAllFileSpecificCommonParams(ICommonParameters commonParams, FileSpecificParameters fileSpecificParams)
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
             if (fileSpecificParams == null)
                 return commonParams;
@@ -165,11 +165,11 @@ namespace TaskLayer
             DigestionParams fileSpecificDigestionParams = ((DigestionParams)commonParams.DigestionParams).Clone();
 
             // set file-specific digestion parameters
-            fileSpecificDigestionParams.Protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
-            fileSpecificDigestionParams.MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            fileSpecificDigestionParams.MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            fileSpecificDigestionParams.MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            fileSpecificDigestionParams.MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            fileSpecificDigestionParams.setProtease(fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease);
+            fileSpecificDigestionParams.setMinPeptideLength(fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength);
+            fileSpecificDigestionParams.setMaxPeptideLength(fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength);
+            fileSpecificDigestionParams.setMaxMissedCleavages(fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages);
+            fileSpecificDigestionParams.setMaxModsForPeptide(fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide);
             returnParams.DigestionParams = fileSpecificDigestionParams;
 
             // set the rest of the file-specific parameters
@@ -295,7 +295,6 @@ namespace TaskLayer
             {
                 int emptyProteinEntriesForThisDb = 0;
                 var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
-
                 proteinList = proteinList.Concat(dbProteinList).ToList();
                 emptyProteinEntries += emptyProteinEntriesForThisDb;
             }
@@ -318,7 +317,7 @@ namespace TaskLayer
             string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
             bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
             theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
-
+            
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
@@ -333,7 +332,6 @@ namespace TaskLayer
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
-
         protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
@@ -343,21 +341,25 @@ namespace TaskLayer
                 {
                     output.WriteLine(heh.ToString(ModstoWritePruned));
                 }
-            }
+           }
         }
-
-        protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
+        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
         {
-            HashSet<IDigestionParams> okay = new HashSet<IDigestionParams>
-            {
+            
+            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
+            { 
                 commonParameters.DigestionParams
             };
 
             foreach (var hah in enumerable)
             {
-                okay.Add(hah.DigestionParams);
-            }
-
+                DigestionParams p = hah.DigestionParams;
+                if (okay.Contains(p)==false)
+                {
+                    okay.Add(p);
+                }              
+            };
+                
             return okay;
         }
 
