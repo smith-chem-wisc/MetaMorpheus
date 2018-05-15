@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace TaskLayer
@@ -42,7 +41,7 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            myTaskResults = new MyTaskResults(this);
+            MyTaskResults = new MyTaskResults(this);
             List<PsmCross> allPsms = new List<PsmCross>();
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
@@ -57,25 +56,7 @@ namespace TaskLayer
             #endregion Load modifications
 
             // load proteins
-            Status("Loading proteins...", new List<string> { taskId });
-            int emptyProteinEntries = 0;
-            List<Protein> proteinList = new List<Protein>();
-            foreach (var db in dbFilenameList)
-            {
-                int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, true, XlSearchParameters.DecoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
-
-                proteinList = proteinList.Concat(dbProteinList).ToList();
-                emptyProteinEntries += emptyProteinEntriesForThisDb;
-            }
-            if (!proteinList.Any())
-            {
-                Warn("Warning: No protein entries were found in the database");
-            }
-            else if (emptyProteinEntries > 0)
-            {
-                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
-            }
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes);
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -95,10 +76,7 @@ namespace TaskLayer
                 crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
             }
 
-            ParallelOptions parallelOptions = new ParallelOptions
-            {
-                MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
-            };
+            ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
 
             MyFileManager myFileManager = new MyFileManager(XlSearchParameters.DisposeOfFileWhenDone);
 
@@ -112,27 +90,27 @@ namespace TaskLayer
 
             #region proseCreatedWhileRunning
 
-            proseCreatedWhileRunning.Append("The following crosslink discovery were used: ");
-            proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName + "; ");
-            proseCreatedWhileRunning.Append("crosslinker type = " + crosslinker.Cleavable + "; ");
-            proseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
-            proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSites + "; ");
+            ProseCreatedWhileRunning.Append("The following crosslink discovery were used: ");
+            ProseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName + "; ");
+            ProseCreatedWhileRunning.Append("crosslinker type = " + crosslinker.Cleavable + "; ");
+            ProseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
+            ProseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSites + "; ");
 
-            proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            proseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
+            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
+            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
                 "maximum peptide length = unspecified; " :
                 "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
-            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
+            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+            ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
 
-            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
-            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
+            ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
+            ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
 
-            proseCreatedWhileRunning.Append("parent mass tolerance(s) = " + XlSearchParameters.XlPrecusorMsTl + "; ");
-            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
-            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+            ProseCreatedWhileRunning.Append("parent mass tolerance(s) = " + XlSearchParameters.XlPrecusorMsTl + "; ");
+            ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             #endregion proseCreatedWhileRunning
 
@@ -236,7 +214,6 @@ namespace TaskLayer
                 {
                     throw;
                 }
-
             }
 
             #endregion Inter Crosslink
@@ -267,7 +244,6 @@ namespace TaskLayer
                 }
                 catch (Exception)
                 {
-
                     throw;
                 }
             }
@@ -309,7 +285,6 @@ namespace TaskLayer
 
             #endregion deadend peptide
 
-
             if (XlSearchParameters.XlOutPepXML)
             {
                 List<PsmCross> allPsmsFDR = new List<PsmCross>();
@@ -343,7 +318,7 @@ namespace TaskLayer
                 }
             }
 
-            return myTaskResults;
+            return MyTaskResults;
         }
 
         #endregion Protected Methods
@@ -470,12 +445,11 @@ namespace TaskLayer
                         psmCrossCrosslinks.Add(item);
                     }
                 }
-
             }
             return psmCrossCrosslinks;
         }
 
-        //Generate user defined crosslinker 
+        //Generate user defined crosslinker
         public static CrosslinkerTypeClass GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
         {
             var crosslinker = new CrosslinkerTypeClass(

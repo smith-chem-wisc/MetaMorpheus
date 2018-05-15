@@ -2,6 +2,7 @@
 using MzLibUtil;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EngineLayer
 {
@@ -109,6 +110,11 @@ namespace EngineLayer
         public CommonParameters Clone()
         {
             return (CommonParameters)this.MemberwiseClone();
+        }
+
+        public ParallelOptions ParallelOptions()
+        {
+            return new ParallelOptions { MaxDegreeOfParallelism = MaxParallelFilesToAnalyze };
         }
 
         #endregion Public Methods
