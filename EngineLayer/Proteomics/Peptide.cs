@@ -29,12 +29,12 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public Protein Protein { get; }
-        public int OneBasedStartResidueInProtein { get; }
-        public int OneBasedEndResidueInProtein { get; }
-        public int MissedCleavages { get; set; }
+        public Protein Protein { get; }// protein from which this peptide came
+        public int OneBasedStartResidueInProtein { get; }// if the first residue in a protein is 1 this is the number of the residue at which the peptide begins
+        public int OneBasedEndResidueInProtein { get; }// if the first residue in a protien is 1 this is the number of the residue at which the peptide ends
+        public int MissedCleavages { get; set; }// the number of missed cleavages this peptide has considerign what protease was supposed to generate it?
         public string PeptideDescription { get; }
-        public int Length { get; }
+        public int Length { get; }//how many residues llong the peptide is (calculated from oneBased Starts and End Residues)
 
         public virtual char PreviousAminoAcid
         {
@@ -76,7 +76,7 @@ namespace EngineLayer
 
         #endregion Public Indexers
 
-        #region Modified Peptide Combinitorics
+        #region Modified Peptide Combinatorics
 
         /// <summary>
         /// Gets the peptides for a specific protein interval

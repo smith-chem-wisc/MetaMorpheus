@@ -22,7 +22,7 @@ namespace EngineLayer
             this.MinPeptideLength = MinPeptideLength;
             this.MaxPeptideLength = MaxPeptideLength;
             this.MaxModificationIsoforms = MaxModificationIsoforms;
-            this.Protease = Protease;//GlobalVariables.ProteaseDictionary["trypsin"];
+            this.Protease = Protease;
             this.InitiatorMethionineBehavior = InitiatorMethionineBehavior;
             this.MaxModsForPeptide = MaxModsForPeptides;
             this.SemiProteaseDigestion = SemiProteaseDigestion;
@@ -52,19 +52,19 @@ namespace EngineLayer
             bool testInit = InitiatorMethionineBehavior.Equals(a.InitiatorMethionineBehavior);
             bool testMaxModsIso = MaxModificationIsoforms.Equals(a.MaxModificationIsoforms);
             bool testMaxMods = MaxModsForPeptide.Equals(a.MaxModsForPeptide);
-            bool testProtease = Protease.Equals(a.Protease);
+            bool testProtease = this.Protease.Equals(a.Protease);
             bool testSemiProtease = SemiProteaseDigestion.Equals(a.SemiProteaseDigestion);
             bool testTerminus = TerminusTypeSemiProtease.Equals(a.TerminusTypeSemiProtease);
             return a != null
-                && MaxMissedCleavages.Equals(a.MaxMissedCleavages)
-                && MinPeptideLength.Equals(a.MinPeptideLength)
-                && MaxPeptideLength.Equals(a.MaxPeptideLength)
-                && InitiatorMethionineBehavior.Equals(a.InitiatorMethionineBehavior)
-                && MaxModificationIsoforms.Equals(a.MaxModificationIsoforms)
-                && MaxModsForPeptide.Equals(a.MaxModsForPeptide)
-                && Protease.Equals(a.Protease)
-                && SemiProteaseDigestion.Equals(a.SemiProteaseDigestion)
-                && TerminusTypeSemiProtease.Equals(a.TerminusTypeSemiProtease);
+                && this.MaxMissedCleavages.Equals(a.MaxMissedCleavages)
+                && this.MinPeptideLength.Equals(a.MinPeptideLength)
+                && this.MaxPeptideLength.Equals(a.MaxPeptideLength)
+                && this.InitiatorMethionineBehavior.Equals(a.InitiatorMethionineBehavior)
+                && this.MaxModificationIsoforms.Equals(a.MaxModificationIsoforms)
+                && this.MaxModsForPeptide.Equals(a.MaxModsForPeptide)
+                && this.Protease.Equals(a.Protease)
+                && this.SemiProteaseDigestion.Equals(a.SemiProteaseDigestion)
+                && this.TerminusTypeSemiProtease.Equals(a.TerminusTypeSemiProtease);
         }
 
         public override int GetHashCode()

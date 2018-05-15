@@ -11,8 +11,8 @@ namespace EngineLayer
         #region Public Fields
 
         public readonly int numFixedMods;
-        public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
-
+        public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;//dictionary of modifications on a peptide the N terminus is index 1
+        // key indicates which residue modification is on (with 1 beign N terminus)
         #endregion Public Fields
 
         #region Private Fields

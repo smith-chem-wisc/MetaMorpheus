@@ -1156,17 +1156,13 @@ namespace TaskLayer
                         flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence, (double)psm.PeptideMonisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupNames[psm]));
                     }
                 }
-
-                // run FlashLFQ
-                foreach (DigestionParams DigstionParam in ListOfDigestionParams)
-                {
-                    var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns, 5.0, false, 2, false, true, true, GlobalVariables.ElementsLocation);
-                    if (flashLFQIdentifications.Any())
-                    {
-                        flashLfqResults = FlashLfqEngine.Run();
-                    }
-                }
                 
+                // run FlashLFQ
+                var FlashLfqEngine = new FlashLFQEngine(flashLFQIdentifications, SearchParameters.QuantifyPpmTol, 5.0, SearchParameters.MatchBetweenRuns, 5.0, false, 2, false, true, true, GlobalVariables.ElementsLocation);
+                if (flashLFQIdentifications.Any())
+                {
+                    flashLfqResults = FlashLfqEngine.Run();
+                }
 
                 // get protein intensity back from FlashLFQ
                 if (proteinGroups != null && flashLfqResults != null)
@@ -1193,6 +1189,9 @@ namespace TaskLayer
                     }
                 }
             }
+
+
+
 
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
