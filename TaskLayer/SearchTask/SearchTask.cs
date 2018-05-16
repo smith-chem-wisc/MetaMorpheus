@@ -159,7 +159,7 @@ namespace TaskLayer
                 myFileManager.DoneWithFile(origDataFile);
 
                 var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
-
+                var testVariableModifications = variableModifications;
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
@@ -259,6 +259,7 @@ namespace TaskLayer
             parameters.IonTypes = ionTypes;
             parameters.AllPsms = allPsms;
             parameters.FixedModifications = fixedModifications;
+            parameters.VariableModifications = variableModifications;
             parameters.ListOfDigestionParams = ListOfDigestionParams;
             parameters.CurrentRawFileList = currentRawFileList;
             parameters.MyFileManager = myFileManager;
