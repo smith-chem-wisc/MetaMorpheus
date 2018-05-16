@@ -117,7 +117,7 @@ namespace Test
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, null, mods);
             DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 1);
-            digestionParams.setMinPeptideLength(1);
+            digestionParams.SetMinPeptideLength(1);
             var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -150,7 +150,7 @@ namespace Test
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, null, mods);
             DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
-            digestionParams.setMinPeptideLength(1);
+            digestionParams.SetMinPeptideLength(1);
             var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -169,7 +169,8 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1
             };
-            var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
+            { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, false, new OpenSearchMode(), 0, new List<string>());
 

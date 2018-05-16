@@ -229,10 +229,10 @@ namespace MetaMorpheusGUI
             CommonParameters CommonParamsToSave = (TheTask.CommonParameters as CommonParameters).Clone();
 
             DigestionParams digestionParamsToSave = new DigestionParams((Protease)proteaseComboBox.SelectedItem);
-            digestionParamsToSave.setMaxMissedCleavages(int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
-            digestionParamsToSave.setMinPeptideLength(int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            digestionParamsToSave.setMaxPeptideLength(int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            digestionParamsToSave.setMaxModificationIsoforms(int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetMaxMissedCleavages(int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetMinPeptideLength(int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetMaxPeptideLength(int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetMaxModificationIsoforms(int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             CommonParamsToSave.DigestionParams = digestionParamsToSave;
             CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;
             CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;

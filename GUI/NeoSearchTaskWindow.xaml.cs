@@ -335,12 +335,12 @@ namespace MetaMorpheusGUI
                 neoParameters.CFilePath = CPath.Text;
 
             DigestionParams digestionParamsToSave = new DigestionParams((Protease)proteaseComboBox.SelectedItem);
-            digestionParamsToSave.setMaxMissedCleavages(int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
-            digestionParamsToSave.setMinPeptideLength(int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            digestionParamsToSave.setMaxPeptideLength(int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            digestionParamsToSave.setMaxModificationIsoforms(int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
-            digestionParamsToSave.setMaxModsForPeptide(int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
-            digestionParamsToSave.setInitiatorMethionineBehavior((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            digestionParamsToSave.SetMaxMissedCleavages(int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetMinPeptideLength(int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetMaxPeptideLength(int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetMaxModificationIsoforms(int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetMaxModsForPeptide(int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
+            digestionParamsToSave.SetInitiatorMethionineBehavior((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             CommonParamsToSave.DigestionParams = digestionParamsToSave;
 
             CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;

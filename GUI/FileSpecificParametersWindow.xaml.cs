@@ -214,27 +214,27 @@ namespace MetaMorpheusGUI
                     }
                     if (tempFileSpecificParams.Protease != null)
                     {
-                        tempDigestParams.setProtease(tempFileSpecificParams.Protease);
+                        tempDigestParams.SetProtease(tempFileSpecificParams.Protease);
                         fileSpecificProteaseEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MinPeptideLength != null)
                     {
-                        tempDigestParams.setMinPeptideLength(tempFileSpecificParams.MinPeptideLength.Value);
+                        tempDigestParams.SetMinPeptideLength(tempFileSpecificParams.MinPeptideLength.Value);
                         fileSpecificMinPeptideLengthEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxPeptideLength != null)
                     {
-                        tempDigestParams.setMaxPeptideLength(tempFileSpecificParams.MaxPeptideLength.Value);
+                        tempDigestParams.SetMaxPeptideLength(tempFileSpecificParams.MaxPeptideLength.Value);
                         fileSpecificMaxPeptideLengthEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxMissedCleavages != null)
                     {
-                        tempDigestParams.setMaxMissedCleavages(tempFileSpecificParams.MaxMissedCleavages.Value);
+                        tempDigestParams.SetMaxMissedCleavages(tempFileSpecificParams.MaxMissedCleavages.Value);
                         fileSpecificMissedCleavagesEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxModsForPeptide != null)
                     {
-                        tempDigestParams.setMaxModsForPeptide(tempFileSpecificParams.MaxMissedCleavages.Value);
+                        tempDigestParams.SetMaxModsForPeptide(tempFileSpecificParams.MaxMissedCleavages.Value);
                         fileSpecificMaxModNumEnabled.IsChecked = true;
                     }
                     //if (tempFileSpecificParams.BIons != null || tempFileSpecificParams.CIons != null

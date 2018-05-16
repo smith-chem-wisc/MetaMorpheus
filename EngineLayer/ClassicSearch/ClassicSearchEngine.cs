@@ -107,7 +107,8 @@ namespace EngineLayer.ClassicSearch
                                     {
                                         if (peptideSpectralMatches[scan.scanIndex] == null)
                                         {
-                                            peptideSpectralMatches[scan.scanIndex] = new PeptideSpectralMatch(compactPeptide, scan.notch, thisScore, scan.scanIndex, scan.theScan, commonParameters.DigestionParams);
+                                            peptideSpectralMatches[scan.scanIndex] = 
+                                            new PeptideSpectralMatch(compactPeptide, scan.notch, thisScore, scan.scanIndex, scan.theScan, commonParameters.DigestionParams);
                                         }
                                         else
                                         {

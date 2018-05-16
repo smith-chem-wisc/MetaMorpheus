@@ -2,7 +2,7 @@
 
 namespace EngineLayer
 {
-    public class DigestionParams
+    public class DigestionParams 
     {
         public int MaxMissedCleavages { get; private set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; private set; }
@@ -16,7 +16,8 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public DigestionParams(Protease Protease, int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
+        public DigestionParams(Protease Protease, int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
+            InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
         {
             this.MaxMissedCleavages = MaxMissedCleavages;
             this.MinPeptideLength = MinPeptideLength;
@@ -46,15 +47,7 @@ namespace EngineLayer
         public override bool Equals(object obj)
         {
             DigestionParams a = obj as DigestionParams;
-            bool testMissed = MaxMissedCleavages.Equals(a.MaxMissedCleavages);
-            bool testMin = MinPeptideLength.Equals(a.MinPeptideLength);
-            bool testMax = MaxPeptideLength.Equals(a.MaxPeptideLength);
-            bool testInit = InitiatorMethionineBehavior.Equals(a.InitiatorMethionineBehavior);
-            bool testMaxModsIso = MaxModificationIsoforms.Equals(a.MaxModificationIsoforms);
-            bool testMaxMods = MaxModsForPeptide.Equals(a.MaxModsForPeptide);
-            bool testProtease = this.Protease.Equals(a.Protease);
-            bool testSemiProtease = SemiProteaseDigestion.Equals(a.SemiProteaseDigestion);
-            bool testTerminus = TerminusTypeSemiProtease.Equals(a.TerminusTypeSemiProtease);
+            
             return a != null
                 && this.MaxMissedCleavages.Equals(a.MaxMissedCleavages)
                 && this.MinPeptideLength.Equals(a.MinPeptideLength)
@@ -77,47 +70,47 @@ namespace EngineLayer
         }
 
         
-        public void setMaxMissedCleavages( int MaxMissedCleavages)
+        public void SetMaxMissedCleavages( int MaxMissedCleavages)
         {
             this.MaxMissedCleavages = MaxMissedCleavages;
         }
 
-        public void setInitiatorMethionineBehavior(InitiatorMethionineBehavior InitiatorMethionineBehavior)
+        public void SetInitiatorMethionineBehavior(InitiatorMethionineBehavior InitiatorMethionineBehavior)
         {
             this.InitiatorMethionineBehavior=InitiatorMethionineBehavior;
         }
 
-        public void setMinPeptideLength( int MinPeptideLength)
+        public void SetMinPeptideLength( int MinPeptideLength)
         {
             this.MinPeptideLength=MinPeptideLength;
         }
 
-        public void setMaxPeptideLength( int MaxPeptideLength)
+        public void SetMaxPeptideLength( int MaxPeptideLength)
         {
             this.MaxPeptideLength = MaxPeptideLength;
         }
 
-        public void setMaxModificationIsoforms(int MaxModificationIsoforms)
+        public void SetMaxModificationIsoforms(int MaxModificationIsoforms)
         {
             this.MaxModificationIsoforms = MaxModificationIsoforms;
         }
 
-        public void setMaxModsForPeptide( int MaxModsForPeptide)
+        public void SetMaxModsForPeptide( int MaxModsForPeptide)
         {
             this.MaxModsForPeptide = MaxModsForPeptide;
         }
 
-        public void setProtease( Protease Protease)
+        public void SetProtease( Protease Protease)
         {
             this.Protease = Protease;
         }
 
-        public void setSemiProteaseDigestion( bool SemiProteaseDigestion)
+        public void SetSemiProteaseDigestion( bool SemiProteaseDigestion)
         {
             this.SemiProteaseDigestion = SemiProteaseDigestion;
         }
 
-        public void setTerminusTypeSemiProtease(TerminusType TerminusTypeSemiProtease)
+        public void SetTerminusTypeSemiProtease(TerminusType TerminusTypeSemiProtease)
         {
             this.TerminusTypeSemiProtease = TerminusTypeSemiProtease;
         }
