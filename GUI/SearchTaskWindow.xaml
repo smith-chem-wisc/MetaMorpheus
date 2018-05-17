@@ -764,11 +764,11 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="Output Choose" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">
-                            <CheckBox x:Name="ckbMzId" Content="Output for .mzid" />
-                            <CheckBox x:Name="ckbPepXML" Content="Output for .pep.xml" />
+                            <CheckBox x:Name="ckbMzId" Content="Output for .mzID" />
+                            <CheckBox x:Name="ckbPepXML" Content="Output for .pep.XML" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
