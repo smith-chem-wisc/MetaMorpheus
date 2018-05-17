@@ -349,26 +349,7 @@ namespace TaskLayer
                 }
            }
         }
-        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
-        {
-            
-            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
-            { 
-                commonParameters.DigestionParams
-            };
-
-            foreach (var hah in enumerable)
-            {
-                DigestionParams p = hah.DigestionParams;
-                if (okay.Contains(p)==false)
-                {
-                    okay.Add(p);
-                }              
-            };
-                
-            return okay;
-        }
-
+        
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);

@@ -127,8 +127,9 @@ namespace TaskLayer
             ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
-
-            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
+            
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
 
             int completedFiles = 0;
             object indexLock = new object();
