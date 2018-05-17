@@ -14,7 +14,8 @@ namespace EngineLayer
 
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
-        //dictionary with key being object contianing mass of the compact peptide and value being a hasset of peptides with set modifications having that mass
+        //private readonly List<PeptideSpectralMatch> fdrFilteredPsms;
+        
         #endregion Private Fields
 
         #region Public Constructors
@@ -45,6 +46,7 @@ namespace EngineLayer
 
         private List<ProteinGroup> ApplyProteinParsimony()
         {
+            
             if (!compactPeptideToProteinPeptideMatching.Values.Any())//if dictionary is empty return an empty list of protein groups
                 return new List<ProteinGroup>();
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled

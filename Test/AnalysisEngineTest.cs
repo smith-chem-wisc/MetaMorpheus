@@ -21,10 +21,11 @@ namespace Test
         [Test]
         public static void TestAnalysisEngineTests()
         {
-            Protease protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("Custom Protease5", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams(protease,0,1,int.MaxValue,1042),
+                DigestionParams = new DigestionParams(protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 1042),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 ProductMassTolerance = new PpmTolerance(10),

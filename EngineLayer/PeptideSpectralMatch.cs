@@ -15,8 +15,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-        private DigestionParams DigestionParams { get; set; }
-
+       
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
@@ -24,7 +23,7 @@ namespace EngineLayer
         #region Public Fields
 
         public const double tolForScoreDifferentiation = 1e-9;
-        
+         
 
         #endregion Public Fields
 
@@ -104,7 +103,7 @@ namespace EngineLayer
         public Dictionary<string, int> ModsIdentified { get; private set; }
         public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
-
+        public readonly DigestionParams DigestionParams;
         public List<double> AllScores { get; set; }
 
         public double[] Features

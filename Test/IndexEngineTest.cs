@@ -36,11 +36,13 @@ namespace Test
                 modsDictionary.Add(mod, (ushort)i);
                 i++;
             }
-
-            Protease p = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            
+            Protease p = new Protease("Custom Protease2", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(p.Name,p);
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams(p,2,1),
+                DigestionParams = new DigestionParams(p.Name,MinPeptideLength: 1),
+               
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
@@ -85,11 +87,13 @@ namespace Test
                 i++;
             }
 
+
             Protease protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
             {
                 
-                DigestionParams = new DigestionParams(protease,2,1,int.MaxValue,1024,InitiatorMethionineBehavior.Retain),
+                DigestionParams = new DigestionParams(protease.Name,2,1,int.MaxValue,1024,InitiatorMethionineBehavior.Retain),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };

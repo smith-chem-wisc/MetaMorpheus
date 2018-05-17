@@ -30,7 +30,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,2)
+                    DigestionParams = new DigestionParams(MinPeptideLength:2)
                 }
             };
 
@@ -40,7 +40,7 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,2147483647,2,InitiatorMethionineBehavior.Retain, 1),
+                DigestionParams = new DigestionParams(MaxMissedCleavages:0,MinPeptideLength:1,MaxModificationIsoforms:2,InitiatorMethionineBehavior:InitiatorMethionineBehavior.Retain, MaxModsForPeptides:1),
                 ScoreCutoff = 1
             };
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);

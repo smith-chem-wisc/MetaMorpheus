@@ -273,9 +273,16 @@ namespace MetaMorpheusGUI
 
             #endregion Check Task Validity
 
+            Protease protease = (Protease)proteaseComboBox.SelectedItem;
+            int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            int MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int MaxPeptideLength = int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             CommonParameters CommonParamsToSave = new CommonParameters
             {
-                DigestionParams = new DigestionParams((Protease)proteaseComboBox.SelectedItem, int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture), int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture), int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture), int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture), (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex)
+
+                DigestionParams = new DigestionParams(protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, InitiatorMethionineBehavior)
             };
 
             if (OutputFileNameTextBox.Text != "")

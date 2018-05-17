@@ -20,10 +20,11 @@ namespace Test
         [Test]
         public static void TestCoIsolation()
         {
-            Protease protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("CustProtease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams(protease,2,1),
+                DigestionParams = new DigestionParams(protease.Name, MinPeptideLength: 1),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 DeconvolutionIntensityRatio = 50

@@ -87,7 +87,7 @@ namespace Test
                 },
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,5)
+                    DigestionParams = new DigestionParams( MinPeptideLength: 5)
                 }
             };
 

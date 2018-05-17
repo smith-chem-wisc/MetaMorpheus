@@ -22,7 +22,7 @@ namespace Test
             Protease p = GlobalVariables.ProteaseDictionary["non-specific"];
             Protein prot = new Protein("MABCDEFGH", null);
 
-            DigestionParams digestionParams = new DigestionParams(p, 8, 1, 9, 1024, InitiatorMethionineBehavior.Retain);
+            DigestionParams digestionParams = new DigestionParams(p.Name, MaxMissedCleavages: 8, MinPeptideLength: 1, MaxPeptideLength: 9, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
 
             Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Count());
         }
@@ -33,7 +33,7 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", null);
-            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 1);
+            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) };
 

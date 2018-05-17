@@ -14,6 +14,7 @@ using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
+    
     public enum MyTask
     {
         Search,
@@ -22,11 +23,13 @@ namespace TaskLayer
         XLSearch,
         Neo
     }
-
+   
     public abstract class MetaMorpheusTask
     {
-        #region Public Fields
 
+        #region Public Fields
+       
+        
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -44,7 +47,7 @@ namespace TaskLayer
                         .ConfigureType<CommonParameters>(ct => ct
                             .CreateInstance(() => new CommonParameters()))
                         .ConfigureType<DigestionParams>(ct => ct
-                            .CreateInstance(() => new DigestionParams(new Protease("weird",null,null,TerminusType.C,CleavageSpecificity.Full,null,null,null))))
+                            .CreateInstance(() => new DigestionParams()))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t", custom))
@@ -162,14 +165,17 @@ namespace TaskLayer
 
             // clone the common parameters as a template for the file-specific params to override certain values
             CommonParameters returnParams = ((CommonParameters)commonParams).Clone();
-            DigestionParams fileSpecificDigestionParams = ((DigestionParams)commonParams.DigestionParams).Clone();
+            
 
             // set file-specific digestion parameters
-            fileSpecificDigestionParams.SetProtease(fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease);
-            fileSpecificDigestionParams.SetMinPeptideLength(fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength);
-            fileSpecificDigestionParams.SetMaxPeptideLength(fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength);
-            fileSpecificDigestionParams.SetMaxMissedCleavages(fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages);
-            fileSpecificDigestionParams.SetMaxModsForPeptide(fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide);
+           
+            
+            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
+            int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+            int MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+            int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            DigestionParams fileSpecificDigestionParams = new DigestionParams(protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModsForPeptide);
             returnParams.DigestionParams = fileSpecificDigestionParams;
 
             // set the rest of the file-specific parameters

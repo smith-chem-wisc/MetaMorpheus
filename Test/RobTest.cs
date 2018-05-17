@@ -35,9 +35,9 @@ namespace Test
                                    };
 
             IEnumerable<string> sequencesInducingCleavage = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "-" };
-            var protease = new Protease("test", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("test1", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
-
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -46,7 +46,7 @@ namespace Test
             p.Add(new Protein("-----F----**", "C1", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
             p.Add(new Protein("----E----**", "C2", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
 
-            DigestionParams digestionParams = new DigestionParams(protease, 2, 1);
+            DigestionParams digestionParams = new DigestionParams(protease.Name, MinPeptideLength: 1);
             
             foreach (var protein in p)
             {
@@ -239,7 +239,7 @@ namespace Test
             for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString()));
 
-            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
+            DigestionParams digestionParams = new DigestionParams();
             foreach (var protein in p)
             {
                 foreach (var peptide in protein.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
@@ -276,7 +276,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
             ModificationWithMass nTermAmmoniaLoss = new ModificationWithMass("ntermammonialoss", "mt", motif, TerminusLocalization.NPep, 0, neutralLosses: new List<double> { 0, -17 });
-            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 2);
+            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 2);
             
             var cool = p.Digest(digestionParams, new List<ModificationWithMass> { nTermAmmoniaLoss }, new List<ModificationWithMass>()).First();
             var nice = cool.CompactPeptide(TerminusType.None);
@@ -294,15 +294,15 @@ namespace Test
             variableModifications.Add(new ModificationWithMassAndCf("resMod", "HaHa", motif, TerminusLocalization.Any, ChemicalFormula.ParseFormula("H")));
 
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
+            var protease = new Protease("CustomProtease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>
             {
                 {variableModifications.Last(), 1 }
             };
 
-            DigestionParams digestionParams = new DigestionParams(protease, 0, 1);
+            DigestionParams digestionParams = new DigestionParams(protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1);
             
             var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep };

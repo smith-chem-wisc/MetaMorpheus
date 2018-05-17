@@ -28,7 +28,7 @@ namespace Test
             List<string> nestedIds = new List<string>();
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
-            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
+            DigestionParams digestionParams = new DigestionParams();
             var digested = p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
 
             PeptideWithSetModifications pep1 = digested[0];
@@ -108,7 +108,7 @@ namespace Test
             {
                 ScoreCutoff = 1,
                 UseDeltaScore = true,
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 5)
+                DigestionParams = new DigestionParams(MinPeptideLength: 5)
             };
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -181,7 +181,7 @@ namespace Test
             CommonParameters = new CommonParameters
             {
                 UseDeltaScore = false,
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 5)
+                DigestionParams = new DigestionParams(MinPeptideLength: 5)
             };
 
             //check worse when using score
@@ -223,7 +223,7 @@ namespace Test
             CommonParameters = new CommonParameters
             {
                 UseDeltaScore = true,
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 5)
+                DigestionParams = new DigestionParams(MinPeptideLength: 5)
             };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
             { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
@@ -256,7 +256,7 @@ namespace Test
             CommonParameters = new CommonParameters
             {
                 UseDeltaScore = false,
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 5)
+                DigestionParams = new DigestionParams(MinPeptideLength: 5)
             };
 
             //check no change when using score

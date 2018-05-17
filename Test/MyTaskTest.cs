@@ -30,7 +30,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ConserveMemory = false,
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,2147483647,1024,InitiatorMethionineBehavior.Retain)
+                    DigestionParams = new DigestionParams(MaxMissedCleavages: 0,MinPeptideLength: 1,InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)
                 },
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -129,7 +129,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,2147483647,1024,InitiatorMethionineBehavior.Retain),
+                    DigestionParams = new DigestionParams(MaxMissedCleavages:0,MinPeptideLength:1,InitiatorMethionineBehavior:InitiatorMethionineBehavior.Retain),
                     ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },
                     ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
                     ListOfModTypesLocalize = GlobalVariables.AllModTypesKnown.ToList(),
@@ -144,7 +144,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]),
+                    DigestionParams = new DigestionParams(),
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
@@ -230,7 +230,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,2),
+                    DigestionParams = new DigestionParams(MinPeptideLength:2),
                     
                     ScoreCutoff = 1,
                     DeconvolutionIntensityRatio = 999,
@@ -316,7 +316,7 @@ namespace Test
                     CommonParameters = new CommonParameters
                     {
                         ConserveMemory = false,
-                        DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2,7,int.MaxValue ,1024, InitiatorMethionineBehavior.Retain,2,false,TerminusType.N),
+                        DigestionParams = new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                         ListOfModsVariable = new List<(string, string)>(),
                         ListOfModsFixed = new List<(string, string)>(),
                         ScoreCutoff = 1,
@@ -380,7 +380,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,5)
+                    DigestionParams = new DigestionParams(MinPeptideLength:5)
                 },
                 SearchParameters = new SearchParameters
                 {

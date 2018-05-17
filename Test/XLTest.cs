@@ -27,8 +27,9 @@ namespace Test
         public static void XlTestXlPosCal()
         {
             var prot = new Protein("MNNNKQQQQ", null);
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            DigestionParams digestionParams = new DigestionParams(protease,2,1, 2147483647, 1024, InitiatorMethionineBehavior.Retain,2,false,TerminusType.N);
+            Protease protease = new Protease("New Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            DigestionParams digestionParams = new DigestionParams(protease.Name, MinPeptideLength:1, InitiatorMethionineBehavior:InitiatorMethionineBehavior.Retain);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
@@ -87,7 +88,7 @@ namespace Test
                 CIons = true,
                 ZdotIons = true,
                 ScoreCutoff = 2,
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2, 5)
+                DigestionParams = new DigestionParams(MinPeptideLength: 5)
              
             };
 
@@ -214,7 +215,7 @@ namespace Test
             {
                 DoPrecursorDeconvolution = false,
                 ScoreCutoff = 1,
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,4)
+                DigestionParams = new DigestionParams(MinPeptideLength:4)
                 
             };
 

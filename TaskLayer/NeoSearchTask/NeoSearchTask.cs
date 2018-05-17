@@ -24,8 +24,8 @@ namespace TaskLayer
         public NeoSearchTask() : base(MyTask.Neo)
         {
             NeoParameters = new NeoParameters();
-
-            DigestionParams tempDigParams = new DigestionParams(GlobalVariables.ProteaseDictionary["non-specific"], 12, 8, 13, 1024, InitiatorMethionineBehavior.Variable, 2, false, TerminusType.N);
+            Protease protease = GlobalVariables.ProteaseDictionary["non-specific"];
+            var tempDigParams = new DigestionParams(protease.Name, MaxMissedCleavages:12, MinPeptideLength:8, MaxPeptideLength:13);
             
             CommonParameters = new CommonParameters
             {
