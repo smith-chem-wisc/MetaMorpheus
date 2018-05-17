@@ -1064,7 +1064,7 @@ namespace TaskLayer
             Status("Searching files...", taskId);
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
-            Dictionary<string, int> numMs2SpectraPerFile = new Dictionary<string, int>();
+            Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -1081,8 +1081,8 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", thisId);
-                numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), myMsDataFile.Count(p => p.MsnOrder == 2));
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
                 var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
@@ -1415,7 +1415,8 @@ namespace TaskLayer
                     WritePsmsToTsv(psmsForThisFile, writtenFile, SearchParameters.ModsToWriteSelection);
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     myTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
-                    myTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + numMs2SpectraPerFile[strippedFileName]);
+                    myTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + numMs2SpectraPerFile[strippedFileName][0]);
+                    myTaskResults.AddNiceText("Number of precursor species fragmented in " + strippedFileName + ": " + numMs2SpectraPerFile[strippedFileName][1]);
                 }
 
                 var writtenFileForPercolator = Path.Combine(OutputFolder, strippedFileName + "_forPercolator.tsv");

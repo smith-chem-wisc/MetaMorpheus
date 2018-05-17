@@ -12,7 +12,7 @@
         public double QValueNotch { get; set; }
         public bool CalculateEValue { get; set; }
         public double MaximumLikelihood { get; set; }
-        public decimal EValue { get; set; }
+        public double EValue { get; set; }
         public double EScore { get; set; }
 
         #endregion Public Properties
