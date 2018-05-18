@@ -8,102 +8,103 @@ namespace EngineLayer
 {
     public class CommonParameters 
     {
+        //Any new property must also be added in MetaMorpheusTask.SetAllFileSpecificCommonParams, else it be overwritten by file specific params
+        //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
+
+
+        public readonly int MaxThreadsToUsePerFile;
+        public readonly IEnumerable<(string, string)> ListOfModsFixed;
+        public readonly IEnumerable<(string, string)> ListOfModsVariable;
+        public readonly bool DoPrecursorDeconvolution;
+        public readonly bool UseProvidedPrecursorInfo;
+        public readonly double DeconvolutionIntensityRatio;
+        public readonly int DeconvolutionMaxAssumedChargeState;
+        public readonly Tolerance DeconvolutionMassTolerance;
+
+        public readonly int TotalPartitions;
+
+        public readonly bool BIons;
+
+        public readonly bool YIons;
+
+        public readonly bool ZdotIons;
+
+        public readonly bool CIons;
+
+        public readonly Tolerance ProductMassTolerance;
+        public readonly Tolerance PrecursorMassTolerance;
+
+        public readonly bool CompIons;
+
+        public readonly double ScoreCutoff;
+
+        public readonly DigestionParams DigestionParams;
+
+        public readonly bool ReportAllAmbiguity;
+
+        public readonly int TopNpeaks;
+        public readonly double MinRatio;
+        public readonly bool TrimMs1Peaks;
+        public readonly bool TrimMsMsPeaks;
+        public readonly string TaskDescriptor;
+
+        public readonly bool UseDeltaScore;
+        public readonly bool CalculateEValue;
+
+
         #region Public Constructors
 
-        public CommonParameters()
+        public CommonParameters(bool BIons = true, bool YIons = true, bool ZdotIons = false, bool CIons = false, bool DoPrecursorDeconvolution = true,
+            bool UseProvidedPrecursorInfo = true, double DeconvolutionIntensityRatio = 3, int DeconvolutionMaxAssumedChargeState = 12, bool ReportAllAmbiguity = true,
+            bool CompIons = false, int TotalPartitions = 1, double ScoreCutoff = 5, int TopNpeaks = 200, double MinRatio = 0.01, bool TrimMs1Peaks = false,
+            bool TrimMsMsPeaks = true, bool UseDeltaScore = false, bool CalculateEValue = false, int prodMassTol = 20, int preMassTol = 5, int deconMassTol = 4,
+            int MaxThreadsToUsePerFile = -1, DigestionParams DigestionParams = null, List<(string, string)> ListOfModsVariable = null, List<(string, string)> ListOfModsFixed = null)
         {
-            ProductMassTolerance = new PpmTolerance(20);
-            PrecursorMassTolerance = new PpmTolerance(5);
+            this.BIons = BIons;
+            this.YIons = YIons;
+            this.ZdotIons = ZdotIons;
+            this.CIons = CIons;
+            this.DoPrecursorDeconvolution = DoPrecursorDeconvolution;
+            this.UseProvidedPrecursorInfo = UseProvidedPrecursorInfo;
+            this.DeconvolutionIntensityRatio = DeconvolutionIntensityRatio;
+            this.DeconvolutionMaxAssumedChargeState = DeconvolutionMaxAssumedChargeState;
+            this.ReportAllAmbiguity = ReportAllAmbiguity;
+            this.CompIons = CompIons;
+            this.TotalPartitions = TotalPartitions;
+            this.ScoreCutoff = ScoreCutoff;
+            this.TopNpeaks = TopNpeaks;
+            this.MinRatio = MinRatio;
+            this.TrimMs1Peaks = TrimMs1Peaks;
+            this.TrimMsMsPeaks = TrimMsMsPeaks;
+            this.UseDeltaScore = UseDeltaScore;
+            this.CalculateEValue = CalculateEValue;
+            this.MaxThreadsToUsePerFile = MaxThreadsToUsePerFile;
+            ProductMassTolerance = new PpmTolerance(prodMassTol); 
+            PrecursorMassTolerance = new PpmTolerance(preMassTol);
+            DeconvolutionMassTolerance = new PpmTolerance(deconMassTol);
 
-            DigestionParams = new DigestionParams();
+            if (DigestionParams == null)
+            {
+                this.DigestionParams = new DigestionParams(); // not compile time constant
+            }
+            if (ListOfModsVariable ==null)
+            {
+                this.ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") };
+            }
+            if (ListOfModsFixed == null)
+            {
+                this.ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
+            }
+            
 
-            BIons = true;
-            YIons = true;
-            ZdotIons = false;
-            CIons = false;
-
-            TotalPartitions = 1;
-            LocalizeAll = true;
-
-            ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
-            ListOfModTypesLocalize = new List<string>();
-
-            ConserveMemory = true;
-
-            MaxParallelFilesToAnalyze = 1;
-
-            MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;
-
-            ScoreCutoff = 5;
-
-            // Deconvolution stuff
-            DoPrecursorDeconvolution = true;
-            UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 3;
-            DeconvolutionMaxAssumedChargeState = 12;
-            DeconvolutionMassTolerance = new PpmTolerance(4);
-            ReportAllAmbiguity = true;
-
-            TopNpeaks = 200;
-            MinRatio = 0.01;
-            TrimMs1Peaks = false;
-            TrimMsMsPeaks = true;
-            UseDeltaScore = false;
-            CalculateEValue = false;
+            
+            
+            
+           
         }
 
         #endregion Public Constructors
 
-        #region Public Properties
-
-        //Any new property must also be added in MetaMorpheusTask.SetAllFileSpecificCommonParams, else it be overwritten by file specific params
-        //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
-        public int MaxParallelFilesToAnalyze { get; set; }
-
-        public int MaxThreadsToUsePerFile { get; set; }
-        public bool LocalizeAll { get; set; }
-        public IEnumerable<(string, string)> ListOfModsFixed { get; set; }
-        public IEnumerable<(string, string)> ListOfModsVariable { get; set; }
-        public IEnumerable<string> ListOfModTypesLocalize { get; set; }
-
-        public bool DoPrecursorDeconvolution { get; set; }
-        public bool UseProvidedPrecursorInfo { get; set; }
-        public double DeconvolutionIntensityRatio { get; set; }
-        public int DeconvolutionMaxAssumedChargeState { get; set; }
-        public Tolerance DeconvolutionMassTolerance { get; set; }
-
-        public int TotalPartitions { get; set; }
-
-        public bool BIons { get; set; }
-
-        public bool YIons { get; set; }
-
-        public bool ZdotIons { get; set; }
-
-        public bool CIons { get; set; }
-
-        public Tolerance ProductMassTolerance { get; set; }
-        public Tolerance PrecursorMassTolerance { get; set; }
-
-        public bool ConserveMemory { get; set; }
-
-        public double ScoreCutoff { get; set; }
-
-        public DigestionParams DigestionParams { get; set; }
-
-        public bool ReportAllAmbiguity { get; set; }
-
-        public int TopNpeaks { get; set; }
-        public double MinRatio { get; set; }
-        public bool TrimMs1Peaks { get; set; }
-        public bool TrimMsMsPeaks { get; set; }
-        public string TaskDescriptor { get; set; }
-
-        public bool UseDeltaScore { get; set; }
-        public bool CalculateEValue { get; set; }
-
-        #endregion Public Properties
 
         #region Public Methods
 
