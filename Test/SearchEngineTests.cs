@@ -763,7 +763,7 @@ namespace Test
             {
                 ProductMassTolerance = productMassTolerance,
             };
-            CommonParameters2.DigestionParams = new protease: protease2.Name, MaxMissedCleavages: 5);
+            CommonParameters2.DigestionParams = new DigestionParams(protease: protease2.Name, MaxMissedCleavages: 5);
             HashSet<DigestionParams> digestParams2 = new HashSet<DigestionParams> { CommonParameters2.DigestionParams };
 
             bool DoPrecursorDeconvolution2 = true;
