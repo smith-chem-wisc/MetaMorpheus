@@ -341,7 +341,7 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int MaxModsForPeptide = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
-            DigestionParams digestionParamsToSave = new DigestionParams(protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, InitiatorMethionineBehavior);
+            DigestionParams digestionParamsToSave = new DigestionParams(protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, InitiatorMethionineBehavior, MaxModsForPeptide);
             CommonParamsToSave.DigestionParams = digestionParamsToSave;
 
             CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;

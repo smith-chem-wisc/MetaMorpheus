@@ -40,10 +40,6 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public DigestionParams Clone()
-        {
-            return (DigestionParams)this.MemberwiseClone();
-        }
         public override bool Equals(object obj)
         {
             DigestionParams a = obj as DigestionParams;
