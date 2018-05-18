@@ -21,7 +21,7 @@ namespace Test
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams(protease.Name, MinPeptideLength: 1),
+                DigestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 ReportAllAmbiguity = false

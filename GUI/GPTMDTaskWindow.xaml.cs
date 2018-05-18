@@ -282,7 +282,7 @@ namespace MetaMorpheusGUI
             CommonParameters CommonParamsToSave = new CommonParameters
             {
 
-                DigestionParams = new DigestionParams(protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, InitiatorMethionineBehavior)
+                DigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength,MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior)
             };
 
             if (OutputFileNameTextBox.Text != "")

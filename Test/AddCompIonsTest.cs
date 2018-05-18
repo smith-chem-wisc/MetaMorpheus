@@ -44,7 +44,7 @@ namespace Test
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams(protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1),
+                DigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
@@ -102,7 +102,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 PrecursorMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams(protease.Name, MinPeptideLength:1),
+                DigestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength:1),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };

@@ -22,7 +22,7 @@ namespace Test
             Protease p = GlobalVariables.ProteaseDictionary["non-specific"];
             Protein prot = new Protein("MABCDEFGH", null);
 
-            DigestionParams digestionParams = new DigestionParams(p.Name, MaxMissedCleavages: 8, MinPeptideLength: 1, MaxPeptideLength: 9, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            DigestionParams digestionParams = new DigestionParams(protease: p.Name, MaxMissedCleavages: 8, MinPeptideLength: 1, MaxPeptideLength: 9, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
 
             Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Count());
         }
