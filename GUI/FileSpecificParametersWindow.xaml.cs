@@ -190,8 +190,14 @@ namespace MetaMorpheusGUI
         {
             // use default settings to populate
             var tempCommonParams = new CommonParameters();
-            var tempDigestParams = new DigestionParams();
+            Protease tempProtease = null;
+            int tempMinPeptideLength = 0;
+            int tempMaxPeptideLength = 0;
+            int tempMaxMissedCleavages = 0;
+            int tempMaxModsForPeptide = 0;
 
+            
+            
             // do any of the selected files already have file-specific parameters specified?
             var ok = SelectedRaw.Select(p => p.FilePath);
             foreach(var path in ok)
@@ -201,7 +207,7 @@ namespace MetaMorpheusGUI
                 {
                     TomlTable tomlTable = Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig);
                     FileSpecificParameters tempFileSpecificParams = new FileSpecificParameters(tomlTable);
-
+                    
                     if (tempFileSpecificParams.PrecursorMassTolerance != null)
                     {
                         tempCommonParams.PrecursorMassTolerance = tempFileSpecificParams.PrecursorMassTolerance;
@@ -214,29 +220,30 @@ namespace MetaMorpheusGUI
                     }
                     if (tempFileSpecificParams.Protease != null)
                     {
-                        tempDigestParams.Protease = tempFileSpecificParams.Protease;
+                        tempProtease=(tempFileSpecificParams.Protease);
                         fileSpecificProteaseEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MinPeptideLength != null)
                     {
-                        tempDigestParams.MinPeptideLength = tempFileSpecificParams.MinPeptideLength.Value;
+                        tempMinPeptideLength=(tempFileSpecificParams.MinPeptideLength.Value);
                         fileSpecificMinPeptideLengthEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxPeptideLength != null)
                     {
-                        tempDigestParams.MaxPeptideLength = tempFileSpecificParams.MaxPeptideLength.Value;
+                        tempMaxPeptideLength=(tempFileSpecificParams.MaxPeptideLength.Value);
                         fileSpecificMaxPeptideLengthEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxMissedCleavages != null)
                     {
-                        tempDigestParams.MaxMissedCleavages = tempFileSpecificParams.MaxMissedCleavages.Value;
+                        tempMaxMissedCleavages=(tempFileSpecificParams.MaxMissedCleavages.Value);
                         fileSpecificMissedCleavagesEnabled.IsChecked = true;
                     }
                     if (tempFileSpecificParams.MaxModsForPeptide != null)
                     {
-                        tempDigestParams.MaxModsForPeptide = tempFileSpecificParams.MaxMissedCleavages.Value;
+                        tempMaxModsForPeptide=(tempFileSpecificParams.MaxMissedCleavages.Value);
                         fileSpecificMaxModNumEnabled.IsChecked = true;
                     }
+                    
                     //if (tempFileSpecificParams.BIons != null || tempFileSpecificParams.CIons != null
                     //    || tempFileSpecificParams.YIons != null || tempFileSpecificParams.ZdotIons != null)
                     //{
@@ -248,8 +255,9 @@ namespace MetaMorpheusGUI
                     //    fileSpecificIonTypesEnabled.IsChecked = true;
                     //}
                 }
+              
             }
-
+            DigestionParams tempDigestParams = new DigestionParams(protease: tempProtease.Name, MaxMissedCleavages: tempMaxMissedCleavages, MinPeptideLength: tempMinPeptideLength, MaxPeptideLength: tempMaxPeptideLength, MaxModsForPeptides: tempMaxModsForPeptide);
             tempCommonParams.DigestionParams = tempDigestParams;
             
             // populate the GUI

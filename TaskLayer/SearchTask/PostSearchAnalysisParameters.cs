@@ -9,12 +9,12 @@ namespace TaskLayer
     {
         public MyTaskResults SearchTaskResults { get; set; }
         public string SearchTaskId { get; set; }
-        public ICommonParameters CommonParameters { get; set; }
+        public CommonParameters CommonParameters { get; set; }
         public SearchParameters SearchParameters { get; set; }
         public List<Protein> ProteinList { get; set; }
         public List<ProductType> IonTypes { get; set; }
         public List<ModificationWithMass> VariableModifications { get; set; }
-        public HashSet<IDigestionParams> ListOfDigestionParams { get; set; }
+        public HashSet<DigestionParams> ListOfDigestionParams { get; set; }
         public List<PeptideSpectralMatch> AllPsms { get; set; }
         public FlashLFQResults FlashLfqResults { get; set; }
         public List<ModificationWithMass> FixedModifications { get; set; }

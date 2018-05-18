@@ -24,14 +24,9 @@ namespace TaskLayer
         public NeoSearchTask() : base(MyTask.Neo)
         {
             NeoParameters = new NeoParameters();
-
-            IDigestionParams tempDigParams = new DigestionParams
-            {
-                MinPeptideLength = 8,
-                MaxPeptideLength = 13,
-                Protease = GlobalVariables.ProteaseDictionary["non-specific"],
-                MaxMissedCleavages = 12
-            };
+            Protease protease = GlobalVariables.ProteaseDictionary["non-specific"];
+            var tempDigParams = new DigestionParams(protease.Name, MaxMissedCleavages:12, MinPeptideLength:8, MaxPeptideLength:13);
+            
             CommonParameters = new CommonParameters
             {
                 DigestionParams = tempDigParams,
@@ -126,7 +121,7 @@ namespace TaskLayer
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);

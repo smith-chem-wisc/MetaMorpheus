@@ -14,6 +14,7 @@ using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
+    
     public enum MyTask
     {
         Search,
@@ -22,11 +23,13 @@ namespace TaskLayer
         XLSearch,
         Neo
     }
-
+   
     public abstract class MetaMorpheusTask
     {
-        #region Public Fields
 
+        #region Public Fields
+       
+        
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -41,9 +44,9 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<ICommonParameters>(ct => ct
+                        .ConfigureType<CommonParameters>(ct => ct
                             .CreateInstance(() => new CommonParameters()))
-                        .ConfigureType<IDigestionParams>(ct => ct
+                        .ConfigureType<DigestionParams>(ct => ct
                             .CreateInstance(() => new DigestionParams()))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
@@ -101,7 +104,7 @@ namespace TaskLayer
 
         public MyTask TaskType { get; set; }
 
-        public ICommonParameters CommonParameters { get; set; }
+        public CommonParameters CommonParameters { get; set; }
 
         #endregion Public Properties
 
@@ -155,21 +158,24 @@ namespace TaskLayer
             }
         }
 
-        public static ICommonParameters SetAllFileSpecificCommonParams(ICommonParameters commonParams, FileSpecificParameters fileSpecificParams)
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
             if (fileSpecificParams == null)
                 return commonParams;
 
             // clone the common parameters as a template for the file-specific params to override certain values
             CommonParameters returnParams = ((CommonParameters)commonParams).Clone();
-            DigestionParams fileSpecificDigestionParams = ((DigestionParams)commonParams.DigestionParams).Clone();
+            
 
             // set file-specific digestion parameters
-            fileSpecificDigestionParams.Protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
-            fileSpecificDigestionParams.MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            fileSpecificDigestionParams.MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            fileSpecificDigestionParams.MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            fileSpecificDigestionParams.MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+           
+            
+            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
+            int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+            int MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+            int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
             returnParams.DigestionParams = fileSpecificDigestionParams;
 
             // set the rest of the file-specific parameters
@@ -295,7 +301,6 @@ namespace TaskLayer
             {
                 int emptyProteinEntriesForThisDb = 0;
                 var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
-
                 proteinList = proteinList.Concat(dbProteinList).ToList();
                 emptyProteinEntries += emptyProteinEntriesForThisDb;
             }
@@ -318,7 +323,7 @@ namespace TaskLayer
             string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
             bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
             theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
-
+            
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
@@ -333,7 +338,6 @@ namespace TaskLayer
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
-
         protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
@@ -343,24 +347,9 @@ namespace TaskLayer
                 {
                     output.WriteLine(heh.ToString(ModstoWritePruned));
                 }
-            }
+           }
         }
-
-        protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
-        {
-            HashSet<IDigestionParams> okay = new HashSet<IDigestionParams>
-            {
-                commonParameters.DigestionParams
-            };
-
-            foreach (var hah in enumerable)
-            {
-                okay.Add(hah.DigestionParams);
-            }
-
-            return okay;
-        }
-
+        
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
