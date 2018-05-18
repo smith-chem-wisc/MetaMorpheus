@@ -618,6 +618,7 @@ namespace MetaMorpheusGUI
                     System.Diagnostics.Process.Start(mailto);
                     Console.WriteLine(body);
                 }
+                ResetTasksButton.IsEnabled = true;
             }
         }
 
