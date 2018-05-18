@@ -87,10 +87,7 @@ namespace Test
                 },
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams
-                    {
-                        MinPeptideLength = 5
-                    }
+                    DigestionParams = new DigestionParams( MinPeptideLength: 5)
                 }
             };
 

@@ -62,31 +62,30 @@ namespace Test
             PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(0, protein1, 1, 9, allModsOneIsNterminus4);
             CompactPeptideBase pep4 = new CompactPeptide(pwsm4, TerminusType.None);
 
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue),
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+            };
+
             var newPsms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1, 0,10,0,scan),
-                new PeptideSpectralMatch(pep1, 0,10,0,scan),
-                new PeptideSpectralMatch(pep2, 0,10,0,scan),
-                new PeptideSpectralMatch(pep3, 0,10,0,scan),
-                new PeptideSpectralMatch(pep4, 0,10,0,scan),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan,CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep2, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep3, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep4, 0,10,0,scan,CommonParameters.DigestionParams),
             };
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = 1,
-                    MaxMissedCleavages = 0,
-                    MaxModificationIsoforms = int.MaxValue,
-                },
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+          
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine
+            (newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
+            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
             {
@@ -140,27 +139,24 @@ namespace Test
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1),
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+            };
+
             var newPsms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1, 0,10,0,scan),
-                new PeptideSpectralMatch(pep3, 0,10,0,scan),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep3, 0,10,0,scan, CommonParameters.DigestionParams),
             };
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = 1,
-                    MaxMissedCleavages = 0,
-                    MaxModificationIsoforms = int.MaxValue
-                },
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+           
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)

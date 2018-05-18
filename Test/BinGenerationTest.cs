@@ -24,11 +24,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams
-                    {
-                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                        MinPeptideLength = 5
-                    },
+                    DigestionParams = new DigestionParams(MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                     ConserveMemory = false,
                 },
                 SearchParameters = new SearchParameters
@@ -88,12 +84,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams
-                    {
-                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                        MaxMissedCleavages = 0,
-                        MinPeptideLength = 5
-                    },
+                    DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                     ConserveMemory = false,
                 },
                 SearchParameters = new SearchParameters
