@@ -317,9 +317,10 @@ namespace MetaMorpheusGUI
                 // the exact file path isn't known, so just open the parent directory
                 outputFolder = Directory.GetParent(outputFolder).FullName;
             }
-            else if (!Directory.Exists(outputFolder) && !string.IsNullOrEmpty(outputFolder))
+
+            if (!Directory.Exists(outputFolder) && !string.IsNullOrEmpty(outputFolder))
             {
-                // create the directory if it has been user-specified (not $DATETIME) and doesn't exist yet
+                // create the directory if it doesn't exist yet
                 try
                 {
                     Directory.CreateDirectory(outputFolder);
