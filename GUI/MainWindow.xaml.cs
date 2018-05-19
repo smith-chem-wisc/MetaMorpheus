@@ -309,6 +309,45 @@ namespace MetaMorpheusGUI
             UpdateOutputFolderTextbox();
         }
 
+        private void OpenOutputFolder_Click(object sender, RoutedEventArgs e)
+        {
+            string outputFolder = OutputFolderTextBox.Text;
+            if (outputFolder.Contains("$DATETIME"))
+            {
+                // the exact file path isn't known, so just open the parent directory
+                outputFolder = Directory.GetParent(outputFolder).FullName;
+            }
+
+            if (!Directory.Exists(outputFolder) && !string.IsNullOrEmpty(outputFolder))
+            {
+                // create the directory if it doesn't exist yet
+                try
+                {
+                    Directory.CreateDirectory(outputFolder);
+                }
+                catch (Exception ex)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Error opening directory: " + ex.Message, null));
+                }
+            }
+
+            if (Directory.Exists(outputFolder))
+            {
+                // open the directory
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                {
+                    FileName = outputFolder,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            else
+            {
+                // this should only happen if the file path is empty or something unexpected happened
+                GuiWarnHandler(null, new StringEventArgs("Output folder does not exist", null));
+            }
+        }
+
         private void AddProteinDatabase_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
@@ -618,6 +657,7 @@ namespace MetaMorpheusGUI
                     System.Diagnostics.Process.Start(mailto);
                     Console.WriteLine(body);
                 }
+                ResetTasksButton.IsEnabled = true;
             }
         }
 

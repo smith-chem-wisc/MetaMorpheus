@@ -109,7 +109,7 @@ namespace TaskLayer
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
 
-                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
 
@@ -273,7 +273,7 @@ namespace TaskLayer
             return countRatio > 0.9 && precRatio + prodRatio < 1.8;
         }
 
-        private DataPointAquisitionResults GetDataAcquisitionResults(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, ICommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
+        private DataPointAquisitionResults GetDataAcquisitionResults(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
         {
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
             MassDiffAcceptor searchMode;
@@ -313,7 +313,7 @@ namespace TaskLayer
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<IDigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
 
             foreach (var huh in allPsms)
                 if (huh != null)

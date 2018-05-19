@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace TaskLayer
+namespace EngineLayer
 {
-    public class CommonParameters : ICommonParameters
+    public class CommonParameters 
     {
         #region Public Constructors
 
@@ -90,7 +90,7 @@ namespace TaskLayer
 
         public double ScoreCutoff { get; set; }
 
-        public IDigestionParams DigestionParams { get; set; }
+        public DigestionParams DigestionParams { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
 

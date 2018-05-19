@@ -151,7 +151,7 @@ namespace TaskLayer
                 Status("Running localization analysis...", Parameters.SearchTaskId);
                 Parallel.For(0, Parameters.CurrentRawFileList.Count, Parameters.CommonParameters.ParallelOptions(), spectraFileIndex =>
                 {
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(Parameters.CommonParameters, Parameters.FileSettingsList[spectraFileIndex]);
+                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(Parameters.CommonParameters, Parameters.FileSettingsList[spectraFileIndex]);
 
                     var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });

@@ -22,14 +22,7 @@ namespace Test
             Protease p = GlobalVariables.ProteaseDictionary["non-specific"];
             Protein prot = new Protein("MABCDEFGH", null);
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 8,
-                MinPeptideLength = 1,
-                MaxPeptideLength = 9,
-                Protease = p
-            };
+            DigestionParams digestionParams = new DigestionParams(protease: p.Name, MaxMissedCleavages: 8, MinPeptideLength: 1, MaxPeptideLength: 9, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
 
             Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Count());
         }
@@ -40,10 +33,7 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
+            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) };
 
@@ -58,7 +48,7 @@ namespace Test
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1, null);
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps.CompactPeptide(TerminusType.None), 0, 0, 2, scan);
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps.CompactPeptide(TerminusType.None), 0, 0, 2, scan, digestionParams);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
