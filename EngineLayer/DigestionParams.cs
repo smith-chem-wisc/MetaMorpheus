@@ -2,7 +2,7 @@
 
 namespace EngineLayer
 {
-    public class DigestionParams 
+    public class DigestionParams
     {
         public readonly int MaxMissedCleavages;
         public readonly InitiatorMethionineBehavior InitiatorMethionineBehavior;
@@ -16,8 +16,8 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
-            InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
+        public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength = int.MaxValue, int MaxModificationIsoforms = 1024,
+            InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion = false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
         {
             this.Protease = GlobalVariables.ProteaseDictionary[protease];
             this.MaxMissedCleavages = MaxMissedCleavages;
@@ -31,19 +31,13 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
         
-
-        
-
-        
-
         #region Public Methods
 
         public override bool Equals(object obj)
         {
             DigestionParams a = obj as DigestionParams;
-            
+
             return a != null
                 && this.MaxMissedCleavages.Equals(a.MaxMissedCleavages)
                 && this.MinPeptideLength.Equals(a.MinPeptideLength)
@@ -64,6 +58,7 @@ namespace EngineLayer
                 ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
         }
+
         #endregion Public Methods
     }
 }
