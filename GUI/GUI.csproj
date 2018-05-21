@@ -281,6 +281,18 @@
   <ItemGroup>
     <Resource Include="youtube-256.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="wiki.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="mail.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="git.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="update.bmp" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
