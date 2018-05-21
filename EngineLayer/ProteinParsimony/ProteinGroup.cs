@@ -158,7 +158,18 @@ namespace EngineLayer
 
             // list of masses
             var sequences = ListOfProteinsOrderedByAccession.Select(p => p.BaseSequence).Distinct();
-            var masses = sequences.Select(p => new Proteomics.Peptide(p).MonoisotopicMass);
+            List<double> masses = new List<double>();
+            foreach(var sequence in sequences)
+            {
+                try
+                {
+                    masses.Add(new Proteomics.Peptide(sequence).MonoisotopicMass);
+                }
+                catch (System.Exception)
+                {
+                    masses.Add(double.NaN);
+                }
+            }
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", masses)));
             sb.Append("\t");
 

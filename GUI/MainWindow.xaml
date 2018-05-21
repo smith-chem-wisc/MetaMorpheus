@@ -183,6 +183,7 @@
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
                         <DockPanel Margin="5" Grid.Row="4" LastChildFill="True">
+                            <Button x:Name="OpenOutputFolderButton" Content="Open" Width="40" DockPanel.Dock="Right" Click="OpenOutputFolder_Click"></Button>
                             <Label Content="Output Folder:" />
                             <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" />
                         </DockPanel>

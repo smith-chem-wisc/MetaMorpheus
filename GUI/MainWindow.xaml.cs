@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using Proteomics;
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -309,6 +310,45 @@ namespace MetaMorpheusGUI
             UpdateOutputFolderTextbox();
         }
 
+        private void OpenOutputFolder_Click(object sender, RoutedEventArgs e)
+        {
+            string outputFolder = OutputFolderTextBox.Text;
+            if (outputFolder.Contains("$DATETIME"))
+            {
+                // the exact file path isn't known, so just open the parent directory
+                outputFolder = Directory.GetParent(outputFolder).FullName;
+            }
+
+            if (!Directory.Exists(outputFolder) && !string.IsNullOrEmpty(outputFolder))
+            {
+                // create the directory if it doesn't exist yet
+                try
+                {
+                    Directory.CreateDirectory(outputFolder);
+                }
+                catch (Exception ex)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Error opening directory: " + ex.Message, null));
+                }
+            }
+
+            if (Directory.Exists(outputFolder))
+            {
+                // open the directory
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                {
+                    FileName = outputFolder,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            else
+            {
+                // this should only happen if the file path is empty or something unexpected happened
+                GuiWarnHandler(null, new StringEventArgs("Output folder does not exist", null));
+            }
+        }
+
         private void AddProteinDatabase_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
@@ -565,7 +605,21 @@ namespace MetaMorpheusGUI
 
             warningsTextBox.Document.Blocks.Clear();
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(), spectraFilesObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
+            if (string.IsNullOrEmpty(OutputFolderTextBox.Text))
+            {
+                var pathOfFirstSpectraFile = Path.GetDirectoryName(spectraFilesObservableCollection.First().FilePath);
+                OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
+            }
+
+            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            string outputFolder = OutputFolderTextBox.Text.Replace("$DATETIME", startTimeForAllFilenames);
+            OutputFolderTextBox.Text = outputFolder;
+
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(),
+                spectraFilesObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(),
+                proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
+                outputFolder);
+
             var t = new Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
@@ -616,6 +670,7 @@ namespace MetaMorpheusGUI
                     System.Diagnostics.Process.Start(mailto);
                     Console.WriteLine(body);
                 }
+                ResetTasksButton.IsEnabled = true;
             }
         }
 
@@ -980,6 +1035,9 @@ namespace MetaMorpheusGUI
 
             tasksTreeView.DataContext = staticTasksObservableCollection;
             UpdateSpectraFileGuiStuff();
+
+            var pathOfFirstSpectraFile = Path.GetDirectoryName(spectraFilesObservableCollection.First().FilePath);
+            OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
         }
 
         private void TasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
