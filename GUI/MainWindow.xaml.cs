@@ -1199,6 +1199,11 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
         }
 
+        private void MenuItem_YouTube(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://www.youtube.com/channel/UCwPeeXcYSQBdbfXt-SdYhEg");
+        }
+
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)
         {
             var globalSettingsDialog = new GlobalSettingsWindow();
