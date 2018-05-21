@@ -195,8 +195,8 @@
                         HorizontalAlignment="Stretch"
                         Background="Silver"
                         Height="5" />
-                <GroupBox Header="Warnings" Grid.Row="2">
-                    <RichTextBox x:Name="warningsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
+                <GroupBox Header="Notifications" Grid.Row="2">
+                    <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
                         <RichTextBox.Resources>
                             <Style TargetType="{x:Type Paragraph}">
                                 <Setter Property="Margin" Value="0" />

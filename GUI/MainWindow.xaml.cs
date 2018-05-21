@@ -168,8 +168,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                warningsTextBox.AppendText(e.S);
-                warningsTextBox.AppendText(Environment.NewLine);
+                notificationsTextBox.AppendText(e.S);
+                notificationsTextBox.AppendText(Environment.NewLine);
             }
         }
 
@@ -603,7 +603,7 @@ namespace MetaMorpheusGUI
             }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            warningsTextBox.Document.Blocks.Clear();
+            notificationsTextBox.Document.Blocks.Clear();
 
             if (string.IsNullOrEmpty(OutputFolderTextBox.Text))
             {
@@ -637,7 +637,7 @@ namespace MetaMorpheusGUI
                 while (e.InnerException != null) e = e.InnerException;
                 var message = "Run failed, Exception: " + e.Message;
                 var messageBoxResult = System.Windows.MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo);
-                warningsTextBox.AppendText(message + Environment.NewLine);
+                notificationsTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
                 //Find Output Folder
                 string outputFolder = e.Data["folder"].ToString();
