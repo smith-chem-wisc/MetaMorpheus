@@ -82,16 +82,8 @@ namespace Test
         public static void XlTest_BSA_DSSO()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters
-            {
-                DoPrecursorDeconvolution = false,
-                CIons = true,
-                ZdotIons = true,
-                ScoreCutoff = 2,
-                DigestionParams = new DigestionParams(MinPeptideLength: 5)
-             
-            };
-
+            var commonParameters = new CommonParameters(DoPrecursorDeconvolution: false, CIons: true, ZdotIons: true, ScoreCutoff: 2, DigestionParams: new DigestionParams(MinPeptideLength: 5));
+           
             var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
 
             //Create databases contain two protein. 
@@ -211,14 +203,8 @@ namespace Test
         public static void XlTest_DiffCrosslinkSites()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters
-            {
-                DoPrecursorDeconvolution = false,
-                ScoreCutoff = 1,
-                DigestionParams = new DigestionParams(MinPeptideLength:4)
-                
-            };
-
+            var commonParameters = new CommonParameters(DoPrecursorDeconvolution: false, ScoreCutoff: 1, DigestionParams: new DigestionParams(MinPeptideLength: 4));
+           
             var xlSearchParameters = new XlSearchParameters
             {
                 CrosslinkerType = CrosslinkerType.UserDefined,

@@ -62,13 +62,8 @@ namespace Test
             PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(0, protein1, 1, 9, allModsOneIsNterminus4);
             CompactPeptideBase pep4 = new CompactPeptide(pwsm4, TerminusType.None);
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
-
+            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue), ScoreCutoff: 1);
+           
             var newPsms = new List<PeptideSpectralMatch>
             {
                 new PeptideSpectralMatch(pep1, 0,10,0,scan,CommonParameters.DigestionParams),
@@ -139,13 +134,8 @@ namespace Test
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
-
+            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1), ScoreCutoff: 1);
+            
             var newPsms = new List<PeptideSpectralMatch>
             {
                 new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),

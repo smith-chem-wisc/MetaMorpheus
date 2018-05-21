@@ -189,7 +189,7 @@ namespace MetaMorpheusGUI
         private void PopulateChoices()
         {
             // use default settings to populate
-            var tempCommonParams = new CommonParameters();
+            
             Protease tempProtease = null;
             int tempMinPeptideLength = 0;
             int tempMaxPeptideLength = 0;
@@ -200,24 +200,32 @@ namespace MetaMorpheusGUI
             
             // do any of the selected files already have file-specific parameters specified?
             var ok = SelectedRaw.Select(p => p.FilePath);
-            foreach(var path in ok)
+            double preMassTol=20;
+            double prodMassTol=5;
+            foreach (var path in ok)
             {
                 string tomlPath = Path.Combine(Directory.GetParent(path).ToString(), Path.GetFileNameWithoutExtension(path)) + ".toml";
                 if(File.Exists(tomlPath))
                 {
                     TomlTable tomlTable = Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig);
                     FileSpecificParameters tempFileSpecificParams = new FileSpecificParameters(tomlTable);
-                    
+
+                    Tolerance PrecursorMassTolerance= new PpmTolerance(20);
                     if (tempFileSpecificParams.PrecursorMassTolerance != null)
                     {
-                        tempCommonParams.PrecursorMassTolerance = tempFileSpecificParams.PrecursorMassTolerance;
+                        PrecursorMassTolerance = tempFileSpecificParams.PrecursorMassTolerance;
                         fileSpecificPrecursorMassTolEnabled.IsChecked = true;
                     }
+                    preMassTol = PrecursorMassTolerance.Value;
+
+                    Tolerance ProductMassTolerance = new PpmTolerance(5);
                     if (tempFileSpecificParams.ProductMassTolerance != null)
                     {
-                        tempCommonParams.ProductMassTolerance = tempFileSpecificParams.ProductMassTolerance;
+                        ProductMassTolerance = tempFileSpecificParams.ProductMassTolerance;
                         fileSpecificProductMassTolEnabled.IsChecked = true;
                     }
+                    prodMassTol = ProductMassTolerance.Value;
+
                     if (tempFileSpecificParams.Protease != null)
                     {
                         tempProtease=(tempFileSpecificParams.Protease);
@@ -258,7 +266,8 @@ namespace MetaMorpheusGUI
               
             }
             DigestionParams tempDigestParams = new DigestionParams(protease: tempProtease.Name, MaxMissedCleavages: tempMaxMissedCleavages, MinPeptideLength: tempMinPeptideLength, MaxPeptideLength: tempMaxPeptideLength, MaxModsForPeptides: tempMaxModsForPeptide);
-            tempCommonParams.DigestionParams = tempDigestParams;
+
+            var tempCommonParams = new CommonParameters(DigestionParams:tempDigestParams, prodMassTol: prodMassTol, preMassTol:preMassTol );
             
             // populate the GUI
             foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)

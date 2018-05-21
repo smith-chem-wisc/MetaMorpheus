@@ -25,18 +25,14 @@ namespace Test
             //Create Search Task
             GptmdTask task1 = new GptmdTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
             };
 
             SearchTask task2 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -85,10 +81,8 @@ namespace Test
                         {"ConnorModType", 1}
                     }
                 },
-                CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams( MinPeptideLength: 5)
-                }
+                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5))
+                
             };
 
             //add task to task list
@@ -197,10 +191,7 @@ namespace Test
                     SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
-                CommonParameters = new CommonParameters
-                {
-                    ListOfModsFixed = listOfModsFixed,
-                }
+                CommonParameters = new CommonParameters(ListOfModsFixed: listOfModsFixed)
             };
 
             task5.SearchParameters.ModsToWriteSelection["Mod"] = 0;
@@ -311,7 +302,6 @@ namespace Test
 
             //make sure this runs correctly
             //run!
-            Console.WriteLine(task5.CommonParameters.ListOfModTypesLocalize);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");

@@ -76,11 +76,8 @@ namespace Test
             psm3.MatchToProteinLinkedPeptides(matching);
 
             var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
-            CommonParameters cp = new CommonParameters
-            {
-                UseDeltaScore = false,
-                CalculateEValue = true
-            };
+            CommonParameters cp = new CommonParameters(CalculateEValue: true);
+           
             FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, cp, nestedIds);
 
             fdr.Run();
@@ -104,12 +101,8 @@ namespace Test
         [Test]
         public static void TestDeltaValues()
         {
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                ScoreCutoff = 1,
-                UseDeltaScore = true,
-                DigestionParams = new DigestionParams(MinPeptideLength: 5)
-            };
+            CommonParameters CommonParameters = new CommonParameters(ScoreCutoff: 1, UseDeltaScore: true, DigestionParams: new DigestionParams(MinPeptideLength: 5));
+            
             SearchParameters SearchParameters = new SearchParameters
             {
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
@@ -178,12 +171,8 @@ namespace Test
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModernDelta.PsmsWithin1PercentFdr == 3);
 
-            CommonParameters = new CommonParameters
-            {
-                UseDeltaScore = false,
-                DigestionParams = new DigestionParams(MinPeptideLength: 5)
-            };
-
+            CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5));
+           
             //check worse when using score
             FdrAnalysisResults fdrResultsClassic = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
             FdrAnalysisResults fdrResultsModern = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
@@ -220,11 +209,8 @@ namespace Test
             allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
 
-            CommonParameters = new CommonParameters
-            {
-                UseDeltaScore = true,
-                DigestionParams = new DigestionParams(MinPeptideLength: 5)
-            };
+            CommonParameters = new CommonParameters(UseDeltaScore: true, DigestionParams: new DigestionParams(MinPeptideLength: 5));
+           
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
             { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
@@ -253,12 +239,8 @@ namespace Test
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModernDelta.PsmsWithin1PercentFdr == 3);
 
-            CommonParameters = new CommonParameters
-            {
-                UseDeltaScore = false,
-                DigestionParams = new DigestionParams(MinPeptideLength: 5)
-            };
-
+            CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5));
+            
             //check no change when using score
             fdrResultsClassic = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
             fdrResultsModern = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());

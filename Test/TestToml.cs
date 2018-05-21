@@ -19,14 +19,7 @@ namespace Test
         {
             SearchTask searchTask = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ProductMassTolerance = new PpmTolerance(666),
-                    ListOfModsFixed = new List<(string, string)> { ("a", "b"), ("c", "d") },
-                    ListOfModsVariable = new List<(string, string)> { ("e", "f"), ("g", "h") },
-                    ListOfModTypesLocalize = new List<string> { "i", "j" },
-                    LocalizeAll = false,
-                },
+                CommonParameters = new CommonParameters (prodMassTol: 666, ListOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") }, ListOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),                
             };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
@@ -41,10 +34,7 @@ namespace Test
 
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsVariable.Count(), searchTaskLoaded.CommonParameters.ListOfModsVariable.Count());
 
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModTypesLocalize.Count(), searchTaskLoaded.CommonParameters.ListOfModTypesLocalize.Count());
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModTypesLocalize.First(), searchTaskLoaded.CommonParameters.ListOfModTypesLocalize.First());
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModTypesLocalize.Last(), searchTaskLoaded.CommonParameters.ListOfModTypesLocalize.Last());
-
+            
             Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptorType, searchTaskLoaded.SearchParameters.MassDiffAcceptorType);
             Assert.AreEqual(searchTask.SearchParameters.CustomMdac, searchTaskLoaded.SearchParameters.CustomMdac);
 

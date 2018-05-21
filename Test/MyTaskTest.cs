@@ -27,11 +27,9 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false,
-                    DigestionParams = new DigestionParams(MaxMissedCleavages: 0,MinPeptideLength: 1,InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)
-                },
+                
+                CommonParameters = new CommonParameters(DigestionParams:new DigestionParams(MaxMissedCleavages: 0,MinPeptideLength: 1,InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                
                 CalibrationParameters = new CalibrationParameters
                 {
                     WriteIntermediateFiles = true,
@@ -39,19 +37,15 @@ namespace Test
                 }
             };
             GptmdTask task2 = new GptmdTask
-            {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+            { 
+                CommonParameters = new CommonParameters(),
             };
+            
 
             SearchTask task3 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -62,10 +56,8 @@ namespace Test
 
             SearchTask task4 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
@@ -127,14 +119,8 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(MaxMissedCleavages:0,MinPeptideLength:1,InitiatorMethionineBehavior:InitiatorMethionineBehavior.Retain),
-                    ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },
-                    ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModTypesLocalize = GlobalVariables.AllModTypesKnown.ToList(),
-                    ProductMassTolerance = new AbsoluteTolerance(0.01)
-                },
+                CommonParameters = new CommonParameters (DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), ListOfModsVariable : new List<(string, string)> { ("Common Variable", "Oxidation of M") }, ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") }, prodMassTol: 0.01),
+                
                 CalibrationParameters = new CalibrationParameters
                 {
                     NumFragmentsNeededForEveryIdentification = 6,
@@ -142,19 +128,13 @@ namespace Test
             };
             GptmdTask task2 = new GptmdTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(),
-                    ProductMassTolerance = new AbsoluteTolerance(0.01)
-                },
+                CommonParameters = new CommonParameters (prodMassTol: 0.01),
             };
 
             SearchTask task3 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -164,10 +144,8 @@ namespace Test
             };
             SearchTask task4 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
@@ -226,23 +204,20 @@ namespace Test
         [Test]
         public static void MakeSureFdrDoesntSkip()
         {
+            DigestionParams dp = new DigestionParams(MinPeptideLength: 2);
             MetaMorpheusTask task = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(MinPeptideLength:2),
-                    
-                    ScoreCutoff = 1,
-                    DeconvolutionIntensityRatio = 999,
-                    DeconvolutionMassTolerance = new PpmTolerance(50),
-                },
+                
+                CommonParameters = new CommonParameters(DigestionParams:dp , ScoreCutoff: 1, DeconvolutionIntensityRatio: 999, deconMassTol: 50),
+                
                 SearchParameters = new SearchParameters
                 {
                     DecoyType = DecoyType.None,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                 }
+                
             };
-
+            
             string xmlName = "MakeSureFdrDoesntSkip.xml";
 
             #region Generate protein and write to file
@@ -263,6 +238,7 @@ namespace Test
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
+               
                 var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
 
                 PeptideWithSetModifications targetGood = targetDigested.First();
@@ -313,16 +289,8 @@ namespace Test
                 GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
-                    CommonParameters = new CommonParameters
-                    {
-                        ConserveMemory = false,
-                        DigestionParams = new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                        ListOfModsVariable = new List<(string, string)>(),
-                        ListOfModsFixed = new List<(string, string)>(),
-                        ScoreCutoff = 1,
-                        PrecursorMassTolerance = new AbsoluteTolerance(1)
-                    },
-
+                    CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), ListOfModsVariable: new List<(string, string)>(), ListOfModsFixed: new List<(string, string)>(), ScoreCutoff: 1, preMassTol:1),
+                    
                     GptmdParameters = new GptmdParameters
                     {
                         ListOfModsGptmd = new List<(string, string)> { ("okType", "ok") },
@@ -377,11 +345,9 @@ namespace Test
 
             SearchTask testPeptides = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
-                    DigestionParams = new DigestionParams(MinPeptideLength:5)
-                },
+                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5)),
+                 //ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
+               
                 SearchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,

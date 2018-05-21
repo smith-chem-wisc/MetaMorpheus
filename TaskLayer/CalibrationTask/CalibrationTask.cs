@@ -30,16 +30,8 @@ namespace TaskLayer
 
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(25),
-                PrecursorMassTolerance = new PpmTolerance(15),
-                TrimMs1Peaks = false,
-                TrimMsMsPeaks = false,
-                DoPrecursorDeconvolution = false,
-                ScoreCutoff = 10
-            };
-
+            CommonParameters = new CommonParameters(prodMassTol: 25, preMassTol: 15, TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
+           
             CalibrationParameters = new CalibrationParameters();
         }
 
@@ -59,7 +51,7 @@ namespace TaskLayer
             Status("Loading modifications...", new List<string> { taskId });
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-            List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
+            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
@@ -101,12 +93,10 @@ namespace TaskLayer
             };
 
             object lock1 = new object();
-
-            ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
-
+                        
             var myFileManager = new MyFileManager(true);
-
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+                        
+            for( int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
@@ -141,23 +131,18 @@ namespace TaskLayer
                         break;
                     }
 
-                    // not enough datapoints seen; open the tolerance and try again
-                    var newParameters = ((CommonParameters)CommonParameters).Clone();
-
+                   
                     if (i == 1) // failed round 1
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(20);
-                        newParameters.ProductMassTolerance = new PpmTolerance(50);
+                        CommonParameters CommonParameters = new CommonParameters( preMassTol:20 , prodMassTol:50, TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
                     }
                     else if (i == 2) // failed round 2
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(30);
-                        newParameters.ProductMassTolerance = new PpmTolerance(100);
+                        CommonParameters CommonParameters = new CommonParameters(preMassTol: 30, prodMassTol: 100, TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
                     }
                     else if (i == 3) // failed round 3
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(40);
-                        newParameters.ProductMassTolerance = new PpmTolerance(150);
+                        CommonParameters CommonParameters = new CommonParameters(preMassTol: 40, prodMassTol: 150, TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
                     }
                     else // failed round 4
                     {
@@ -174,10 +159,7 @@ namespace TaskLayer
                             Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + numRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
                         }
                         FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        return;
                     }
-
-                    CommonParameters = newParameters;
 
                     Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
                     Math.Round(CommonParameters.PrecursorMassTolerance.Value, 2) + " ppm precursor and " +
@@ -241,7 +223,7 @@ namespace TaskLayer
                 MyTaskResults.newFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
-            });
+            }
 
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));

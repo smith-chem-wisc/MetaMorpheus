@@ -21,12 +21,8 @@ namespace Test
         {
             SearchTask st = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams(MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    ConserveMemory = false,
-                },
+                CommonParameters = new CommonParameters(ScoreCutoff: 1, DigestionParams: new DigestionParams(MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+               
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
@@ -81,12 +77,8 @@ namespace Test
         {
             SearchTask st = new SearchTask()
             {
-                CommonParameters = new CommonParameters
-                {
-                    ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    ConserveMemory = false,
-                },
+                CommonParameters = new CommonParameters(ScoreCutoff: 1, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
