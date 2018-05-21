@@ -37,7 +37,7 @@
                         <Image Source="mail.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Smith Lab YouTube Help Videos" Click="MenuItem_YouTube" >
+                <MenuItem Header="MetaMorpheus YouTube Help Videos" Click="MenuItem_YouTube" >
                     <MenuItem.Icon>
                         <Image Source="youtube-256.bmp"/>
                     </MenuItem.Icon>
