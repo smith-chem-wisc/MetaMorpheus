@@ -24,5 +24,14 @@ namespace MetaMorpheusGUI
         public string DisplayName { get; set; }
 
         #endregion Public Properties
+
+        #region Public Methods
+
+        public PreRunTask Clone()
+        {
+            return (PreRunTask)this.MemberwiseClone();
+        }
+
+        #endregion Public Methods
     }
 }

@@ -32,6 +32,19 @@ namespace EngineLayer
                 MetaMorpheusVersion = "Not a release version.";
 #endif
             }
+            else
+            {
+                // as of 0.0.277, AppVeyor appends the build number 
+                // this is intentional; it's to avoid conflicting AppVeyor build numbers
+                // trim the build number off the version number for displaying/checking versions, etc
+                var foundIndexes = new List<int>();
+                for (int i = 0; i < MetaMorpheusVersion.Length; i++)
+                {
+                    if (MetaMorpheusVersion[i] == '.')
+                        foundIndexes.Add(i);
+                }
+                MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
+            }
 
             #endregion Determine MetaMorpheusVersion
 
@@ -78,7 +91,7 @@ namespace EngineLayer
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-        public static IReadOnlyDictionary<string, Protease> ProteaseDictionary { get; }
+        public static Dictionary<string, Protease> ProteaseDictionary;
         public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
 
@@ -102,6 +115,14 @@ namespace EngineLayer
                     allModTypesKnown.Add(ye.modificationType);
                 }
             }
+        }
+
+        public static string CheckLengthOfOutput(string psmString)
+        {
+            if (psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs)
+                return "Output too long for Excel";
+            else
+                return psmString;
         }
 
         #endregion Public Methods

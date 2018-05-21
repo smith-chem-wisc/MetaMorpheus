@@ -45,6 +45,8 @@ namespace TaskLayer
 
         public static event EventHandler<StringListEventArgs> NewSpectrasHandler;
 
+        public static event EventHandler<StringListEventArgs> NewFileSpecificTomlHandler;
+
         public static event EventHandler<StringEventArgs> WarnHandler;
 
         #endregion Public Events
@@ -59,7 +61,7 @@ namespace TaskLayer
 
             if (!currentRawDataFilenameList.Any())
             {
-                Warn("No data files selected");
+                Warn("No spectra files selected");
                 FinishedAllTasks(null);
                 return;
             }
@@ -74,13 +76,13 @@ namespace TaskLayer
             {
                 if (!currentRawDataFilenameList.Any())
                 {
-                    Warn("Cannot proceed. No data files selected.");
+                    Warn("Cannot proceed. No spectra files selected.");
                     FinishedAllTasks(outputFolder);
                     return;
                 }
                 if (!currentXmlDbFilenameList.Any())
                 {
-                    Warn("Cannot proceed. No xml files selected.");
+                    Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(outputFolder);
                     return;
                 }
@@ -103,6 +105,10 @@ namespace TaskLayer
                 {
                     currentRawDataFilenameList = myTaskResults.newSpectra;
                     NewSpectras(myTaskResults.newSpectra);
+                }
+                if(myTaskResults.newFileSpecificTomls != null)
+                {
+                    NewFileSpecificToml(myTaskResults.newFileSpecificTomls);
                 }
                 allResultsText.AppendLine(Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + myTaskResults.ToString());
             }
@@ -140,6 +146,11 @@ namespace TaskLayer
         private void NewSpectras(List<string> newSpectra)
         {
             NewSpectrasHandler?.Invoke(this, new StringListEventArgs(newSpectra));
+        }
+
+        private void NewFileSpecificToml(List<string> newFileSpecificTomls)
+        {
+            NewFileSpecificTomlHandler?.Invoke(this, new StringListEventArgs(newFileSpecificTomls));
         }
 
         private void NewDBs(List<DbForTask> newDatabases)

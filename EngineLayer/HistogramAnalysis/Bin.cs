@@ -12,7 +12,7 @@ namespace EngineLayer.HistogramAnalysis
 
         public string AA = "-";
         public Dictionary<char, int> residueCount;
-        public Dictionary<string, Tuple<string, string, Psm>> uniquePSMs;
+        public Dictionary<string, Tuple<string, string, PeptideSpectralMatch>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
 
         #endregion Public Fields
@@ -22,7 +22,7 @@ namespace EngineLayer.HistogramAnalysis
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            uniquePSMs = new Dictionary<string, Tuple<string, string, Psm>>();
+            uniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
         }
 
         #endregion Public Constructors
@@ -127,7 +127,7 @@ namespace EngineLayer.HistogramAnalysis
             foreach (var hm in ok)
                 if (Math.Abs(hm.Item1 + hm.Item2 - MassShift) <= v && CountTarget < hm.Item3)
                     okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture) + " and " + Math.Max(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture));
-            Combos = string.Join(" or ", okk);
+            Combos = string.Join("|", okk);
         }
 
         public double ComputeZ(double v)
@@ -143,7 +143,7 @@ namespace EngineLayer.HistogramAnalysis
                 if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
                     ok.Add(hm.id);
             }
-            UniprotID = string.Join(" or ", ok);
+            UniprotID = string.Join("|", ok);
         }
 
         public void IdentifyAA(double v)
@@ -169,7 +169,7 @@ namespace EngineLayer.HistogramAnalysis
                     }
                 }
             }
-            AA = string.Join(" or ", ok);
+            AA = string.Join("|", ok);
         }
 
         public void IdentifyUnimodBins(double v)
@@ -187,16 +187,16 @@ namespace EngineLayer.HistogramAnalysis
                     okDiff.Add(theMod.monoisotopicMass - MassShift);
                 }
             }
-            UnimodId = string.Join(" or ", ok);
-            UnimodFormulas = string.Join(" or ", okformula);
-            UnimodDiffs = string.Join(" or ", okDiff);
+            UnimodId = string.Join("|", ok);
+            UnimodFormulas = string.Join("|", okformula);
+            UnimodDiffs = string.Join("|", okDiff);
         }
 
         #endregion Public Methods
 
         #region Internal Methods
 
-        internal void Add(Psm ok)
+        internal void Add(PeptideSpectralMatch ok)
         {
             if (ok.FullSequence != null)
             {
@@ -204,10 +204,10 @@ namespace EngineLayer.HistogramAnalysis
                 {
                     var current = uniquePSMs[ok.FullSequence];
                     if (current.Item3.Score < ok.Score)
-                        uniquePSMs[ok.FullSequence] = new Tuple<string, string, Psm>(ok.BaseSequence, ok.FullSequence, ok);
+                        uniquePSMs[ok.FullSequence] = new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok);
                 }
                 else
-                    uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, Psm>(ok.BaseSequence, ok.FullSequence, ok));
+                    uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
             }
         }
 

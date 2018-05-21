@@ -21,15 +21,11 @@ namespace Test
         [Test]
         public static void TestAnalysisEngineTests()
         {
+            Protease protease = new Protease("Custom Protease5", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams
-                {
-                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
-                    MaxMissedCleavages = 0,
-                    MaxModificationIsoforms = 1042,
-                },
+                DigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 1042),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 ProductMassTolerance = new PpmTolerance(10),
@@ -79,16 +75,16 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null, "scan=2"), 2 + 132.040, 1, null);
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null, "scan=3"), 3, 1, null);
 
-            Psm matchA = new Psm(compactPeptide1, 0, 0, 0, scanA);
-            Psm matchB = new Psm(compactPeptide2, 0, 0, 0, scanB);
-            Psm matchC = new Psm(compactPeptide3, 0, 0, 0, scanC);
+            PeptideSpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 0, 0, scanA, CommonParameters.DigestionParams);
+            PeptideSpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 0, 0, scanB, CommonParameters.DigestionParams);
+            PeptideSpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 0, 0, scanC, CommonParameters.DigestionParams);
 
-            var newPsms = new List<Psm> { matchA, matchB, matchC };
+            var newPsms = new List<PeptideSpectralMatch> { matchA, matchB, matchC };
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
             var searchMode = new SinglePpmAroundZeroSearchMode(5);
-            Action<List<Psm>, string, List<string>> action2 = (List<Psm> l, string s, List<string> sdf) => {; };
+            Action<List<PeptideSpectralMatch>, string, List<string>> action2 = (List<PeptideSpectralMatch> l, string s, List<string> sdf) => {; };
 
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
@@ -103,7 +99,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
@@ -112,7 +108,7 @@ namespace Test
                 if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, false, new List<string> { "ff" });
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string> { "ff" });
 
             engine.Run();
         }

@@ -38,22 +38,19 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
+            Protease protease = new Protease("Custom Protease3", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams
-                {
-                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
-                    MaxMissedCleavages = 0
-                },
+                DigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>()).Run();
-            Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, true, CommonParameters, CommonParameters.ProductMassTolerance, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
+            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, true, CommonParameters, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
             double scoreF = allPsmsArray[0].Score;
@@ -97,20 +94,20 @@ namespace Test
 
             SearchParameters SearchParameters = new SearchParameters
             {
-                MassDiffAcceptorType = MassDiffAcceptorType.Exact
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                SearchTarget = true,
             };
+            Protease protease = new Protease("singleN4", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
             {
                 PrecursorMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams
-                {
-                    Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
-                },
+                DigestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength:1),
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 
+                new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -124,11 +121,11 @@ namespace Test
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
-            Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             SearchParameters.AddCompIons = true;
             new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
@@ -137,6 +134,8 @@ namespace Test
 
             // Single ms2 scan
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray[0] != null);
+            Assert.That(allPsmsArray2[0] != null);
 
             Assert.IsTrue(allPsmsArray2[0].Score > 1);
 

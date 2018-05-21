@@ -17,108 +17,199 @@ namespace Test
         [Test]
         public static void ParsimonyVariableTreatAsUnique()
         {
-            bool localizeable = false;
-            var hah = GetInfo(localizeable);
-
-            var newPsms = hah.Item1;
-            var compactPeptideToProteinPeptideMatching = hah.Item2;
-            var massDiffAcceptors = hah.Item3;
-            var noOneHitWonders = hah.Item4;
-            var compactPeptide1 = hah.Item5;
-            var compactPeptide2 = hah.Item6;
-
-            Assert.AreEqual(3, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
             bool modPeptidesAreUnique = true;
+
+            // set up mods
+            var modDictionary = new Dictionary<int, List<Modification>>();
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
+            var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
+
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
+
+            Protease protease = new Protease("kprotease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            // modified version of protein
+            var protein1 = new Protein("PEPTIDEM", "accession1");
+            // unmodified version of protein
+            var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
+
+            var pep1 = protein1.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
+
+            // check to make sure mod is present
+            Assert.That(pep1.Sequence.Equals(pep2.Sequence));
+            Assert.That(pep1.NumMods == 1);
+            Assert.That(pep2.NumMods == 1);
+
+            // build the dictionary for input to parsimony
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            var cp1 = pep1.CompactPeptide(terminusType);
+            var cp2 = pep2.CompactPeptide(terminusType);
+            Assert.That(cp1.Equals(cp2));
+
+            compactPeptideToProteinPeptideMatching.Add(pep1.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep1 });
+            Assert.That(compactPeptideToProteinPeptideMatching.ContainsKey(cp2));
+            compactPeptideToProteinPeptideMatching[cp2].Add(pep2);
+
+            // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
-            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
+            // check to make sure both peptides are associated with both proteins
+            Assert.That(compactPeptideToProteinPeptideMatching.Count == 1);
+            Assert.That(compactPeptideToProteinPeptideMatching.First().Value.Count == 2);
+            var seq = compactPeptideToProteinPeptideMatching.First().Value.First().Sequence;
+            foreach (var sequence in compactPeptideToProteinPeptideMatching.First().Value)
+            {
+                Assert.That(sequence.Sequence.Equals(seq));
+            }
         }
 
         [Test]
         public static void ParsimonyVariableDontTreatAsUnique()
         {
-            bool localizeable = false;
-            var hah = GetInfo(localizeable);
-
-            var newPsms = hah.Item1;
-            var compactPeptideToProteinPeptideMatching = hah.Item2;
-            var massDiffAcceptors = hah.Item3;
-            var noOneHitWonders = hah.Item4;
-            var compactPeptide1 = hah.Item5;
-            var compactPeptide2 = hah.Item6;
-
-            Assert.AreEqual(3, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
             bool modPeptidesAreUnique = false;
+
+            // set up mods
+            var modDictionary = new Dictionary<int, List<Modification>>();
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
+            var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
+            Protease protease = new Protease("k Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
+
+            // modified version of protein
+            var protein1 = new Protein("PEPTIDEM", "accession1");
+            // unmodified version of protein
+            var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
+
+            var pep1 = protein1.Digest(new DigestionParams(protease: "k Protease", MinPeptideLength:1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease: "k Protease", MinPeptideLength:1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
+
+            // check to make sure mod is present
+            Assert.That(pep1.Sequence.Equals(pep2.Sequence));
+            Assert.That(pep1.NumMods == 1);
+            Assert.That(pep2.NumMods == 1);
+
+            // build the dictionary for input to parsimony
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            var cp1 = pep1.CompactPeptide(terminusType);
+            var cp2 = pep2.CompactPeptide(terminusType);
+            Assert.That(cp1.Equals(cp2));
+
+            compactPeptideToProteinPeptideMatching.Add(pep1.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep1 });
+            Assert.That(compactPeptideToProteinPeptideMatching.ContainsKey(cp2));
+            compactPeptideToProteinPeptideMatching[cp2].Add(pep2);
+
+            // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
-            Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
+            // check to make sure both peptides are associated with both proteins
+            Assert.That(compactPeptideToProteinPeptideMatching.Count == 1);
+            Assert.That(compactPeptideToProteinPeptideMatching.First().Value.Count == 2);
+            var seq = compactPeptideToProteinPeptideMatching.First().Value.First().Sequence;
+            foreach (var sequence in compactPeptideToProteinPeptideMatching.First().Value)
+            {
+                Assert.That(sequence.Sequence.Equals(seq));
+            }
         }
 
         [Test]
         public static void ParsimonyLocalizeableTreatAsUnique()
         {
-            bool localizeable = true;
-            var hah = GetInfo(localizeable);
-
-            var newPsms = hah.Item1;
-            var compactPeptideToProteinPeptideMatching = hah.Item2;
-            var noOneHitWonders = hah.Item4;
-            var compactPeptide1 = hah.Item5;
-            var compactPeptide2 = hah.Item6;
-
-            Assert.AreEqual(3, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
             bool modPeptidesAreUnique = true;
+
+            // set up mods
+            var modDictionary = new Dictionary<int, List<Modification>>();
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
+            var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
+
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
+            Protease protease = new Protease("k protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+
+            // modified version of protein
+            var protein1 = new Protein("PEPTIDEM", "accession1");
+            // unmodified version of protein
+            var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
+
+            var pep1 = protein1.Digest(new DigestionParams (protease.Name,MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams (protease.Name, MinPeptideLength: 1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
+
+            // check to make sure mod is present
+            Assert.That(pep1.Sequence != pep2.Sequence);
+            Assert.That(pep1.NumMods == 1);
+            Assert.That(pep2.NumMods == 0);
+
+            // build the dictionary for input to parsimony
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            compactPeptideToProteinPeptideMatching.Add(pep1.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep1 });
+            compactPeptideToProteinPeptideMatching.Add(pep2.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep2 });
+
+            // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
-            Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
-            Assert.AreEqual(1, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
-            Assert.AreEqual(1, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
+            // check to make sure both peptides are NOT associated with both proteins
+            Assert.That(compactPeptideToProteinPeptideMatching.Count == 2);
+            foreach (var kvp in compactPeptideToProteinPeptideMatching)
+            {
+                Assert.That(kvp.Value.Count == 1);
+            }
         }
 
         [Test]
         public static void ParsimonyLocalizeableDontTreatAsUnique()
         {
-            bool localizeable = true;
-            var hah = GetInfo(localizeable);
-
-            var newPsms = hah.Item1;
-            var compactPeptideToProteinPeptideMatching = hah.Item2;
-            var massDiffAcceptors = hah.Item3;
-            var noOneHitWonders = hah.Item4;
-            var compactPeptide1 = hah.Item5;
-            var compactPeptide2 = hah.Item6;
-
-            Assert.AreEqual(3, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
             bool modPeptidesAreUnique = false;
+
+            // set up mods
+            var modDictionary = new Dictionary<int, List<Modification>>();
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
+            var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
+
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
+            Protease protease = new Protease("kProtease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+
+            // modified version of protein
+            var protein1 = new Protein("PEPTIDEM", "accession1");
+            // unmodified version of protein
+            var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
+
+            var pep1 = protein1.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength:1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease: protease.Name,MinPeptideLength:1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
+
+            // check to make sure mod is present
+            Assert.That(pep1.Sequence != pep2.Sequence);
+            Assert.That(pep1.NumMods == 1);
+            Assert.That(pep2.NumMods == 0);
+
+            // build the dictionary for input to parsimony
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            compactPeptideToProteinPeptideMatching.Add(pep1.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep1 });
+            compactPeptideToProteinPeptideMatching.Add(pep2.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep2 });
+
+            // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
-            Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
+            // check to make sure both peptides are associated with both proteins
+            Assert.That(compactPeptideToProteinPeptideMatching.Count == 2);
+            foreach (var kvp in compactPeptideToProteinPeptideMatching)
+            {
+                Assert.That(kvp.Value.Count == 2);
+                var seq = kvp.Value.First().Sequence;
 
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
+                foreach (var peptide in kvp.Value)
+                {
+                    Assert.That(peptide.Sequence.Equals(seq));
+                }
+            }
+            var test1 = compactPeptideToProteinPeptideMatching.First().Value.ToList();
+            Assert.That(test1[0].OneBasedStartResidueInProtein != test1[1].OneBasedStartResidueInProtein);
+            Assert.That(test1[0].OneBasedEndResidueInProtein != test1[1].OneBasedEndResidueInProtein);
         }
 
         [Test]
@@ -129,7 +220,7 @@ namespace Test
             Protein protein3 = new Protein("MTASIK", "protein3");
 
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
-            DigestionParams digestionParams = new DigestionParams();
+            DigestionParams digestionParams = new DigestionParams(MinPeptideLength:5);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var pep1 = protein1.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
             var pep2 = protein2.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
@@ -162,18 +253,11 @@ namespace Test
 
         #region Private Methods
 
-        private static Tuple<List<Psm>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
+        private static Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = null,
-                    MaxMissedCleavages = 0,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                    MaxModsForPeptide = 1,
-                    MaxModificationIsoforms = 2,
-                },
+                DigestionParams = new DigestionParams(MaxMissedCleavages:0, MinPeptideLength:1, MaxModificationIsoforms: 2, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, MaxModsForPeptides:1),
                 ScoreCutoff = 1
             };
 
@@ -228,13 +312,13 @@ namespace Test
             int scanIndex = 0;
             double score = 0;
             int notch = 0;
-            Psm psm1 = new Psm(compactPeptide1, notch, score, scanIndex, scan);
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(compactPeptide1, notch, score, scanIndex, scan, CommonParameters.DigestionParams);
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            Psm psm2 = new Psm(compactPeptide1, notch, score, scanIndex, scan);
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(compactPeptide1, notch, score, scanIndex, scan, CommonParameters.DigestionParams);
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            Psm psm3 = new Psm(compactPeptide2, notch, score, scanIndex, scan);
+            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(compactPeptide2, notch, score, scanIndex, scan, CommonParameters.DigestionParams);
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            var newPsms = new List<Psm>
+            var newPsms = new List<PeptideSpectralMatch>
             {
                 psm1,
                 psm2,
@@ -242,7 +326,8 @@ namespace Test
             };
 
             MassDiffAcceptor massDiffAcceptors = new SinglePpmAroundZeroSearchMode(5);
-            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 },
+                allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;
@@ -253,7 +338,7 @@ namespace Test
 
             bool noOneHitWonders = false;
 
-            return new Tuple<List<Psm>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase>
+            return new Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase>
             (
                 newPsms, compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );

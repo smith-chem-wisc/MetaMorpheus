@@ -10,6 +10,7 @@ namespace TaskLayer
 
         public XlSearchParameters()
         {
+            FragmentationType = FragmentaionType.MS2_HCD;
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSSO;
             CrosslinkSearchTop = false;
@@ -20,14 +21,19 @@ namespace TaskLayer
             UdXLkerShortMass = null;
             UdXLkerLongMass = null;
             UdXLkerTotalMass = null;
-            UdXLkerResidue = 'K';
+            UdXLkerLoopMass = null;
+            UdXLkerResidues = "K";
+            UdXLkerResidues2 = "K";
+            UdXLkerDeadendMassH2O = null;
+            UdXLkerDeadendMassNH2 = null;
+            UdXLkerDeadendMassTris = null;
             XlPrecusorMsTl = new PpmTolerance(10);
             XlBetaPrecusorMsTl = new PpmTolerance(10);
             XlQuench_H2O = true;
             XlQuench_NH2 = false;
             XlQuench_Tris = true;
 
-            XlOutAll = true;
+            XlOutAll = false;
             XlOutCrosslink = true;
             XlOutPercolator = false;
             XlOutPepXML = false;
@@ -40,6 +46,7 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public FragmentaionType FragmentationType { get; set; }
         public DecoyType DecoyType { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
 
@@ -52,7 +59,12 @@ namespace TaskLayer
         public double? UdXLkerTotalMass { get; set; }
         public double? UdXLkerShortMass { get; set; }
         public double? UdXLkerLongMass { get; set; }
-        public char UdXLkerResidue { get; set; }
+        public double? UdXLkerLoopMass { get; set; }
+        public string UdXLkerResidues { get; set; }
+        public string UdXLkerResidues2 { get; set; }
+        public double? UdXLkerDeadendMassH2O { get; set; }
+        public double? UdXLkerDeadendMassNH2 { get; set; }
+        public double? UdXLkerDeadendMassTris { get; set; }
         public Tolerance XlPrecusorMsTl { get; set; }
         public Tolerance XlBetaPrecusorMsTl { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }

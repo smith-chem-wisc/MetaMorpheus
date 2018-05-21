@@ -10,7 +10,7 @@ namespace EngineLayer.Localization
     {
         #region Private Fields
 
-        private readonly IEnumerable<Psm> allResultingIdentifications;
+        private readonly IEnumerable<PeptideSpectralMatch> allResultingIdentifications;
         private readonly List<ProductType> lp;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly Tolerance fragmentTolerance;
@@ -21,7 +21,7 @@ namespace EngineLayer.Localization
 
         #region Public Constructors
 
-        public LocalizationEngine(IEnumerable<Psm> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.lp = lp;

@@ -11,6 +11,7 @@ using IO.Thermo;
 #endif
 
 using MassSpectrometry;
+using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -47,89 +48,89 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            myTaskResults = new MyTaskResults(this)
-            {
-                newDatabases = new List<DbForTask>()
-            };
-            Status("Loading modifications...", new List<string> { taskId });
-
+            // load modifications
+            Status("Loading modifications...", taskId);
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
-
             List<ModificationWithMass> gptmdModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.modificationType, b.id))).ToList();
-
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
-            MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).GroupBy(b => Math.Round(b, 5)).Select(b => b.FirstOrDefault()).OrderBy(b => b), CommonParameters.PrecursorMassTolerance);
-
-            List<Psm> allPsms = new List<Psm>();
-
+            // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
-                ionTypes.Add(ProductType.B);
+                ionTypes.Add(ProductType.BnoB1ions);
             if (CommonParameters.YIons)
                 ionTypes.Add(ProductType.Y);
-            if (CommonParameters.CIons)
-                ionTypes.Add(ProductType.C);
             if (CommonParameters.ZdotIons)
                 ionTypes.Add(ProductType.Zdot);
+            if (CommonParameters.CIons)
+                ionTypes.Add(ProductType.C);
 
-            Status("Loading proteins...", new List<string> { taskId });
-            Dictionary<string, Modification> um = null;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, b.IsContaminant, out um)).ToList();
+            // load proteins
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
+
+            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
 
             var numRawFiles = currentRawFileList.Count;
 
-            proseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
-            }
-            else
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
-            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
+            // write prose settings
+            ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
+            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
+            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+                "maximum peptide length = unspecified; " :
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
+            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+            ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
+            ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
+            ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
+            ProseCreatedWhileRunning.Append("G-PTM-D modifications count = " + gptmdModifications.Count + "; ");
 
-            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
-            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
-            proseCreatedWhileRunning.Append("G-PTM-D modifications count = " + gptmdModifications.Count + "; ");
-            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + searchMode.ToProseString() + "}; ");
-            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
-            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+            // temporary search type for writing prose
+            // the actual search type is technically file-specific but we don't allow file-specific notches, so it's safe to do this
+            MassDiffAcceptor tempSearchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
+            ProseCreatedWhileRunning.Append("precursor mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
 
+            ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+
+            // start the G-PTM-D task
             Status("Running G-PTM-D...", new List<string> { taskId });
-
-            HashSet<IDigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
+            MyTaskResults = new MyTaskResults(this)
+            {
+                newDatabases = new List<DbForTask>()
+            };
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
 
             MyFileManager myFileManager = new MyFileManager(true);
 
             object lock1 = new object();
             object lock2 = new object();
-            ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+            ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
+
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+
+                // mark the file as in-progress
+                StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
-                Psm[] allPsmsArray = new Psm[arrayOfMs2ScansSortedByMass.Length];
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, searchMode, false, combinedParams, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, searchMode, false, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
                 lock (lock2)
                 {
                     allPsms.AddRange(allPsmsArray);
@@ -152,41 +153,73 @@ namespace TaskLayer
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-            new FdrAnalysisEngine(allPsms, searchMode.NumNotches, false, new List<string> { taskId }).Run();
+            new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, new List<string> { taskId }).Run();
 
-            var writtenFile = Path.Combine(OutputFolder, "PSMs.psmtsv");
+            var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
             SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
 
-            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, CommonParameters.PrecursorMassTolerance, new List<string> { taskId }).Run();
+            // get file-specific precursor mass tolerances for the GPTMD engine
+            var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
+            for (int i = 0; i < currentRawFileList.Count; i++)
+            {
+                string filePath = currentRawFileList[i];
+                Tolerance fileTolerance = CommonParameters.PrecursorMassTolerance;
+                if (fileSettingsList[i] != null && fileSettingsList[i].PrecursorMassTolerance != null)
+                {
+                    fileTolerance = fileSettingsList[i].PrecursorMassTolerance;
+                }
+                filePathToPrecursorMassTolerance.Add(filePath, fileTolerance);
+            }
 
+            // run GPTMD engine
+            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, new List<string> { taskId }).Run();
+
+            // write GPTMD databases
             if (dbFilenameList.Any(b => !b.IsContaminant))
             {
-                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
+                List<string> databaseNames = new List<string>();
+                foreach (var nonContaminantDb in dbFilenameList.Where(p => !p.IsContaminant))
+                {
+                    var dbName = Path.GetFileNameWithoutExtension(nonContaminantDb.FilePath);
+                    var theExtension = Path.GetExtension(nonContaminantDb.FilePath).ToLowerInvariant();
+                    bool compressed = theExtension.EndsWith("gz");
+                    databaseNames.Add(compressed ? Path.GetFileNameWithoutExtension(dbName) : dbName);
+                }
+                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
                 SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
-                myTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
-                myTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
-                myTaskResults.AddNiceText("Mods types and counts:");
-                myTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                MyTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+                MyTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
+                MyTaskResults.AddNiceText("Mods types and counts:");
+                MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             if (dbFilenameList.Any(b => b.IsContaminant))
             {
-                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
+                // do NOT use this code (Path.GetFilenameWithoutExtension) because GPTMD on .xml.gz will result in .xml.xml file type being written
+                //string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
+                List<string> databaseNames = new List<string>();
+                foreach (var contaminantDb in dbFilenameList.Where(p => p.IsContaminant))
+                {
+                    var dbName = Path.GetFileName(contaminantDb.FilePath);
+                    int indexOfFirstDot = dbName.IndexOf(".");
+                    databaseNames.Add(dbName.Substring(0, indexOfFirstDot));
+                }
+                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
                 SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
-                myTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
-                myTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
-                myTaskResults.AddNiceText("Mods types and counts:");
-                myTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                MyTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
+                MyTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
+                MyTaskResults.AddNiceText("Mods types and counts:");
+                MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
-            return myTaskResults;
+            return MyTaskResults;
         }
 
         #endregion Protected Methods
@@ -209,7 +242,18 @@ namespace TaskLayer
             }
         }
 
-        private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
+        private static IEnumerable<double> GetAcceptableMassShifts(List<ModificationWithMass> fixedMods, List<ModificationWithMass> variableMods, List<ModificationWithMass> gptmdMods, IEnumerable<Tuple<double, double>> combos)
+        {
+            IEnumerable<double> gptmdNotches = gptmdMods.Select(b => b.monoisotopicMass);
+            IEnumerable<double> gptmdMinusOtherModsNotches = GetObservedMasses(variableMods.Concat(fixedMods), gptmdMods);
+            IEnumerable<double> multipleGptmdNotches = combos.Select(b => b.Item1 + b.Item2);
+            IEnumerable<double> zeroNotch = new List<double> { 0 };
+
+            IEnumerable<double> allNotches = gptmdNotches.Concat(gptmdMinusOtherModsNotches).Concat(multipleGptmdNotches).Concat(zeroNotch);
+            return allNotches.GroupBy(b => Math.Round(b, 5)).Select(b => b.FirstOrDefault()).OrderBy(b => b);
+        }
+
+        private static IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
         {
             foreach (var modOnPeptide in enumerable)
             {

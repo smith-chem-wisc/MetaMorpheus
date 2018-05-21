@@ -8,13 +8,13 @@ namespace EngineLayer.ModificationAnalysis
     {
         #region Private Fields
 
-        private readonly List<Psm> newPsms;
+        private readonly List<PeptideSpectralMatch> newPsms;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModificationAnalysisEngine(List<Psm> newPsms, List<string> nestedIds) : base(nestedIds)
+        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
         }

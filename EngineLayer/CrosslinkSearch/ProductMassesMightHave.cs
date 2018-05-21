@@ -21,6 +21,7 @@
         public double[] ProductMz { get; set; }
         public string[] ProductName { get; set; }
         public int XlPos { get; set; }
+        public int XlPos2 { get; set; }
 
         #endregion Public Properties
     }

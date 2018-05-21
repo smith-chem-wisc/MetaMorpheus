@@ -53,7 +53,7 @@ namespace EngineLayer.Neo
         public static void FindAmbiguity(List<NeoPsm> candidates, List<Protein> theoreticalProteins, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
             PopulateSequenceLookUpDictionaries(databaseFileName, theoreticalProteins);
-            Ms2ScanWithSpecificMass[] indexedSpectra = new Ms2ScanWithSpecificMass[spectra.Max(x => x.OneBasedScanNumber)+1];
+            Ms2ScanWithSpecificMass[] indexedSpectra = new Ms2ScanWithSpecificMass[spectra.Max(x => x.OneBasedScanNumber) + 1];
             foreach (Ms2ScanWithSpecificMass scan in spectra)
                 indexedSpectra[scan.OneBasedScanNumber] = scan;
             for (int i = 0; i < candidates.Count(); i++) //must be mutable while iterating
@@ -1066,18 +1066,18 @@ namespace EngineLayer.Neo
                 string[] index = File.ReadAllLines(filename);
                 Parallel.ForEach(index, s =>
                 {
-                string[] line = s.Replace("_;", ";").Split(';').ToArray();
-                string key = line[0];
-                List<string> nList = line[1].Split('_').ToList();
-                List<string> cList = line[2].Split('_').ToList();
-                if (nList.Count > 1 || nList[0].Length != 0)
-                {
-                    for (int i = 0; i < nList.Count; i++)
-                        nList[i] = key + nList[i];
+                    string[] line = s.Replace("_;", ";").Split(';').ToArray();
+                    string key = line[0];
+                    List<string> nList = line[1].Split('_').ToList();
+                    List<string> cList = line[2].Split('_').ToList();
+                    if (nList.Count > 1 || nList[0].Length != 0)
+                    {
+                        for (int i = 0; i < nList.Count; i++)
+                            nList[i] = key + nList[i];
 
-                    List<Protein> prots = new List<Protein>();
+                        List<Protein> prots = new List<Protein>();
                         string[] accessions = line[3].Split('|').ToArray();
-                        for(int i=0; i<accessions.Length-1; i++)
+                        for (int i = 0; i < accessions.Length - 1; i++)
                             prots.Add(idToSequence[accessions[i]]);
                         lock (protDictionary)
                         {
