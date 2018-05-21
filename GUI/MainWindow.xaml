@@ -22,7 +22,7 @@
                         <Image Source="update.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" >
+                <MenuItem Header="Open MetaMorpheus Wiki Page" Click="MenuItem_Click" >
                     <MenuItem.Icon>
                         <Image Source="wiki.bmp"/>
                     </MenuItem.Icon>
@@ -40,6 +40,11 @@
                 <MenuItem Header="MetaMorpheus YouTube Help Videos" Click="MenuItem_YouTube" >
                     <MenuItem.Icon>
                         <Image Source="youtube-256.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="News in Proteomics Research" Click="MenuItem_ProteomicsNewsBlog" >
+                    <MenuItem.Icon>
+                        <Image Source="Blogger.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>

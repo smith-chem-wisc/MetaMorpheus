@@ -1204,6 +1204,11 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
         }
 
+        private void MenuItem_ProteomicsNewsBlog(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://proteomicsnews.blogspot.com/");
+        }
+
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)
         {
             var globalSettingsDialog = new GlobalSettingsWindow();
