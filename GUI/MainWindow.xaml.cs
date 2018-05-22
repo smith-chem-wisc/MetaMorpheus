@@ -550,7 +550,7 @@ namespace MetaMorpheusGUI
         {
             PreRunTask te = new PreRunTask(ye);
             staticTasksObservableCollection.Add(te);
-            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParameters.TaskDescriptor;
+            staticTasksObservableCollection.Last().DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParams.TaskDescriptor;
         }
 
         // handles double-clicking on a data grid row
@@ -599,7 +599,7 @@ namespace MetaMorpheusGUI
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
             {
-                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor, staticTasksObservableCollection[i].metaMorpheusTask));
+                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParams.TaskDescriptor, staticTasksObservableCollection[i].metaMorpheusTask));
             }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
@@ -698,7 +698,7 @@ namespace MetaMorpheusGUI
                 // this exists so that when a task is deleted, the remaining tasks are renamed to keep the task numbers correct
                 for (int i = 0; i < staticTasksObservableCollection.Count; i++)
                 {
-                    string newName = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor;
+                    string newName = "Task" + (i + 1) + "-" + staticTasksObservableCollection[i].metaMorpheusTask.CommonParams.TaskDescriptor;
                     staticTasksObservableCollection[i].DisplayName = newName;
                 }
                 tasksTreeView.Items.Refresh();
@@ -1052,7 +1052,7 @@ namespace MetaMorpheusGUI
 
                         searchDialog.ShowDialog();
 
-                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParameters.TaskDescriptor;
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParams.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
 
                         return;
@@ -1060,7 +1060,7 @@ namespace MetaMorpheusGUI
                     case MyTask.Gptmd:
                         var gptmddialog = new GptmdTaskWindow(preRunTask.metaMorpheusTask as GptmdTask);
                         gptmddialog.ShowDialog();
-                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + gptmddialog.TheTask.CommonParameters.TaskDescriptor;
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + gptmddialog.TheTask.CommonParams.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
 
                         return;
@@ -1068,21 +1068,21 @@ namespace MetaMorpheusGUI
                     case MyTask.Calibrate:
                         var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
-                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + calibratedialog.TheTask.CommonParameters.TaskDescriptor;
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + calibratedialog.TheTask.CommonParams.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
 
                     case MyTask.XLSearch:
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
-                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParams.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
 
                     case MyTask.Neo:
                         var Neodialog = new NeoSearchTaskWindow(preRunTask.metaMorpheusTask as NeoSearchTask);
                         Neodialog.ShowDialog();
-                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + Neodialog.TheTask.CommonParameters.TaskDescriptor;
+                        preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + Neodialog.TheTask.CommonParams.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
                 }

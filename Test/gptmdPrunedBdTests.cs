@@ -25,13 +25,13 @@ namespace Test
             //Create Search Task
             GptmdTask task1 = new GptmdTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParams = new CommonParameters(),
                 
             };
 
             SearchTask task2 = new SearchTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParams = new CommonParameters(),
                 
                 SearchParameters = new SearchParameters
                 {
@@ -81,7 +81,7 @@ namespace Test
                         {"ConnorModType", 1}
                     }
                 },
-                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5))
+                CommonParams = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5))
                 
             };
 
@@ -106,7 +106,7 @@ namespace Test
 
             //create modification lists
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
-                (b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+                (b => task1.CommonParams.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -142,7 +142,7 @@ namespace Test
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true,
                 DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<ModificationWithMass> { },
+            var digestedList = protein[0].Digest(task1.CommonParams.DigestionParams, new List<ModificationWithMass> { },
                 variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
 
@@ -191,7 +191,7 @@ namespace Test
                     SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
-                CommonParameters = new CommonParameters(ListOfModsFixed: listOfModsFixed)
+                CommonParams = new CommonParameters(ListOfModsFixed: listOfModsFixed)
             };
 
             task5.SearchParameters.ModsToWriteSelection["Mod"] = 0;
@@ -222,9 +222,9 @@ namespace Test
             #region Protein and Mod Creation
 
             //create modification lists
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParams.ListOfModsVariable.Contains
             ((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsFixed.Contains
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParams.ListOfModsFixed.Contains
             ((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
@@ -283,7 +283,7 @@ namespace Test
 
             //now create MZML data
             var protein = ProteinDbLoader.LoadProteinXML(xmlName2, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var digestedList = protein[0].Digest(task5.CommonParams.DigestionParams, fixedModifications, variableModifications).ToList();
 
             //Set Peptide with 1 mod at position 3
             PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
@@ -306,7 +306,7 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
-            var Dlist = proteins[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var Dlist = proteins[0].Digest(task5.CommonParams.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(Dlist[0].numFixedMods, 1);
 
             //check length

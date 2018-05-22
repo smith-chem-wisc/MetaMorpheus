@@ -27,7 +27,7 @@ namespace Test
                     DecoyType = DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(ScoreCutoff:1, DigestionParams: new DigestionParams(MinPeptideLength: 2)),
+                CommonParams = new CommonParameters(ScoreCutoff:1, DigestionParams: new DigestionParams(MinPeptideLength: 2)),
             };
 
             string xmlName = "andguiaheow.xml";

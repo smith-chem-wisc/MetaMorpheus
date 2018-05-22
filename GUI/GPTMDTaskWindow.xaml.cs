@@ -69,27 +69,27 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GptmdTask task)
         {
-            missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
-            maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
+            missedCleavagesTextBox.Text = task.CommonParams.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParams.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            txtMinPeptideLength.Text = task.CommonParams.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
+            txtMaxPeptideLength.Text = task.CommonParams.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParams.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            proteaseComboBox.SelectedItem = task.CommonParams.DigestionParams.Protease;
+            maxModificationIsoformsTextBox.Text = task.CommonParams.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParams.DigestionParams.InitiatorMethionineBehavior;
 
-            productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            productMassToleranceTextBox.Text = task.CommonParams.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            productMassToleranceComboBox.SelectedIndex = task.CommonParams.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            precursorMassToleranceTextBox.Text = task.CommonParams.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceComboBox.SelectedIndex = task.CommonParams.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
 
-            bCheckBox.IsChecked = task.CommonParameters.BIons;
-            yCheckBox.IsChecked = task.CommonParameters.YIons;
-            cCheckBox.IsChecked = task.CommonParameters.CIons;
-            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
-            minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            bCheckBox.IsChecked = task.CommonParams.BIons;
+            yCheckBox.IsChecked = task.CommonParams.YIons;
+            cCheckBox.IsChecked = task.CommonParams.CIons;
+            zdotCheckBox.IsChecked = task.CommonParams.ZdotIons;
+            minScoreAllowed.Text = task.CommonParams.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
-            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
+            OutputFileNameTextBox.Text = task.CommonParams.TaskDescriptor;
 
-            foreach (var mod in task.CommonParameters.ListOfModsFixed)
+            foreach (var mod in task.CommonParams.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
@@ -111,7 +111,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            foreach (var mod in task.CommonParameters.ListOfModsVariable)
+            foreach (var mod in task.CommonParams.ListOfModsVariable)
             {
                 var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
@@ -335,7 +335,7 @@ namespace MetaMorpheusGUI
                 TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParams = CommonParamsToSave;
 
             DialogResult = true;
         }

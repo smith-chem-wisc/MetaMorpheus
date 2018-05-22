@@ -152,32 +152,32 @@ namespace MetaMorpheusGUI
             maxCisLengthTextBox.Text = task.NeoParameters.MaxDistanceAllowed.ToString();
             searchNormalCis.IsChecked = task.NeoParameters.NormalCis;
             searchReverseCis.IsChecked = task.NeoParameters.ReverseCis;
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            proteaseComboBox.SelectedItem = task.CommonParams.DigestionParams.Protease;
 
-            missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
-            maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            txtMaxModNum.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
-            if (task.CommonParameters.ProductMassTolerance != null)
+            missedCleavagesTextBox.Text = task.CommonParams.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            txtMinPeptideLength.Text = task.CommonParams.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
+            txtMaxPeptideLength.Text = task.CommonParams.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            proteaseComboBox.SelectedItem = task.CommonParams.DigestionParams.Protease;
+            maxModificationIsoformsTextBox.Text = task.CommonParams.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            txtMaxModNum.Text = task.CommonParams.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParams.DigestionParams.InitiatorMethionineBehavior;
+            if (task.CommonParams.ProductMassTolerance != null)
             {
-                productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+                productMassToleranceTextBox.Text = task.CommonParams.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             }
-            productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            if (task.CommonParameters.PrecursorMassTolerance != null)
+            productMassToleranceComboBox.SelectedIndex = task.CommonParams.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            if (task.CommonParams.PrecursorMassTolerance != null)
             {
-                precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+                precursorMassToleranceTextBox.Text = task.CommonParams.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             }
-            precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-            bCheckBox.IsChecked = task.CommonParameters.BIons;
-            yCheckBox.IsChecked = task.CommonParameters.YIons;
-            cCheckBox.IsChecked = task.CommonParameters.CIons;
-            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
-            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
+            precursorMassToleranceComboBox.SelectedIndex = task.CommonParams.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            bCheckBox.IsChecked = task.CommonParams.BIons;
+            yCheckBox.IsChecked = task.CommonParams.YIons;
+            cCheckBox.IsChecked = task.CommonParams.CIons;
+            zdotCheckBox.IsChecked = task.CommonParams.ZdotIons;
+            OutputFileNameTextBox.Text = task.CommonParams.TaskDescriptor;
 
-            foreach (var mod in task.CommonParameters.ListOfModsFixed)
+            foreach (var mod in task.CommonParams.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
@@ -199,7 +199,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            foreach (var mod in task.CommonParameters.ListOfModsVariable)
+            foreach (var mod in task.CommonParams.ListOfModsVariable)
             {
                 var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
@@ -384,7 +384,7 @@ namespace MetaMorpheusGUI
             
             
             TheTask.NeoParameters = neoParameters;
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParams = CommonParamsToSave;
 
             #endregion Save Parameters
 

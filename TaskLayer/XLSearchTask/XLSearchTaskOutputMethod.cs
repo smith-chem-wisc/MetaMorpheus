@@ -249,8 +249,8 @@ namespace TaskLayer
             _pepxml.summary_xml = items[0].FullFilePath + ".pep.xml";
 
             string proteaseC = ""; string proteaseNC = "";
-            foreach (var x in CommonParameters.DigestionParams.Protease.SequencesInducingCleavage) { proteaseC += x; }
-            foreach (var x in CommonParameters.DigestionParams.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
+            foreach (var x in CommonParams.DigestionParams.Protease.SequencesInducingCleavage) { proteaseC += x; }
+            foreach (var x in CommonParams.DigestionParams.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
 
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass().SelectCrosslinker(XlSearchParameters.CrosslinkerType);
 
@@ -275,14 +275,14 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker xl site", value = crosslinker.CrosslinkerModSites.ToString() });
 
                 para.Add(new pepXML.Generated.nameValueType { name = "Generate decoy proteins", value = XlSearchParameters.DecoyType.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "MaxMissed Cleavages", value = CommonParameters.DigestionParams.MaxMissedCleavages.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Protease", value = CommonParameters.DigestionParams.Protease.Name });
-                para.Add(new pepXML.Generated.nameValueType { name = "Initiator Methionine", value = CommonParameters.DigestionParams.InitiatorMethionineBehavior.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Max Modification Isoforms", value = CommonParameters.DigestionParams.MaxModificationIsoforms.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Min Peptide Len", value = CommonParameters.DigestionParams.MinPeptideLength.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + CommonParameters.BIons.ToString() + " Y " + CommonParameters.YIons.ToString() + " C " + CommonParameters.CIons.ToString() + " Z " + CommonParameters.ZdotIons.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "MaxMissed Cleavages", value = CommonParams.DigestionParams.MaxMissedCleavages.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Protease", value = CommonParams.DigestionParams.Protease.Name });
+                para.Add(new pepXML.Generated.nameValueType { name = "Initiator Methionine", value = CommonParams.DigestionParams.InitiatorMethionineBehavior.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Max Modification Isoforms", value = CommonParams.DigestionParams.MaxModificationIsoforms.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Min Peptide Len", value = CommonParams.DigestionParams.MinPeptideLength.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParams.DigestionParams.MaxPeptideLength.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParams.ProductMassTolerance.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + CommonParams.BIons.ToString() + " Y " + CommonParams.YIons.ToString() + " C " + CommonParams.CIons.ToString() + " Z " + CommonParams.ZdotIons.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Allowed Beta Precusor Mass Difference", value = XlSearchParameters.XlBetaPrecusorMsTl.ToString() });
                 foreach (var item in fixedModifications)
                 {
@@ -305,7 +305,7 @@ namespace TaskLayer
                  raw_data = ".mzML",
                  sample_enzyme = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzyme()
                  {
-                     name = CommonParameters.DigestionParams.Protease.Name,
+                     name = CommonParams.DigestionParams.Protease.Name,
                      specificity = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzymeSpecificity[1]
                      {
                          new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzymeSpecificity
@@ -333,8 +333,8 @@ namespace TaskLayer
                          },
                          enzymatic_search_constraint = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summaryEnzymatic_search_constraint
                          {
-                             enzyme = CommonParameters.DigestionParams.Protease.Name,
-                             max_num_internal_cleavages = CommonParameters.DigestionParams.MaxMissedCleavages.ToString(),
+                             enzyme = CommonParams.DigestionParams.Protease.Name,
+                             max_num_internal_cleavages = CommonParams.DigestionParams.MaxMissedCleavages.ToString(),
                              //min_number_termini = "2"
                          },
 

@@ -59,6 +59,23 @@ namespace EngineLayer
                 ^ MaxModsForPeptide.GetHashCode();
         }
 
+        public override string ToString()
+        {
+            string ret = "";
+
+            ret += "Protease = " + Protease.Name + ";";
+            ret += "MaxMissedCleavages = " + MaxMissedCleavages + ";";
+            ret += "MinPeptideLength = " + MinPeptideLength + ";";
+            ret += "MaxPeptideLength = " + MaxPeptideLength + ";";
+            ret += "MaxModificationIsoforms = " + MaxModificationIsoforms + ";";
+            ret += "InitiatorMethionineBehavior = " + InitiatorMethionineBehavior + ";";
+            ret += "MaxModsForPeptides = " + MaxModsForPeptide + ";";
+            ret += "SemiProteaseDigestion = " + SemiProteaseDigestion + ";";
+            ret += "TerminusTypeSemiProtease = " + TerminusTypeSemiProtease + ";";
+            
+            return ret;
+        }
+
         #endregion Public Methods
     }
 }

@@ -22,7 +22,7 @@ namespace TaskLayer
 
         public SearchTask() : base(MyTask.Search)
         {
-            CommonParameters = new CommonParameters();
+            CommonParams = new CommonParameters();
 
             SearchParameters = new SearchParameters();
         }
@@ -80,21 +80,21 @@ namespace TaskLayer
         {
             // load modifications
             Status("Loading modifications...", taskId);
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParams.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParams.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
-            if (CommonParameters.BIons && SearchParameters.AddCompIons)
+            if (CommonParams.BIons && SearchParameters.AddCompIons)
                 ionTypes.Add(ProductType.B);
-            else if (CommonParameters.BIons)
+            else if (CommonParams.BIons)
                 ionTypes.Add(ProductType.BnoB1ions);
-            if (CommonParameters.YIons)
+            if (CommonParams.YIons)
                 ionTypes.Add(ProductType.Y);
-            if (CommonParameters.ZdotIons)
+            if (CommonParams.ZdotIons)
                 ionTypes.Add(ProductType.Zdot);
-            if (CommonParameters.CIons)
+            if (CommonParams.CIons)
                 ionTypes.Add(ProductType.C);
 
             // load proteins
@@ -103,20 +103,20 @@ namespace TaskLayer
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
-            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
-            ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+            ProseCreatedWhileRunning.Append("protease = " + CommonParams.DigestionParams.Protease + "; ");
+            ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParams.DigestionParams.MaxMissedCleavages + "; ");
+            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParams.DigestionParams.MinPeptideLength + "; ");
+            ProseCreatedWhileRunning.Append(CommonParams.DigestionParams.MaxPeptideLength == int.MaxValue ?
                 "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+                "maximum peptide length = " + CommonParams.DigestionParams.MaxPeptideLength + "; ");
+            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParams.DigestionParams.InitiatorMethionineBehavior + "; ");
             ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
-            ProseCreatedWhileRunning.Append("max mods per peptide = " + CommonParameters.DigestionParams.MaxModsForPeptide + "; ");
-            ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
-            ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
-            ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
-            ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
+            ProseCreatedWhileRunning.Append("max mods per peptide = " + CommonParams.DigestionParams.MaxModsForPeptide + "; ");
+            ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParams.DigestionParams.MaxModificationIsoforms + "; ");
+            ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParams.PrecursorMassTolerance + "; ");
+            ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParams.ProductMassTolerance + "; ");
+            ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParams.ReportAllAmbiguity + ". ");
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             // start the search task
@@ -127,7 +127,7 @@ namespace TaskLayer
             
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParams, b));
             HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
 
             int completedFiles = 0;
@@ -145,7 +145,7 @@ namespace TaskLayer
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParams, fileSettingsList[spectraFileIndex]);
 
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -251,7 +251,7 @@ namespace TaskLayer
             parameters.SearchTaskResults = MyTaskResults;
             parameters.SearchTaskId = taskId;
             parameters.SearchParameters = SearchParameters;
-            parameters.CommonParameters = CommonParameters;
+            parameters.CommonParameters = CommonParams;
             parameters.ProteinList = proteinList;
             parameters.IonTypes = ionTypes;
             parameters.AllPsms = allPsms;

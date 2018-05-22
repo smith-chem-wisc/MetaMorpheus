@@ -29,7 +29,7 @@ namespace TaskLayer
 
         #region Public Fields
        
-        
+
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -44,10 +44,14 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<CommonParameters>(ct => ct
-                            .CreateInstance(() => new CommonParameters()))
-                        .ConfigureType<DigestionParams>(ct => ct
-                            .CreateInstance(() => new DigestionParams()))
+                        .ConfigureType<CommonParameters> (type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())
+                                .FromToml(tmlString => GetCommonParametersFromString(tmlString.Value))))
+                        .ConfigureType<DigestionParams>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())
+                                .FromToml(tmlString => GetDigestionParamsFromString(tmlString.Value)/*ProteaseDictionary[tmlString.Value]*/)))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t", custom))
@@ -104,7 +108,7 @@ namespace TaskLayer
 
         public MyTask TaskType { get; set; }
 
-        public CommonParameters CommonParameters { get; set; }
+        public CommonParameters CommonParams { get; set; }
 
         #endregion Public Properties
 
@@ -399,8 +403,202 @@ namespace TaskLayer
 
         #region Private Methods
 
+        private static CommonParameters GetCommonParametersFromString(string value)
+        {
+            string[] input = value.Split(';');
+            string[,] output = new string[input.Length, 2];
+            for (int i = 0; i < input.Length-1; i++)
+            {
+                
+                string a = input[i];
+                string[] temp = a.Split('=');
+                string key = temp[0];
+                string val = temp[1];
+               
+                output[i, 0] = key;
+                output[i, 1] = val;
+            }
+
+                            
+            bool BIons = Convert.ToBoolean(output[0, 1]);
+            bool YIons = Convert.ToBoolean(output[1, 1]);
+            bool ZdotIons = Convert.ToBoolean(output[2, 1]);
+            bool CIons = Convert.ToBoolean(output[3, 1]);
+            bool DoPrecursorDeconvolution = Convert.ToBoolean(output[4, 1]);
+            bool UseProvidedPrecursorInfo = Convert.ToBoolean(output[5, 1]);
+            double DeconvolutionIntensityRatio = Convert.ToDouble(output[6, 1]);
+            int DeconvolutionMaxAssumedChargeState = Convert.ToInt32(output[7, 1]);
+            bool ReportAllAmbiguity = Convert.ToBoolean(output[8, 1]);
+            bool CompIons = Convert.ToBoolean(output[9, 1]);
+            int TotalPartitions = Convert.ToInt32(output[10, 1]);
+            double ScoreCutoff = Convert.ToDouble(output[11, 1]);
+            int TopNpeaks = Convert.ToInt32(output[12, 1]);
+            double MinRatio = Convert.ToDouble(output[13, 1]);
+            bool TrimMs1Peaks = Convert.ToBoolean(output[14, 1]);
+            bool TrimMsMsPeaks = Convert.ToBoolean(output[15, 1]);
+            bool UseDeltaScore = Convert.ToBoolean(output[16, 1]);
+            bool CalculateEValue = Convert.ToBoolean(output[17, 1]);
+            double prodMassTol = Convert.ToDouble(output[18, 1]);
+            double preMassTol = Convert.ToDouble(output[19, 1]);
+            double deconMassTol = Convert.ToDouble(output[20, 1]);
+            int MaxThreadsToUsePerFile = Convert.ToInt32(output[21, 1]);
+
+            string protease = output[22, 1];
+            int MaxMissedCleavages = Convert.ToInt32(output[23, 1]);
+            int MinPeptideLength = Convert.ToInt32(output[24, 1]);
+            int MaxPeptideLength = Convert.ToInt32(output[25, 1]);
+            int MaxModificationIsoforms = Convert.ToInt32(output[26, 1]);
+            InitiatorMethionineBehavior InitiatorMethionineBehavior;
+            if (output[27, 1] == "InitiatorMethionineBehavior.Cleave")
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Cleave;
+            }
+            else if (output[27, 1] == "InitiatorMethionineBehavior.Retain")
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
+            }
+            else if (output[27, 1] == "InitiatorMethionineBehavior.Variable")
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+            }
+            else
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Undefined;
+            }
+            int MaxModsForPeptides = Convert.ToInt32(output[28, 1]);
+            bool SemiProteaseDigestion = Convert.ToBoolean(output[29, 1]);
+            //string term = ;
+            TerminusType TerminusTypeSemiProtease;
+            if (output[30, 1] == "TerminusType.N")
+            {
+                TerminusTypeSemiProtease = TerminusType.N;
+            }
+            else if (output[30, 1] == "TerminusType.C")
+            {
+                TerminusTypeSemiProtease = TerminusType.C;
+            }
+            else
+            {
+                TerminusTypeSemiProtease = TerminusType.None;
+            }
+            
+            DigestionParams DigestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior, MaxModsForPeptides: MaxModsForPeptides, SemiProteaseDigestion: SemiProteaseDigestion, TerminusTypeSemiProtease:TerminusTypeSemiProtease);
+            string listofModsVariable = output[31, 1];
+            string[] listContentVariable = listofModsVariable.Split(',');
+            string[,] listContentStringsVariable = new string[listContentVariable.Length, 2];
+            List<(string, string)> ListOfModsVariable = new List<(string, string)>();
+            for (int i = 0; i < listContentVariable.Length-1; i++)
+            {
+
+                string a = listContentVariable[i];
+                string[] temp = a.Split('/');
+                string key = temp[0];
+                string val = temp[1];
+
+                listContentStringsVariable[i, 0] = key;
+                listContentStringsVariable[i, 1] = val;
+            }
+
+            for (int i = 0; i < listContentVariable.Length-1; i++)
+            {
+                string string1 = listContentStringsVariable[i, 0];
+                string string2 = listContentStringsVariable[i, 1];
+                (string, string) item = (string1, string2);
+                ListOfModsVariable.Add(item);
+
+            }
+
+
+            string listofModsFixed = output[32, 1];
+            string[] listContentFixed = listofModsFixed.Split(',');
+            string[,] listContentStringsFixed = new string[listContentFixed.Length, 2];
+            List<(string, string)> ListOfModsFixed = new List<(string, string)>();
+
+            for (int i = 0; i < listContentFixed.Length-1; i++)
+            {
+
+                string a = listContentFixed[i];
+                string[] temp = a.Split('/');
+                string key = temp[0];
+                string val = temp[1];
+
+                listContentStringsFixed[i, 0] = key;
+                listContentStringsFixed[i, 1] = val;
+            }
+
+            
+            for (int i = 0; i < listContentFixed.Length-1; i++)
+            {
+                string string1 = listContentStringsFixed[i, 0];
+                string string2 = listContentStringsFixed[i, 1];
+                (string, string) item = (string1, string2);
+                ListOfModsFixed.Add(item);
+
+            }
+
+            return new CommonParameters(BIons: BIons , YIons: YIons, ZdotIons: ZdotIons, CIons: CIons, DoPrecursorDeconvolution: DoPrecursorDeconvolution, UseProvidedPrecursorInfo: UseProvidedPrecursorInfo, DeconvolutionIntensityRatio: DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState: DeconvolutionMaxAssumedChargeState, ReportAllAmbiguity: ReportAllAmbiguity, CompIons: CompIons , TotalPartitions: TotalPartitions , ScoreCutoff: ScoreCutoff, TopNpeaks: TopNpeaks, MinRatio: MinRatio, TrimMs1Peaks: TrimMs1Peaks, TrimMsMsPeaks: TrimMsMsPeaks, UseDeltaScore: UseDeltaScore, CalculateEValue: CalculateEValue, prodMassTol: prodMassTol, preMassTol: preMassTol , deconMassTol: deconMassTol, MaxThreadsToUsePerFile: MaxThreadsToUsePerFile , DigestionParams: DigestionParams, ListOfModsVariable: ListOfModsVariable , ListOfModsFixed: ListOfModsFixed);
+        }
+
+        private static DigestionParams GetDigestionParamsFromString(string value)
+        {
+            string[] input = value.Split(';');
+            string[,] output = new string[input.Length, 2];
+            for (int i = 0; i < input.Length - 1; i++)
+            {
+
+                string a = input[i];
+                string[] temp = a.Split('=');
+                string key = temp[0];
+                string val = temp[1];
+
+                output[i, 0] = key;
+                output[i, 1] = val;
+            }
+            string protease = output[21, 1];
+            int MaxMissedCleavages = Convert.ToInt32(output[22, 1]);
+            int MinPeptideLength = Convert.ToInt32(output[23, 1]);
+            int MaxPeptideLength = Convert.ToInt32(output[24, 1]);
+            int MaxModificationIsoforms = Convert.ToInt32(output[25, 1]);
+            InitiatorMethionineBehavior InitiatorMethionineBehavior;
+            if (output[26, 1] == "InitiatorMethionineBehavior.Cleave")
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Cleave;
+            }
+            else if (output[26, 1] == "InitiatorMethionineBehavior.Retain")
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
+            }
+            else if (output[26, 1] == "InitiatorMethionineBehavior.Variable")
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+            }
+            else
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Undefined;
+            }
+            int MaxModsForPeptides = Convert.ToInt32(output[27, 1]);
+            bool SemiProteaseDigestion = Convert.ToBoolean(output[28, 1]);
+            
+            TerminusType TerminusTypeSemiProtease;
+            if (output[29, 1] == "TerminusType.N")
+            {
+                TerminusTypeSemiProtease = TerminusType.N;
+            }
+            else if (output[29, 1] == "TerminusType.C")
+            {
+                TerminusTypeSemiProtease = TerminusType.C;
+            }
+            else
+            {
+                TerminusTypeSemiProtease = TerminusType.None;
+            }
+
+           return new DigestionParams(protease: protease, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior, MaxModsForPeptides: MaxModsForPeptides, SemiProteaseDigestion: SemiProteaseDigestion, TerminusTypeSemiProtease: TerminusTypeSemiProtease);
+        }
+
         private static List<string> GetModsTypesFromString(string value)
         {
+            Console.WriteLine(value);
             return value.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).ToList();
         }
 

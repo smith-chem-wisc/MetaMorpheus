@@ -28,7 +28,7 @@ namespace Test
             CalibrationTask task1 = new CalibrationTask
             {
                 
-                CommonParameters = new CommonParameters(DigestionParams:new DigestionParams(MaxMissedCleavages: 0,MinPeptideLength: 1,InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                CommonParams = new CommonParameters(DigestionParams:new DigestionParams(MaxMissedCleavages: 0,MinPeptideLength: 1,InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
                 
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -38,13 +38,13 @@ namespace Test
             };
             GptmdTask task2 = new GptmdTask
             { 
-                CommonParameters = new CommonParameters(),
+                CommonParams = new CommonParameters(),
             };
             
 
             SearchTask task3 = new SearchTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParams = new CommonParameters(),
                 
                 SearchParameters = new SearchParameters
                 {
@@ -56,7 +56,7 @@ namespace Test
 
             SearchTask task4 = new SearchTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParams = new CommonParameters(),
                 
                 SearchParameters = new SearchParameters
                 {
@@ -71,13 +71,13 @@ namespace Test
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParams.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParams.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.CommonParams.DigestionParams, fixedModifications, variableModifications).ToList();
 
             Assert.AreEqual(3, digestedList.Count);
 
@@ -89,7 +89,7 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
-            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParams.DigestionParams, fixedModifications, variableModifications).ToList();
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
@@ -119,7 +119,7 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters (DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), ListOfModsVariable : new List<(string, string)> { ("Common Variable", "Oxidation of M") }, ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") }, prodMassTol: 0.01),
+                CommonParams = new CommonParameters (DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), ListOfModsVariable : new List<(string, string)> { ("Common Variable", "Oxidation of M") }, ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") }, prodMassTol: 0.01),
                 
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -128,12 +128,12 @@ namespace Test
             };
             GptmdTask task2 = new GptmdTask
             {
-                CommonParameters = new CommonParameters (prodMassTol: 0.01),
+                CommonParams = new CommonParameters (prodMassTol: 0.01),
             };
 
             SearchTask task3 = new SearchTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParams = new CommonParameters(),
                 
                 SearchParameters = new SearchParameters
                 {
@@ -144,7 +144,7 @@ namespace Test
             };
             SearchTask task4 = new SearchTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParams = new CommonParameters(),
                 
                 SearchParameters = new SearchParameters
                 {
@@ -159,13 +159,13 @@ namespace Test
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParams.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParams.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.CommonParams.DigestionParams, fixedModifications, variableModifications).ToList();
 
             Assert.AreEqual(3, digestedList.Count);
 
@@ -177,7 +177,7 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
-            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParams.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
@@ -208,7 +208,7 @@ namespace Test
             MetaMorpheusTask task = new SearchTask
             {
                 
-                CommonParameters = new CommonParameters(DigestionParams:dp , ScoreCutoff: 1, DeconvolutionIntensityRatio: 999, deconMassTol: 50),
+                CommonParams = new CommonParameters(DigestionParams:dp , ScoreCutoff: 1, DeconvolutionIntensityRatio: 999, deconMassTol: 50),
                 
                 SearchParameters = new SearchParameters
                 {
@@ -239,7 +239,7 @@ namespace Test
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
                
-                var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
+                var targetDigested = theProteins[0].Digest(task.CommonParams.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
 
                 PeptideWithSetModifications targetGood = targetDigested.First();
 
@@ -289,7 +289,7 @@ namespace Test
                 GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
-                    CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), ListOfModsVariable: new List<(string, string)>(), ListOfModsFixed: new List<(string, string)>(), ScoreCutoff: 1, preMassTol:1),
+                    CommonParams = new CommonParameters(DigestionParams: new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), ListOfModsVariable: new List<(string, string)>(), ListOfModsFixed: new List<(string, string)>(), ScoreCutoff: 1, preMassTol:1),
                     
                     GptmdParameters = new GptmdParameters
                     {
@@ -320,7 +320,7 @@ namespace Test
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => b.id.Equals("ok")).ToList()).ToList();
+                var targetDigested = theProteins[0].Digest(task1.CommonParams.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => b.id.Equals("ok")).ToList()).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 PeptideWithSetModifications targetGood = targetDigested[0];
@@ -345,7 +345,7 @@ namespace Test
 
             SearchTask testPeptides = new SearchTask
             {
-                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5)),
+                CommonParams = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5)),
                  //ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
                
                 SearchParameters = new SearchParameters
@@ -376,7 +376,7 @@ namespace Test
             //create modification lists
 
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
-                (b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+                (b => testPeptides.CommonParams.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();
@@ -410,7 +410,7 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
+            var setList1 = protein[0].Digest(testPeptides.CommonParams.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
 
             //Finally Write MZML file

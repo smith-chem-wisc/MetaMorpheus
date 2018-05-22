@@ -120,6 +120,62 @@ namespace EngineLayer
             return new CommonParameters();
         }
 
+        public override string ToString()
+        {
+            string ret = "";
+
+            ret += "BIons =" + BIons + ";";
+            ret += "YIons =" + YIons + ";";
+            ret += "ZdotIons =" + ZdotIons + ";";
+            ret += "CIons =" + CIons + ";";
+            ret += "DoPreCursorDeconvolution =" + DoPrecursorDeconvolution + ";";
+            ret += "UseProvidedPrecursorInfo =" + UseProvidedPrecursorInfo + ";";
+            ret += "DeconvolutionIntensityRatio =" + DeconvolutionIntensityRatio + ";";
+            ret += "DeconvolutionMaxAssumedChargeState =" + DeconvolutionMaxAssumedChargeState + ";";
+            ret += "ReportAllAmbiguity =" + ReportAllAmbiguity + ";";
+            ret += "CompIons =" + CompIons + ";";
+            ret += "TotalPartitions =" + TotalPartitions + ";";
+            ret += "ScoreCutoff =" + ScoreCutoff + ";";
+            ret += "TopNpeaks =" + TopNpeaks + ";";
+            ret += "MinRatio =" + MinRatio + ";";
+            ret += "TrimMs1Peaks =" + TrimMs1Peaks + ";";
+            ret += "TrimMsMsPeaks =" + TrimMsMsPeaks + ";";
+            ret += "UseDeltaScore =" + UseDeltaScore + ";";
+            ret += "CalculateEValue =" + CalculateEValue + ";";
+            ret += "prodMassTol =" + ProductMassTolerance.Value + ";";
+            ret += "preMassTol =" + PrecursorMassTolerance.Value + ";";
+            ret += "deconMassTol =" + DeconvolutionMassTolerance.Value + ";";
+            ret += "MaxThreadsToUsePerFile =" + MaxThreadsToUsePerFile + ";";
+            ret += "DigestionParams: Protease =" + DigestionParams.Protease.Name + ";";
+            ret += "DigestionParams: MaxMissedCleavages =" + DigestionParams.MaxMissedCleavages + ";";
+            ret += "DigestionParams: MinPeptideLength =" + DigestionParams.MinPeptideLength + ";";
+            ret += "DigestionParams: MaxPeptideLength =" + DigestionParams.MaxPeptideLength + ";";
+            ret += "DigestionParams: MaxModificationIsoforms =" + DigestionParams.MaxModificationIsoforms + ";";
+            ret += "DigestionParams: InitiatorMethionineBehavior =" + DigestionParams.InitiatorMethionineBehavior + ";";
+            ret += "DigestionParams: MaxModsForPeptides =" + DigestionParams.MaxModsForPeptide + ";";
+            ret += "DigestionParams: SemiProteaseDigestion =" + DigestionParams.SemiProteaseDigestion + ";";
+            ret += "DigestionParams: TerminusTypeSemiProtease =" + DigestionParams.TerminusTypeSemiProtease + ";";
+
+            string contentVariable = "";
+            foreach (var thing in ListOfModsVariable)
+            {
+               
+                contentVariable+=  thing.Item1 + "/";
+                contentVariable += thing.Item2 + ",";
+            }
+            ret += "ListOfModsVariable =" + contentVariable + ";";
+            string contentFixed = "";
+            foreach (var thing in ListOfModsFixed)
+            {
+
+                contentFixed += thing.Item1 + "/";
+                contentFixed += thing.Item2 + ",";
+            }
+            ret += "ListOfModsFixed =" + contentFixed + ";";
+     
+            return ret;
+        }
+
         #endregion Public Methods
     }
 }

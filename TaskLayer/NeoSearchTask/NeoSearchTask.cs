@@ -27,7 +27,7 @@ namespace TaskLayer
             Protease protease = GlobalVariables.ProteaseDictionary["non-specific"];
             var tempDigParams = new DigestionParams(protease.Name, MaxMissedCleavages:12, MinPeptideLength:8, MaxPeptideLength:13);
 
-            CommonParameters = new CommonParameters(DigestionParams: tempDigParams, DoPrecursorDeconvolution: false, preMassTol: int.MaxValue, prodMassTol: int.MaxValue);
+            CommonParams = new CommonParameters(DigestionParams: tempDigParams, DoPrecursorDeconvolution: false, preMassTol: int.MaxValue, prodMassTol: int.MaxValue);
             
         }
 
@@ -113,7 +113,7 @@ namespace TaskLayer
                 for( int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
-                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParams, fileSettingsList[spectraFileIndex]);
 
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -127,8 +127,8 @@ namespace TaskLayer
 
                     #region Load modifications
 
-                    List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-                    List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+                    List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParams.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+                    List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParams.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
                     List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
                     
                     #endregion Load modifications
