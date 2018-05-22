@@ -5,7 +5,12 @@
 
 [![](https://github.com/smith-chem-wisc/MetaMorpheus/blob/master/GUI/MMnice.ico)](https://smith-chem-wisc.github.io/MetaMorpheus/)
 
-Download the current version [here](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest). For first-time Windows users, choose "MetaMorpheusInstaller.msi" and install MetaMorpheus. Check out our [getting started video]() on YouTube <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.pnghttps://www.youtube.com/watch?v=rNgCDzi7STs&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb">
+Download the current version [here](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest). For first-time Windows users, choose "MetaMorpheusInstaller.msi" and install MetaMorpheus. Check out our [getting started video]() on YouTube
+
+![YouTube](https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.pnghttps://www.youtube.com/watch?v=rNgCDzi7STs&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb "Logo Title Text 1")
+
+
+<img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.pnghttps://www.youtube.com/watch?v=rNgCDzi7STs&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb">
  
 MetaMorpheus is a bottom-up proteomics database search software with integrated post-translational modification (PTM) discovery capability.
 This program combines features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTM-D](https://github.com/smith-chem-wisc/gptmd) in a single tool.
