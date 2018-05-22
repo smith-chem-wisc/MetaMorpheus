@@ -37,7 +37,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 ## Database Requirements
 
-UniProt .XML or .fasta format; may be used in compressed (.gz) format.
+UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you would like to know how to obtain a UniProt .XML databases, please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Protein Databases Video](https://www.youtube.com/watch?v=LFvCj04r5kU&index=2&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb) on YouTube
 
 ## Test Installation (Windows GUI)
 
