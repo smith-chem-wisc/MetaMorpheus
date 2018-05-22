@@ -1,4 +1,4 @@
- <img src="https://user-images.githubusercontent.com/16841846/40388611-a22ba290-5dd5-11e8-8ec1-2e0d1ef581fe.png"> # MetaMorpheus: Free, Open-Source PTM Discovery <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Tweet"></a>
+ # <img src="https://user-images.githubusercontent.com/16841846/40388929-841db5da-5dd6-11e8-8c21-6c71eed30011.png"> MetaMorpheus: Free, Open-Source PTM Discovery <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Tweet"></a>
 
 [![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
