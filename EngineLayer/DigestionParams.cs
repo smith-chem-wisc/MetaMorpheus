@@ -61,17 +61,18 @@ namespace EngineLayer
 
         public override string ToString()
         {
+            DigestionParams temp = new DigestionParams();
             string ret = "";
 
-            ret += "Protease = " + Protease.Name + ";";
-            ret += "MaxMissedCleavages = " + MaxMissedCleavages + ";";
-            ret += "MinPeptideLength = " + MinPeptideLength + ";";
-            ret += "MaxPeptideLength = " + MaxPeptideLength + ";";
-            ret += "MaxModificationIsoforms = " + MaxModificationIsoforms + ";";
-            ret += "InitiatorMethionineBehavior = " + InitiatorMethionineBehavior + ";";
-            ret += "MaxModsForPeptides = " + MaxModsForPeptide + ";";
-            ret += "SemiProteaseDigestion = " + SemiProteaseDigestion + ";";
-            ret += "TerminusTypeSemiProtease = " + TerminusTypeSemiProtease + ";";
+            ret += nameof(temp.Protease) + " = " + Protease.Name + ";";
+            ret += nameof(temp.MaxMissedCleavages) + "MaxMissedCleavages = " + MaxMissedCleavages + ";";
+            ret += nameof(temp.MinPeptideLength) + "MinPeptideLength = " + MinPeptideLength + ";";
+            ret += nameof(temp.MaxPeptideLength) + "MaxPeptideLength = " + MaxPeptideLength + ";";
+            ret += nameof(temp.MaxModificationIsoforms) + "MaxModificationIsoforms = " + MaxModificationIsoforms + ";";
+            ret += nameof(temp.InitiatorMethionineBehavior) + "InitiatorMethionineBehavior = " + InitiatorMethionineBehavior + ";";
+            ret += nameof(temp.MaxModsForPeptide) + "MaxModsForPeptides = " + MaxModsForPeptide + ";";
+            ret += nameof(temp.SemiProteaseDigestion) + "SemiProteaseDigestion = " + SemiProteaseDigestion + ";";
+            ret += nameof(temp.TerminusTypeSemiProtease) + "TerminusTypeSemiProtease = " + TerminusTypeSemiProtease + ";";
             
             return ret;
         }

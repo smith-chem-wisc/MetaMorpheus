@@ -122,48 +122,49 @@ namespace EngineLayer
 
         public override string ToString()
         {
+            CommonParameters temp = new CommonParameters();
             string ret = "";
 
-            ret += "BIons =" + BIons + ";";
-            ret += "YIons =" + YIons + ";";
-            ret += "ZdotIons =" + ZdotIons + ";";
-            ret += "CIons =" + CIons + ";";
-            ret += "DoPreCursorDeconvolution =" + DoPrecursorDeconvolution + ";";
-            ret += "UseProvidedPrecursorInfo =" + UseProvidedPrecursorInfo + ";";
-            ret += "DeconvolutionIntensityRatio =" + DeconvolutionIntensityRatio + ";";
-            ret += "DeconvolutionMaxAssumedChargeState =" + DeconvolutionMaxAssumedChargeState + ";";
-            ret += "ReportAllAmbiguity =" + ReportAllAmbiguity + ";";
-            ret += "CompIons =" + CompIons + ";";
-            ret += "TotalPartitions =" + TotalPartitions + ";";
-            ret += "ScoreCutoff =" + ScoreCutoff + ";";
-            ret += "TopNpeaks =" + TopNpeaks + ";";
-            ret += "MinRatio =" + MinRatio + ";";
-            ret += "TrimMs1Peaks =" + TrimMs1Peaks + ";";
-            ret += "TrimMsMsPeaks =" + TrimMsMsPeaks + ";";
-            ret += "UseDeltaScore =" + UseDeltaScore + ";";
-            ret += "CalculateEValue =" + CalculateEValue + ";";
-            ret += "prodMassTol =" + ProductMassTolerance.Value + ";";
-            ret += "preMassTol =" + PrecursorMassTolerance.Value + ";";
-            ret += "deconMassTol =" + DeconvolutionMassTolerance.Value + ";";
-            ret += "MaxThreadsToUsePerFile =" + MaxThreadsToUsePerFile + ";";
-            ret += "DigestionParams: Protease =" + DigestionParams.Protease.Name + ";";
-            ret += "DigestionParams: MaxMissedCleavages =" + DigestionParams.MaxMissedCleavages + ";";
-            ret += "DigestionParams: MinPeptideLength =" + DigestionParams.MinPeptideLength + ";";
-            ret += "DigestionParams: MaxPeptideLength =" + DigestionParams.MaxPeptideLength + ";";
-            ret += "DigestionParams: MaxModificationIsoforms =" + DigestionParams.MaxModificationIsoforms + ";";
-            ret += "DigestionParams: InitiatorMethionineBehavior =" + DigestionParams.InitiatorMethionineBehavior + ";";
-            ret += "DigestionParams: MaxModsForPeptides =" + DigestionParams.MaxModsForPeptide + ";";
-            ret += "DigestionParams: SemiProteaseDigestion =" + DigestionParams.SemiProteaseDigestion + ";";
-            ret += "DigestionParams: TerminusTypeSemiProtease =" + DigestionParams.TerminusTypeSemiProtease + ";";
+            ret += nameof(temp.BIons) + " =" + BIons + ";";
+            ret += nameof(temp.YIons) + " =" + YIons + ";";
+            ret += nameof(temp.ZdotIons) + " =" + ZdotIons + ";";
+            ret += nameof(temp.CIons) + " =" + CIons + ";";
+            ret += nameof(temp.DoPrecursorDeconvolution) + " =" + DoPrecursorDeconvolution + ";";
+            ret += nameof(temp.UseProvidedPrecursorInfo) + " =" + UseProvidedPrecursorInfo + ";";
+            ret += nameof(temp.DeconvolutionIntensityRatio) + " =" + DeconvolutionIntensityRatio + ";";
+            ret += nameof(temp.DeconvolutionMaxAssumedChargeState) + " =" + DeconvolutionMaxAssumedChargeState + ";";
+            ret += nameof(temp.ReportAllAmbiguity) + " =" + ReportAllAmbiguity + ";";
+            ret += nameof(temp.CompIons) + " =" + CompIons + ";";
+            ret += nameof(temp.TotalPartitions) + " =" + TotalPartitions + ";";
+            ret += nameof(temp.ScoreCutoff) + " =" + ScoreCutoff + ";";
+            ret += nameof(temp.TopNpeaks) + " =" + TopNpeaks + ";";
+            ret += nameof(temp.MinRatio) + " =" + MinRatio + ";";
+            ret += nameof(temp.TrimMs1Peaks) + " =" + TrimMs1Peaks + ";";
+            ret += nameof(temp.TrimMsMsPeaks) + " =" + TrimMsMsPeaks + ";";
+            ret += nameof(temp.UseDeltaScore) + " =" + UseDeltaScore + ";";
+            ret += nameof(temp.CalculateEValue) + " =" + CalculateEValue + ";";
+            ret += nameof(temp.ProductMassTolerance) + " =" + ProductMassTolerance.Value + ";";
+            ret += nameof(temp.PrecursorMassTolerance) + " =" + PrecursorMassTolerance.Value + ";";
+            ret += nameof(temp.DeconvolutionMassTolerance) + " =" + DeconvolutionMassTolerance.Value + ";";
+            ret += nameof(temp.MaxThreadsToUsePerFile) + " =" + MaxThreadsToUsePerFile + ";";
+            ret += nameof(temp.DigestionParams.Protease) + " =" + DigestionParams.Protease.Name + ";";
+            ret += nameof(temp.DigestionParams.MaxMissedCleavages) + " =" + DigestionParams.MaxMissedCleavages + ";";
+            ret += nameof(temp.DigestionParams.MinPeptideLength) + " =" + DigestionParams.MinPeptideLength + ";";
+            ret += nameof(temp.DigestionParams.MaxPeptideLength) + " =" + DigestionParams.MaxPeptideLength + ";";
+            ret += nameof(temp.DigestionParams.MaxModificationIsoforms) + " =" + DigestionParams.MaxModificationIsoforms + ";";
+            ret += nameof(temp.DigestionParams.InitiatorMethionineBehavior) + " =" + DigestionParams.InitiatorMethionineBehavior + ";";
+            ret += nameof(temp.DigestionParams.MaxModsForPeptide) + " =" + DigestionParams.MaxModsForPeptide + ";";
+            ret += nameof(temp.DigestionParams.SemiProteaseDigestion) + " =" + DigestionParams.SemiProteaseDigestion + ";";
+            ret += nameof(temp.DigestionParams.TerminusTypeSemiProtease) + " =" + DigestionParams.TerminusTypeSemiProtease + ";";
 
             string contentVariable = "";
             foreach (var thing in ListOfModsVariable)
             {
                
-                contentVariable+=  thing.Item1 + "/";
+                contentVariable +=  thing.Item1 + "/";
                 contentVariable += thing.Item2 + ",";
             }
-            ret += "ListOfModsVariable =" + contentVariable + ";";
+            ret += nameof(temp.ListOfModsVariable) + " =" + contentVariable + ";";
             string contentFixed = "";
             foreach (var thing in ListOfModsFixed)
             {
@@ -171,7 +172,7 @@ namespace EngineLayer
                 contentFixed += thing.Item1 + "/";
                 contentFixed += thing.Item2 + ",";
             }
-            ret += "ListOfModsFixed =" + contentFixed + ";";
+            ret += nameof(temp.ListOfModsFixed) + " =" + contentFixed + ";";
      
             return ret;
         }

@@ -51,7 +51,7 @@ namespace TaskLayer
                         .ConfigureType<DigestionParams>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => GetDigestionParamsFromString(tmlString.Value)/*ProteaseDictionary[tmlString.Value]*/)))
+                                .FromToml(tmlString => GetDigestionParamsFromString(tmlString.Value))))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t", custom))
@@ -168,27 +168,28 @@ namespace TaskLayer
                 return commonParams;
 
             // set file-specific digestion parameters
-           
-            
-            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
-            int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            int MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
-            DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
-            
+            else
+            {
+                Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
+                int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+                int MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+                int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+                int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+                DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
 
-            // set the rest of the file-specific parameters
-            Tolerance PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            double preMassTol = (double)PrecursorMassTolerance.Value; 
-            Tolerance ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            double prodMassTol = (double)ProductMassTolerance.Value;
-            bool BIons = fileSpecificParams.BIons ?? commonParams.BIons;
-            bool YIons = fileSpecificParams.BIons ?? commonParams.YIons;
-            bool CIons = fileSpecificParams.CIons ?? commonParams.CIons;
-            bool ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
-            CommonParameters returnParams = new CommonParameters(DigestionParams: fileSpecificDigestionParams, preMassTol: preMassTol, prodMassTol: prodMassTol, BIons: BIons, YIons:YIons, CIons:CIons, ZdotIons:ZdotIons);
-            return returnParams;
+
+                // set the rest of the file-specific parameters
+                Tolerance PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+                double preMassTol = (double)PrecursorMassTolerance.Value;
+                Tolerance ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+                double prodMassTol = (double)ProductMassTolerance.Value;
+                bool BIons = fileSpecificParams.BIons ?? commonParams.BIons;
+                bool YIons = fileSpecificParams.BIons ?? commonParams.YIons;
+                bool CIons = fileSpecificParams.CIons ?? commonParams.CIons;
+                bool ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
+                CommonParameters returnParams = new CommonParameters(DigestionParams: fileSpecificDigestionParams, preMassTol: preMassTol, prodMassTol: prodMassTol, BIons: BIons, YIons: YIons, CIons: CIons, ZdotIons: ZdotIons);
+                return returnParams;
+            }
         }
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
@@ -405,59 +406,62 @@ namespace TaskLayer
 
         private static CommonParameters GetCommonParametersFromString(string value)
         {
+            CommonParameters temp = new CommonParameters();
+
+            Dictionary<string, string> parameters = new Dictionary<string, string>();
             string[] input = value.Split(';');
-            string[,] output = new string[input.Length, 2];
+            
             for (int i = 0; i < input.Length-1; i++)
             {
                 
                 string a = input[i];
-                string[] temp = a.Split('=');
-                string key = temp[0];
-                string val = temp[1];
+                string[] temps = a.Split('=');
+                string key = temps[0].Trim();
+                string val = temps[1];
+                parameters.Add(key, val);
                
-                output[i, 0] = key;
-                output[i, 1] = val;
             }
 
-                            
-            bool BIons = Convert.ToBoolean(output[0, 1]);
-            bool YIons = Convert.ToBoolean(output[1, 1]);
-            bool ZdotIons = Convert.ToBoolean(output[2, 1]);
-            bool CIons = Convert.ToBoolean(output[3, 1]);
-            bool DoPrecursorDeconvolution = Convert.ToBoolean(output[4, 1]);
-            bool UseProvidedPrecursorInfo = Convert.ToBoolean(output[5, 1]);
-            double DeconvolutionIntensityRatio = Convert.ToDouble(output[6, 1]);
-            int DeconvolutionMaxAssumedChargeState = Convert.ToInt32(output[7, 1]);
-            bool ReportAllAmbiguity = Convert.ToBoolean(output[8, 1]);
-            bool CompIons = Convert.ToBoolean(output[9, 1]);
-            int TotalPartitions = Convert.ToInt32(output[10, 1]);
-            double ScoreCutoff = Convert.ToDouble(output[11, 1]);
-            int TopNpeaks = Convert.ToInt32(output[12, 1]);
-            double MinRatio = Convert.ToDouble(output[13, 1]);
-            bool TrimMs1Peaks = Convert.ToBoolean(output[14, 1]);
-            bool TrimMsMsPeaks = Convert.ToBoolean(output[15, 1]);
-            bool UseDeltaScore = Convert.ToBoolean(output[16, 1]);
-            bool CalculateEValue = Convert.ToBoolean(output[17, 1]);
-            double prodMassTol = Convert.ToDouble(output[18, 1]);
-            double preMassTol = Convert.ToDouble(output[19, 1]);
-            double deconMassTol = Convert.ToDouble(output[20, 1]);
-            int MaxThreadsToUsePerFile = Convert.ToInt32(output[21, 1]);
 
-            string protease = output[22, 1];
-            int MaxMissedCleavages = Convert.ToInt32(output[23, 1]);
-            int MinPeptideLength = Convert.ToInt32(output[24, 1]);
-            int MaxPeptideLength = Convert.ToInt32(output[25, 1]);
-            int MaxModificationIsoforms = Convert.ToInt32(output[26, 1]);
+            //bool BIons = Convert.ToBoolean(output[0, 1]);
+            bool BIons = Convert.ToBoolean(parameters[nameof(temp.BIons)]);
+            bool YIons = Convert.ToBoolean(parameters[nameof(temp.YIons)]);
+            bool ZdotIons = Convert.ToBoolean(parameters[nameof(temp.ZdotIons)]);
+            bool CIons = Convert.ToBoolean(parameters[nameof(temp.CIons)]);
+            bool DoPrecursorDeconvolution = Convert.ToBoolean(parameters[nameof(temp.DoPrecursorDeconvolution)]);
+            bool UseProvidedPrecursorInfo = Convert.ToBoolean(parameters[nameof(temp.UseProvidedPrecursorInfo)]);
+            double DeconvolutionIntensityRatio = Convert.ToDouble(parameters[nameof(temp.DeconvolutionIntensityRatio)]);
+            int DeconvolutionMaxAssumedChargeState = Convert.ToInt32(parameters[nameof(temp.DeconvolutionMaxAssumedChargeState)]);
+            bool ReportAllAmbiguity = Convert.ToBoolean(parameters[nameof(temp.ReportAllAmbiguity)]);
+            bool CompIons = Convert.ToBoolean(parameters[nameof(temp.CompIons)]);
+            int TotalPartitions = Convert.ToInt32(parameters[nameof(temp.TotalPartitions)]);
+            double ScoreCutoff = Convert.ToDouble(parameters[nameof(temp.ScoreCutoff)]);
+            int TopNpeaks = Convert.ToInt32(parameters[nameof(temp.TopNpeaks)]);
+            double MinRatio = Convert.ToDouble(parameters[nameof(temp.MinRatio)]);
+            bool TrimMs1Peaks = Convert.ToBoolean(parameters[nameof(temp.TrimMs1Peaks)]);
+            bool TrimMsMsPeaks = Convert.ToBoolean(parameters[nameof(temp.TrimMsMsPeaks)]);
+            bool UseDeltaScore = Convert.ToBoolean(parameters[nameof(temp.UseDeltaScore)]);
+            bool CalculateEValue = Convert.ToBoolean(parameters[nameof(temp.CalculateEValue)]);
+            double prodMassTol = Convert.ToDouble(parameters[nameof(temp.ProductMassTolerance)]);
+            double preMassTol = Convert.ToDouble(parameters[nameof(temp.PrecursorMassTolerance)]);
+            double deconMassTol = Convert.ToDouble(parameters[nameof(temp.DeconvolutionMassTolerance)]);
+            int MaxThreadsToUsePerFile = Convert.ToInt32(parameters[nameof(temp.MaxThreadsToUsePerFile)]);
+
+            string protease = parameters[nameof(temp.DigestionParams.Protease)];
+            int MaxMissedCleavages = Convert.ToInt32(parameters[nameof(temp.DigestionParams.MaxMissedCleavages)]);
+            int MinPeptideLength = Convert.ToInt32(parameters[nameof(temp.DigestionParams.MinPeptideLength)]);
+            int MaxPeptideLength = Convert.ToInt32(parameters[nameof(temp.DigestionParams.MaxPeptideLength)]);
+            int MaxModificationIsoforms = Convert.ToInt32(parameters[nameof(temp.DigestionParams.MaxModificationIsoforms)]);
             InitiatorMethionineBehavior InitiatorMethionineBehavior;
-            if (output[27, 1] == "InitiatorMethionineBehavior.Cleave")
+            if (parameters[nameof(temp.DigestionParams.InitiatorMethionineBehavior)] == "InitiatorMethionineBehavior.Cleave")
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Cleave;
             }
-            else if (output[27, 1] == "InitiatorMethionineBehavior.Retain")
+            else if (parameters[nameof(temp.DigestionParams.InitiatorMethionineBehavior)] == "InitiatorMethionineBehavior.Retain")
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
             }
-            else if (output[27, 1] == "InitiatorMethionineBehavior.Variable")
+            else if (parameters[nameof(temp.DigestionParams.InitiatorMethionineBehavior)] == "InitiatorMethionineBehavior.Variable")
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             }
@@ -465,15 +469,15 @@ namespace TaskLayer
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Undefined;
             }
-            int MaxModsForPeptides = Convert.ToInt32(output[28, 1]);
-            bool SemiProteaseDigestion = Convert.ToBoolean(output[29, 1]);
+            int MaxModsForPeptides = Convert.ToInt32(parameters[nameof(temp.DigestionParams.MaxModsForPeptide)]);
+            bool SemiProteaseDigestion = Convert.ToBoolean(parameters[nameof(temp.DigestionParams.SemiProteaseDigestion)]);
             //string term = ;
             TerminusType TerminusTypeSemiProtease;
-            if (output[30, 1] == "TerminusType.N")
+            if (parameters[nameof(temp.DigestionParams.TerminusTypeSemiProtease)] == "TerminusType.N")
             {
                 TerminusTypeSemiProtease = TerminusType.N;
             }
-            else if (output[30, 1] == "TerminusType.C")
+            else if (parameters[nameof(temp.DigestionParams.TerminusTypeSemiProtease)] == "TerminusType.C")
             {
                 TerminusTypeSemiProtease = TerminusType.C;
             }
@@ -483,7 +487,7 @@ namespace TaskLayer
             }
             
             DigestionParams DigestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior, MaxModsForPeptides: MaxModsForPeptides, SemiProteaseDigestion: SemiProteaseDigestion, TerminusTypeSemiProtease:TerminusTypeSemiProtease);
-            string listofModsVariable = output[31, 1];
+            string listofModsVariable = parameters[nameof(temp.ListOfModsVariable)];
             string[] listContentVariable = listofModsVariable.Split(',');
             string[,] listContentStringsVariable = new string[listContentVariable.Length, 2];
             List<(string, string)> ListOfModsVariable = new List<(string, string)>();
@@ -491,9 +495,9 @@ namespace TaskLayer
             {
 
                 string a = listContentVariable[i];
-                string[] temp = a.Split('/');
-                string key = temp[0];
-                string val = temp[1];
+                string[] temps = a.Split('/');
+                string key = temps[0];
+                string val = temps[1];
 
                 listContentStringsVariable[i, 0] = key;
                 listContentStringsVariable[i, 1] = val;
@@ -509,7 +513,7 @@ namespace TaskLayer
             }
 
 
-            string listofModsFixed = output[32, 1];
+            string listofModsFixed = parameters[nameof(temp.ListOfModsFixed)];
             string[] listContentFixed = listofModsFixed.Split(',');
             string[,] listContentStringsFixed = new string[listContentFixed.Length, 2];
             List<(string, string)> ListOfModsFixed = new List<(string, string)>();
@@ -518,9 +522,9 @@ namespace TaskLayer
             {
 
                 string a = listContentFixed[i];
-                string[] temp = a.Split('/');
-                string key = temp[0];
-                string val = temp[1];
+                string[] temps = a.Split('/');
+                string key = temps[0];
+                string val = temps[1];
 
                 listContentStringsFixed[i, 0] = key;
                 listContentStringsFixed[i, 1] = val;
@@ -541,34 +545,34 @@ namespace TaskLayer
 
         private static DigestionParams GetDigestionParamsFromString(string value)
         {
+            DigestionParams temp = new DigestionParams();
+            Dictionary<string, string> parameters = new Dictionary<string, string>();
             string[] input = value.Split(';');
-            string[,] output = new string[input.Length, 2];
+            
             for (int i = 0; i < input.Length - 1; i++)
             {
 
                 string a = input[i];
-                string[] temp = a.Split('=');
-                string key = temp[0];
-                string val = temp[1];
-
-                output[i, 0] = key;
-                output[i, 1] = val;
+                string[] temps = a.Split('=');
+                string key = temps[0];
+                string val = temps[1];
+                parameters.Add(key, val);
             }
-            string protease = output[21, 1];
-            int MaxMissedCleavages = Convert.ToInt32(output[22, 1]);
-            int MinPeptideLength = Convert.ToInt32(output[23, 1]);
-            int MaxPeptideLength = Convert.ToInt32(output[24, 1]);
-            int MaxModificationIsoforms = Convert.ToInt32(output[25, 1]);
+            string protease = parameters[nameof(temp.Protease)];
+            int MaxMissedCleavages = Convert.ToInt32(parameters[nameof(temp.MaxMissedCleavages)]);
+            int MinPeptideLength = Convert.ToInt32(parameters[nameof(temp.MinPeptideLength)]);
+            int MaxPeptideLength = Convert.ToInt32(parameters[nameof(temp.MaxPeptideLength)]);
+            int MaxModificationIsoforms = Convert.ToInt32(parameters[nameof(temp.MaxModificationIsoforms)]);
             InitiatorMethionineBehavior InitiatorMethionineBehavior;
             if (output[26, 1] == "InitiatorMethionineBehavior.Cleave")
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Cleave;
             }
-            else if (output[26, 1] == "InitiatorMethionineBehavior.Retain")
+            else if (parameters[nameof(temp.InitiatorMethionineBehavior)] == "InitiatorMethionineBehavior.Retain")
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
             }
-            else if (output[26, 1] == "InitiatorMethionineBehavior.Variable")
+            else if (parameters[nameof(temp.InitiatorMethionineBehavior)] == "InitiatorMethionineBehavior.Variable")
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             }
@@ -576,15 +580,15 @@ namespace TaskLayer
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Undefined;
             }
-            int MaxModsForPeptides = Convert.ToInt32(output[27, 1]);
-            bool SemiProteaseDigestion = Convert.ToBoolean(output[28, 1]);
+            int MaxModsForPeptides = Convert.ToInt32(parameters[nameof(temp.MaxModsForPeptide)]);
+            bool SemiProteaseDigestion = Convert.ToBoolean(parameters[nameof(temp.SemiProteaseDigestion)]);
             
             TerminusType TerminusTypeSemiProtease;
-            if (output[29, 1] == "TerminusType.N")
+            if (parameters[nameof(temp.TerminusTypeSemiProtease)] == "TerminusType.N")
             {
                 TerminusTypeSemiProtease = TerminusType.N;
             }
-            else if (output[29, 1] == "TerminusType.C")
+            else if (parameters[nameof(temp.TerminusTypeSemiProtease)] == "TerminusType.C")
             {
                 TerminusTypeSemiProtease = TerminusType.C;
             }
