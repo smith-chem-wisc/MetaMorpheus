@@ -65,18 +65,17 @@ namespace EngineLayer
             string ret = "";
 
             ret += nameof(temp.Protease) + " = " + Protease.Name + ";";
-            ret += nameof(temp.MaxMissedCleavages) + "MaxMissedCleavages = " + MaxMissedCleavages + ";";
-            ret += nameof(temp.MinPeptideLength) + "MinPeptideLength = " + MinPeptideLength + ";";
-            ret += nameof(temp.MaxPeptideLength) + "MaxPeptideLength = " + MaxPeptideLength + ";";
-            ret += nameof(temp.MaxModificationIsoforms) + "MaxModificationIsoforms = " + MaxModificationIsoforms + ";";
-            ret += nameof(temp.InitiatorMethionineBehavior) + "InitiatorMethionineBehavior = " + InitiatorMethionineBehavior + ";";
-            ret += nameof(temp.MaxModsForPeptide) + "MaxModsForPeptides = " + MaxModsForPeptide + ";";
-            ret += nameof(temp.SemiProteaseDigestion) + "SemiProteaseDigestion = " + SemiProteaseDigestion + ";";
-            ret += nameof(temp.TerminusTypeSemiProtease) + "TerminusTypeSemiProtease = " + TerminusTypeSemiProtease + ";";
+            ret += nameof(temp.MaxMissedCleavages) + " = " + MaxMissedCleavages + ";";
+            ret += nameof(temp.MinPeptideLength) + " = " + MinPeptideLength + ";";
+            ret += nameof(temp.MaxPeptideLength) + " = " + MaxPeptideLength + ";";
+            ret += nameof(temp.MaxModificationIsoforms) + " = " + MaxModificationIsoforms + ";";
+            ret += nameof(temp.InitiatorMethionineBehavior) + " = " + InitiatorMethionineBehavior + ";";
+            ret += nameof(temp.MaxModsForPeptide) + " = " + MaxModsForPeptide + ";";
+            ret += nameof(temp.SemiProteaseDigestion) + " = " + SemiProteaseDigestion + ";";
+            ret += nameof(temp.TerminusTypeSemiProtease) + " = " + TerminusTypeSemiProtease + ";";
             
             return ret;
         }
-
         #endregion Public Methods
     }
 }
