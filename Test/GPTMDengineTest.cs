@@ -38,15 +38,12 @@ namespace Test
             var parentProtein = new Protein("NNNNN", "accession");
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 5
-            };
+            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 5);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).First();
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan, digestionParams);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
@@ -82,16 +79,13 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (651.297638557 + 21.981943 + 15.994915).ToMz(1), 1, "filepath");
 
             var parentProtein = new Protein("NNNPPP", "accession");
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 5
-            };
+            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 5);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).First();
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
-            PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
+            PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan, digestionParams);
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan, digestionParams);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {

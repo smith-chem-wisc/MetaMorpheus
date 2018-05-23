@@ -17,10 +17,36 @@
                 <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
             </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" />
-                <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
-                <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" />
-                <MenuItem Header="Email Support at mm_support@chem.wisc.edu" Click="MenuItem_Click_4" />
+                <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" >
+                    <MenuItem.Icon>
+                        <Image Source="update_20.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Open MetaMorpheus Wiki Page" Click="MenuItem_Click" >
+                    <MenuItem.Icon>
+                        <Image Source="wiki_20.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" >
+                    <MenuItem.Icon>
+                        <Image Source="git_20.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Email Support at mm__support@chem.wisc.edu" Click="MenuItem_Click_4" >
+                    <MenuItem.Icon>
+                        <Image Source="mail_20.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="MetaMorpheus YouTube Help Videos" Click="MenuItem_YouTube" >
+                    <MenuItem.Icon>
+                        <Image Source="youtube_20.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="News in Proteomics Research" Click="MenuItem_ProteomicsNewsBlog" >
+                    <MenuItem.Icon>
+                        <Image Source="Blogger_20.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
         </Menu>
         <Grid>
@@ -183,6 +209,7 @@
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
                         <DockPanel Margin="5" Grid.Row="4" LastChildFill="True">
+                            <Button x:Name="OpenOutputFolderButton" Content="Open" Width="40" DockPanel.Dock="Right" Click="OpenOutputFolder_Click"></Button>
                             <Label Content="Output Folder:" />
                             <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" />
                         </DockPanel>
@@ -194,8 +221,8 @@
                         HorizontalAlignment="Stretch"
                         Background="Silver"
                         Height="5" />
-                <GroupBox Header="Warnings" Grid.Row="2">
-                    <RichTextBox x:Name="warningsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
+                <GroupBox Header="Notifications" Grid.Row="2">
+                    <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
                         <RichTextBox.Resources>
                             <Style TargetType="{x:Type Paragraph}">
                                 <Setter Property="Margin" Value="0" />

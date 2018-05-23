@@ -27,14 +27,9 @@ namespace Test
         public static void XlTestXlPosCal()
         {
             var prot = new Protein("MNNNKQQQQ", null);
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 2,
-                Protease = protease,
-                MinPeptideLength = 1
-            };
+            Protease protease = new Protease("New Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength:1, InitiatorMethionineBehavior:InitiatorMethionineBehavior.Retain);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
@@ -92,10 +87,8 @@ namespace Test
                 CIons = true,
                 ZdotIons = true,
                 ScoreCutoff = 2,
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = 5
-                }
+                DigestionParams = new DigestionParams(MinPeptideLength: 5)
+             
             };
 
             var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
@@ -141,7 +134,8 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<IDigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams>
+            { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -179,8 +173,8 @@ namespace Test
 
 
             //Test PsmCross.XlCalculateTotalProductMasses.
-            var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
-            var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0]);
+            var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
+            var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
             var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker.CrosslinkerModSites);
             var productMassesAlphaList = PsmCross.XlCalculateTotalProductMasses(psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, true, false, linkPos);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 99);
@@ -220,10 +214,8 @@ namespace Test
             {
                 DoPrecursorDeconvolution = false,
                 ScoreCutoff = 1,
-                DigestionParams = new DigestionParams
-                {
-                    MinPeptideLength = 4
-                }
+                DigestionParams = new DigestionParams(MinPeptideLength:4)
+                
             };
 
             var xlSearchParameters = new XlSearchParameters
@@ -273,7 +265,7 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<IDigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 

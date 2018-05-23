@@ -278,6 +278,16 @@
   <ItemGroup>
     <Resource Include="MMnice.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="wiki_20.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Blogger_20.bmp" />
+    <Resource Include="git_20.bmp" />
+    <Resource Include="mail_20.bmp" />
+    <Resource Include="update_20.bmp" />
+    <Resource Include="youtube_20.bmp" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

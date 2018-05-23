@@ -4,8 +4,8 @@ using Nett;
 using Newtonsoft.Json.Linq;
 using Proteomics;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -168,8 +168,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                warningsTextBox.AppendText(e.S);
-                warningsTextBox.AppendText(Environment.NewLine);
+                notificationsTextBox.AppendText(e.S);
+                notificationsTextBox.AppendText(Environment.NewLine);
             }
         }
 
@@ -310,6 +310,45 @@ namespace MetaMorpheusGUI
             UpdateOutputFolderTextbox();
         }
 
+        private void OpenOutputFolder_Click(object sender, RoutedEventArgs e)
+        {
+            string outputFolder = OutputFolderTextBox.Text;
+            if (outputFolder.Contains("$DATETIME"))
+            {
+                // the exact file path isn't known, so just open the parent directory
+                outputFolder = Directory.GetParent(outputFolder).FullName;
+            }
+
+            if (!Directory.Exists(outputFolder) && !string.IsNullOrEmpty(outputFolder))
+            {
+                // create the directory if it doesn't exist yet
+                try
+                {
+                    Directory.CreateDirectory(outputFolder);
+                }
+                catch (Exception ex)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Error opening directory: " + ex.Message, null));
+                }
+            }
+
+            if (Directory.Exists(outputFolder))
+            {
+                // open the directory
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                {
+                    FileName = outputFolder,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            else
+            {
+                // this should only happen if the file path is empty or something unexpected happened
+                GuiWarnHandler(null, new StringEventArgs("Output folder does not exist", null));
+            }
+        }
+
         private void AddProteinDatabase_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
@@ -383,7 +422,9 @@ namespace MetaMorpheusGUI
             // we need to get the filename before parsing out the extension because if we assume that everything after the dot
             // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
             var filename = Path.GetFileName(draggedFilePath);
-            var theExtension = filename.Substring(filename.IndexOf(".")).ToLowerInvariant();
+            var theExtension = Path.GetExtension(filename).ToLowerInvariant();
+            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
+            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(filename)).ToLowerInvariant() : theExtension;
 
             switch (theExtension)
             {
@@ -413,27 +454,25 @@ namespace MetaMorpheusGUI
                     goto case ".mzml";
 
                 case ".mzml":
+                    if (compressed) // not implemented yet
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
+                        break;
+                    }
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!SpectraFileExists(spectraFilesObservableCollection, zz)) { spectraFilesObservableCollection.Add(zz); }
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
 
-                case ".mzml.gz":  // not implemented yet
-                case ".fasta.gz": // not implemented yet
-                    GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
-                    break;
-
                 case ".xml":
-                case ".xml.gz":
                 case ".fasta":
                 case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
-
                     if (!DatabaseExists(proteinDbObservableCollection, uu))
                     {
                         proteinDbObservableCollection.Add(uu);
-                        if (theExtension.Equals(".xml") || theExtension.Equals(".xml.gz"))
+                        if (theExtension.Equals(".xml"))
                         {
                             try
                             {
@@ -534,7 +573,6 @@ namespace MetaMorpheusGUI
                 }
                 catch (Exception)
                 {
-
                 }
             }
         }
@@ -565,9 +603,23 @@ namespace MetaMorpheusGUI
             }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            warningsTextBox.Document.Blocks.Clear();
+            notificationsTextBox.Document.Blocks.Clear();
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(), spectraFilesObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), OutputFolderTextBox.Text);
+            if (string.IsNullOrEmpty(OutputFolderTextBox.Text))
+            {
+                var pathOfFirstSpectraFile = Path.GetDirectoryName(spectraFilesObservableCollection.First().FilePath);
+                OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
+            }
+
+            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            string outputFolder = OutputFolderTextBox.Text.Replace("$DATETIME", startTimeForAllFilenames);
+            OutputFolderTextBox.Text = outputFolder;
+
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(),
+                spectraFilesObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(),
+                proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
+                outputFolder);
+
             var t = new Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
@@ -585,7 +637,7 @@ namespace MetaMorpheusGUI
                 while (e.InnerException != null) e = e.InnerException;
                 var message = "Run failed, Exception: " + e.Message;
                 var messageBoxResult = System.Windows.MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo);
-                warningsTextBox.AppendText(message + Environment.NewLine);
+                notificationsTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
                 //Find Output Folder
                 string outputFolder = e.Data["folder"].ToString();
@@ -618,6 +670,7 @@ namespace MetaMorpheusGUI
                     System.Diagnostics.Process.Start(mailto);
                     Console.WriteLine(body);
                 }
+                ResetTasksButton.IsEnabled = true;
             }
         }
 
@@ -767,7 +820,7 @@ namespace MetaMorpheusGUI
                     MoveSelectedTask(sender, e, true);
                     e.Handled = true;
                 }
-                
+
                 // move task down
                 if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
                 {
@@ -982,6 +1035,9 @@ namespace MetaMorpheusGUI
 
             tasksTreeView.DataContext = staticTasksObservableCollection;
             UpdateSpectraFileGuiStuff();
+
+            var pathOfFirstSpectraFile = Path.GetDirectoryName(spectraFilesObservableCollection.First().FilePath);
+            OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
         }
 
         private void TasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -1141,6 +1197,16 @@ namespace MetaMorpheusGUI
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+        }
+
+        private void MenuItem_YouTube(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+        }
+
+        private void MenuItem_ProteomicsNewsBlog(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://proteomicsnews.blogspot.com/");
         }
 
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)
