@@ -168,8 +168,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                warningsTextBox.AppendText(e.S);
-                warningsTextBox.AppendText(Environment.NewLine);
+                notificationsTextBox.AppendText(e.S);
+                notificationsTextBox.AppendText(Environment.NewLine);
             }
         }
 
@@ -603,7 +603,7 @@ namespace MetaMorpheusGUI
             }
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            warningsTextBox.Document.Blocks.Clear();
+            notificationsTextBox.Document.Blocks.Clear();
 
             if (string.IsNullOrEmpty(OutputFolderTextBox.Text))
             {
@@ -637,7 +637,7 @@ namespace MetaMorpheusGUI
                 while (e.InnerException != null) e = e.InnerException;
                 var message = "Run failed, Exception: " + e.Message;
                 var messageBoxResult = System.Windows.MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo);
-                warningsTextBox.AppendText(message + Environment.NewLine);
+                notificationsTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
                 //Find Output Folder
                 string outputFolder = e.Data["folder"].ToString();
@@ -1197,6 +1197,16 @@ namespace MetaMorpheusGUI
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+        }
+
+        private void MenuItem_YouTube(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+        }
+
+        private void MenuItem_ProteomicsNewsBlog(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://proteomicsnews.blogspot.com/");
         }
 
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)
