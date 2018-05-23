@@ -554,7 +554,7 @@ namespace TaskLayer
 
                 string a = input[i];
                 string[] temps = a.Split('=');
-                string key = temps[0];
+                string key = temps[0].Trim();
                 string val = temps[1];
                 parameters.Add(key, val);
             }
