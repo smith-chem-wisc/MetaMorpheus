@@ -844,16 +844,15 @@ namespace TaskLayer
             for (int i = 0; i < items.Count; i++)
             {
                 var pepWithSetMods = items[i].CompactPeptides.First().Value.Item2.First();
-                int pepXmlMods = pepWithSetMods.allModsOneIsNterminus.Count;
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                for (int j = 0; j < pepXmlMods; j++)
+                foreach (var mod in pepWithSetMods.allModsOneIsNterminus)
                 {
-                    var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
+                    var pepXmlMod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                     {
-                        mass = pepWithSetMods.allModsOneIsNterminus.Values.Select(p => p.monoisotopicMass).ToList()[j],
-                        position = (pepWithSetMods.allModsOneIsNterminus.Keys.ToList()[j] - 1).ToString()
+                        mass = mod.Value.monoisotopicMass,
+                        position = (mod.Key - 1).ToString()
                     };
-                    mods.Add(mod);
+                    mods.Add(pepXmlMod);
                 }
 
                 var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
@@ -866,7 +865,7 @@ namespace TaskLayer
                     num_tot_proteins = 1,
                     calc_neutral_pep_mass = (float)items[i].ScanPrecursorMass,
                     massdiff = ((items[i].PeptideMonisotopicMass != null) ? (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value).ToString() : "-"),               
-                    modification_info = (pepXmlMods == 0 ? new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() } : null),
+                    modification_info = (mods.Count == 0 ? new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() } : null),
                     search_score = new pepXML.Generated.nameValueType[]
                     {
                                         new pepXML.Generated.nameValueType{ name = "Score", value = items[i].Score.ToString()},
