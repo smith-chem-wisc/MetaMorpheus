@@ -564,7 +564,7 @@ namespace TaskLayer
             int MaxPeptideLength = Convert.ToInt32(parameters[nameof(temp.MaxPeptideLength)]);
             int MaxModificationIsoforms = Convert.ToInt32(parameters[nameof(temp.MaxModificationIsoforms)]);
             InitiatorMethionineBehavior InitiatorMethionineBehavior;
-            if (output[26, 1] == "InitiatorMethionineBehavior.Cleave")
+            if (parameters[nameof(temp.InitiatorMethionineBehavior)] == "InitiatorMethionineBehavior.Cleave")
             {
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Cleave;
             }
