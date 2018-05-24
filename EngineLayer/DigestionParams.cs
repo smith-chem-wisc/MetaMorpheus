@@ -2,7 +2,7 @@
 
 namespace EngineLayer
 {
-    public class DigestionParams 
+    public class DigestionParams
     {
         public int MaxMissedCleavages { get; private set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; private set; }
@@ -44,7 +44,7 @@ namespace EngineLayer
         public override bool Equals(object obj)
         {
             DigestionParams a = obj as DigestionParams;
-            
+
             return a != null
                 && this.MaxMissedCleavages.Equals(a.MaxMissedCleavages)
                 && this.MinPeptideLength.Equals(a.MinPeptideLength)
