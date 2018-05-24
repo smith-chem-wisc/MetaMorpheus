@@ -4,17 +4,24 @@ namespace EngineLayer
 {
     public class DigestionParams 
     {
-        public readonly int MaxMissedCleavages;
-        public readonly InitiatorMethionineBehavior InitiatorMethionineBehavior;
-        public readonly int MinPeptideLength;
-        public readonly int MaxPeptideLength;
-        public readonly int MaxModificationIsoforms;
-        public readonly int MaxModsForPeptide;
-        public readonly Protease Protease;
-        public readonly bool SemiProteaseDigestion; //for nonspecific searching of proteases
-        public readonly TerminusType TerminusTypeSemiProtease;
+        public int MaxMissedCleavages { get; private set; }
+        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; private set; }
+        public int MinPeptideLength { get; private set; }
+        public int MaxPeptideLength { get; private set; }
+        public int MaxModificationIsoforms { get; private set; }
+        public int MaxModsForPeptide { get; private set; }
+        public Protease Protease { get; private set; }
+        public bool SemiProteaseDigestion { get; private set; } //for nonspecific searching of proteases
+        public TerminusType TerminusTypeSemiProtease { get; private set; }
 
         #region Public Constructors
+
+        // this parameterless constructor needs to exist to read the toml. 
+        // if you can figure out a way to get rid of it, feel free...
+        public DigestionParams() : this("trypsin")
+        {
+
+        }
 
         public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
             InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
@@ -31,13 +38,7 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
         
-
-        
-
-        
-
         #region Public Methods
 
         public override bool Equals(object obj)
@@ -64,6 +65,7 @@ namespace EngineLayer
                 ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
         }
+
         #endregion Public Methods
     }
 }
