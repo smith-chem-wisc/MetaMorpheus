@@ -14,6 +14,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using System.Collections.Generic;
 
 namespace MetaMorpheusGUI
 {
@@ -29,6 +30,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
+        private ObservableCollection<QuantForDataGrid> quantForDataGrids;
 
         #endregion Private Fields
 
@@ -1239,6 +1241,19 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void BtnQuantSet_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new QuantSettingWindow(spectraFilesObservableCollection);
+
+            //Do something in GUI.Main
+            if(dialog.ShowDialog() == true)
+            {
+                quantForDataGrids = new ObservableCollection<QuantForDataGrid>();
+                quantForDataGrids = dialog.SpectraFilesQuantSets;
+               
+            }
+        }
+        
         private void MenuItem_Click_2(object sender, RoutedEventArgs e)
         {
             try
@@ -1296,5 +1311,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 }

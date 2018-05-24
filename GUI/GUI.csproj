@@ -146,6 +146,7 @@
       <DependentUpon>FileSpecificParametersWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CollectionForTreeView.cs" />
+    <Compile Include="ForDisplayingInDataGrids\QuantForDataGrid.cs" />
     <Compile Include="ForTreeView.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
       <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
@@ -170,6 +171,9 @@
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\PreRunTask.cs" />
     <Compile Include="Parameter.cs" />
+    <Compile Include="QuantSettingWindow.xaml.cs">
+      <DependentUpon>QuantSettingWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
@@ -213,6 +217,10 @@
     <Page Include="MetaUpdater.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="QuantSettingWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="SearchTaskWindow.xaml">
       <SubType>Designer</SubType>
