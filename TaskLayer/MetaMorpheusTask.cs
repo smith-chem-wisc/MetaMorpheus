@@ -26,10 +26,10 @@ namespace TaskLayer
    
     public abstract class MetaMorpheusTask
     {
+        TomlSettings t = TomlSettings.Create();
 
         #region Public Fields
-       
-
+        
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert

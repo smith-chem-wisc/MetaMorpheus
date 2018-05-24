@@ -713,17 +713,16 @@ namespace Test
             var listOfSortedms2Scans2 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution2, UseProvidedPrecursorInfo2, DeconvolutionIntensityRatio2, DeconvolutionMaxAssumedChargeState2, DeconvolutionMassTolerance2).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans2.Length];
+            
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters2, new List<string>()).Run();
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray2.Length);
+            Assert.AreEqual(1, allPsmsArray.Length);
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
             // Single ms2 scan
             Assert.AreEqual(1, allPsmsArray2.Length);
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
-            double testNum = allPsmsArray2[0].Score;
-            bool test = allPsmsArray2[0].Score > 4;
             Assert.IsTrue(allPsmsArray2[0].Score > 4);
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray2[0].ScanNumber);

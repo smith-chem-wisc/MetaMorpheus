@@ -123,15 +123,16 @@ namespace EngineLayer
         public override string ToString()
         {
             CommonParameters temp = new CommonParameters();
+            string delim = " = ";
             string ret = "";
 
-            ret += nameof(temp.BIons) + " =" + BIons + ";";
-            ret += nameof(temp.YIons) + " =" + YIons + ";";
-            ret += nameof(temp.ZdotIons) + " =" + ZdotIons + ";";
-            ret += nameof(temp.CIons) + " =" + CIons + ";";
-            ret += nameof(temp.DoPrecursorDeconvolution) + " =" + DoPrecursorDeconvolution + ";";
-            ret += nameof(temp.UseProvidedPrecursorInfo) + " =" + UseProvidedPrecursorInfo + ";";
-            ret += nameof(temp.DeconvolutionIntensityRatio) + " =" + DeconvolutionIntensityRatio + ";";
+            ret += nameof(temp.BIons) + delim + BIons + "\n";
+            ret += nameof(temp.YIons) + " = " + YIons + "\n";
+            ret += nameof(temp.ZdotIons) + " = " + ZdotIons + "\n";
+            ret += nameof(temp.CIons) + " = " + CIons + "\n";
+            ret += nameof(temp.DoPrecursorDeconvolution) + " = " + DoPrecursorDeconvolution + "\n";
+            ret += nameof(temp.UseProvidedPrecursorInfo) + " = " + UseProvidedPrecursorInfo + ";";
+            ret += nameof(temp.DeconvolutionIntensityRatio) + " = " + DeconvolutionIntensityRatio + ";";
             ret += nameof(temp.DeconvolutionMaxAssumedChargeState) + " =" + DeconvolutionMaxAssumedChargeState + ";";
             ret += nameof(temp.ReportAllAmbiguity) + " =" + ReportAllAmbiguity + ";";
             ret += nameof(temp.CompIons) + " =" + CompIons + ";";
