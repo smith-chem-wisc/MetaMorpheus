@@ -132,20 +132,20 @@ namespace EngineLayer.Calibration
                   {
                       var scan = myMsDataFile.GetOneBasedScan(i);
 
-                      if (scan is MsDataScan ms2Scan)
+                      if (scan.MsnOrder==2)
                       {
-                          var precursorScan = myMsDataFile.GetOneBasedScan(ms2Scan.OneBasedPrecursorScanNumber.Value);
+                          var precursorScan = myMsDataFile.GetOneBasedScan(scan.OneBasedPrecursorScanNumber.Value);
 
-                          if (!ms2Scan.SelectedIonMonoisotopicGuessIntensity.HasValue && ms2Scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                          if (!scan.SelectedIonMonoisotopicGuessIntensity.HasValue && scan.SelectedIonMonoisotopicGuessMz.HasValue)
                           {
-                              ms2Scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
+                              scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
                           }
 
                           double theFunc(MzPeak x) => x.Mz - ms2predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
 
                           double theFuncForPrecursor(MzPeak x) => x.Mz - ms1predictor.Predict(new double[] { x.Mz, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
 
-                          ms2Scan.TransformMzs(theFunc, theFuncForPrecursor);
+                          scan.TransformMzs(theFunc, theFuncForPrecursor);
                       }
                       else
                       {
