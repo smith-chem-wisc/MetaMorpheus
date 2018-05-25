@@ -27,7 +27,7 @@ namespace TaskLayer
         #region Private Fields
 
         private readonly bool disposeOfFileWhenDone;
-        private readonly Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>> myMsDataFiles = new Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>>();
+        private readonly Dictionary<string, MsDataFile> myMsDataFiles = new Dictionary<string, MsDataFile>();
         private readonly object fileLoadingLock = new object();
         private const string AssumedThermoMsFileReaderDllPath = @"C:\Program Files\Thermo\MSFileReader";
         private const string DesiredFileIoVersion = "3.0";
@@ -57,7 +57,7 @@ namespace TaskLayer
         {
             return (myMsDataFiles.ContainsKey(path) && myMsDataFiles[path] != null);
         }
-        
+
         public static ThermoMsFileReaderVersionCheck ValidateThermoMsFileReaderVersion()
         {
             string fileIoAssumedPath = Path.Combine(AssumedThermoMsFileReaderDllPath, "Fileio_x64.dll");
@@ -87,10 +87,10 @@ namespace TaskLayer
 
         #region Internal Methods
 
-        internal IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
+        internal MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
         {
             FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
-            if (myMsDataFiles.TryGetValue(origDataFile, out IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> value) && value != null)
+            if (myMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
                 return value;
 
             // By now know that need to load this file!!!
