@@ -229,9 +229,13 @@ namespace EngineLayer
                 foreach (var file in FilesForQuantification)
                 {
                     if (IntensitiesByFile[file] > 0)
+                    {
                         sb.Append(IntensitiesByFile[file]);
+                    }
                     else
+                    {
                         sb.Append("");
+                    }
                     sb.Append("\t");
                 }
             }
@@ -483,7 +487,15 @@ namespace EngineLayer
                 spectraFileInfo = FilesForQuantification.Where(p => p.fullFilePathWithExtension == fullFilePath).First();
                 subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
             }
-            subsetPg.IntensitiesByFile = IntensitiesByFile != null ? new Dictionary<SpectraFileInfo, double> { { spectraFileInfo, IntensitiesByFile[spectraFileInfo] } } : new Dictionary<SpectraFileInfo, double>();
+
+            if (IntensitiesByFile == null)
+            {
+                subsetPg.IntensitiesByFile = null;
+            }
+            else
+            {
+                subsetPg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { spectraFileInfo, IntensitiesByFile[spectraFileInfo] } };
+            }
 
             return subsetPg;
         }

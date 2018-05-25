@@ -253,7 +253,7 @@ namespace TaskLayer
             {
                 if (!psmToProteinGroups.ContainsKey(psm))
                 {
-                    psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup>() { undefinedPg });
+                    psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
             }
 
@@ -265,7 +265,8 @@ namespace TaskLayer
 
                 foreach (var psm in spectraFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence, (double)psm.PeptideMonisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence, 
+                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
                 }
             }
 
@@ -286,7 +287,6 @@ namespace TaskLayer
             // get protein intensity back from FlashLFQ
             if (ProteinGroups != null && Parameters.FlashLfqResults != null)
             {
-                Dictionary<string, EngineLayer.ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, EngineLayer.ProteinGroup>();
                 foreach (var proteinGroup in ProteinGroups)
                 {
                     proteinGroup.FilesForQuantification = Parameters.FlashLfqResults.spectraFiles;
