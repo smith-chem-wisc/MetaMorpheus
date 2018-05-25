@@ -23,6 +23,8 @@ namespace MetaMorpheusGUI
         public bool InProgress { get; private set; }
         public string FilePath { get; private set; }
 
+
+
         #endregion Public Properties
 
         #region Public Methods
@@ -40,6 +42,7 @@ namespace MetaMorpheusGUI
         {
             Parameters = text;
         }
+
 
         #endregion Public Methods
     }

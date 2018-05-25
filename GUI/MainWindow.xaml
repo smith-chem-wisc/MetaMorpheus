@@ -136,6 +136,7 @@
                             <Button x:Name="AddRaw" Content="Add" Click="AddSpectraFile_Click" />
                             <Button x:Name="ClearRaw" Content="Clear" Click="ClearSpectraFiles_Click" />
                             <Button x:Name="ChangeFileParameters" Content="Change File Parameters" Click="ChangeFileParameters_Click" />
+                            <Button x:Name="BtnQuantSet" Content="Set Quantification" Click="BtnQuantSet_Click"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>

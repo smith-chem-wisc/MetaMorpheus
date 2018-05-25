@@ -65,6 +65,7 @@ namespace TaskLayer
                  {
                  base_name = filePathNoExtension,
                  raw_data_type = "raw",
+
                  raw_data = ".mzML", //TODO: use file format of spectra file used
                  sample_enzyme = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzyme()
                  {
@@ -91,7 +92,6 @@ namespace TaskLayer
                          precursor_mass_type = pepXML.Generated.massType.monoisotopic,
                          fragment_mass_type = pepXML.Generated.massType.monoisotopic,
                          search_id = 1,
-
                          //generate database information
                          //TODO: multiple databases
                          search_database = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summarySearch_database
@@ -114,6 +114,7 @@ namespace TaskLayer
             _pepxml.msms_run_summary[0].spectrum_query = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query[items.Count];
 
             var searchHits = new List<pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit>();
+          
             foreach(var psm in items)
             {
                 PeptideWithSetModifications peptide = psm.CompactPeptides.First().Value.Item2.First();
