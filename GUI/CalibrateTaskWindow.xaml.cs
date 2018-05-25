@@ -228,12 +228,12 @@ namespace MetaMorpheusGUI
 
             CommonParameters CommonParamsToSave = (TheTask.CommonParameters as CommonParameters).Clone();
 
-           
+
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             int MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
-            int MaxPeptideLength= int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
-            int MaxModificationIsoforms= int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            int MaxPeptideLength = int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DigestionParams digestionParamsToSave = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms);
             CommonParamsToSave.DigestionParams = digestionParamsToSave;
             CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;
