@@ -40,7 +40,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            //Do something in GUI.Main
+            //Do something in GUI.Main or not?
             SpectraFilesQuantSets = spectraFilesQuantSets;
             DoQuant = CbQuant.IsChecked.Value;
 
