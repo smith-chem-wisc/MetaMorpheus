@@ -31,6 +31,8 @@ namespace TaskLayer
                 {"ProteinTermMod", 3},
                 {"UniProt", 2},
             };
+            OutMzId = true;
+            OutPepXML = false;
         }
 
         #endregion Public Constructors
@@ -58,6 +60,8 @@ namespace TaskLayer
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
+        public bool OutMzId { get; set; }
+        public bool OutPepXML { get; set; }
 
         #endregion Public Properties
     }
