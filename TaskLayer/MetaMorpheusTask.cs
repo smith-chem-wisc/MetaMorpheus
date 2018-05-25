@@ -44,10 +44,6 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<CommonParameters>(ct => ct
-                            .CreateInstance(() => new CommonParameters()))
-                        .ConfigureType<DigestionParams>(ct => ct
-                            .CreateInstance(() => new DigestionParams()))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t", custom))

@@ -1,12 +1,10 @@
-# MetaMorpheus: Free, Open-Source PTM Discovery <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Tweet"></a>
+ # <img src="https://user-images.githubusercontent.com/16841846/40388929-841db5da-5dd6-11e8-8c21-6c71eed30011.png"> MetaMorpheus: Free, Open-Source PTM Discovery <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://user-images.githubusercontent.com/16841846/40389057-efdbfd40-5dd6-11e8-9d9e-68da0e793288.png" alt="Tweet"></a>
 
 [![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
 
-[![](https://github.com/smith-chem-wisc/MetaMorpheus/blob/master/GUI/MMnice.ico)](https://smith-chem-wisc.github.io/MetaMorpheus/)
+Download the current version [here](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest). For first-time Windows users, choose "MetaMorpheusInstaller.msi" and install MetaMorpheus. Check out our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[getting started video](https://www.youtube.com/watch?v=rNgCDzi7STs&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb) on YouTube 
 
-Download the current version [here](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest). For first-time Windows users, choose "MetaMorpheusInstaller.msi" and install MetaMorpheus.
- 
 MetaMorpheus is a bottom-up proteomics database search software with integrated post-translational modification (PTM) discovery capability.
 This program combines features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTM-D](https://github.com/smith-chem-wisc/gptmd) in a single tool.
 
@@ -34,10 +32,11 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
    * Thermo .raw
    * .mzML file in centroid mode
 * MS1 and MS2 scans
+If you would like to know more about the types of files that can be searched with MetaMorpheus, please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Mass Spectra Files Video](https://www.youtube.com/watch?v=SN6_T2JyxhA&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb&index=3) on YouTube.
 
 ## Database Requirements
 
-UniProt .XML or .fasta format; may be used in compressed (.gz) format.
+UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you would like to know how to obtain a UniProt .XML databases, please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Protein Databases Video](https://www.youtube.com/watch?v=LFvCj04r5kU&index=2&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb) on YouTube.
 
 ## Test Installation (Windows GUI)
 
@@ -90,7 +89,7 @@ dotnet CMD/bin/Release/netcoreapp2.0/CMD.dll -t Task1SearchExample.toml Task2Cal
 
 
 ## References
-* [Enhanced Global Post-translational Modification Discovery with MetaMorpheus--J. Proteome Res., Article ASAP](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873)
+* [Enhanced Global Post-translational Modification Discovery with MetaMorpheus--J Proteome Res. 2018 May 4;17(5):1844-1851](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873)
 * [Global Post-translational Modification Discovery--J. Proteome Res., 2017, 16, 1383-1390](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034)
 
 * [Global Identification of Protein Post-translational Modifications in a Single-Pass Database Search--J. Proteome Res., 2015, 14 (11), pp 4714–4720](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.5b00599)

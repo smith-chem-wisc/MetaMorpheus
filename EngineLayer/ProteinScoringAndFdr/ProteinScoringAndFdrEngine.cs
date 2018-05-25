@@ -58,9 +58,9 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValueNotch < 0.01&& psm.FdrInfo.QValue < 0.01)
+                if (psm.FdrInfo.QValueNotch < 0.01 && psm.FdrInfo.QValue < 0.01)
                 {
-                    if((treatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!treatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
+                    if ((treatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!treatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
                         foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                         {
@@ -158,7 +158,7 @@ namespace EngineLayer
             }
 
             // pick the best notch-QValue for each paired accession
-            foreach(var accession in accessionToProteinGroup)
+            foreach (var accession in accessionToProteinGroup)
             {
                 if (accession.Value.Count > 1)
                 {
@@ -168,14 +168,14 @@ namespace EngineLayer
                     proteinGroups = proteinGroups.Except(pgList).ToList();
                 }
             }
-            
+
             // order protein groups by notch-QValue
             var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
 
             // calculate protein QValues
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
-            
+
             foreach (var proteinGroup in sortedProteinGroups)
             {
                 if (proteinGroup.isDecoy)
@@ -187,7 +187,7 @@ namespace EngineLayer
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
             }
-            
+
             return sortedProteinGroups;
         }
 
