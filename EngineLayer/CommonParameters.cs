@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer
 {
-    public class CommonParameters 
+    public class CommonParameters
     {
         #region Public Constructors
 

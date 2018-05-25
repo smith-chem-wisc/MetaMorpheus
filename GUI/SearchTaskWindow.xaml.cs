@@ -203,7 +203,7 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
-            ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
+            //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
             ckbMzId.IsChecked = task.SearchParameters.OutMzId;
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -450,7 +450,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.OutMzId = ckbMzId.IsChecked.Value;
-            TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
+            //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
             if (checkBoxDecoy.IsChecked.Value)
             {

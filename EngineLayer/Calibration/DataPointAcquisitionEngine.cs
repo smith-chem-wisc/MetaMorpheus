@@ -17,7 +17,7 @@ namespace EngineLayer.Calibration
         private const double fineResolutionForIsotopeDistCalculation = 0.1;
 
         private readonly List<PeptideSpectralMatch> goodIdentifications;
-        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+        private readonly MsDataFile myMsDataFile;
         private readonly int numFragmentsNeededForEveryIdentification;
         private readonly Tolerance mzToleranceForMs1Search;
         private readonly Tolerance mzToleranceForMs2Search;
@@ -31,7 +31,7 @@ namespace EngineLayer.Calibration
 
         public DataPointAcquisitionEngine(
             List<PeptideSpectralMatch> goodIdentifications,
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile,
+            MsDataFile myMsDataFile,
             Tolerance mzToleranceForMs1Search,
             Tolerance mzToleranceForMs2Search,
             int numFragmentsNeededForEveryIdentification,
@@ -94,7 +94,7 @@ namespace EngineLayer.Calibration
                         continue;
                     Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
-                    var ms2tuple = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2scanNumber) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, identification);
+                    var ms2tuple = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2scanNumber), identification);
 
                     lock (lockObj2)
                     {
@@ -235,14 +235,14 @@ namespace EngineLayer.Calibration
             return (result, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
         }
 
-        private static List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, PeptideSpectralMatch identification)
+        private static List<LabeledDataPoint> SearchMS2Spectrum(MsDataScan ms2DataScan, PeptideSpectralMatch identification)
         {
             List<LabeledDataPoint> result = new List<LabeledDataPoint>();
 
             if (ms2DataScan.MassSpectrum.Size == 0)
                 return result;
-            
-            foreach(var productType in identification.MatchedIonDictOnlyMatches)
+
+            foreach (var productType in identification.MatchedIonDictOnlyMatches)
             {
                 for (int i = 0; i < productType.Value.Length; i++)
                 {
@@ -255,8 +255,8 @@ namespace EngineLayer.Calibration
 
                     result.Add(
                         new LabeledDataPoint(
-                            exptPeakMz, 
-                            ms2DataScan.RetentionTime, 
+                            exptPeakMz,
+                            ms2DataScan.RetentionTime,
                             Math.Log(ms2DataScan.TotalIonCurrent),
                             Math.Log(injTime),
                             Math.Log(exptPeakIntensity),

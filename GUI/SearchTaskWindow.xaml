@@ -767,8 +767,8 @@
                 <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">
-                            <CheckBox x:Name="ckbMzId" Content="Output for .mzID" />
-                            <CheckBox x:Name="ckbPepXML" Content="Output for .pep.XML" />
+                            <CheckBox x:Name="ckbMzId" Content="Write .mzID" />
+                            <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                         </StackPanel>
                     </Expander>
                 </GroupBox>
