@@ -192,17 +192,7 @@
                             Use for fixed and variable modifications in the sample (Limit to a few mods)
                         </TextBlock>
                     </GroupBox.ToolTip>
-                    <Expander x:Name="ModExpander" IsExpanded="False" HorizontalAlignment="Right" Margin="0,0,0.333,0" Width="733">
-                        <Expander.Style>
-                            <Style TargetType="Expander">
-                                <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
-                                <Style.Triggers>
-                                    <Trigger Property="IsExpanded" Value="True">
-                                        <Setter Property="Header" Value="Hide" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Expander.Style>
+                    <Expander>
                         <StackPanel>
                             <Grid>
                                 <Grid.ColumnDefinitions>

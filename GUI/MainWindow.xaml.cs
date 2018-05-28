@@ -30,7 +30,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
-        private ObservableCollection<QuantForDataGrid> quantForDataGrids;
 
         #endregion Private Fields
 
@@ -581,6 +580,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
+            // check for valid tasks/spectra files/protein databases
             if (!staticTasksObservableCollection.Any())
             {
                 GuiWarnHandler(null, new StringEventArgs("You need to add at least one task!", null));
@@ -607,6 +607,7 @@ namespace MetaMorpheusGUI
 
             notificationsTextBox.Document.Blocks.Clear();
 
+            // output folder
             if (string.IsNullOrEmpty(OutputFolderTextBox.Text))
             {
                 var pathOfFirstSpectraFile = Path.GetDirectoryName(spectraFilesObservableCollection.First().FilePath);
@@ -617,6 +618,40 @@ namespace MetaMorpheusGUI
             string outputFolder = OutputFolderTextBox.Text.Replace("$DATETIME", startTimeForAllFilenames);
             OutputFolderTextBox.Text = outputFolder;
 
+            // check that experimental design is defined if normalization is enabled
+            // TODO: move all of this over to EverythingRunnerEngine
+            var searchTasks = staticTasksObservableCollection
+                .Where(p => p.metaMorpheusTask.TaskType == MyTask.Search)
+                .Select(p => (SearchTask)p.metaMorpheusTask);
+
+            string pathToExperDesign = Directory.GetParent(spectraFilesObservableCollection.First().FilePath).FullName;
+            pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+
+            foreach (var searchTask in searchTasks.Where(p => p.SearchParameters.Normalize))
+            {
+                if (!File.Exists(pathToExperDesign))
+                {
+                    MessageBox.Show("Experimental design must be defined for normalization!\n" +
+                        "Click the \"Experimental Design\" button in the bottom left by the spectra files");
+                    return;
+                }
+
+                // check that experimental design is OK (spectra files may have been added after exper design was defined)
+                // TODO: experimental design might still have flaws if user edited the file manually, need to check for this
+                var experDesign = File.ReadAllLines(pathToExperDesign).ToDictionary(p => p.Split('\t')[0], p => p);
+                var filesToUse = new HashSet<string>(spectraFilesObservableCollection.Select(p => Path.GetFileNameWithoutExtension(p.FileName)));
+                var experDesignFilesDefined = new HashSet<string>(experDesign.Keys);
+
+                var undefined = filesToUse.Except(experDesignFilesDefined);
+
+                if (undefined.Any())
+                {
+                    MessageBox.Show("Need to define experimental design parameters for file: " + undefined.First());
+                    return;
+                }
+            }
+
+            // everything is OK to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(),
                 spectraFilesObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(),
                 proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
@@ -1243,17 +1278,10 @@ namespace MetaMorpheusGUI
 
         private void BtnQuantSet_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new QuantSettingWindow(spectraFilesObservableCollection);
-
-            //Do something in GUI.Main
-            if(dialog.ShowDialog() == true)
-            {
-                quantForDataGrids = new ObservableCollection<QuantForDataGrid>();
-                quantForDataGrids = dialog.SpectraFilesQuantSets;
-               
-            }
+            var dialog = new ExperimentalDesignWindow(spectraFilesObservableCollection);
+            dialog.ShowDialog();
         }
-        
+
         private void MenuItem_Click_2(object sender, RoutedEventArgs e)
         {
             try

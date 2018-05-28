@@ -7,37 +7,34 @@ using System.IO;
 
 namespace MetaMorpheusGUI
 {
-    public class QuantForDataGrid
+    public class ExperimentalDesignForDataGrid
     {
-        public QuantForDataGrid(string path)
+        public ExperimentalDesignForDataGrid(string filename)
         {
-            FileName = Path.GetFileName(path);
-            FilePath = path;
+            FileName = Path.GetFileNameWithoutExtension(filename);
         }
 
         public string FileName { get; private set; }      
-        public string Qcondition { get; set; }
-        public string QbioRep { get; set; }
-        public string Qfraction { get; set; }
-        public string QtechRep { get; set; }
-        public string FilePath { get; private set; }
+        public string Condition { get; set; }
+        public string Biorep { get; set; }
+        public string Fraction { get; set; }
+        public string Techrep { get; set; }
 
         public void SetQconditionText(string text)
         {
-            Qcondition = text;
+            Condition = text;
         }
         public void SetQbioRepText(string text)
         {
-            QbioRep = text;
+            Biorep = text;
         }
         public void SetQfractionText(string text)
         {
-            Qfraction = text;
+            Fraction = text;
         }
         public void SetQtechRepText(string text)
         {
-            QtechRep = text;
+            Techrep = text;
         }
-
     }
 }

@@ -26,10 +26,8 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
-
         #region Public Fields
-
-
+        
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -157,15 +155,14 @@ namespace TaskLayer
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
             if (fileSpecificParams == null)
+            {
                 return commonParams;
+            }
 
             // clone the common parameters as a template for the file-specific params to override certain values
-            CommonParameters returnParams = ((CommonParameters)commonParams).Clone();
-
-
+            CommonParameters returnParams = commonParams.Clone();
+            
             // set file-specific digestion parameters
-
-
             Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
             int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
             int MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;

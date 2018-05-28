@@ -166,6 +166,7 @@ namespace MetaMorpheusGUI
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
             quantPpmTolerance.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
+            checkBoxNormalize.IsChecked = task.SearchParameters.Normalize;
             modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
             checkBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
             histogramBinWidthTextBox.Text = task.SearchParameters.HistogramBinTolInDaltons.ToString(CultureInfo.InvariantCulture);
@@ -445,6 +446,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = checkBoxQuantification.IsChecked.Value;
+            TheTask.SearchParameters.Normalize = checkBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
