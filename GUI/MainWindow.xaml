@@ -135,8 +135,8 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="AddRaw" Content="Add" Click="AddSpectraFile_Click" />
                             <Button x:Name="ClearRaw" Content="Clear" Click="ClearSpectraFiles_Click" />
-                            <Button x:Name="ChangeFileParameters" Content="Change File Parameters" Click="ChangeFileParameters_Click" />
-                            <Button x:Name="BtnQuantSet" Content="Set Quantification" Click="BtnQuantSet_Click"/>
+                            <Button x:Name="ChangeFileParameters" Content="Set File-Specific Parameters" Click="ChangeFileParameters_Click" />
+                            <Button x:Name="BtnQuantSet" Content="Experimental Design" Click="BtnQuantSet_Click"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -156,17 +156,17 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="20" />
-                            <RowDefinition Height="20" />
+                            <RowDefinition Height="0" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
                             <RowDefinition Height="36" />
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button x:Name="addSearchTaskButton" Content="New Search Task" Click="AddSearchTaskButton_Click" />
-                            <Button x:Name="addCalibrateTaskButton" Content="New Calibrate Task" Click="AddCalibrateTaskButton_Click" />
-                            <Button x:Name="addGPTMDTaskButton" Content="New GPTMD Task" Click="AddGPTMDTaskButton_Click" />
-                            <Button x:Name="btnAddCrosslinkSearch" Content="New XL Task" Click="BtnAddCrosslinkSearch_Click" />
+                            <Button x:Name="addCalibrateTaskButton" Content="Calibrate" Click="AddCalibrateTaskButton_Click" />
+                            <Button x:Name="addGPTMDTaskButton" Content="Discover PTMs" Click="AddGPTMDTaskButton_Click" />
+                            <Button x:Name="addSearchTaskButton" Content="Search" Click="AddSearchTaskButton_Click" />
+                            <Button x:Name="btnAddCrosslinkSearch" Content="XL Search" Click="BtnAddCrosslinkSearch_Click" />
                         </StackPanel>
                         <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="addNeoTaskButton" Content="New Neo Meta-Task" Click="AddNeoTaskButton_Click" />
