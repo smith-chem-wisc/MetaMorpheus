@@ -650,6 +650,7 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
+            BtnQuantSet.IsEnabled = false;
 
             // everything is OK to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(),
@@ -1067,6 +1068,7 @@ namespace MetaMorpheusGUI
             ClearXML.IsEnabled = true;
             AddRaw.IsEnabled = true;
             ClearRaw.IsEnabled = true;
+            BtnQuantSet.IsEnabled = true;
 
             LoadTaskButton.IsEnabled = true;
 
