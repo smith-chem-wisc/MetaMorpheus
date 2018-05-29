@@ -21,7 +21,7 @@ namespace MetaMorpheusGUI
         //viewed, loaded, and changed from it.
         public FileSpecificParametersWindow(ObservableCollection<RawDataForDataGrid> selectedSpectraFiles)
         {
-            SelectedRaw = selectedSpectraFiles;
+            SelectedSpectra = selectedSpectraFiles;
             InitializeComponent();
             PopulateChoices();
         }
@@ -30,7 +30,7 @@ namespace MetaMorpheusGUI
 
         #region Internal Properties
 
-        internal ObservableCollection<RawDataForDataGrid> SelectedRaw { get; private set; }
+        internal ObservableCollection<RawDataForDataGrid> SelectedSpectra { get; private set; }
 
         #endregion Internal Properties
 
@@ -47,7 +47,7 @@ namespace MetaMorpheusGUI
             {
                 paramsToSaveCount++;
                 double value = 0;
-                if(double.TryParse(precursorMassToleranceTextBox.Text, out value))
+                if (double.TryParse(precursorMassToleranceTextBox.Text, out value))
                 {
                     if (precursorMassToleranceComboBox.SelectedIndex == 0)
                     {
@@ -158,7 +158,7 @@ namespace MetaMorpheusGUI
             //}
 
             // write parameters to toml files for the selected spectra files
-            var tomlPathsForSelectedFiles = SelectedRaw.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
+            var tomlPathsForSelectedFiles = SelectedSpectra.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
             foreach (var tomlToWrite in tomlPathsForSelectedFiles)
             {
                 if (paramsToSaveCount > 0)
@@ -190,60 +190,59 @@ namespace MetaMorpheusGUI
         {
             // use default settings to populate
             var tempCommonParams = new CommonParameters();
-            Protease tempProtease = null;
-            int tempMinPeptideLength = 0;
-            int tempMaxPeptideLength = 0;
-            int tempMaxMissedCleavages = 0;
-            int tempMaxModsForPeptide = 0;
-
-            
+            Protease tempProtease = tempCommonParams.DigestionParams.Protease;
+            int tempMinPeptideLength = tempCommonParams.DigestionParams.MinPeptideLength;
+            int tempMaxPeptideLength = tempCommonParams.DigestionParams.MaxPeptideLength;
+            int tempMaxMissedCleavages = tempCommonParams.DigestionParams.MaxMissedCleavages;
+            int tempMaxModsForPeptide = tempCommonParams.DigestionParams.MaxModsForPeptide;
             
             // do any of the selected files already have file-specific parameters specified?
-            var ok = SelectedRaw.Select(p => p.FilePath);
-            foreach(var path in ok)
+            var spectraFiles = SelectedSpectra.Select(p => p.FilePath);
+            foreach (string file in spectraFiles)
             {
-                string tomlPath = Path.Combine(Directory.GetParent(path).ToString(), Path.GetFileNameWithoutExtension(path)) + ".toml";
-                if(File.Exists(tomlPath))
+                string tomlPath = Path.Combine(Directory.GetParent(file).ToString(), Path.GetFileNameWithoutExtension(file)) + ".toml";
+
+                if (File.Exists(tomlPath))
                 {
                     TomlTable tomlTable = Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig);
-                    FileSpecificParameters tempFileSpecificParams = new FileSpecificParameters(tomlTable);
-                    
-                    if (tempFileSpecificParams.PrecursorMassTolerance != null)
+                    FileSpecificParameters fileSpecificParams = new FileSpecificParameters(tomlTable);
+
+                    if (fileSpecificParams.PrecursorMassTolerance != null)
                     {
-                        tempCommonParams.PrecursorMassTolerance = tempFileSpecificParams.PrecursorMassTolerance;
+                        tempCommonParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance;
                         fileSpecificPrecursorMassTolEnabled.IsChecked = true;
                     }
-                    if (tempFileSpecificParams.ProductMassTolerance != null)
+                    if (fileSpecificParams.ProductMassTolerance != null)
                     {
-                        tempCommonParams.ProductMassTolerance = tempFileSpecificParams.ProductMassTolerance;
+                        tempCommonParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance;
                         fileSpecificProductMassTolEnabled.IsChecked = true;
                     }
-                    if (tempFileSpecificParams.Protease != null)
+                    if (fileSpecificParams.Protease != null)
                     {
-                        tempProtease=(tempFileSpecificParams.Protease);
+                        tempProtease = (fileSpecificParams.Protease);
                         fileSpecificProteaseEnabled.IsChecked = true;
                     }
-                    if (tempFileSpecificParams.MinPeptideLength != null)
+                    if (fileSpecificParams.MinPeptideLength != null)
                     {
-                        tempMinPeptideLength=(tempFileSpecificParams.MinPeptideLength.Value);
+                        tempMinPeptideLength = (fileSpecificParams.MinPeptideLength.Value);
                         fileSpecificMinPeptideLengthEnabled.IsChecked = true;
                     }
-                    if (tempFileSpecificParams.MaxPeptideLength != null)
+                    if (fileSpecificParams.MaxPeptideLength != null)
                     {
-                        tempMaxPeptideLength=(tempFileSpecificParams.MaxPeptideLength.Value);
+                        tempMaxPeptideLength = (fileSpecificParams.MaxPeptideLength.Value);
                         fileSpecificMaxPeptideLengthEnabled.IsChecked = true;
                     }
-                    if (tempFileSpecificParams.MaxMissedCleavages != null)
+                    if (fileSpecificParams.MaxMissedCleavages != null)
                     {
-                        tempMaxMissedCleavages=(tempFileSpecificParams.MaxMissedCleavages.Value);
+                        tempMaxMissedCleavages = (fileSpecificParams.MaxMissedCleavages.Value);
                         fileSpecificMissedCleavagesEnabled.IsChecked = true;
                     }
-                    if (tempFileSpecificParams.MaxModsForPeptide != null)
+                    if (fileSpecificParams.MaxModsForPeptide != null)
                     {
-                        tempMaxModsForPeptide=(tempFileSpecificParams.MaxMissedCleavages.Value);
+                        tempMaxModsForPeptide = (fileSpecificParams.MaxMissedCleavages.Value);
                         fileSpecificMaxModNumEnabled.IsChecked = true;
                     }
-                    
+
                     //if (tempFileSpecificParams.BIons != null || tempFileSpecificParams.CIons != null
                     //    || tempFileSpecificParams.YIons != null || tempFileSpecificParams.ZdotIons != null)
                     //{
@@ -255,16 +254,23 @@ namespace MetaMorpheusGUI
                     //    fileSpecificIonTypesEnabled.IsChecked = true;
                     //}
                 }
-              
             }
-            DigestionParams tempDigestParams = new DigestionParams(protease: tempProtease.Name, MaxMissedCleavages: tempMaxMissedCleavages, MinPeptideLength: tempMinPeptideLength, MaxPeptideLength: tempMaxPeptideLength, MaxModsForPeptides: tempMaxModsForPeptide);
-            tempCommonParams.DigestionParams = tempDigestParams;
-            
+
+            DigestionParams digestParams = new DigestionParams(
+                protease: tempProtease.Name, 
+                MaxMissedCleavages: tempMaxMissedCleavages, 
+                MinPeptideLength: tempMinPeptideLength, 
+                MaxPeptideLength: tempMaxPeptideLength, 
+                MaxModsForPeptides: tempMaxModsForPeptide);
+
+            tempCommonParams.DigestionParams = digestParams;
+
             // populate the GUI
             foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
             {
                 fileSpecificProtease.Items.Add(protease);
             }
+
             fileSpecificProtease.SelectedItem = tempCommonParams.DigestionParams.Protease;
 
             productMassToleranceComboBox.Items.Add("Da");

@@ -160,7 +160,7 @@ namespace TaskLayer
 
                     var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                    MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                     new LocalizationEngine(Parameters.AllPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), Parameters.IonTypes,
                         myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }, Parameters.SearchParameters.AddCompIons).Run();
                     Parameters.MyFileManager.DoneWithFile(origDataFile);
@@ -178,15 +178,57 @@ namespace TaskLayer
 
             // construct file info for FlashLFQ
             var spectraFileInfo = new List<SpectraFileInfo>();
-            foreach (var file in Parameters.CurrentRawFileList)
+
+            // get experimental design info for normalization
+            if (Parameters.SearchParameters.Normalize)
             {
-                // experimental design info passed in here for each spectra file
-                spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: 0, fraction: 0, techrep: 0));
-                Parameters.MyFileManager.DoneWithFile(file);
+                string assumedExperimentalDesignPath = Directory.GetParent(Parameters.CurrentRawFileList.First()).FullName;
+                assumedExperimentalDesignPath = Path.Combine(assumedExperimentalDesignPath, GlobalVariables.ExperimentalDesignFileName);
+
+                if (File.Exists(assumedExperimentalDesignPath))
+                {
+                    var experimentalDesign = File.ReadAllLines(assumedExperimentalDesignPath)
+                        .ToDictionary(p => p.Split('\t')[0], p => p);
+
+                    foreach(var file in Parameters.CurrentRawFileList)
+                    {
+                        string filename = Path.GetFileNameWithoutExtension(file);
+
+                        var expDesignForThisFile = experimentalDesign[filename];
+                        var split = expDesignForThisFile.Split('\t');
+
+                        string condition = split[1];
+                        int biorep = int.Parse(split[2]);
+                        int fraction = int.Parse(split[3]);
+                        int techrep = int.Parse(split[4]);
+
+                        // experimental design info passed in here for each spectra file
+                        spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, 
+                            condition: condition, 
+                            biorep: biorep - 1, 
+                            fraction: fraction - 1, 
+                            techrep: techrep - 1));
+
+                        Parameters.MyFileManager.DoneWithFile(file);
+                    }
+                }
+                else
+                {
+                    throw new MetaMorpheusException("Could not find experimental design file at location:\n" + assumedExperimentalDesignPath);
+                }
+            }
+            else
+            {
+                foreach (var file in Parameters.CurrentRawFileList)
+                {
+                    // experimental design info passed in here for each spectra file
+                    spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: 0, fraction: 0, techrep: 0));
+                    Parameters.MyFileManager.DoneWithFile(file);
+                }
             }
 
             // get PSMs to pass to FlashLFQ
-            var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p => 
+            var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
                 p.FdrInfo.QValue < 0.01
                 && p.FdrInfo.QValueNotch < 0.01
                 && !p.IsDecoy
@@ -265,7 +307,7 @@ namespace TaskLayer
 
                 foreach (var psm in spectraFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence, 
+                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
                         psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
                 }
             }
@@ -273,7 +315,7 @@ namespace TaskLayer
             // run FlashLFQ
             var FlashLfqEngine = new FlashLFQEngine(
                 allIdentifications: flashLFQIdentifications,
-                normalize: false,
+                normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
@@ -289,10 +331,10 @@ namespace TaskLayer
             {
                 foreach (var proteinGroup in ProteinGroups)
                 {
-                    proteinGroup.FilesForQuantification = Parameters.FlashLfqResults.spectraFiles;
+                    proteinGroup.FilesForQuantification = spectraFileInfo;
                     proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
-                    
-                    foreach (var spectraFile in Parameters.FlashLfqResults.spectraFiles)
+
+                    foreach (var spectraFile in proteinGroup.FilesForQuantification)
                     {
                         if (Parameters.FlashLfqResults.proteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
                         {
@@ -709,7 +751,7 @@ namespace TaskLayer
 
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {
-            if (items != null)
+            if (items != null && items.Any())
             {
                 var writtenFile = Path.Combine(outputFolder, strippedFileName + ".tsv");
 
