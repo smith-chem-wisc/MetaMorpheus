@@ -331,10 +331,10 @@ namespace TaskLayer
             {
                 foreach (var proteinGroup in ProteinGroups)
                 {
-                    proteinGroup.FilesForQuantification = Parameters.FlashLfqResults.spectraFiles;
+                    proteinGroup.FilesForQuantification = spectraFileInfo;
                     proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
 
-                    foreach (var spectraFile in Parameters.FlashLfqResults.spectraFiles)
+                    foreach (var spectraFile in proteinGroup.FilesForQuantification)
                     {
                         if (Parameters.FlashLfqResults.proteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
                         {
