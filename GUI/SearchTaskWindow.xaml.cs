@@ -158,8 +158,8 @@ namespace MetaMorpheusGUI
         {
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            nonSpecificSearchRadioButton1.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParams.DigestionParams.Protease.Name.Contains("non-specific");
-            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParams.DigestionParams.Protease.Name.Contains("non-specific");
+            nonSpecificSearchRadioButton1.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
+            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
             txtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
@@ -173,38 +173,38 @@ namespace MetaMorpheusGUI
             checkBoxDecoy.IsChecked = task.SearchParameters.DecoyType != DecoyType.None;
             radioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
             radioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
-            missedCleavagesTextBox.Text = task.CommonParams.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParams.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParams.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            txtMaxPeptideLength.Text = task.CommonParams.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParams.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParams.DigestionParams.Protease;
-            maxModificationIsoformsTextBox.Text = task.CommonParams.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            txtMaxModNum.Text = task.CommonParams.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParams.DigestionParams.InitiatorMethionineBehavior;
-            productMassToleranceTextBox.Text = task.CommonParams.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = task.CommonParams.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            precursorMassToleranceTextBox.Text = task.CommonParams.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = task.CommonParams.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
+            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            txtMaxModNum.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
+            productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             addCompIonCheckBox.IsChecked = task.SearchParameters.AddCompIons;
-            bCheckBox.IsChecked = task.CommonParams.BIons;
-            yCheckBox.IsChecked = task.CommonParams.YIons;
-            cCheckBox.IsChecked = task.CommonParams.CIons;
-            zdotCheckBox.IsChecked = task.CommonParams.ZdotIons;
-            numberOfDatabaseSearchesTextBox.Text = task.CommonParams.TotalPartitions.ToString(CultureInfo.InvariantCulture);
-            deconvolutePrecursors.IsChecked = task.CommonParams.DoPrecursorDeconvolution;
-            useProvidedPrecursor.IsChecked = task.CommonParams.UseProvidedPrecursorInfo;
-            allAmbiguity.IsChecked = task.CommonParams.ReportAllAmbiguity;
-            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParams.DeconvolutionMaxAssumedChargeState.ToString();
-            minScoreAllowed.Text = task.CommonParams.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
-            eValueCheckBox.IsChecked = task.CommonParams.CalculateEValue;
-            deltaScoreCheckBox.IsChecked = task.CommonParams.UseDeltaScore;
-            trimMs1.IsChecked = task.CommonParams.TrimMs1Peaks;
-            trimMsMs.IsChecked = task.CommonParams.TrimMsMsPeaks;
-            TopNPeaksTextBox.Text = task.CommonParams.TopNpeaks == int.MaxValue ? "" : task.CommonParams.TopNpeaks.ToString(CultureInfo.InvariantCulture);
-            MinRatioTextBox.Text = task.CommonParams.MinRatio.ToString(CultureInfo.InvariantCulture);
+            bCheckBox.IsChecked = task.CommonParameters.BIons;
+            yCheckBox.IsChecked = task.CommonParameters.YIons;
+            cCheckBox.IsChecked = task.CommonParameters.CIons;
+            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
+            numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
+            deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
+            useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
+            allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
+            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
+            minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            eValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
+            deltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
+            trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
+            trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
+            MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
 
-            OutputFileNameTextBox.Text = task.CommonParams.TaskDescriptor;
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
-            foreach (var mod in task.CommonParams.ListOfModsFixed)
+            foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
@@ -226,7 +226,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            foreach (var mod in task.CommonParams.ListOfModsVariable)
+            foreach (var mod in task.CommonParameters.ListOfModsVariable)
             {
                 var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
@@ -542,7 +542,7 @@ namespace MetaMorpheusGUI
 
             SetModSelectionForPrunedDB();
 
-            TheTask.CommonParams = CommonParamsToSave;
+            TheTask.CommonParameters = CommonParamsToSave;
 
             #endregion Save Parameters
 

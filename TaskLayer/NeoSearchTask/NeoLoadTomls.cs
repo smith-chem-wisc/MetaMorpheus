@@ -26,7 +26,7 @@ namespace TaskLayer
             {
                 string caliFileName = "CalibrationTaskconfig.toml";
                 caliFileName = Path.Combine(defaultFolderPath, caliFileName);
-                UpdateTomls(tomlFileName, caliFileName, ye5.CommonParams, TerminusType.None, false);
+                UpdateTomls(tomlFileName, caliFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<CalibrationTask>(caliFileName, MetaMorpheusTask.tomlConfig);//FIXME, An item with the same key has already been added, dictionary in Toml.ReadFile
                 novelCollection.Add(yeo);//multiple protease issue
             }
@@ -35,7 +35,7 @@ namespace TaskLayer
             {
                 string gptmdFileName = "GptmdTaskconfig.toml";
                 gptmdFileName = Path.Combine(defaultFolderPath, gptmdFileName);
-                UpdateTomls(tomlFileName, gptmdFileName, ye5.CommonParams, TerminusType.None, false);
+                UpdateTomls(tomlFileName, gptmdFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<GptmdTask>(gptmdFileName, MetaMorpheusTask.tomlConfig);
                 novelCollection.Add(yeo);
             }
@@ -44,7 +44,7 @@ namespace TaskLayer
             {
                 string targetFileName = "SearchTaskTargetconfig.toml";
                 targetFileName = Path.Combine(defaultFolderPath, targetFileName);
-                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParams, TerminusType.None, false);
+                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
                 novelCollection.Add(yeo);
             }
@@ -53,7 +53,7 @@ namespace TaskLayer
             {
                 string decoyFileName = "SearchTaskDecoyconfig.toml";
                 decoyFileName = Path.Combine(defaultFolderPath, decoyFileName);
-                UpdateTomls(tomlFileName, decoyFileName, ye5.CommonParams, TerminusType.None, false);
+                UpdateTomls(tomlFileName, decoyFileName, ye5.CommonParameters, TerminusType.None, false);
                 var yeo = Toml.ReadFile<SearchTask>(decoyFileName, MetaMorpheusTask.tomlConfig);
                 novelCollection.Add(yeo);
             }
@@ -67,7 +67,7 @@ namespace TaskLayer
             {
                 string targetFileName = "SearchTaskNconfig.toml";
                 targetFileName = Path.Combine(defaultFolderPath, targetFileName);
-                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParams, TerminusType.N, false);
+                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.N, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
                 novelCollection.Add(yeo);
             }
@@ -76,7 +76,7 @@ namespace TaskLayer
             {
                 string targetFileName = "SearchTaskCconfig.toml";
                 targetFileName = Path.Combine(defaultFolderPath, targetFileName);
-                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParams, TerminusType.C, false);
+                UpdateTomls(tomlFileName, targetFileName, ye5.CommonParameters, TerminusType.C, false);
                 var yeo = Toml.ReadFile<SearchTask>(targetFileName, MetaMorpheusTask.tomlConfig);
                 novelCollection.Add(yeo);
             }
@@ -87,7 +87,7 @@ namespace TaskLayer
 
             string cisFileName = "SearchTaskCisconfig.toml";
             cisFileName = Path.Combine(defaultFolderPath, cisFileName);
-            UpdateTomls(tomlFileName, cisFileName, ye5.CommonParams, TerminusType.None, true);
+            UpdateTomls(tomlFileName, cisFileName, ye5.CommonParameters, TerminusType.None, true);
             var yeocis = Toml.ReadFile<SearchTask>(cisFileName, MetaMorpheusTask.tomlConfig);
             novelCollection.Add(yeocis);
 
@@ -97,7 +97,7 @@ namespace TaskLayer
 
             string transFileName = "SearchTaskTransconfig.toml";
             transFileName = Path.Combine(defaultFolderPath, transFileName);
-            UpdateTomls(tomlFileName, transFileName, ye5.CommonParams, TerminusType.None, true);
+            UpdateTomls(tomlFileName, transFileName, ye5.CommonParameters, TerminusType.None, true);
             var yeotrans = Toml.ReadFile<SearchTask>(transFileName, MetaMorpheusTask.tomlConfig);
             novelCollection.Add(yeotrans);
 

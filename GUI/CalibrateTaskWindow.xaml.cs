@@ -32,7 +32,7 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             PopulateChoices();
 
-            TheTask = new CalibrationTask();
+            CalibrationTask TheTask = new CalibrationTask();
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the Calibration Task";
@@ -59,34 +59,34 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
-            missedCleavagesTextBox.Text = task.CommonParams.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParams.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParams.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            txtMaxPeptideLength.Text = task.CommonParams.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParams.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParams.DigestionParams.Protease;
-            maxModificationIsoformsTextBox.Text = task.CommonParams.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParams.DigestionParams.InitiatorMethionineBehavior;
+            missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
+            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
 
-            productMassToleranceTextBox.Text = task.CommonParams.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = task.CommonParams.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            precursorMassToleranceTextBox.Text = task.CommonParams.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = task.CommonParams.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
 
             //maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
 
-            bCheckBox.IsChecked = task.CommonParams.BIons;
-            yCheckBox.IsChecked = task.CommonParams.YIons;
-            zdotCheckBox.IsChecked = task.CommonParams.ZdotIons;
-            cCheckBox.IsChecked = task.CommonParams.CIons;
+            bCheckBox.IsChecked = task.CommonParameters.BIons;
+            yCheckBox.IsChecked = task.CommonParameters.YIons;
+            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
+            cCheckBox.IsChecked = task.CommonParameters.CIons;
 
             
 
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
-            minScoreAllowed.Text = task.CommonParams.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
-            OutputFileNameTextBox.Text = task.CommonParams.TaskDescriptor;
+            OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
-            foreach (var mod in task.CommonParams.ListOfModsFixed)
+            foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
@@ -104,7 +104,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            foreach (var mod in task.CommonParams.ListOfModsVariable)
+            foreach (var mod in task.CommonParameters.ListOfModsVariable)
             {
                 var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
@@ -275,7 +275,7 @@ namespace MetaMorpheusGUI
             }
 
             
-            TheTask.CommonParams = CommonParamsToSave;
+            TheTask.CommonParameters = CommonParamsToSave;
 
             DialogResult = true;
         }

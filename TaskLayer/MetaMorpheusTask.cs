@@ -160,7 +160,7 @@ namespace TaskLayer
                 return commonParams;
 
             // clone the common parameters as a template for the file-specific params to override certain values
-            CommonParameters returnParams = ((CommonParameters)commonParams).Clone();
+            
             
 
             // set file-specific digestion parameters
@@ -172,17 +172,17 @@ namespace TaskLayer
             int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
             int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
             DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
-            returnParams.DigestionParams = fileSpecificDigestionParams;
+           
 
             // set the rest of the file-specific parameters
-            returnParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            returnParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            returnParams.BIons = fileSpecificParams.BIons ?? commonParams.BIons;
-            returnParams.YIons = fileSpecificParams.BIons ?? commonParams.YIons;
-            returnParams.CIons = fileSpecificParams.CIons ?? commonParams.CIons;
-            returnParams.ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
-
-            return returnParams;
+            var PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            var ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            var BIons = fileSpecificParams.BIons ?? commonParams.BIons;
+            var YIons = fileSpecificParams.YIons ?? commonParams.YIons;
+            var CIons = fileSpecificParams.CIons ?? commonParams.CIons;
+            var ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
+            
+            return new CommonParameters(BIons: BIons, YIons: YIons, CIons: CIons, ZdotIons:ZdotIons, prodMassTol: ProductMassTolerance.Value, preMassTol: PrecursorMassTolerance.Value, DigestionParams: fileSpecificDigestionParams);
         }
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)

@@ -65,24 +65,6 @@ namespace EngineLayer
                 ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
         }
-
-        public override string ToString()
-        {
-            DigestionParams temp = new DigestionParams();
-            string ret = "";
-
-            ret += nameof(temp.Protease) + " = " + Protease.Name + ";";
-            ret += nameof(temp.MaxMissedCleavages) + " = " + MaxMissedCleavages + ";";
-            ret += nameof(temp.MinPeptideLength) + " = " + MinPeptideLength + ";";
-            ret += nameof(temp.MaxPeptideLength) + " = " + MaxPeptideLength + ";";
-            ret += nameof(temp.MaxModificationIsoforms) + " = " + MaxModificationIsoforms + ";";
-            ret += nameof(temp.InitiatorMethionineBehavior) + " = " + InitiatorMethionineBehavior + ";";
-            ret += nameof(temp.MaxModsForPeptide) + " = " + MaxModsForPeptide + ";";
-            ret += nameof(temp.SemiProteaseDigestion) + " = " + SemiProteaseDigestion + ";";
-            ret += nameof(temp.TerminusTypeSemiProtease) + " = " + TerminusTypeSemiProtease + ";";
-            
-            return ret;
-        }
         #endregion Public Methods
     }
 }

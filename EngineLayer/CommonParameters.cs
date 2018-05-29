@@ -11,33 +11,40 @@ namespace EngineLayer
         //Any new property must also be added in MetaMorpheusTask.SetAllFileSpecificCommonParams, else it be overwritten by file specific params
         //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
         public string TaskDescriptor { get; set; }
-        public readonly int MaxThreadsToUsePerFile;
-        public readonly IEnumerable<(string, string)> ListOfModsFixed;
-        public readonly IEnumerable<(string, string)> ListOfModsVariable;
-        public readonly bool DoPrecursorDeconvolution;
-        public readonly bool UseProvidedPrecursorInfo;
-        public readonly double DeconvolutionIntensityRatio;
-        public readonly int DeconvolutionMaxAssumedChargeState;
-        public readonly Tolerance DeconvolutionMassTolerance;
-        public readonly int TotalPartitions;
-        public readonly bool BIons;
-        public readonly bool YIons;
-        public readonly bool ZdotIons;
-        public readonly bool CIons;
-        public readonly Tolerance ProductMassTolerance;
-        public readonly Tolerance PrecursorMassTolerance;
-        public readonly bool CompIons;
-        public readonly double ScoreCutoff;
-        public readonly DigestionParams DigestionParams;
-        public readonly bool ReportAllAmbiguity;
-        public readonly int TopNpeaks;
-        public readonly double MinRatio;
-        public readonly bool TrimMs1Peaks;
-        public readonly bool TrimMsMsPeaks;
-        public readonly bool UseDeltaScore;
-        public readonly bool CalculateEValue;
+        public int MaxThreadsToUsePerFile { get; private set; }
+        public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
+        public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
+        public bool DoPrecursorDeconvolution { get; private set; }
+        public bool UseProvidedPrecursorInfo { get; private set; }
+        public double DeconvolutionIntensityRatio { get; private set; }
+        public int DeconvolutionMaxAssumedChargeState { get; private set; }
+        public Tolerance DeconvolutionMassTolerance { get; private set; }
+        public int TotalPartitions { get; private set; }
+        public bool BIons { get; private set; }
+        public bool YIons { get; private set; }
+        public bool ZdotIons { get; private set; }
+        public bool CIons { get; private set; }
+        public Tolerance ProductMassTolerance { get; private set; }
+        public Tolerance PrecursorMassTolerance { get; private set; }
+        public bool CompIons { get; private set; }
+        public double ScoreCutoff { get; private set; }
+        public DigestionParams DigestionParams { get; private set; }
+        public bool ReportAllAmbiguity { get; private set; }
+        public int TopNpeaks { get; private set; }
+        public double MinRatio { get; private set; }
+        public bool TrimMs1Peaks { get; private set; }
+        public bool TrimMsMsPeaks { get; private set; }
+        public bool UseDeltaScore { get; private set; }
+        public bool CalculateEValue { get; private set; }
 
         #region Public Constructors
+
+        // this parameterless constructor needs to exist to read the toml. 
+        // if you can figure out a way to get rid of it, feel free...
+        public CommonParameters() : this(DigestionParams: null)
+        {
+
+        }
 
         public CommonParameters(bool BIons = true, bool YIons = true, bool ZdotIons = false, bool CIons = false, bool DoPrecursorDeconvolution = true,
             bool UseProvidedPrecursorInfo = true, double DeconvolutionIntensityRatio = 3, int DeconvolutionMaxAssumedChargeState = 12, bool ReportAllAmbiguity = true,
@@ -114,68 +121,139 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public CommonParameters Clone()
+        //public CommonParameters Clone()
+        //{
+        //    // same settings as this.[myparameters]
+        //    return new CommonParameters();
+        //}
+
+        public void SetTaskDescriptor(string TaskDescriptor)
         {
-            // same settings as this.[myparameters]
-            return new CommonParameters();
+            this.TaskDescriptor = TaskDescriptor;
         }
 
-        public override string ToString()
+        private void SetMaxThreadsToUsePerFile(int MaxThreadsToUsePerFile)
         {
-            CommonParameters temp = new CommonParameters();
-            string delim = " = ";
-            string ret = "";
+            this.MaxThreadsToUsePerFile = MaxThreadsToUsePerFile;
+        }
 
-            ret += nameof(temp.BIons) + delim + BIons + "\n";
-            ret += nameof(temp.YIons) + " = " + YIons + "\n";
-            ret += nameof(temp.ZdotIons) + " = " + ZdotIons + "\n";
-            ret += nameof(temp.CIons) + " = " + CIons + "\n";
-            ret += nameof(temp.DoPrecursorDeconvolution) + " = " + DoPrecursorDeconvolution + "\n";
-            ret += nameof(temp.UseProvidedPrecursorInfo) + " = " + UseProvidedPrecursorInfo + ";";
-            ret += nameof(temp.DeconvolutionIntensityRatio) + " = " + DeconvolutionIntensityRatio + ";";
-            ret += nameof(temp.DeconvolutionMaxAssumedChargeState) + " =" + DeconvolutionMaxAssumedChargeState + ";";
-            ret += nameof(temp.ReportAllAmbiguity) + " =" + ReportAllAmbiguity + ";";
-            ret += nameof(temp.CompIons) + " =" + CompIons + ";";
-            ret += nameof(temp.TotalPartitions) + " =" + TotalPartitions + ";";
-            ret += nameof(temp.ScoreCutoff) + " =" + ScoreCutoff + ";";
-            ret += nameof(temp.TopNpeaks) + " =" + TopNpeaks + ";";
-            ret += nameof(temp.MinRatio) + " =" + MinRatio + ";";
-            ret += nameof(temp.TrimMs1Peaks) + " =" + TrimMs1Peaks + ";";
-            ret += nameof(temp.TrimMsMsPeaks) + " =" + TrimMsMsPeaks + ";";
-            ret += nameof(temp.UseDeltaScore) + " =" + UseDeltaScore + ";";
-            ret += nameof(temp.CalculateEValue) + " =" + CalculateEValue + ";";
-            ret += nameof(temp.ProductMassTolerance) + " =" + ProductMassTolerance.Value + ";";
-            ret += nameof(temp.PrecursorMassTolerance) + " =" + PrecursorMassTolerance.Value + ";";
-            ret += nameof(temp.DeconvolutionMassTolerance) + " =" + DeconvolutionMassTolerance.Value + ";";
-            ret += nameof(temp.MaxThreadsToUsePerFile) + " =" + MaxThreadsToUsePerFile + ";";
-            ret += nameof(temp.DigestionParams.Protease) + " =" + DigestionParams.Protease.Name + ";";
-            ret += nameof(temp.DigestionParams.MaxMissedCleavages) + " =" + DigestionParams.MaxMissedCleavages + ";";
-            ret += nameof(temp.DigestionParams.MinPeptideLength) + " =" + DigestionParams.MinPeptideLength + ";";
-            ret += nameof(temp.DigestionParams.MaxPeptideLength) + " =" + DigestionParams.MaxPeptideLength + ";";
-            ret += nameof(temp.DigestionParams.MaxModificationIsoforms) + " =" + DigestionParams.MaxModificationIsoforms + ";";
-            ret += nameof(temp.DigestionParams.InitiatorMethionineBehavior) + " =" + DigestionParams.InitiatorMethionineBehavior + ";";
-            ret += nameof(temp.DigestionParams.MaxModsForPeptide) + " =" + DigestionParams.MaxModsForPeptide + ";";
-            ret += nameof(temp.DigestionParams.SemiProteaseDigestion) + " =" + DigestionParams.SemiProteaseDigestion + ";";
-            ret += nameof(temp.DigestionParams.TerminusTypeSemiProtease) + " =" + DigestionParams.TerminusTypeSemiProtease + ";";
+        private void SetListOfModsFixed(IEnumerable<(string, string)> ListOfModsFixed)
+        {
+            this.ListOfModsFixed = ListOfModsFixed;
+        }
 
-            string contentVariable = "";
-            foreach (var thing in ListOfModsVariable)
-            {
-               
-                contentVariable +=  thing.Item1 + "/";
-                contentVariable += thing.Item2 + ",";
-            }
-            ret += nameof(temp.ListOfModsVariable) + " =" + contentVariable + ";";
-            string contentFixed = "";
-            foreach (var thing in ListOfModsFixed)
-            {
+        private void  SetListOfModsVariable(IEnumerable<(string, string)> ListOfModsVariable)
+        {
+            this.ListOfModsVariable = ListOfModsVariable;
+        }
 
-                contentFixed += thing.Item1 + "/";
-                contentFixed += thing.Item2 + ",";
-            }
-            ret += nameof(temp.ListOfModsFixed) + " =" + contentFixed + ";";
-     
-            return ret;
+        private void SetDoPrecursorDeconvolution(bool DoPrecursorDeconvolution)
+        {
+            this.DoPrecursorDeconvolution = DoPrecursorDeconvolution;
+        }
+
+        private void SetUseProvidedPrecursorInfo(bool UseProvidedPrecursorInfo)
+        {
+            this.UseProvidedPrecursorInfo = UseProvidedPrecursorInfo;
+        }
+
+        private void SetDeconvolutionIntensityRatio(int DeconvolutionIntesityRatio)
+        {
+            this.DeconvolutionIntensityRatio = DeconvolutionIntensityRatio;
+        }
+
+        private void SetDeconvolutionMaxAssumedChargeState(int DeconvolutionMaxAssumedChargeState)
+        {
+            this.DeconvolutionMaxAssumedChargeState = DeconvolutionMaxAssumedChargeState;
+        }
+
+        public void SetDeconvolutionMassTolerance(Tolerance DeconvolutionMassTolerance)
+        {
+            this.DeconvolutionMassTolerance = DeconvolutionMassTolerance;
+        }
+
+        public void SetTotalPartitions(int TotalPartitions)
+        {
+            this.TotalPartitions = TotalPartitions;
+        }
+
+        public void SetBIons(bool BIons)
+        {
+            this.BIons = BIons;
+        }
+
+        public void SetYIons(bool YIons)
+        {
+            this.YIons = YIons;
+        }
+
+        public void SetZdotIons(bool ZdotIons)
+        {
+            this.ZdotIons = ZdotIons;
+        }
+
+        public void SetCIons(bool CIons)
+        {
+            this.CIons = CIons; 
+        }
+
+        public void SetProductMassTolerance(Tolerance ProductMassTolerance)
+        {
+            this.ProductMassTolerance = ProductMassTolerance;
+        }
+
+        public void SetPrecursorMassTolerance(Tolerance PrecursorMassTolerance)
+        {
+            this.PrecursorMassTolerance = PrecursorMassTolerance;
+        }
+
+        public void SetCompIons(bool CompIons)
+        {
+            this.CompIons = CompIons;
+        }
+
+        public void SetScoreCutoff(double ScoreCutoff)
+        {
+            this.ScoreCutoff = ScoreCutoff;
+        }
+
+        public void SetDigestionParams(DigestionParams DigetionsParams)
+        {
+            this.DigestionParams = DigestionParams;
+        }
+
+        public void SetReportAllAmbiguity(bool ReportAllAmbiguity)
+        {
+            this.ReportAllAmbiguity = ReportAllAmbiguity;
+        }
+
+        public void SetTopNpeaks(int TopNpeaks)
+        {
+            this.TopNpeaks = TopNpeaks;
+        }
+
+        public void SetMinRatio(double MinRatio)
+        {
+            this.MinRatio = MinRatio;
+        }
+
+        public void SetTrimMs1Peaks(bool TrimMS1Peaks)
+        {
+            this.TrimMs1Peaks = TrimMS1Peaks;
+        }
+
+        public void SetTrimMsMsPeaks(bool TrimMsMsPeaks)
+        {
+            this.TrimMsMsPeaks = TrimMsMsPeaks;
+        }
+        public void SetUseDeltaScore(bool UseDeltaScore)
+        {
+            this.UseDeltaScore = UseDeltaScore;
+        }
+
+        public void SetCalculateEValue(bool CalculateEValue)
+        {
+            this.CalculateEValue = CalculateEValue;
         }
 
         #endregion Public Methods
