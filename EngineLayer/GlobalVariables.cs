@@ -63,6 +63,8 @@ namespace EngineLayer
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
 
+            ExperimentalDesignFileName = "ExperimentalDesign.tsv";
+
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
             PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
@@ -91,9 +93,10 @@ namespace EngineLayer
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-        public static IReadOnlyDictionary<string, Protease> ProteaseDictionary { get; }
+        public static Dictionary<string, Protease> ProteaseDictionary;
         public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
+        public static string ExperimentalDesignFileName { get;  }
 
         #endregion Public Properties
 

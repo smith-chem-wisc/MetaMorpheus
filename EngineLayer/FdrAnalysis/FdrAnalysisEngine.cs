@@ -19,7 +19,7 @@ namespace EngineLayer.FdrAnalysis
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, ICommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
+        public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.psms = psms.Where(p => p != null).ToList();
             this.massDiffAcceptorNumNotches = massDiffAcceptorNumNotches;

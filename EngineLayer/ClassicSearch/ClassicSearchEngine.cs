@@ -31,7 +31,7 @@ namespace EngineLayer.ClassicSearch
 
         private readonly bool addCompIons;
 
-        private readonly ICommonParameters commonParameters;
+        private readonly CommonParameters commonParameters;
 
         private readonly List<DissociationType> dissociationTypes;
 
@@ -39,7 +39,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, bool addCompIons, ICommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, bool addCompIons, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.peptideSpectralMatches = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -61,7 +61,7 @@ namespace EngineLayer.ClassicSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("Getting ms2 scans...");
-            
+
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
@@ -74,7 +74,7 @@ namespace EngineLayer.ClassicSearch
             }
 
             Status("Performing classic search...");
-            
+
             if (proteins.Any())
             {
                 Parallel.ForEach(Partitioner.Create(0, proteins.Count), partitionRange =>
@@ -107,7 +107,8 @@ namespace EngineLayer.ClassicSearch
                                     {
                                         if (peptideSpectralMatches[scan.scanIndex] == null)
                                         {
-                                            peptideSpectralMatches[scan.scanIndex] = new PeptideSpectralMatch(compactPeptide, scan.notch, thisScore, scan.scanIndex, scan.theScan);
+                                            peptideSpectralMatches[scan.scanIndex] =
+                                            new PeptideSpectralMatch(compactPeptide, scan.notch, thisScore, scan.scanIndex, scan.theScan, commonParameters.DigestionParams);
                                         }
                                         else
                                         {

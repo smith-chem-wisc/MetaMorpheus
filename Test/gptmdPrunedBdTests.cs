@@ -15,10 +15,10 @@ namespace Test
     [TestFixture]
     public static class GptmdPrunedDbTests
     {
-        
+
         // want a psm whose base sequence is not ambigous but full sequence is (ptm is not localized): make sure this does not make it in DB
-       
-       [Test]
+
+        [Test]
         public static void TestPrunedGeneration()
         {
             //Create GPTMD Task
@@ -45,22 +45,22 @@ namespace Test
                     SearchType = SearchType.Classic
                 }
             };
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2)};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2) };
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
             engine.Run();
-            string final = Path.Combine(MySetUpClass.outputFolder, "task2","DbForPrunedDbGPTMDproteinPruned.xml");
+            string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
             //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
-                // all proteins in DB have baseSequence!=null (not ambiguous)
-                // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(proteins.Count(),20);
+            // all proteins in DB have baseSequence!=null (not ambiguous)
+            // all proteins that belong to a protein group are written to DB
+            Assert.AreEqual(proteins.Count(), 20);
             int totalNumberOfMods = 0;
             foreach (Protein p in proteins)
             {
                 int numberOfMods = p.OneBasedPossibleLocalizedModifications.Count();
-                totalNumberOfMods=totalNumberOfMods + numberOfMods;
+                totalNumberOfMods = totalNumberOfMods + numberOfMods;
             }
             //tests that modifications are being done correctly
             Assert.AreEqual(totalNumberOfMods, 0);
@@ -87,10 +87,7 @@ namespace Test
                 },
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams
-                    {
-                        MinPeptideLength = 5
-                    }
+                    DigestionParams = new DigestionParams(MinPeptideLength: 5)
                 }
             };
 
@@ -160,7 +157,7 @@ namespace Test
 
             //Finally Write MZML file
             Assert.AreEqual("PEP[ConnorModType:ConnorMod]TID", pepWithSetMods1.Sequence);
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
@@ -172,7 +169,7 @@ namespace Test
             engine.Run();
 
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
-            
+
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
@@ -305,7 +302,7 @@ namespace Test
             PeptideWithSetModifications pepWithSetMods5 = digestedList[4];
 
             //CUSTOM PEP
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
             { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
             string mzmlName = @"newMzml.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -341,6 +338,5 @@ namespace Test
             Assert.AreEqual(listOfLocalMods.Count, 3);
         }
     }
-
-}     
+}
 

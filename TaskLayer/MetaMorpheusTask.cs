@@ -14,6 +14,7 @@ using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
+
     public enum MyTask
     {
         Search,
@@ -26,7 +27,7 @@ namespace TaskLayer
     public abstract class MetaMorpheusTask
     {
         #region Public Fields
-
+        
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -41,10 +42,6 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<ICommonParameters>(ct => ct
-                            .CreateInstance(() => new CommonParameters()))
-                        .ConfigureType<IDigestionParams>(ct => ct
-                            .CreateInstance(() => new DigestionParams()))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t", custom))
@@ -58,9 +55,9 @@ namespace TaskLayer
 
         #region Protected Fields
 
-        protected readonly StringBuilder proseCreatedWhileRunning = new StringBuilder();
+        protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
-        protected MyTaskResults myTaskResults;
+        protected MyTaskResults MyTaskResults;
 
         #endregion Protected Fields
 
@@ -101,14 +98,14 @@ namespace TaskLayer
 
         public MyTask TaskType { get; set; }
 
-        public ICommonParameters CommonParameters { get; set; }
+        public CommonParameters CommonParameters { get; set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(
-         IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile,
+         MsDataFile myMSDataFile,
          string fullFilePath,
          bool doPrecursorDeconvolution,
          bool useProvidedPrecursorInfo,
@@ -116,7 +113,7 @@ namespace TaskLayer
          int deconvolutionMaxAssumedChargeState,
          Tolerance deconvolutionMassTolerance)
         {
-            foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
+            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1))
             {
                 List<(double, int)> isolatedStuff = new List<(double, int)>();
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
@@ -145,8 +142,8 @@ namespace TaskLayer
                     else
                     {
                         var precursorMZ = ms2scan.SelectedIonMZ;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add((precursorMZ, precursorCharge));
+                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.Value.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
+                            isolatedStuff.Add((precursorMZ.Value, precursorCharge));
                     }
                 }
 
@@ -155,21 +152,23 @@ namespace TaskLayer
             }
         }
 
-        public static ICommonParameters SetAllFileSpecificCommonParams(ICommonParameters commonParams, FileSpecificParameters fileSpecificParams)
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
             if (fileSpecificParams == null)
+            {
                 return commonParams;
+            }
 
             // clone the common parameters as a template for the file-specific params to override certain values
-            CommonParameters returnParams = ((CommonParameters)commonParams).Clone();
-            DigestionParams fileSpecificDigestionParams = ((DigestionParams)commonParams.DigestionParams).Clone();
-
+            CommonParameters returnParams = commonParams.Clone();
+            
             // set file-specific digestion parameters
-            fileSpecificDigestionParams.Protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
-            fileSpecificDigestionParams.MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            fileSpecificDigestionParams.MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            fileSpecificDigestionParams.MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            fileSpecificDigestionParams.MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
+            int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+            int MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+            int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
             returnParams.DigestionParams = fileSpecificDigestionParams;
 
             // set the rest of the file-specific parameters
@@ -214,7 +213,7 @@ namespace TaskLayer
                         {
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
                         }
-                        catch(MetaMorpheusException e)
+                        catch (MetaMorpheusException e)
                         {
                             // file-specific toml has already been validated in the GUI when the spectra files were added, so...
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
@@ -225,12 +224,12 @@ namespace TaskLayer
 
                 RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
                 stopWatch.Stop();
-                myTaskResults.Time = stopWatch.Elapsed;
+                MyTaskResults.Time = stopWatch.Elapsed;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
-                    file.Write(myTaskResults.ToString());
+                    file.Write(MyTaskResults.ToString());
                 }
                 SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
@@ -261,9 +260,9 @@ namespace TaskLayer
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
                     file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
-                    file.Write(proseCreatedWhileRunning.ToString());
+                    file.Write(ProseCreatedWhileRunning.ToString());
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
-                    file.WriteLine("The total time to perform the " + this.TaskType.ToString().ToLowerInvariant() + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
+                    file.WriteLine("The total time to perform the " + this.TaskType.ToString().ToLowerInvariant() + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
 
@@ -279,21 +278,34 @@ namespace TaskLayer
             #endregion Write prose
 
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
-            return myTaskResults;
+            return MyTaskResults;
         }
 
         #endregion Public Methods
 
         #region Protected Methods
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
+        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes)
         {
-            using (StreamWriter output = new StreamWriter(filePath))
+            Status("Loading proteins...", new List<string> { taskId });
+            int emptyProteinEntries = 0;
+            List<Protein> proteinList = new List<Protein>();
+            foreach (var db in dbFilenameList)
             {
-                output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var heh in items)
-                    output.WriteLine(heh.ToString(ModstoWritePruned));
+                int emptyProteinEntriesForThisDb = 0;
+                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
+                proteinList = proteinList.Concat(dbProteinList).ToList();
+                emptyProteinEntries += emptyProteinEntriesForThisDb;
             }
+            if (!proteinList.Any())
+            {
+                Warn("Warning: No protein entries were found in the database");
+            }
+            else if (emptyProteinEntries > 0)
+            {
+                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
+            }
+            return proteinList;
         }
 
         protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um, out int emptyEntriesCount)
@@ -301,7 +313,11 @@ namespace TaskLayer
             List<string> dbErrors = new List<string>();
             List<Protein> proteinList = new List<Protein>();
 
-            if (Path.GetExtension(fileName).Equals(".fasta") || Path.GetExtension(fileName).Equals(".fa"))
+            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
+            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
+            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
+
+            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
                 proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, out dbErrors);
@@ -315,18 +331,16 @@ namespace TaskLayer
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
-
-        protected static HashSet<IDigestionParams> GetListOfDistinctDigestionParams(ICommonParameters commonParameters, IEnumerable<ICommonParameters> enumerable)
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
-            HashSet<IDigestionParams> okay = new HashSet<IDigestionParams>
+            using (StreamWriter output = new StreamWriter(filePath))
             {
-                commonParameters.DigestionParams
-            };
-
-            foreach (var hah in enumerable)
-                okay.Add(hah.DigestionParams);
-
-            return okay;
+                output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
+                foreach (var heh in items)
+                {
+                    output.WriteLine(heh.ToString(ModstoWritePruned));
+                }
+            }
         }
 
         protected void ReportProgress(ProgressEventArgs v)
@@ -392,7 +406,7 @@ namespace TaskLayer
 
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
         {
-            myTaskResults.AddResultText(e.ToString());
+            MyTaskResults.AddResultText(e.ToString());
         }
 
         private void FinishedSingleTask(string displayName)

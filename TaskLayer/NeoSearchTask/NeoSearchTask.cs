@@ -24,14 +24,9 @@ namespace TaskLayer
         public NeoSearchTask() : base(MyTask.Neo)
         {
             NeoParameters = new NeoParameters();
+            Protease protease = GlobalVariables.ProteaseDictionary["non-specific"];
+            var tempDigParams = new DigestionParams(protease.Name, MaxMissedCleavages: 12, MinPeptideLength: 8, MaxPeptideLength: 13);
 
-            IDigestionParams tempDigParams = new DigestionParams
-            {
-                MinPeptideLength = 8,
-                MaxPeptideLength = 13,
-                Protease = GlobalVariables.ProteaseDictionary["non-specific"],
-                MaxMissedCleavages = 12
-            };
             CommonParameters = new CommonParameters
             {
                 DigestionParams = tempDigParams,
@@ -70,7 +65,7 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            myTaskResults = new MyTaskResults(this);
+            MyTaskResults = new MyTaskResults(this);
 
             if (NeoType.Equals(NeoTaskType.AggregateTargetDecoyFiles))
             {
@@ -118,10 +113,7 @@ namespace TaskLayer
             {
                 NeoMassCalculator.ImportMasses();
 
-                ParallelOptions parallelOptions = new ParallelOptions
-                {
-                    MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze
-                };
+                ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
 
                 MyFileManager myFileManager = new MyFileManager(true);
 
@@ -129,12 +121,12 @@ namespace TaskLayer
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);
                     Status("Loading spectra file...", thisId);
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                    MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -154,25 +146,7 @@ namespace TaskLayer
                     #endregion Load modifications
 
                     // load proteins
-                    Status("Loading proteins...", new List<string> { taskId });
-                    int emptyProteinEntries = 0;
-                    List<Protein> proteinList = new List<Protein>();
-                    foreach (var db in dbFilenameList)
-                    {
-                        int emptyProteinEntriesForThisDb = 0;
-                        var dbProteinList = LoadProteinDb(db.FilePath, true, DecoyType.None, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
-
-                        proteinList = proteinList.Concat(dbProteinList).ToList();
-                        emptyProteinEntries += emptyProteinEntriesForThisDb;
-                    }
-                    if (!proteinList.Any())
-                    {
-                        Warn("Warning: No protein entries were found in the database");
-                    }
-                    else if (emptyProteinEntries > 0)
-                    {
-                        Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
-                    }
+                    List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes);
 
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;
@@ -237,7 +211,7 @@ namespace TaskLayer
                 dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder, false) };
             }
 
-            return myTaskResults;
+            return MyTaskResults;
         }
 
         #endregion Protected Methods
