@@ -39,17 +39,17 @@ namespace Test
             TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
 
             CompactPeptide peptide1 = new CompactPeptide(pep1, TerminusType.None);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan1 = t.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+            MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, peptide1.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             PeptideSpectralMatch psm1 = new PeptideSpectralMatch(peptide1, 0, 3, 0, scan1, digestionParams);
 
             CompactPeptide peptide2 = new CompactPeptide(pep2, TerminusType.None);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan2 = t.GetOneBasedScan(4) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+            MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
             Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, peptide2.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             PeptideSpectralMatch psm2 = new PeptideSpectralMatch(peptide2, 1, 2, 1, scan2, digestionParams);
 
             CompactPeptide peptide3 = new CompactPeptide(pep3, TerminusType.None);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan3 = t.GetOneBasedScan(6) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+            MsDataScan mzLibScan3 = t.GetOneBasedScan(6);
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, peptide3.MonoisotopicMassIncludingFixedMods.ToMz(1), 1, null);
             PeptideSpectralMatch psm3 = new PeptideSpectralMatch(peptide3, 0, 1, 2, scan3, digestionParams);
 
@@ -115,10 +115,10 @@ namespace Test
             Protein TargetProtein2 = new Protein("TIDELVE", "accession2");
             Protein TargetProtein3 = new Protein("TIDENIE", "accession3");
             Protein TargetProteinLost = new Protein("PEPTIDEANTHE", "accession4");
-            Protein DecoyProteinFound = new Protein("PETPLEDQGTHE", "accessiond", isDecoy:true);
+            Protein DecoyProteinFound = new Protein("PETPLEDQGTHE", "accessiond", isDecoy: true);
 
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
             {
                 TargetProtein1.Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[0],
                 TargetProtein2.Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[0],
@@ -182,7 +182,7 @@ namespace Test
 
             //check that when delta is bad, we used the score
             // Generate data for files
-            Protein DecoyProtein1 = new Protein("TLEDAGGTHE", "accession1d",isDecoy:true);
+            Protein DecoyProtein1 = new Protein("TLEDAGGTHE", "accession1d", isDecoy: true);
             Protein DecoyProtein2 = new Protein("TLEDLVE", "accession2d", isDecoy: true);
             Protein DecoyProtein3 = new Protein("TLEDNIE", "accession3d", isDecoy: true);
             Protein DecoyProteinShiny = new Protein("GGGGGG", "accessionShinyd", isDecoy: true);

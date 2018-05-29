@@ -54,7 +54,7 @@ namespace Test
             var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass> { mod }).Last();
 
             List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepsWithSetMods);
+            MsDataFile myMsDataFile = new TestDataFile(pepsWithSetMods);
 
             List<Protein> proteinList = new List<Protein> { prot1, prot2, prot3, prot4 };
 
@@ -107,8 +107,8 @@ namespace Test
 
             List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
             List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(listForFile1);
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(listForFile2);
+            MsDataFile myMsDataFile1 = new TestDataFile(listForFile1);
+            MsDataFile myMsDataFile2 = new TestDataFile(listForFile2);
 
             List<Protein> proteinList = new List<Protein> { prot1 };
 

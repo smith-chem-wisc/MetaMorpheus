@@ -58,13 +58,18 @@ namespace Test
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
-            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
+            MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
+            MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
-            CommonParameters CommonParameters = new CommonParameters(prodMassTol: 5, ScoreCutoff: 1, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                ProductMassTolerance = new PpmTolerance(5),
+                ConserveMemory = false,
+                ScoreCutoff = 1
+            };
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
 
             cse.Run();
@@ -86,13 +91,18 @@ namespace Test
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
-            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
+            MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
+            MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
-            CommonParameters CommonParameters = new CommonParameters(ScoreCutoff: 1, prodMassTol: 5, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                ProductMassTolerance = new PpmTolerance(5),
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                ConserveMemory = false,
+                ScoreCutoff = 1
+            };
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
 
             cse.Run();
@@ -113,13 +123,18 @@ namespace Test
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
-            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
+            MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
+            MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
-            CommonParameters CommonParameters = new CommonParameters(prodMassTol: 5, ScoreCutoff: 1, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                ProductMassTolerance = new PpmTolerance(5),
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                ConserveMemory = false,
+                ScoreCutoff = 1
+            };
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
 
             cse.Run();
@@ -140,13 +155,18 @@ namespace Test
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
-            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
+            MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
+            MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 600, 1, null) };
-            CommonParameters CommonParameters = new CommonParameters(prodMassTol: 5, ScoreCutoff: 1, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                ProductMassTolerance = new PpmTolerance(5),
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                ConserveMemory = false,
+                ScoreCutoff = 1
+            };
             var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
             { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -169,13 +189,18 @@ namespace Test
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, 3, 4 };
-            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null, "scan=1");
+            MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
+            MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
-            CommonParameters CommonParameters = new CommonParameters(prodMassTol: 5, ScoreCutoff: 1, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                ProductMassTolerance = new PpmTolerance(5),
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                ConserveMemory = false,
+                ScoreCutoff = 1
+            };
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
 
             cse.Run();
@@ -223,7 +248,7 @@ namespace Test
         public static void TestPeptideWithSetModifications()
         {
             var prot = new Protein("M", null);
-            DigestionParams digestionParams = new DigestionParams(protease: "Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModsForPeptides:3);
+            DigestionParams digestionParams = new DigestionParams(protease: "Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModsForPeptides: 3);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
@@ -320,7 +345,7 @@ namespace Test
         public static void TestGoodPeptideWithLength()
         {
             var prot = new Protein("MNNNKQQQQMNNNKQQQQ", null);
-            
+
             DigestionParams digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);

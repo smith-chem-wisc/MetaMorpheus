@@ -30,8 +30,8 @@ namespace Test
                 full_name: "fullName",
                 sequenceVariations: new List<SequenceVariation> { new SequenceVariation(2, "P", "Q", "changed this sequence") })
                     .Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scann = myMsDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+            MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
             PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods.CompactPeptide(TerminusType.None), 1, 2, 3, scan, digestionParams);
 

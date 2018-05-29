@@ -15,13 +15,6 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.Localization;
 using UsefulProteomicsDatabases;
 
-#if NETFRAMEWORK
-
-using IO.Thermo;
-
-#else
-#endif
-
 namespace TaskLayer
 {
     public class CalibrationTask : MetaMorpheusTask
@@ -101,14 +94,14 @@ namespace TaskLayer
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 var originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + "-calib.mzML");
+                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".mzML");
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+                MsDataFile myMsDataFile;
 
                 // load the file
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
@@ -188,7 +181,7 @@ namespace TaskLayer
                 bool improvement = ImprovGlobal(preCalibrationPrecursorErrorIqr, preCalibrationProductErrorIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorErrorIqr, postCalibrationProductErrorIqr);
 
                 // write toml settings for the calibrated file
-                var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + "-calib.toml");
+                var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".toml");
 
                 var fileSpecificParams = new FileSpecificParameters();
 
@@ -225,6 +218,37 @@ namespace TaskLayer
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
             }
 
+            // re-write experimental design (if it has been defined) with new calibrated file names
+            string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
+            assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+            List<string> newExperimentalDesignOutput = new List<string>();
+            if (File.Exists(assumedPathToExperDesign))
+            {
+                var lines = File.ReadAllLines(assumedPathToExperDesign);
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    // header of experimental design file
+                    if (i == 0)
+                    {
+                        newExperimentalDesignOutput.Add(lines[i]);
+                    }
+                    else
+                    {
+                        var split = lines[i].Split('\t');
+                        string newline = Path.GetFileNameWithoutExtension(split[0]) + calibSuffix + "\t";
+                        for(int j = 1; j < split.Length; j++)
+                        {
+                            newline += split[j] + "\t";
+                        }
+
+                        newExperimentalDesignOutput.Add(newline);
+                    }
+                }
+            }
+
+            File.WriteAllLines(Path.Combine(OutputFolder, GlobalVariables.ExperimentalDesignFileName), newExperimentalDesignOutput);
+
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
@@ -238,6 +262,7 @@ namespace TaskLayer
         private int numRequiredPsms = 20;
         private int numRequiredMs1Datapoints = 50;
         private int numRequiredMs2Datapoints = 100;
+        private const string calibSuffix = "-calib";
 
         #endregion Private Fields
 
@@ -262,7 +287,7 @@ namespace TaskLayer
             return countRatio > 0.9 && precRatio + prodRatio < 1.8;
         }
 
-        private DataPointAquisitionResults GetDataAcquisitionResults(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
+        private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
         {
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
             MassDiffAcceptor searchMode;

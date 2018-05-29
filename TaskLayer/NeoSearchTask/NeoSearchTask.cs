@@ -25,10 +25,15 @@ namespace TaskLayer
         {
             NeoParameters = new NeoParameters();
             Protease protease = GlobalVariables.ProteaseDictionary["non-specific"];
-            var tempDigParams = new DigestionParams(protease.Name, MaxMissedCleavages:12, MinPeptideLength:8, MaxPeptideLength:13);
+            var tempDigParams = new DigestionParams(protease.Name, MaxMissedCleavages: 12, MinPeptideLength: 8, MaxPeptideLength: 13);
 
-            CommonParameters = new CommonParameters(DigestionParams: tempDigParams, DoPrecursorDeconvolution: false, preMassTol: int.MaxValue, prodMassTol: int.MaxValue);
-            
+            CommonParameters = new CommonParameters
+            {
+                DigestionParams = tempDigParams,
+                DoPrecursorDeconvolution = false,
+                PrecursorMassTolerance = null,
+                ProductMassTolerance = null
+            };
         }
 
         #endregion Public Constructors
@@ -107,10 +112,13 @@ namespace TaskLayer
             else if (NeoType.Equals(NeoTaskType.GenerateSplicedPeptides))
             {
                 NeoMassCalculator.ImportMasses();
+
+                ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
+
                 MyFileManager myFileManager = new MyFileManager(true);
 
                 //Import Spectra
-                for( int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
@@ -118,7 +126,7 @@ namespace TaskLayer
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);
                     Status("Loading spectra file...", thisId);
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                    MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -129,8 +137,12 @@ namespace TaskLayer
 
                     List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
                     List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-                    List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
-                    
+                    List<string> localizeableModificationTypes = CommonParameters.ListOfModTypesLocalize == null ? new List<string>() : CommonParameters.ListOfModTypesLocalize.ToList();
+                    if (CommonParameters.LocalizeAll)
+                        localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
+                    else
+                        localizeableModificationTypes = GlobalVariables.AllModTypesKnown.Where(b => localizeableModificationTypes.Contains(b)).ToList();
+
                     #endregion Load modifications
 
                     // load proteins
@@ -191,7 +203,7 @@ namespace TaskLayer
                     //Switch databases
                     string outputFolder = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixNC.fasta";
                     dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder, false) };
-                }
+                });
             }
             else //if SearchTransDb
             {
