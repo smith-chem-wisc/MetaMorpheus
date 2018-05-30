@@ -371,7 +371,7 @@ namespace MetaMorpheusGUI
         {
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML",
+                Filter = "Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;.mgf",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
@@ -454,6 +454,10 @@ namespace MetaMorpheusGUI
 
                     goto case ".mzml";
 
+                case ".mgf":
+                    GuiWarnHandler(null, new StringEventArgs(".mgf files lack the necessary information for calibration, quantification, and chimeric spectra.", null));
+                    goto case ".mzml";
+
                 case ".mzml":
                     if (compressed) // not implemented yet
                     {
@@ -461,10 +465,14 @@ namespace MetaMorpheusGUI
                         break;
                     }
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
-                    if (!SpectraFileExists(spectraFilesObservableCollection, zz)) { spectraFilesObservableCollection.Add(zz); }
+                    if (!SpectraFileExists(spectraFilesObservableCollection, zz))
+                    {
+                        spectraFilesObservableCollection.Add(zz);
+                    }
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
+
 
                 case ".xml":
                 case ".fasta":
