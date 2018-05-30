@@ -45,6 +45,7 @@ namespace TaskLayer
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
+        public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }

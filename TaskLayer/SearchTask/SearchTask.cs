@@ -99,8 +99,7 @@ namespace TaskLayer
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
-
-
+            
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
