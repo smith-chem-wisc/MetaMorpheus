@@ -371,7 +371,7 @@ namespace MetaMorpheusGUI
         {
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;.mgf",
+                Filter = "Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;*.mgf",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
@@ -472,7 +472,6 @@ namespace MetaMorpheusGUI
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
-
 
                 case ".xml":
                 case ".fasta":
