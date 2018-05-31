@@ -79,16 +79,9 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             //disable quantification if a .mgf is being used
-            if(SearchParameters.DoQuantification)
+            if (SearchParameters.DoQuantification && currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf")))
             {
-                foreach(string rawFile in currentRawFileList)
-                {
-                    if(Path.GetExtension(rawFile).Equals(".mgf"))
-                    {
-                        SearchParameters.DoQuantification = false;
-                        continue;
-                    }
-                }
+                SearchParameters.DoQuantification = false;
             }
 
             // load modifications
