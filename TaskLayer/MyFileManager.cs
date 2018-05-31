@@ -101,7 +101,7 @@ namespace TaskLayer
                 {
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter);
                 }
-                else if (Path.GetExtension(origDataFile).Equals(".mgf"))
+                else if (Path.GetExtension(origDataFile).Equals(".mgf", StringComparison.OrdinalIgnoreCase))
                 {
                     myMsDataFiles[origDataFile] = Mgf.LoadAllStaticData(origDataFile, filter);
                 }
