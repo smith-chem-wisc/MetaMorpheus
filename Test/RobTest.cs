@@ -1,15 +1,12 @@
 ﻿using Chemistry;
 using EngineLayer;
-using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
