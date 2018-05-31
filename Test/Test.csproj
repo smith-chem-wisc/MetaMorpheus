@@ -54,6 +54,9 @@
     <None Update="TestData\gapdh.fasta.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\ok.mgf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\BSA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
