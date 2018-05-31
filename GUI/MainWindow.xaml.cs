@@ -455,7 +455,7 @@ namespace MetaMorpheusGUI
                     goto case ".mzml";
 
                 case ".mgf":
-                    GuiWarnHandler(null, new StringEventArgs(".mgf files lack the necessary information for calibration, quantification, and chimeric spectra.", null));
+                    GuiWarnHandler(null, new StringEventArgs(".mgf files lack the necessary information for quantification and chimeric spectra identification. All other features will function as expected.", null));
                     goto case ".mzml";
 
                 case ".mzml":

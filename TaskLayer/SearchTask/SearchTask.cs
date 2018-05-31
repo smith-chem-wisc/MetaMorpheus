@@ -78,6 +78,19 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            //disable quantification if a .mgf is being used
+            if(SearchParameters.DoQuantification)
+            {
+                foreach(string rawFile in currentRawFileList)
+                {
+                    if(Path.GetExtension(rawFile).Equals(".mgf"))
+                    {
+                        SearchParameters.DoQuantification = false;
+                        continue;
+                    }
+                }
+            }
+
             // load modifications
             Status("Loading modifications...", taskId);
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
