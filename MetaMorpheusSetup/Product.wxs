@@ -12,7 +12,7 @@
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
     <Package Id="*" InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
     <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of MetaMorpheus is already installed."/>
-        
+
     <Condition Message="This application is only supported on Windows 7 or higher.">
       <![CDATA[Installed OR (VersionNT >= 601)]]>
     </Condition>
@@ -22,18 +22,18 @@
     </Condition>
 
     <MediaTemplate EmbedCab="yes"/>
-    
-    
-    
+
+
+
     <!--A feature for the Feature table. Features are the smallest installable unit.-->
     <Feature Id="ProductFeature" Level="1">
-      
+
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
       <!--App Data Section-->
-      
+
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <ComponentGroupRef Id="Appsrc_NeoData_files" />
@@ -44,7 +44,7 @@
       <ComponentRef Id="RemoveApp"/>
       <ComponentRef Id="DesktopShortcut"/>
     </Feature>
-   
+
     <Directory Id="TARGETDIR" Name="SourceDir">
       <!--Desktop Shortcut Installation-->
       <Directory Id="DesktopFolder" Name="Desktop">
@@ -56,7 +56,7 @@
           <Shortcut Id="AppDeskTopSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
         </Component>
       </Directory>
-      
+
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="DataFolder" Name="Data" />
@@ -75,7 +75,7 @@
       <Directory Id="LocalAppDataFolder">
         <Directory Id="MetaMorpheusAppFolder" Name="MetaMorpheus">
           <Component Id="MetaAppsettings.toml" Guid="1d8da0c2-5b44-4fe4-a581-1fc526346313">
-            <Condition>OVERWRITEAPPDATA</Condition> 
+            <Condition>OVERWRITEAPPDATA</Condition>
             <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             <File Id="settings.toml" Name="settings.toml" Source="$(var.GUI_TargetDir)settings.toml" />
           </Component>
@@ -96,11 +96,12 @@
             <Component Id="RemoveNeo" Guid="af5ff12f-ef0c-4945-be30-36c00ea734e9">
               <RemoveFolder Id="NeoAppFolder" On="uninstall"/>
               <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-            </Component>          </Directory>
+            </Component>
+          </Directory>
         </Directory>
       </Directory>
     </Directory>
-    
+
     <UI>
       <UIRef Id="WixUI_Mondo"/>
       <UIRef Id="newDlg"/>
@@ -108,27 +109,27 @@
       <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
       <Publish Dialog="MetaSCDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="1">1</Publish>
       <Publish Dialog="MetaSCDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1">1</Publish>
-      
+
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
       <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MyMaintenanceTypeDlg">1</Publish>
       <Publish Dialog="MyMaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="1">1</Publish>
       <!--<Publish Dialog="MyMaintenanceTypeDlg" Control="Next" Event="NewDialog" Value="ExitDialog" Order="1">1</Publish>-->
 
       <Publish Dialog="ExitDialog"
-        Control="Finish" 
-        Event="DoAction" 
+        Control="Finish"
+        Event="DoAction"
         Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
-      
+
     </UI>
-    
- 
-  <CustomAction Id='LaunchFile' FileKey='MetaMorpheusGUI.exe' ExeCommand='' Return="asyncNoWait" />
-  <Property Id="OVERWRITEAPPDATA" Value="1" />
-  <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
-  <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
-  <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
-  <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
-  
+
+
+    <CustomAction Id='LaunchFile' FileKey='MetaMorpheusGUI.exe' ExeCommand='' Return="asyncNoWait" />
+    <Property Id="OVERWRITEAPPDATA" Value="1" />
+    <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
+    <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
   </Product>
 
   <!--Executables and libraries-->
@@ -232,49 +233,52 @@
       </Component>
       <Component Id="src_SharpLearning.Optimization.dll">
         <File Id="src_SharpLearning.Optimization.dll" Name="SharpLearning.Optimization.dll" Source="$(var.GUI_TargetDir)SharpLearning.Optimization.dll" />
-	  </Component>
-	  <Component Id="src_SharpLearning.GradientBoost.dll">
+      </Component>
+      <Component Id="src_SharpLearning.GradientBoost.dll">
         <File Id="src_SharpLearning.GradientBoost.dll" Name="SharpLearning.GradientBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.GradientBoost.dll" />
       </Component>
       <Component Id="src_Spectra.dll" Guid="280ccb7f-a4f8-4df7-9f88-6cf6fa9bc15b">
         <File Id="src_Spectra.dll" Name="Spectra.dll" Source="$(var.GUI_TargetDir)Spectra.dll" />
       </Component>
+      <Component Id="src_Mgf.dll">
+        <File Id="src_Mgf.dll" Name="Mgf.dll" Source="$(var.GUI_TargetDir)Mgf.dll" />
+      </Component>
       <Component Id="src_System.Data.Common.dll" Guid="795499dd-11a0-4132-8e33-c1f64bd11c51">
         <File Id="src_System.Data.Common.dll" Name="System.Data.Common.dll" Source="$(var.GUI_TargetDir)System.Data.Common.dll" />
       </Component>
       <Component Id="src_System.Diagnostics.StackTrace.dll" Guid="727eb4a0-a11d-4948-b8d0-403b96de69c4">
-                <File Id="src_System.Diagnostics.StackTrace.dll" Name="System.Diagnostics.StackTrace.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.StackTrace.dll" />
-              </Component>
+        <File Id="src_System.Diagnostics.StackTrace.dll" Name="System.Diagnostics.StackTrace.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.StackTrace.dll" />
+      </Component>
       <Component Id="src_System.Diagnostics.Tracing.dll" Guid="7e43f9df-4a1c-4f02-99f7-d7f5aa8c63f1">
-                <File Id="src_System.Diagnostics.Tracing.dll" Name="System.Diagnostics.Tracing.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Tracing.dll" />
-              </Component>
+        <File Id="src_System.Diagnostics.Tracing.dll" Name="System.Diagnostics.Tracing.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Tracing.dll" />
+      </Component>
       <Component Id="src_System.Globalization.Extensions.dll" Guid="12b04d22-78d4-4cf3-b2a5-92d2ca9eb504">
-                <File Id="src_System.Globalization.Extensions.dll" Name="System.Globalization.Extensions.dll" Source="$(var.GUI_TargetDir)System.Globalization.Extensions.dll" />
-              </Component>
+        <File Id="src_System.Globalization.Extensions.dll" Name="System.Globalization.Extensions.dll" Source="$(var.GUI_TargetDir)System.Globalization.Extensions.dll" />
+      </Component>
       <Component Id="src_System.IO.Compression.dll" Guid="5d786beb-ae3e-4a9e-9496-189ddb307903">
-                <File Id="src_System.IO.Compression.dll" Name="System.IO.Compression.dll" Source="$(var.GUI_TargetDir)System.IO.Compression.dll" />
-              </Component>
+        <File Id="src_System.IO.Compression.dll" Name="System.IO.Compression.dll" Source="$(var.GUI_TargetDir)System.IO.Compression.dll" />
+      </Component>
       <Component Id="src_System.Net.Http.dll" Guid="480e547f-a7d7-4f57-a9a3-4ddb448faddf">
-                <File Id="src_System.Net.Http.dll" Name="System.Net.Http.dll" Source="$(var.GUI_TargetDir)System.Net.Http.dll" />
-              </Component>
+        <File Id="src_System.Net.Http.dll" Name="System.Net.Http.dll" Source="$(var.GUI_TargetDir)System.Net.Http.dll" />
+      </Component>
       <Component Id="src_System.Net.Sockets.dll" Guid="340d9c4a-dc96-4ddf-8813-d071f92581cb">
-                <File Id="src_System.Net.Sockets.dll" Name="System.Net.Sockets.dll" Source="$(var.GUI_TargetDir)System.Net.Sockets.dll" />
-              </Component>
+        <File Id="src_System.Net.Sockets.dll" Name="System.Net.Sockets.dll" Source="$(var.GUI_TargetDir)System.Net.Sockets.dll" />
+      </Component>
       <Component Id="src_System.Runtime.Serialization.Primitives.dll" Guid="561a0d2f-182d-42f4-9e0c-81e4f81650c6">
-                <File Id="src_System.Runtime.Serialization.Primitives.dll" Name="System.Runtime.Serialization.Primitives.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Primitives.dll" />
-              </Component>
+        <File Id="src_System.Runtime.Serialization.Primitives.dll" Name="System.Runtime.Serialization.Primitives.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Primitives.dll" />
+      </Component>
       <Component Id="src_System.Security.Cryptography.Algorithms.dll" Guid="af07a661-d962-48e2-8ca4-96f40f167ee7">
-                <File Id="src_System.Security.Cryptography.Algorithms.dll" Name="System.Security.Cryptography.Algorithms.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Algorithms.dll" />
-              </Component>
+        <File Id="src_System.Security.Cryptography.Algorithms.dll" Name="System.Security.Cryptography.Algorithms.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Algorithms.dll" />
+      </Component>
       <Component Id="src_System.Security.SecureString.dll" Guid="58b65b98-6752-4030-badc-ff30f2d160e3">
-                <File Id="src_System.Security.SecureString.dll" Name="System.Security.SecureString.dll" Source="$(var.GUI_TargetDir)System.Security.SecureString.dll" />
-              </Component>
+        <File Id="src_System.Security.SecureString.dll" Name="System.Security.SecureString.dll" Source="$(var.GUI_TargetDir)System.Security.SecureString.dll" />
+      </Component>
       <Component Id="src_System.Threading.Overlapped.dll" Guid="252a5ba3-10e0-41ac-8fb3-af9a955ea71a">
-                <File Id="src_System.Threading.Overlapped.dll" Name="System.Threading.Overlapped.dll" Source="$(var.GUI_TargetDir)System.Threading.Overlapped.dll" />
-              </Component>
+        <File Id="src_System.Threading.Overlapped.dll" Name="System.Threading.Overlapped.dll" Source="$(var.GUI_TargetDir)System.Threading.Overlapped.dll" />
+      </Component>
       <Component Id="src_System.Xml.XPath.XDocument.dll" Guid="70f63556-f331-4c08-ac9f-3515dacbf0e9">
-                <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.XDocument.dll" />
-              </Component>
+        <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.XDocument.dll" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
@@ -376,7 +380,7 @@
   </Fragment>
 
   <!--Builds the App Neo\Data folder-->
-  <Fragment>      
+  <Fragment>
     <ComponentGroup Id="Appsrc_NeoData_files" Directory="MetaAppNeoDataFolder">
       <Component Id="RemoveNeoData" Guid="a453b2c1-f11d-4953-8a21-c1cdd20e9fea">
         <Condition>OVERWRITEAPPDATA</Condition>
@@ -394,15 +398,15 @@
         <File ReadOnly="no" Id="Appsrc_NeoData_Dictionary1.txt" Name="Dictionary1.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary1.txt" />
       </Component>
       <Component Id="Appsrc_NeoData_Dictionary2.txt" Guid="cd4484ee-dc05-4d92-9dff-5a61c9086478">
-                <Condition>OVERWRITEAPPDATA</Condition>
+        <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_NeoData_Dictionary2.txt" Name="Dictionary2.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary2.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>
-  
+
   <!--Builds the App Neo\TomlFiles folder-->
-    <Fragment>
+  <Fragment>
     <ComponentGroup Id="Appsrc_NeoTomlFiles_files" Directory="MetaAppNeoTomlFilesFolder">
       <Component Id="RemoveNeoTomlFiles" Guid="269e9408-f6ff-4bc8-991a-ba3abe65b212">
         <Condition>OVERWRITEAPPDATA</Condition>
