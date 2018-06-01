@@ -371,7 +371,7 @@ namespace MetaMorpheusGUI
         {
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML",
+                Filter = "Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;*.mgf",
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
@@ -454,6 +454,10 @@ namespace MetaMorpheusGUI
 
                     goto case ".mzml";
 
+                case ".mgf":
+                    GuiWarnHandler(null, new StringEventArgs(".mgf files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
+                    goto case ".mzml";
+
                 case ".mzml":
                     if (compressed) // not implemented yet
                     {
@@ -461,7 +465,10 @@ namespace MetaMorpheusGUI
                         break;
                     }
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
-                    if (!SpectraFileExists(spectraFilesObservableCollection, zz)) { spectraFilesObservableCollection.Add(zz); }
+                    if (!SpectraFileExists(spectraFilesObservableCollection, zz))
+                    {
+                        spectraFilesObservableCollection.Add(zz);
+                    }
                     UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
@@ -650,6 +657,7 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
+            BtnQuantSet.IsEnabled = false;
 
             // everything is OK to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => (b.DisplayName, b.task)).ToList(),
@@ -1067,6 +1075,7 @@ namespace MetaMorpheusGUI
             ClearXML.IsEnabled = true;
             AddRaw.IsEnabled = true;
             ClearRaw.IsEnabled = true;
+            BtnQuantSet.IsEnabled = true;
 
             LoadTaskButton.IsEnabled = true;
 
