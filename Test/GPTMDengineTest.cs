@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Gptmd;
-using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -9,7 +8,6 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {

@@ -3,7 +3,6 @@ using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.CrosslinkAnalysis;
 using EngineLayer.Indexing;
-using IO.MzML;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
