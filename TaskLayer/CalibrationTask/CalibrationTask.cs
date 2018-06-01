@@ -23,7 +23,7 @@ namespace TaskLayer
 
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            CommonParameters = new CommonParameters(prodMassTol: 25, preMassTol: 15, TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
+            CommonParameters = new CommonParameters(ProductMassTolerance: new PpmTolerance(25), PrecursorMassTolerance: new PpmTolerance(15), TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
            
             CalibrationParameters = new CalibrationParameters();
         }
@@ -127,15 +127,15 @@ namespace TaskLayer
                    
                     if (i == 1) // failed round 1
                     {
-                        CommonParameters CommonParameters = new CommonParameters( preMassTol:20 , prodMassTol:50, TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
+                        CommonParameters CommonParameters = new CommonParameters(PrecursorMassTolerance: new PpmTolerance(20) , ProductMassTolerance: new PpmTolerance(50), TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
                     }
                     else if (i == 2) // failed round 2
                     {
-                        CommonParameters CommonParameters = new CommonParameters(preMassTol: 30, prodMassTol: 100, TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
+                        CommonParameters CommonParameters = new CommonParameters(PrecursorMassTolerance: new PpmTolerance(30), ProductMassTolerance: new PpmTolerance(100), TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
                     }
                     else if (i == 3) // failed round 3
                     {
-                        CommonParameters CommonParameters = new CommonParameters(preMassTol: 40, prodMassTol: 150, TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
+                        CommonParameters CommonParameters = new CommonParameters(PrecursorMassTolerance: new PpmTolerance(40), ProductMassTolerance: new PpmTolerance(150), TrimMsMsPeaks: false, DoPrecursorDeconvolution: false, ScoreCutoff: 10);
                     }
                     else // failed round 4
                     {

@@ -160,7 +160,7 @@ namespace TaskLayer
             }
 
             // clone the common parameters as a template for the file-specific params to override certain values
-            CommonParameters returnParams = commonParams.Clone();
+            
             
             // set file-specific digestion parameters
             Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
@@ -169,16 +169,17 @@ namespace TaskLayer
             int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
             int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
             DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
-            returnParams.DigestionParams = fileSpecificDigestionParams;
+            
 
             // set the rest of the file-specific parameters
-            returnParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            returnParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            returnParams.BIons = fileSpecificParams.BIons ?? commonParams.BIons;
-            returnParams.YIons = fileSpecificParams.BIons ?? commonParams.YIons;
-            returnParams.CIons = fileSpecificParams.CIons ?? commonParams.CIons;
-            returnParams.ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
+            Tolerance PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            Tolerance ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            bool BIons = fileSpecificParams.BIons ?? commonParams.BIons;
+            bool YIons = fileSpecificParams.YIons ?? commonParams.YIons;
+            bool CIons = fileSpecificParams.CIons ?? commonParams.CIons;
+            bool ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
 
+            CommonParameters returnParams = new CommonParameters(BIons: BIons, YIons: YIons, CIons: CIons, ZdotIons: ZdotIons, PrecursorMassTolerance: PrecursorMassTolerance, ProductMassTolerance: ProductMassTolerance, DigestionParams: fileSpecificDigestionParams);
             return returnParams;
         }
 

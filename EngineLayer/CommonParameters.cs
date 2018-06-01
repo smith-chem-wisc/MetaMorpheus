@@ -49,7 +49,7 @@ namespace EngineLayer
         public CommonParameters(bool BIons = true, bool YIons = true, bool ZdotIons = false, bool CIons = false, bool DoPrecursorDeconvolution = true,
             bool UseProvidedPrecursorInfo = true, double DeconvolutionIntensityRatio = 3, int DeconvolutionMaxAssumedChargeState = 12, bool ReportAllAmbiguity = true,
             bool CompIons = false, int TotalPartitions = 1, double ScoreCutoff = 5, int TopNpeaks = 200, double MinRatio = 0.01, bool TrimMs1Peaks = false,
-            bool TrimMsMsPeaks = true, bool UseDeltaScore = false, bool CalculateEValue = false, double prodMassTol = 20, double preMassTol = 5, double deconMassTol = 4,
+            bool TrimMsMsPeaks = true, bool UseDeltaScore = false, bool CalculateEValue = false, Tolerance ProductMassTolerance = null, Tolerance PrecursorMassTolerance = null, Tolerance DeconvolutionMassTolerance = null,
             int MaxThreadsToUsePerFile = -1, DigestionParams DigestionParams = null, List<(string, string)> ListOfModsVariable = null, List<(string, string)> ListOfModsFixed = null)
         {
             this.BIons = BIons;
@@ -71,10 +71,34 @@ namespace EngineLayer
             this.UseDeltaScore = UseDeltaScore;
             this.CalculateEValue = CalculateEValue;
             this.MaxThreadsToUsePerFile = MaxThreadsToUsePerFile;
-            ProductMassTolerance = new PpmTolerance(prodMassTol);
-            PrecursorMassTolerance = new PpmTolerance(preMassTol);
-            DeconvolutionMassTolerance = new PpmTolerance(deconMassTol);
 
+            if (ProductMassTolerance == null)
+            {
+                this.ProductMassTolerance = new PpmTolerance(20);
+            }
+            else
+            {
+                this.ProductMassTolerance = ProductMassTolerance;
+            }
+
+            if (PrecursorMassTolerance == null)
+            {
+                this.PrecursorMassTolerance = new PpmTolerance(5);
+            }
+            else
+            {
+                this.PrecursorMassTolerance = PrecursorMassTolerance;
+            }
+
+            if (DeconvolutionMassTolerance == null)
+            {
+                this.DeconvolutionMassTolerance = new PpmTolerance(4);
+            }
+            else
+            {
+                this.DeconvolutionMassTolerance = DeconvolutionMassTolerance;
+            }
+            
             if (DigestionParams == null)
             {
                 this.DigestionParams = new DigestionParams(); // not compile time constant

@@ -250,8 +250,7 @@ namespace MetaMorpheusGUI
             {
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            double prodMassTol = ProductMassTolerance.Value;
-
+            
             Tolerance PrecursorMassTolerance;
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -262,8 +261,7 @@ namespace MetaMorpheusGUI
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
             }
-            double preMassTol = PrecursorMassTolerance.Value;
-            CommonParameters CommonParamsToSave = new CommonParameters(DigestionParams: digestionParamsToSave, BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value, CIons: cCheckBox.IsChecked.Value, ZdotIons: zdotCheckBox.IsChecked.Value, ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), ListOfModsFixed: listOfModsFixed, ListOfModsVariable: listOfModsVariable, prodMassTol:prodMassTol, preMassTol:preMassTol);
+            CommonParameters CommonParamsToSave = new CommonParameters(DigestionParams: digestionParamsToSave, BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value, CIons: cCheckBox.IsChecked.Value, ZdotIons: zdotCheckBox.IsChecked.Value, ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), ListOfModsFixed: listOfModsFixed, ListOfModsVariable: listOfModsVariable, ProductMassTolerance:ProductMassTolerance, PrecursorMassTolerance:PrecursorMassTolerance);
 
             if (OutputFileNameTextBox.Text != "")
             {

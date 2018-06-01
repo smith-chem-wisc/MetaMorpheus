@@ -19,7 +19,7 @@ namespace Test
         {
             SearchTask searchTask = new SearchTask
             {
-                CommonParameters = new CommonParameters (prodMassTol: 666, ListOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") }, ListOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),                
+                CommonParameters = new CommonParameters (ProductMassTolerance: new PpmTolerance(666), ListOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") }, ListOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),                
             };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);

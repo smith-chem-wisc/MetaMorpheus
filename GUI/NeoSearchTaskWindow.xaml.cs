@@ -342,8 +342,7 @@ namespace MetaMorpheusGUI
             {
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            double prodMassTolerance = ProductMassTolerance.Value;
-
+            
             Tolerance PrecursorMassTolerance;
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -357,8 +356,7 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            double preMassTolerance = PrecursorMassTolerance.Value;
-
+            
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
             {
@@ -372,7 +370,7 @@ namespace MetaMorpheusGUI
             }
 
             CommonParameters CommonParamsToSave = new CommonParameters(DigestionParams: digestionParamsToSave, BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value,
-                CIons: cCheckBox.IsChecked.Value,ZdotIons: zdotCheckBox.IsChecked.Value, prodMassTol: prodMassTolerance, preMassTol:preMassTolerance, ListOfModsFixed: listOfModsFixed, ListOfModsVariable: listOfModsVariable)
+                CIons: cCheckBox.IsChecked.Value,ZdotIons: zdotCheckBox.IsChecked.Value, ProductMassTolerance: ProductMassTolerance, PrecursorMassTolerance:PrecursorMassTolerance, ListOfModsFixed: listOfModsFixed, ListOfModsVariable: listOfModsVariable)
             {
                 TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask"
             };

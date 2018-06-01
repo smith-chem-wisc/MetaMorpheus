@@ -289,8 +289,7 @@ namespace MetaMorpheusGUI
             {
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            double prodMassTol = ProductMassTolerance.Value;
-
+            
             Tolerance PrecursorMassTolerance;
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -300,7 +299,7 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            double preMassTol = PrecursorMassTolerance.Value;
+           
 
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
@@ -314,7 +313,7 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
             
-            CommonParameters CommonParamsToSave = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior), BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value, CIons: cCheckBox.IsChecked.Value, ZdotIons: zdotCheckBox.IsChecked.Value, ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), preMassTol:preMassTol, prodMassTol: prodMassTol, ListOfModsFixed:listOfModsFixed, ListOfModsVariable: listOfModsVariable);
+            CommonParameters CommonParamsToSave = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior), BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value, CIons: cCheckBox.IsChecked.Value, ZdotIons: zdotCheckBox.IsChecked.Value, ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), PrecursorMassTolerance:PrecursorMassTolerance, ProductMassTolerance: ProductMassTolerance, ListOfModsFixed:listOfModsFixed, ListOfModsVariable: listOfModsVariable);
 
             if (OutputFileNameTextBox.Text != "")
             {

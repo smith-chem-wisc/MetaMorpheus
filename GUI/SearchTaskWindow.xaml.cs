@@ -457,7 +457,7 @@ namespace MetaMorpheusGUI
 
             CommonParameters CommonParamsToSave = new CommonParameters(UseDeltaScore: deltaScoreCheckBox.IsChecked.Value, ReportAllAmbiguity: allAmbiguity.IsChecked.Value, DeconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),  
                 TotalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture), DoPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value, UseProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value, ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), 
-                CalculateEValue: eValueCheckBox.IsChecked.Value, ListOfModsFixed: listOfModsFixed, ListOfModsVariable:  listOfModsVariable, BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value, CIons: cCheckBox.IsChecked.Value, ZdotIons: zdotCheckBox.IsChecked.Value, preMassTol: PrecursorMassTolerance.Value, prodMassTol:ProductMassTolerance.Value , DigestionParams: digestionParamsToSave ,TrimMs1Peaks: TrimMs1Peaks, TrimMsMsPeaks: TrimMsMsPeaks, TopNpeaks: TopNpeaks, MinRatio: MinRatio);
+                CalculateEValue: eValueCheckBox.IsChecked.Value, ListOfModsFixed: listOfModsFixed, ListOfModsVariable:  listOfModsVariable, BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value, CIons: cCheckBox.IsChecked.Value, ZdotIons: zdotCheckBox.IsChecked.Value, PrecursorMassTolerance: PrecursorMassTolerance, ProductMassTolerance:ProductMassTolerance, DigestionParams: digestionParamsToSave ,TrimMs1Peaks: TrimMs1Peaks, TrimMsMsPeaks: TrimMsMsPeaks, TopNpeaks: TopNpeaks, MinRatio: MinRatio);
 
             if (OutputFileNameTextBox.Text != "")
             {
