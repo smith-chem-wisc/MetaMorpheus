@@ -145,11 +145,11 @@ namespace EngineLayer
 
         #region Public Methods
 
-        //public CommonParameters Clone()
-        //{
-        //    // same settings as this.[myparameters]
-        //    return new CommonParameters();
-        //}
+        public CommonParameters Clone()
+        {
+             //same settings as this.[myparameters]
+           return new CommonParameters();
+        }
 
         public void SetTaskDescriptor(string TaskDescriptor)
         {
@@ -179,11 +179,6 @@ namespace EngineLayer
         private void SetUseProvidedPrecursorInfo(bool UseProvidedPrecursorInfo)
         {
             this.UseProvidedPrecursorInfo = UseProvidedPrecursorInfo;
-        }
-
-        private void SetDeconvolutionIntensityRatio(int DeconvolutionIntesityRatio)
-        {
-            this.DeconvolutionIntensityRatio = DeconvolutionIntensityRatio;
         }
 
         private void SetDeconvolutionMaxAssumedChargeState(int DeconvolutionMaxAssumedChargeState)
