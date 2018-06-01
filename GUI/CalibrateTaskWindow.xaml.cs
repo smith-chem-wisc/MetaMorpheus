@@ -71,8 +71,7 @@ namespace MetaMorpheusGUI
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
 
-            //maxDegreesOfParallelism.Text = task.CommonParameters.MaxParallelFilesToAnalyze.ToString();
-
+           
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
@@ -123,8 +122,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            //localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
-
+           
             foreach (var heh in localizeModTypeForTreeViewObservableCollection)
             {
                 heh.Use = false;
@@ -170,9 +168,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
-            //foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
-            //    localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
-            //localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
+           
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -261,7 +257,17 @@ namespace MetaMorpheusGUI
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
             }
-            CommonParameters CommonParamsToSave = new CommonParameters(DigestionParams: digestionParamsToSave, BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value, CIons: cCheckBox.IsChecked.Value, ZdotIons: zdotCheckBox.IsChecked.Value, ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), ListOfModsFixed: listOfModsFixed, ListOfModsVariable: listOfModsVariable, ProductMassTolerance:ProductMassTolerance, PrecursorMassTolerance:PrecursorMassTolerance);
+            CommonParameters CommonParamsToSave = new CommonParameters(
+                DigestionParams: digestionParamsToSave, 
+                BIons: bCheckBox.IsChecked.Value,
+                YIons: yCheckBox.IsChecked.Value,
+                CIons: cCheckBox.IsChecked.Value, 
+                ZdotIons: zdotCheckBox.IsChecked.Value, 
+                ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                ListOfModsFixed: listOfModsFixed, 
+                ListOfModsVariable: listOfModsVariable, 
+                ProductMassTolerance:ProductMassTolerance,
+                PrecursorMassTolerance:PrecursorMassTolerance);
 
             if (OutputFileNameTextBox.Text != "")
             {

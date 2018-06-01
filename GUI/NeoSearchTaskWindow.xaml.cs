@@ -369,8 +369,16 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
-            CommonParameters CommonParamsToSave = new CommonParameters(DigestionParams: digestionParamsToSave, BIons: bCheckBox.IsChecked.Value, YIons: yCheckBox.IsChecked.Value,
-                CIons: cCheckBox.IsChecked.Value,ZdotIons: zdotCheckBox.IsChecked.Value, ProductMassTolerance: ProductMassTolerance, PrecursorMassTolerance:PrecursorMassTolerance, ListOfModsFixed: listOfModsFixed, ListOfModsVariable: listOfModsVariable)
+            CommonParameters CommonParamsToSave = new CommonParameters(
+                DigestionParams: digestionParamsToSave,
+                BIons: bCheckBox.IsChecked.Value,
+                YIons: yCheckBox.IsChecked.Value,
+                CIons: cCheckBox.IsChecked.Value,
+                ZdotIons: zdotCheckBox.IsChecked.Value,
+                ProductMassTolerance: ProductMassTolerance, 
+                PrecursorMassTolerance:PrecursorMassTolerance, 
+                ListOfModsFixed: listOfModsFixed, 
+                ListOfModsVariable: listOfModsVariable)
             {
                 TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask"
             };
