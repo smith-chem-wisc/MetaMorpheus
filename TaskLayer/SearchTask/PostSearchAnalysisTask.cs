@@ -120,7 +120,7 @@ namespace TaskLayer
             ProteinParsimonyResults proteinAnalysisResults = null;
             if (Parameters.SearchParameters.DoParsimony)
             {
-                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, new List<string> { Parameters.SearchTaskId }).Run());
+                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, new List<string> { Parameters.SearchTaskId }).Run());
             }
 
             Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
@@ -128,7 +128,7 @@ namespace TaskLayer
             {
                 if (huh != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
                 }
             }
 

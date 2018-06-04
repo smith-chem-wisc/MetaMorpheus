@@ -144,7 +144,7 @@ namespace TaskLayer
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, new List<string> { taskId });
 
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
+            Dictionary< Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> compactPeptideToProteinPeptideMatchingTest = resTest.proteaseSortedCompactPeptideToProteinPeptideMatching;
 
             foreach (var huh in allPsms)
                 if (huh != null)

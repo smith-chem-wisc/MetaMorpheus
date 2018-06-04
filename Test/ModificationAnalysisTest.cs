@@ -84,7 +84,7 @@ namespace Test
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
             {
-                psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
+                psm.MatchToProteinLinkedPeptides(nice.proteaseSortedCompactPeptideToProteinPeptideMatching);
             }
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
@@ -151,10 +151,12 @@ namespace Test
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
             {
-                psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
+                psm.MatchToProteinLinkedPeptides(nice.proteaseSortedCompactPeptideToProteinPeptideMatching);
             }
-
-            Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
+            foreach (var kvp in nice.proteaseSortedCompactPeptideToProteinPeptideMatching.Values)
+            {
+                Assert.AreEqual(2, kvp[pep1].Count);
+            }
 
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();

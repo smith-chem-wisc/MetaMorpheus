@@ -51,8 +51,11 @@ namespace Test
             Assert.That(compactPeptideToProteinPeptideMatching.ContainsKey(cp2));
             compactPeptideToProteinPeptideMatching[cp2].Add(pep2);
 
+
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedCompactPeptideToProteinPeptideMatching.Add(protease, compactPeptideToProteinPeptideMatching);
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             // check to make sure both peptides are associated with both proteins
@@ -101,8 +104,11 @@ namespace Test
             Assert.That(compactPeptideToProteinPeptideMatching.ContainsKey(cp2));
             compactPeptideToProteinPeptideMatching[cp2].Add(pep2);
 
+
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedCompactPeptideToProteinPeptideMatching.Add(protease, compactPeptideToProteinPeptideMatching);
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             // check to make sure both peptides are associated with both proteins
@@ -147,8 +153,11 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(pep1.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep1 });
             compactPeptideToProteinPeptideMatching.Add(pep2.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep2 });
 
+
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedCompactPeptideToProteinPeptideMatching.Add(protease, compactPeptideToProteinPeptideMatching);
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             // check to make sure both peptides are NOT associated with both proteins
@@ -191,8 +200,10 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(pep1.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep1 });
             compactPeptideToProteinPeptideMatching.Add(pep2.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep2 });
 
+            Dictionary < Protease, Dictionary < CompactPeptideBase, HashSet < PeptideWithSetModifications >>> proteaseSortedCompactPeptideToProteinPeptideMatching =  new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedCompactPeptideToProteinPeptideMatching.Add(protease, compactPeptideToProteinPeptideMatching);
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             // check to make sure both peptides are associated with both proteins
@@ -238,7 +249,9 @@ namespace Test
                 {compactPeptide3, new HashSet<PeptideWithSetModifications>{pep3} }
             };
 
-            var cool = (ProteinParsimonyResults)new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, false, new List<string>()).Run();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedCompactPeptideToProteinPeptideMatching.Add(digestionParams.Protease, compactPeptideToProteinPeptideMatching);
+            var cool = (ProteinParsimonyResults)new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, false, new List<string>()).Run();
 
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching.Count);
 
@@ -326,11 +339,20 @@ namespace Test
                 allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
-            var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;
+            var proteaseSortedCompactPeptideToProteinPeptideMatching = haha.proteaseSortedCompactPeptideToProteinPeptideMatching;
+
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            foreach (var kvp in proteaseSortedCompactPeptideToProteinPeptideMatching)
+            {
+                foreach (var pair in kvp.Value)
+                {
+                    compactPeptideToProteinPeptideMatching.Add(pair.Key, pair.Value);
+                }
+            }
 
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching.Count);
 
-            psm1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+            psm1.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
 
             bool noOneHitWonders = false;
 

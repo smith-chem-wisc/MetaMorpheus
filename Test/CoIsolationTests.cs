@@ -80,7 +80,7 @@ namespace Test
             {
                 if (huh != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(ojdfkj.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(ojdfkj.proteaseSortedCompactPeptideToProteinPeptideMatching);
                 }
             }
 
