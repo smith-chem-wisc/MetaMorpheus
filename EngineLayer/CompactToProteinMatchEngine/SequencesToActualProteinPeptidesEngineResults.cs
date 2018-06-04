@@ -5,19 +5,19 @@ namespace EngineLayer
 {
     public class SequencesToActualProteinPeptidesEngineResults : MetaMorpheusEngineResults
     {
+        
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngineResults(MetaMorpheusEngine s, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching) : base(s)
+        public SequencesToActualProteinPeptidesEngineResults(MetaMorpheusEngine s, Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching) : base(s)
         {
-            this.CompactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
+            this.proteaseSortedCompactPeptideToProteinPeptideMatching = proteaseSortedCompactPeptideToProteinPeptideMatching;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
-
-        public Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CompactPeptideToProteinPeptideMatching { get; }
-
+        public Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching { get; }
+      
         #endregion Public Properties
 
         #region Public Methods
@@ -26,7 +26,8 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            sb.Append("CompactPeptideToProteinPeptideMatching.Count: " + CompactPeptideToProteinPeptideMatching.Count);
+            //i dont know if this is exactly what I want to do here
+            sb.Append("CompactPeptideToProteinPeptideMatching.Count: " + proteaseSortedCompactPeptideToProteinPeptideMatching.Count);
             return sb.ToString();
         }
 
