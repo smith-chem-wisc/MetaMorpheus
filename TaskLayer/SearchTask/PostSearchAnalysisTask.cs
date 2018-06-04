@@ -85,20 +85,30 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (Parameters.ProteinList.Any())
             {
+                // filtering input for psms grouping to ony be peptides of 1% FDR and unambiguous base sequences
+                List<PeptideSpectralMatch> fdrFilteredPsms = new List<PeptideSpectralMatch>();
+                foreach (var psm in Parameters.AllPsms)
+                {
+                    if(psm.FdrInfo.QValue<= 0.010000 && psm.FdrInfo.QValueNotch<= 0.010000 && psm.BaseSequence != null)
+                    {
+                        fdrFilteredPsms.Add(psm);
+                    }
+
+                }
                 if (Parameters.SearchParameters.SearchType == SearchType.NonSpecific)
                 {
                     List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(Parameters.IonTypes);
                     MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(Parameters.CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
                     foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
                     {
-                        new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, Parameters.AllPsms, Parameters.ProteinList, Parameters.FixedModifications,
+                        new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, fdrFilteredPsms, Parameters.ProteinList, Parameters.FixedModifications,
                             Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
                             Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId }).Run();
                     }
                 }
                 else
                 {
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(Parameters.AllPsms, Parameters.ProteinList,
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(fdrFilteredPsms, Parameters.ProteinList,
                         Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
                         Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId });
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();

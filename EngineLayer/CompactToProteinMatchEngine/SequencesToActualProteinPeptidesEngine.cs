@@ -22,6 +22,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
+        //has input for collection of all digestion parameters--- can we split here for compact to protein matching
         public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
         {
             this.proteins = proteinList;
