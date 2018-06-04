@@ -20,10 +20,18 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM, List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptor, bool reportAllAmbiguity, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<Protease,Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseCPWMtoPWSM, List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptor, bool reportAllAmbiguity, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, nestedIds)
         {
             this.massDiffAcceptor = massDiffAcceptor;
-            this.CPWMtoPWSM = CPWMtoPWSM;
+            foreach (var proteaseSet in proteaseCPWMtoPWSM)
+            {
+                var CPWM = proteaseSet.Value;
+               foreach(var CPWMkvp in CPWM)
+               {
+                    CPWMtoPWSM.Add(CPWMkvp.Key, CPWMkvp.Value);
+               }
+            }
+            
         }
 
         #endregion Public Constructors

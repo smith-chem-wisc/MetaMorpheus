@@ -83,7 +83,7 @@ namespace TaskLayer
         {
             Status("Matching peptides to proteins...", Parameters.SearchTaskId);
             Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            
             if (Parameters.ProteinList.Any())
             {
                 // filtering input for psms grouping to ony be peptides of 1% FDR and unambiguous base sequences
@@ -102,7 +102,7 @@ namespace TaskLayer
                     MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(Parameters.CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
                     foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
                     {
-                        new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, fdrFilteredPsms, Parameters.ProteinList, Parameters.FixedModifications,
+                        new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, fdrFilteredPsms, Parameters.ProteinList, Parameters.FixedModifications,
                             Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
                             Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId }).Run();
                     }
