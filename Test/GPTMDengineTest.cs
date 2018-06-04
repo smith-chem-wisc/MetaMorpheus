@@ -48,9 +48,13 @@ namespace Test
             {
                 {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
+
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedMatching.Add(digestionParams.Protease, matching);
+
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
-            newPsm.MatchToProteinLinkedPeptides(matching);
+            newPsm.MatchToProteinLinkedPeptides(proteaseSortedMatching);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
             allResultingIdentifications.Add(newPsm);
@@ -89,11 +93,14 @@ namespace Test
             {
                 {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
+
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedMatching.Add(digestionParams.Protease, matching);
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            match.MatchToProteinLinkedPeptides(matching);
+            match.MatchToProteinLinkedPeptides(proteaseSortedMatching);
 
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
             allIdentifications = new List<PeptideSpectralMatch> { match };

@@ -72,7 +72,7 @@ namespace Test
                 },
             };
             Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
-            proteaseSortedMatching.Add(null, matching);
+            proteaseSortedMatching.Add(digestionParams.Protease, matching);
             psm1.MatchToProteinLinkedPeptides(proteaseSortedMatching);
             psm2.MatchToProteinLinkedPeptides(proteaseSortedMatching);
             psm3.MatchToProteinLinkedPeptides(proteaseSortedMatching);

@@ -59,16 +59,20 @@ namespace Test
                 { pwsm3.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm3 } },
             };
             var digestionParams = new DigestionParams();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedMatching.Add(digestionParams.Protease, matching);
+
+            
             IScan scan = new ThisTestScan();
             var psm1 = new PeptideSpectralMatch(pwsm1.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm1.MatchToProteinLinkedPeptides(matching);
+            psm1.MatchToProteinLinkedPeptides(proteaseSortedMatching);
             var psm2 = new PeptideSpectralMatch(pwsm2.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm2.MatchToProteinLinkedPeptides(matching);
+            psm2.MatchToProteinLinkedPeptides(proteaseSortedMatching);
             var psm3 = new PeptideSpectralMatch(pwsm3.CompactPeptide(TerminusType.None), 0, 1, 0, scan,digestionParams);
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm3.MatchToProteinLinkedPeptides(matching);
+            psm3.MatchToProteinLinkedPeptides(proteaseSortedMatching);
 
             List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
             {
@@ -77,7 +81,7 @@ namespace Test
                 psm3,
             };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new List<string>());
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(proteaseSortedMatching, true, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
             ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new List<string>());

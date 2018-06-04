@@ -102,6 +102,8 @@ namespace Test
                 }
             }
 
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedDictionary = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedDictionary.Add(digestionParams.Protease, dictionary);
             // copy for comparison later
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             foreach (var kvp in dictionary)
@@ -114,8 +116,10 @@ namespace Test
                 initialDictionary.Add(cp, peps);
             }
 
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedInitialDictionary = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedInitialDictionary.Add(digestionParams.Protease, initialDictionary);
             // apply parsimony to dictionary
-            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, false, new List<string>());
+            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(proteaseSortedDictionary, false, new List<string>());
             var hah = (ProteinParsimonyResults)ae.Run();
             var proteinGroups = hah.ProteinGroups;
 
@@ -164,7 +168,7 @@ namespace Test
 
             foreach (var hm in psms)
             {
-                hm.MatchToProteinLinkedPeptides(initialDictionary);
+                hm.MatchToProteinLinkedPeptides(proteaseSortedInitialDictionary);
                 hm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
 
@@ -338,7 +342,10 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, true, new List<string> { "ff" });
+
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedCompactPeptideToProteinPeptideMatching.Add(digestionParams.Protease, compactPeptideToProteinPeptideMatching);
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, true, new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
@@ -360,9 +367,9 @@ namespace Test
             {
             };
             match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            match1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-            match2.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-            match3.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+            match1.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+            match2.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+            match3.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {

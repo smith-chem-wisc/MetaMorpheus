@@ -44,7 +44,9 @@ namespace Test
                 { pepWithSetMods.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
 
-            psm.MatchToProteinLinkedPeptides(matching);
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            proteaseSortedMatching.Add(digestionParams.Protease, matching);
+            psm.MatchToProteinLinkedPeptides(proteaseSortedMatching);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
