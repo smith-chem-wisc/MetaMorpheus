@@ -147,13 +147,23 @@ namespace EngineLayer
                 {
                     string pepSequence;
                     if (!treatModPeptidesAsDifferentPeptides)
-                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + string.Join("", peptide.CTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture);
+                    {
+                        string nTerminalMasses = peptide.NTerminalMasses == null ? "" : string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture)));
+                        string cTerminalMasses = peptide.CTerminalMasses == null ? "" : string.Join("", peptide.CTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture)));
+                        pepSequence = nTerminalMasses + cTerminalMasses + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture);
+                    }
                     else
+                    {
                         pepSequence = compactPeptideToFullSeqMatch[peptide];
+                    }
                     if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out HashSet<Protein> proteinListHere))
+                    {
                         peptideSeqProteinListMatch.Add(pepSequence, new HashSet<Protein>() { kvp.Key });
+                    }
                     else
+                    {
                         proteinListHere.Add(kvp.Key);
+                    }
                 }
             }
 
@@ -164,9 +174,13 @@ namespace EngineLayer
                 foreach (var protein in kvp.Value)
                 {
                     if (algDictionary.TryGetValue(protein, out HashSet<string> newPeptideBaseSeqs))
+                    {
                         newPeptideBaseSeqs.Add(kvp.Key);
+                    }
                     else
+                    {
                         algDictionary.Add(protein, new HashSet<string> { kvp.Key });
+                    }
                 }
             }
 
@@ -174,9 +188,8 @@ namespace EngineLayer
             var proteinToPepSeqMatch = algDictionary.ToDictionary(x => x.Key, x => x.Value);
 
             // *** main parsimony loop
-            bool uniquePeptidesLeft = false;
-            if (proteinsWithUniquePeptides.Any())
-                uniquePeptidesLeft = true;
+            bool uniquePeptidesLeft = proteinsWithUniquePeptides.Any();
+
             int numNewSeqs = algDictionary.Max(p => p.Value.Count);
 
             while (numNewSeqs != 0)
