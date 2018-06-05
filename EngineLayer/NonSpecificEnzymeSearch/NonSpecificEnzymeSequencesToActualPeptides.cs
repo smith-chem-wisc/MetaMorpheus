@@ -261,7 +261,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         foreach (KeyValuePair<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>> kvp in localCPWMtoPWSM)
                         {
                             i++;
-                            var stuff = CPWMtoPWSM;
                             if (CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> tempPWSMHashSet))
                             {
                                 foreach (PeptideWithSetModifications PWSM in kvp.Value)

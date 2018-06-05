@@ -339,8 +339,7 @@ namespace Test
                 allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
-            var proteaseSortedCompactPeptideToProteinPeptideMatching = haha.proteaseSortedCompactPeptideToProteinPeptideMatching;
-                        
+                                    
             Assert.AreEqual(2, haha.compactPeptideToProteinPeptideMatching.Count);
 
             psm1.MatchToProteinLinkedPeptides(haha.compactPeptideToProteinPeptideMatching);

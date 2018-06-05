@@ -109,7 +109,6 @@ namespace TaskLayer
             {
                 // filtering input for psms grouping to ony be peptides of 1% FDR and unambiguous base sequences
                 List<PeptideSpectralMatch> filteredPsms = new List<PeptideSpectralMatch>();
-                List<PeptideSpectralMatch> unfilterdPsms = Parameters.AllPsms;
                 foreach (var psm in Parameters.AllPsms)
                 {
                     if(psm != null && psm.FdrInfo.QValue <= 0.010000 && psm.FdrInfo.QValueNotch <= 0.0100000)
