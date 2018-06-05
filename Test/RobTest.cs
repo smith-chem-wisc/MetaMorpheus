@@ -102,7 +102,8 @@ namespace Test
                 }
             }
 
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedDictionary = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedDictionary = 
+                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             proteaseSortedDictionary.Add(digestionParams.Protease, dictionary);
             // copy for comparison later
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
@@ -116,7 +117,8 @@ namespace Test
                 initialDictionary.Add(cp, peps);
             }
 
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedInitialDictionary = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedInitialDictionary = 
+                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             proteaseSortedInitialDictionary.Add(digestionParams.Protease, initialDictionary);
             // apply parsimony to dictionary
             ProteinParsimonyEngine ae = new ProteinParsimonyEngine(proteaseSortedDictionary, false, new List<string>());
@@ -343,7 +345,8 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
 
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = 
+                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             proteaseSortedCompactPeptideToProteinPeptideMatching.Add(digestionParams.Protease, compactPeptideToProteinPeptideMatching);
             ProteinParsimonyEngine engine = new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, true, new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();

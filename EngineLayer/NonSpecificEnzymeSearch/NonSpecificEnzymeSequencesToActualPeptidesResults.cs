@@ -8,7 +8,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
     {
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptidesResults(MetaMorpheusEngine s, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching) : base(s)
+        public NonSpecificEnzymeSequencesToActualPeptidesResults
+            (MetaMorpheusEngine s, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching) : base(s)
         {
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
             

@@ -34,7 +34,14 @@ namespace Test
 
             #region Generate protein and write to file
 
-            CommonParameters CommonParameters = new CommonParameters(ScoreCutoff: 1, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 2, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, MaxModsForPeptides: 1));
+            CommonParameters CommonParameters = new CommonParameters(
+                ScoreCutoff: 1, 
+                DigestionParams: new DigestionParams(
+                    MaxMissedCleavages: 0, 
+                    MinPeptideLength: 1, 
+                    MaxModificationIsoforms: 2, 
+                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, 
+                    MaxModsForPeptides: 1));
             
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
             ModificationWithMass alanineMod = new ModificationWithMass("111", "mt", motifA, TerminusLocalization.Any, 111);

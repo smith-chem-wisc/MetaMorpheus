@@ -52,7 +52,8 @@ namespace Test
             compactPeptideToProteinPeptideMatching[cp2].Add(pep2);
 
 
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = 
+                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             proteaseSortedCompactPeptideToProteinPeptideMatching.Add(protease, compactPeptideToProteinPeptideMatching);
             // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
@@ -268,7 +269,14 @@ namespace Test
 
         private static Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
-            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 2, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, MaxModsForPeptides: 1), ScoreCutoff: 1);
+            CommonParameters CommonParameters = new CommonParameters(
+                DigestionParams: new DigestionParams(
+                    MaxMissedCleavages: 0, 
+                    MinPeptideLength: 1, 
+                    MaxModificationIsoforms: 2, 
+                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, 
+                    MaxModsForPeptides: 1), 
+                ScoreCutoff: 1);
             
             // Alanine = Glycine + CH2
             Protein protein1 = new Protein("MA", "protein1");
@@ -340,15 +348,15 @@ namespace Test
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
                                     
-            Assert.AreEqual(2, haha.compactPeptideToProteinPeptideMatching.Count);
+            Assert.AreEqual(2, haha.CompactPeptideToProteinPeptideMatching.Count);
 
-            psm1.MatchToProteinLinkedPeptides(haha.compactPeptideToProteinPeptideMatching);
+            psm1.MatchToProteinLinkedPeptides(haha.CompactPeptideToProteinPeptideMatching);
 
             bool noOneHitWonders = false;
 
             return new Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase>
             (
-                newPsms, haha.compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
+                newPsms, haha.CompactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );
         }
 

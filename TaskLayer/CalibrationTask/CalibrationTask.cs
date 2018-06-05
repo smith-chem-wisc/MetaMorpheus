@@ -347,13 +347,14 @@ namespace TaskLayer
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
             
-            var peptideProteinMatch = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run());
-            var proteaseSortedCompactPeptideToProteinPeptideMatching = peptideProteinMatch.proteaseSortedCompactPeptideToProteinPeptideMatching;
-             
+            var peptideProteinMatch = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
+                (allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, 
+                combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run());
+                      
 
             foreach (var huh in allPsms)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(peptideProteinMatch.compactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(peptideProteinMatch.CompactPeptideToProteinPeptideMatching);
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 

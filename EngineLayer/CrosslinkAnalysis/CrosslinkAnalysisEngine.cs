@@ -53,7 +53,8 @@ namespace EngineLayer.CrosslinkAnalysis
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = 
+                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             proteaseSortedCompactPeptideToProteinPeptideMatching.Add(CommonParameters.DigestionParams.Protease, compactPeptideToProteinPeptideMatching);
             CrosslinkAnalysisResults myAnalysisResults = new CrosslinkAnalysisResults(this);
             Status("Running analysis engine!");

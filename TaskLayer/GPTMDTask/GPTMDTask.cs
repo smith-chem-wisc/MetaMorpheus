@@ -147,7 +147,7 @@ namespace TaskLayer
            
             foreach (var huh in allPsms)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(resTest.compactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(resTest.CompactPeptideToProteinPeptideMatching);
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 

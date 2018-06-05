@@ -119,7 +119,14 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters (DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), ListOfModsVariable : new List<(string, string)> { ("Common Variable", "Oxidation of M") }, ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") }, ProductMassTolerance: new AbsoluteTolerance(0.01)),
+                CommonParameters = new CommonParameters (
+                    DigestionParams: new DigestionParams(
+                        MaxMissedCleavages: 0, 
+                        MinPeptideLength: 1, 
+                        InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                    ListOfModsVariable : new List<(string, string)> { ("Common Variable", "Oxidation of M") }, 
+                    ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") }, 
+                    ProductMassTolerance: new AbsoluteTolerance(0.01)),
                 
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -289,7 +296,13 @@ namespace Test
                 GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
-                    CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), ListOfModsVariable: new List<(string, string)>(), ListOfModsFixed: new List<(string, string)>(), ScoreCutoff: 1, PrecursorMassTolerance: new AbsoluteTolerance(1)),
+                    CommonParameters = new CommonParameters(
+                        DigestionParams: new DigestionParams(
+                            InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        ListOfModsVariable: new List<(string, string)>(), 
+                        ListOfModsFixed: new List<(string, string)>(), 
+                        ScoreCutoff: 1,
+                        PrecursorMassTolerance: new AbsoluteTolerance(1)),
                     
                     GptmdParameters = new GptmdParameters
                     {

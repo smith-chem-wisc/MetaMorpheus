@@ -77,11 +77,13 @@ namespace EngineLayer
                 
             }
 
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching =
+                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
 
             foreach (Protease p in proteases)
             {
-                Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+                Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching =
+                    new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
                 List<PeptideSpectralMatch> proteasePsms = new List<PeptideSpectralMatch>();
                 foreach (var psm in psms)
                 {
@@ -106,7 +108,8 @@ namespace EngineLayer
                     {
                         foreach (var digestionParam in collectionOfDigestionParams)
                         {
-                            foreach (var peptide in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
+                            var digestedProteins = proteins[i].Digest(digestionParam, fixedModifications, variableModifications);
+                            foreach (var peptide in digestedProteins)
                             {
                                 var compactPeptide = peptide.CompactPeptide(terminusType);
 

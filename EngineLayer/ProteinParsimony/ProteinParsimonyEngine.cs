@@ -13,14 +13,14 @@ namespace EngineLayer
         #region Private Fields
 
         private readonly bool treatModPeptidesAsDifferentPeptides;
-        //private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinParsimonyEngine(Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching, bool modPeptidesAreDifferent, List<string> nestedIds) : base(nestedIds)
+        public ProteinParsimonyEngine(Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching,
+            bool modPeptidesAreDifferent, List<string> nestedIds) : base(nestedIds)
         {
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
             this.proteaseSortedCompactPeptideToProteinPeptideMatching = proteaseSortedCompactPeptideToProteinPeptideMatching;
@@ -46,9 +46,11 @@ namespace EngineLayer
 
         private List<ProteinGroup> ApplyProteinParsimony()
         {
-            
+
             if (!proteaseSortedCompactPeptideToProteinPeptideMatching.Values.Any())//if dictionary is empty return an empty list of protein groups
+            {
                 return new List<ProteinGroup>();
+            } 
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
 
 
@@ -57,9 +59,8 @@ namespace EngineLayer
 
 
             foreach (var proteaseSpecificCPPM in proteaseSortedCompactPeptideToProteinPeptideMatching)
-            {
-                Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-                compactPeptideToProteinPeptideMatching = proteaseSpecificCPPM.Value;
+            {                
+                var compactPeptideToProteinPeptideMatching = proteaseSpecificCPPM.Value;
 
                 if (!treatModPeptidesAsDifferentPeptides)//user want modified and unmodified peptides treated the same
                 {
@@ -78,7 +79,9 @@ namespace EngineLayer
                     // where to store results
                     foreach (var pep in compactPeptideToProteinPeptideMatching)
                     {
-                        foreach (var pepWithSetMods in pep.Value)
+                        var pepSet = pep.Value;
+
+                        foreach (var pepWithSetMods in pepSet)
                         {
                             if (blah.TryGetValue(pepWithSetMods, out List<CompactPeptideBase> list))
                                 list.Add(pep.Key);

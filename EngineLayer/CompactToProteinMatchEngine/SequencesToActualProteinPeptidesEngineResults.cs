@@ -8,10 +8,12 @@ namespace EngineLayer
         
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngineResults(MetaMorpheusEngine s, Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching) : base(s)
+        public SequencesToActualProteinPeptidesEngineResults
+            (MetaMorpheusEngine s, Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching) : base(s)
         {
-            this.proteaseSortedCompactPeptideToProteinPeptideMatching = proteaseSortedCompactPeptideToProteinPeptideMatching;
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            this.ProteaseSortedCompactPeptideToProteinPeptideMatching = proteaseSortedCompactPeptideToProteinPeptideMatching;
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching =
+                new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
             {
                 var CPWM = proteaseSet.Value;
@@ -20,14 +22,14 @@ namespace EngineLayer
                     compactPeptideToProteinPeptideMatching.Add(CPWMkvp.Key, CPWMkvp.Value);
                 }
             }
-            this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
+            this.CompactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
-        public Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching { get; }
-        public Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching { get; }
+        public Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> ProteaseSortedCompactPeptideToProteinPeptideMatching { get; }
+        public Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CompactPeptideToProteinPeptideMatching { get; }
         #endregion Public Properties
 
         #region Public Methods
@@ -37,7 +39,7 @@ namespace EngineLayer
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
             //i dont know if this is exactly what I want to do here
-            sb.Append("CompactPeptideToProteinPeptideMatching.Count: " + proteaseSortedCompactPeptideToProteinPeptideMatching.Count);
+            sb.Append("CompactPeptideToProteinPeptideMatching.Count: " + ProteaseSortedCompactPeptideToProteinPeptideMatching.Count);
             return sb.ToString();
         }
 

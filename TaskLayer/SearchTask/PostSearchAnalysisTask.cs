@@ -103,7 +103,8 @@ namespace TaskLayer
                 Status("Matching peptides to proteins...", Parameters.SearchTaskId);
             }
 
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = 
+                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             
             if (Parameters.ProteinList.Any())
             {
@@ -134,7 +135,7 @@ namespace TaskLayer
                         Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
                         Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId });
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-                    proteaseSortedCompactPeptideToProteinPeptideMatching = res.proteaseSortedCompactPeptideToProteinPeptideMatching;
+                    proteaseSortedCompactPeptideToProteinPeptideMatching = res.ProteaseSortedCompactPeptideToProteinPeptideMatching;
                 }
             }
 

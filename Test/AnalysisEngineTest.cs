@@ -22,7 +22,14 @@ namespace Test
         {
             Protease protease = new Protease("Custom Protease5", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 1042), ScoreCutoff: 1, ProductMassTolerance: new PpmTolerance(10));
+            CommonParameters CommonParameters = new CommonParameters(
+                DigestionParams: new DigestionParams(
+                    protease: protease.Name, 
+                    MaxMissedCleavages: 0, 
+                    MinPeptideLength: 1, 
+                    MaxModificationIsoforms: 1042), 
+                ScoreCutoff: 1, 
+                ProductMassTolerance: new PpmTolerance(10));
             
             List<ModificationWithMass> localizeableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
@@ -98,7 +105,7 @@ namespace Test
            
             foreach (var huh in newPsms)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(res.compactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(res.CompactPeptideToProteinPeptideMatching);
 
             FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string> { "ff" });
 

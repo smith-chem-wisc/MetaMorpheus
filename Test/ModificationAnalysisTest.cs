@@ -62,7 +62,12 @@ namespace Test
             PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(0, protein1, 1, 9, allModsOneIsNterminus4);
             CompactPeptideBase pep4 = new CompactPeptide(pwsm4, TerminusType.None);
 
-            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue), ScoreCutoff: 1);
+            CommonParameters CommonParameters = new CommonParameters(
+                DigestionParams: new DigestionParams(
+                    MaxMissedCleavages: 0,
+                    MinPeptideLength: 1,
+                    MaxModificationIsoforms: int.MaxValue),
+                ScoreCutoff: 1);
            
             var newPsms = new List<PeptideSpectralMatch>
             {
@@ -84,7 +89,7 @@ namespace Test
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
             {
-                psm.MatchToProteinLinkedPeptides(nice.compactPeptideToProteinPeptideMatching);
+                psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
             }
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
@@ -151,9 +156,9 @@ namespace Test
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
             {
-                psm.MatchToProteinLinkedPeptides(nice.compactPeptideToProteinPeptideMatching);
+                psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
             }
-            foreach (var kvp in nice.proteaseSortedCompactPeptideToProteinPeptideMatching.Values)
+            foreach (var kvp in nice.ProteaseSortedCompactPeptideToProteinPeptideMatching.Values)
             {
                 Assert.AreEqual(2, kvp[pep1].Count);
             }
