@@ -153,6 +153,7 @@ namespace EngineLayer
                         for (int experimentalIndex = 0; experimentalIndex < numExperimentalPeaks; experimentalIndex++)
                         {
                             double currentExperimentalMass = complementaryMasses[experimentalIndex];
+                            double currentExperimentalIntensity = complementaryIntensities[experimentalIndex];
                             double originalExperimentalMass = massShiftForComplementaryConversion - currentExperimentalMass;
                             double minBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMinimumValue(originalExperimentalMass);
                             double maxBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMaximumValue(originalExperimentalMass);
@@ -160,6 +161,7 @@ namespace EngineLayer
                             if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                             {
                                 matchedIonMassesList.Add(currentTheoreticalMass);
+                                matchedIonIntensitiesList.Add(currentExperimentalIntensity);
                                 productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                                 productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
