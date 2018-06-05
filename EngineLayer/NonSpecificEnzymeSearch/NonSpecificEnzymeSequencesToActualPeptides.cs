@@ -15,6 +15,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private readonly MassDiffAcceptor massDiffAcceptor;
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM;
+        private readonly Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseCPWMtoPWSM;
 
         #endregion Private Fields
 
@@ -23,6 +24,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<Protease,Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseCPWMtoPWSM, List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptor, bool reportAllAmbiguity, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, nestedIds)
         {
             this.massDiffAcceptor = massDiffAcceptor;
+            this.proteaseCPWMtoPWSM = proteaseCPWMtoPWSM;
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             foreach (var proteaseSet in proteaseCPWMtoPWSM)
             {
                 var CPWM = proteaseSet.Value;
@@ -31,7 +34,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     CPWMtoPWSM.Add(CPWMkvp.Key, CPWMkvp.Value);
                }
             }
-            
+            this.CPWMtoPWSM = CPWMtoPWSM;
         }
 
         #endregion Public Constructors
@@ -258,6 +261,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         foreach (KeyValuePair<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>> kvp in localCPWMtoPWSM)
                         {
                             i++;
+                            var stuff = CPWMtoPWSM;
                             if (CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> tempPWSMHashSet))
                             {
                                 foreach (PeptideWithSetModifications PWSM in kvp.Value)
@@ -319,7 +323,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                     psm.CompactCompactPeptides();
                 }
-            return new MetaMorpheusEngineResults(this);
+            return new NonSpecificEnzymeSequencesToActualPeptidesResults(this, CPWMtoPWSM);
         }
 
         #endregion Protected Methods

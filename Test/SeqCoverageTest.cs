@@ -66,13 +66,13 @@ namespace Test
             IScan scan = new ThisTestScan();
             var psm1 = new PeptideSpectralMatch(pwsm1.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm1.MatchToProteinLinkedPeptides(proteaseSortedMatching);
+            psm1.MatchToProteinLinkedPeptides(matching);
             var psm2 = new PeptideSpectralMatch(pwsm2.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm2.MatchToProteinLinkedPeptides(proteaseSortedMatching);
+            psm2.MatchToProteinLinkedPeptides(matching);
             var psm3 = new PeptideSpectralMatch(pwsm3.CompactPeptide(TerminusType.None), 0, 1, 0, scan,digestionParams);
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm3.MatchToProteinLinkedPeptides(proteaseSortedMatching);
+            psm3.MatchToProteinLinkedPeptides(matching);
 
             List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
             {

@@ -57,6 +57,15 @@ namespace EngineLayer
         {
             // split by protease to group them together in a dictionary with key being the protease and the value being the Dictionary <CompactPeptideBase, HashSet<PeptideWithSetModification>>
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            foreach (var psm in allPsms)
+            {
+                if (psm != null)
+                {
+                    psms.Add(psm);
+                }
+            }
+
             HashSet<Protease> proteases = new HashSet<Protease>();
                
             foreach (DigestionParams dp in collectionOfDigestionParams)
@@ -74,9 +83,9 @@ namespace EngineLayer
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
                 List<PeptideSpectralMatch> proteasePsms = new List<PeptideSpectralMatch>();
-                foreach (var psm in allPsms)
+                foreach (var psm in psms)
                 {
-                    if (psm.DigestionParams.Protease == p && psm != null)
+                    if (psm.DigestionParams.Protease == p)
                     {
                         proteasePsms.Add(psm);
                     }

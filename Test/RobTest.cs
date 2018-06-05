@@ -168,7 +168,7 @@ namespace Test
 
             foreach (var hm in psms)
             {
-                hm.MatchToProteinLinkedPeptides(proteaseSortedInitialDictionary);
+                hm.MatchToProteinLinkedPeptides(initialDictionary);
                 hm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
 
@@ -367,9 +367,9 @@ namespace Test
             {
             };
             match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            match1.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
-            match2.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
-            match3.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+            match1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+            match2.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+            match3.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {

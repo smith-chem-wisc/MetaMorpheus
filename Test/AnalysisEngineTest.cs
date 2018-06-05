@@ -99,7 +99,7 @@ namespace Test
 
             foreach (var huh in newPsms)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(res.compactPeptideToProteinPeptideMatching);
 
             FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string> { "ff" });
 

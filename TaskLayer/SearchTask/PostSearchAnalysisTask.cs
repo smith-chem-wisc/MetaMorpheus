@@ -88,9 +88,10 @@ namespace TaskLayer
             {
                 // filtering input for psms grouping to ony be peptides of 1% FDR and unambiguous base sequences
                 List<PeptideSpectralMatch> fdrFilteredPsms = new List<PeptideSpectralMatch>();
-                foreach (var psm in Parameters.AllPsms)
+                List<PeptideSpectralMatch> unfilterdPsms = Parameters.AllPsms;
+                foreach (var psm in unfilterdPsms)
                 {
-                    if(psm.FdrInfo.QValue<= 0.010000 && psm.FdrInfo.QValueNotch<= 0.010000 && psm.BaseSequence != null)
+                    if(psm != null/*&&psm.FdrInfo.QValue<= 0.010000 && psm.FdrInfo.QValueNotch<= 0.010000 && psm.BaseSequence != null*/)
                     {
                         fdrFilteredPsms.Add(psm);
                     }
@@ -123,12 +124,21 @@ namespace TaskLayer
                 proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, new List<string> { Parameters.SearchTaskId }).Run());
             }
 
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
+            {
+                foreach (var kvp in proteaseSet.Value)
+                {
+                    compactPeptideToProteinPeptideMatching.Add(kvp.Key, kvp.Value);
+                }
+            }
+
             Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
             foreach (var huh in Parameters.AllPsms)
             {
                 if (huh != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 }
             }
 

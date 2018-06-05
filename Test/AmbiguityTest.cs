@@ -52,7 +52,7 @@ namespace Test
             {
                 if (huh != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(haht.proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(haht.compactPeptideToProteinPeptideMatching);
                 }
             }
 
@@ -60,7 +60,7 @@ namespace Test
             {
                 if (huh != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(hahf.proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(hahf.compactPeptideToProteinPeptideMatching);
                 }
             }
 

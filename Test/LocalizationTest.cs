@@ -55,9 +55,8 @@ namespace Test
             {
                 {ps.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ ps} }
             };
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
-            proteaseSortedMatching.Add(digestionParams.Protease, matching);
-            newPsm.MatchToProteinLinkedPeptides(proteaseSortedMatching);
+            
+            newPsm.MatchToProteinLinkedPeptides(matching);
 
             LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);
             f.Run();

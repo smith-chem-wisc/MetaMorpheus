@@ -149,21 +149,24 @@ namespace EngineLayer
             }
         }
 
-        public void MatchToProteinLinkedPeptides(Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptidesToProteinMatching)
+        public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptidesToProteinMatching)
         {
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matchingCompactPeptideToProtein = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>(); 
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matchingCompactPeptideToProtein = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
-            foreach (var kvp in proteaseSortedCompactPeptidesToProteinMatching)
+            var compactPep = compactPeptidesToProteinMatching;
+
+            foreach (var kvp in compactPeptidesToProteinMatching)
             {
-                foreach (var pair in kvp.Value)
-                {
-                    matchingCompactPeptideToProtein.Add(pair.Key, pair.Value);
-                }
+                
+                    matchingCompactPeptideToProtein.Add(kvp.Key, kvp.Value);
+                
             }
             
             foreach (var cpKey in compactPeptides.Keys.ToList())
             {
+                var test = cpKey;
+                var tests = matchingCompactPeptideToProtein;
                 compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matchingCompactPeptideToProtein[cpKey]);
             }
             var pepsWithMods = compactPeptides.SelectMany(b => b.Value.Item2);

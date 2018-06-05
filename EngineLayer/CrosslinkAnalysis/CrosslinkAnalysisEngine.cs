@@ -114,10 +114,10 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 if (newPsms[myScanWithMassIndex] != null)
                 {
-                    newPsms[myScanWithMassIndex].MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    newPsms[myScanWithMassIndex].MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                     if (newPsms[myScanWithMassIndex].BetaPsmCross != null)
                     {
-                        newPsms[myScanWithMassIndex].BetaPsmCross.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                        newPsms[myScanWithMassIndex].BetaPsmCross.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                     }
                 }
             }

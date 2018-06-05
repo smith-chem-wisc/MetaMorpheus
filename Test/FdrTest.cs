@@ -73,9 +73,9 @@ namespace Test
             };
             Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             proteaseSortedMatching.Add(digestionParams.Protease, matching);
-            psm1.MatchToProteinLinkedPeptides(proteaseSortedMatching);
-            psm2.MatchToProteinLinkedPeptides(proteaseSortedMatching);
-            psm3.MatchToProteinLinkedPeptides(proteaseSortedMatching);
+            psm1.MatchToProteinLinkedPeptides(matching);
+            psm2.MatchToProteinLinkedPeptides(matching);
+            psm3.MatchToProteinLinkedPeptides(matching);
 
             var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
             CommonParameters cp = new CommonParameters(CalculateEValue: true);
@@ -160,13 +160,22 @@ namespace Test
                 proteaseSortedCompactPeptideToProteinPeptideMatching = res.proteaseSortedCompactPeptideToProteinPeptideMatching;
             }
 
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
+            {
+                foreach (var kvp in proteaseSet.Value)
+                {
+                    compactPeptideToProteinPeptideMatching.Add(kvp.Key, kvp.Value);
+                }
+            }
+
             foreach (var psm in allPsmsArray)
             {
-                psm.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             }
             foreach (var psm in allPsmsArrayModern)
             {
-                psm.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             }
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
             FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());
@@ -228,13 +237,22 @@ namespace Test
                 proteaseSortedCompactPeptideToProteinPeptideMatching = res.proteaseSortedCompactPeptideToProteinPeptideMatching;
             }
 
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching2 = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
+            {
+                foreach (var kvp in proteaseSet.Value)
+                {
+                    compactPeptideToProteinPeptideMatching2.Add(kvp.Key, kvp.Value);
+                }
+            }
+
             foreach (var psm in allPsmsArray)
             {
-                psm.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching2);
             }
             foreach (var psm in allPsmsArrayModern)
             {
-                psm.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching2);
             }
             fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
             fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());

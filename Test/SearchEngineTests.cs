@@ -57,7 +57,7 @@ namespace Test
 
             foreach (var huh in allPsmsArray)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(hah.proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(hah.compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
         }
@@ -99,7 +99,7 @@ namespace Test
 
             foreach (var huh in allPsmsArray)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(hah.proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(hah.compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QXQ", allPsmsArray[0].BaseSequence);
         }
@@ -167,7 +167,7 @@ namespace Test
 
             foreach (var huh in allPsmsArray)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(hah.proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(hah.compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
         }
@@ -380,9 +380,18 @@ namespace Test
             new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, new List<PeptideSpectralMatch> { allPsmsArray[0] }, 
                 proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, new List<DigestionParams> { CommonParameters3.DigestionParams }, massDiffAcceptor, CommonParameters3.ReportAllAmbiguity, new List<string>()).Run();
 
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
+            {
+                foreach (var kvp in proteaseSet.Value)
+                {
+                    compactPeptideToProteinPeptideMatching.Add(kvp.Key, kvp.Value);
+                }
+            }
+
             foreach (var huh in allPsmsArray)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -456,16 +465,18 @@ namespace Test
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
             Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
-            new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, new List<PeptideSpectralMatch>
+            var results = new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, new List<PeptideSpectralMatch>
             { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, new List<DigestionParams> { CommonParameters2.DigestionParams }, massDiffAcceptor, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
-
-            foreach (var huh in allPsmsArray)
-            {
-                if (huh != null)
-                {
-                    huh.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
-                }
-            }
+            
+            
+            
+            //foreach (var huh in allPsmsArray)
+            //{
+            //    if (huh != null)
+            //    {
+            //        huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+            //    }
+            //}
 
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
@@ -567,11 +578,20 @@ namespace Test
             Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, new List<PeptideSpectralMatch> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
+            {
+                foreach (var kvp in proteaseSet.Value)
+                {
+                    compactPeptideToProteinPeptideMatching.Add(kvp.Key, kvp.Value);
+                }
+            } 
+
             foreach (var huh in allPsmsArray)
             {
                 if (huh != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 }
             }
 
@@ -643,11 +663,20 @@ namespace Test
             Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, new List<PeptideSpectralMatch> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.Y }, digestParams, searchModes, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
 
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
+            {
+                foreach (var kvp in proteaseSet.Value)
+                {
+                    compactPeptideToProteinPeptideMatching.Add(kvp.Key, kvp.Value);
+                }
+            }
+
             foreach (var huh in allPsmsArray)
             {
                 if (huh != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 }
             }
             var sequence2 = allPsmsArray[0].BaseSequence;
@@ -741,14 +770,14 @@ namespace Test
             {
                 if (huh != null)
                 {
-                    huh.MatchToProteinLinkedPeptides(hah.proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(hah.compactPeptideToProteinPeptideMatching);
                 }
             }
             foreach (var huh2 in allPsmsArray2)
             {
                 if (huh2 != null)
                 {
-                    huh2.MatchToProteinLinkedPeptides(hah2.proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    huh2.MatchToProteinLinkedPeptides(hah2.compactPeptideToProteinPeptideMatching);
                 }
             }
             Assert.AreEqual("QQQGGGG", allPsmsArray2[0].BaseSequence);

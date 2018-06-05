@@ -11,13 +11,23 @@ namespace EngineLayer
         public SequencesToActualProteinPeptidesEngineResults(MetaMorpheusEngine s, Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching) : base(s)
         {
             this.proteaseSortedCompactPeptideToProteinPeptideMatching = proteaseSortedCompactPeptideToProteinPeptideMatching;
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
+            {
+                var CPWM = proteaseSet.Value;
+                foreach (var CPWMkvp in CPWM)
+                {
+                    compactPeptideToProteinPeptideMatching.Add(CPWMkvp.Key, CPWMkvp.Value);
+                }
+            }
+            this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
         public Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching { get; }
-      
+        public Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching { get; }
         #endregion Public Properties
 
         #region Public Methods

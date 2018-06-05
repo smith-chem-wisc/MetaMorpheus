@@ -340,25 +340,16 @@ namespace Test
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var proteaseSortedCompactPeptideToProteinPeptideMatching = haha.proteaseSortedCompactPeptideToProteinPeptideMatching;
+                        
+            Assert.AreEqual(2, haha.compactPeptideToProteinPeptideMatching.Count);
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-            foreach (var kvp in proteaseSortedCompactPeptideToProteinPeptideMatching)
-            {
-                foreach (var pair in kvp.Value)
-                {
-                    compactPeptideToProteinPeptideMatching.Add(pair.Key, pair.Value);
-                }
-            }
-
-            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching.Count);
-
-            psm1.MatchToProteinLinkedPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching);
+            psm1.MatchToProteinLinkedPeptides(haha.compactPeptideToProteinPeptideMatching);
 
             bool noOneHitWonders = false;
 
             return new Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase>
             (
-                newPsms, compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
+                newPsms, haha.compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );
         }
 
