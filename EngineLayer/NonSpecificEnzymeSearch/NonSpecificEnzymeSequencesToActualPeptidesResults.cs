@@ -4,7 +4,7 @@ using System.Text;
 
 namespace EngineLayer.NonSpecificEnzymeSearch
 {
-    class NonSpecificEnzymeSequencesToActualPeptidesResults : MetaMorpheusEngineResults
+    public class NonSpecificEnzymeSequencesToActualPeptidesResults : MetaMorpheusEngineResults
     {
         #region Public Constructors
 
