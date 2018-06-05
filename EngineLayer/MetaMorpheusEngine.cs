@@ -46,7 +46,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static void MatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static void MatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, List<double> matchedIonIntensitiesList)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -78,9 +78,12 @@ namespace EngineLayer
             {
                 double currentExperimentalMz = experimental_mzs[experimentalIndex];
                 // If found match
+                double currentExperimentalIntensity = experimental_intensities[experimentalIndex];
+
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
                     matchedIonMassesList.Add(currentTheoreticalMass);
+                    matchedIonIntensitiesList.Add(currentExperimentalIntensity); 
                     double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);

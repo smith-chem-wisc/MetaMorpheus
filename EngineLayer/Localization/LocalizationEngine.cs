@@ -41,9 +41,10 @@ namespace EngineLayer.Localization
 
             foreach (var ok in allResultingIdentifications)
             {
-                ok.MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+                ok.MatchedIonDictOnlyMatchesMasses = new Dictionary<ProductType, double[]>();
                 ok.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
                 ok.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
+                ok.MatchedIonDictOnlyMatchesIntensity = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
@@ -53,11 +54,13 @@ namespace EngineLayer.Localization
                     List<double> matchedIonMassesList = new List<double>();
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
-                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons);
+                    List<double> matchedIonIntensityList = new List<double>(); 
+                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons, matchedIonIntensityList); 
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    ok.MatchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
+                    ok.MatchedIonDictOnlyMatchesMasses.Add(huh, matchedIonMassesOnlyMatches);
                     ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
                     ok.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
+                    ok.MatchedIonDictOnlyMatchesIntensity.Add(huh, matchedIonIntensityList.ToArray()); 
                 }
             }
 

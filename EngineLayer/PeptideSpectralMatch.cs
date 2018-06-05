@@ -44,7 +44,8 @@ namespace EngineLayer
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<double>();
             this.DigestionParams = digestionParams;
-            MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+            MatchedIonDictOnlyMatchesMasses = new Dictionary<ProductType, double[]>();
+            MatchedIonDictOnlyMatchesIntensity = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
@@ -80,7 +81,8 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatches { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatchesMasses { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatchesIntensity { get; internal set; } //new
         public string ProteinAccesion { get; private set; }
         public string Organism { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
@@ -88,6 +90,8 @@ namespace EngineLayer
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
         public readonly DigestionParams DigestionParams;
         public List<double> AllScores { get; set; }
+        
+        
 
         public double[] Features
         {
@@ -421,14 +425,15 @@ namespace EngineLayer
             string matchedIonMasses = " ";
             string matchedIonDiffDa = " ";
             string matchedIonDiffPpm = " ";
-            if (peptide != null && peptide.MatchedIonDictOnlyMatches.Any())
+            string matchedIonIntensities = " "; 
+            if (peptide != null && peptide.MatchedIonDictOnlyMatchesMasses.Any())
             {
                 //Count
-                matchedIonCounts = string.Join(";", peptide.MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0)));
+                matchedIonCounts = string.Join(";", peptide.MatchedIonDictOnlyMatchesMasses.Select(b => b.Value.Count(c => c > 0)));
 
                 //Masses
                 StringBuilder sbTemp = new StringBuilder();
-                foreach (var kvp in peptide.MatchedIonDictOnlyMatches)
+                foreach (var kvp in peptide.MatchedIonDictOnlyMatchesMasses)
                 {
                     sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
                 }
@@ -449,11 +454,20 @@ namespace EngineLayer
                     sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];");
                 }
                 matchedIonDiffPpm = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
+
+                //Intensities
+                sbTemp.Clear();
+                foreach (var kvp in peptide.MatchedIonDictOnlyMatchesIntensity)
+                {
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                }
+                matchedIonIntensities = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
             }
             s["Matched Ion Counts"] = matchedIonCounts;
             s["Matched Ion Masses"] = matchedIonMasses;
             s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
             s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
+            s["Matched Ion Intesities"] = matchedIonIntensities; 
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
