@@ -81,7 +81,28 @@ namespace TaskLayer
         /// </summary>
         private void GroupAndOrderPSMs()
         {
-            Status("Matching peptides to proteins...", Parameters.SearchTaskId);
+            Status("Running FDR analysis...", Parameters.SearchTaskId);
+            int massDiffAcceptorNumNotches = Parameters.NumNotches;
+            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+
+            //sort the list of psms by the score used for fdr calculation
+            if (fdrAnalysisResults.DeltaScoreImprovement)
+            {
+                Parameters.AllPsms = Parameters.AllPsms.Where(b => b != null)
+                    .OrderByDescending(b => b.DeltaScore)
+                    .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                    .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            }
+            else
+            {
+                Parameters.AllPsms = Parameters.AllPsms.Where(b => b != null)
+                    .OrderByDescending(b => b.Score)
+                    .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                    .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+
+                Status("Matching peptides to proteins...", Parameters.SearchTaskId);
+            }
+
             Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
             
             if (Parameters.ProteinList.Any())
@@ -91,7 +112,7 @@ namespace TaskLayer
                 List<PeptideSpectralMatch> unfilterdPsms = Parameters.AllPsms;
                 foreach (var psm in Parameters.AllPsms)
                 {
-                    if(psm != null )
+                    if(psm != null && psm.FdrInfo.QValue <= 0.010000 && psm.FdrInfo.QValueNotch <= 0.0100000)
                     {
                         filteredPsms.Add(psm);
                     }
@@ -142,25 +163,8 @@ namespace TaskLayer
                 }
             }
 
-            Status("Running FDR analysis...", Parameters.SearchTaskId);
-            int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
-
-            //sort the list of psms by the score used for fdr calculation
-            if (fdrAnalysisResults.DeltaScoreImprovement)
-            {
-                Parameters.AllPsms = Parameters.AllPsms.Where(b => b != null)
-                    .OrderByDescending(b => b.DeltaScore)
-                    .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-                    .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-            }
-            else
-            {
-                Parameters.AllPsms = Parameters.AllPsms.Where(b => b != null)
-                    .OrderByDescending(b => b.Score)
-                    .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-                    .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-            }
+            
+            
 
             if (Parameters.SearchParameters.DoParsimony)
             {
