@@ -154,8 +154,7 @@ namespace EngineLayer
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matchingCompactPeptideToProtein = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
-            var compactPep = compactPeptidesToProteinMatching;
-
+          
             foreach (var kvp in compactPeptidesToProteinMatching)
             {
                 
@@ -165,8 +164,7 @@ namespace EngineLayer
             
             foreach (var cpKey in compactPeptides.Keys.ToList())
             {
-                var test = cpKey;
-                var tests = matchingCompactPeptideToProtein;
+                
                 compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matchingCompactPeptideToProtein[cpKey]);
             }
             var pepsWithMods = compactPeptides.SelectMany(b => b.Value.Item2);

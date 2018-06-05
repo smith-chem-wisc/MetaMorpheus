@@ -87,13 +87,13 @@ namespace TaskLayer
             if (Parameters.ProteinList.Any())
             {
                 // filtering input for psms grouping to ony be peptides of 1% FDR and unambiguous base sequences
-                List<PeptideSpectralMatch> fdrFilteredPsms = new List<PeptideSpectralMatch>();
+                List<PeptideSpectralMatch> filteredPsms = new List<PeptideSpectralMatch>();
                 List<PeptideSpectralMatch> unfilterdPsms = Parameters.AllPsms;
-                foreach (var psm in unfilterdPsms)
+                foreach (var psm in Parameters.AllPsms)
                 {
-                    if(psm != null/*&&psm.FdrInfo.QValue<= 0.010000 && psm.FdrInfo.QValueNotch<= 0.010000 && psm.BaseSequence != null*/)
+                    if(psm != null )
                     {
-                        fdrFilteredPsms.Add(psm);
+                        filteredPsms.Add(psm);
                     }
 
                 }
@@ -103,14 +103,14 @@ namespace TaskLayer
                     MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(Parameters.CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
                     foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
                     {
-                        new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, fdrFilteredPsms, Parameters.ProteinList, Parameters.FixedModifications,
+                        new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, filteredPsms, Parameters.ProteinList, Parameters.FixedModifications,
                             Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
                             Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId }).Run();
                     }
                 }
                 else
                 {
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(fdrFilteredPsms, Parameters.ProteinList,
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(filteredPsms, Parameters.ProteinList,
                         Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
                         Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId });
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
