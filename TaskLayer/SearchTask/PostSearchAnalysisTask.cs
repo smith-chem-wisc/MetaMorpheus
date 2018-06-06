@@ -420,7 +420,7 @@ namespace TaskLayer
                 WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator);
                 SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
             }
-            foreach(var group in PsmsGroupedByFile)
+            foreach (var group in PsmsGroupedByFile)
             {
                 var psmsForThisFile = group.ToList();
                 var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
