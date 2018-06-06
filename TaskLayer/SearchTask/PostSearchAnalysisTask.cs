@@ -395,11 +395,11 @@ namespace TaskLayer
                 WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
                 SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
             }
-            Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue < 0.01 && !a.IsDecoy));
+            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue < 0.01 && !a.IsDecoy));
 
             if (Parameters.SearchParameters.DoParsimony)
             {
-                Parameters.SearchTaskResults.AddNiceText("Target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue < 0.01 && !b.isDecoy) + Environment.NewLine);
+                Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue < 0.01 && !b.isDecoy) + Environment.NewLine);
             }
 
             PsmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
@@ -415,24 +415,16 @@ namespace TaskLayer
                 WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
                 SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
                 Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
-                Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
-                Parameters.SearchTaskResults.AddNiceText("Number of precursor species fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
 
                 var writtenFileForPercolator = Path.Combine(Parameters.OutputFolder, strippedFileName + "_forPercolator.tsv");
                 WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator);
                 SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
             }
-            foreach (var group in PsmsGroupedByFile)
+            foreach(var group in PsmsGroupedByFile)
             {
                 var psmsForThisFile = group.ToList();
-
                 var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
-
-                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-                var writtenFile = Path.Combine(Parameters.OutputFolder, strippedFileName + "_Peptides.psmtsv");
-                WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
-                SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
-                Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
+                Parameters.SearchTaskResults.AddNiceText("MS2 spectra / precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0] + " / " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
             }
         }
 
