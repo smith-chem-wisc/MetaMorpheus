@@ -78,12 +78,11 @@ namespace EngineLayer
             {
                 double currentExperimentalMz = experimental_mzs[experimentalIndex];
                 // If found match
-                double currentExperimentalIntensity = experimental_intensities[experimentalIndex];
 
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
                     matchedIonMassesList.Add(currentTheoreticalMass);
-                    matchedIonIntensitiesList.Add(currentExperimentalIntensity); 
+                    matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]); 
                     double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
@@ -153,7 +152,6 @@ namespace EngineLayer
                         for (int experimentalIndex = 0; experimentalIndex < numExperimentalPeaks; experimentalIndex++)
                         {
                             double currentExperimentalMass = complementaryMasses[experimentalIndex];
-                            double currentExperimentalIntensity = complementaryIntensities[experimentalIndex];
                             double originalExperimentalMass = massShiftForComplementaryConversion - currentExperimentalMass;
                             double minBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMinimumValue(originalExperimentalMass);
                             double maxBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMaximumValue(originalExperimentalMass);
@@ -161,7 +159,7 @@ namespace EngineLayer
                             if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                             {
                                 matchedIonMassesList.Add(currentTheoreticalMass);
-                                matchedIonIntensitiesList.Add(currentExperimentalIntensity);
+                                matchedIonIntensitiesList.Add(complementaryIntensities[experimentalIndex]);
                                 productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                                 productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 

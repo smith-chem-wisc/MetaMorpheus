@@ -41,10 +41,10 @@ namespace EngineLayer.Localization
 
             foreach (var ok in allResultingIdentifications)
             {
-                ok.MatchedIonDictOnlyMatchesMasses = new Dictionary<ProductType, double[]>();
+                ok.MatchedIonMassesDict = new Dictionary<ProductType, double[]>();
                 ok.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
                 ok.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-                ok.MatchedIonDictOnlyMatchesIntensity = new Dictionary<ProductType, double[]>();
+                ok.MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
@@ -57,10 +57,10 @@ namespace EngineLayer.Localization
                     List<double> matchedIonIntensityList = new List<double>(); 
                     MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons, matchedIonIntensityList); 
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    ok.MatchedIonDictOnlyMatchesMasses.Add(huh, matchedIonMassesOnlyMatches);
+                    ok.MatchedIonMassesDict.Add(huh, matchedIonMassesOnlyMatches);
                     ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
                     ok.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
-                    ok.MatchedIonDictOnlyMatchesIntensity.Add(huh, matchedIonIntensityList.ToArray()); 
+                    ok.MatchedIonIntensitiesDict.Add(huh, matchedIonIntensityList.ToArray()); 
                 }
             }
 

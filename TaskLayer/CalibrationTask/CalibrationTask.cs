@@ -378,7 +378,7 @@ namespace TaskLayer
                     List<double> matchedIonIntensitiesList = new List<double>();
                     LocalizationEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, false, matchedIonIntensitiesList);
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    psm.MatchedIonDictOnlyMatchesMasses.Add(huh, matchedIonMassesOnlyMatches);
+                    psm.MatchedIonMassesDict.Add(huh, matchedIonMassesOnlyMatches);
                     psm.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
                     psm.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
                 }
