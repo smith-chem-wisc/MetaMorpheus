@@ -166,6 +166,7 @@ namespace MetaMorpheusGUI
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
             quantPpmTolerance.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
+            checkBoxNormalize.IsChecked = task.SearchParameters.Normalize;
             modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
             checkBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
             histogramBinWidthTextBox.Text = task.SearchParameters.HistogramBinTolInDaltons.ToString(CultureInfo.InvariantCulture);
@@ -203,7 +204,8 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
-
+            //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
+            ckbMzId.IsChecked = task.SearchParameters.OutMzId;
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -444,10 +446,14 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = checkBoxQuantification.IsChecked.Value;
+            TheTask.SearchParameters.Normalize = checkBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
+            TheTask.SearchParameters.OutMzId = ckbMzId.IsChecked.Value;
+            //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
+
             if (checkBoxDecoy.IsChecked.Value)
             {
                 if (radioButtonReverseDecoy.IsChecked.Value)

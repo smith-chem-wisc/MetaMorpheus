@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
-using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -43,23 +42,23 @@ namespace Test
 
             var dist2 = IsotopicDistribution.GetDistribution(pep2.GetChemicalFormula(), 0.1, 0.01);
 
-            IMzmlScan[] Scans = new IMzmlScan[2];
+            MsDataScan[] Scans = new MsDataScan[2];
             double[] ms1intensities = new double[] { 0.8, 0.8, 0.2, 0.02, 0.2, 0.02 };
             double[] ms1mzs = dist1.Masses.Concat(dist2.Masses).OrderBy(b => b).Select(b => b.ToMz(1)).ToArray();
 
             double selectedIonMz = ms1mzs[1];
 
-            MzmlMzSpectrum MS1 = new MzmlMzSpectrum(ms1mzs, ms1intensities, false);
+            MzSpectrum MS1 = new MzSpectrum(ms1mzs, ms1intensities, false);
 
-            Scans[0] = new MzmlScan(1, MS1, 1, false, Polarity.Positive, 1.0, new MzRange(300, 2000), "first spectrum", MZAnalyzerType.Unknown, MS1.SumOfAllY, null, "scan=1");
+            Scans[0] = new MsDataScan(MS1, 1, 1, false, Polarity.Positive, 1.0, new MzRange(300, 2000), "first spectrum", MZAnalyzerType.Unknown, MS1.SumOfAllY, null, null, "scan=1");
 
             double[] ms2intensities = new double[] { 1, 1, 1, 1, 1 };
             double[] ms2mzs = new double[] { 146.106.ToMz(1), 228.086.ToMz(1), 229.07.ToMz(1), 260.148.ToMz(1), 342.129.ToMz(1) };
-            MzmlMzSpectrum MS2 = new MzmlMzSpectrum(ms2mzs, ms2intensities, false);
+            MzSpectrum MS2 = new MzSpectrum(ms2mzs, ms2intensities, false);
             double isolationMZ = selectedIonMz;
-            Scans[1] = new MzmlScanWithPrecursor(2, MS2, 2, false, Polarity.Positive, 2.0, new MzRange(100, 1500), "second spectrum", MZAnalyzerType.Unknown, MS2.SumOfAllY, selectedIonMz, null, null, isolationMZ, 2.5, DissociationType.HCD, 1, null, null, "scan=2");
+            Scans[1] = new MsDataScan(MS2, 2, 2, false, Polarity.Positive, 2.0, new MzRange(100, 1500), "second spectrum", MZAnalyzerType.Unknown, MS2.SumOfAllY, null, null, "scan=2", selectedIonMz, null, null, isolationMZ, 2.5, DissociationType.HCD, 1, null);
 
-            var myMsDataFile = new FakeMsDataFile(Scans);
+            var myMsDataFile = new MsDataFile(Scans, null);
 
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;

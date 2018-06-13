@@ -1,15 +1,12 @@
 ﻿using Chemistry;
 using EngineLayer;
-using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
@@ -47,7 +44,7 @@ namespace Test
             p.Add(new Protein("----E----**", "C2", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
 
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1);
-            
+
             foreach (var protein in p)
             {
                 foreach (var peptide in protein.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
@@ -140,7 +137,7 @@ namespace Test
             // builds psm list to match to peptides
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
+            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File");
 
             foreach (var kvp in dictionary)
@@ -277,7 +274,7 @@ namespace Test
             ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
             ModificationWithMass nTermAmmoniaLoss = new ModificationWithMass("ntermammonialoss", "mt", motif, TerminusLocalization.NPep, 0, neutralLosses: new List<double> { 0, -17 });
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 2);
-            
+
             var cool = p.Digest(digestionParams, new List<ModificationWithMass> { nTermAmmoniaLoss }, new List<ModificationWithMass>()).First();
             var nice = cool.CompactPeptide(TerminusType.None);
             Assert.AreEqual(2, nice.NTerminalMasses.Length);
@@ -303,7 +300,7 @@ namespace Test
             };
 
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1);
-            
+
             var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep };
             CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), TerminusType.None);
@@ -345,7 +342,7 @@ namespace Test
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
+            MsDataScan jdfk = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, 2, 0, "File");
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
@@ -382,8 +379,8 @@ namespace Test
         [Test]
         public static void TestProteinGroupsAccessionOutputOrder()
         {
-            
-            
+
+
             var p = new HashSet<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
 
@@ -392,7 +389,7 @@ namespace Test
 
             // make protein A
             p.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
-            
+
             // add protein B and A to the protein group
             ProteinGroup testGroup = new ProteinGroup(p, null, null);
 

@@ -78,6 +78,12 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            //disable quantification if a .mgf is being used
+            if (SearchParameters.DoQuantification && currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
+            {
+                SearchParameters.DoQuantification = false;
+            }
+
             // load modifications
             Status("Loading modifications...", taskId);
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
@@ -99,8 +105,7 @@ namespace TaskLayer
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
-
-
+            
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
@@ -127,7 +132,7 @@ namespace TaskLayer
             ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
-            
+
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
             HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
 
@@ -153,10 +158,10 @@ namespace TaskLayer
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-                numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
+                numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
                 var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
@@ -277,8 +282,8 @@ namespace TaskLayer
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
-            switch(massDiffAcceptorType)
-            { 
+            switch (massDiffAcceptorType)
+            {
                 case MassDiffAcceptorType.Exact: return 1;
                 case MassDiffAcceptorType.OneMM: return 2;
                 case MassDiffAcceptorType.TwoMM: return 3;
@@ -286,7 +291,7 @@ namespace TaskLayer
                 case MassDiffAcceptorType.ModOpen: return 1;
                 case MassDiffAcceptorType.Open: return 1;
                 case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
-                
+
                 default: throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
@@ -346,7 +351,7 @@ namespace TaskLayer
                 {
                     return true;
                 }
-                    
+
             }
             return false;
         }
@@ -390,7 +395,7 @@ namespace TaskLayer
                     {
                         return possibleFolder.FullName;
                     }
-                        
+
                 }
             }
             return null;
@@ -409,7 +414,7 @@ namespace TaskLayer
             var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             Directory.CreateDirectory(folder);
             return folder;
-        }     
+        }
 
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {

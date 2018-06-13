@@ -83,8 +83,8 @@ namespace Test
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams(protease: "k Protease", MinPeptideLength:1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams(protease: "k Protease", MinPeptideLength:1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams(protease: "k Protease", MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease: "k Protease", MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence.Equals(pep2.Sequence));
@@ -134,8 +134,8 @@ namespace Test
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams (protease.Name,MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams (protease.Name, MinPeptideLength: 1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams(protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease.Name, MinPeptideLength: 1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence != pep2.Sequence);
@@ -178,8 +178,8 @@ namespace Test
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength:1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams(protease: protease.Name,MinPeptideLength:1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence != pep2.Sequence);
@@ -220,7 +220,7 @@ namespace Test
             Protein protein3 = new Protein("MTASIK", "protein3");
 
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
-            DigestionParams digestionParams = new DigestionParams(MinPeptideLength:5);
+            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 5);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var pep1 = protein1.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
             var pep2 = protein2.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
@@ -257,7 +257,7 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams(MaxMissedCleavages:0, MinPeptideLength:1, MaxModificationIsoforms: 2, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, MaxModsForPeptides:1),
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 2, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, MaxModsForPeptides: 1),
                 ScoreCutoff = 1
             };
 
@@ -307,7 +307,7 @@ namespace Test
             string fullFilePath = null;
             int precursorCharge = 0;
             TestDataFile testDataFile = new TestDataFile();
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan = testDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+            MsDataScan mzLibScan = testDataFile.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(mzLibScan, 0, precursorCharge, fullFilePath);
             int scanIndex = 0;
             double score = 0;

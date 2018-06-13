@@ -26,14 +26,14 @@ namespace EngineLayer.Calibration
         private const int trainingIterations = 30;
         private readonly int randomSeed;
 
-        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+        private readonly MsDataFile myMsDataFile;
         private readonly DataPointAquisitionResults datapoints;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, DataPointAquisitionResults datapoints, List<string> nestedIds) : base(nestedIds)
+        public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, List<string> nestedIds) : base(nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.datapoints = datapoints;
@@ -60,7 +60,7 @@ namespace EngineLayer.Calibration
 
             var myMs1DataPoints = new List<(double[] xValues, double yValue)>();
             var myMs2DataPoints = new List<(double[] xValues, double yValue)>();
-            
+
             // generate MS1 calibration datapoints
             for (int i = 0; i < datapoints.Ms1List.Count; i++)
             {
@@ -77,7 +77,7 @@ namespace EngineLayer.Calibration
 
                 myMs1DataPoints.Add((explanatoryVariables, mzError));
             }
-            
+
             // generate MS2 calibration datapoints
             for (int i = 0; i < datapoints.Ms2List.Count; i++)
             {
@@ -116,14 +116,14 @@ namespace EngineLayer.Calibration
             Status("Calibrating spectra");
 
             CalibrateSpectra(ms1Model, ms2Model);
-            
+
             return new MetaMorpheusEngineResults(this);
         }
 
         #endregion Protected Methods
 
         #region Private Methods
-        
+
         private void CalibrateSpectra(IPredictorModel<double> ms1predictor, IPredictorModel<double> ms2predictor)
         {
             Parallel.ForEach(Partitioner.Create(1, myMsDataFile.NumSpectra + 1), fff =>
@@ -132,24 +132,24 @@ namespace EngineLayer.Calibration
                   {
                       var scan = myMsDataFile.GetOneBasedScan(i);
 
-                      if (scan is IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2Scan)
+                      if (scan.MsnOrder==2)
                       {
-                          var precursorScan = myMsDataFile.GetOneBasedScan(ms2Scan.OneBasedPrecursorScanNumber.Value);
+                          var precursorScan = myMsDataFile.GetOneBasedScan(scan.OneBasedPrecursorScanNumber.Value);
 
-                          if (!ms2Scan.SelectedIonMonoisotopicGuessIntensity.HasValue && ms2Scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                          if (!scan.SelectedIonMonoisotopicGuessIntensity.HasValue && scan.SelectedIonMonoisotopicGuessMz.HasValue)
                           {
-                              ms2Scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
+                              scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
                           }
-                          
-                          double theFunc(IPeak x) => x.X - ms2predictor.Predict(new double[] { x.X, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Y) });
 
-                          double theFuncForPrecursor(IPeak x) => x.X - ms1predictor.Predict(new double[] { x.X, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Y) });
+                          double theFunc(MzPeak x) => x.Mz - ms2predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
 
-                          ms2Scan.TransformMzs(theFunc, theFuncForPrecursor);
+                          double theFuncForPrecursor(MzPeak x) => x.Mz - ms1predictor.Predict(new double[] { x.Mz, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
+
+                          scan.TransformMzs(theFunc, theFuncForPrecursor);
                       }
                       else
                       {
-                          Func<IPeak, double> theFunc = x => x.X - ms1predictor.Predict(new double[] { x.X, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Y) });
+                          Func<MzPeak, double> theFunc = x => x.Mz - ms1predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
                           scan.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
                       }
                   }
@@ -176,12 +176,12 @@ namespace EngineLayer.Calibration
             }
 
             var myYValues = myInputs.Select(p => p.yValue).ToArray();
-            
+
             // split data into training set and test set
             var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
             var trainingSetX = splitData.TrainingSet.Observations;
             var trainingSetY = splitData.TrainingSet.Targets;
-            
+
             // parameter ranges for the optimizer 
             var parameters = new ParameterBounds[]
             {
@@ -264,7 +264,7 @@ namespace EngineLayer.Calibration
             }
 
             var myYValues = myInputs.Select(p => p.yValue).ToArray();
-            
+
             // split data into training set and test set
             var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
             var trainingSetX = splitData.TrainingSet.Observations;
@@ -287,7 +287,7 @@ namespace EngineLayer.Calibration
 
             var validationSplit = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: randomSeed)
                 .SplitSet(myXValueMatrix, myYValues);
-            
+
             // define minimization metric
             Func<double[], OptimizerResult> minimize = p =>
             {
@@ -301,7 +301,7 @@ namespace EngineLayer.Calibration
                     subSampleRatio: p[5],
                     featuresPrSplit: (int)p[6],
                     runParallel: false);
-                
+
                 var candidateModel = candidateLearner.Learn(validationSplit.TrainingSet.Observations,
                 validationSplit.TrainingSet.Targets);
 
@@ -317,7 +317,7 @@ namespace EngineLayer.Calibration
             // find best parameters
             var result = optimizer.OptimizeBest(minimize);
             var best = result.ParameterSet;
-            
+
             // create the final learner using the best parameters 
             // (parameters that resulted in the model with the least error)
             learner = new RegressionAbsoluteLossGradientBoostLearner(
