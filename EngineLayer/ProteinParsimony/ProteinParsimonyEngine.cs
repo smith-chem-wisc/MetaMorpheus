@@ -127,7 +127,6 @@ namespace EngineLayer
 
 
 
-            //*****WANT FOR EACH PROTEASE******
             foreach (var proteaseSpecificCPPM in proteaseSortedCompactPeptideToProteinPeptideMatching)
             {
                 foreach (var kvp in proteaseSpecificCPPM.Value)
