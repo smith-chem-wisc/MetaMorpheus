@@ -303,9 +303,11 @@ namespace EngineLayer
                             {
                                 foreach (var parsimonyProteinWithThisNumPeptides in parsimonyProteinsWithSameNumPeptides)
                                 {
-                                    if (parsimonyProteinWithThisNumPeptides.Key != list[i].Key 
+                                    if (parsimonyProteinWithThisNumPeptides.Key != list[i].Key
                                     && proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key].SetEquals(proteinToPeptidesMatching[list[i].Key]))
-                                            indistinguishableProteins.GetOrAdd(list[i].Key, proteinToPeptidesMatching[list[i].Key]);
+                                    {
+                                        indistinguishableProteins.GetOrAdd(list[i].Key, proteinToPeptidesMatching[list[i].Key]);
+                                    }
                                 }
                             }
                         }
