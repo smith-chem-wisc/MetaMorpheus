@@ -106,6 +106,7 @@ namespace EngineLayer.Calibration
 
                     double[] theoreticalMasses = dist.Masses.ToArray();
                     double[] theoreticalIntensities = dist.Intensities.ToArray();
+                    
 
                     Array.Sort(theoreticalIntensities, theoreticalMasses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
@@ -242,7 +243,7 @@ namespace EngineLayer.Calibration
             if (ms2DataScan.MassSpectrum.Size == 0)
                 return result;
 
-            foreach (var productType in identification.MatchedIonDictOnlyMatches)
+            foreach (var productType in identification.MatchedIonMassesDict)
             {
                 for (int i = 0; i < productType.Value.Length; i++)
                 {
