@@ -405,6 +405,18 @@ namespace TaskLayer
             PsmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
 
             // individual psm files (with global psm fdr, global parsimony)
+            foreach (var group in PsmsGroupedByFile) //just spectra
+            {
+                var psmsForThisFile = group.ToList();
+                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
+                Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
+            }
+            foreach (var group in PsmsGroupedByFile) //just fragmented precursors
+            {
+                var psmsForThisFile = group.ToList();
+                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
+                Parameters.SearchTaskResults.AddNiceText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
+            }
             foreach (var group in PsmsGroupedByFile)
             {
                 var psmsForThisFile = group.ToList();
@@ -419,12 +431,6 @@ namespace TaskLayer
                 var writtenFileForPercolator = Path.Combine(Parameters.OutputFolder, strippedFileName + "_forPercolator.tsv");
                 WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator);
                 SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
-            }
-            foreach (var group in PsmsGroupedByFile)
-            {
-                var psmsForThisFile = group.ToList();
-                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
-                Parameters.SearchTaskResults.AddNiceText("MS2 spectra / precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0] + " / " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
             }
             foreach (var group in PsmsGroupedByFile)
             {
