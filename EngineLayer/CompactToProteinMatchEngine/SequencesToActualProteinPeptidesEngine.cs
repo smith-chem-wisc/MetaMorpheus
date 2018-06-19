@@ -22,7 +22,6 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        //has input for collection of all digestion parameters--- can we split here for compact to protein matching
         public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
         {
             this.proteins = proteinList;
@@ -55,44 +54,14 @@ namespace EngineLayer
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            // split by protease to group them together in a dictionary with key being the protease and the value being the Dictionary <CompactPeptideBase, HashSet<PeptideWithSetModification>>
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+
+            #region Match Sequences to PeptideWithSetModifications
+
             foreach (var psm in allPsms)
             {
                 if (psm != null)
-                {
-                    psms.Add(psm);
-                }
-            }
-
-            HashSet<Protease> proteases = new HashSet<Protease>();
-               
-            foreach (DigestionParams dp in collectionOfDigestionParams)
-            {
-                if (!proteases.Contains(dp.Protease))
-                {
-                    proteases.Add(dp.Protease);
-                }
-                
-            }
-
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching =
-                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
-
-            foreach (Protease p in proteases)
-            {
-                Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching =
-                    new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-                List<PeptideSpectralMatch> proteasePsms = new List<PeptideSpectralMatch>();
-                foreach (var psm in psms)
-                {
-                    if (psm.DigestionParams.Protease == p)
-                    {
-                        proteasePsms.Add(psm);
-                    }
-                }
-                foreach (var psm in proteasePsms)
                 {
                     foreach (var compactPeptide in psm.CompactPeptides)
                     {
@@ -100,34 +69,47 @@ namespace EngineLayer
                             compactPeptideToProteinPeptideMatching.Add(compactPeptide.Key, new HashSet<PeptideWithSetModifications>());
                     }
                 }
-               
+            }
 
-                Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
+            double proteinsMatched = 0;
+            int oldPercentProgress = 0;
+
+            Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
+            {
+                for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    for (int i = fff.Item1; i < fff.Item2; i++)
+                    foreach (var digestionParam in collectionOfDigestionParams)
                     {
-                        foreach (var digestionParam in collectionOfDigestionParams)
+                        foreach (var peptide in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
                         {
-                            var digestedProteins = proteins[i].Digest(digestionParam, fixedModifications, variableModifications);
-                            foreach (var peptide in digestedProteins)
-                            {
-                                var compactPeptide = peptide.CompactPeptide(terminusType);
+                            var compactPeptide = peptide.CompactPeptide(terminusType);
 
-                                if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out var peptidesWithSetMods))
-                                {
-                                    lock (peptidesWithSetMods)
-                                        peptidesWithSetMods.Add(peptide);
-                                }
+                            if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out var peptidesWithSetMods))
+                            {
+                                lock (peptidesWithSetMods)
+                                    peptidesWithSetMods.Add(peptide);
                             }
                         }
                     }
-                });
-                proteaseSortedCompactPeptideToProteinPeptideMatching.Add(p, compactPeptideToProteinPeptideMatching);
-                if (!reportAllAmbiguity)
-                    ResolveAmbiguities(compactPeptideToProteinPeptideMatching);
-            }
 
-            return new SequencesToActualProteinPeptidesEngineResults(this, proteaseSortedCompactPeptideToProteinPeptideMatching);
+                    // report progress (proteins matched so far out of total proteins in database)
+                    proteinsMatched++;
+                    var percentProgress = (int)((proteinsMatched / proteins.Count) * 100);
+
+                    if (percentProgress > oldPercentProgress)
+                    {
+                        oldPercentProgress = percentProgress;
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", nestedIds));
+                    }
+                }
+            });
+
+            #endregion Match Sequences to PeptideWithSetModifications
+
+            if (!reportAllAmbiguity)
+                ResolveAmbiguities(compactPeptideToProteinPeptideMatching);
+
+            return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
 
         #endregion Protected Methods

@@ -71,9 +71,7 @@ namespace Test
                     peptide4, new HashSet<PeptideWithSetModifications>{ pep4 }
                 },
             };
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedMatching = 
-                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
-            proteaseSortedMatching.Add(digestionParams.Protease, matching);
+                       
             psm1.MatchToProteinLinkedPeptides(matching);
             psm2.MatchToProteinLinkedPeptides(matching);
             psm3.MatchToProteinLinkedPeptides(matching);
@@ -152,25 +150,17 @@ namespace Test
             PeptideSpectralMatch[] allPsmsArrayModern = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ModernSearchEngine(allPsmsArrayModern, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, false, massDiffAcceptor, 0, new List<string>()).Run();
 
-            Dictionary<Protease,Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = 
-                new Dictionary< Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = 
+                new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (proteinList.Any())
             {
                 SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsmsArray.ToList(), proteinList, fixedModifications, variableModifications, new List<ProductType>
                 { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-                proteaseSortedCompactPeptideToProteinPeptideMatching = res.ProteaseSortedCompactPeptideToProteinPeptideMatching;
+                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
-            {
-                foreach (var kvp in proteaseSet.Value)
-                {
-                    compactPeptideToProteinPeptideMatching.Add(kvp.Key, kvp.Value);
-                }
-            }
-
+            
             foreach (var psm in allPsmsArray)
             {
                 psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
@@ -231,23 +221,15 @@ namespace Test
             allPsmsArrayModern = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ModernSearchEngine(allPsmsArrayModern, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, false, massDiffAcceptor, 0, new List<string>()).Run();
 
-            proteaseSortedCompactPeptideToProteinPeptideMatching = new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
+            var compactPeptideToProteinPeptideMatching2 = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (proteinList.Any())
             {
                 SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine2 = new SequencesToActualProteinPeptidesEngine(allPsmsArray.ToList(), proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine2.Run();
-                proteaseSortedCompactPeptideToProteinPeptideMatching = res.ProteaseSortedCompactPeptideToProteinPeptideMatching;
+                compactPeptideToProteinPeptideMatching2 = res.CompactPeptideToProteinPeptideMatching;
             }
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching2 = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
-            {
-                foreach (var kvp in proteaseSet.Value)
-                {
-                    compactPeptideToProteinPeptideMatching2.Add(kvp.Key, kvp.Value);
-                }
-            }
-
+            
             foreach (var psm in allPsmsArray)
             {
                 psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching2);

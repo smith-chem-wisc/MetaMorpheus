@@ -81,6 +81,46 @@ namespace TaskLayer
         /// </summary>
         private void GroupAndOrderPSMs()
         {
+            Status("Matching peptides to proteins...", Parameters.SearchTaskId);
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            if (Parameters.ProteinList.Any())
+            {
+                if (Parameters.SearchParameters.SearchType == SearchType.NonSpecific)
+                {
+                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(Parameters.IonTypes);
+                    MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(Parameters.CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
+                    foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
+                    {
+                        new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, Parameters.AllPsms, Parameters.ProteinList, Parameters.FixedModifications,
+                            Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
+                            Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId }).Run();
+                    }
+                }
+                else
+                {
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(Parameters.AllPsms, Parameters.ProteinList,
+                        Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
+                        Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId });
+                    var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
+                    compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+                }
+            }
+
+            ProteinParsimonyResults proteinAnalysisResults = null;
+            if (Parameters.SearchParameters.DoParsimony)
+            {
+                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, new List<string> { Parameters.SearchTaskId }).Run());
+            }
+
+            Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
+            foreach (var huh in Parameters.AllPsms)
+            {
+                if (huh != null)
+                {
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
+
             Status("Running FDR analysis...", Parameters.SearchTaskId);
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
@@ -99,72 +139,7 @@ namespace TaskLayer
                     .OrderByDescending(b => b.Score)
                     .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                     .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-
-                Status("Matching peptides to proteins...", Parameters.SearchTaskId);
             }
-
-            Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>> proteaseSortedCompactPeptideToProteinPeptideMatching = 
-                new Dictionary<Protease, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>>();
-            
-            if (Parameters.ProteinList.Any())
-            {
-                // filtering input for psms grouping to ony be peptides of 1% FDR and unambiguous base sequences
-                List<PeptideSpectralMatch> filteredPsms = new List<PeptideSpectralMatch>();
-                foreach (var psm in Parameters.AllPsms)
-                {
-                    if(psm != null && psm.FdrInfo.QValue <= 0.010000 && psm.FdrInfo.QValueNotch <= 0.0100000)
-                    {
-                        filteredPsms.Add(psm);
-                    }
-
-                }
-                if (Parameters.SearchParameters.SearchType == SearchType.NonSpecific)
-                {
-                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(Parameters.IonTypes);
-                    MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(Parameters.CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
-                    foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
-                    {
-                        new NonSpecificEnzymeSequencesToActualPeptides(proteaseSortedCompactPeptideToProteinPeptideMatching, filteredPsms, Parameters.ProteinList, Parameters.FixedModifications,
-                            Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
-                            Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId }).Run();
-                    }
-                }
-                else
-                {
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(filteredPsms, Parameters.ProteinList,
-                        Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
-                        Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId });
-                    var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-                    proteaseSortedCompactPeptideToProteinPeptideMatching = res.ProteaseSortedCompactPeptideToProteinPeptideMatching;
-                }
-            }
-
-            ProteinParsimonyResults proteinAnalysisResults = null;
-            if (Parameters.SearchParameters.DoParsimony)
-            {
-                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(proteaseSortedCompactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, new List<string> { Parameters.SearchTaskId }).Run());
-            }
-
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-            foreach (var proteaseSet in proteaseSortedCompactPeptideToProteinPeptideMatching)
-            {
-                foreach (var kvp in proteaseSet.Value)
-                {
-                    compactPeptideToProteinPeptideMatching.Add(kvp.Key, kvp.Value);
-                }
-            }
-
-            Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
-            foreach (var huh in Parameters.AllPsms)
-            {
-                if (huh != null)
-                {
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                }
-            }
-
-            
-            
 
             if (Parameters.SearchParameters.DoParsimony)
             {
@@ -179,7 +154,7 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoLocalizationAnalysis)
             {
                 Status("Running localization analysis...", Parameters.SearchTaskId);
-                for(int spectraFileIndex = 0; spectraFileIndex < Parameters.CurrentRawFileList.Count; spectraFileIndex++)
+                for (int spectraFileIndex = 0; spectraFileIndex < Parameters.CurrentRawFileList.Count; spectraFileIndex++)
                 {
                     CommonParameters combinedParams = SetAllFileSpecificCommonParams(Parameters.CommonParameters, Parameters.FileSettingsList[spectraFileIndex]);
 
@@ -215,7 +190,7 @@ namespace TaskLayer
                     var experimentalDesign = File.ReadAllLines(assumedExperimentalDesignPath)
                         .ToDictionary(p => p.Split('\t')[0], p => p);
 
-                    foreach(var file in Parameters.CurrentRawFileList)
+                    foreach (var file in Parameters.CurrentRawFileList)
                     {
                         string filename = Path.GetFileNameWithoutExtension(file);
 
@@ -228,10 +203,10 @@ namespace TaskLayer
                         int techrep = int.Parse(split[4]);
 
                         // experimental design info passed in here for each spectra file
-                        spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, 
-                            condition: condition, 
-                            biorep: biorep - 1, 
-                            fraction: fraction - 1, 
+                        spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file,
+                            condition: condition,
+                            biorep: biorep - 1,
+                            fraction: fraction - 1,
                             techrep: techrep - 1));
 
                         Parameters.MyFileManager.DoneWithFile(file);
@@ -420,16 +395,28 @@ namespace TaskLayer
                 WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
                 SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
             }
-            Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue < 0.01 && !a.IsDecoy));
+            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue < 0.01 && !a.IsDecoy));
 
             if (Parameters.SearchParameters.DoParsimony)
             {
-                Parameters.SearchTaskResults.AddNiceText("Target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue < 0.01 && !b.isDecoy) + Environment.NewLine);
+                Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue < 0.01 && !b.isDecoy) + Environment.NewLine);
             }
 
             PsmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
 
             // individual psm files (with global psm fdr, global parsimony)
+            foreach (var group in PsmsGroupedByFile) //just spectra
+            {
+                var psmsForThisFile = group.ToList();
+                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
+                Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
+            }
+            foreach (var group in PsmsGroupedByFile) //just fragmented precursors
+            {
+                var psmsForThisFile = group.ToList();
+                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
+                Parameters.SearchTaskResults.AddNiceText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
+            }
             foreach (var group in PsmsGroupedByFile)
             {
                 var psmsForThisFile = group.ToList();
@@ -440,8 +427,6 @@ namespace TaskLayer
                 WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
                 SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
                 Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
-                Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
-                Parameters.SearchTaskResults.AddNiceText("Number of precursor species fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
 
                 var writtenFileForPercolator = Path.Combine(Parameters.OutputFolder, strippedFileName + "_forPercolator.tsv");
                 WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator);
@@ -798,7 +783,7 @@ namespace TaskLayer
             var baseSeqPath = Path.Combine(outputFolder, fileName + "BaseSequences.tsv");
             var fullSeqPath = Path.Combine(outputFolder, fileName + "FullSequences.tsv");
 
-            flashLFQResults.WriteResults(null, baseSeqPath, fullSeqPath, null);
+            flashLFQResults.WriteResults(null, fullSeqPath, baseSeqPath, null);
 
             SucessfullyFinishedWritingFile(baseSeqPath, nestedIds);
             SucessfullyFinishedWritingFile(fullSeqPath, nestedIds);

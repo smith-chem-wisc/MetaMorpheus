@@ -27,9 +27,8 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                
-                CommonParameters = new CommonParameters(DigestionParams:new DigestionParams(MaxMissedCleavages: 0,MinPeptideLength: 1,InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
-                
+                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+               
                 CalibrationParameters = new CalibrationParameters
                 {
                     WriteIntermediateFiles = true,
@@ -37,10 +36,10 @@ namespace Test
                 }
             };
             GptmdTask task2 = new GptmdTask
-            { 
-                CommonParameters = new CommonParameters(),
+            {
+                CommonParameters = new CommonParameters()
+                
             };
-            
 
             SearchTask task3 = new SearchTask
             {
@@ -119,15 +118,13 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters (
-                    DigestionParams: new DigestionParams(
-                        MaxMissedCleavages: 0, 
-                        MinPeptideLength: 1, 
-                        InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    ListOfModsVariable : new List<(string, string)> { ("Common Variable", "Oxidation of M") }, 
-                    ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") }, 
-                    ProductMassTolerance: new AbsoluteTolerance(0.01)),
-                
+                CommonParameters = new CommonParameters
+                (
+                    DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                    ListOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    ProductMassTolerance: new AbsoluteTolerance(0.01)
+                ),
                 CalibrationParameters = new CalibrationParameters
                 {
                     NumFragmentsNeededForEveryIdentification = 6,
@@ -135,7 +132,11 @@ namespace Test
             };
             GptmdTask task2 = new GptmdTask
             {
-                CommonParameters = new CommonParameters (ProductMassTolerance: new AbsoluteTolerance(0.01)),
+                CommonParameters = new CommonParameters
+                (
+                    DigestionParams: new DigestionParams(),
+                    ProductMassTolerance: new AbsoluteTolerance(0.01)
+                ),
             };
 
             SearchTask task3 = new SearchTask
@@ -211,20 +212,23 @@ namespace Test
         [Test]
         public static void MakeSureFdrDoesntSkip()
         {
-            DigestionParams dp = new DigestionParams(MinPeptideLength: 2);
             MetaMorpheusTask task = new SearchTask
             {
-                
-                CommonParameters = new CommonParameters(DigestionParams:dp , ScoreCutoff: 1, DeconvolutionIntensityRatio: 999, DeconvolutionMassTolerance: new PpmTolerance(50)),
-                
+                CommonParameters = new CommonParameters
+                (
+                    DigestionParams : new DigestionParams(MinPeptideLength: 2),
+
+                    ScoreCutoff: 1,
+                    DeconvolutionIntensityRatio: 999,
+                    DeconvolutionMassTolerance : new PpmTolerance(50)
+                ),
                 SearchParameters = new SearchParameters
                 {
                     DecoyType = DecoyType.None,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                 }
-                
             };
-            
+
             string xmlName = "MakeSureFdrDoesntSkip.xml";
 
             #region Generate protein and write to file
@@ -245,7 +249,6 @@ namespace Test
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-               
                 var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
 
                 PeptideWithSetModifications targetGood = targetDigested.First();
@@ -296,14 +299,15 @@ namespace Test
                 GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
-                    CommonParameters = new CommonParameters(
-                        DigestionParams: new DigestionParams(
-                            InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                        ListOfModsVariable: new List<(string, string)>(), 
-                        ListOfModsFixed: new List<(string, string)>(), 
-                        ScoreCutoff: 1,
-                        PrecursorMassTolerance: new AbsoluteTolerance(1)),
-                    
+                    CommonParameters = new CommonParameters
+                    (                       
+                        DigestionParams : new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        ListOfModsVariable : new List<(string, string)>(),
+                        ListOfModsFixed : new List<(string, string)>(),
+                        ScoreCutoff : 1,
+                        PrecursorMassTolerance : new AbsoluteTolerance(1)
+                    ),
+
                     GptmdParameters = new GptmdParameters
                     {
                         ListOfModsGptmd = new List<(string, string)> { ("okType", "ok") },
@@ -358,9 +362,11 @@ namespace Test
 
             SearchTask testPeptides = new SearchTask
             {
-                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5)),
-                 //ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
-               
+                CommonParameters = new CommonParameters
+                (
+                    
+                    DigestionParams : new DigestionParams(MinPeptideLength: 5)
+                ),
                 SearchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,
@@ -446,7 +452,7 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("Target peptides within 1% FDR: 4"))
+                    if (line.Contains("All target peptides within 1% FDR: 4"))
                     {
                         foundD = true;
                     }

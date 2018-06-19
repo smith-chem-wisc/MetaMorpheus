@@ -158,10 +158,9 @@ namespace Test
             {
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
             }
-            foreach (var kvp in nice.ProteaseSortedCompactPeptideToProteinPeptideMatching.Values)
-            {
-                Assert.AreEqual(2, kvp[pep1].Count);
-            }
+
+            Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
+
 
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
