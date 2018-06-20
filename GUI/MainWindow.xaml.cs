@@ -15,6 +15,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using System.Collections.Generic;
+using RealTimeGUI;
 
 namespace MetaMorpheusGUI
 {
@@ -1345,6 +1346,12 @@ namespace MetaMorpheusGUI
         {
             System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
+        }
+
+        private void MenuItemClickRealTimeGUI(object sender, RoutedEventArgs e)
+        {
+            RealTimeGUI.MainWindow realTimeGUI = new RealTimeGUI.MainWindow();
+            realTimeGUI.Show();
         }
 
         #endregion Private Methods

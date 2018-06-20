@@ -284,6 +284,10 @@
       <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
       <Name>EngineLayer</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RealTimeGUI\RealTimeGUI.csproj">
+      <Project>{5ca7f217-dd3e-433c-9024-ab636943fe17}</Project>
+      <Name>RealTimeGUI</Name>
+    </ProjectReference>
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
       <Name>TaskLayer</Name>
