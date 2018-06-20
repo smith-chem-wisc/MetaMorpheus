@@ -88,7 +88,7 @@ namespace TaskLayer
 
         #region Internal Methods
 
-        internal MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
+        public MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
         {
             FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
             if (myMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)

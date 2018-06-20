@@ -19,6 +19,8 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Bootstrapper1", "Bootstrapp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealTimeGUI", "RealTimeGUI\RealTimeGUI.csproj", "{5CA7F217-DD3E-433C-9024-AB636943FE17}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaDrawGUI", "MetaDrawGUI\MetaDrawGUI.csproj", "{2963FFC2-52A5-4781-83BE-7E327C3E57E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +88,14 @@ Global
 		{5CA7F217-DD3E-433C-9024-AB636943FE17}.TestAndRelease|Any CPU.Build.0 = Release|Any CPU
 		{5CA7F217-DD3E-433C-9024-AB636943FE17}.TestAndReleaseLinux|Any CPU.ActiveCfg = Release|Any CPU
 		{5CA7F217-DD3E-433C-9024-AB636943FE17}.TestAndReleaseLinux|Any CPU.Build.0 = Release|Any CPU
+		{2963FFC2-52A5-4781-83BE-7E327C3E57E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2963FFC2-52A5-4781-83BE-7E327C3E57E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2963FFC2-52A5-4781-83BE-7E327C3E57E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2963FFC2-52A5-4781-83BE-7E327C3E57E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2963FFC2-52A5-4781-83BE-7E327C3E57E9}.TestAndRelease|Any CPU.ActiveCfg = Release|Any CPU
+		{2963FFC2-52A5-4781-83BE-7E327C3E57E9}.TestAndRelease|Any CPU.Build.0 = Release|Any CPU
+		{2963FFC2-52A5-4781-83BE-7E327C3E57E9}.TestAndReleaseLinux|Any CPU.ActiveCfg = Release|Any CPU
+		{2963FFC2-52A5-4781-83BE-7E327C3E57E9}.TestAndReleaseLinux|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

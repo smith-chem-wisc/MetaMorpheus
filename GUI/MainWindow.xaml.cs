@@ -16,6 +16,7 @@ using System.Windows.Input;
 using TaskLayer;
 using System.Collections.Generic;
 using RealTimeGUI;
+using MetaDrawGUI;
 
 namespace MetaMorpheusGUI
 {
@@ -1348,10 +1349,16 @@ namespace MetaMorpheusGUI
             Application.Current.Shutdown();
         }
 
-        private void MenuItemClickRealTimeGUI(object sender, RoutedEventArgs e)
+        private void MenuItemClickRealTimeGUI_Click(object sender, RoutedEventArgs e)
         {
             RealTimeGUI.MainWindow realTimeGUI = new RealTimeGUI.MainWindow();
             realTimeGUI.Show();
+        }
+
+        private void MenuItemClickMetaDrawGUI_Click(object sender, RoutedEventArgs e)
+        {
+            MetaDrawGUI.MainWindow metaDrawGUI = new MetaDrawGUI.MainWindow();
+            metaDrawGUI.Show();
         }
 
         #endregion Private Methods
