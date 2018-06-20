@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.ClassicSearch
-{
+{ 
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
         #region Private Fields
