@@ -22,6 +22,7 @@
             <GroupBox Header="Control Panel" Grid.Row="0" Grid.Column="0" >
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
                     <Button x:Name="BtnConnection" Content="Connect" Click="BtnConnection_Click"/>
+                    <Button x:Name="BtnRealTimeData" Content="Data Collect" Click="BtnRealTimeData_Click"/>
                 </StackPanel>
             </GroupBox>
             <GridSplitter Grid.Column="1"

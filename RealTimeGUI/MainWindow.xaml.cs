@@ -30,5 +30,11 @@ namespace RealTimeGUI
             var x = Connection.DoJob();
             TbNotifications.AppendText(x);
         }
+
+        private void BtnRealTimeData_Click(object sender, RoutedEventArgs e)
+        {
+            DataReceiver dataReceiver = new DataReceiver();
+            dataReceiver.DoJob();
+        }
     }
 }

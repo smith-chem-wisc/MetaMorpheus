@@ -23,8 +23,10 @@ namespace RealTimeGUI
 		/// </summary>
 		static private IInstrumentAccessContainer GetContainer()
 		{
-			string baseName = @"SOFTWARE\Finnigan\Xcalibur\Devices\" + InstrumentName;
-			using (RegistryKey key = Registry.LocalMachine.OpenSubKey(baseName))
+			//string baseName = @"SOFTWARE\Finnigan\Xcalibur\Devices\" + InstrumentName;
+            string baseName = ((IntPtr.Size > 4) ? @"SOFTWARE\Wow6432Node\Finnigan\Xcalibur\Devices\" : @"SOFTWARE\Finnigan\Xcalibur\Devices\")
+
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(baseName))
 			{
 				if (key != null)
 				{
