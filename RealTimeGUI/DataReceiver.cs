@@ -18,6 +18,8 @@ namespace RealTimeGUI
         string TextTime { get; set; }
         List<IMsScan> ListScan { get; set; }
 
+        public static event EventHandler<NotificationEventArgs> DataReceiverNotificationEventHandler;
+
         internal void DoJob()
 		{
 			using (IExactiveInstrumentAccess instrument = Connection.GetFirstInstrument())
@@ -44,20 +46,22 @@ namespace RealTimeGUI
 			{
                 //Console.WriteLine("\n{0:HH:mm:ss,fff} scan with {1} centroids arrived", DateTime.Now, scan.CentroidCount);
                 ListScan.Add(scan);
-			}
+                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(ListScan.Count.ToString()));
+            }
 		}
 
 		private void Orbitrap_AcquisitionStreamClosing(object sender, EventArgs e)
 		{
 			//Console.WriteLine("\n{0:HH:mm:ss,fff} {1}", DateTime.Now, "Acquisition stream closed (end of method)");
             TextTime = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream closed (end of method)";
-
+            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(TextTime));
         }
 
 		private void Orbitrap_AcquisitionStreamOpening(object sender, MsAcquisitionOpeningEventArgs e)
 		{
             //Console.WriteLine("\n{0:HH:mm:ss,fff} {1}", DateTime.Now, "Acquisition stream opens (start of method)");
             TextTime = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream opens (start of method)";
+            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(TextTime));
         }
 	}
 }

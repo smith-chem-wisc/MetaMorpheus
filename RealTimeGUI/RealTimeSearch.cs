@@ -10,7 +10,7 @@ namespace RealTimeGUI
 {
     class RealTimeSearch
     {
-        
+        DataReceiver DataReceiver { get; set; }
 
     }
 }

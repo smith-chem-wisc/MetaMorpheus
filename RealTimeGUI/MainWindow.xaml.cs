@@ -23,6 +23,12 @@ namespace RealTimeGUI
         public MainWindow()
         {
             InitializeComponent();
+            DataReceiver.DataReceiverNotificationEventHandler += UpdateTbNotification;
+        }
+
+        private void UpdateTbNotification(object sender, NotificationEventArgs e)
+        {
+            TbNotifications.AppendText(e.Notification);
         }
 
         private void BtnConnection_Click(object sender, RoutedEventArgs e)
