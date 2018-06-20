@@ -85,17 +85,8 @@ namespace EngineLayer
                         pepsToRemove.Add(peptide);
                 }
 
-                foreach (var removePep in pepsToRemove)
-                {
-                    if (proteinGroup.AllPeptides.Contains(removePep))
-                    {
-                        proteinGroup.AllPeptides.Remove(removePep);
-                    }
-                    if (proteinGroup.UniquePeptides.Contains(removePep))
-                    {
-                        proteinGroup.UniquePeptides.Remove(removePep);
-                    }
-                }
+                proteinGroup.AllPeptides.ExceptWith(pepsToRemove);
+                proteinGroup.UniquePeptides.ExceptWith(pepsToRemove);
                 
             }
 

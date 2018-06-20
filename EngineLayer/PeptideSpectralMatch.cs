@@ -154,20 +154,13 @@ namespace EngineLayer
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptidesToProteinMatching)
         {
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matchingCompactPeptideToProtein = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-
-          
-            foreach (var kvp in compactPeptidesToProteinMatching)
-            {
-                
-                    matchingCompactPeptideToProtein.Add(kvp.Key, kvp.Value);
-                
-            }
+                  
+            
             
             foreach (var cpKey in compactPeptides.Keys.ToList())
             {
                 
-                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matchingCompactPeptideToProtein[cpKey]);
+                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, compactPeptidesToProteinMatching[cpKey]);
             }
             var pepsWithMods = compactPeptides.SelectMany(b => b.Value.Item2);
             IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
