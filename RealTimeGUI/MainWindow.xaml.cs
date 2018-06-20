@@ -28,7 +28,14 @@ namespace RealTimeGUI
 
         private void UpdateTbNotification(object sender, NotificationEventArgs e)
         {
-            TbNotifications.AppendText(e.Notification);
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => UpdateTbNotification(sender, e)));
+            }
+            else
+            {
+                TbNotifications.AppendText(e.Notification);
+            }    
         }
 
         private void BtnConnection_Click(object sender, RoutedEventArgs e)
