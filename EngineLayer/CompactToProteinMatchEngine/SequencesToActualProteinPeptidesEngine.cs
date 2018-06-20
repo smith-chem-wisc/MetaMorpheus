@@ -48,7 +48,15 @@ namespace EngineLayer
             foreach (CompactPeptide key in keys)
             {
                 HashSet<PeptideWithSetModifications> value = compactPeptideToProteinPeptideMatching[key];
-                compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { value.FirstOrDefault(b => !b.Protein.IsDecoy) ?? value.First() };
+                HashSet<PeptideWithSetModifications> resolvedValues = new HashSet<PeptideWithSetModifications>();
+                foreach (var PWSM in value)
+                {
+                    if (!PWSM.Protein.IsDecoy)
+                    {
+                        resolvedValues.Add(PWSM);
+                    }
+                }
+                compactPeptideToProteinPeptideMatching[key] = resolvedValues;
             }
         }
 
@@ -74,20 +82,18 @@ namespace EngineLayer
             double proteinsMatched = 0;
             int oldPercentProgress = 0;
 
-            Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
-            {
-                for (int i = fff.Item1; i < fff.Item2; i++)
+            
+                for (int i =0; i < proteins.Count; i++)
                 {
                     foreach (var digestionParam in collectionOfDigestionParams)
                     {
                         foreach (var peptide in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
                         {
                             var compactPeptide = peptide.CompactPeptide(terminusType);
-
-                            if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out var peptidesWithSetMods))
+  
+                            if (compactPeptideToProteinPeptideMatching.ContainsKey(compactPeptide))
                             {
-                                lock (peptidesWithSetMods)
-                                    peptidesWithSetMods.Add(peptide);
+                                compactPeptideToProteinPeptideMatching[compactPeptide].Add(peptide);
                             }
                         }
                     }
@@ -102,7 +108,7 @@ namespace EngineLayer
                         ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", nestedIds));
                     }
                 }
-            });
+           
 
             #endregion Match Sequences to PeptideWithSetModifications
 
