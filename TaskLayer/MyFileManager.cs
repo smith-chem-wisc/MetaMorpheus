@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using IO.MzML;
+using IO.Mgf;
 
 #if NETFRAMEWORK
 
@@ -95,9 +96,14 @@ namespace TaskLayer
 
             // By now know that need to load this file!!!
             lock (fileLoadingLock) // Lock because reading is sequential
+            {
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
                 {
                     myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter);
+                }
+                else if (Path.GetExtension(origDataFile).Equals(".mgf", StringComparison.OrdinalIgnoreCase))
+                {
+                    myMsDataFiles[origDataFile] = Mgf.LoadAllStaticData(origDataFile, filter);
                 }
                 else
                 {
@@ -107,7 +113,8 @@ namespace TaskLayer
                     Warn("No capability for reading " + origDataFile);
 #endif
                 }
-            return myMsDataFiles[origDataFile];
+                return myMsDataFiles[origDataFile];
+            }
         }
 
         internal void DoneWithFile(string origDataFile)
