@@ -20,14 +20,14 @@ namespace Test
             string[] sequences = {
                 "---ABC",
                 "--EFGABC",
-                "--WXGEFG"};
+            };
                 
             IEnumerable<string> sequencesInducingCleavage = new List<string> {  "-" };
             IEnumerable<string> sequencesInducingCleavage2 = new List<string> { "G" };
-            IEnumerable<string> sequencesInducingCleavage3 = new List<string> { "X" };
+           
             var protease = new Protease("test1", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var protease2 = new Protease("test2", sequencesInducingCleavage2, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            var protease3 = new Protease("test3", sequencesInducingCleavage3, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            
             var peptideList = new HashSet<PeptideWithSetModifications>();
            
             var p = new List<Protein>();
@@ -37,8 +37,7 @@ namespace Test
 
             DigestionParams digestionParams = new DigestionParams(Protease: protease, MinPeptideLength: 1);
             DigestionParams digestionParams2 = new DigestionParams(Protease: protease2, MinPeptideLength: 1);
-            DigestionParams digestionParams3 = new DigestionParams(Protease: protease3, MinPeptideLength: 1);
-
+           
             foreach (var protein in p)
             {
                 foreach (var peptide in protein.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
@@ -48,7 +47,7 @@ namespace Test
                         
                         case "ABC": peptideList.Add(peptide); break;
                         case "EFGABC": peptideList.Add(peptide); break;
-                        case "WXGEFG": peptideList.Add(peptide); break;
+                        
                         
                         
                     }
@@ -60,21 +59,12 @@ namespace Test
                         
                         case "ABC": peptideList.Add(peptide); break;
                         case "--EFG": peptideList.Add(peptide); break;
-                        case "--WXG": peptideList.Add(peptide); break;
-                        case "EFG": peptideList.Add(peptide); break;
+                        
                         
 
                     }
                 }
-                foreach (var peptide in protein.Digest(digestionParams3, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
-                {
-                    switch (peptide.BaseSequence)
-                    {
-                        case "--WX": peptideList.Add(peptide); break;
-                        case "GEFG": peptideList.Add(peptide); break;
-
-                    }
-                }
+                
             }
 
             // creates the initial dictionary of "peptide" and "virtual peptide" matches
@@ -124,23 +114,20 @@ namespace Test
                                 psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2));
                                 break;
                             }
-                            else { break; } 
-                            
+                            else { break; }
 
-                        
+
+
                         case "EFGABC": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams)); break;
-                        case "WXGEFG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams)); break;
-                        
 
-                        
+
+
+
 
                         case "--EFG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2)); break;
-                        case "--WXG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2)); break;
-                        case "EFG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2)); break;
-                        
-                        
-                        case "GEFG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams3)); break;
-                        case "--WX": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams3)); break;
+
+
+
                     }
                 }
             }
