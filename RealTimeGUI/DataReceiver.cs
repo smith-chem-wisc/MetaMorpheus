@@ -22,12 +22,15 @@ namespace RealTimeGUI
 
         internal void DoJob()
 		{
+            ListScan = new List<IMsScan>();
 			using (IExactiveInstrumentAccess instrument = Connection.GetFirstInstrument())
 			{
 				IMsScanContainer orbitrap = instrument.GetMsScanContainer(0);
-				Console.WriteLine("Waiting 60 seconds for scans on detector " + orbitrap.DetectorClass + "...");
+                //Console.WriteLine("Waiting 60 seconds for scans on detector " + orbitrap.DetectorClass + "...");
+                string x = "Waiting 60 seconds for scans on detector " + orbitrap.DetectorClass + "...";
+                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
 
-				orbitrap.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
+                orbitrap.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
 				orbitrap.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
 				orbitrap.MsScanArrived += Orbitrap_MsScanArrived;
 				Thread.CurrentThread.Join(60000);
