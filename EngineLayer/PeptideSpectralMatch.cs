@@ -150,11 +150,11 @@ namespace EngineLayer
             }
         }
 
-        public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptidesToProteinMatching)
+        public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var cpKey in compactPeptides.Keys.ToList())
             {
-                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, compactPeptidesToProteinMatching[cpKey]);
+                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matching[cpKey]);
             }
             var pepsWithMods = compactPeptides.SelectMany(b => b.Value.Item2);
             IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
@@ -464,7 +464,7 @@ namespace EngineLayer
             s["Matched Ion Masses"] = matchedIonMasses;
             s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
             s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
-            s["Matched Ion Intesities"] = matchedIonIntensities;
+            s["Matched Ion Intensities"] = matchedIonIntensities;
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)

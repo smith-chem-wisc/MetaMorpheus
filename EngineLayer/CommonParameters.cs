@@ -2,41 +2,13 @@
 using MzLibUtil;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer
 {
     public class CommonParameters
     {
-        //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
-        public string TaskDescriptor { get; set; }
-        public int MaxThreadsToUsePerFile { get; private set; }
-        public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
-        public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
-        public bool DoPrecursorDeconvolution { get; private set; }
-        public bool UseProvidedPrecursorInfo { get; private set; }
-        public double DeconvolutionIntensityRatio { get; private set; }
-        public int DeconvolutionMaxAssumedChargeState { get; private set; }
-        public Tolerance DeconvolutionMassTolerance { get; private set; }
-        public int TotalPartitions { get; private set; }
-        public bool BIons { get; private set; }
-        public bool YIons { get; private set; }
-        public bool ZdotIons { get; private set; }
-        public bool CIons { get; private set; }
-        public Tolerance ProductMassTolerance { get; private set; }
-        public Tolerance PrecursorMassTolerance { get; private set; }
-        public bool CompIons { get; private set; }
-        public double ScoreCutoff { get; private set; }
-        public DigestionParams DigestionParams { get; private set; }
-        public bool ReportAllAmbiguity { get; private set; }
-        public int TopNpeaks { get; private set; }
-        public double MinRatio { get; private set; }
-        public bool TrimMs1Peaks { get; private set; }
-        public bool TrimMsMsPeaks { get; private set; }
-        public bool UseDeltaScore { get; private set; }
-        public bool CalculateEValue { get; private set; }
-
+        
         #region Public Constructors
 
         // this parameterless constructor needs to exist to read the toml. 
@@ -90,6 +62,38 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
+
+        #region Public Properties
+
+        //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
+        public string TaskDescriptor { get; set; }
+        public int MaxThreadsToUsePerFile { get; private set; }
+        public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
+        public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
+        public bool DoPrecursorDeconvolution { get; private set; }
+        public bool UseProvidedPrecursorInfo { get; private set; }
+        public double DeconvolutionIntensityRatio { get; private set; }
+        public int DeconvolutionMaxAssumedChargeState { get; private set; }
+        public Tolerance DeconvolutionMassTolerance { get; private set; }
+        public int TotalPartitions { get; private set; }
+        public bool BIons { get; private set; }
+        public bool YIons { get; private set; }
+        public bool ZdotIons { get; private set; }
+        public bool CIons { get; private set; }
+        public Tolerance ProductMassTolerance { get; private set; }
+        public Tolerance PrecursorMassTolerance { get; private set; }
+        public bool CompIons { get; private set; }
+        public double ScoreCutoff { get; private set; }
+        public DigestionParams DigestionParams { get; private set; }
+        public bool ReportAllAmbiguity { get; private set; }
+        public int TopNpeaks { get; private set; }
+        public double MinRatio { get; private set; }
+        public bool TrimMs1Peaks { get; private set; }
+        public bool TrimMsMsPeaks { get; private set; }
+        public bool UseDeltaScore { get; private set; }
+        public bool CalculateEValue { get; private set; }
+
+        #endregion Public Properties
 
         #region Public Methods
 
