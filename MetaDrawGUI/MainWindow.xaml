@@ -36,7 +36,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="btnAddFiles" Content="Add" Click="btnAddFiles_Click"/>
                             <Button x:Name="btnClearFiles" Content="Clear" Click="btnClearFiles_Click"/>
-                            <Button x:Name="btnRun" Content="Run" Click="btnRun_Click"/>
+                            <Button x:Name="btnLoadScans" Content="Run" Click="btnLoadScans_Click"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -55,7 +55,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="btnAddResultFiles" Content="Add" Click="btnAddFiles_Click"/>
                             <Button x:Name="btnClearResultFiles" Content="Clear" Click="btnClearFiles_Click"/>
-                            <Button x:Name="btnReadResultFile" Content="Read" Click="btnReadResultFile_Click"/>
+                            <Button x:Name="btnReadResultFile" Content="Read" IsEnabled="False" Click="btnReadResultFile_Click" />
                         </StackPanel>
                         <StackPanel  Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left">
                             <Label Content=" Ouput Folder"/>
@@ -79,7 +79,7 @@
                         </DataGrid>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
                             <TextBox Name="txtScanNum" Text="Scan Number" />
-                            <Button Name="btnDraw" Content="Draw" Click="btnDraw_Click"/>
+                            <Button Name="btnDraw" Content="Draw" Click="btnDraw_Click" IsEnabled="False"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>

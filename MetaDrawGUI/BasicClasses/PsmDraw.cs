@@ -40,7 +40,7 @@ namespace MetaDrawGUI
         //Calculate All possible Products Masses based on ModMass and linkPos
         public static ProductMassesMightHave XlCalculateTotalProductMassesForSingle(PsmDraw psmCross, List<ProductType> lp, bool Charge_2_3_PrimeFragment)
         {
-            int length = psmCross.compactPeptide.NTerminalMasses.Length;
+            int length = psmCross.CompactPeptideDraw.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
 
             var pmmhCurr = new ProductMassesMightHave();
@@ -114,25 +114,25 @@ namespace MetaDrawGUI
             if (containsAdot)
                 throw new NotImplementedException();
             if (containsBnoB1)
-                massLen += compactPeptide.NTerminalMasses.Length - 1;
+                massLen += CompactPeptideDraw.NTerminalMasses.Length - 1;
             if (containsB)
-                massLen += compactPeptide.NTerminalMasses.Length;
+                massLen += CompactPeptideDraw.NTerminalMasses.Length;
             if (containsC)
-                massLen += compactPeptide.NTerminalMasses.Length;
+                massLen += CompactPeptideDraw.NTerminalMasses.Length;
             if (containsX)
                 throw new NotImplementedException();
             if (containsY)
-                massLen += compactPeptide.CTerminalMasses.Length;
+                massLen += CompactPeptideDraw.CTerminalMasses.Length;
             if (containsZdot)
-                massLen += compactPeptide.CTerminalMasses.Length;
+                massLen += CompactPeptideDraw.CTerminalMasses.Length;
 
             ProductMassesMightHave productMassMightHave = new ProductMassesMightHave(massLen);
             int i = 0;
             int ib = 0;
             int ic = 0;
-            for (int j = 0; j < compactPeptide.NTerminalMasses.Length; j++)
+            for (int j = 0; j < CompactPeptideDraw.NTerminalMasses.Length; j++)
             {
-                var hm = compactPeptide.NTerminalMasses[j];
+                var hm = CompactPeptideDraw.NTerminalMasses[j];
                 if (containsBnoB1)
                 {
                     if (j > 0)
@@ -158,22 +158,22 @@ namespace MetaDrawGUI
                     ic++;
                 }
             }
-            int iy = compactPeptide.CTerminalMasses.Length - 1;
-            int iz = compactPeptide.CTerminalMasses.Length - 1;
-            for (int j = 0; j < compactPeptide.CTerminalMasses.Length; j++)
+            int iy = CompactPeptideDraw.CTerminalMasses.Length - 1;
+            int iz = CompactPeptideDraw.CTerminalMasses.Length - 1;
+            for (int j = 0; j < CompactPeptideDraw.CTerminalMasses.Length; j++)
             {
-                var hm = compactPeptide.CTerminalMasses[j];
+                var hm = CompactPeptideDraw.CTerminalMasses[j];
                 if (containsY)
                 {
                     productMassMightHave.ProductMz[i] = hm + waterMonoisotopicMass;
-                    productMassMightHave.ProductName[i] = "y" + (compactPeptide.CTerminalMasses.Length - iy).ToString();
+                    productMassMightHave.ProductName[i] = "y" + (CompactPeptideDraw.CTerminalMasses.Length - iy).ToString();
                     i++;
                     iy--;
                 }
                 if (containsZdot)
                 {
                     productMassMightHave.ProductMz[i] = hm + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
-                    productMassMightHave.ProductName[i] = "z" + (compactPeptide.CTerminalMasses.Length - iz).ToString();
+                    productMassMightHave.ProductName[i] = "z" + (CompactPeptideDraw.CTerminalMasses.Length - iz).ToString();
                     i++;
                     iz--;
                 }

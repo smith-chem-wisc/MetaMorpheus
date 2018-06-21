@@ -10,6 +10,7 @@ using EngineLayer.CrosslinkSearch;
 using System.Collections.Generic;
 using MzLibUtil;
 using System.Text.RegularExpressions;
+using MassSpectrometry;
 
 namespace MetaDrawGUI
 {
@@ -22,8 +23,8 @@ namespace MetaDrawGUI
         private readonly ObservableCollection<RawDataForDataGrid> resultFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private MainViewModel mainViewModel = null;
         private List<Ms2ScanWithSpecificMass> arrayOfMs2ScansSortedByMass = null;
+        private MsDataFile MsDataFile = null;   
         private List<PsmDraw> PSMs = null;
-        private Dictionary<int, double[]> predictedIntensities = null;
         private readonly ObservableCollection<SpectrumForDataGrid> spectrumNumsObservableCollection = new ObservableCollection<SpectrumForDataGrid>();
 
         public MainWindow()
@@ -137,7 +138,7 @@ namespace MetaDrawGUI
 
         //Reading the MS2 scans is time consuming and require lot of memory. There must be other ways to do this!. 
         //Also limit to only one file per time. 
-        private void btnRun_Click(object sender, RoutedEventArgs e)
+        private void btnLoadScans_Click(object sender, RoutedEventArgs e)
         {
             if (!spectraFilesObservableCollection.Any())
             {
@@ -146,10 +147,12 @@ namespace MetaDrawGUI
 
             LoadScans loadScans = new LoadScans(spectraFilesObservableCollection.Where(b => b.Use).First().FilePath, txtBoxOutputFolder.Text);
 
-            loadScans.Run();
+            MsDataFile = loadScans.Run();          
 
-            arrayOfMs2ScansSortedByMass = loadScans.arrayOfMs2ScansSortedByMass.ToList();
+            //arrayOfMs2ScansSortedByMass = loadScans.arrayOfMs2ScansSortedByMass.ToList();
 
+            btnLoadScans.IsEnabled = false;
+            btnReadResultFile.IsEnabled = true;
         }
 
         private void UpdateOutputFolderTextbox()
@@ -173,7 +176,7 @@ namespace MetaDrawGUI
 
         private void btnDraw_Click(object sender, RoutedEventArgs e)
         {
-            btnRun.IsEnabled = false;
+            btnLoadScans.IsEnabled = false;
 
             mainViewModel.Model.InvalidatePlot(true);
 
@@ -185,6 +188,10 @@ namespace MetaDrawGUI
 
         private void btnReadResultFile_Click(object sender, RoutedEventArgs e)
         {
+            if (resultFilesObservableCollection.Count == 0)
+            {
+                MessageBox.Show("Please add result files.");
+            }
             var resultFilePath = resultFilesObservableCollection.Where(b => b.Use).First().FilePath;
             PSMs = TsvResultReader.ReadTsv(resultFilePath);
             foreach (var item in PSMs)
@@ -192,6 +199,9 @@ namespace MetaDrawGUI
                 spectrumNumsObservableCollection.Add(new SpectrumForDataGrid(item.ScanNumber));
             }
             dataGridScanNums.Items.Refresh();
+
+            btnReadResultFile.IsEnabled = false;
+            btnDraw.IsEnabled = true;
         }
 
         private void Row_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -215,32 +225,32 @@ namespace MetaDrawGUI
 
         private void UpdateModel(int x)
         {
-            if (arrayOfMs2ScansSortedByMass == null || arrayOfMs2ScansSortedByMass.Exists(p => p.OneBasedScanNumber == x))
+            if (MsDataFile == null)
             {
                 MessageBox.Show("Please check the MS data loaded.");
                 return;
             }
-            Ms2ScanWithSpecificMass msScanForDraw = arrayOfMs2ScansSortedByMass.Where(p => p.OneBasedScanNumber == x).First();
 
             //Only draw scan, maybe for future use 
             //mainViewModel.UpdateScanModel(msScanForDraw);
 
-            PsmDraw psmCross = PSMs.Where(p => p.ScanNumber == x).First();
+            var msScanForDraw = MsDataFile.GetAllScansList().Where(p => p.OneBasedScanNumber == x).First();
+
+            PsmDraw psmDraw = PSMs.Where(p => p.ScanNumber == x).First();
 
             //The parameters below need to be set by users. Change GUI.
             var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
             Tolerance productMassTolerance = new PpmTolerance(20);
 
-            var pmm = PsmDraw.XlCalculateTotalProductMassesForSingle(psmCross, lp, false);
+            var pmm = PsmDraw.XlCalculateTotalProductMassesForSingle(psmDraw, lp, false);
 
             var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
 
-            double pmmScore = PsmCross.XlMatchIons(msScanForDraw.TheScan, productMassTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+            double pmmScore = PsmCross.XlMatchIons(msScanForDraw, productMassTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
 
-            psmCross.MatchedIonInfo = matchedIonMassesListPositiveIsMatch;
+            psmDraw.MatchedIonInfo = matchedIonMassesListPositiveIsMatch;
 
-
-            mainViewModel.UpdateForSingle(msScanForDraw, psmCross);
+            mainViewModel.UpdateForSingle(msScanForDraw, psmDraw);
 
         }
     }

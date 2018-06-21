@@ -8,6 +8,7 @@ using EngineLayer;
 using System.ComponentModel;
 using MetaDrawGUI;
 using System.IO;
+using MassSpectrometry;
 
 namespace ViewModels
 {
@@ -81,10 +82,10 @@ namespace ViewModels
 
         }
 
-        public void UpdateForSingle(Ms2ScanWithSpecificMass MsScanForDraw, PsmDraw psmParentsForDraw)
+        public void UpdateForSingle(MsDataScan MsScanForDraw, PsmDraw psmParentsForDraw)
         {
-            var x = MsScanForDraw.TheScan.MassSpectrum.XArray;
-            var y = MsScanForDraw.TheScan.MassSpectrum.YArray;
+            var x = MsScanForDraw.MassSpectrum.XArray;
+            var y = MsScanForDraw.MassSpectrum.YArray;
 
             string scanNum = psmParentsForDraw.ScanNumber.ToString();
             string sequence1 = psmParentsForDraw.FullSequence;

@@ -128,12 +128,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="CompactPeptideDraw.cs" />
+    <Compile Include="BasicClasses\CompactPeptideDraw.cs" />
     <Compile Include="LoadScans.cs" />
-    <Compile Include="PepWithSetModForCompactPep.cs" />
-    <Compile Include="PsmDraw.cs" />
-    <Compile Include="RawDataForDataGrid.cs" />
-    <Compile Include="SpectrumForDataGrid.cs" />
+    <Compile Include="BasicClasses\PepWithSetModForCompactPep.cs" />
+    <Compile Include="BasicClasses\PsmDraw.cs" />
+    <Compile Include="DataGrids\RawDataForDataGrid.cs" />
+    <Compile Include="DataGrids\SpectrumForDataGrid.cs" />
     <Compile Include="TsvResultReader.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Page Include="MainWindow.xaml">

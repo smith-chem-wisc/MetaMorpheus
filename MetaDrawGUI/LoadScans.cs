@@ -25,9 +25,9 @@ namespace MetaDrawGUI
             currentRawDataFilename = startingRawFilename;
         }
 
-        public Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass { get; set; }
+        public Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass { get; set; }        
 
-        public void Run()
+        public MsDataFile Run()
         {
             SearchParameters searchParameters = new SearchParameters();
 
@@ -37,7 +37,7 @@ namespace MetaDrawGUI
 
             var msDataScans = myFileManager.LoadFile(currentRawDataFilename, commonParameters.TopNpeaks, commonParameters.MinRatio, commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
 
-            arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(msDataScans, currentRawDataFilename, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            return msDataScans;
         }
 
 
