@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Generic;
+using System.Windows;
 
 using Thermo.Interfaces.ExactiveAccess_V1;
 using Thermo.Interfaces.InstrumentAccess_V1.MsScanContainer;
@@ -28,12 +29,13 @@ namespace RealTimeGUI
 				IMsScanContainer orbitrap = instrument.GetMsScanContainer(0);
                 //Console.WriteLine("Waiting 60 seconds for scans on detector " + orbitrap.DetectorClass + "...");
                 string x = "Waiting 60 seconds for scans on detector " + orbitrap.DetectorClass + "...";
-                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
+                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x + "/n"));
+                MainWindow.mainWindow.TbNotifications.AppendText(x + "/n");
 
                 orbitrap.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
 				orbitrap.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
 				orbitrap.MsScanArrived += Orbitrap_MsScanArrived;
-				Thread.CurrentThread.Join(60000);
+				Thread.CurrentThread.Join(10000);
 				orbitrap.MsScanArrived -= Orbitrap_MsScanArrived;
 				orbitrap.AcquisitionStreamClosing -= Orbitrap_AcquisitionStreamClosing;
 				orbitrap.AcquisitionStreamOpening -= Orbitrap_AcquisitionStreamOpening;
@@ -56,14 +58,16 @@ namespace RealTimeGUI
 		private void Orbitrap_AcquisitionStreamClosing(object sender, EventArgs e)
 		{
 			//Console.WriteLine("\n{0:HH:mm:ss,fff} {1}", DateTime.Now, "Acquisition stream closed (end of method)");
-            TextTime = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream closed (end of method)";
+            TextTime = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream closed (end of method)" + "/n";
+            MainWindow.mainWindow.TbNotifications.AppendText(TextTime + "/n");
             DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(TextTime));
         }
 
 		private void Orbitrap_AcquisitionStreamOpening(object sender, MsAcquisitionOpeningEventArgs e)
 		{
             //Console.WriteLine("\n{0:HH:mm:ss,fff} {1}", DateTime.Now, "Acquisition stream opens (start of method)");
-            TextTime = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream opens (start of method)";
+            TextTime = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream opens (start of method)" + "/n";
+            MainWindow.mainWindow.TbNotifications.AppendText(TextTime + "/n");
             DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(TextTime));
         }
 	}

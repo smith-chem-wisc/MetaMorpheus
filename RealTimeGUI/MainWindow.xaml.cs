@@ -20,8 +20,12 @@ namespace RealTimeGUI
     /// </summary>
     public partial class MainWindow : Window
     {
+        public string SetText { set { TbNotifications.AppendText(value); } }
+        internal static MainWindow mainWindow;
+
         public MainWindow()
         {
+            mainWindow = this;
             InitializeComponent();
             DataReceiver.DataReceiverNotificationEventHandler += UpdateTbNotification;
         }
