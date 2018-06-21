@@ -290,12 +290,10 @@ namespace MetaMorpheusGUI
             #endregion Check Task Validity
 
             #region Save Parameters
-
             
             //Code for determining SemiSpecific
             NeoParameters neoParameters = new NeoParameters
             {
-
                 Calibrate = calibrate.IsChecked.Value,
                 GPTMD = gptmd.IsChecked.Value,
                 TargetSearch = searchTarget.IsChecked.Value,
@@ -382,12 +380,6 @@ namespace MetaMorpheusGUI
             {
                 TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask"
             };
-
-
-            
-
-           
-            
             
             TheTask.NeoParameters = neoParameters;
             TheTask.CommonParameters = CommonParamsToSave;

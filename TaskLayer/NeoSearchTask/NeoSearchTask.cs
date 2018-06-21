@@ -33,7 +33,7 @@ namespace TaskLayer
                 DoPrecursorDeconvolution: false,
                 PrecursorMassTolerance: new PpmTolerance(double.MaxValue),
                 ProductMassTolerance: new PpmTolerance(double.MaxValue));
-           
+
         }
 
         #endregion Public Constructors
@@ -116,7 +116,7 @@ namespace TaskLayer
                 MyFileManager myFileManager = new MyFileManager(true);
 
                 //Import Spectra
-                for(int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+                for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
@@ -136,7 +136,7 @@ namespace TaskLayer
                     List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
                     List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
                     List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
-                   
+
                     #endregion Load modifications
 
                     // load proteins

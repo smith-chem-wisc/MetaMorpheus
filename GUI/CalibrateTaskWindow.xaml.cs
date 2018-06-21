@@ -32,7 +32,7 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             PopulateChoices();
 
-            CalibrationTask TheTask = new CalibrationTask();
+            TheTask = new CalibrationTask();
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the Calibration Task";
@@ -71,13 +71,10 @@ namespace MetaMorpheusGUI
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
 
-           
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
-
-            
 
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
@@ -122,12 +119,10 @@ namespace MetaMorpheusGUI
                 }
             }
 
-           
             foreach (var heh in localizeModTypeForTreeViewObservableCollection)
             {
                 heh.Use = false;
             }
-
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
@@ -135,17 +130,22 @@ namespace MetaMorpheusGUI
             foreach (var ye in fixedModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
-            }  
+            }
         }
 
         private void PopulateChoices()
         {
             foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            {
                 proteaseComboBox.Items.Add(protease);
+            }
+
             proteaseComboBox.SelectedIndex = 12;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
+            {
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+            }
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
@@ -156,19 +156,27 @@ namespace MetaMorpheusGUI
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 fixedModTypeForTreeViewObservableCollection.Add(theModType);
+
                 foreach (var uah in hm)
+                {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+                }
             }
+
             fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
+
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 variableModTypeForTreeViewObservableCollection.Add(theModType);
+
                 foreach (var uah in hm)
+                {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+                }
             }
+
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
-           
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -216,9 +224,6 @@ namespace MetaMorpheusGUI
 
             #endregion Check Task Validity
 
-            
-
-
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             int MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
@@ -231,7 +236,7 @@ namespace MetaMorpheusGUI
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            
+
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
             {
@@ -246,7 +251,7 @@ namespace MetaMorpheusGUI
             {
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            
+
             Tolerance PrecursorMassTolerance;
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -258,16 +263,16 @@ namespace MetaMorpheusGUI
 
             }
             CommonParameters CommonParamsToSave = new CommonParameters(
-                DigestionParams: digestionParamsToSave, 
+                DigestionParams: digestionParamsToSave,
                 BIons: bCheckBox.IsChecked.Value,
                 YIons: yCheckBox.IsChecked.Value,
-                CIons: cCheckBox.IsChecked.Value, 
-                ZdotIons: zdotCheckBox.IsChecked.Value, 
+                CIons: cCheckBox.IsChecked.Value,
+                ZdotIons: zdotCheckBox.IsChecked.Value,
                 ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                ListOfModsFixed: listOfModsFixed, 
-                ListOfModsVariable: listOfModsVariable, 
-                ProductMassTolerance:ProductMassTolerance,
-                PrecursorMassTolerance:PrecursorMassTolerance);
+                ListOfModsFixed: listOfModsFixed,
+                ListOfModsVariable: listOfModsVariable,
+                ProductMassTolerance: ProductMassTolerance,
+                PrecursorMassTolerance: PrecursorMassTolerance);
 
             if (OutputFileNameTextBox.Text != "")
             {
@@ -278,7 +283,6 @@ namespace MetaMorpheusGUI
                 CommonParamsToSave.TaskDescriptor = "CalibrateTask";
             }
 
-            
             TheTask.CommonParameters = CommonParamsToSave;
 
             DialogResult = true;

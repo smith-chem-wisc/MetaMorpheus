@@ -65,6 +65,7 @@ namespace EngineLayer
                 ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
         }
+
         #endregion Public Methods
     }
 }

@@ -87,7 +87,6 @@ namespace EngineLayer
 
                 proteinGroup.AllPeptides.ExceptWith(pepsToRemove);
                 proteinGroup.UniquePeptides.ExceptWith(pepsToRemove);
-                
             }
 
             // score the group

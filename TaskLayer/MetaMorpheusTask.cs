@@ -158,9 +158,6 @@ namespace TaskLayer
             {
                 return commonParams;
             }
-
-            // clone the common parameters as a template for the file-specific params to override certain values
-            
             
             // set file-specific digestion parameters
             Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
@@ -170,7 +167,6 @@ namespace TaskLayer
             int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
             DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
             
-
             // set the rest of the file-specific parameters
             Tolerance PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
@@ -187,6 +183,7 @@ namespace TaskLayer
                 PrecursorMassTolerance: PrecursorMassTolerance,
                 ProductMassTolerance: ProductMassTolerance, 
                 DigestionParams: fileSpecificDigestionParams);
+
             return returnParams;
         }
 

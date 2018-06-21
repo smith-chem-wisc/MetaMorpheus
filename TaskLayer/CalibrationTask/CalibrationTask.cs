@@ -24,12 +24,12 @@ namespace TaskLayer
         public CalibrationTask() : base(MyTask.Calibrate)
         {
             CommonParameters = new CommonParameters(
-                ProductMassTolerance: new PpmTolerance(25), 
-                PrecursorMassTolerance: new PpmTolerance(15), 
-                TrimMsMsPeaks: false, 
-                DoPrecursorDeconvolution: false, 
+                ProductMassTolerance: new PpmTolerance(25),
+                PrecursorMassTolerance: new PpmTolerance(15),
+                TrimMsMsPeaks: false,
+                DoPrecursorDeconvolution: false,
                 ScoreCutoff: 10);
-           
+
             CalibrationParameters = new CalibrationParameters();
         }
 
@@ -91,10 +91,10 @@ namespace TaskLayer
             };
 
             object lock1 = new object();
-                        
+
             var myFileManager = new MyFileManager(true);
-                        
-            for( int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+
+            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
@@ -128,34 +128,21 @@ namespace TaskLayer
                     {
                         break;
                     }
-
-                   
+                    
                     if (i == 1) // failed round 1
                     {
-                        CommonParameters CommonParameters = new CommonParameters(
-                            PrecursorMassTolerance: new PpmTolerance(20), 
-                            ProductMassTolerance: new PpmTolerance(50), 
-                            TrimMsMsPeaks: false, 
-                            DoPrecursorDeconvolution: false,
-                            ScoreCutoff: 10);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(20));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(50));
                     }
                     else if (i == 2) // failed round 2
                     {
-                        CommonParameters CommonParameters = new CommonParameters(
-                            PrecursorMassTolerance: new PpmTolerance(30),
-                            ProductMassTolerance: new PpmTolerance(100),
-                            TrimMsMsPeaks: false,
-                            DoPrecursorDeconvolution: false,
-                            ScoreCutoff: 10);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(30));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(100));
                     }
                     else if (i == 3) // failed round 3
                     {
-                        CommonParameters CommonParameters = new CommonParameters(
-                            PrecursorMassTolerance: new PpmTolerance(40),
-                            ProductMassTolerance: new PpmTolerance(150),
-                            TrimMsMsPeaks: false,
-                            DoPrecursorDeconvolution: false,
-                            ScoreCutoff: 10);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(40));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(150));
                     }
                     else // failed round 4
                     {
@@ -257,7 +244,7 @@ namespace TaskLayer
                     {
                         var split = lines[i].Split('\t');
                         string newline = Path.GetFileNameWithoutExtension(split[0]) + calibSuffix + "\t";
-                        for(int j = 1; j < split.Length; j++)
+                        for (int j = 1; j < split.Length; j++)
                         {
                             newline += split[j] + "\t";
                         }
@@ -346,12 +333,11 @@ namespace TaskLayer
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, false, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
-            
-            var peptideProteinMatch = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
-                (allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, 
-                combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run());
-                      
 
+            var peptideProteinMatch = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
+                (allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams },
+                combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run());
+            
             foreach (var huh in allPsms)
                 if (huh != null)
                     huh.MatchToProteinLinkedPeptides(peptideProteinMatch.CompactPeptideToProteinPeptideMatching);

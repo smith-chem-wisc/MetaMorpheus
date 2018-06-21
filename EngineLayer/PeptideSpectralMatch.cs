@@ -15,7 +15,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-       
+
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
@@ -23,7 +23,6 @@ namespace EngineLayer
         #region Public Fields
 
         public const double tolForScoreDifferentiation = 1e-9;
-         
 
         #endregion Public Fields
 
@@ -49,7 +48,7 @@ namespace EngineLayer
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
-      
+
         #endregion Public Constructors
 
         #region Public Properties
@@ -153,13 +152,8 @@ namespace EngineLayer
 
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptidesToProteinMatching)
         {
-
-                  
-            
-            
             foreach (var cpKey in compactPeptides.Keys.ToList())
             {
-                
                 compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, compactPeptidesToProteinMatching[cpKey]);
             }
             var pepsWithMods = compactPeptides.SelectMany(b => b.Value.Item2);
@@ -177,7 +171,7 @@ namespace EngineLayer
             ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
-        
+
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
@@ -221,7 +215,7 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-        
+
         #region Private Methods
 
         private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
@@ -302,7 +296,7 @@ namespace EngineLayer
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
-                return  new Tuple<string, double?>(returnString, null);
+                return new Tuple<string, double?>(returnString, null);
             }
         }
 
@@ -428,7 +422,7 @@ namespace EngineLayer
             string matchedIonMasses = " ";
             string matchedIonDiffDa = " ";
             string matchedIonDiffPpm = " ";
-            string matchedIonIntensities = " "; 
+            string matchedIonIntensities = " ";
             if (peptide != null && peptide.MatchedIonMassesDict.Any())
             {
                 //Count
@@ -470,7 +464,7 @@ namespace EngineLayer
             s["Matched Ion Masses"] = matchedIonMasses;
             s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
             s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
-            s["Matched Ion Intesities"] = matchedIonIntensities; 
+            s["Matched Ion Intesities"] = matchedIonIntensities;
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)

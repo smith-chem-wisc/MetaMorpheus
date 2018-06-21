@@ -250,8 +250,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-
-           
+            
             foreach (var heh in localizeModTypeForTreeViewObservableCollection)
             {
                     heh.Use = false;
@@ -526,9 +525,6 @@ namespace MetaMorpheusGUI
             {
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             }
-
-           
-
             
             if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
             {

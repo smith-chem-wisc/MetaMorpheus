@@ -110,8 +110,8 @@ namespace TaskLayer
 
             object lock1 = new object();
             object lock2 = new object();
-            
-            for(int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+
+            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
 
@@ -144,7 +144,7 @@ namespace TaskLayer
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, new List<string> { taskId });
 
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
-           
+
             foreach (var huh in allPsms)
                 if (huh != null)
                     huh.MatchToProteinLinkedPeptides(resTest.CompactPeptideToProteinPeptideMatching);

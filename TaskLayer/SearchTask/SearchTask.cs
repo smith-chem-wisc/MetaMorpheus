@@ -37,7 +37,6 @@ namespace TaskLayer
 
         #region Public Methods
 
-
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
             switch (massDiffAcceptorType)
@@ -75,10 +74,9 @@ namespace TaskLayer
 
         #region Protected Methods
 
-
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            //disable quantification if a .mgf is being used
+            // disable quantification if a .mgf is being used
             if (SearchParameters.DoQuantification && currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
             {
                 SearchParameters.DoQuantification = false;
@@ -105,7 +103,7 @@ namespace TaskLayer
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
-            
+
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
@@ -129,7 +127,6 @@ namespace TaskLayer
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
             FlashLFQResults flashLfqResults = null;
 
-            
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
@@ -143,7 +140,7 @@ namespace TaskLayer
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
-            for( int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
 
@@ -249,7 +246,8 @@ namespace TaskLayer
                 completedFiles++;
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
-            };
+            }
+
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
             PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters();
@@ -275,6 +273,7 @@ namespace TaskLayer
             postProcessing.Parameters = parameters;
             return postProcessing.Run();
         }
+
         #endregion Protected Methods
 
         #region Private Methods

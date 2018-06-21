@@ -321,15 +321,15 @@ namespace MetaMorpheusGUI
                     MaxPeptideLength: MaxPeptideLength,
                     MaxModificationIsoforms: MaxModificationIsoforms, 
                     InitiatorMethionineBehavior: InitiatorMethionineBehavior), 
-                BIons: bCheckBox.IsChecked.Value, 
-                YIons: yCheckBox.IsChecked.Value, 
-                CIons: cCheckBox.IsChecked.Value, 
-                ZdotIons: zdotCheckBox.IsChecked.Value, 
-                ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                PrecursorMassTolerance:PrecursorMassTolerance, 
-                ProductMassTolerance: ProductMassTolerance,
-                ListOfModsFixed:listOfModsFixed, 
-                ListOfModsVariable: listOfModsVariable);
+                    BIons: bCheckBox.IsChecked.Value, 
+                    YIons: yCheckBox.IsChecked.Value, 
+                    CIons: cCheckBox.IsChecked.Value, 
+                    ZdotIons: zdotCheckBox.IsChecked.Value, 
+                    ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    PrecursorMassTolerance:PrecursorMassTolerance, 
+                    ProductMassTolerance: ProductMassTolerance,
+                    ListOfModsFixed:listOfModsFixed, 
+                    ListOfModsVariable: listOfModsVariable);
 
             if (OutputFileNameTextBox.Text != "")
             {
@@ -339,10 +339,6 @@ namespace MetaMorpheusGUI
             {
                 CommonParamsToSave.SetTaskDescriptor("GPTMDTask");
             }
-
-            
-
-
             
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
