@@ -194,7 +194,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             }
                         }
                     }
-                
+
                     //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
                     //CP==CompactPeptide
                     //CPWM==CompactPeptideWithMass (Patched to respresent a double)

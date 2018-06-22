@@ -19,14 +19,8 @@ namespace Test
         {
             Protease protease = new Protease("Custom Protease4", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-                ReportAllAmbiguity = false
-            };
-
+            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1), ScoreCutoff: 1, ReportAllAmbiguity: false);
+            
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();

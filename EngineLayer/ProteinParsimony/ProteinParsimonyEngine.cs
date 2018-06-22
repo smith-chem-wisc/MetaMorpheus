@@ -14,7 +14,7 @@ namespace EngineLayer
 
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
-        
+
         #endregion Private Fields
 
         #region Public Constructors

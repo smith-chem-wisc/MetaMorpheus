@@ -61,13 +61,13 @@ namespace Test
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                ProductMassTolerance = new PpmTolerance(5),
-                ConserveMemory = false,
-                ScoreCutoff = 1
-            };
+            CommonParameters CommonParameters = new CommonParameters(
+                ProductMassTolerance: new PpmTolerance(5),
+                ScoreCutoff: 1, 
+                DigestionParams: new DigestionParams(
+                    MaxMissedCleavages: 0, 
+                    MinPeptideLength: 1,
+                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
 
             cse.Run();
@@ -94,13 +94,14 @@ namespace Test
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                ConserveMemory = false,
-                ScoreCutoff = 1
-            };
+            CommonParameters CommonParameters = new CommonParameters(
+                ScoreCutoff: 1, 
+                ProductMassTolerance: new PpmTolerance(5),
+                DigestionParams: new DigestionParams(
+                    MaxMissedCleavages: 0, 
+                    MinPeptideLength: 1, 
+                    MaxModificationIsoforms: int.MaxValue, 
+                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
 
             cse.Run();
@@ -126,13 +127,14 @@ namespace Test
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                ConserveMemory = false,
-                ScoreCutoff = 1
-            };
+            CommonParameters CommonParameters = new CommonParameters(
+                ProductMassTolerance: new PpmTolerance(5),
+                ScoreCutoff: 1, 
+                DigestionParams: new DigestionParams(
+                    MaxMissedCleavages: 0, 
+                    MinPeptideLength: 1, 
+                    MaxModificationIsoforms: int.MaxValue,
+                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
 
             cse.Run();
@@ -158,13 +160,8 @@ namespace Test
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 600, 1, null) };
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                ConserveMemory = false,
-                ScoreCutoff = 1
-            };
+            CommonParameters CommonParameters = new CommonParameters(ProductMassTolerance: new PpmTolerance(5), ScoreCutoff: 1, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
+          
             var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
             { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -192,13 +189,8 @@ namespace Test
 
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                ConserveMemory = false,
-                ScoreCutoff = 1
-            };
+            CommonParameters CommonParameters = new CommonParameters(ProductMassTolerance: new PpmTolerance(5), ScoreCutoff: 1, DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
+
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, new List<string>());
 
             cse.Run();

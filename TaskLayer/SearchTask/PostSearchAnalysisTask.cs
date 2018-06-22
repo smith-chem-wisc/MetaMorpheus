@@ -154,7 +154,7 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoLocalizationAnalysis)
             {
                 Status("Running localization analysis...", Parameters.SearchTaskId);
-                Parallel.For(0, Parameters.CurrentRawFileList.Count, Parameters.CommonParameters.ParallelOptions(), spectraFileIndex =>
+                for (int spectraFileIndex = 0; spectraFileIndex < Parameters.CurrentRawFileList.Count; spectraFileIndex++)
                 {
                     CommonParameters combinedParams = SetAllFileSpecificCommonParams(Parameters.CommonParameters, Parameters.FileSettingsList[spectraFileIndex]);
 
@@ -165,7 +165,7 @@ namespace TaskLayer
                         myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }, Parameters.SearchParameters.AddCompIons).Run();
                     Parameters.MyFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }));
-                });
+                }
             }
 
             new ModificationAnalysisEngine(Parameters.AllPsms, new List<string> { Parameters.SearchTaskId }).Run();
