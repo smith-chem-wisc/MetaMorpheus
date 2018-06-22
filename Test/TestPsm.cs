@@ -7,6 +7,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
+using System;
 
 namespace Test
 {
@@ -19,15 +20,29 @@ namespace Test
         public static void TestPsmHeader()
         {
             DigestionParams digestionParams = new DigestionParams();
-            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", "accession1").Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scann = myMsDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+            PeptideWithSetModifications pepWithSetMods = new Protein(
+                "MQQQQQQQ",
+                "accession1",
+                "org",
+                new List<Tuple<string, string>> { new Tuple<string, string>("geneNameType", "geneName") },
+                new Dictionary<int, List<Modification>> { { 2, new List<Modification> { new Modification("mod", "mod") } } },
+                name: "name",
+                full_name: "fullName",
+                sequenceVariations: new List<SequenceVariation> { new SequenceVariation(2, "P", "Q", "changed this sequence") })
+                    .Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
+            MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
-            Psm psm = new Psm(pepWithSetMods.CompactPeptide(TerminusType.None), 1, 2, 3, scan);
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods.CompactPeptide(TerminusType.None), 1, 2, 3, scan, digestionParams);
 
             var t = psm.ToString();
+<<<<<<< HEAD
+            var tabsepheader = PeptideSpectralMatch.GetTabSeparatedHeader();
+            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+=======
             var tabsepheader = Psm.GetTabSeparatedHeader();
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
@@ -36,18 +51,18 @@ namespace Test
 
             psm.MatchToProteinLinkedPeptides(matching);
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
             List<ProductType> lp = new List<ProductType> { ProductType.B };
 
-            new LocalizationEngine(new List<Psm> { psm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false).Run();
+            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false).Run();
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
-            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, false);
+            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, true);
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
         }
 
         #endregion Public Methods

@@ -31,6 +31,8 @@ namespace TaskLayer
                 {"ProteinTermMod", 3},
                 {"UniProt", 2},
             };
+            OutMzId = true;
+            OutPepXML = false;
         }
 
         #endregion Public Constructors
@@ -43,6 +45,7 @@ namespace TaskLayer
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
+        public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
@@ -58,6 +61,8 @@ namespace TaskLayer
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
+        public bool OutMzId { get; set; }
+        public bool OutPepXML { get; set; }
 
         #endregion Public Properties
     }

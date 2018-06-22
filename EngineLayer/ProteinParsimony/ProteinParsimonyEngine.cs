@@ -14,7 +14,7 @@ namespace EngineLayer
 
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
-
+        
         #endregion Private Fields
 
         #region Public Constructors
@@ -45,18 +45,37 @@ namespace EngineLayer
 
         private List<ProteinGroup> ApplyProteinParsimony()
         {
-            if (!compactPeptideToProteinPeptideMatching.Values.Any())
+
+            if (!compactPeptideToProteinPeptideMatching.Values.Any())//if dictionary is empty return an empty list of protein groups
+            {
                 return new List<ProteinGroup>();
+            }
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
-            if (!treatModPeptidesAsDifferentPeptides)
+            if (!treatModPeptidesAsDifferentPeptides)//user want modified and unmodified peptides treated the same
             {
                 Dictionary<string, HashSet<PeptideWithSetModifications>> baseSeqToProteinMatch = new Dictionary<string, HashSet<PeptideWithSetModifications>>();
+<<<<<<< HEAD
+                // dictionary where string key is the base sequence and the HashSet is all PeptidesWithSetModificatiosn with the same sequence 
+                // can access which protein these matching peptides came from through the PeptideWithSetModifications object
                 foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
                 {
                     if (baseSeqToProteinMatch.TryGetValue(peptide.BaseSequence, out HashSet<PeptideWithSetModifications> value))
+                    {
+=======
+                foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
+                {
+                    if (baseSeqToProteinMatch.TryGetValue(peptide.BaseSequence, out HashSet<PeptideWithSetModifications> value))
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                         value.Add(peptide);
+                    }
                     else
+<<<<<<< HEAD
+                    {
                         baseSeqToProteinMatch[peptide.BaseSequence] = new HashSet<PeptideWithSetModifications> { peptide };
+                    }
+=======
+                        baseSeqToProteinMatch[peptide.BaseSequence] = new HashSet<PeptideWithSetModifications> { peptide };
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                 }
 
                 var blah = new Dictionary<PeptideWithSetModifications, List<CompactPeptideBase>>();
@@ -66,9 +85,19 @@ namespace EngineLayer
                     foreach (var pepWithSetMods in pep.Value)
                     {
                         if (blah.TryGetValue(pepWithSetMods, out List<CompactPeptideBase> list))
+<<<<<<< HEAD
+                        {
+                            list.Add(pep.Key);
+                        }
+                        else
+                        {
+                            blah.Add(pepWithSetMods, new List<CompactPeptideBase> { pep.Key });
+                        }
+=======
                             list.Add(pep.Key);
                         else
                             blah.Add(pepWithSetMods, new List<CompactPeptideBase> { pep.Key });
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                     }
                 }
 
@@ -79,7 +108,13 @@ namespace EngineLayer
                         // list of proteins along with start/end residue in protein and the # missed cleavages
                         var peptideInProteinInfo = new List<Tuple<Protein, int, int, int>>();
                         foreach (var peptide in baseSequence.Value)
+<<<<<<< HEAD
+                        {
+                            peptideInProteinInfo.Add(new Tuple<Protein, int, int, int>(peptide.Protein, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
+                        }
+=======
                             peptideInProteinInfo.Add(new Tuple<Protein, int, int, int>(peptide.Protein, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.missedCleavages));
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                         foreach (var peptide in baseSequence.Value)
                         {
@@ -110,18 +145,26 @@ namespace EngineLayer
                 if (proteinsAssociatedWithThisPeptide.Count == 1)
                 {
                     if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out HashSet<PeptideWithSetModifications> peptides))
+                    {
                         proteinsWithUniquePeptides.Add(kvp.Value.First().Protein, new HashSet<PeptideWithSetModifications>(kvp.Value));
+                    }
                     else
+                    {
                         peptides.UnionWith(kvp.Value);
+                    }
                 }
 
                 // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
                 if (kvp.Value.Any(p => p.Protein.IsDecoy))
+                {
                     kvp.Value.RemoveWhere(p => !p.Protein.IsDecoy);
+                }
 
                 // if a peptide is associated with a contaminant protein, remove all target protein associations with the peptide
                 if (kvp.Value.Any(p => p.Protein.IsContaminant))
+                {
                     kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
+                }
             }
 
             // makes dictionary with proteins as keys and list of associated peptides as the value (makes parsimony algo easier)
@@ -130,9 +173,13 @@ namespace EngineLayer
                 foreach (var peptide in kvp.Value)
                 {
                     if (!proteinToPeptidesMatching.TryGetValue(peptide.Protein, out HashSet<CompactPeptideBase> peptides))
+                    {
                         proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<CompactPeptideBase>() { kvp.Key });
+                    }
                     else
+                    {
                         peptides.Add(kvp.Key);
+                    }
                 }
             }
 
@@ -144,13 +191,23 @@ namespace EngineLayer
                 {
                     string pepSequence;
                     if (!treatModPeptidesAsDifferentPeptides)
-                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + string.Join("", peptide.CTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture);
+                    {
+                        string nTerminalMasses = peptide.NTerminalMasses == null ? "" : string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture)));
+                        string cTerminalMasses = peptide.CTerminalMasses == null ? "" : string.Join("", peptide.CTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture)));
+                        pepSequence = nTerminalMasses + cTerminalMasses + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture);
+                    }
                     else
+                    {
                         pepSequence = compactPeptideToFullSeqMatch[peptide];
+                    }
                     if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out HashSet<Protein> proteinListHere))
+                    {
                         peptideSeqProteinListMatch.Add(pepSequence, new HashSet<Protein>() { kvp.Key });
+                    }
                     else
+                    {
                         proteinListHere.Add(kvp.Key);
+                    }
                 }
             }
 
@@ -161,9 +218,13 @@ namespace EngineLayer
                 foreach (var protein in kvp.Value)
                 {
                     if (algDictionary.TryGetValue(protein, out HashSet<string> newPeptideBaseSeqs))
+                    {
                         newPeptideBaseSeqs.Add(kvp.Key);
+                    }
                     else
+                    {
                         algDictionary.Add(protein, new HashSet<string> { kvp.Key });
+                    }
                 }
             }
 
@@ -171,9 +232,8 @@ namespace EngineLayer
             var proteinToPepSeqMatch = algDictionary.ToDictionary(x => x.Key, x => x.Value);
 
             // *** main parsimony loop
-            bool uniquePeptidesLeft = false;
-            if (proteinsWithUniquePeptides.Any())
-                uniquePeptidesLeft = true;
+            bool uniquePeptidesLeft = proteinsWithUniquePeptides.Any();
+
             int numNewSeqs = algDictionary.Max(p => p.Value.Count);
 
             while (numNewSeqs != 0)
@@ -184,14 +244,20 @@ namespace EngineLayer
                 {
                     var proteinsWithUniquePeptidesLeft = algDictionary.Where(p => proteinsWithUniquePeptides.ContainsKey(p.Key));
                     if (proteinsWithUniquePeptidesLeft.Any())
+                    {
                         possibleBestProteinList.Add(proteinsWithUniquePeptidesLeft.First());
+                    }
                     else
+                    {
                         uniquePeptidesLeft = false;
+                    }
                 }
 
                 // gets list of proteins with the most unaccounted-for peptide base sequences
                 if (!uniquePeptidesLeft)
+                {
                     possibleBestProteinList = algDictionary.Where(p => p.Value.Count == numNewSeqs).ToList();
+                }
 
                 Protein bestProtein = possibleBestProteinList.First().Key;
                 HashSet<string> newSeqs = new HashSet<string>(algDictionary[bestProtein]);
@@ -204,15 +270,18 @@ namespace EngineLayer
                     foreach (var kvp in possibleBestProteinList)
                     {
                         if (newSeqs.IsSubsetOf(kvp.Value))
+                        {
                             proteinsWithTheseBaseSeqs.Add(kvp.Key);
+                        }
                     }
 
                     if (proteinsWithTheseBaseSeqs.Count > 1)
                     {
                         var proteinsOrderedByTotalPeptideCount = new Dictionary<Protein, HashSet<string>>();
                         foreach (var protein in proteinsWithTheseBaseSeqs)
+                        {
                             proteinsOrderedByTotalPeptideCount.Add(protein, proteinToPepSeqMatch[protein]);
-
+                        }
                         bestProtein = proteinsOrderedByTotalPeptideCount.OrderByDescending(kvp => kvp.Value.Count).First().Key;
                     }
                 }
@@ -225,14 +294,12 @@ namespace EngineLayer
                     HashSet<Protein> proteinsWithThisPeptide = peptideSeqProteinListMatch[newBaseSeq];
 
                     foreach (var protein in proteinsWithThisPeptide)
+                    {
                         algDictionary[protein].Remove(newBaseSeq);
+                    }
                 }
-
                 algDictionary.Remove(bestProtein);
-                if (algDictionary.Any())
-                    numNewSeqs = algDictionary.Max(p => p.Value.Count);
-                else
-                    numNewSeqs = 0;
+                numNewSeqs = algDictionary.Any() ? algDictionary.Max(p => p.Value.Count) : 0;
             }
 
             // *** done with parsimony
@@ -256,9 +323,11 @@ namespace EngineLayer
                             {
                                 foreach (var parsimonyProteinWithThisNumPeptides in parsimonyProteinsWithSameNumPeptides)
                                 {
-                                    if (parsimonyProteinWithThisNumPeptides.Key != list[i].Key)
-                                        if (proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key].SetEquals(proteinToPeptidesMatching[list[i].Key]))
-                                            indistinguishableProteins.GetOrAdd(list[i].Key, proteinToPeptidesMatching[list[i].Key]);
+                                    if (parsimonyProteinWithThisNumPeptides.Key != list[i].Key
+                                    && proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key].SetEquals(proteinToPeptidesMatching[list[i].Key]))
+                                    {
+                                        indistinguishableProteins.GetOrAdd(list[i].Key, proteinToPeptidesMatching[list[i].Key]);
+                                    }
                                 }
                             }
                         }
@@ -266,10 +335,14 @@ namespace EngineLayer
                 }
             }
             foreach (var protein in indistinguishableProteins)
+            {
                 parsimonyProteinList.Add(protein.Key, protein.Value);
+            }
 
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
+            {
                 kvp.Value.RemoveWhere(p => !parsimonyProteinList.ContainsKey(p.Protein));
+            }
 
             Status("Finished Parsimony");
 
@@ -284,9 +357,13 @@ namespace EngineLayer
             foreach (var peptide in allPeptides)
             {
                 if (proteinToPeptidesMatching.TryGetValue(peptide.Protein, out HashSet<PeptideWithSetModifications> peptidesHere))
+                {
                     peptidesHere.Add(peptide);
+                }
                 else
+                {
                     proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<PeptideWithSetModifications> { peptide });
+                }
             }
 
             // build protein group after parsimony (each group only has 1 protein at this point, indistinguishables will be merged during scoring)

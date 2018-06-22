@@ -24,14 +24,9 @@ namespace TaskLayer
         public NeoSearchTask() : base(MyTask.Neo)
         {
             NeoParameters = new NeoParameters();
+            Protease protease = GlobalVariables.ProteaseDictionary["non-specific"];
+            var tempDigParams = new DigestionParams(protease.Name, MaxMissedCleavages: 12, MinPeptideLength: 8, MaxPeptideLength: 13);
 
-            IDigestionParams tempDigParams = new DigestionParams
-            {
-                MinPeptideLength = 8,
-                MaxPeptideLength = 13,
-                Protease = GlobalVariables.ProteaseDictionary["non-specific"],
-                MaxMissedCleavages = 12
-            };
             CommonParameters = new CommonParameters
             {
                 DigestionParams = tempDigParams,
@@ -68,9 +63,9 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            myTaskResults = new MyTaskResults(this);
+            MyTaskResults = new MyTaskResults(this);
 
             if (NeoType.Equals(NeoTaskType.AggregateTargetDecoyFiles))
             {
@@ -118,21 +113,20 @@ namespace TaskLayer
             {
                 NeoMassCalculator.ImportMasses();
 
-                ParallelOptions parallelOptions = new ParallelOptions();
-                if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                    parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
+                ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
+
                 MyFileManager myFileManager = new MyFileManager(true);
 
                 //Import Spectra
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
-                    ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);
                     Status("Loading spectra file...", thisId);
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                    MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -151,7 +145,12 @@ namespace TaskLayer
 
                     #endregion Load modifications
 
+<<<<<<< HEAD
+                    // load proteins
+                    List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes);
+=======
                     var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;
@@ -216,7 +215,7 @@ namespace TaskLayer
                 dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder, false) };
             }
 
-            return myTaskResults;
+            return MyTaskResults;
         }
 
         #endregion Protected Methods

@@ -21,15 +21,15 @@ namespace EngineLayer.Indexing
         protected readonly List<ProductType> lp;
         protected readonly int currentPartition;
         protected readonly DecoyType decoyType;
-        protected readonly IEnumerable<IDigestionParams> CollectionOfDigestionParams;
-        protected readonly ICommonParameters commonParams;
+        protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
+        protected readonly CommonParameters commonParams;
         protected readonly double maxFragmentSize;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<IDigestionParams> CollectionOfDigestionParams, ICommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -87,8 +87,7 @@ namespace EngineLayer.Indexing
                 {
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        var digestedList = proteinList[i].Digest(digestionParams, fixedModifications, variableModifications).ToList();
-                        foreach (var pepWithSetMods in digestedList)
+                        foreach (var pepWithSetMods in proteinList[i].Digest(digestionParams, fixedModifications, variableModifications))
                         {
                             CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
 

@@ -13,7 +13,7 @@ namespace EngineLayer.Indexing
     {
         #region Public Constructors
 
-        public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<IDigestionParams> CollectionOfDigestionParams, ICommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
+        public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
         {
         }
 
@@ -63,8 +63,7 @@ namespace EngineLayer.Indexing
                 {
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        var digestedList = proteinList[i].Digest(digestionParams, fixedModifications, variableModifications).ToList();
-                        foreach (var pepWithSetMods in digestedList)
+                        foreach (var pepWithSetMods in proteinList[i].Digest(digestionParams, fixedModifications, variableModifications))
                         {
                             CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
 

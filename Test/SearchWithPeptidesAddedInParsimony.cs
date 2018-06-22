@@ -30,10 +30,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams
-                    {
-                        MinPeptideLength = 2
-                    }
+                    DigestionParams = new DigestionParams(MinPeptideLength: 2)
                 }
             };
 
@@ -43,14 +40,7 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                DigestionParams = new DigestionParams
-                {
-                    MaxMissedCleavages = 0,
-                    MinPeptideLength = null,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                    MaxModsForPeptide = 1,
-                    MaxModificationIsoforms = 2
-                },
+                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 2, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, MaxModsForPeptides: 1),
                 ScoreCutoff = 1
             };
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
@@ -87,11 +77,9 @@ namespace Test
 
             #region Generate and write the mzml
 
-            {
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
 
-                IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-            }
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             #endregion Generate and write the mzml
 

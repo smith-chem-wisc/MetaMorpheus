@@ -10,9 +10,9 @@ namespace EngineLayer.Localization
     {
         #region Private Fields
 
-        private readonly IEnumerable<Psm> allResultingIdentifications;
+        private readonly IEnumerable<PeptideSpectralMatch> allResultingIdentifications;
         private readonly List<ProductType> lp;
-        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+        private readonly MsDataFile myMsDataFile;
         private readonly Tolerance fragmentTolerance;
         private readonly bool addCompIons;
         private readonly List<DissociationType> dissociationTypes;
@@ -21,7 +21,7 @@ namespace EngineLayer.Localization
 
         #region Public Constructors
 
-        public LocalizationEngine(IEnumerable<Psm> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.lp = lp;
@@ -41,9 +41,10 @@ namespace EngineLayer.Localization
 
             foreach (var ok in allResultingIdentifications)
             {
-                ok.MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+                ok.MatchedIonMassesDict = new Dictionary<ProductType, double[]>();
                 ok.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
                 ok.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
+                ok.MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
@@ -53,11 +54,13 @@ namespace EngineLayer.Localization
                     List<double> matchedIonMassesList = new List<double>();
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
-                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons);
+                    List<double> matchedIonIntensityList = new List<double>(); 
+                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons, matchedIonIntensityList); 
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    ok.MatchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
+                    ok.MatchedIonMassesDict.Add(huh, matchedIonMassesOnlyMatches);
                     ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
                     ok.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
+                    ok.MatchedIonIntensitiesDict.Add(huh, matchedIonIntensityList.ToArray()); 
                 }
             }
 

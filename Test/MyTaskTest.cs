@@ -30,12 +30,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ConserveMemory = false,
-                    DigestionParams = new DigestionParams
-                    {
-                        MaxMissedCleavages = 0,
-                        MinPeptideLength = null,
-                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
-                    },
+                    DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)
                 },
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -104,7 +99,7 @@ namespace Test
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
 
@@ -134,12 +129,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams
-                    {
-                        MaxMissedCleavages = 0,
-                        MinPeptideLength = null,
-                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
-                    },
+                    DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                     ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },
                     ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
                     ListOfModTypesLocalize = GlobalVariables.AllModTypesKnown.ToList(),
@@ -154,10 +144,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams
-                    {
-                        Protease = GlobalVariables.ProteaseDictionary["trypsin"],
-                    },
+                    DigestionParams = new DigestionParams(),
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
@@ -215,12 +202,12 @@ namespace Test
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             string mzmlName1 = @"ok1.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName1, false);
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             string mzmlName2 = @"ok2.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
@@ -243,10 +230,8 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    DigestionParams = new DigestionParams
-                    {
-                        MinPeptideLength = 2,
-                    },
+                    DigestionParams = new DigestionParams(MinPeptideLength: 2),
+
                     ScoreCutoff = 1,
                     DeconvolutionIntensityRatio = 999,
                     DeconvolutionMassTolerance = new PpmTolerance(50),
@@ -331,10 +316,7 @@ namespace Test
                     CommonParameters = new CommonParameters
                     {
                         ConserveMemory = false,
-                        DigestionParams = new DigestionParams
-                        {
-                            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                        },
+                        DigestionParams = new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                         ListOfModsVariable = new List<(string, string)>(),
                         ListOfModsFixed = new List<(string, string)>(),
                         ScoreCutoff = 1,
@@ -376,7 +358,7 @@ namespace Test
                 PeptideWithSetModifications targetGood = targetDigested[0];
 
                 PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
+                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
 
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
@@ -388,6 +370,8 @@ namespace Test
             Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
         }
 
+<<<<<<< HEAD
+=======
         //test if prunedDatabase matches expected output
         [Test]
         public static void TestPrunedDatabase()
@@ -653,6 +637,7 @@ namespace Test
             Assert.AreEqual(listOfLocalMods.Count, 3);
         }
 
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
         [Test]
         public static void TestPeptideCount()
         {
@@ -663,6 +648,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
+                    DigestionParams = new DigestionParams(MinPeptideLength: 5)
                 },
                 SearchParameters = new SearchParameters
                 {
@@ -672,8 +658,15 @@ namespace Test
                 }
             };
 
+<<<<<<< HEAD
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>
+            {
+               ("TestPeptides", testPeptides)
+            };
+=======
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
                ("TestPeptides", testPeptides)};
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
@@ -689,7 +682,12 @@ namespace Test
 
             //create modification lists
 
+<<<<<<< HEAD
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
+                (b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+=======
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();
@@ -727,7 +725,7 @@ namespace Test
             Assert.AreEqual(4, setList1.Count);
 
             //Finally Write MZML file
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
@@ -746,7 +744,11 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
+<<<<<<< HEAD
+                    if (line.Contains("All target peptides within 1% FDR: 4"))
+=======
                     if (line.Contains("Target peptides within 1% FDR: 4"))
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                     {
                         foundD = true;
                     }

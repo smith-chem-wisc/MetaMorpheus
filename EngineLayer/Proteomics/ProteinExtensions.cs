@@ -1,12 +1,21 @@
 using Proteomics;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace EngineLayer
 {
     public static class ProteinExtensions
     {
+<<<<<<< HEAD
+        /// <summary>
+        /// Gets peptides for digestion of a protein
+        /// </summary>
+        /// <param name="protein"></param>
+        /// <param name="digestionParams"></param>
+        /// <param name="allKnownFixedModifications"></param>
+        /// <param name="variableModifications"></param>
+        /// <returns></returns>
+        public static IEnumerable<PeptideWithSetModifications> Digest(this Protein protein, DigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications, List<ModificationWithMass> variableModifications)
+=======
         #region Public Methods
 
         public static IEnumerable<PeptideWithSetModifications> Digest(this Protein protein, IDigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications, List<ModificationWithMass> variableModifications)
@@ -504,84 +513,10 @@ namespace EngineLayer
         }
 
         private static IEnumerable<Dictionary<int, ModificationWithMass>> GetVariableModificationPatterns(Dictionary<int, List<ModificationWithMass>> possibleVariableModifications, int maxModsForPeptide, int peptideLength)
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
         {
-            if (possibleVariableModifications.Count == 0)
-            {
-                yield return null;
-            }
-            else
-            {
-                var possible_variable_modifications = new Dictionary<int, List<ModificationWithMass>>(possibleVariableModifications);
-
-                int[] base_variable_modification_pattern = new int[peptideLength + 4];
-                var totalAvailableMods = possible_variable_modifications.Select(b => b.Value == null ? 0 : b.Value.Count).Sum();
-                for (int variable_modifications = 0; variable_modifications <= Math.Min(totalAvailableMods, maxModsForPeptide); variable_modifications++)
-                {
-                    foreach (int[] variable_modification_pattern in GetVariableModificationPatterns(new List<KeyValuePair<int, List<ModificationWithMass>>>(possible_variable_modifications), possible_variable_modifications.Count - variable_modifications, base_variable_modification_pattern, 0))
-                    {
-                        yield return GetNewVariableModificationPattern(variable_modification_pattern, possible_variable_modifications);
-                    }
-                }
-            }
+            ProteinDigestion digestion = new ProteinDigestion(digestionParams, allKnownFixedModifications, variableModifications);
+            return digestionParams.SemiProteaseDigestion ? digestion.SemiSpecificDigestion(protein) : digestion.Digestion(protein);
         }
-
-        private static IEnumerable<int[]> GetVariableModificationPatterns(List<KeyValuePair<int, List<ModificationWithMass>>> possibleVariableModifications, int unmodifiedResiduesDesired, int[] variableModificationPattern, int index)
-        {
-            if (index < possibleVariableModifications.Count - 1)
-            {
-                if (unmodifiedResiduesDesired > 0)
-                {
-                    variableModificationPattern[possibleVariableModifications[index].Key] = 0;
-                    foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications, unmodifiedResiduesDesired - 1, variableModificationPattern, index + 1))
-                    {
-                        yield return new_variable_modification_pattern;
-                    }
-                }
-                if (unmodifiedResiduesDesired < possibleVariableModifications.Count - index)
-                {
-                    for (int i = 1; i <= possibleVariableModifications[index].Value.Count; i++)
-                    {
-                        variableModificationPattern[possibleVariableModifications[index].Key] = i;
-                        foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications, unmodifiedResiduesDesired, variableModificationPattern, index + 1))
-                        {
-                            yield return new_variable_modification_pattern;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (unmodifiedResiduesDesired > 0)
-                {
-                    variableModificationPattern[possibleVariableModifications[index].Key] = 0;
-                    yield return variableModificationPattern;
-                }
-                else
-                {
-                    for (int i = 1; i <= possibleVariableModifications[index].Value.Count; i++)
-                    {
-                        variableModificationPattern[possibleVariableModifications[index].Key] = i;
-                        yield return variableModificationPattern;
-                    }
-                }
-            }
-        }
-
-        private static Dictionary<int, ModificationWithMass> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, List<ModificationWithMass>>> possibleVariableModifications)
-        {
-            var modification_pattern = new Dictionary<int, ModificationWithMass>();
-
-            foreach (KeyValuePair<int, List<ModificationWithMass>> kvp in possibleVariableModifications)
-            {
-                if (variableModificationArray[kvp.Key] > 0)
-                {
-                    modification_pattern.Add(kvp.Key, kvp.Value[variableModificationArray[kvp.Key] - 1]);
-                }
-            }
-
-            return modification_pattern;
-        }
-
-        #endregion Private Methods
     }
 }

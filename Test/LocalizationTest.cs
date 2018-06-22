@@ -22,14 +22,7 @@ namespace Test
             Protease p = GlobalVariables.ProteaseDictionary["non-specific"];
             Protein prot = new Protein("MABCDEFGH", null);
 
-            DigestionParams digestionParams = new DigestionParams
-            {
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 8,
-                MinPeptideLength = 1,
-                MaxPeptideLength = 9,
-                Protease = p
-            };
+            DigestionParams digestionParams = new DigestionParams(protease: p.Name, MaxMissedCleavages: 8, MinPeptideLength: 1, MaxPeptideLength: 9, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
 
             Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Count());
         }
@@ -40,10 +33,7 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
+            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) };
 
@@ -54,11 +44,11 @@ namespace Test
             List<ProductType> lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1, null);
-            Psm newPsm = new Psm(ps.CompactPeptide(TerminusType.None), 0, 0, 2, scan);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.GetAllScansList().Last(), pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1, null);
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps.CompactPeptide(TerminusType.None), 0, 0, 2, scan, digestionParams);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
@@ -68,12 +58,14 @@ namespace Test
 
             newPsm.MatchToProteinLinkedPeptides(matching);
 
-            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);
+            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);
             f.Run();
 
             // Was single peak!!!
-            Assert.AreEqual(0, newPsm.MatchedIonDictOnlyMatches[ProductType.BnoB1ions].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.MatchedIonDictOnlyMatches[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.MatchedIonMassesDict[ProductType.BnoB1ions].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.MatchedIonMassesDict[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.MatchedIonIntensitiesDict[ProductType.BnoB1ions].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.MatchedIonIntensitiesDict[ProductType.Y].Count(b => b > 0));
             // If localizing, three match!!!
             Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
         }

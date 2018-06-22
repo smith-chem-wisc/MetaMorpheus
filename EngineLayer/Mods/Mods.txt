@@ -109,11 +109,13 @@ MT   ProteinTermMod
 CF   H2 C2 O1
 //
 ID   Acetyl
-TG   S or K or C or T
+TG   S or K or T
 PP   Anywhere.
 MT   Mod
 CF   H2 C2 O1
 //
+<<<<<<< HEAD
+=======
 ID   Acetald+26
 TG   X
 PP   Peptide N-terminal.
@@ -138,6 +140,7 @@ PP   Anywhere.
 MT   Mod
 CF   H4 C2
 //
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 ID   Acetylation+Methionine
 TG   mX
 PP   N-terminal.
@@ -229,17 +232,23 @@ PP   Anywhere.
 MT   Mod
 CF   H-2 S-1
 //
-ID   Didehydro
-TG   Y or S
-PP   Anywhere.
-MT   Mod
-CF   H-2
-//
-ID   Didehydrobutyrine
-TG   T or S
+ID   Dehydroalanine from Serine
+TG   S
 PP   Anywhere.
 MT   Mod
 CF   H-2 O-1
+//
+ID   Dehydrobutyrine
+TG   T
+PP   Anywhere.
+MT   Mod
+CF   H-2 O-1
+//
+ID   Didehydro
+TG   Y
+PP   Anywhere.
+MT   Mod
+CF   H-2
 //
 ID   Formylation
 TG   X
@@ -446,11 +455,17 @@ PP   Peptide N-terminal.
 MT   PeptideTermMod
 CF   C1
 //
-ID   Carboxymethyl of peptide n term
-TG   X
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   H2 C2 O2
+ID   Decarboxylation
+TG   D or E
+PP   Anywhere.
+MT   Mod
+CF   H-2 C-1 O-1
+//
+ID   Reduction
+TG   D or S or T
+PP   Anywhere.
+MT   Mod
+CF   O-1
 //
 ID   Decarboxylation
 TG   D or E

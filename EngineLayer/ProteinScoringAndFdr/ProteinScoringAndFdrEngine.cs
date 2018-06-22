@@ -7,7 +7,7 @@ namespace EngineLayer
     {
         #region Private Fields
 
-        private readonly IEnumerable<Psm> newPsms;
+        private readonly IEnumerable<PeptideSpectralMatch> newPsms;
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly bool mergeIndistinguishableProteinGroups;
@@ -17,7 +17,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, List<string> nestedIds) : base(nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.proteinGroups = proteinGroups;
@@ -50,22 +50,31 @@ namespace EngineLayer
             return proteinGroupName.Contains("DECOY_") ? proteinGroupName.Replace("DECOY_", "") : proteinGroupName;
         }
 
-        private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<Psm> psmList)
+        private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<PeptideSpectralMatch> psmList)
         {
             Status("Scoring protein groups...");
 
             // add each protein groups PSMs
-            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<Psm>>();
+            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValue < 0.01)
+                if (psm.FdrInfo.QValueNotch < 0.01 && psm.FdrInfo.QValue < 0.01)
                 {
+<<<<<<< HEAD
+                    if ((treatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!treatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
+                    {
+                        foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
+                        {
+                            if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
+                                peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
+=======
                     if((treatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!treatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
                         foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                         {
                             if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<Psm> psmsForThisPeptide))
                                 peptideToPsmMatching.Add(pepWithSetMods, new HashSet<Psm> { psm });
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                             else
                                 psmsForThisPeptide.Add(psm);
                         }
@@ -79,7 +88,7 @@ namespace EngineLayer
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
-                    if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<Psm> psms))
+                    if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<PeptideSpectralMatch> psms))
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
                     else
                         pepsToRemove.Add(peptide);
@@ -158,7 +167,11 @@ namespace EngineLayer
             }
 
             // pick the best notch-QValue for each paired accession
+<<<<<<< HEAD
+            foreach (var accession in accessionToProteinGroup)
+=======
             foreach(var accession in accessionToProteinGroup)
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             {
                 if (accession.Value.Count > 1)
                 {
@@ -168,6 +181,16 @@ namespace EngineLayer
                     proteinGroups = proteinGroups.Except(pgList).ToList();
                 }
             }
+<<<<<<< HEAD
+
+            // order protein groups by notch-QValue
+            var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+
+            // calculate protein QValues
+            int cumulativeTarget = 0;
+            int cumulativeDecoy = 0;
+
+=======
             
             // order protein groups by notch-QValue
             var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
@@ -176,6 +199,7 @@ namespace EngineLayer
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
             
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             foreach (var proteinGroup in sortedProteinGroups)
             {
                 if (proteinGroup.isDecoy)

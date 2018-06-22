@@ -5,12 +5,29 @@
   </PropertyGroup>
 
   <ItemGroup>
+<<<<<<< HEAD
+    <PackageReference Include="FluentCommandLineParser" Version="1.4.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
+    <PackageReference Include="mzLib" Version="1.0.318" />
+    <PackageReference Include="NUnit" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.Containers" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.InputOutput" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.Optimization" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.RandomForest" Version="0.26.9" />
+=======
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
     <PackageReference Include="mzLib" Version="1.0.287" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
     <PackageReference Include="SharpLearning.AdaBoost" Version="0.26.8.1" />
     <PackageReference Include="SharpLearning.RandomForest" Version="0.26.8.1" />
+>>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
   </ItemGroup>
 
   <ItemGroup>
@@ -34,9 +51,44 @@
     <None Update="SlicedSearchTaskConfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\gapdh.fa.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\gapdh.fa">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\gapdh.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\gapdh.fasta.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\ok.mgf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\okk.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\BSA.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\BSA_DSS_23747.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\DbForPrunedDb.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\PrunedDbSpectra.mzml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="testFileSpecfic.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
+  <ItemGroup>
+    <Folder Include="XlTestData\" />
+  </ItemGroup>
 </Project>

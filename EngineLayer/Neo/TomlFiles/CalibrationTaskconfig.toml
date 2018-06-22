@@ -40,6 +40,6 @@ MaxMissedCleavages = 2
 InitiatorMethionineBehavior = "Variable"
 MinPeptideLength = 6
 MaxPeptideLength = 50
-MaxModificationIsoforms = 4096
+MaxModificationIsoforms = 1024
 MaxModsForPeptide = 3
 Protease = "trypsin"
