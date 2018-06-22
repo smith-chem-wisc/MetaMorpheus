@@ -54,14 +54,5 @@ namespace RealTimeGUI
 			}
 			return (IExactiveInstrumentAccess) m_container.Get(1);
 		}
-
-        static internal string DoJob()
-        {
-            IInstrumentAccessContainer container = GetContainer();
-            using (IInstrumentAccess instrument = container.Get(1))
-            {
-                return instrument.InstrumentName;
-            }
-        }
 	}
 }

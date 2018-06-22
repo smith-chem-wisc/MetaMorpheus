@@ -12,37 +12,40 @@ namespace RealTimeGUI
 	/// <summary>
 	/// Show incoming data packets and signals of acquisition start, acquisition stop and each scan.
 	/// </summary>
-	class DataReceiver
+	public class DataReceiver
 	{
 		internal DataReceiver() { }
 
-        string TextTime { get; set; }
-        List<IMsScan> ListScan { get; set; }
+        public IExactiveInstrumentAccess InstrumentAccess { get; set; }
+
+        public IMsScanContainer ScanContainer { get; set; }
+
+        public List<IMsScan> ListScan { get; set; }
+        
+        public RTParameters RTParameters { get; set; }
 
         public static event EventHandler<NotificationEventArgs> DataReceiverNotificationEventHandler;
 
-        internal void DoJob()
-		{
-            ListScan = new List<IMsScan>();
-			using (IExactiveInstrumentAccess instrument = Connection.GetFirstInstrument())
-			{
-				IMsScanContainer orbitrap = instrument.GetMsScanContainer(0);
-                //Console.WriteLine("Waiting 60 seconds for scans on detector " + orbitrap.DetectorClass + "...");
-                string x = "Waiting 60 seconds for scans on detector " + orbitrap.DetectorClass + "...";
-                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x + "/n"));
-                MainWindow.mainWindow.TbNotifications.AppendText(x + "/n");
+        internal void ReceiveData()
+        {
+            string x = "Start receive scans on detector " + ScanContainer.DetectorClass + ".";
+            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x + "\n"));
 
-                orbitrap.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
-				orbitrap.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
-				orbitrap.MsScanArrived += Orbitrap_MsScanArrived;
-				Thread.CurrentThread.Join(10000);
-				orbitrap.MsScanArrived -= Orbitrap_MsScanArrived;
-				orbitrap.AcquisitionStreamClosing -= Orbitrap_AcquisitionStreamClosing;
-				orbitrap.AcquisitionStreamOpening -= Orbitrap_AcquisitionStreamOpening;
-			}
-		}
+            ScanContainer.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
+            ScanContainer.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
+            ScanContainer.MsScanArrived += Orbitrap_MsScanArrived;
+        }
 
-		private void Orbitrap_MsScanArrived(object sender, MsScanEventArgs e)
+        internal void StopReceiveData()
+        {
+            string x = "Stop receive scans on detector " + ScanContainer.DetectorClass + "...";
+            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x + "\n"));
+            ScanContainer.MsScanArrived -= Orbitrap_MsScanArrived;
+            ScanContainer.AcquisitionStreamClosing -= Orbitrap_AcquisitionStreamClosing;
+            ScanContainer.AcquisitionStreamOpening -= Orbitrap_AcquisitionStreamOpening;
+        }
+
+        private void Orbitrap_MsScanArrived(object sender, MsScanEventArgs e)
 		{
 			// If examining code takes longer, in particular for some scans, it is wise
 			// to use a processing queue in order to get the system as responsive as possible.
@@ -50,25 +53,20 @@ namespace RealTimeGUI
 			using (IMsScan scan = (IMsScan) e.GetScan())	// caution! You must dispose this, or you block shared memory!
 			{
                 //Console.WriteLine("\n{0:HH:mm:ss,fff} scan with {1} centroids arrived", DateTime.Now, scan.CentroidCount);
-                ListScan.Add(scan);
-                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(ListScan.Count.ToString()));
+                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs("..."));
             }
 		}
 
 		private void Orbitrap_AcquisitionStreamClosing(object sender, EventArgs e)
 		{
-			//Console.WriteLine("\n{0:HH:mm:ss,fff} {1}", DateTime.Now, "Acquisition stream closed (end of method)");
-            TextTime = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream closed (end of method)" + "/n";
-            MainWindow.mainWindow.TbNotifications.AppendText(TextTime + "/n");
-            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(TextTime));
+            string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream closed (end of method)" + "\n";
+            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
         }
 
 		private void Orbitrap_AcquisitionStreamOpening(object sender, MsAcquisitionOpeningEventArgs e)
 		{
-            //Console.WriteLine("\n{0:HH:mm:ss,fff} {1}", DateTime.Now, "Acquisition stream opens (start of method)");
-            TextTime = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream opens (start of method)" + "/n";
-            MainWindow.mainWindow.TbNotifications.AppendText(TextTime + "/n");
-            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(TextTime));
+            string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream opens (start of method)" + "\n";
+            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
         }
 	}
 }
