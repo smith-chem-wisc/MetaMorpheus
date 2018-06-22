@@ -8,7 +8,6 @@ namespace EngineLayer
 {
     public class CommonParameters
     {
-        
         #region Public Constructors
 
         // this parameterless constructor needs to exist to read the toml. 
@@ -127,12 +126,7 @@ namespace EngineLayer
                 ListOfModsFixed: this.ListOfModsFixed
             );
         }
-
-        public void SetTaskDescriptor(string TaskDescriptor)
-        {
-            this.TaskDescriptor = TaskDescriptor;
-        }
-
+        
         public void SetProductMassTolerance(Tolerance ProductMassTolerance)
         {
             this.ProductMassTolerance = ProductMassTolerance;
@@ -143,9 +137,9 @@ namespace EngineLayer
             this.PrecursorMassTolerance = PrecursorMassTolerance;
         }
 
-        public void SetDigestionParams(DigestionParams DigetionsParams)
+        public void SetDigestionParams(DigestionParams DigestionParams)
         {
-            this.DigestionParams = DigestionParams;
+            this.DigestionParams = this.DigestionParams;
         }
 
         #endregion Public Methods

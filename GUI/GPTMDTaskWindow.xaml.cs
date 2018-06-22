@@ -333,11 +333,11 @@ namespace MetaMorpheusGUI
 
             if (OutputFileNameTextBox.Text != "")
             {
-                CommonParamsToSave.SetTaskDescriptor(OutputFileNameTextBox.Text);
+                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
             }
             else
             {
-                CommonParamsToSave.SetTaskDescriptor("GPTMDTask");
+                CommonParamsToSave.TaskDescriptor = "GPTMDTask";
             }
             
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
