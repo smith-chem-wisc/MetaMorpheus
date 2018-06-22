@@ -166,10 +166,7 @@ namespace MetaMorpheusGUI
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
             quantPpmTolerance.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
-<<<<<<< HEAD
             checkBoxNormalize.IsChecked = task.SearchParameters.Normalize;
-=======
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
             checkBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
             histogramBinWidthTextBox.Text = task.SearchParameters.HistogramBinTolInDaltons.ToString(CultureInfo.InvariantCulture);
@@ -200,18 +197,11 @@ namespace MetaMorpheusGUI
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             eValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
-<<<<<<< HEAD
             deltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
-=======
-            //trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
-            //trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
-            //TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
-            //MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
@@ -435,17 +425,10 @@ namespace MetaMorpheusGUI
                 CommonParamsToSave.TaskDescriptor = "SearchTask";
             }
 
-<<<<<<< HEAD
             CommonParamsToSave.TrimMs1Peaks = trimMs1.IsChecked.Value;
             CommonParamsToSave.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             CommonParamsToSave.TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
             CommonParamsToSave.MinRatio = double.Parse(MinRatioTextBox.Text);
-=======
-            //CommonParamsToSave.TrimMs1Peaks = trimMs1.IsChecked.Value;
-            //CommonParamsToSave.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
-            //CommonParamsToSave.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
-            //CommonParamsToSave.MinRatio = double.TryParse(MinRatioCheckBox.Text, out double MinRatio) ? (double?)MinRatio : null;
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             if (classicSearchRadioButton.IsChecked.Value)
             {

@@ -94,49 +94,8 @@ namespace TaskLayer
             };
 
             object lock1 = new object();
-<<<<<<< HEAD
 
             ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
-=======
-            ParallelOptions parallelOptions = new ParallelOptions();
-            if (CommonParameters.MaxParallelFilesToAnalyze.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxParallelFilesToAnalyze.Value;
-            Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
-            {
-                var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
-                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-                lock (lock1) // Lock because reading is sequential
-                {
-                    if (Path.GetExtension(originalUncalibratedFilePath).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
-                        myMsDataFile = Mzml.LoadAllStaticData(originalUncalibratedFilePath);
-                    else
-#if NETFRAMEWORK
-                        myMsDataFile = ThermoStaticData.LoadAllStaticData(originalUncalibratedFilePath);
-#else
-                        {
-                            Warn("No capability for reading " + originalUncalibratedFilePath);
-                            return;
-                        }
-#endif
-                }
-
-                var initLearners = new List<ILearner<double>>
-                    {
-                        new MzMultiplier()
-                    };
-
-                var mzSepLearners = new List<ILearner<double>>
-                    {
-                        new LinearCalibrationFunctionMathNet(new int[] { }),
-
-                        new LinearCalibrationFunctionMathNet(new [] { 0 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 1 }),
-                        new LinearCalibrationFunctionMathNet(new [] { 2 }),
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             var myFileManager = new MyFileManager(true);
 
@@ -152,17 +111,12 @@ namespace TaskLayer
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
-<<<<<<< HEAD
                 MsDataFile myMsDataFile;
-=======
-                (int thisRoundCount, DataPointAquisitionResults datapointAcquisitionResult, Tolerance thisRoundPrecursorTol, Tolerance thisRoundProductTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                 // load the file
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
                 lock (lock1)
                 {
-<<<<<<< HEAD
                     myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks);
                 }
 
@@ -182,32 +136,6 @@ namespace TaskLayer
 
                     // not enough datapoints seen; open the tolerance and try again
                     var newParameters = ((CommonParameters)CommonParameters).Clone();
-=======
-                    Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
-                    Warn("datapointAcquisitionResult.Ms1List.Count: " + datapointAcquisitionResult.Ms1List.Count);
-                    return;
-                }
-                if (CalibrationParameters.WriteIntermediateFiles)
-                {
-                    WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "init", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                    WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "init", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                }
-
-                int bestCount;
-                Tolerance bestPrecursorTol;
-                Tolerance bestProductTol;
-                string calibratedFilePath = null;
-                var round = 1;
-                do
-                {
-                    new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, initLearners, "mz", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath }).Run();
-
-                    bestCount = thisRoundCount;
-                    bestPrecursorTol = thisRoundPrecursorTol;
-                    bestProductTol = thisRoundProductTol;
-
-                    (thisRoundCount, datapointAcquisitionResult, thisRoundPrecursorTol, thisRoundProductTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, thisRoundPrecursorTol, thisRoundProductTol);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                     if (i == 1) // failed round 1
                     {
@@ -219,19 +147,13 @@ namespace TaskLayer
                         newParameters.PrecursorMassTolerance = new PpmTolerance(30);
                         newParameters.ProductMassTolerance = new PpmTolerance(100);
                     }
-<<<<<<< HEAD
                     else if (i == 3) // failed round 3
-=======
-
-                    if (round >= 3 && !ImprovGlobal(bestPrecursorTol, bestProductTol, bestCount, thisRoundCount, thisRoundPrecursorTol, thisRoundProductTol))
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                     {
                         newParameters.PrecursorMassTolerance = new PpmTolerance(40);
                         newParameters.ProductMassTolerance = new PpmTolerance(150);
                     }
                     else // failed round 4
                     {
-<<<<<<< HEAD
                         if (acquisitionResults.Psms.Count < numRequiredPsms)
                         {
                             Warn("Calibration failure! Could not find enough high-quality PSMs. Required " + numRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
@@ -249,25 +171,12 @@ namespace TaskLayer
                     }
 
                     CommonParameters = newParameters;
-=======
-                        WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "round" + round + "alignment", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "round" + round + "alignment", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-
-                        var intermediateFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "round" + round + "alignment.mzml");
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, intermediateFilePath, false);
-                        SucessfullyFinishedWritingFile(intermediateFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                    }
-
-                    calibratedFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "-calib.mzml");
-                    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                     Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
                     Math.Round(CommonParameters.PrecursorMassTolerance.Value, 2) + " ppm precursor and " +
                     Math.Round(CommonParameters.ProductMassTolerance.Value, 2) + " ppm product");
                 }
 
-<<<<<<< HEAD
                 // stats before calibration
                 int prevPsmCount = acquisitionResults.Psms.Count;
                 double preCalibrationPrecursorErrorIqr = acquisitionResults.PsmPrecursorIqrPpmError;
@@ -285,24 +194,10 @@ namespace TaskLayer
                 int postCalibrationPsmCount = acquisitionResults.Psms.Count;
                 double postCalibrationPrecursorErrorIqr = acquisitionResults.PsmPrecursorIqrPpmError;
                 double postCalibrationProductErrorIqr = acquisitionResults.PsmProductIqrPpmError;
-=======
-                myMsDataFile = Mzml.LoadAllStaticData(calibratedFilePath);
-
-                do
-                {
-                    new CalibrationEngine(myMsDataFile, datapointAcquisitionResult, mzSepLearners, "mzRtTicInj", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath }).Run();
-
-                    bestCount = thisRoundCount;
-                    bestPrecursorTol = thisRoundPrecursorTol;
-                    bestProductTol = thisRoundProductTol;
-
-                    (thisRoundCount, datapointAcquisitionResult, thisRoundPrecursorTol, thisRoundProductTol) = GetDataAcquisitionResultsAndAppropriateTolerances(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, thisRoundPrecursorTol, thisRoundProductTol);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                 // did the data improve? (not used for anything yet...)
                 bool improvement = ImprovGlobal(preCalibrationPrecursorErrorIqr, preCalibrationProductErrorIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorErrorIqr, postCalibrationProductErrorIqr);
 
-<<<<<<< HEAD
                 // write toml settings for the calibrated file
                 var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".toml");
 
@@ -326,27 +221,9 @@ namespace TaskLayer
                 }
 
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
-=======
-                    if (!ImprovGlobal(bestPrecursorTol, bestProductTol, bestCount, thisRoundCount, thisRoundPrecursorTol, thisRoundProductTol))
-                        break;
-
-                    if (CalibrationParameters.WriteIntermediateFiles)
-                    {
-                        WriteMs1DataPoints(datapointAcquisitionResult.Ms1List, OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "round" + round + "inter-scan", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        WriteMs2DataPoints(datapointAcquisitionResult.Ms2List, OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "round" + round + "inter-scan", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-
-                        var intermediateFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "round" + round + "inter-scan.mzml");
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, intermediateFilePath, false);
-                        SucessfullyFinishedWritingFile(intermediateFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                    }
-
-                    calibratedFilePath = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "-calib.mzml");
-                    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                 SucessfullyFinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
-<<<<<<< HEAD
                 // write the calibrated mzML file
                 MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
                 myFileManager.DoneWithFile(originalUncalibratedFilePath);
@@ -366,13 +243,9 @@ namespace TaskLayer
             if (File.Exists(assumedPathToExperDesign))
             {
                 var lines = File.ReadAllLines(assumedPathToExperDesign);
-=======
-                SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                 for (int i = 0; i < lines.Length; i++)
                 {
-<<<<<<< HEAD
                     // header of experimental design file
                     if (i == 0)
                     {
@@ -389,28 +262,12 @@ namespace TaskLayer
 
                         newExperimentalDesignOutput.Add(newline);
                     }
-=======
-                    var tomlFileName = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(originalUncalibratedFilePath) + "-calib.toml");
-                    FileSpecificTolerances f = new FileSpecificTolerances
-                    {
-                        PrecursorMassTolerance = bestPrecursorTol,
-                        ProductMassTolerance = bestProductTol
-                    };
-                    Toml.WriteFile(f, tomlFileName, tomlConfig);
-                    SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                 }
             }
 
-<<<<<<< HEAD
             File.WriteAllLines(Path.Combine(OutputFolder, GlobalVariables.ExperimentalDesignFileName), newExperimentalDesignOutput);
 
             // finished calibrating all files for the task
-=======
-                myTaskResults.newSpectra.Add(calibratedFilePath);
-                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath }));
-            });
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             return MyTaskResults;
@@ -505,20 +362,11 @@ namespace TaskLayer
                 return new DataPointAquisitionResults(null, new List<PeptideSpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             }
 
-<<<<<<< HEAD
             var dissociationTypes = MetaMorpheusEngine.DetermineDissociationType(lp);
             foreach (var psm in allPsms)
             {
                 var theScan = myMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 double thePrecursorMass = psm.ScanPrecursorMass;
-=======
-            // Store
-
-            DataPointAquisitionResults bestResult = new DataPointAquisitionResults(null, new List<LabeledMs1DataPoint>(), new List<LabeledMs2DataPoint>(), 0, 0, 0, 0);
-
-            Tolerance bestPrecursorMassToleranceForDatapointAcquisition = initPrecTol;
-            Tolerance bestProductMassToleranceForDatapointAcquisition = initProdTol;
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                 foreach (var huh in lp)
                 {
@@ -547,43 +395,7 @@ namespace TaskLayer
                     fragmentTypesForCalibration,
                     new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
-<<<<<<< HEAD
             return currentResult;
-=======
-                if (currentResult.Ms1List.Count == 0 || currentResult.Ms2List.Count == 0)
-                {
-                    Warn("currentResult.Ms1List.Count = " + currentResult.Ms1List.Count + " currentResult.Ms2List.Count = " + currentResult.Ms2List.Count);
-                    Warn("NumMs1MassChargeCombinationsConsidered: " + currentResult.NumMs1MassChargeCombinationsConsidered);
-                    Warn("NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + currentResult.NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
-                    Warn("NumMs2MassChargeCombinationsConsidered: " + currentResult.NumMs2MassChargeCombinationsConsidered);
-                    Warn("NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks: " + currentResult.NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
-                    Warn("Please validate tolerances used.");
-                    return (0, null, null, null);
-                }
-
-                var computedPrecursorMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms1InfoPpm.Item1 + 6 * currentResult.Ms1InfoPpm.Item2), Math.Abs(currentResult.Ms1InfoPpm.Item1 - 6 * currentResult.Ms1InfoPpm.Item2)));
-                var computedProductMassToleranceForDatapointAcquisition = new PpmTolerance(Math.Max(Math.Abs(currentResult.Ms2InfoPpm.Item1 + 6 * currentResult.Ms2InfoPpm.Item2), Math.Abs(currentResult.Ms2InfoPpm.Item1 - 6 * currentResult.Ms2InfoPpm.Item2)));
-
-                bool ms1Worse = currentResult.Ms1List.Count <= bestResult.Ms1List.Count && ((currentResult.Ms1InfoPpm.Item2 / bestResult.Ms1InfoPpm.Item2) >= ((double)currentResult.Ms1List.Count / bestResult.Ms1List.Count));
-                bool ms2Worse = currentResult.Ms2List.Count <= bestResult.Ms2List.Count && ((currentResult.Ms2InfoPpm.Item2 / bestResult.Ms2InfoPpm.Item2) >= ((double)currentResult.Ms2List.Count / bestResult.Ms2List.Count));
-
-                if (ms1Worse || ms2Worse)
-                    break;
-
-                bestPrecursorMassToleranceForDatapointAcquisition = testPrecursorMassToleranceForDatapointAcquisition;
-                bestProductMassToleranceForDatapointAcquisition = testProductMassToleranceForDatapointAcquisition;
-
-                testPrecursorMassToleranceForDatapointAcquisition = computedPrecursorMassToleranceForDatapointAcquisition;
-                testProductMassToleranceForDatapointAcquisition = computedProductMassToleranceForDatapointAcquisition;
-
-                bestResult = currentResult;
-                round++;
-            } while (true);
-
-            Log("Returning precTol:" + bestPrecursorMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-            Log("Returning prodTol:" + bestProductMassToleranceForDatapointAcquisition, new List<string> { taskId, "Individual Spectra Files", currentDataFile });
-            return (goodIdentifications.Count, bestResult, bestPrecursorMassToleranceForDatapointAcquisition, bestProductMassToleranceForDatapointAcquisition);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
         }
 
         #endregion Private Methods

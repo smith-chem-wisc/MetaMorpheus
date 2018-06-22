@@ -54,28 +54,18 @@ namespace EngineLayer
             if (!treatModPeptidesAsDifferentPeptides)//user want modified and unmodified peptides treated the same
             {
                 Dictionary<string, HashSet<PeptideWithSetModifications>> baseSeqToProteinMatch = new Dictionary<string, HashSet<PeptideWithSetModifications>>();
-<<<<<<< HEAD
                 // dictionary where string key is the base sequence and the HashSet is all PeptidesWithSetModificatiosn with the same sequence 
                 // can access which protein these matching peptides came from through the PeptideWithSetModifications object
                 foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
                 {
                     if (baseSeqToProteinMatch.TryGetValue(peptide.BaseSequence, out HashSet<PeptideWithSetModifications> value))
                     {
-=======
-                foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
-                {
-                    if (baseSeqToProteinMatch.TryGetValue(peptide.BaseSequence, out HashSet<PeptideWithSetModifications> value))
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                         value.Add(peptide);
                     }
                     else
-<<<<<<< HEAD
                     {
                         baseSeqToProteinMatch[peptide.BaseSequence] = new HashSet<PeptideWithSetModifications> { peptide };
                     }
-=======
-                        baseSeqToProteinMatch[peptide.BaseSequence] = new HashSet<PeptideWithSetModifications> { peptide };
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                 }
 
                 var blah = new Dictionary<PeptideWithSetModifications, List<CompactPeptideBase>>();
@@ -85,7 +75,6 @@ namespace EngineLayer
                     foreach (var pepWithSetMods in pep.Value)
                     {
                         if (blah.TryGetValue(pepWithSetMods, out List<CompactPeptideBase> list))
-<<<<<<< HEAD
                         {
                             list.Add(pep.Key);
                         }
@@ -93,11 +82,6 @@ namespace EngineLayer
                         {
                             blah.Add(pepWithSetMods, new List<CompactPeptideBase> { pep.Key });
                         }
-=======
-                            list.Add(pep.Key);
-                        else
-                            blah.Add(pepWithSetMods, new List<CompactPeptideBase> { pep.Key });
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                     }
                 }
 
@@ -108,13 +92,9 @@ namespace EngineLayer
                         // list of proteins along with start/end residue in protein and the # missed cleavages
                         var peptideInProteinInfo = new List<Tuple<Protein, int, int, int>>();
                         foreach (var peptide in baseSequence.Value)
-<<<<<<< HEAD
                         {
                             peptideInProteinInfo.Add(new Tuple<Protein, int, int, int>(peptide.Protein, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
                         }
-=======
-                            peptideInProteinInfo.Add(new Tuple<Protein, int, int, int>(peptide.Protein, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.missedCleavages));
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                         foreach (var peptide in baseSequence.Value)
                         {

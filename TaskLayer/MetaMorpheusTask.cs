@@ -311,7 +311,6 @@ namespace TaskLayer
         protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um, out int emptyEntriesCount)
         {
             List<string> dbErrors = new List<string>();
-<<<<<<< HEAD
             List<Protein> proteinList = new List<Protein>();
 
             string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
@@ -322,13 +321,6 @@ namespace TaskLayer
             {
                 um = null;
                 proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, out dbErrors);
-=======
-
-            if (Path.GetExtension(fileName).Equals(".fasta") || Path.GetExtension(fileName).Equals(".fa"))
-            {
-                um = null;
-                return ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression, ProteinDbLoader.uniprot_organism_expression, out dbErrors);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             }
             else
             {

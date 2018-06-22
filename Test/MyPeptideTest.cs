@@ -49,14 +49,7 @@ namespace Test
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             mods.Add(1, new List<Modification> { new ModificationWithMass("Hehe", null, motif, TerminusLocalization.NProt, 18.010565, null, null, null, null) });
             var prot = new Protein("MMMM", null, null, null, mods);
-<<<<<<< HEAD
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
-=======
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = ye.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -89,16 +82,8 @@ namespace Test
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, null, mods);
-<<<<<<< HEAD
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
             PeptideWithSetModifications thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-=======
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
-            var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
             Array.Sort(massArray);
@@ -129,14 +114,7 @@ namespace Test
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, null, mods);
-<<<<<<< HEAD
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
-=======
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -168,14 +146,7 @@ namespace Test
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, null, mods);
-<<<<<<< HEAD
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
-=======
-            DigestionParams digestionParams = new DigestionParams
-            {
-                MinPeptideLength = 1,
-            };
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -209,14 +180,7 @@ namespace Test
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             var prot = new Protein("XMMM", null, null, null, mods);
-<<<<<<< HEAD
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
-=======
-            DigestionParams digestionParams = new DigestionParams()
-            {
-                MinPeptideLength = 1,
-            };
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             var thePep = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
@@ -332,17 +296,7 @@ namespace Test
                 {8, new List<Modification> {mod } }
             };
             var prot = new Protein("MNNNNKRRRRR", null, null, null, modDict);
-<<<<<<< HEAD
             DigestionParams digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
-=======
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0,
-            };
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             var digestList = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             var ok1 = digestList[1];
             var ok2 = digestList[3];
@@ -364,17 +318,7 @@ namespace Test
                 {8, new List<Modification> {mod } }
             };
             var prot = new Protein("MNNNNKRRRRR", null, null, null, modDict, isDecoy: true);
-<<<<<<< HEAD
             DigestionParams digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
-=======
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            DigestionParams digestionParams = new DigestionParams
-            {
-                Protease = protease,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0,
-            };
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             var digestedList = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             var ok1 = digestedList[1];

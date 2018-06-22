@@ -58,7 +58,6 @@ namespace TaskLayer
             List<ModificationWithMass> gptmdModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.modificationType, b.id))).ToList();
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
-<<<<<<< HEAD
             // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -72,53 +71,10 @@ namespace TaskLayer
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
-=======
-            List<Psm> allPsms = new List<Psm>();
-
-            List<ProductType> ionTypes = new List<ProductType>();
-            if (CommonParameters.BIons)
-                ionTypes.Add(ProductType.B);
-            if (CommonParameters.YIons)
-                ionTypes.Add(ProductType.Y);
-            if (CommonParameters.CIons)
-                ionTypes.Add(ProductType.C);
-            if (CommonParameters.ZdotIons)
-                ionTypes.Add(ProductType.Zdot);
-
-            Status("Loading proteins...", new List<string> { taskId });
-            Dictionary<string, Modification> um = null;
-            //Decoys are currently not being searched with DecoyType.None
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.Reverse, localizeableModificationTypes, b.IsContaminant, out um)).ToList();
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
 
-<<<<<<< HEAD
             var numRawFiles = currentRawFileList.Count;
-=======
-            proseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
-            }
-            else
-            {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
-            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
-
-            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
-            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
-            proseCreatedWhileRunning.Append("G-PTM-D modifications count = " + gptmdModifications.Count + "; ");
-            //puppet searchmode for writing files. Actual searchmode is filespecific
-            MassDiffAcceptor tempSearchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
-            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
-            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
-            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
@@ -152,8 +108,6 @@ namespace TaskLayer
 
             MyFileManager myFileManager = new MyFileManager(true);
 
-            MyFileManager myFileManager = new MyFileManager(true);
-
             object lock1 = new object();
             object lock2 = new object();
             ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
@@ -161,11 +115,6 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-<<<<<<< HEAD
-=======
-                ICommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -176,21 +125,12 @@ namespace TaskLayer
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-<<<<<<< HEAD
                 MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
                 PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                 new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, searchMode, false, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
-=======
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
-                Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-                myFileManager.DoneWithFile(origDataFile);
-                Psm[] allPsmsArray = new Psm[arrayOfMs2ScansSortedByMass.Length];
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, searchMode, false, combinedParams, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                 lock (lock2)
                 {
                     allPsms.AddRange(allPsmsArray);
@@ -213,11 +153,7 @@ namespace TaskLayer
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-<<<<<<< HEAD
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, new List<string> { taskId }).Run();
-=======
-            new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, false, new List<string> { taskId }).Run();
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
@@ -242,7 +178,6 @@ namespace TaskLayer
             // write GPTMD databases
             if (dbFilenameList.Any(b => !b.IsContaminant))
             {
-<<<<<<< HEAD
                 List<string> databaseNames = new List<string>();
                 foreach (var nonContaminantDb in dbFilenameList.Where(p => !p.IsContaminant))
                 {
@@ -250,17 +185,6 @@ namespace TaskLayer
                     var theExtension = Path.GetExtension(nonContaminantDb.FilePath).ToLowerInvariant();
                     bool compressed = theExtension.EndsWith("gz");
                     databaseNames.Add(compressed ? Path.GetFileNameWithoutExtension(dbName) : dbName);
-=======
-                // do NOT use this code (Path.GetFilenameWithoutExtension) because GPTMD on .xml.gz will result in .xml.xml file type being written
-                //string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "GPTMD.xml");
-                
-                List<string> databaseNames = new List<string>();
-                foreach (var nonContaminantDb in dbFilenameList.Where(p => !p.IsContaminant))
-                {
-                    var dbName = Path.GetFileName(nonContaminantDb.FilePath);
-                    int indexOfFirstDot = dbName.IndexOf(".");
-                    databaseNames.Add(dbName.Substring(0, indexOfFirstDot));
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                 }
                 string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 

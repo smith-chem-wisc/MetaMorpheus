@@ -1,9 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-<<<<<<< HEAD
-=======
-using IO.MzML;
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -46,11 +42,8 @@ namespace Test
             p.Add(new Protein("-----F----*", "D1", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
             p.Add(new Protein("-----F----**", "C1", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
             p.Add(new Protein("----E----**", "C2", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
-<<<<<<< HEAD
 
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1);
-=======
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             foreach (var protein in p)
             {
@@ -386,13 +379,8 @@ namespace Test
         [Test]
         public static void TestProteinGroupsAccessionOutputOrder()
         {
-<<<<<<< HEAD
 
 
-=======
-            
-            
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             var p = new HashSet<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
 
@@ -401,11 +389,7 @@ namespace Test
 
             // make protein A
             p.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             // add protein B and A to the protein group
             ProteinGroup testGroup = new ProteinGroup(p, null, null);
 

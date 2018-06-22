@@ -69,7 +69,6 @@ namespace EngineLayer.Gptmd
             //foreach peptide in each psm and for each modification that matches the notch, 
             //add that modification to every allowed residue
             foreach (var psm in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy))
-<<<<<<< HEAD
             {
                 // get file-specific precursor tolerance
                 Tolerance precursorMassTolerance = filePathToPrecursorMassTolerance[psm.FullFilePath];
@@ -78,10 +77,6 @@ namespace EngineLayer.Gptmd
                 foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                 {
                     foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, pepWithSetMods))
-=======
-                foreach (var peptide in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
-                    foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                     {
                         var proteinAccession = pepWithSetMods.Protein.Accession;
 

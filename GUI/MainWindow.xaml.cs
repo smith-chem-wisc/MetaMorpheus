@@ -243,7 +243,6 @@ namespace MetaMorpheusGUI
         {
             if (!Dispatcher.CheckAccess())
             {
-<<<<<<< HEAD
                 Dispatcher.BeginInvoke(new Action(() => AddNewFileSpecificToml(sender, e)));
             }
             else
@@ -263,12 +262,6 @@ namespace MetaMorpheusGUI
                 if (string.IsNullOrWhiteSpace(OutputFolderTextBox.Text))
                 {
                     var pathOfFirstSpectraFile = Path.GetDirectoryName(spectraFilesObservableCollection.First().FilePath);
-=======
-                // if current output folder is blank and there is a spectra file, use the spectra file's path as the output path
-                if (string.IsNullOrWhiteSpace(OutputFolderTextBox.Text))
-                {
-                    var pathOfFirstSpectraFile = Path.GetDirectoryName(rawDataObservableCollection.First().FilePath);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                     OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
                 }
                 // else do nothing (do not override if there is a path already there; might clear user-defined path)
@@ -397,11 +390,7 @@ namespace MetaMorpheusGUI
         {
             if (LoadTaskButton.IsEnabled)
             {
-<<<<<<< HEAD
                 string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
-=======
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                 if (files != null)
                 {
@@ -418,17 +407,10 @@ namespace MetaMorpheusGUI
                         {
                             AddAFile(draggedFilePath);
                         }
-<<<<<<< HEAD
                         dataGridSpectraFiles.CommitEdit(DataGridEditingUnit.Row, true);
                         dataGridProteinDatabases.CommitEdit(DataGridEditingUnit.Row, true);
                         dataGridSpectraFiles.Items.Refresh();
                         dataGridProteinDatabases.Items.Refresh();
-=======
-                        dataGridDatafiles.CommitEdit(DataGridEditingUnit.Row, true);
-                        dataGridXMLs.CommitEdit(DataGridEditingUnit.Row, true);
-                        dataGridDatafiles.Items.Refresh();
-                        dataGridXMLs.Items.Refresh();
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                     }
                 }
                 UpdateTaskGuiStuff();
@@ -443,13 +425,9 @@ namespace MetaMorpheusGUI
             // we need to get the filename before parsing out the extension because if we assume that everything after the dot
             // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
             var filename = Path.GetFileName(draggedFilePath);
-<<<<<<< HEAD
             var theExtension = Path.GetExtension(filename).ToLowerInvariant();
             bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
             theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(filename)).ToLowerInvariant() : theExtension;
-=======
-            var theExtension = filename.Substring(filename.IndexOf(".")).ToLowerInvariant();
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
             switch (theExtension)
             {
@@ -497,13 +475,7 @@ namespace MetaMorpheusGUI
                     UpdateOutputFolderTextbox();
                     break;
 
-                case ".mzml.gz":  // not implemented yet
-                case ".fasta.gz": // not implemented yet
-                    GuiWarnHandler(null, new StringEventArgs("Cannot read, try uncompressing: " + draggedFilePath, null));
-                    break;
-
                 case ".xml":
-<<<<<<< HEAD
                 case ".fasta":
                 case ".fa":
                     ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
@@ -511,17 +483,6 @@ namespace MetaMorpheusGUI
                     {
                         proteinDbObservableCollection.Add(uu);
                         if (theExtension.Equals(".xml"))
-=======
-                case ".xml.gz":
-                case ".fasta":
-                case ".fa":
-                    ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
-
-                    if (!ExistDa(proteinDbObservableCollection, uu))
-                    {
-                        proteinDbObservableCollection.Add(uu);
-                        if (theExtension.Equals(".xml") || theExtension.Equals(".xml.gz"))
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                         {
                             try
                             {
@@ -530,11 +491,7 @@ namespace MetaMorpheusGUI
                             catch (Exception ee)
                             {
                                 MessageBox.Show(ee.ToString());
-<<<<<<< HEAD
                                 GuiWarnHandler(null, new StringEventArgs("Cannot parse modification info from: " + draggedFilePath, null));
-=======
-                                GuiWarnHandler(null, new StringEventArgs("Cannot read: " + draggedFilePath, null));
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                                 proteinDbObservableCollection.Remove(uu);
                             }
                         }
@@ -542,7 +499,6 @@ namespace MetaMorpheusGUI
                     break;
 
                 case ".toml":
-<<<<<<< HEAD
                     TomlTable tomlFile = null;
                     try
                     {
@@ -555,14 +511,6 @@ namespace MetaMorpheusGUI
                     }
 
                     if (tomlFile.ContainsKey("TaskType"))
-=======
-                    var tomlFile = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                    if (tomlFile.Keys.Contains("PrecursorMassTolerance") && tomlFile.Keys.Contains("ProductMassTolerance") && tomlFile.Keys.Count == 2)
-                    {
-                        // do nothing; it's a ppm suggested tolerance toml from calibration, this gets read in elsewhere
-                    }
-                    else
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                     {
                         try
                         {
@@ -597,18 +545,11 @@ namespace MetaMorpheusGUI
                         }
                         catch (Exception e)
                         {
-<<<<<<< HEAD
                             GuiWarnHandler(null, new StringEventArgs("Cannot read task toml: " + e.Message, null));
                         }
                     }
                     break;
 
-=======
-                            GuiWarnHandler(null, new StringEventArgs("Could not parse .toml: " + e.Message, null));
-                        }
-                    }
-                    break;
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                 default:
                     GuiWarnHandler(null, new StringEventArgs("Unrecognized file type: " + theExtension, null));
                     break;

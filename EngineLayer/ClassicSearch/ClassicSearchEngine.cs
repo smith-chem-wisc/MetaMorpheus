@@ -75,7 +75,6 @@ namespace EngineLayer.ClassicSearch
 
             Status("Performing classic search...");
 
-<<<<<<< HEAD
             if (proteins.Any())
             {
                 Parallel.ForEach(Partitioner.Create(0, proteins.Count), partitionRange =>
@@ -150,91 +149,6 @@ namespace EngineLayer.ClassicSearch
                 }
             }
 
-=======
-            var lockObject = new object();
-            int proteinsSeen = 0;
-            int old_progress = 0;
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-            Status("Starting classic search...");
-            if (totalProteins > 0)
-            {
-                Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
-                {
-                    var psms = new Psm[arrayOfSortedMS2Scans.Length];
-                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
-                    {
-                        var protein = proteinList[i];
-                        var digestedList = protein.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
-                        foreach (var yyy in digestedList)
-                        {
-                            var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
-                            if (!commonParameters.ConserveMemory)
-                            {
-                                var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
-                                if (peptideWasObserved)
-                                    continue;
-                                lock (observedPeptides)
-                                {
-                                    peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
-                                    if (peptideWasObserved)
-                                        continue;
-                                    observedPeptides.Add(correspondingCompactPeptide);
-                                }
-                            }
-
-                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                            Array.Sort(productMasses);
-
-                            var searchMode = this.searchMode;
-                            foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
-                            {
-                                double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                var score = CalculatePeptideScore(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons, 0);
-
-                                if (score > commonParameters.ScoreCutoff || commonParameters.CalculateEValue)
-                                {
-                                    if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
-                                        psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                    else
-                                        psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, commonParameters.ReportAllAmbiguity);
-                                    if (commonParameters.CalculateEValue)
-                                        psms[scanWithIndexAndNotchInfo.scanIndex].UpdateAllScores(score);
-                                }
-                            }
-                        }
-                    }
-                    lock (lockObject)
-                    {
-                        for (int i = 0; i < globalPsms.Length; i++)
-                            if (psms[i] != null)
-                            {
-                                if (globalPsms[i] == null)
-                                    globalPsms[i] = psms[i];
-                                else
-                                {
-                                    if (commonParameters.CalculateEValue)
-                                        globalPsms[i].SumAllScores(psms[i]);
-                                    globalPsms[i].AddOrReplace(psms[i], commonParameters.ReportAllAmbiguity);
-                                }
-                            }
-                        proteinsSeen += partitionRange.Item2 - partitionRange.Item1;
-                        var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
-                        if (new_progress > old_progress)
-                        {
-                            ReportProgress(new ProgressEventArgs(new_progress, "Performing classic search...", nestedIds));
-                            old_progress = new_progress;
-                        }
-                    }
-                });
-            }
-            if (commonParameters.CalculateEValue)
-                Parallel.ForEach(Partitioner.Create(0, globalPsms.Length), partitionRange =>
-                 {
-                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
-                         if (globalPsms[i] != null && globalPsms[i].Score < commonParameters.ScoreCutoff)
-                             globalPsms[i] = null;
-                 });
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             return new MetaMorpheusEngineResults(this);
         }
 

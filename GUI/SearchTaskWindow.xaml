@@ -82,7 +82,7 @@
                                     </StackPanel>-->
                                 </StackPanel>
                             </GroupBox>
-                            <!--<GroupBox Header="Peak Trimming">
+                            <GroupBox Header="Peak Trimming">
                                 <StackPanel>
                                     <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ToolTipService.ToolTip>
@@ -111,13 +111,8 @@
                                         </TextBox>
                                     </StackPanel>
                                 </StackPanel>
-<<<<<<< HEAD
                             </GroupBox>
                             <!--<CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />-->
-=======
-                            </GroupBox>-->
-                            <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                         </StackPanel>
                     </Expander>
                 </GroupBox>

@@ -141,15 +141,9 @@ namespace EngineLayer.Calibration
                               scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
                           }
 
-<<<<<<< HEAD
                           double theFunc(MzPeak x) => x.Mz - ms2predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
 
                           double theFuncForPrecursor(MzPeak x) => x.Mz - ms1predictor.Predict(new double[] { x.Mz, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
-=======
-                          double theFunc(IPeak x) => x.X - ms2predictor.Predict(x.X, a.RetentionTime, Math.Log(a.TotalIonCurrent), a.InjectionTime.HasValue ? Math.Log(a.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
-
-                          double theFuncForPrecursor(IPeak x) => x.X - ms1predictor.Predict(x.X, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Y));
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                           scan.TransformMzs(theFunc, theFuncForPrecursor);
                       }

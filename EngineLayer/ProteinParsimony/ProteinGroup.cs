@@ -140,11 +140,7 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             // list of protein accession numbers
             sb.Append(ProteinGroupName);
             sb.Append("\t");
@@ -162,7 +158,6 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of masses
-<<<<<<< HEAD
             var sequences = ListOfProteinsOrderedByAccession.Select(p => p.BaseSequence).Distinct();
             List<double> masses = new List<double>();
             foreach (var sequence in sequences)
@@ -177,10 +172,6 @@ namespace EngineLayer
                 }
             }
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", masses)));
-=======
-            IDigestionParams digestionParams = new TDdigest();
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First().MonoisotopicMass).Distinct())));
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             sb.Append("\t");
 
             // number of proteins in group
@@ -252,11 +243,7 @@ namespace EngineLayer
             // number of PSMs for listed peptides
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             // isDecoy
             if (isDecoy)
                 sb.Append("D");
@@ -302,11 +289,7 @@ namespace EngineLayer
             var proteinsWithUnambigSeqPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
             var proteinsWithPsmsWithLocalizedMods = new Dictionary<Protein, List<PeptideWithSetModifications>>();
 
-<<<<<<< HEAD
             foreach (var protein in Proteins)
-=======
-            foreach(var protein in Proteins)
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             {
                 proteinsWithUnambigSeqPsms.Add(protein, new List<PeptideWithSetModifications>());
                 proteinsWithPsmsWithLocalizedMods.Add(protein, new List<PeptideWithSetModifications>());
@@ -321,11 +304,7 @@ namespace EngineLayer
                     foreach (var pepWithSetMods in PepsWithSetMods)
                     {
                         // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
-<<<<<<< HEAD
                         if (Proteins.Contains(pepWithSetMods.Protein))
-=======
-                        if(Proteins.Contains(pepWithSetMods.Protein))
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                         {
                             proteinsWithUnambigSeqPsms[pepWithSetMods.Protein].Add(pepWithSetMods);
 
@@ -344,7 +323,6 @@ namespace EngineLayer
                 bool errorResult = false;
                 var sequenceCoverageDisplay = protein.BaseSequence.ToLower(CultureInfo.InvariantCulture);
                 HashSet<int> coveredOneBasedResidues = new HashSet<int>();
-<<<<<<< HEAD
 
                 // get residue numbers of each peptide in the protein and identify them as observed if the sequence is unambiguous
                 foreach (var peptide in proteinsWithUnambigSeqPsms[protein])
@@ -372,41 +350,11 @@ namespace EngineLayer
                 else
                     SequenceCoveragePercent.Add(double.NaN);
 
-=======
-
-                // get residue numbers of each peptide in the protein and identify them as observed if the sequence is unambiguous
-                foreach (var peptide in proteinsWithUnambigSeqPsms[protein])
-                {
-                    string sequenceExtractedFromProtein = "";
-                    for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
-                    {
-                        // check for bugs in sequence coverage; make sure we have the right amino acids!
-                        sequenceExtractedFromProtein += sequenceCoverageDisplay[i - 1];
-                        coveredOneBasedResidues.Add(i);
-                    }
-
-                    if (!sequenceExtractedFromProtein.ToUpper().Equals(peptide.BaseSequence))
-                        errorResult = true;
-                }
-
-                // calculate sequence coverage percent
-                double seqCoveragePercent = (double)coveredOneBasedResidues.Count / protein.Length;
-                if (seqCoveragePercent > 1)
-                    errorResult = true;
-
-                // add the percent coverage or NaN if there was an error
-                if (!errorResult)
-                    SequenceCoveragePercent.Add(seqCoveragePercent);
-                else
-                    SequenceCoveragePercent.Add(double.NaN);
-                
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                 // convert the observed amino acids to upper case if they are unambiguously observed
                 var coverageArray = sequenceCoverageDisplay.ToCharArray();
                 foreach (var obsResidueLocation in coveredOneBasedResidues)
                     coverageArray[obsResidueLocation - 1] = char.ToUpper(coverageArray[obsResidueLocation - 1]);
                 sequenceCoverageDisplay = new string(coverageArray);
-<<<<<<< HEAD
 
                 // check to see if there was an errored result; if not, add the coverage display
                 if (!errorResult)
@@ -414,15 +362,6 @@ namespace EngineLayer
                 else
                     SequenceCoverageDisplayList.Add("Error calculating sequence coverage");
 
-=======
-
-                // check to see if there was an errored result; if not, add the coverage display
-                if(!errorResult)
-                    SequenceCoverageDisplayList.Add(sequenceCoverageDisplay);
-                else
-                    SequenceCoverageDisplayList.Add("Error calculating sequence coverage");
-
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                 // put mods in the sequence coverage display
                 if (!errorResult)
                 {

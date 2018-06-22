@@ -215,11 +215,7 @@ namespace EngineLayer.ModernSearch
                             }
                             if (compFragmentFloorMass < 0)
                                 compFragmentFloorMass = 0;
-<<<<<<< HEAD
 
-=======
-                            
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
                             for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
                                 if (fragmentIndex[fragmentBin] != null)
                                     binsToSearch.Add(fragmentBin);

@@ -201,7 +201,6 @@ namespace Test
                 AddCompIons = true,
                 MaxFragmentSize = 1, // super small index
             };
-<<<<<<< HEAD
            
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -218,43 +217,16 @@ namespace Test
                 CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
-=======
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new AbsoluteTolerance(100), // super large tolerance (100 Da)
-                DigestionParams = new DigestionParams
-                {
-                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                    MinPeptideLength = null,
-                },
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
-            
-            var proteinList = new List<Protein> { new Protein("K", null) };
-
-            var indexEngine = new IndexingEngine(proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<IDigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
-            var indexResults = (IndexingResults)indexEngine.Run();
-            
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, true, true, 4, 10, new PpmTolerance(5)).OrderBy(b => b.PrecursorMass).ToArray();
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
-<<<<<<< HEAD
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-=======
-            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // no assertions... just don't crash...
         }
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
         [Test]
         public static void TestNonViablePSM()
         {

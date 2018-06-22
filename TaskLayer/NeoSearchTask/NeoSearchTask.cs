@@ -145,12 +145,8 @@ namespace TaskLayer
 
                     #endregion Load modifications
 
-<<<<<<< HEAD
                     // load proteins
                     List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes);
-=======
-                    var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, DecoyType.None, localizeableModificationTypes, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
->>>>>>> b6218ce1d8219a5f824b8d1064f3d4e3fa8b51db
 
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;
