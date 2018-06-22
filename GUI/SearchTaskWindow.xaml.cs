@@ -405,15 +405,24 @@ namespace MetaMorpheusGUI
             #region Save Parameters
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
-            bool SemiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
-            TerminusType TerminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C);
-            int MaxMissedCleavages = (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
-            int MinPeptideLength = (int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int MaxPeptideLength = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
-            int MaxModsForPeptide = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
-            InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
-            DigestionParams digestionParamsToSave = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior, MaxModsForPeptides: MaxModsForPeptide);
+            bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
+            TerminusType terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C);
+            int maxMissedCleavages = (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
+            int minPeptideLengthValue = (int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int maxPeptideLengthValue = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int maxModificationIsoformsValue = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
+            int maxModsForPeptideValue = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
+            InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            DigestionParams digestionParamsToSave = new DigestionParams(
+                protease: protease.Name,
+                SemiProteaseDigestion: semiProteaseDigestion,
+                TerminusTypeSemiProtease: terminusTypeSemiProtease,
+                MaxMissedCleavages: maxMissedCleavages,
+                MinPeptideLength: minPeptideLengthValue,
+                MaxPeptideLength: maxPeptideLengthValue,
+                MaxModificationIsoforms: maxModificationIsoforms,
+                InitiatorMethionineBehavior: initiatorMethionineBehavior,
+                MaxModsForPeptides: maxModsForPeptideValue);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
