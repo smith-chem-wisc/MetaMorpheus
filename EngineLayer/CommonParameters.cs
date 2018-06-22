@@ -139,7 +139,7 @@ namespace EngineLayer
 
         public void SetDigestionParams(DigestionParams DigestionParams)
         {
-            this.DigestionParams = this.DigestionParams;
+            this.DigestionParams = DigestionParams;
         }
 
         #endregion Public Methods
