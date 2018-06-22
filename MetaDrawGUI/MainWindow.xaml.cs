@@ -83,6 +83,7 @@ namespace MetaDrawGUI
                 resultFilesObservableCollection.Clear();
             else
                 spectraFilesObservableCollection.Clear();
+
         }
 
         private void btnAddFiles_Click(object sender, RoutedEventArgs e)
