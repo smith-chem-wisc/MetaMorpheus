@@ -20,7 +20,7 @@ namespace TaskLayer
     {
         #region Public Constructors
 
-        public RealTimeTask() : base(MyTask.Search)
+        public RealTimeTask() : base(MyTask.RealTime)
         {
             CommonParameters = new CommonParameters();
 
@@ -41,7 +41,6 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             // load modifications
-            Status("Loading modifications...", taskId);
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
@@ -78,49 +77,30 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
-            // start the search task
-            MyTaskResults = new MyTaskResults(this);
+            // start the task
 
-            ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
-
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
-            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
+            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>();
+            ListOfDigestionParams.Add(CommonParameters.DigestionParams);
 
             object indexLock = new object();
 
-            Status("Searching files...", taskId);
-            Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
+            var thisId = new List<string> { taskId, "Individual Spectra Files" };
 
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+
+            for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
             {
-                var origDataFile = currentRawFileList[spectraFileIndex];
+                List<CompactPeptide> peptideIndex = null;
+                List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / CommonParameters.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / CommonParameters.TotalPartitions) - (currentPartition * proteinList.Count() / CommonParameters.TotalPartitions));
 
-                var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-
-                // modern search
+                var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, RealTimeParameters.DecoyType, ListOfDigestionParams, CommonParameters, RealTimeParameters.MaxFragmentSize, new List<string> { taskId });
+                List<int>[] fragmentIndex = null;
+                lock (indexLock)
                 {
-                    for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
-                    {
-                        List<CompactPeptide> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
-
-
-                        Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, RealTimeParameters.DecoyType, ListOfDigestionParams, combinedParams, RealTimeParameters.MaxFragmentSize, new List<string> { taskId });
-                        List<int>[] fragmentIndex = null;
-                        lock (indexLock)
-                        {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
-                        }
-
-                        Status("Searching files...", taskId);
-
-                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
-                    }
+                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
                 }
-            });
-            ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
+            }
+
+            MyTaskResults = new MyTaskResults(this);
             return MyTaskResults;
         }
         #endregion Protected Methods

@@ -28,6 +28,9 @@ namespace RealTimeGUI
         public DatabaseParameterWindow()
         {
             InitializeComponent();
+            PopulateChoices();
+            TheTask = new RealTimeTask();
+            UpdateFieldsFromTask(TheTask);
 
             dataContextForDatabaseWindow = new DataContextForDatabaseWindow
             {
@@ -37,7 +40,7 @@ namespace RealTimeGUI
             };
         }
 
-        internal RealTimeSearch RealTimeSearch { get; private set; }
+        internal RealTimeTask TheTask { get; private set; }
 
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
@@ -169,6 +172,71 @@ namespace RealTimeGUI
             {
                 ye.VerifyCheckState();
             }
+        }
+
+        private void BtnSave_Click(object sender, RoutedEventArgs e)
+        {
+            CommonParameters CommonParamsToSave = (TheTask.CommonParameters as CommonParameters).Clone();
+            TheTask.RealTimeParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
+
+            Protease protease = (Protease)proteaseComboBox.SelectedItem;
+            int MaxMissedCleavages = (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
+            int MinPeptideLength = (int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int MaxPeptideLength = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
+            InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            DigestionParams digestionParamsToSave = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior);
+            CommonParamsToSave.DigestionParams = digestionParamsToSave;
+
+            if (productMassToleranceComboBox.SelectedIndex == 0)
+            {
+                CommonParamsToSave.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                CommonParamsToSave.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            }
+            CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;
+            CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;
+            CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
+            CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            CommonParamsToSave.TotalPartitions = int.Parse(txtNumberOfDatabaseSearches.Text, CultureInfo.InvariantCulture);
+
+
+            var listOfModsVariable = new List<(string, string)>();
+            foreach (var heh in variableModTypeForTreeViewObservableCollection)
+            {
+                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            }
+            CommonParamsToSave.ListOfModsVariable = listOfModsVariable;
+
+            var listOfModsFixed = new List<(string, string)>();
+            foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+            {
+                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            }
+            CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
+
+            if (localizeAllCheckBox.IsChecked.Value)
+            {
+                CommonParamsToSave.ListOfModTypesLocalize = null;
+                CommonParamsToSave.LocalizeAll = true;
+            }
+            else
+            {
+                CommonParamsToSave.LocalizeAll = false;
+                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
+            }
+
+            TheTask.CommonParameters = CommonParamsToSave;
+
+            DialogResult = true;
+        }
+
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 

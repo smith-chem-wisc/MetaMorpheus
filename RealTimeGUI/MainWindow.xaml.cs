@@ -28,10 +28,13 @@ namespace RealTimeGUI
     {
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         public DataReceiver DataReceiver { get; set; }
+        public RealTimeTask RealTimeTask { get; set; }
+
 
         public MainWindow()
         {
             InitializeComponent();
+            RealTimeTask = new RealTimeTask();
 
             DataReceiver = new DataReceiver();
             dataGridProteinDatabases.DataContext = proteinDbObservableCollection;
@@ -39,6 +42,9 @@ namespace RealTimeGUI
             DataReceiver.DataReceiverNotificationEventHandler += UpdateTbNotification;
             MyFileManager.WarnHandler += GuiWarnHandler;
             RealTimeSearch.WarnHandler += GuiWarnHandler;
+
+            
+
         }
 
         private void UpdateTbNotification(object sender, NotificationEventArgs e)
@@ -143,6 +149,34 @@ namespace RealTimeGUI
             }
         }
 
+        private void Window_Drop(object sender, DragEventArgs e)
+        {
+            //if (LoadTaskButton.IsEnabled)
+            {
+                string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
+
+                if (files != null)
+                {
+                    foreach (var draggedFilePath in files)
+                    {
+                        if (Directory.Exists(draggedFilePath))
+                        {
+                            foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
+                            {
+                                AddAFile(file);
+                            }
+                        }
+                        else
+                        {
+                            AddAFile(draggedFilePath);
+                        }
+                        dataGridProteinDatabases.CommitEdit(DataGridEditingUnit.Row, true);
+                        dataGridProteinDatabases.Items.Refresh();
+                    }
+                }
+            }
+        }
+
         private bool DatabaseExists(ObservableCollection<ProteinDbForDataGrid> pDOC, ProteinDbForDataGrid uuu)
         {
             foreach (ProteinDbForDataGrid pdoc in pDOC)
@@ -194,7 +228,9 @@ namespace RealTimeGUI
             }
             string outputFolder = TbOutputFolder.Text;
 
-
+            RealTimeSearch realTimeSearch = new RealTimeSearch(proteinDbObservableCollection.Where(b=>b.Use).Select(b=>new DbForTask(b.FilePath, b.Contaminant)).ToList(), RealTimeTask, outputFolder);
+            var t = new Task(realTimeSearch.Run);
+            t.Start();
         }
 
         private void BtnOpenOutputFolder_Click(object sender, RoutedEventArgs e)
@@ -237,7 +273,7 @@ namespace RealTimeGUI
             var dialog = new DatabaseParameterWindow();
             if (dialog.ShowDialog() == true)
             {
-
+                RealTimeTask = dialog.TheTask;
             }
         }
     }

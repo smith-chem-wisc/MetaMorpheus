@@ -21,13 +21,16 @@ namespace RealTimeGUI
 
         private string outputFolder;
         private List<DbForTask> currentXmlDbFilenameList;
+        private RealTimeTask realTimeTask;
 
 
-        public RealTimeSearch(List<DbForTask> startingXmlDbFilenameList, string outputFolder)
+        public RealTimeSearch(List<DbForTask> startingXmlDbFilenameList, RealTimeTask realTimeTask, string outputFolder)
         {
             this.outputFolder = outputFolder;
 
             currentXmlDbFilenameList = startingXmlDbFilenameList;
+
+            this.realTimeTask = realTimeTask;
         }
 
         public static event EventHandler<StringEventArgs> WarnHandler;
@@ -47,7 +50,7 @@ namespace RealTimeGUI
                 }
 
                 // Actual task running code
-
+                realTimeTask.RealTimeRunTask(outputFolder, currentXmlDbFilenameList);
 
             }
             stopWatch.Stop();

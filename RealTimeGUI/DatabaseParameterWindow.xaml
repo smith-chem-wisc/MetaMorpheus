@@ -185,5 +185,9 @@
                 </GroupBox>
             </DockPanel>
         </ScrollViewer>
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="5">
+            <Button x:Name="BtnCancel" Content="Cancel" Click="BtnCancel_Click" />
+            <Button x:Name="BtnSave" Content="Save Search Task" Click="BtnSave_Click"  FontSize="24" />
+        </StackPanel>
     </Grid>
 </Window>

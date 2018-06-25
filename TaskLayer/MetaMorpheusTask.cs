@@ -21,7 +21,8 @@ namespace TaskLayer
         Gptmd,
         Calibrate,
         XLSearch,
-        Neo
+        Neo,
+        RealTime
     }
 
     public abstract class MetaMorpheusTask
@@ -279,6 +280,29 @@ namespace TaskLayer
 
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return MyTaskResults;
+        }
+
+        //This is for Instrument Control or Real Time Search
+        public void RealTimeRunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList)
+        {
+            RunSpecific(output_folder, currentProteinDbFilenameList, null, "", null);
+
+            {
+                var proseFilePath = Path.Combine(output_folder, "prose.txt");
+                using (StreamWriter file = new StreamWriter(proseFilePath))
+                {
+                    file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
+                    file.Write(ProseCreatedWhileRunning.ToString());
+                    file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
+                    file.WriteLine();
+                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
+
+                    file.WriteLine();
+                    file.WriteLine("Databases:");
+                    file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
+                }
+                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { "Real-Time Search" });
+            }
         }
 
         #endregion Public Methods
