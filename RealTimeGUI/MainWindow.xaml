@@ -35,10 +35,15 @@
                     </StackPanel>
                 </Grid>
             </GroupBox>
+            <GridSplitter Grid.Column="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Stretch"
+                        Background="Silver"
+                        Width="5" />
             <GroupBox Header="Database preparation" Grid.Row="0" Grid.Column="2">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="2*"/>
                         <RowDefinition Height="30"/>
                         <RowDefinition Height="36"/>
                         <RowDefinition Height="1*"/>
@@ -59,16 +64,13 @@
                         <Label Content="Output Folder:" />
                         <TextBox x:Name="TbOutputFolder" Text="C:\RealTime" ToolTip="Ion index files" />
                     </DockPanel>
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left" Grid.Row="3">
-                        <Button x:Name="BtnDatabasePrepare" Content="Database Preparation" Click="BtnDatabasePrepare_Click"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Grid.Row="5">
+                        <Button x:Name="BtnDataBaseParameter" Content="Set Database Parameter" Click="BtnDataBaseParameter_Click"/>
+                        <Button x:Name="BtnDatabasePrepare" Content="Bottom-up Database Preparation" Click="BtnDatabasePrepare_Click"/>
                     </StackPanel>
                 </Grid>
             </GroupBox>
-            <GridSplitter Grid.Column="1"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Stretch"
-                        Background="Silver"
-                        Width="5" />
         </Grid>
         <GridSplitter Grid.Row="1"
                         VerticalAlignment="Center"

@@ -231,5 +231,14 @@ namespace RealTimeGUI
                 GuiWarnHandler(null, new StringEventArgs("Output folder does not exist", null));
             }
         }
+
+        private void BtnDataBaseParameter_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new DatabaseParameterWindow();
+            if (dialog.ShowDialog() == true)
+            {
+
+            }
+        }
     }
 }

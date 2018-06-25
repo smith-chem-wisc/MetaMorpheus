@@ -16,7 +16,7 @@ using EngineLayer;
 
 namespace RealTimeGUI
 {
-    public class RealTimeSearch
+    public class RealTimeSearch 
     {
 
         private string outputFolder;
