@@ -42,12 +42,8 @@ namespace Test
 
             Protease protease = new Protease("Custom Protease3", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1), ScoreCutoff: 1);
+           
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, true, CommonParameters, new List<string>()).Run();
@@ -99,13 +95,8 @@ namespace Test
             };
             Protease protease = new Protease("singleN4", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                PrecursorMassTolerance = new PpmTolerance(5),
-                DigestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength:1),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1), ScoreCutoff: 1);
+           
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 
                 new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
 
@@ -166,21 +157,26 @@ namespace Test
             double precursorMass = 402.18629720155;
             //The below theoretical does not accurately represent B-Y ions
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { 50, 60, 70, 147.0764 - Constants.protonMass, 200, 215, 230, 245, precursorMass + Constants.protonMass - 147.0764, 258.127, 275.1350, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
-            List<double> matchedIonsT = new List<double>();
+            List<double> matchedIonMassesT = new List<double>();
             List<double> matchedDaErrorT = new List<double>();
             List<double> matchedPpmErrorT = new List<double>();
-            List<double> matchedIonsF = new List<double>();
+            List<double> matchedIonIntensityT = new List<double>();
+            List<double> matchedIonMassesF = new List<double>();
             List<double> matchedDaErrorF = new List<double>();
             List<double> matchedPpmErrorF = new List<double>();
-            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsT, matchedDaErrorT, matchedPpmErrorT, precursorMass, new List<DissociationType> { DissociationType.HCD }, true);
-            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsF, matchedDaErrorF, matchedPpmErrorF, precursorMass, new List<DissociationType> { DissociationType.HCD }, false);
+            List<double> matchedIonIntensityF = new List<double>();
+
+            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesT, matchedDaErrorT, matchedPpmErrorT, precursorMass, new List<DissociationType> { DissociationType.HCD }, true, matchedIonIntensityT);
+            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesF, matchedDaErrorF, matchedPpmErrorF, precursorMass, new List<DissociationType> { DissociationType.HCD }, false, matchedIonIntensityF);
 
             //Test the number of ions is doubled
-            Assert.IsTrue(matchedIonsT.Count == matchedIonsF.Count * 2);
+            Assert.IsTrue(matchedIonMassesT.Count == matchedIonMassesF.Count * 2);
             //Test the number of da errors is doubled
             Assert.IsTrue(matchedDaErrorT.Count == matchedDaErrorF.Count * 2);
             //test the number of ppm errors is doubled
             Assert.IsTrue(matchedPpmErrorT.Count == matchedPpmErrorF.Count * 2);
+            //test the number of the intensity values is doubled
+            Assert.IsTrue(matchedIonIntensityT.Count == matchedIonIntensityF.Count * 2);
             foreach (double d in matchedDaErrorF)
                 Assert.IsTrue(d <= 0.01);
             foreach (double d in matchedDaErrorT)

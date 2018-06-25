@@ -23,15 +23,12 @@ namespace TaskLayer
 
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(25),
-                PrecursorMassTolerance = new PpmTolerance(15),
-                TrimMs1Peaks = false,
-                TrimMsMsPeaks = false,
-                DoPrecursorDeconvolution = false,
-                ScoreCutoff = 10
-            };
+            CommonParameters = new CommonParameters(
+                ProductMassTolerance: new PpmTolerance(25),
+                PrecursorMassTolerance: new PpmTolerance(15),
+                TrimMsMsPeaks: false,
+                DoPrecursorDeconvolution: false,
+                ScoreCutoff: 10);
 
             CalibrationParameters = new CalibrationParameters();
         }
@@ -52,7 +49,7 @@ namespace TaskLayer
             Status("Loading modifications...", new List<string> { taskId });
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-            List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
+            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
@@ -95,11 +92,9 @@ namespace TaskLayer
 
             object lock1 = new object();
 
-            ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
-
             var myFileManager = new MyFileManager(true);
 
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
@@ -133,24 +128,21 @@ namespace TaskLayer
                     {
                         break;
                     }
-
-                    // not enough datapoints seen; open the tolerance and try again
-                    var newParameters = ((CommonParameters)CommonParameters).Clone();
-
+                    
                     if (i == 1) // failed round 1
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(20);
-                        newParameters.ProductMassTolerance = new PpmTolerance(50);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(20));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(50));
                     }
                     else if (i == 2) // failed round 2
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(30);
-                        newParameters.ProductMassTolerance = new PpmTolerance(100);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(30));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(100));
                     }
                     else if (i == 3) // failed round 3
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(40);
-                        newParameters.ProductMassTolerance = new PpmTolerance(150);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(40));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(150));
                     }
                     else // failed round 4
                     {
@@ -167,10 +159,8 @@ namespace TaskLayer
                             Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + numRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
                         }
                         FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        return;
+                        return MyTaskResults;
                     }
-
-                    CommonParameters = newParameters;
 
                     Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
                     Math.Round(CommonParameters.PrecursorMassTolerance.Value, 2) + " ppm precursor and " +
@@ -234,7 +224,7 @@ namespace TaskLayer
                 MyTaskResults.newFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
-            });
+            }
 
             // re-write experimental design (if it has been defined) with new calibrated file names
             string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
@@ -255,7 +245,7 @@ namespace TaskLayer
                     {
                         var split = lines[i].Split('\t');
                         string newline = Path.GetFileNameWithoutExtension(split[0]) + calibSuffix + "\t";
-                        for(int j = 1; j < split.Length; j++)
+                        for (int j = 1; j < split.Length; j++)
                         {
                             newline += split[j] + "\t";
                         }
@@ -345,8 +335,10 @@ namespace TaskLayer
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
-
+            var compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
+                (allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams },
+                combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
+            
             foreach (var huh in allPsms)
                 if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
@@ -375,9 +367,10 @@ namespace TaskLayer
                     List<double> matchedIonMassesList = new List<double>();
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
-                    LocalizationEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, false);
+                    List<double> matchedIonIntensitiesList = new List<double>();
+                    LocalizationEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, false, matchedIonIntensitiesList);
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    psm.MatchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
+                    psm.MatchedIonMassesDict.Add(huh, matchedIonMassesOnlyMatches);
                     psm.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
                     psm.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
                 }
