@@ -191,7 +191,7 @@ namespace EngineLayer
                         kvp.Add(ok.Key, ok.Value);
                     }
                 }
-                yield return new PeptideWithSetModifications(Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein,
+                yield return new PeptideWithSetModifications(Protein, digestionParams, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein,
                     PeptideDescription, MissedCleavages, kvp, numFixedMods);
                 variable_modification_isoforms++;
                 if (variable_modification_isoforms == maximumVariableModificationIsoforms)
