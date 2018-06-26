@@ -28,8 +28,9 @@ namespace TaskLayer
             MaxFragmentSize = 30000.0;
             ModsToWriteSelection = new Dictionary<string, int>
             {
-                {"ProteinTermMod", 3},
-                {"UniProt", 2},
+                {"Biological", 3},
+                //{"ProteinTermMod", 3},
+                {"UniProt", 3},
             };
             OutMzId = true;
             OutPepXML = false;
