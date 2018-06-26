@@ -15,7 +15,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-       
+
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
@@ -23,7 +23,6 @@ namespace EngineLayer
         #region Public Fields
 
         public const double tolForScoreDifferentiation = 1e-9;
-         
 
         #endregion Public Fields
 
@@ -44,11 +43,12 @@ namespace EngineLayer
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<double>();
             this.DigestionParams = digestionParams;
-            MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+            MatchedIonMassesDict = new Dictionary<ProductType, double[]>();
+            MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
-      
+
         #endregion Public Constructors
 
         #region Public Properties
@@ -80,7 +80,8 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatches { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonMassesDict { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonIntensitiesDict { get; internal set; } //new
         public string ProteinAccesion { get; private set; }
         public string Organism { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
@@ -170,7 +171,7 @@ namespace EngineLayer
             ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
-        
+
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
@@ -214,7 +215,7 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-        
+
         #region Private Methods
 
         private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
@@ -295,7 +296,7 @@ namespace EngineLayer
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
-                return  new Tuple<string, double?>(returnString, null);
+                return new Tuple<string, double?>(returnString, null);
             }
         }
 
@@ -421,14 +422,15 @@ namespace EngineLayer
             string matchedIonMasses = " ";
             string matchedIonDiffDa = " ";
             string matchedIonDiffPpm = " ";
-            if (peptide != null && peptide.MatchedIonDictOnlyMatches.Any())
+            string matchedIonIntensities = " ";
+            if (peptide != null && peptide.MatchedIonMassesDict.Any())
             {
                 //Count
-                matchedIonCounts = string.Join(";", peptide.MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0)));
+                matchedIonCounts = string.Join(";", peptide.MatchedIonMassesDict.Select(b => b.Value.Count(c => c > 0)));
 
                 //Masses
                 StringBuilder sbTemp = new StringBuilder();
-                foreach (var kvp in peptide.MatchedIonDictOnlyMatches)
+                foreach (var kvp in peptide.MatchedIonMassesDict)
                 {
                     sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
                 }
@@ -449,11 +451,20 @@ namespace EngineLayer
                     sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];");
                 }
                 matchedIonDiffPpm = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
+
+                //Intensities
+                sbTemp.Clear();
+                foreach (var kvp in peptide.MatchedIonIntensitiesDict)
+                {
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                }
+                matchedIonIntensities = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
             }
             s["Matched Ion Counts"] = matchedIonCounts;
             s["Matched Ion Masses"] = matchedIonMasses;
             s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
             s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
+            s["Matched Ion Intensities"] = matchedIonIntensities;
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
