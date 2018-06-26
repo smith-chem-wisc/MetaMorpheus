@@ -128,7 +128,7 @@ namespace TaskLayer
                     {
                         break;
                     }
-                    
+
                     if (i == 1) // failed round 1
                     {
                         this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(20));
@@ -338,7 +338,7 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
                 (allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams },
                 combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
-            
+
             foreach (var huh in allPsms)
                 if (huh != null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);

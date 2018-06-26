@@ -57,7 +57,7 @@ namespace EngineLayer.Localization
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
                     List<double> matchedIonIntensityList = new List<double>();
-                   
+
                     //populate the above lists
                     MatchIons(theScan, fragmentTolerance, sortedTheoreticalProductMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensityList, thePrecursorMass, dissociationTypes, addCompIons);
 

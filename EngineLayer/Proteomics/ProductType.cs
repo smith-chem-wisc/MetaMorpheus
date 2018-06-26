@@ -68,11 +68,6 @@ namespace EngineLayer
             }
         }
 
-        public override string ToString()
-        {
-            return this.ToString()[0].ToString().ToLower();
-        }
-
         #endregion Public Methods
     }
 }
