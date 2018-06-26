@@ -55,15 +55,17 @@ namespace Test
             {
                 {ps.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ ps} }
             };
-
+            
             newPsm.MatchToProteinLinkedPeptides(matching);
 
             LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);
             f.Run();
 
             // Was single peak!!!
-            Assert.AreEqual(0, newPsm.MatchedIonDictOnlyMatches[ProductType.BnoB1ions].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.MatchedIonDictOnlyMatches[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.MatchedIonMassesDict[ProductType.BnoB1ions].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.MatchedIonMassesDict[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.MatchedIonIntensitiesDict[ProductType.BnoB1ions].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.MatchedIonIntensitiesDict[ProductType.Y].Count(b => b > 0));
             // If localizing, three match!!!
             Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
         }
