@@ -43,6 +43,7 @@ namespace EngineLayer
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<double>();
             this.DigestionParams = digestionParams;
+            MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
             MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();

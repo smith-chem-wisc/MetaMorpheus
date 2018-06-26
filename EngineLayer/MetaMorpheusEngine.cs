@@ -390,11 +390,15 @@ namespace EngineLayer
         {
             List<DissociationType> dissociationTypes = new List<DissociationType>();
 
-            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
+            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y) || lp.Contains(ProductType.BnoB1ions))
+            {
                 dissociationTypes.Add(DissociationType.HCD);
+            }
 
             if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
+            {
                 dissociationTypes.Add(DissociationType.ETD);
+            }
 
             return dissociationTypes;
         }
