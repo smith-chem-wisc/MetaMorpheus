@@ -356,7 +356,6 @@ namespace TaskLayer
                 return new DataPointAquisitionResults(null, new List<PeptideSpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             }
 
-            var dissociationTypes = MetaMorpheusEngine.DetermineDissociationType(productTypes);
             foreach (var psm in allPsms)
             {
                 var theScan = myMsDataFile.GetOneBasedScan(psm.ScanNumber);
