@@ -356,7 +356,7 @@ namespace Test
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
             };
             Protease protease = new Protease("single N", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            
             DigestionParams dp = new DigestionParams(protease: protease);
             CommonParameters CommonParameters = new CommonParameters(
                 PrecursorMassTolerance: new PpmTolerance(5),
@@ -542,7 +542,7 @@ namespace Test
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
             var protease = new Protease("singleN2", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915) };
             DigestionParams digestionParams = new DigestionParams(protease: protease, MinPeptideLength: 5, MaxModsForPeptides: 3);
