@@ -434,7 +434,7 @@ namespace EngineLayer
                 StringBuilder sbTemp = new StringBuilder();
                 foreach(var kvp in peptide.MatchedIonSeriesDict)
                 {
-                    sbTemp.Append("[" + string.Join(",", kvp.Key.ToString(), kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)), "+1") + "];");
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => kvp.Key.ToString() + b.ToString("F5", CultureInfo.InvariantCulture) +"+1")) + "];");
                 }
                 matchedIonSeries = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
 

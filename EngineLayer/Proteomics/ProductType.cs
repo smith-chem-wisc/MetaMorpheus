@@ -14,7 +14,7 @@ namespace EngineLayer
         None
     }
 
-    public static class ProductTypeMethod
+    public class ProductTypeMethod
     {
         #region Public Methods
 
@@ -66,6 +66,11 @@ namespace EngineLayer
             {
                 throw new MetaMorpheusException("No ions types were selected.");
             }
+        }
+
+        public override string ToString()
+        {
+            return this.ToString()[0].ToString().ToLower();
         }
 
         #endregion Public Methods
