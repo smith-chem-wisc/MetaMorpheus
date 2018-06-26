@@ -364,15 +364,17 @@ namespace TaskLayer
                 {
                     var ionMasses = psm.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
                     Array.Sort(ionMasses);
-                    List<double> matchedIonMassesList = new List<double>();
+                    List<int> matchedIonSeriesList = new List<int>();
+                    List<double> matchedIonMassToChargeRatioList = new List<double>();
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
                     List<double> matchedIonIntensitiesList = new List<double>();
-                    LocalizationEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, false, matchedIonIntensitiesList);
-                    double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    psm.MatchedIonMassesDict.Add(huh, matchedIonMassesOnlyMatches);
+                    MetaMorpheusEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensitiesList, thePrecursorMass, dissociationTypes, false);
+                    psm.MatchedIonSeriesDict.Add(huh, matchedIonSeriesList.ToArray());
+                    psm.MatchedIonMassToChargeRatioDict.Add(huh, matchedIonMassToChargeRatioList.ToArray());
                     psm.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
                     psm.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
+                    psm.MatchedIonIntensitiesDict.Add(huh, matchedIonIntensitiesList.ToArray());
                 }
             }
 

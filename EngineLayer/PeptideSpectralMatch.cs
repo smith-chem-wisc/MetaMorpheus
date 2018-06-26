@@ -43,7 +43,7 @@ namespace EngineLayer
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<double>();
             this.DigestionParams = digestionParams;
-            MatchedIonMassesDict = new Dictionary<ProductType, double[]>();
+            MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
@@ -80,8 +80,9 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public Dictionary<ProductType, double[]> MatchedIonMassesDict { get; internal set; }
-        public Dictionary<ProductType, double[]> MatchedIonIntensitiesDict { get; internal set; } //new
+        public Dictionary<ProductType, int[]> MatchedIonSeriesDict { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonMassToChargeRatioDict { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonIntensitiesDict { get; internal set; }
         public string ProteinAccesion { get; private set; }
         public string Organism { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
@@ -418,23 +419,32 @@ namespace EngineLayer
 
         private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
         {
+            string matchedIonSeries = " ";
             string matchedIonCounts = " ";
-            string matchedIonMasses = " ";
+            string matchedIonMassToChargeRatios = " ";
             string matchedIonDiffDa = " ";
             string matchedIonDiffPpm = " ";
             string matchedIonIntensities = " ";
-            if (peptide != null && peptide.MatchedIonMassesDict.Any())
+            if (peptide != null && peptide.MatchedIonMassToChargeRatioDict.Any())
             {
                 //Count
-                matchedIonCounts = string.Join(";", peptide.MatchedIonMassesDict.Select(b => b.Value.Count(c => c > 0)));
+                matchedIonCounts = string.Join(";", peptide.MatchedIonMassToChargeRatioDict.Select(b => b.Value.Count(c => c > 0)));
 
-                //Masses
+                //Ion series
                 StringBuilder sbTemp = new StringBuilder();
-                foreach (var kvp in peptide.MatchedIonMassesDict)
+                foreach(var kvp in peptide.MatchedIonSeriesDict)
+                {
+                    sbTemp.Append("[" + string.Join(",", kvp.Key.ToString(), kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)), "+1") + "];");
+                }
+                matchedIonSeries = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
+
+                //Mass to charge ratios
+                sbTemp.Clear();
+                foreach (var kvp in peptide.MatchedIonMassToChargeRatioDict)
                 {
                     sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
                 }
-                matchedIonMasses = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
+                matchedIonMassToChargeRatios = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
 
                 //Mass error Da
                 sbTemp.Clear();
@@ -461,7 +471,8 @@ namespace EngineLayer
                 matchedIonIntensities = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
             }
             s["Matched Ion Counts"] = matchedIonCounts;
-            s["Matched Ion Masses"] = matchedIonMasses;
+            s["Matched Ion Series"] = matchedIonSeries;
+            s["Matched Ion Mass-To-Charge Ratios"] = matchedIonMassToChargeRatios;
             s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
             s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
             s["Matched Ion Intensities"] = matchedIonIntensities;

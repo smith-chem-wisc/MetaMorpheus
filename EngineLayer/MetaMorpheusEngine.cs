@@ -46,7 +46,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static void MatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, List<double> matchedIonIntensitiesList)
+        public static void MatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<int> matchedIonSeries, List<double> matchedIonMassToChargeRatios, List<double> productMassErrorDa, List<double> productMassErrorPpm, List<double> matchedIonIntensitiesList, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -81,13 +81,13 @@ namespace EngineLayer
 
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
-                    matchedIonMassesList.Add(currentTheoreticalMass);
+                    matchedIonSeries.Add(++currentTheoreticalIndex); //++ because there's no such thing as a y0 ion.
+                    matchedIonMassToChargeRatios.Add(currentTheoreticalMz);
                     matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]); 
                     double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
-                    currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
@@ -158,12 +158,12 @@ namespace EngineLayer
                             // If found match
                             if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                             {
-                                matchedIonMassesList.Add(currentTheoreticalMass);
+                                matchedIonSeries.Add(++currentTheoreticalIndex);
+                                matchedIonMassToChargeRatios.Add(currentTheoreticalMass.ToMz(1)); //currentTheoreticalMz is not updated
                                 matchedIonIntensitiesList.Add(complementaryIntensities[experimentalIndex]);
                                 productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                                 productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
-                                currentTheoreticalIndex++;
                                 if (currentTheoreticalIndex == TotalProductsHere)
                                     break;
                                 currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
