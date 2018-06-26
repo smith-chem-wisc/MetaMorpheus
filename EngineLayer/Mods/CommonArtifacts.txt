@@ -1,0 +1,97 @@
+CommonArtifacts
+ID   Deamidation
+TG   N or Q
+PP   Anywhere.
+MT   Mod
+CF   H-1 N-1 O1
+//
+ID   Ammonia loss
+TG   Q or C
+PP   Peptide N-terminal.
+MT   PeptideTermMod
+CF   H-3 N-1
+//
+ID   Ammonia loss
+TG   N
+PP   Anywhere.
+MT   Mod
+CF   H-3 N-1
+//
+ID   Sodium
+TG   D or E
+PP   Anywhere.
+MT   Metal
+CF   H-1 Na1
+//
+ID   Potassium
+TG   D or E
+PP   Anywhere.
+MT   Metal
+CF   H-1 K1
+//
+ID   Calcium
+TG   D or E
+PP   Anywhere.
+MT   Metal
+CF   H-2 Ca1
+//
+ID   Fe[III]
+TG   D or E
+PP   Anywhere.
+MT   Metal
+CF   H-3 Fe1
+//
+ID   Fe[II]
+TG   D or E
+PP   Anywhere.
+MT   Metal
+CF   H-2 Fe1
+//
+ID   Sodium
+TG   X
+PP   Peptide C-terminal.
+MT   Metal
+CF   H-1 Na1
+//
+ID   Potassium
+TG   X
+PP   Peptide C-terminal.
+MT   Metal
+CF   H-1 K1
+//
+ID   Calcium
+TG   X
+PP   Peptide C-terminal.
+MT   Metal
+CF   H-2 Ca1
+//
+ID   Fe[III]
+TG   X
+PP   Peptide C-terminal.
+MT   Metal
+CF   H-3 Fe1
+//
+ID   Fe[II]
+TG   X
+PP   Peptide C-terminal.
+MT   Metal
+CF   H-2 Fe1
+//
+ID   WaterLoss from PepNterm E
+TG   E
+PP   Peptide N-terminal.
+MT   PeptideTermMod
+CF   H-2 O-1
+//
+ID   Carbamyl
+TG   X
+PP   Peptide N-terminal.
+MT   PeptideTermMod
+CF   H1 C1 N1 O1
+//
+ID   Carbamyl
+TG   K or R or C or M
+PP   Anywhere.
+MT   Mod
+CF   H1 C1 N1 O1
+//

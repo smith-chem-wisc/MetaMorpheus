@@ -1,0 +1,57 @@
+CommonBiological
+ID   Phospho
+TG   S or T or Y
+PP   Anywhere.
+NL   H0 or H3 O4 P1
+MT   Mod
+CF   H1 O3 P1
+//
+ID   Acetyl
+TG   K
+PP   Anywhere.
+MT   Mod
+CF   H2 C2 O1
+//
+ID   Acetyl
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   H2 C2 O1
+//
+ID   Methyl
+TG   K or R
+PP   Anywhere.
+MT   Mod
+CF   H2 C
+//
+ID   DiMethyl
+TG   K or R
+PP   Anywhere.
+MT   Mod
+CF   H4 C2
+//
+ID   TriMethyl
+TG   K
+PP   Anywhere.
+MT   Mod
+CF   H6 C3
+//
+ID   HexNAc
+TG   Nxs or Nxt or S or T
+PP   Anywhere.
+NL   C8H13NO5
+CF   C8H13NO5
+MT   Glycan
+//
+ID   PyroGlu from Gln
+TG   Q
+PP   N-terminal.
+MT   ProteinTermMod
+CF   H-3 N-1
+//
+ID   Formylation
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   C1 O1
+//
