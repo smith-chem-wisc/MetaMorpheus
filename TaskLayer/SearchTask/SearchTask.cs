@@ -37,6 +37,7 @@ namespace TaskLayer
 
         #region Public Methods
 
+
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
             switch (massDiffAcceptorType)
@@ -74,6 +75,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             // disable quantification if a .mgf is being used
@@ -103,6 +105,7 @@ namespace TaskLayer
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
+
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -177,6 +180,8 @@ namespace TaskLayer
                         {
                             GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
                         }
+
+
 
                         Status("Searching files...", taskId);
 
@@ -273,15 +278,14 @@ namespace TaskLayer
             postProcessing.Parameters = parameters;
             return postProcessing.Run();
         }
-
         #endregion Protected Methods
 
         #region Private Methods
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
-            switch (massDiffAcceptorType)
-            {
+            switch(massDiffAcceptorType)
+            { 
                 case MassDiffAcceptorType.Exact: return 1;
                 case MassDiffAcceptorType.OneMM: return 2;
                 case MassDiffAcceptorType.TwoMM: return 3;
@@ -289,7 +293,7 @@ namespace TaskLayer
                 case MassDiffAcceptorType.ModOpen: return 1;
                 case MassDiffAcceptorType.Open: return 1;
                 case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
-
+                
                 default: throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
@@ -410,9 +414,9 @@ namespace TaskLayer
         private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
             var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
-            Directory.CreateDirectory(folder);
+                Directory.CreateDirectory(folder);
             return folder;
-        }
+        }     
 
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {

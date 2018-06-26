@@ -321,7 +321,7 @@ namespace TaskLayer
             string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
             bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
             theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
-
+            
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
@@ -345,7 +345,26 @@ namespace TaskLayer
                 {
                     output.WriteLine(heh.ToString(ModstoWritePruned));
                 }
-            }
+           }
+        }
+        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
+        {
+            
+            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
+            { 
+                commonParameters.DigestionParams
+            };
+
+            foreach (var hah in enumerable)
+            {
+                DigestionParams p = hah.DigestionParams;
+                if (okay.Contains(p)==false)
+                {
+                    okay.Add(p);
+                }              
+            };
+                
+            return okay;
         }
 
         protected void ReportProgress(ProgressEventArgs v)
