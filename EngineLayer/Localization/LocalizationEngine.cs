@@ -75,9 +75,11 @@ namespace EngineLayer.Localization
                 double thePrecursorMass = psm.ScanPrecursorMass;
 
                 if (psm.FullSequence == null)
+                {
                     continue;
+                }
 
-                var representative = psm.CompactPeptides.First().Value.Item2.First();
+                PeptideWithSetModifications representative = psm.CompactPeptides.First().Value.Item2.First();
 
                 var localizedScores = new List<double>();
                 for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
