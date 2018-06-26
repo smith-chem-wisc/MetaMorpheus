@@ -46,7 +46,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static void MatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<int> matchedIonSeries, List<double> matchedIonMassToChargeRatios, List<double> productMassErrorDa, List<double> productMassErrorPpm, List<double> matchedIonIntensitiesList, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static void MatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<int> matchedIonSeries, List<double> matchedIonMassToChargeRatios, List<double> productMassErrorDa, List<double> productMassErrorPpm, List<double> matchedIonIntensitiesList, double precursorMass, ProductType productType, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -83,7 +83,7 @@ namespace EngineLayer
                 {
                     matchedIonSeries.Add(++currentTheoreticalIndex); //++ because there's no such thing as a y0 ion.
                     matchedIonMassToChargeRatios.Add(currentTheoreticalMz);
-                    matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]); 
+                    matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]);
                     double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
@@ -130,7 +130,7 @@ namespace EngineLayer
                 double[] complementaryMasses = new double[numExperimentalPeaks];
                 double[] complementaryIntensities = new double[numExperimentalPeaks];
 
-                foreach (DissociationType dissociationType in dissociationTypes)
+                foreach (DissociationType dissociationType in DetermineDissociationType(new List<ProductType> { productType }))
                 {
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
@@ -201,6 +201,15 @@ namespace EngineLayer
                     {
                         throw new NotImplementedException();
                     }
+                }
+            }
+
+            //matchedIonSeries assumes 1-n, but bnob1 has no b1, so we need to ++ each series number
+            if (productType == ProductType.BnoB1ions)
+            {
+                for (int i = 0; i < matchedIonSeries.Count; i++)
+                {
+                    matchedIonSeries[i]++;
                 }
             }
         }
