@@ -27,22 +27,22 @@ namespace Test
                     DecoyType = DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters
-                {
-                    ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,2)
-                }
+                CommonParameters = new CommonParameters(ScoreCutoff:1, DigestionParams: new DigestionParams(MinPeptideLength: 2)),
             };
 
             string xmlName = "andguiaheow.xml";
 
             #region Generate protein and write to file
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,2147483647,2,InitiatorMethionineBehavior.Retain, 1),
-                ScoreCutoff = 1
-            };
+            CommonParameters CommonParameters = new CommonParameters(
+                ScoreCutoff: 1, 
+                DigestionParams: new DigestionParams(
+                    MaxMissedCleavages: 0, 
+                    MinPeptideLength: 1, 
+                    MaxModificationIsoforms: 2, 
+                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, 
+                    MaxModsForPeptides: 1));
+            
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
             ModificationWithMass alanineMod = new ModificationWithMass("111", "mt", motifA, TerminusLocalization.Any, 111);
 
@@ -77,7 +77,7 @@ namespace Test
 
             #region Generate and write the mzml
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 

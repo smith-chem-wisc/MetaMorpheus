@@ -2,7 +2,7 @@
 
 namespace EngineLayer
 {
-    public class DigestionParams 
+    public class DigestionParams
     {
         public int MaxMissedCleavages { get; private set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; private set; }
@@ -16,14 +16,21 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public DigestionParams(Protease Protease, int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
+        // this parameterless constructor needs to exist to read the toml. 
+        // if you can figure out a way to get rid of it, feel free...
+        public DigestionParams() : this("trypsin")
+        {
+
+        }
+
+        public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
             InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
         {
+            this.Protease = GlobalVariables.ProteaseDictionary[protease];
             this.MaxMissedCleavages = MaxMissedCleavages;
             this.MinPeptideLength = MinPeptideLength;
             this.MaxPeptideLength = MaxPeptideLength;
             this.MaxModificationIsoforms = MaxModificationIsoforms;
-            this.Protease = Protease;
             this.InitiatorMethionineBehavior = InitiatorMethionineBehavior;
             this.MaxModsForPeptide = MaxModsForPeptides;
             this.SemiProteaseDigestion = SemiProteaseDigestion;
@@ -31,23 +38,13 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
         
-
-        
-
-        
-
         #region Public Methods
 
-        public DigestionParams Clone()
-        {
-            return (DigestionParams)this.MemberwiseClone();
-        }
         public override bool Equals(object obj)
         {
             DigestionParams a = obj as DigestionParams;
-            
+
             return a != null
                 && this.MaxMissedCleavages.Equals(a.MaxMissedCleavages)
                 && this.MinPeptideLength.Equals(a.MinPeptideLength)
@@ -69,51 +66,6 @@ namespace EngineLayer
                 ^ MaxModsForPeptide.GetHashCode();
         }
 
-        
-        public void SetMaxMissedCleavages( int MaxMissedCleavages)
-        {
-            this.MaxMissedCleavages = MaxMissedCleavages;
-        }
-
-        public void SetInitiatorMethionineBehavior(InitiatorMethionineBehavior InitiatorMethionineBehavior)
-        {
-            this.InitiatorMethionineBehavior=InitiatorMethionineBehavior;
-        }
-
-        public void SetMinPeptideLength( int MinPeptideLength)
-        {
-            this.MinPeptideLength=MinPeptideLength;
-        }
-
-        public void SetMaxPeptideLength( int MaxPeptideLength)
-        {
-            this.MaxPeptideLength = MaxPeptideLength;
-        }
-
-        public void SetMaxModificationIsoforms(int MaxModificationIsoforms)
-        {
-            this.MaxModificationIsoforms = MaxModificationIsoforms;
-        }
-
-        public void SetMaxModsForPeptide( int MaxModsForPeptide)
-        {
-            this.MaxModsForPeptide = MaxModsForPeptide;
-        }
-
-        public void SetProtease( Protease Protease)
-        {
-            this.Protease = Protease;
-        }
-
-        public void SetSemiProteaseDigestion( bool SemiProteaseDigestion)
-        {
-            this.SemiProteaseDigestion = SemiProteaseDigestion;
-        }
-
-        public void SetTerminusTypeSemiProtease(TerminusType TerminusTypeSemiProtease)
-        {
-            this.TerminusTypeSemiProtease = TerminusTypeSemiProtease;
-        }
         #endregion Public Methods
     }
 }

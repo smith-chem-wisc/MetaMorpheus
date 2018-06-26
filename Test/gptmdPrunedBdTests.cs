@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
 using System;
@@ -25,18 +24,14 @@ namespace Test
             //Create Search Task
             GptmdTask task1 = new GptmdTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
             };
 
             SearchTask task2 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -85,10 +80,8 @@ namespace Test
                         {"ConnorModType", 1}
                     }
                 },
-                CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,5)
-                }
+                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5))
+                
             };
 
             //add task to task list
@@ -157,7 +150,7 @@ namespace Test
 
             //Finally Write MZML file
             Assert.AreEqual("PEP[ConnorModType:ConnorMod]TID", pepWithSetMods1.Sequence);
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
@@ -197,10 +190,7 @@ namespace Test
                     SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
-                CommonParameters = new CommonParameters
-                {
-                    ListOfModsFixed = listOfModsFixed,
-                }
+                CommonParameters = new CommonParameters(ListOfModsFixed: listOfModsFixed)
             };
 
             task5.SearchParameters.ModsToWriteSelection["Mod"] = 0;
@@ -302,7 +292,7 @@ namespace Test
             PeptideWithSetModifications pepWithSetMods5 = digestedList[4];
 
             //CUSTOM PEP
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
             { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
             string mzmlName = @"newMzml.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -311,7 +301,6 @@ namespace Test
 
             //make sure this runs correctly
             //run!
-            Console.WriteLine(task5.CommonParameters.ListOfModTypesLocalize);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");

@@ -36,14 +36,11 @@ namespace Test
                 modsDictionary.Add(mod, (ushort)i);
                 i++;
             }
-
-            Protease p = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(p,2,1),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+            
+            Protease p = new Protease("Custom Protease2", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(p.Name,p);
+            CommonParameters CommonParameters = new CommonParameters(ScoreCutoff: 1, DigestionParams: new DigestionParams(protease: p.Name, MinPeptideLength: 1));
+           
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
             { ProductType.BnoB1ions, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
@@ -85,14 +82,16 @@ namespace Test
                 i++;
             }
 
+
             Protease protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                
-                DigestionParams = new DigestionParams(protease,2,1,int.MaxValue,1024,InitiatorMethionineBehavior.Retain),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            CommonParameters CommonParameters = new CommonParameters(
+                DigestionParams: new DigestionParams(
+                    protease: protease.Name, 
+                    MinPeptideLength: 1, 
+                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), 
+                ScoreCutoff: 1);
+            
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
             var results = (IndexingResults)engine.Run();

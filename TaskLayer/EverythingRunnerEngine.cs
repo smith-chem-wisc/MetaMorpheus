@@ -106,7 +106,7 @@ namespace TaskLayer
                     currentRawDataFilenameList = myTaskResults.newSpectra;
                     NewSpectras(myTaskResults.newSpectra);
                 }
-                if(myTaskResults.newFileSpecificTomls != null)
+                if (myTaskResults.newFileSpecificTomls != null)
                 {
                     NewFileSpecificToml(myTaskResults.newFileSpecificTomls);
                 }

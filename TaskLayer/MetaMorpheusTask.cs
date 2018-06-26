@@ -14,6 +14,7 @@ using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
+
     public enum MyTask
     {
         Search,
@@ -26,7 +27,7 @@ namespace TaskLayer
     public abstract class MetaMorpheusTask
     {
         #region Public Fields
-
+        
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -41,10 +42,6 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<CommonParameters>(ct => ct
-                            .CreateInstance(() => new CommonParameters()))
-                        .ConfigureType<DigestionParams>(ct => ct
-                            .CreateInstance(() => new DigestionParams(new Protease("weird",null,null,TerminusType.C,CleavageSpecificity.Full,null,null,null))))
                         .ConfigureType<List<string>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t", custom))
@@ -108,7 +105,7 @@ namespace TaskLayer
         #region Public Methods
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(
-         IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile,
+         MsDataFile myMSDataFile,
          string fullFilePath,
          bool doPrecursorDeconvolution,
          bool useProvidedPrecursorInfo,
@@ -116,7 +113,7 @@ namespace TaskLayer
          int deconvolutionMaxAssumedChargeState,
          Tolerance deconvolutionMassTolerance)
         {
-            foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
+            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1))
             {
                 List<(double, int)> isolatedStuff = new List<(double, int)>();
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
@@ -145,8 +142,8 @@ namespace TaskLayer
                     else
                     {
                         var precursorMZ = ms2scan.SelectedIonMZ;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add((precursorMZ, precursorCharge));
+                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.Value.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
+                            isolatedStuff.Add((precursorMZ.Value, precursorCharge));
                     }
                 }
 
@@ -158,27 +155,34 @@ namespace TaskLayer
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
             if (fileSpecificParams == null)
+            {
                 return commonParams;
-
-            // clone the common parameters as a template for the file-specific params to override certain values
-            CommonParameters returnParams = ((CommonParameters)commonParams).Clone();
-            DigestionParams fileSpecificDigestionParams = ((DigestionParams)commonParams.DigestionParams).Clone();
-
+            }
+            
             // set file-specific digestion parameters
-            fileSpecificDigestionParams.SetProtease(fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease);
-            fileSpecificDigestionParams.SetMinPeptideLength(fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength);
-            fileSpecificDigestionParams.SetMaxPeptideLength(fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength);
-            fileSpecificDigestionParams.SetMaxMissedCleavages(fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages);
-            fileSpecificDigestionParams.SetMaxModsForPeptide(fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide);
-            returnParams.DigestionParams = fileSpecificDigestionParams;
-
+            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
+            int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+            int MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+            int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
+            
             // set the rest of the file-specific parameters
-            returnParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            returnParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            returnParams.BIons = fileSpecificParams.BIons ?? commonParams.BIons;
-            returnParams.YIons = fileSpecificParams.BIons ?? commonParams.YIons;
-            returnParams.CIons = fileSpecificParams.CIons ?? commonParams.CIons;
-            returnParams.ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
+            Tolerance PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            Tolerance ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            bool BIons = fileSpecificParams.BIons ?? commonParams.BIons;
+            bool YIons = fileSpecificParams.YIons ?? commonParams.YIons;
+            bool CIons = fileSpecificParams.CIons ?? commonParams.CIons;
+            bool ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
+
+            CommonParameters returnParams = new CommonParameters(
+                BIons: BIons,
+                YIons: YIons, 
+                CIons: CIons, 
+                ZdotIons: ZdotIons, 
+                PrecursorMassTolerance: PrecursorMassTolerance,
+                ProductMassTolerance: ProductMassTolerance, 
+                DigestionParams: fileSpecificDigestionParams);
 
             return returnParams;
         }

@@ -293,7 +293,7 @@ namespace TaskLayer
                     para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + item.id, value = item.monoisotopicMass.ToString() });
                 }
 
-                para.Add(new pepXML.Generated.nameValueType { name = "Localize All Modifications", value = CommonParameters.LocalizeAll.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Localize All Modifications", value = "true" });
             }
 
             _pepxml.msms_run_summary = new pepXML.Generated.msms_pipeline_analysisMsms_run_summary[1]

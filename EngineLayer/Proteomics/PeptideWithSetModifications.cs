@@ -12,9 +12,8 @@ namespace EngineLayer
 
         public readonly int numFixedMods;
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;//dictionary of modifications on a peptide the N terminus is index 1
-        // key indicates which residue modification is on (with 1 beign N terminus)
-        public readonly DigestionParams digestionParams;
-            #endregion Public Fields
+        // key indicates which residue modification is on (with 1 being N terminus)
+        #endregion Public Fields
 
         #region Private Fields
 

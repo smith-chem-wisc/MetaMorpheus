@@ -62,24 +62,26 @@ namespace Test
             PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(0, protein1, 1, 9, allModsOneIsNterminus4);
             CompactPeptideBase pep4 = new CompactPeptide(pwsm4, TerminusType.None);
 
+            CommonParameters CommonParameters = new CommonParameters(
+                DigestionParams: new DigestionParams(
+                    MaxMissedCleavages: 0,
+                    MinPeptideLength: 1,
+                    MaxModificationIsoforms: int.MaxValue),
+                ScoreCutoff: 1);
+           
             var newPsms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1, 0,10,0,scan),
-                new PeptideSpectralMatch(pep1, 0,10,0,scan),
-                new PeptideSpectralMatch(pep2, 0,10,0,scan),
-                new PeptideSpectralMatch(pep3, 0,10,0,scan),
-                new PeptideSpectralMatch(pep4, 0,10,0,scan),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan,CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep2, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep3, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep4, 0,10,0,scan,CommonParameters.DigestionParams),
             };
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1, int.MaxValue, int.MaxValue),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+          
 
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine
             (newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
@@ -137,21 +139,18 @@ namespace Test
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
+            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1), ScoreCutoff: 1);
+            
             var newPsms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1, 0,10,0,scan),
-                new PeptideSpectralMatch(pep3, 0,10,0,scan),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep3, 0,10,0,scan, CommonParameters.DigestionParams),
             };
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+           
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
@@ -161,6 +160,7 @@ namespace Test
             }
 
             Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
+
 
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();

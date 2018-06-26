@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.ClassicSearch
-{
+{ 
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
         #region Private Fields
@@ -61,7 +61,7 @@ namespace EngineLayer.ClassicSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("Getting ms2 scans...");
-            
+
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
@@ -74,7 +74,7 @@ namespace EngineLayer.ClassicSearch
             }
 
             Status("Performing classic search...");
-            
+
             if (proteins.Any())
             {
                 Parallel.ForEach(Partitioner.Create(0, proteins.Count), partitionRange =>
@@ -107,7 +107,7 @@ namespace EngineLayer.ClassicSearch
                                     {
                                         if (peptideSpectralMatches[scan.scanIndex] == null)
                                         {
-                                            peptideSpectralMatches[scan.scanIndex] = 
+                                            peptideSpectralMatches[scan.scanIndex] =
                                             new PeptideSpectralMatch(compactPeptide, scan.notch, thisScore, scan.scanIndex, scan.theScan, commonParameters.DigestionParams);
                                         }
                                         else

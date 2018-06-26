@@ -46,7 +46,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static void MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons)
+        public static void MatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, List<double> matchedIonIntensitiesList)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -78,9 +78,11 @@ namespace EngineLayer
             {
                 double currentExperimentalMz = experimental_mzs[experimentalIndex];
                 // If found match
+
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
                     matchedIonMassesList.Add(currentTheoreticalMass);
+                    matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]); 
                     double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
@@ -157,6 +159,7 @@ namespace EngineLayer
                             if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                             {
                                 matchedIonMassesList.Add(currentTheoreticalMass);
+                                matchedIonIntensitiesList.Add(complementaryIntensities[experimentalIndex]);
                                 productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                                 productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
@@ -202,7 +205,7 @@ namespace EngineLayer
             }
         }
 
-        public static double CalculatePeptideScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, double maximumMassThatFragmentIonScoreIsDoubled)
+        public static double CalculatePeptideScore(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, double maximumMassThatFragmentIonScoreIsDoubled)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -390,7 +393,7 @@ namespace EngineLayer
         #endregion Public Methods
 
         #region Protected Methods
-        
+
         protected void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));

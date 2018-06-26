@@ -27,11 +27,8 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false,
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,2147483647,1024,InitiatorMethionineBehavior.Retain)
-                },
+                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+               
                 CalibrationParameters = new CalibrationParameters
                 {
                     WriteIntermediateFiles = true,
@@ -40,18 +37,14 @@ namespace Test
             };
             GptmdTask task2 = new GptmdTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters()
+                
             };
 
             SearchTask task3 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -62,10 +55,8 @@ namespace Test
 
             SearchTask task4 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
@@ -99,7 +90,7 @@ namespace Test
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
 
@@ -128,13 +119,12 @@ namespace Test
             CalibrationTask task1 = new CalibrationTask
             {
                 CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],0,1,2147483647,1024,InitiatorMethionineBehavior.Retain),
-                    ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },
-                    ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModTypesLocalize = GlobalVariables.AllModTypesKnown.ToList(),
-                    ProductMassTolerance = new AbsoluteTolerance(0.01)
-                },
+                (
+                    DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                    ListOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    ProductMassTolerance: new AbsoluteTolerance(0.01)
+                ),
                 CalibrationParameters = new CalibrationParameters
                 {
                     NumFragmentsNeededForEveryIdentification = 6,
@@ -143,18 +133,16 @@ namespace Test
             GptmdTask task2 = new GptmdTask
             {
                 CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]),
-                    ProductMassTolerance = new AbsoluteTolerance(0.01)
-                },
+                (
+                    DigestionParams: new DigestionParams(),
+                    ProductMassTolerance: new AbsoluteTolerance(0.01)
+                ),
             };
 
             SearchTask task3 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -164,10 +152,8 @@ namespace Test
             };
             SearchTask task4 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+                
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
@@ -202,12 +188,12 @@ namespace Test
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             string mzmlName1 = @"ok1.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName1, false);
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             string mzmlName2 = @"ok2.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
@@ -229,13 +215,13 @@ namespace Test
             MetaMorpheusTask task = new SearchTask
             {
                 CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,2),
-                    
-                    ScoreCutoff = 1,
-                    DeconvolutionIntensityRatio = 999,
-                    DeconvolutionMassTolerance = new PpmTolerance(50),
-                },
+                (
+                    DigestionParams : new DigestionParams(MinPeptideLength: 2),
+
+                    ScoreCutoff: 1,
+                    DeconvolutionIntensityRatio: 999,
+                    DeconvolutionMassTolerance : new PpmTolerance(50)
+                ),
                 SearchParameters = new SearchParameters
                 {
                     DecoyType = DecoyType.None,
@@ -314,14 +300,13 @@ namespace Test
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
-                    {
-                        ConserveMemory = false,
-                        DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"], 2,7,int.MaxValue ,1024, InitiatorMethionineBehavior.Retain,2,false,TerminusType.N),
-                        ListOfModsVariable = new List<(string, string)>(),
-                        ListOfModsFixed = new List<(string, string)>(),
-                        ScoreCutoff = 1,
-                        PrecursorMassTolerance = new AbsoluteTolerance(1)
-                    },
+                    (                       
+                        DigestionParams : new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        ListOfModsVariable : new List<(string, string)>(),
+                        ListOfModsFixed : new List<(string, string)>(),
+                        ScoreCutoff : 1,
+                        PrecursorMassTolerance : new AbsoluteTolerance(1)
+                    ),
 
                     GptmdParameters = new GptmdParameters
                     {
@@ -358,7 +343,7 @@ namespace Test
                 PeptideWithSetModifications targetGood = targetDigested[0];
 
                 PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
+                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
 
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
@@ -378,10 +363,10 @@ namespace Test
             SearchTask testPeptides = new SearchTask
             {
                 CommonParameters = new CommonParameters
-                {
-                    ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
-                    DigestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"],2,5)
-                },
+                (
+                    
+                    DigestionParams : new DigestionParams(MinPeptideLength: 5)
+                ),
                 SearchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,
@@ -448,7 +433,7 @@ namespace Test
             Assert.AreEqual(4, setList1.Count);
 
             //Finally Write MZML file
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
@@ -467,7 +452,7 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("Target peptides within 1% FDR: 4"))
+                    if (line.Contains("All target peptides within 1% FDR: 4"))
                     {
                         foundD = true;
                     }

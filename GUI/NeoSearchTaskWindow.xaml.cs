@@ -221,22 +221,12 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
-            if (task.CommonParameters.LocalizeAll)
+            
+            foreach (var heh in localizeModTypeForTreeViewObservableCollection)
             {
-                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
-                {
-                    heh.Use = true;
-                }
+                heh.Use = true;
             }
-            else
-            {
-                foreach (var mod in task.CommonParameters.ListOfModTypesLocalize)
-                {
-                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod));
-                    theModType.Use = true;
-                }
-            }
+            
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
@@ -300,16 +290,10 @@ namespace MetaMorpheusGUI
             #endregion Check Task Validity
 
             #region Save Parameters
-
-            CommonParameters CommonParamsToSave = new CommonParameters
-            {
-                TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask"
-            };
-
+            
             //Code for determining SemiSpecific
             NeoParameters neoParameters = new NeoParameters
             {
-
                 Calibrate = calibrate.IsChecked.Value,
                 GPTMD = gptmd.IsChecked.Value,
                 TargetSearch = searchTarget.IsChecked.Value,
@@ -334,70 +318,69 @@ namespace MetaMorpheusGUI
             if (!searchC.IsChecked.Value)
                 neoParameters.CFilePath = CPath.Text;
 
-            DigestionParams digestionParamsToSave = new DigestionParams((Protease)proteaseComboBox.SelectedItem);
-            digestionParamsToSave.SetMaxMissedCleavages(int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
-            digestionParamsToSave.SetMinPeptideLength(int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            digestionParamsToSave.SetMaxPeptideLength(int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            digestionParamsToSave.SetMaxModificationIsoforms(int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
-            digestionParamsToSave.SetMaxModsForPeptide(int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
-            digestionParamsToSave.SetInitiatorMethionineBehavior((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
-            CommonParamsToSave.DigestionParams = digestionParamsToSave;
+            Protease protease = (Protease)proteaseComboBox.SelectedItem;
+            int MaxMissedCleavages = (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
+            int MinPeptideLength = (int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int MaxPeptideLength = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
+            int MaxModsForPeptide = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
+            InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            DigestionParams digestionParamsToSave = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior, MaxModsForPeptides: MaxModsForPeptide);
 
-            CommonParamsToSave.BIons = bCheckBox.IsChecked.Value;
-            CommonParamsToSave.YIons = yCheckBox.IsChecked.Value;
-            CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
-            CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
             {
-                CommonParamsToSave.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
             else if (productMassToleranceTextBox.Text.Length == 0 || precursorMassToleranceTextBox.Text.Length == 0)
             {
-                CommonParamsToSave.ProductMassTolerance = new PpmTolerance(25);
+                ProductMassTolerance = new PpmTolerance(25);
             }
             else
             {
-                CommonParamsToSave.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-
+            
+            Tolerance PrecursorMassTolerance;
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
             {
-                CommonParamsToSave.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
             else if (productMassToleranceTextBox.Text.Length == 0 || precursorMassToleranceTextBox.Text.Length == 0)
             {
-                CommonParamsToSave.PrecursorMassTolerance = new PpmTolerance(15);
+                PrecursorMassTolerance = new PpmTolerance(15);
             }
             else
             {
-                CommonParamsToSave.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-
+            
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            CommonParamsToSave.ListOfModsVariable = listOfModsVariable;
 
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            CommonParamsToSave.ListOfModsFixed = listOfModsFixed;
 
-            if (localizeAllCheckBox.IsChecked.Value)
+            CommonParameters CommonParamsToSave = new CommonParameters(
+                DigestionParams: digestionParamsToSave,
+                BIons: bCheckBox.IsChecked.Value,
+                YIons: yCheckBox.IsChecked.Value,
+                CIons: cCheckBox.IsChecked.Value,
+                ZdotIons: zdotCheckBox.IsChecked.Value,
+                ProductMassTolerance: ProductMassTolerance, 
+                PrecursorMassTolerance:PrecursorMassTolerance, 
+                ListOfModsFixed: listOfModsFixed, 
+                ListOfModsVariable: listOfModsVariable)
             {
-                CommonParamsToSave.ListOfModTypesLocalize = null;
-                CommonParamsToSave.LocalizeAll = true;
-            }
-            else
-            {
-                CommonParamsToSave.LocalizeAll = false;
-                CommonParamsToSave.ListOfModTypesLocalize = localizeModTypeForTreeViewObservableCollection.Where(b => b.Use.HasValue && b.Use.Value).Select(b => b.DisplayName).ToList();
-            }
-
+                TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask"
+            };
+            
             TheTask.NeoParameters = neoParameters;
             TheTask.CommonParameters = CommonParamsToSave;
 
