@@ -315,7 +315,7 @@ namespace MetaMorpheusGUI
             
             CommonParameters CommonParamsToSave = new CommonParameters(
                 DigestionParams: new DigestionParams(
-                    protease: protease.Name,
+                    protease: protease,
                     MaxMissedCleavages: MaxMissedCleavages,
                     MinPeptideLength: MinPeptideLength,
                     MaxPeptideLength: MaxPeptideLength,

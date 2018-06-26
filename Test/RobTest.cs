@@ -43,7 +43,7 @@ namespace Test
             p.Add(new Protein("-----F----**", "C1", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
             p.Add(new Protein("----E----**", "C2", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
 
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1);
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MinPeptideLength: 1);
 
             foreach (var protein in p)
             {
@@ -236,7 +236,7 @@ namespace Test
             for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString()));
 
-            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
+            DigestionParams digestionParams = new DigestionParams();
             foreach (var protein in p)
             {
                 foreach (var peptide in protein.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
@@ -299,7 +299,7 @@ namespace Test
                 {variableModifications.Last(), 1 }
             };
 
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1);
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 1);
 
             var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep };

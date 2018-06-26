@@ -28,7 +28,7 @@ namespace Test
             List<string> nestedIds = new List<string>();
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
-            DigestionParams digestionParams = new DigestionParams(GlobalVariables.ProteaseDictionary["trypsin"]);
+            DigestionParams digestionParams = new DigestionParams();
             var digested = p.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
 
             PeptideWithSetModifications pep1 = digested[0];

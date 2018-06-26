@@ -414,7 +414,7 @@ namespace MetaMorpheusGUI
             int maxModsForPeptideValue = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             DigestionParams digestionParamsToSave = new DigestionParams(
-                protease: protease.Name,
+                protease: protease,
                 SemiProteaseDigestion: semiProteaseDigestion,
                 TerminusTypeSemiProtease: terminusTypeSemiProtease,
                 MaxMissedCleavages: maxMissedCleavages,

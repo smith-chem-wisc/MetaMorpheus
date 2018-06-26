@@ -13,6 +13,7 @@ namespace EngineLayer
         public readonly int numFixedMods;
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;//dictionary of modifications on a peptide the N terminus is index 1
         // key indicates which residue modification is on (with 1 being N terminus)
+        public DigestionParams digestionParams;
         #endregion Public Fields
 
         #region Private Fields
@@ -24,6 +25,7 @@ namespace EngineLayer
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
         private double? monoisotopicMass;
+        
 
         #endregion Private Fields
 

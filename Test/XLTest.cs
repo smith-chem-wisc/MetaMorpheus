@@ -27,8 +27,7 @@ namespace Test
         {
             var prot = new Protein("MNNNKQQQQ", null);
             Protease protease = new Protease("New Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength:1, InitiatorMethionineBehavior:InitiatorMethionineBehavior.Retain);
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MinPeptideLength:1, InitiatorMethionineBehavior:InitiatorMethionineBehavior.Retain);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();

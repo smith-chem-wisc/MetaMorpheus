@@ -15,7 +15,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-        private DigestionParams DigestionParams { get; set; }
+        private DigestionParams DigestionParam { get; set; }
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
@@ -44,31 +44,13 @@ namespace EngineLayer
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<double>();
-            this.DigestionParams = digestionParams;
-            MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
-            ProductMassErrorDa = new Dictionary<ProductType, double[]>();
-            ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-        }
-        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
-        {
-            this.ScanIndex = scanIndex;
-            this.FullFilePath = scan.FullFilePath;
-            this.ScanNumber = scan.OneBasedScanNumber;
-            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
-            this.ScanRetentionTime = scan.RetentionTime;
-            this.ScanExperimentalPeaks = scan.NumPeaks;
-            this.TotalIonCurrent = scan.TotalIonCurrent;
-            this.ScanPrecursorCharge = scan.PrecursorCharge;
-            this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
-            this.ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch, true);
-            this.AllScores = new List<double>();
-            this.DigestionParams = digestionParams;
+            this.DigestionParam = digestionParams;
             MatchedIonMassesDict = new Dictionary<ProductType, double[]>();
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
+       
         #endregion Public Constructors
 
         #region Public Properties

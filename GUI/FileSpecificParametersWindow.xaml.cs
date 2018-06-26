@@ -257,7 +257,7 @@ namespace MetaMorpheusGUI
             }
 
             DigestionParams digestParams = new DigestionParams(
-                protease: tempProtease.Name, 
+                protease: tempProtease, 
                 MaxMissedCleavages: tempMaxMissedCleavages, 
                 MinPeptideLength: tempMinPeptideLength, 
                 MaxPeptideLength: tempMaxPeptideLength, 

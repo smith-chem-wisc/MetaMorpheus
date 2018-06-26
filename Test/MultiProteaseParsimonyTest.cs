@@ -24,8 +24,10 @@ namespace Test
                 
             IEnumerable<string> sequencesInducingCleavage = new List<string> {  "-" };
             IEnumerable<string> sequencesInducingCleavage2 = new List<string> { "G" };
-           
+
+
             var protease = new Protease("test1", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            
             var protease2 = new Protease("test2", sequencesInducingCleavage2, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             
             var peptideList = new HashSet<PeptideWithSetModifications>();
@@ -35,8 +37,8 @@ namespace Test
             for (int i = 0; i<sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
 
-            DigestionParams digestionParams = new DigestionParams(Protease: protease, MinPeptideLength: 1);
-            DigestionParams digestionParams2 = new DigestionParams(Protease: protease2, MinPeptideLength: 1);
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MinPeptideLength: 1);
+            DigestionParams digestionParams2 = new DigestionParams(protease: protease2, MinPeptideLength: 1);
            
             foreach (var protein in p)
             {
@@ -93,9 +95,9 @@ namespace Test
             // builds psm list to match to peptides
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null, "scan=1");
+            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File");
-          
+
 
             foreach (var kvp in dictionary)
             {

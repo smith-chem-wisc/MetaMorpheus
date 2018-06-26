@@ -47,7 +47,7 @@ namespace EngineLayer
         {
             if (!compactPeptideToProteinPeptideMatching.Values.Any())//if dictionary is empty return an empty list of protein groups
                 return new List<ProteinGroup>();
-            }
+            
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
             if (!treatModPeptidesAsDifferentPeptides)//user want modified and unmodified peptides treated the same
             {

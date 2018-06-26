@@ -25,8 +25,8 @@ namespace Test
         {
             var prot = new Protein("MNNNKQQQQ", null);
             var protease = new Protease("CustomizedProtease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+           
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
 
@@ -216,7 +216,7 @@ namespace Test
             var prot = new Protein("MNNNKQQXQ", null);
             var protease = new Protease("Custom Protease7", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
 
             Assert.AreEqual(2, ye.Count);
@@ -238,7 +238,10 @@ namespace Test
         public static void TestPeptideWithSetModifications()
         {
             var prot = new Protein("M", null);
-            DigestionParams digestionParams = new DigestionParams(protease: "Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModsForPeptides: 3);
+
+            var protease = new Protease("Custom Protease7", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModsForPeptides: 3);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));
@@ -288,7 +291,10 @@ namespace Test
                 {8, new List<Modification> {mod } }
             };
             var prot = new Protein("MNNNNKRRRRR", null, null, null, modDict);
-            DigestionParams digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+
+            var protease = new Protease("Custom Protease7", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var digestList = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             var ok1 = digestList[1];
             var ok2 = digestList[3];
@@ -310,7 +316,10 @@ namespace Test
                 {8, new List<Modification> {mod } }
             };
             var prot = new Protein("MNNNNKRRRRR", null, null, null, modDict, isDecoy: true);
-            DigestionParams digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+
+            var protease = new Protease("Custom Protease7", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
 
             var digestedList = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             var ok1 = digestedList[1];
@@ -336,13 +345,15 @@ namespace Test
         {
             var prot = new Protein("MNNNKQQQQMNNNKQQQQ", null);
 
-            DigestionParams digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            var protease = new Protease("Custom Protease7", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+
+            DigestionParams digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
-            digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var ye1 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
-            digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 1, MaxPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 1, MaxPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var ye2 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
-            digestionParams = new DigestionParams("Custom Protease7", MaxMissedCleavages: 0, MinPeptideLength: 5, MaxPeptideLength: 8, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            digestionParams = new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 5, MaxPeptideLength: 8, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var ye3 = prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             Assert.AreEqual(3, ye.Count);
             Assert.AreEqual(2, ye1.Count);
