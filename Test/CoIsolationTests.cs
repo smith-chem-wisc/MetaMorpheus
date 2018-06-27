@@ -8,6 +8,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
+using System;
 
 namespace Test
 {
@@ -19,7 +20,7 @@ namespace Test
         [Test]
         public static void TestCoIsolation()
         {
-            Protease protease = new Protease("CustProtease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("CustProtease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(ScoreCutoff: 1, DeconvolutionIntensityRatio: 50, DigestionParams: new DigestionParams(protease.Name, MinPeptideLength: 1));
           
