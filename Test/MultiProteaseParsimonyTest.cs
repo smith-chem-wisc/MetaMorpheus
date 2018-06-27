@@ -18,11 +18,11 @@ namespace Test
        public static void MultiProteaseCompactPeptideMatchingTest()
        {
             string[] sequences = {
-                "---ABC",
-                "--EFGABC",
+                "-XYZ--ABC",
+                "-XYZ-EFGABC",
             };
                 
-            IEnumerable<string> sequencesInducingCleavage = new List<string> {  "-" };
+            IEnumerable<string> sequencesInducingCleavage = new List<string> {  "-", "Z" };
             IEnumerable<string> sequencesInducingCleavage2 = new List<string> { "G" };
 
 
@@ -49,6 +49,7 @@ namespace Test
                         
                         case "ABC": peptideList.Add(peptide); break;
                         case "EFGABC": peptideList.Add(peptide); break;
+                        case "XYZ": peptideList.Add(peptide); break;
                         
                         
                         
@@ -60,7 +61,7 @@ namespace Test
                     {
                         
                         case "ABC": peptideList.Add(peptide); break;
-                        case "--EFG": peptideList.Add(peptide); break;
+                        case "-XYZ-EFG": peptideList.Add(peptide); break;
                         
                         
 
@@ -87,9 +88,10 @@ namespace Test
 
             
 
-            dictionary.Add(peptides[0], new HashSet<PeptideWithSetModifications> { PWSM[0], PWSM[3] });
-            dictionary.Add(peptides[1], new HashSet<PeptideWithSetModifications> { PWSM[1] });
-            dictionary.Add(peptides[2], new HashSet<PeptideWithSetModifications> { PWSM[2] });
+            dictionary.Add(peptides[0], new HashSet<PeptideWithSetModifications> { PWSM[0], PWSM[2] });
+            dictionary.Add(peptides[1], new HashSet<PeptideWithSetModifications> { PWSM[1], PWSM[5] });
+            dictionary.Add(peptides[3], new HashSet<PeptideWithSetModifications> { PWSM[3] });
+            dictionary.Add(peptides[4], new HashSet<PeptideWithSetModifications> { PWSM[4] });
 
 
             // builds psm list to match to peptides
@@ -123,10 +125,10 @@ namespace Test
                         case "EFGABC": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams)); break;
 
 
+                        case "XYZ": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams)); break;
 
 
-
-                        case "--EFG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2)); break;
+                        case "-XYZ-EFG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2)); break; 
 
 
 
@@ -162,8 +164,10 @@ namespace Test
           
             List < ProteinGroup > proteinGroups = proteinAnalysisResults.ProteinGroups;
             Assert.AreEqual(2, proteinGroups.Count);
-            Assert.AreEqual(1, proteinGroups.ElementAt(0).AllPeptides.Count);
-            Assert.AreEqual(3, proteinGroups.ElementAt(1).AllPeptides.Count);
+            Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
+            Assert.AreEqual(1, proteinGroups.ElementAt(0).UniquePeptides.Count);
+            Assert.AreEqual(4, proteinGroups.ElementAt(1).AllPeptides.Count);
+            Assert.AreEqual(3, proteinGroups.ElementAt(1).UniquePeptides.Count);
 
 
 
