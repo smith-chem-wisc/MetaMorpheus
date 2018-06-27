@@ -82,18 +82,21 @@ namespace EngineLayer
             double proteinsMatched = 0;
             int oldPercentProgress = 0;
 
-            
-                for (int i =0; i < proteins.Count; i++)
+
+            Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
+            { 
+                for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     foreach (var digestionParam in collectionOfDigestionParams)
                     {
                         foreach (var peptide in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
                         {
                             var compactPeptide = peptide.CompactPeptide(terminusType);
-  
-                            if (compactPeptideToProteinPeptideMatching.ContainsKey(compactPeptide))
+
+                            if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide,out var peptidesWithSetMods))
                             {
-                                compactPeptideToProteinPeptideMatching[compactPeptide].Add(peptide);
+                                lock(peptidesWithSetMods)
+                                peptidesWithSetMods.Add(peptide);
                             }
                         }
                     }
@@ -108,8 +111,8 @@ namespace EngineLayer
                         ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", nestedIds));
                     }
                 }
-           
 
+            });
             #endregion Match Sequences to PeptideWithSetModifications
 
             if (!reportAllAmbiguity)
