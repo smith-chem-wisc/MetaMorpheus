@@ -30,15 +30,7 @@ namespace EngineLayer
         #endregion Private Fields
 
         #region Public Constructors
-
-        public PeptideWithSetModifications(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription, int missedCleavages, 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-            : base(protein, oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, peptideDescription)
-        {
-            this.allModsOneIsNterminus = allModsOneIsNterminus;
-            this.numFixedMods = numFixedMods;
-        }
-
+               
         public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) 
             : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein,
                   everythingElseFromThisOne.MissedCleavages, everythingElseFromThisOne.PeptideDescription)
