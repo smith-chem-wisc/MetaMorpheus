@@ -426,7 +426,7 @@ namespace EngineLayer
                 (new StringBuilder(), "F5", "Matched Ion Mass-To-Charge Ratios"),
                 (new StringBuilder(), "F5", "Matched Ion Mass Diff (Da)"),
                 (new StringBuilder(), "F2", "Matched Ion Mass Diff (Ppm)"),
-                (new StringBuilder(), "F5", "Matched Ion Intensities")
+                (new StringBuilder(), "F0", "Matched Ion Intensities")
             };
 
             const string blankEntry = " "; //the space prevents sorting issues in excel
@@ -455,7 +455,7 @@ namespace EngineLayer
 
                     //Ion series
                     string[] seriesToWrite = peptide.MatchedIonSeriesDict[productType].Select(x => ionType + x.ToString() + "+1").ToArray(); //assumes charge of +1
-                    seriesStringBuilder.Append("[" + string.Join(delimiter, seriesToWrite) + "]");
+                    seriesStringBuilder.Append("[" + string.Join(delimiter, seriesToWrite) + "];");
 
                     //All other data present in dictionary
                     //add bracket to the beginning of each stringbuilder in the dictionary for this product type
