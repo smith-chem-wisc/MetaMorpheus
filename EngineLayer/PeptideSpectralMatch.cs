@@ -420,30 +420,84 @@ namespace EngineLayer
 
         private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
         {
-            string matchedIonSeries = " ";
-            string matchedIonCounts = " ";
-            string matchedIonMassToChargeRatios = " ";
-            string matchedIonDiffDa = " ";
-            string matchedIonDiffPpm = " ";
-            string matchedIonIntensities = " ";
             if (peptide != null && peptide.MatchedIonMassToChargeRatioDict.Any())
             {
                 //Count
-                matchedIonCounts = string.Join(";", peptide.MatchedIonMassToChargeRatioDict.Select(b => b.Value.Count(c => c > 0)));
+                //matchedIonCounts = string.Join(";", peptide.MatchedIonMassToChargeRatioDict.Select(b => b.Value.Count(c => c > 0)));
+
+                StringBuilder seriesStringBuilder = new StringBuilder();
+                Dictionary<Dictionary<ProductType,double[]>, StringBuilder> peptideInfoToStringBuilderDict = new Dictionary<Dictionary<ProductType, double[]>, StringBuilder> //allows for easy iteration over the series
+                {
+                    { peptide.MatchedIonMassToChargeRatioDict, new StringBuilder() },
+                    { peptide.ProductMassErrorDa, new StringBuilder() },
+                    { peptide.ProductMassErrorPpm, new StringBuilder() },
+                    { peptide.MatchedIonIntensitiesDict, new StringBuilder() }
+                };
+                
+                foreach (ProductType productType in peptide.MatchedIonSeriesDict.Keys)
+                {
+                    string ionType = productType.ToString()[0].ToString().ToLower(); //gets the first char of the type (ie b, y, c, z)
+
+                    //Ion series
+                    string[] seriesToWrite = peptide.MatchedIonSeriesDict[productType].Select(x => ionType + x.ToString() + "+1").ToArray(); //assumes charge of +1
+                    seriesStringBuilder.Append("[" + string.Join(", ", seriesToWrite) + "]");
+
+                    foreach (var kvp in peptideInfoToStringBuilderDict) //add bracket to the beginning of each
+                    {
+                        kvp.Value.Append("[");
+                    }
+                    
+
+
+                    for(int i=0; i<seriesForProductType.Length; i++)
+                    {
+                        string seriesToWrite = ionType + seriesForProductType[i].ToString() + "+1"; //assumes charge of +1;
+                        sbTemp.Append("[" + string.Join(",", tempSeries) + "];");
+
+                        foreach (var kvp in peptideInfoToStringBuilderDict)
+                        {
+                            string stringToAppend = i != seriesForProductType.Length - 1 ?
+                                seriesToWrite + ":" + kvp.Value[i] + ", " :
+                                seriesToWrite + ":" + kvp.Value[i];
+                            kvp.Value.Append(stringToAppend);
+                        }
+                    }
+
+                    foreach (var kvp in peptideInfoToStringBuilderDict) //add bracket to the end of each
+                    {
+                        kvp.Value.Append("]");
+                    }
+
+
+                    sbTemp.Append("[" + string.Join(",", tempSeries) + "];");
+
+                }
 
                 //Ion series
                 StringBuilder sbTemp = new StringBuilder();
-                foreach (var kvp in peptide.MatchedIonSeriesDict)
+
+                //generate ion series found
+                Dictionary<ProductType, string[]> ionSeriesToWrite = new Dictionary<ProductType, string[]>(); ;
+                foreach (var kvp in peptide.MatchedIonSeriesDict) //assume all Dicts have the same keys
                 {
+                    string[] tempSeries = new string[kvp.Value.Length];
                     string ionType = kvp.Key.ToString()[0].ToString().ToLower();
-                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => ionType + b.ToString() + "+1")) + "];");
+
+                    for (int i = 0; i < tempSeries.Length; i++)
+                    {
+                        tempSeries[i] = ionType + kvp.Value[i].ToString() + "+1"; //assumes charge of +1
+                    }
+
+                    ionSeriesToWrite.Add(kvp.Key, tempSeries);
+                    sbTemp.Append("[" + string.Join(",", tempSeries) + "];");
                 }
                 matchedIonSeries = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
 
                 //Mass to charge ratios
                 sbTemp.Clear();
                 foreach (var kvp in peptide.MatchedIonMassToChargeRatioDict)
-                {
+                { string[] tempSeries = kvp
+
                     sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
                 }
                 matchedIonMassToChargeRatios = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
@@ -472,12 +526,15 @@ namespace EngineLayer
                 }
                 matchedIonIntensities = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
             }
-            s["Matched Ion Counts"] = matchedIonCounts;
-            s["Matched Ion Series"] = matchedIonSeries;
-            s["Matched Ion Mass-To-Charge Ratios"] = matchedIonMassToChargeRatios;
-            s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
-            s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
-            s["Matched Ion Intensities"] = matchedIonIntensities;
+            else
+            {
+                s["Matched Ion Counts"] = matchedIonCounts;
+                s["Matched Ion Series"] = matchedIonSeries;
+                s["Matched Ion Mass-To-Charge Ratios"] = matchedIonMassToChargeRatios;
+                s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
+                s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
+                s["Matched Ion Intensities"] = matchedIonIntensities;
+            }
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
