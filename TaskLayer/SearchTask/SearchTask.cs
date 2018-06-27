@@ -37,7 +37,6 @@ namespace TaskLayer
 
         #region Public Methods
 
-
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
             switch (massDiffAcceptorType)
