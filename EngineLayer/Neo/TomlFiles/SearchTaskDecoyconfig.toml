@@ -42,7 +42,6 @@ ZdotIons = false
 CIons = false
 ProductMassTolerance = "±25.0000 PPM"
 PrecursorMassTolerance = "±15.0000 PPM"
-ConserveMemory = true
 ScoreCutoff = 5.0
 ReportAllAmbiguity = true
 ExcelCompatible = true

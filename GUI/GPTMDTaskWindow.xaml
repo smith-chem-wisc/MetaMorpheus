@@ -269,7 +269,7 @@
                 <GroupBox Header="G-PTM-D Modifications" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                     <GroupBox.ToolTip>
                         <TextBlock>
-                            Use for all mods that are possibly occuring in vivo (the more the merrier!)
+                            Use for all mods that are possibly occuring biologically or experimentally
                             <LineBreak/>
                             G-PTM-D will search the database and use characteristic precursor mass-differences to identify these PTMs.
                         </TextBlock>

@@ -55,7 +55,7 @@ namespace Test
             {
                 {ps.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ ps} }
             };
-
+            
             newPsm.MatchToProteinLinkedPeptides(matching);
 
             LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);

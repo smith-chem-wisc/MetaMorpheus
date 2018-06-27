@@ -48,6 +48,8 @@ namespace Test
             {
                 {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
+
+           
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
             newPsm.MatchToProteinLinkedPeptides(matching);
@@ -89,6 +91,8 @@ namespace Test
             {
                 {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
+
+          
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
