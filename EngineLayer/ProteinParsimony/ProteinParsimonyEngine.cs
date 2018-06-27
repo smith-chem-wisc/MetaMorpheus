@@ -143,25 +143,13 @@ namespace EngineLayer
                else
                {
                     PeptideWithSetModifications[] peptides = new PeptideWithSetModifications[kvp.Value.Count];
-                    int i = 0;
+                   
                     foreach (var peptide in kvp.Value)
                     {
-                        peptides[i] = peptide;
-                        i++;
-                    }
-
-                    foreach (var peptide in kvp.Value)
-                    {
-                        Protease protease = peptide.digestionParams.Protease;
-                        int j = 0;
-                        foreach (var pep in kvp.Value)
-                        {
-                            if (protease == pep.digestionParams.Protease)
-                            {
-                                j++;
-                            }
-                        }
-                        if (j == 1)
+                       
+                        int sameProteaseCount = kvp.Value.Count(v =>v.digestionParams.Protease == peptide.digestionParams.Protease);
+                        
+                        if (sameProteaseCount == 1)
                         {
                             if (!proteinsWithUniquePeptides.TryGetValue(peptide.Protein, out HashSet<PeptideWithSetModifications> peps))
                                 proteinsWithUniquePeptides.Add(peptide.Protein, new HashSet<PeptideWithSetModifications> { peptide });
