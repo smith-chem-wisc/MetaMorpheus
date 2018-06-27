@@ -13,8 +13,9 @@ namespace EngineLayer
         #region Private Fields
 
         private readonly bool treatModPeptidesAsDifferentPeptides;
-        private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         //dictionary with key being object contianing mass of the compact peptide and value being a hasset of peptides with set modifications having that mass
+        private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+        
         #endregion Private Fields
 
         #region Public Constructors
