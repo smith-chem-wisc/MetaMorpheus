@@ -210,8 +210,6 @@ namespace Test
         {
             List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
             var prot = new Protein("MNNNKQQQQ", null, null, null, new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(5, 6, "lala") });
-            var protease = new Protease("Custom Protease", null, null, CleavageSpecificity.None, null, null, null);
-
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 5);
             var ye = prot.Digest(digestionParams, fixedModifications, new List<ModificationWithMass>()).ToList();
 
@@ -266,7 +264,6 @@ namespace Test
         public static void TestPeptideWithFixedModifications()
         {
             var prot = new Protein("M", null);
-            var protease = new Protease("Custom Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             List<ModificationWithMass> fixedMods = new List<ModificationWithMass>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             fixedMods.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass));

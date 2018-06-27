@@ -465,7 +465,7 @@ namespace EngineLayer
             s["Matched Ion Masses"] = matchedIonMasses;
             s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
             s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
-            s["Matched Ion Intesities"] = matchedIonIntensities; 
+            s["Matched Ion Intensities"] = matchedIonIntensities; 
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)

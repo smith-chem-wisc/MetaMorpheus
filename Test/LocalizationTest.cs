@@ -30,7 +30,6 @@ namespace Test
         [Test]
         public static void TestLocalization()
         {
-            var protease = new Protease("Custom Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", null);
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);

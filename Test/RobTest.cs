@@ -229,7 +229,6 @@ namespace Test
             // creates some test proteins, digest, and fragment
             string[] sequences = { "GLSDGEWQQVLNVWGK" }; // just one peptide
 
-            var protease = new Protease("tryp", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             var peptides = new HashSet<PeptideWithSetModifications>();
 
             var p = new List<Protein>();

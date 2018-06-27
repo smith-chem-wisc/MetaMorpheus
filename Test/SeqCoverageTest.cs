@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
@@ -108,20 +107,6 @@ namespace Test
         {
             Protein ParentProtein = new Protein("MOAT", "accession1");
 
-            SearchTask task1 = new SearchTask
-            {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
-                SearchParameters = new SearchParameters
-                {
-                    DoParsimony = true,
-                    SearchTarget = true,
-                    SearchType = SearchType.Modern
-                }
-            };
-
             var protease = new Protease("TestProtease1", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("O", TerminusType.C), new Tuple<string, TerminusType>("T", TerminusType.N) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             DigestionParams multiProtease = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
@@ -138,22 +123,6 @@ namespace Test
         {
             Protein ParentProtein = new Protein("MOAT", "accession1");
 
-            SearchTask task1 = new SearchTask
-            {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
-                SearchParameters = new SearchParameters
-                {
-                    DoParsimony = true,
-                    SearchTarget = true,
-                    SearchType = SearchType.Modern
-                }
-            };
-
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             var protease = new Protease("TestProtease2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("O", TerminusType.C), new Tuple<string, TerminusType>("T", TerminusType.N) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             DigestionParams multiProtease = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 1, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
@@ -172,22 +141,6 @@ namespace Test
         {
             Protein ParentProtein = new Protein("MOAT", "accession1");
 
-            SearchTask task1 = new SearchTask
-            {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
-                SearchParameters = new SearchParameters
-                {
-                    DoParsimony = true,
-                    SearchTarget = true,
-                    SearchType = SearchType.Modern
-                }
-            };
-
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             var protease = new Protease("TestProtease3", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("O", TerminusType.C), new Tuple<string, TerminusType>("T", TerminusType.N) }, new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("A", TerminusType.C) }, CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             DigestionParams multiProtease = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
