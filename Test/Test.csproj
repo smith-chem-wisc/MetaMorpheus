@@ -42,6 +42,9 @@
     <None Update="SlicedSearchTaskConfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\DoubleProtease.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\gapdh.fa.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

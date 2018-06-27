@@ -712,7 +712,7 @@ namespace MetaMorpheusGUI
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
         }
-
+        
         #endregion Private Methods
 
     }

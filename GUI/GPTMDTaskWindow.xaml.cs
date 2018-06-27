@@ -357,7 +357,7 @@ namespace MetaMorpheusGUI
             return Array.TrueForAll(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
-
+        
         #endregion Private Methods
     }
 }
