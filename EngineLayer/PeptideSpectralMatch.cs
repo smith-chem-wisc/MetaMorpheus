@@ -15,7 +15,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-        private DigestionParams DigestionParam { get; set; }
+        
 
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
@@ -45,7 +45,7 @@ namespace EngineLayer
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<double>();
-            this.DigestionParam = digestionParams;
+            this.DigestionParams = digestionParams;
             MatchedIonMassesDict = new Dictionary<ProductType, double[]>();
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
