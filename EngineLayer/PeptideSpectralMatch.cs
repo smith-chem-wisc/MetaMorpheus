@@ -442,9 +442,9 @@ namespace EngineLayer
                     = new Dictionary<Dictionary<ProductType, double[]>, (StringBuilder sb, string format, string header)>
                 {
                     { peptide.MatchedIonMassToChargeRatioDict,  matchedIonInfo[0]},
-                    { peptide.ProductMassErrorDa, matchedIonInfo[0] },
-                    { peptide.ProductMassErrorPpm, matchedIonInfo[0] },
-                    { peptide.MatchedIonIntensitiesDict, matchedIonInfo[0] }
+                    { peptide.ProductMassErrorDa, matchedIonInfo[1] },
+                    { peptide.ProductMassErrorPpm, matchedIonInfo[2] },
+                    { peptide.MatchedIonIntensitiesDict, matchedIonInfo[3] }
                 };
 
                 const string delimiter = ", "; //using ", " instead of "," improves human readability
@@ -488,7 +488,7 @@ namespace EngineLayer
                         kvp.Value.sb.Append("];");
                     }
                 }
-                ionCounts = "[" + string.Join(";", peptide.MatchedIonMassToChargeRatioDict.Select(b => b.Value.Count(c => c > 0))) + "]";
+                ionCounts = string.Join(";", peptide.MatchedIonMassToChargeRatioDict.Select(b => b.Value.Count(c => c > 0)));
                 ionSeries = "[" + GlobalVariables.CheckLengthOfOutput(seriesStringBuilder.ToString()) + "]";
             }
             else
