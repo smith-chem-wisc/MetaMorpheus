@@ -43,34 +43,40 @@
     <None Update="Mods\aListOfmods.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Mods\CommonArtifacts.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Mods\CommonBiological.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Mods\Crosslink.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\detachers.txt">
+    <None Update="Mods\Detachers.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\glyco.txt">
+    <None Update="Mods\Glyco.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\fallOff.txt">
+    <None Update="Mods\FallOff.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\missing.txt">
+    <None Update="Mods\Missing.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Mods\Mods.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\RNA.txt">
+    <None Update="Mods\Rna.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\substitutions.txt">
+    <None Update="Mods\Substitutions.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\surfactants.txt">
+    <None Update="Mods\Surfactants.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\tmt.txt">
+    <None Update="Mods\Tmt.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Neo\Data\amino_acids.tsv">
