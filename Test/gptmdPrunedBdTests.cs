@@ -50,7 +50,7 @@ namespace Test
             //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
                 // all proteins in DB have baseSequence!=null (not ambiguous)
                 // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(proteins.Count(),20);
+            Assert.AreEqual(proteins.Count(),18); //used to be 20 before I changed the list of mods
             int totalNumberOfMods = 0;
             foreach (Protein p in proteins)
             {
