@@ -164,10 +164,28 @@ namespace Test
           
             List < ProteinGroup > proteinGroups = proteinAnalysisResults.ProteinGroups;
             Assert.AreEqual(2, proteinGroups.Count);
+
             Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
             Assert.AreEqual(1, proteinGroups.ElementAt(0).UniquePeptides.Count);
+            Assert.AreEqual("XYZ", proteinGroups.ElementAt(0).AllPeptides.ElementAt(0).BaseSequence);
+            Assert.AreEqual("test1", proteinGroups.ElementAt(0).AllPeptides.ElementAt(0).digestionParams.Protease.Name);
+            Assert.AreEqual("ABC", proteinGroups.ElementAt(0).AllPeptides.ElementAt(1).BaseSequence);
+            Assert.AreEqual("test1", proteinGroups.ElementAt(0).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
+            Assert.AreEqual("ABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).BaseSequence);
+                        
             Assert.AreEqual(4, proteinGroups.ElementAt(1).AllPeptides.Count);
             Assert.AreEqual(3, proteinGroups.ElementAt(1).UniquePeptides.Count);
+            Assert.AreEqual("XYZ", proteinGroups.ElementAt(1).AllPeptides.ElementAt(0).BaseSequence);
+            Assert.AreEqual("test1", proteinGroups.ElementAt(1).AllPeptides.ElementAt(0).digestionParams.Protease.Name);
+            Assert.AreEqual("ABC", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).BaseSequence);
+            Assert.AreEqual("test2", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
+            Assert.AreEqual("EFGABC", proteinGroups.ElementAt(1).AllPeptides.ElementAt(2).BaseSequence);
+            Assert.AreEqual("test1", proteinGroups.ElementAt(1).AllPeptides.ElementAt(2).digestionParams.Protease.Name);
+            Assert.AreEqual("-XYZ-EFG", proteinGroups.ElementAt(1).AllPeptides.ElementAt(3).BaseSequence);
+            Assert.AreEqual("test2", proteinGroups.ElementAt(1).AllPeptides.ElementAt(3).digestionParams.Protease.Name);
+            Assert.AreEqual("ABC", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).BaseSequence);
+            Assert.AreEqual("EFGABC", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(1).BaseSequence);
+            Assert.AreEqual("-XYZ-EFG", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(2).BaseSequence);
 
 
 
