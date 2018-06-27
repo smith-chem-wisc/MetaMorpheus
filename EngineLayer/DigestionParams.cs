@@ -18,23 +18,15 @@ namespace EngineLayer
 
         // this parameterless constructor needs to exist to read the toml. 
         // if you can figure out a way to get rid of it, feel free...
-        public DigestionParams() : this(GlobalVariables.ProteaseDictionary["trypsin"])
+        public DigestionParams() : this("trypsin")
         {
 
         }
 
-        public DigestionParams(Protease protease = null, int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
+        public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
             InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
-        {
-            if (protease == null)
-            {
-                this.Protease = GlobalVariables.ProteaseDictionary["trypsin"];
-            }
-            else
-            {
-                this.Protease = protease;
-            }
-                
+        {            
+            this.Protease = GlobalVariables.ProteaseDictionary[protease];           
             this.MaxMissedCleavages = MaxMissedCleavages;
             this.MinPeptideLength = MinPeptideLength;
             this.MaxPeptideLength = MaxPeptideLength;
@@ -43,7 +35,6 @@ namespace EngineLayer
             this.MaxModsForPeptide = MaxModsForPeptides;
             this.SemiProteaseDigestion = SemiProteaseDigestion;
             this.TerminusTypeSemiProtease = TerminusTypeSemiProtease;
-           
         }
 
         #endregion Public Constructors

@@ -17,6 +17,7 @@ namespace EngineLayer
         private const double tolForDoubleResolution = 1e-6;
         private DigestionParams DigestionParam { get; set; }
 
+
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields

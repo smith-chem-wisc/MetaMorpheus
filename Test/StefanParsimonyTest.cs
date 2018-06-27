@@ -27,14 +27,14 @@ namespace Test
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
 
             Protease protease = new Protease("kprotease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             // modified version of protein
             var protein1 = new Protein("PEPTIDEM", "accession1");
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams(protease: protease, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams(protease: protease, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence.Equals(pep2.Sequence));
@@ -75,7 +75,7 @@ namespace Test
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
             Protease protease = new Protease("k Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
 
             // modified version of protein
@@ -83,8 +83,8 @@ namespace Test
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams(protease: protease, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams(protease: protease, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence.Equals(pep2.Sequence));
@@ -127,14 +127,14 @@ namespace Test
 
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
             Protease protease = new Protease("k protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-           
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             // modified version of protein
             var protein1 = new Protein("PEPTIDEM", "accession1");
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams(protease, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams(protease, MinPeptideLength: 1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams(protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease.Name, MinPeptideLength: 1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence != pep2.Sequence);
@@ -170,15 +170,15 @@ namespace Test
 
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
             Protease protease = new Protease("kProtease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
 
             // modified version of protein
             var protein1 = new Protein("PEPTIDEM", "accession1");
             // unmodified version of protein
             var protein2 = new Protein("YYYKPEPTIDEM", "accession2");
 
-            var pep1 = protein1.Digest(new DigestionParams(protease: protease, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
-            var pep2 = protein2.Digest(new DigestionParams(protease: protease, MinPeptideLength: 1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
+            var pep1 = protein1.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass> { mod }, new List<ModificationWithMass>()).First();
+            var pep2 = protein2.Digest(new DigestionParams(protease: protease.Name, MinPeptideLength: 1), new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList()[1];
 
             // check to make sure mod is present
             Assert.That(pep1.Sequence != pep2.Sequence);

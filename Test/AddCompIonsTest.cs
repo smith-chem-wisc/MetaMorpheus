@@ -41,8 +41,8 @@ namespace Test
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             Protease protease = new Protease("Custom Protease3", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            
-            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease, MaxMissedCleavages: 0, MinPeptideLength: 1), ScoreCutoff: 1);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1), ScoreCutoff: 1);
            
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -94,8 +94,8 @@ namespace Test
                 SearchTarget = true,
             };
             Protease protease = new Protease("singleN4", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-           
-            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease, MinPeptideLength: 1), ScoreCutoff: 1);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1), ScoreCutoff: 1);
            
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 
                 new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
