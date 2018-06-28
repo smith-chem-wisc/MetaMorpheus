@@ -37,8 +37,10 @@ namespace Test
                 i++;
             }
             
+
             Protease p = new Protease("Custom Protease2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(p.Name,p);
+
             CommonParameters CommonParameters = new CommonParameters(ScoreCutoff: 1, DigestionParams: new DigestionParams(protease: p.Name, MinPeptideLength: 1));
            
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
