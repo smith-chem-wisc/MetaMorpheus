@@ -95,3 +95,22 @@ PP   Anywhere.
 MT   Artifact
 CF   H1 C1 N1 O1
 //
+ID   Oxidation
+MT   Artifact
+TG   W
+PP   Anywhere.
+CF   O1
+MM   15.994915
+//
+ID   Dioxidation
+TG   W
+PP   Anywhere.
+MT   Artifact
+CF   O2
+//
+ID   Carboxymethylation
+TG   C
+PP   Anywhere.
+MT   Artifact
+CF   H2 C2 O2
+//
