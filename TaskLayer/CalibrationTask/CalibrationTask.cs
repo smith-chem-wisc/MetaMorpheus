@@ -128,7 +128,7 @@ namespace TaskLayer
                     {
                         break;
                     }
-                    
+
                     if (i == 1) // failed round 1
                     {
                         this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(20));
@@ -298,11 +298,9 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
         {
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
-            MassDiffAcceptor searchMode;
-            if (initPrecTol is PpmTolerance)
-                searchMode = new SinglePpmAroundZeroSearchMode(initPrecTol.Value);
-            else
-                searchMode = new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
+            MassDiffAcceptor searchMode = initPrecTol is PpmTolerance ?
+                (MassDiffAcceptor)new SinglePpmAroundZeroSearchMode(initPrecTol.Value) :
+                new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
             if (combinedParameters.BIons)
@@ -318,30 +316,34 @@ namespace TaskLayer
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
-            List<ProductType> lp = new List<ProductType>();
+            List<ProductType> productTypes = new List<ProductType>();
             if (combinedParameters.BIons)
-                lp.Add(ProductType.B);
+                productTypes.Add(ProductType.B);
             if (combinedParameters.YIons)
-                lp.Add(ProductType.Y);
+                productTypes.Add(ProductType.Y);
             if (combinedParameters.CIons)
-                lp.Add(ProductType.C);
+                productTypes.Add(ProductType.C);
             if (combinedParameters.ZdotIons)
-                lp.Add(ProductType.Zdot);
+                productTypes.Add(ProductType.Zdot);
 
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, false, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productTypes, searchMode, false, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
 
             var compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
-                (allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams },
+                (allPsms, proteinList, fixedModifications, variableModifications, productTypes, new List<DigestionParams> { combinedParameters.DigestionParams },
                 combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
-            
+
             foreach (var huh in allPsms)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
@@ -354,25 +356,26 @@ namespace TaskLayer
                 return new DataPointAquisitionResults(null, new List<PeptideSpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             }
 
-            var dissociationTypes = MetaMorpheusEngine.DetermineDissociationType(lp);
             foreach (var psm in allPsms)
             {
                 var theScan = myMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 double thePrecursorMass = psm.ScanPrecursorMass;
 
-                foreach (var huh in lp)
+                foreach (ProductType productType in productTypes)
                 {
-                    var ionMasses = psm.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
+                    var ionMasses = psm.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { productType });
                     Array.Sort(ionMasses);
-                    List<double> matchedIonMassesList = new List<double>();
+                    List<int> matchedIonSeriesList = new List<int>();
+                    List<double> matchedIonMassToChargeRatioList = new List<double>();
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
                     List<double> matchedIonIntensitiesList = new List<double>();
-                    LocalizationEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, false, matchedIonIntensitiesList);
-                    double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    psm.MatchedIonMassesDict.Add(huh, matchedIonMassesOnlyMatches);
-                    psm.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
-                    psm.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
+                    MetaMorpheusEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensitiesList, thePrecursorMass, productType, false);
+                    psm.MatchedIonSeriesDict.Add(productType, matchedIonSeriesList.ToArray());
+                    psm.MatchedIonMassToChargeRatioDict.Add(productType, matchedIonMassToChargeRatioList.ToArray());
+                    psm.ProductMassErrorDa.Add(productType, productMassErrorDaList.ToArray());
+                    psm.ProductMassErrorPpm.Add(productType, productMassErrorPpmList.ToArray());
+                    psm.MatchedIonIntensitiesDict.Add(productType, matchedIonIntensitiesList.ToArray());
                 }
             }
 
