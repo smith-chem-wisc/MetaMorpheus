@@ -14,7 +14,7 @@ namespace EngineLayer
         None
     }
 
-    public class ProductTypeMethod
+    public static class ProductTypeMethod
     {
         #region Public Methods
 
