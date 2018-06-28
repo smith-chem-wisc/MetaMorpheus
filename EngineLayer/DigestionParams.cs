@@ -25,7 +25,7 @@ namespace EngineLayer
 
         public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
             InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
-        {            
+        {       
             this.Protease = GlobalVariables.ProteaseDictionary[protease];           
             this.MaxMissedCleavages = MaxMissedCleavages;
             this.MinPeptideLength = MinPeptideLength;

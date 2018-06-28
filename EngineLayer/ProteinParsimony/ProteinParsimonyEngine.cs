@@ -50,8 +50,9 @@ namespace EngineLayer
         private List<ProteinGroup> ApplyProteinParsimony()
         {
             if (!compactPeptideToProteinPeptideMatching.Values.Any())//if dictionary is empty return an empty list of protein groups
+            {
                 return new List<ProteinGroup>();
-            
+            }
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
             if (!treatModPeptidesAsDifferentPeptides)//user want modified and unmodified peptides treated the same
             {
@@ -118,8 +119,6 @@ namespace EngineLayer
 
             // peptide matched to fullseq (used depending on user preference)
             var compactPeptideToFullSeqMatch = compactPeptideToProteinPeptideMatching.ToDictionary(x => x.Key, x => x.Value.First().Sequence);
-
-                      
             
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {

@@ -15,8 +15,6 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-        
-
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
@@ -26,7 +24,6 @@ namespace EngineLayer
 
         public const double tolForScoreDifferentiation = 1e-9;
         
-
         #endregion Public Fields
 
         #region Public Constructors
@@ -51,7 +48,6 @@ namespace EngineLayer
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
-       
         #endregion Public Constructors
 
         #region Public Properties
