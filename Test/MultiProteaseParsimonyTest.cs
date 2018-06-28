@@ -13,80 +13,80 @@ namespace Test
     [TestFixture]
     class MultiProteaseParsimonyTest
     {
-     
-       [Test]
-       public static void MultiProteaseUniqueTest()
-       {
+
+        [Test]
+        public static void MultiProteaseUniqueTest()
+        {
             string[] sequences = {
                 "-XYZ--ABC",
                 "-XYZ-EFGABC",
             };
-                
-            IEnumerable<string> sequencesInducingCleavage = new List<string> {  "-", "Z" };
-            IEnumerable<string> sequencesInducingCleavage2 = new List<string> { "G" };
+
+            List<Tuple<string,TerminusType>> sequencesInducingCleavage = new List <Tuple<string, TerminusType>> {new Tuple<string,TerminusType>( "-", TerminusType.C), new Tuple<string, TerminusType>("Z", TerminusType.C)};
+            List<Tuple<string,TerminusType>> sequencesInducingCleavage2 = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C)};
 
 
-            var protease = new Protease("test1", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("test1", sequencesInducingCleavage, new List<Tuple<string,TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("test2", sequencesInducingCleavage2, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("test2", sequencesInducingCleavage2, new List<Tuple<string,TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease2.Name, protease2);
             var peptideList = new HashSet<PeptideWithSetModifications>();
-           
+
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
-            for (int i = 0; i<sequences.Length; i++)
+            for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
 
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1);
             DigestionParams digestionParams2 = new DigestionParams(protease: protease2.Name, MinPeptideLength: 1);
-           
+
             foreach (var protein in p)
             {
                 foreach (var peptide in protein.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
                 {
                     switch (peptide.BaseSequence)
                     {
-                        
+
                         case "ABC": peptideList.Add(peptide); break;
                         case "EFGABC": peptideList.Add(peptide); break;
                         case "XYZ": peptideList.Add(peptide); break;
-                        
-                        
-                        
+
+
+
                     }
                 }
                 foreach (var peptide in protein.Digest(digestionParams2, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
                 {
                     switch (peptide.BaseSequence)
                     {
-                        
+
                         case "ABC": peptideList.Add(peptide); break;
                         case "-XYZ-EFG": peptideList.Add(peptide); break;
-                        
-                        
+
+
 
                     }
                 }
-                
+
             }
 
             // creates the initial dictionary of "peptide" and "virtual peptide" matches
             var dictionary = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             CompactPeptide[] peptides = new CompactPeptide[peptideList.Count];
-            
-            PeptideWithSetModifications[] PWSM= new PeptideWithSetModifications[peptideList.Count];
+
+            PeptideWithSetModifications[] PWSM = new PeptideWithSetModifications[peptideList.Count];
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
 
             // creates peptide list
-            for (int i = 0; i<peptideList.Count; i++)
+            for (int i = 0; i < peptideList.Count; i++)
             {
                 peptides[i] = new CompactPeptide(peptideList.ElementAt(i), TerminusType.None);
                 PWSM[i] = peptideList.ElementAt(i);
             }
 
 
-            
+
 
             dictionary.Add(peptides[0], new HashSet<PeptideWithSetModifications> { PWSM[0], PWSM[2] });
             dictionary.Add(peptides[1], new HashSet<PeptideWithSetModifications> { PWSM[1], PWSM[5] });
@@ -128,7 +128,7 @@ namespace Test
                         case "XYZ": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams)); break;
 
 
-                        case "-XYZ-EFG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2)); break; 
+                        case "-XYZ-EFG": psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2)); break;
 
 
 
@@ -136,7 +136,7 @@ namespace Test
                 }
             }
 
-            
+
             List<ProductType> IonTypes = new List<ProductType>();
             ProductType BnoB1ions = ProductType.BnoB1ions;
             ProductType Yions = ProductType.Y;
@@ -146,7 +146,7 @@ namespace Test
             HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
             digestionParamsList.Add(digestionParams);
             digestionParamsList.Add(digestionParams2);
-           // digestionParamsList.Add(digestionParams3);
+            // digestionParamsList.Add(digestionParams3);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             ModificationWithMass mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
             List<ModificationWithMass> modVarList = new List<ModificationWithMass> { mod };
@@ -163,12 +163,12 @@ namespace Test
             Assert.AreEqual(2, CompactPeptidesToProteinPeptidesMatching.ElementAt(0).Value.Count);
             Assert.AreEqual("XYZ", CompactPeptidesToProteinPeptidesMatching.ElementAt(0).Value.ElementAt(0).BaseSequence);
             Assert.AreEqual("XYZ", CompactPeptidesToProteinPeptidesMatching.ElementAt(0).Value.ElementAt(1).BaseSequence);
-           
+
 
             Assert.AreEqual(2, CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.Count);
             Assert.AreEqual("ABC", CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.ElementAt(0).BaseSequence);
             Assert.AreEqual("ABC", CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.ElementAt(1).BaseSequence);
-            
+
 
             Assert.AreEqual(1, CompactPeptidesToProteinPeptidesMatching.ElementAt(2).Value.Count);
             Assert.AreEqual("EFGABC", CompactPeptidesToProteinPeptidesMatching.ElementAt(2).Value.ElementAt(0).BaseSequence);
@@ -181,8 +181,8 @@ namespace Test
 
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, digestionParamsList, false, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
-          
-            List < ProteinGroup > proteinGroups = proteinAnalysisResults.ProteinGroups;
+
+            List<ProteinGroup> proteinGroups = proteinAnalysisResults.ProteinGroups;
             Assert.AreEqual(2, proteinGroups.Count);
 
             if (proteinGroups.ElementAt(0).ProteinGroupName == "1")
@@ -233,10 +233,10 @@ namespace Test
                 Assert.AreEqual("EFGABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(1).BaseSequence);
                 Assert.AreEqual("-XYZ-EFG", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(2).BaseSequence);
             }
-            
-           
-                        
-            
+
+
+
+
 
 
 
@@ -251,13 +251,13 @@ namespace Test
                 "EFGABC",
             };
 
-            IEnumerable<string> sequencesInducingCleavage = new List<string> { "C" };
-            IEnumerable<string> sequencesInducingCleavage2 = new List<string> { "G" };
+            List<Tuple<string,TerminusType>> sequencesInducingCleavage = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("C", TerminusType.C)};
+            List<Tuple<string, TerminusType>> sequencesInducingCleavage2 = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) };
 
 
-            var protease = new Protease("testA", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("testA", sequencesInducingCleavage, new List<Tuple<string,TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("testB", sequencesInducingCleavage2, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("testB", sequencesInducingCleavage2, new List<Tuple<string,TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease2.Name, protease2);
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
@@ -278,7 +278,7 @@ namespace Test
 
                         case "ABC": peptideList.Add(peptide); break;
                         case "EFG": peptideList.Add(peptide); break;
-                        
+
 
 
 
@@ -319,7 +319,7 @@ namespace Test
 
             dictionary.Add(peptides[0], new HashSet<PeptideWithSetModifications> { PWSM[0], PWSM[3] });
             dictionary.Add(peptides[1], new HashSet<PeptideWithSetModifications> { PWSM[1], PWSM[2] });
-            
+
 
             // builds psm list to match to peptides
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
@@ -360,7 +360,7 @@ namespace Test
                             }
                             else { break; }
 
-                        
+
 
                     }
                 }
@@ -400,7 +400,7 @@ namespace Test
             Assert.AreEqual("EFG", CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.ElementAt(1).BaseSequence);
 
 
-            
+
 
 
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, digestionParamsList, false, null);
@@ -426,7 +426,7 @@ namespace Test
             Assert.AreEqual("testB", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
             Assert.AreEqual("ABC", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).BaseSequence);
             Assert.AreEqual("EFG", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(1).BaseSequence);
-          
+
 
 
 

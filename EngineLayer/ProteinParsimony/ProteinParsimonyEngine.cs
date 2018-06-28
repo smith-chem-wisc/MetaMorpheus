@@ -16,7 +16,7 @@ namespace EngineLayer
         //dictionary with key being object contianing mass of the compact peptide and value being a hasset of peptides with set modifications having that mass
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly HashSet<DigestionParams> ListOfDigestionParams;
-        
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -25,9 +25,9 @@ namespace EngineLayer
         {
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
-            this.ListOfDigestionParams = listOfDigestionParams; 
+            this.ListOfDigestionParams = listOfDigestionParams;
         }
-        
+
         #endregion Public Constructors
 
         #region Protected Methods
@@ -92,15 +92,15 @@ namespace EngineLayer
                     if (baseSequence.Value.Count > 1 && baseSequence.Value.Any(p => p.NumMods > 0))
                     {
                         // list of proteins along with start/end residue in protein and the # missed cleavages
-                        var peptideInProteinInfo = new List<Tuple<Protein,DigestionParams, int, int, int>>();
+                        var peptideInProteinInfo = new List<Tuple<Protein, DigestionParams, int, int, int>>();
                         foreach (var peptide in baseSequence.Value)// does this peptide have digestion param info?
                             peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int>(peptide.Protein, peptide.digestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
 
                         foreach (var peptide in baseSequence.Value)
                         {
                             foreach (var proteinInfo in peptideInProteinInfo)
-                            {                                
-                                var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5 , peptide.allModsOneIsNterminus, peptide.numFixedMods);
+                            {
+                                var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5, peptide.allModsOneIsNterminus, peptide.numFixedMods);
                                 foreach (var compactPeptide in blah[peptide])
                                 {
                                     compactPeptideToProteinPeptideMatching[compactPeptide].Add(pep);
@@ -117,53 +117,53 @@ namespace EngineLayer
 
             // peptide matched to fullseq (used depending on user preference)
             var compactPeptideToFullSeqMatch = compactPeptideToProteinPeptideMatching.ToDictionary(x => x.Key, x => x.Value.First().Sequence);
-            
+
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
-            {            
-               HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
-               if (proteinsAssociatedWithThisPeptide.Count == 1)
-               {
-                  if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out HashSet<PeptideWithSetModifications> peptides))
-                      proteinsWithUniquePeptides.Add(kvp.Value.First().Protein, new HashSet<PeptideWithSetModifications>(kvp.Value));
-                  else
-                      peptides.UnionWith(kvp.Value);
-               }
+            {
+                HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
+                if (proteinsAssociatedWithThisPeptide.Count == 1)
+                {
+                    if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out HashSet<PeptideWithSetModifications> peptides))
+                        proteinsWithUniquePeptides.Add(kvp.Value.First().Protein, new HashSet<PeptideWithSetModifications>(kvp.Value));
+                    else
+                        peptides.UnionWith(kvp.Value);
+                }
                 //for MultiProtease parsimony protein with the same base sequence can be unique if they 
                 //come from different proteolytic digestions
                 //Here if proteinAssociatedWithThisPeptide.Count is greater than 1 we must check to ensure that this is not because of
                 //different proteolytic digestions yielding the same peptide. 
                 //if different proteases do yield the same peptide then both of these peptides are unique
-               else
-               {
-                                      
+                else
+                {
+
                     foreach (var peptide in kvp.Value)
                     {
                         Protease protease = peptide.digestionParams.Protease;
                         int sameProteaseCount = kvp.Value.Count(v => v.digestionParams.Protease == protease); ;
-                        
 
-                            if (sameProteaseCount == 1)
+
+                        if (sameProteaseCount == 1)
                         {
                             if (!proteinsWithUniquePeptides.TryGetValue(peptide.Protein, out HashSet<PeptideWithSetModifications> peps))
                                 proteinsWithUniquePeptides.Add(peptide.Protein, new HashSet<PeptideWithSetModifications> { peptide });
                             else
                                 peps.UnionWith(kvp.Value);
-                            
+
                         }
                     }
-               }
-                
-                    // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
-                    if (kvp.Value.Any(p => p.Protein.IsDecoy))
-                        kvp.Value.RemoveWhere(p => !p.Protein.IsDecoy);
+                }
 
-                    // if a peptide is associated with a contaminant protein, remove all target protein associations with the peptide
-                    if (kvp.Value.Any(p => p.Protein.IsContaminant))
-                        kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
-                
+                // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
+                if (kvp.Value.Any(p => p.Protein.IsDecoy))
+                    kvp.Value.RemoveWhere(p => !p.Protein.IsDecoy);
+
+                // if a peptide is associated with a contaminant protein, remove all target protein associations with the peptide
+                if (kvp.Value.Any(p => p.Protein.IsContaminant))
+                    kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
+
             }
-                
-            
+
+
             // makes dictionary with proteins as keys and list of associated peptides as the value (makes parsimony algo easier)
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
@@ -305,7 +305,7 @@ namespace EngineLayer
             var proteinsGroupedByNumPeptides = proteinToPeptidesMatching.GroupBy(p => p.Value.Count);
             var parsimonyProteinsGroupedByNumPeptides = parsimonyProteinList.GroupBy(p => p.Value.Count);
             var indistinguishableProteins = new ConcurrentDictionary<Protein, HashSet<CompactPeptideBase>>();
-            
+
             foreach (var group in proteinsGroupedByNumPeptides)
             {
                 var parsimonyProteinsWithSameNumPeptides = parsimonyProteinsGroupedByNumPeptides.FirstOrDefault(p => p.Key == group.Key);
