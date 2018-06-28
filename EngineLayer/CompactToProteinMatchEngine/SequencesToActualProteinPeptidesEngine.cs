@@ -48,7 +48,7 @@ namespace EngineLayer
             foreach (CompactPeptide key in keys)
             {
                 HashSet<PeptideWithSetModifications> value = compactPeptideToProteinPeptideMatching[key];
-                compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { value.FirstOrDefault(b => !b.Protein.IsDecoy) ?? value.First() }; 
+                compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { value.FirstOrDefault(b => !b.Protein.IsDecoy) ?? value.First() };
             }
         }
 
@@ -73,9 +73,9 @@ namespace EngineLayer
 
             double proteinsMatched = 0;
             int oldPercentProgress = 0;
-            
+
             Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
-            { 
+            {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     foreach (var digestionParam in collectionOfDigestionParams)
@@ -103,6 +103,7 @@ namespace EngineLayer
                     }
                 }
             });
+
             #endregion Match Sequences to PeptideWithSetModifications
 
             if (!reportAllAmbiguity)
