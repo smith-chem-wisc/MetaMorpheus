@@ -70,8 +70,7 @@ namespace TaskLayer
         #endregion Public Methods
 
         #region Protected Methods
-
-
+        
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             // disable quantification if a .mgf is being used
@@ -101,8 +100,7 @@ namespace TaskLayer
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
-
-
+            
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
@@ -176,9 +174,7 @@ namespace TaskLayer
                         {
                             GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
                         }
-
-
-
+                        
                         Status("Searching files...", taskId);
 
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();

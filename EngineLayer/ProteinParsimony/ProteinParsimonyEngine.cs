@@ -27,8 +27,7 @@ namespace EngineLayer
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
             this.ListOfDigestionParams = listOfDigestionParams; 
         }
-
-
+        
         #endregion Public Constructors
 
         #region Protected Methods
@@ -100,8 +99,7 @@ namespace EngineLayer
                         foreach (var peptide in baseSequence.Value)
                         {
                             foreach (var proteinInfo in peptideInProteinInfo)
-                            {
-                                
+                            {                                
                                 var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5 , peptide.allModsOneIsNterminus, peptide.numFixedMods);
                                 foreach (var compactPeptide in blah[peptide])
                                 {
@@ -121,8 +119,7 @@ namespace EngineLayer
             var compactPeptideToFullSeqMatch = compactPeptideToProteinPeptideMatching.ToDictionary(x => x.Key, x => x.Value.First().Sequence);
             
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
-            {
-            
+            {            
                HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
                if (proteinsAssociatedWithThisPeptide.Count == 1)
                {

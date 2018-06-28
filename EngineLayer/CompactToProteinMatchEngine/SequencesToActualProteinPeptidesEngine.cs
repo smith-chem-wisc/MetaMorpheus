@@ -102,7 +102,6 @@ namespace EngineLayer
                         ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", nestedIds));
                     }
                 }
-
             });
             #endregion Match Sequences to PeptideWithSetModifications
 

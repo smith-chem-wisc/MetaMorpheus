@@ -25,8 +25,7 @@ namespace EngineLayer
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
         private double? monoisotopicMass;
-        
-
+                
         #endregion Private Fields
 
         #region Public Constructors
