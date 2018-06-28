@@ -48,6 +48,7 @@ namespace EngineLayer
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
+
         #endregion Public Constructors
 
         #region Public Properties
