@@ -72,11 +72,10 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngineWithWeirdPeptide()
         {
-            Protease protease = new Protease("Customized Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            
+
             CommonParameters CommonParameters = new CommonParameters(
                 DigestionParams: new DigestionParams(
-                    protease: protease.Name,
+                    protease: "Customized Protease",
                     MaxMissedCleavages: 0, 
                     MinPeptideLength: 1),
                 ScoreCutoff: 1);
@@ -126,13 +125,11 @@ namespace Test
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 SearchTarget = true,
             };
-
-            Protease protease = new Protease("Customized Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
+            
             CommonParameters CommonParameters = new CommonParameters(
                 PrecursorMassTolerance: new PpmTolerance(5),
                 DigestionParams: new DigestionParams(
-                    protease: protease.Name,
+                    protease: "Customized Protease",
                     MinPeptideLength: 1),
                 ScoreCutoff: 1);
             
@@ -204,12 +201,11 @@ namespace Test
                 AddCompIons = true,
                 MaxFragmentSize = 1, // super small index
             };
-            Protease protease = new Protease("Customized Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             CommonParameters CommonParameters = new CommonParameters(
                 ProductMassTolerance: new AbsoluteTolerance(100), // super large tolerance (100 Da)
                 DigestionParams: new DigestionParams(
-                    protease: protease.Name, 
+                    protease: "Customized Protease", 
                     MinPeptideLength: 1),
                 ScoreCutoff: 1);
           
@@ -236,11 +232,9 @@ namespace Test
             //just check if it crashes or not.
             SearchParameters SearchParameters = new SearchParameters();
 
-            Protease protease = new Protease("Customized Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
             CommonParameters CommonParameters = new CommonParameters(
                 DigestionParams: new DigestionParams(
-                    protease: protease.Name),
+                    protease: "Customized Protease"),
                 ScoreCutoff: 255);
               
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
@@ -300,11 +294,9 @@ namespace Test
                 SearchTarget = true,
             };
 
-            Protease protease = new Protease("Customized Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
             CommonParameters CommonParameters = new CommonParameters(
                 DigestionParams: new DigestionParams(
-                    protease: protease.Name,
+                    protease: "Customized Protease",
                     MinPeptideLength: 1),
                 ScoreCutoff: 1);
             

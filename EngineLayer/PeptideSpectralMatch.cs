@@ -23,7 +23,7 @@ namespace EngineLayer
         #region Public Fields
 
         public const double tolForScoreDifferentiation = 1e-9;
-        
+
         #endregion Public Fields
 
         #region Public Constructors
