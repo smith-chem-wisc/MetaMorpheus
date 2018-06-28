@@ -31,11 +31,10 @@ namespace Test
                                    "----EFG--J"    // 10: indistinguishable from 6 (J will not be a "detected" PSM)
                                    };
 
-            IEnumerable<string> sequencesInducingCleavage = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "-" };
-            var protease = new Protease("test3", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            IEnumerable<Tuple<string, TerminusType>> sequencesInducingCleavage = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("A", TerminusType.C), new Tuple<string, TerminusType>("B", TerminusType.C), new Tuple<string, TerminusType>("C", TerminusType.C), new Tuple<string, TerminusType>("D", TerminusType.C), new Tuple<string, TerminusType>("E", TerminusType.C), new Tuple<string, TerminusType>("F", TerminusType.C), new Tuple<string, TerminusType>("G", TerminusType.C), new Tuple<string, TerminusType>("H", TerminusType.C), new Tuple<string, TerminusType>("I", TerminusType.C), new Tuple<string, TerminusType>("J", TerminusType.C), new Tuple<string, TerminusType>("-", TerminusType.C) };
+            var protease = new Protease("test1", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
-            
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -114,9 +113,9 @@ namespace Test
 
                 initialDictionary.Add(cp, peps);
             }
-            HashSet<DigestionParams> listOfDigestionParams = new HashSet<DigestionParams> { digestionParams };
+
             // apply parsimony to dictionary
-            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, listOfDigestionParams, false, new List<string>());
+            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, false, new List<string>());
             var hah = (ProteinParsimonyResults)ae.Run();
             var proteinGroups = hah.ProteinGroups;
 
@@ -230,8 +229,6 @@ namespace Test
             // creates some test proteins, digest, and fragment
             string[] sequences = { "GLSDGEWQQVLNVWGK" }; // just one peptide
 
-            var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             var peptides = new HashSet<PeptideWithSetModifications>();
 
             var p = new List<Protein>();
@@ -293,7 +290,7 @@ namespace Test
             variableModifications.Add(new ModificationWithMassAndCf("resMod", "HaHa", motif, TerminusLocalization.Any, ChemicalFormula.ParseFormula("H")));
 
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
-            var protease = new Protease("CustomProtease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("CustomProtease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>
@@ -340,9 +337,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            HashSet<DigestionParams> listOfDigestionParams = new HashSet<DigestionParams> { digestionParams };
-
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, listOfDigestionParams, true, new List<string> { "ff" });
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, true, new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
