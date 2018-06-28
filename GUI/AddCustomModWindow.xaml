@@ -1,0 +1,77 @@
+﻿<Window x:Class="MetaMorpheusGUI.AddCustomModWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Title="Add custom modification" Height="270" Width="380" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
+            <!--Modification name-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Modification Name" Width="190"></Label>
+                <TextBox Name="modNameTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Mod name, example: 'Phosphorylation'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Category-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Category" Width="190"></Label>
+                <TextBox Name="categoryTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Category, example: 'MyModifications'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Amino acid/motifs-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Amino Acids Locations/Motifs" Width="190"></Label>
+                <TextBox Name="aminoAcidMotifTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Separate with ';' for example 'S;T;Y'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Chemical formula-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Chemical Formula" Width="190"></Label>
+                <TextBox Name="chemicalFormulaTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Chemical formula (optional if mass difference is specified), example: 'H1 O3 P1'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Monoisotopic mass difference-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Monoisotopic Mass Difference" Width="190"></Label>
+                <TextBox Name="modMassTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Monoisotopic mass difference (optional, if chemical formula is specified), example: '79.98'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Neutral losses-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Neutral Losses" Width="190"></Label>
+                <TextBox Name="neutralLossTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Neutral loss (optional, separate with ';') example: 'H0;H3 O4 P1'"/>
+                    </ToolTipService.ToolTip>
+                </TextBox>
+            </StackPanel>
+            <!--Terminus Type-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Terminal Location" Width="190"></Label>
+                <ComboBox Name="terminusTypeComboBox" Width="155" Height="22"></ComboBox>
+            </StackPanel>
+        </StackPanel>
+        <!--Save and cancel buttons-->
+        <StackPanel Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center"  >
+            <Button Content="Save Mod" FontSize="13" Margin="5" Width="100" Click="SaveCustomMod" />
+            <Button Content="Cancel" FontSize="13" Margin="5" Width="100" Click="CancelCustomMod" />
+        </StackPanel>
+    </Grid>
+</Window>

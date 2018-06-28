@@ -62,10 +62,6 @@
                                             </TextBlock>
                                         </CheckBox.ToolTip>
                                     </CheckBox>
-                                    <!--<StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label Content="Deconvolution Intensity Ratio " />
-                                        <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
-                                    </StackPanel>-->
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Deconvolution Max Assumed Charge State" />
                                         <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -76,10 +72,6 @@
                                             </TextBox.ToolTip>
                                         </TextBox>
                                     </StackPanel>
-                                    <!--<StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label Content="Deconvolution Mass Tolerance in PPM" />
-                                        <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
-                                    </StackPanel>-->
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Peak Trimming">
@@ -112,7 +104,6 @@
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
-                            <!--<CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />-->
                         </StackPanel>
                     </Expander>
                 </GroupBox>
@@ -183,7 +174,6 @@
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
                                                 </StackPanel>
-                                                <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />-->
                                                 <StackPanel Grid.Column="1">
                                                     <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <RadioButton.ToolTip>
@@ -504,10 +494,6 @@
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
-                            <!--<StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="ff" Content="Files to analyze in parallel" />
-                                <TextBox x:Name="maxDegreesOfParallelism" PreviewTextInput="PreviewIfInt" Width="45" />
-                            </StackPanel>-->
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
                                 <TextBox x:Name="minScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -614,31 +600,10 @@
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>
-                                <!--<StackPanel Grid.Column="2">
-                                    <Label Content="Database Localized" />
-                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
-                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Style>
-                                            <Style TargetType="{x:Type TreeView}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                                        <Setter Property="Visibility" Value="Hidden" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TreeView.Style>
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForLoc}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                        </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>-->
                             </Grid>
+                            <!--<StackPanel HorizontalAlignment="Left" Margin="5">
+                                <Button Content="Add custom modification" Width="200" Height="20" Click="AddCustomMod_Click"></Button>
+                            </StackPanel>-->
                         </StackPanel>
                     </Expander>
                 </GroupBox>
