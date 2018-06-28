@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using System;
 
 namespace Test
 {
@@ -21,7 +22,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngine()
         {
-            Protease protease = new Protease("Customized Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("Customized Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
                 (DigestionParams: new DigestionParams(
@@ -355,7 +356,7 @@ namespace Test
                 AddCompIons = true,
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
             };
-            Protease protease = new Protease("single N", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null);
+            Protease protease = new Protease("single N", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.None), new Tuple<string, TerminusType>( "G", TerminusType.None) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.SingleN, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             DigestionParams dp = new DigestionParams(protease: protease.Name);
             CommonParameters CommonParameters = new CommonParameters(
@@ -447,7 +448,7 @@ namespace Test
                 SearchTarget = true,
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
             };
-            Protease protease = new Protease("single C", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleC, null, null, null);
+            Protease protease = new Protease("single C", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.None), new Tuple<string, TerminusType>( "G", TerminusType.None) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.SingleC, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             var dp = new DigestionParams(protease: protease.Name);
 
@@ -541,7 +542,7 @@ namespace Test
         public static void TestNonSpecificEnzymeVariableModificationHandlingNTerm()
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
-            var protease = new Protease("singleN2", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null);
+            var protease = new Protease("singleN2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.None), new Tuple<string, TerminusType>("G", TerminusType.None), new Tuple<string, TerminusType>("M", TerminusType.None), new Tuple<string, TerminusType>("N", TerminusType.None), new Tuple<string, TerminusType>("Q", TerminusType.None) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.SingleN, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915) };
@@ -558,7 +559,7 @@ namespace Test
         public static void TestNonSpecificEnzymeVariableModificationHandlingCTerm()
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
-            var protease = new Protease("singleC2", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleC, null, null, null);
+            var protease = new Protease("singleC2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.None), new Tuple<string, TerminusType>("G", TerminusType.None), new Tuple<string, TerminusType>("M", TerminusType.None), new Tuple<string, TerminusType>("N", TerminusType.None), new Tuple<string, TerminusType>("Q", TerminusType.None) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.SingleC, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915, null) };
@@ -597,7 +598,7 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("singleN3", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.None, null, null, null);
+            var protease = new Protease("singleN3", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.None, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 ProductMassTolerance: productMassTolerance,
@@ -679,7 +680,7 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("singleC3", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.None, null, null, null);
+            var protease = new Protease("singleC3", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.None, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 ScoreCutoff: 1,
@@ -754,8 +755,8 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("semi-trypsin1", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.Semi, null, null, null);
-            var protease2 = new Protease("semi-trypsin2", new List<string> { "N" }, new List<string>(), TerminusType.C, CleavageSpecificity.Semi, null, null, null);
+            var protease = new Protease("semi-trypsin1", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Semi, null, null, null);
+            var protease2 = new Protease("semi-trypsin2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("N", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Semi, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             GlobalVariables.ProteaseDictionary.Add(protease2.Name, protease2);
             CommonParameters CommonParameters = new CommonParameters(
@@ -856,7 +857,7 @@ namespace Test
             List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
             var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
-            var protease = new Protease("semi-Trypsin", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.Semi, null, null, null);
+            var protease = new Protease("semi-Trypsin", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Semi, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             DigestionParams digestParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 2);
 

@@ -26,7 +26,7 @@ namespace Test
 
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
 
-            Protease protease = new Protease("kprotease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("kprotease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             // modified version of protein
             var protein1 = new Protein("PEPTIDEM", "accession1");
@@ -75,7 +75,7 @@ namespace Test
             var modDictionary = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
-            Protease protease = new Protease("k Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("k Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
 
@@ -128,7 +128,7 @@ namespace Test
             var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
 
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
-            Protease protease = new Protease("k protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("k protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             // modified version of protein
             var protein1 = new Protein("PEPTIDEM", "accession1");
@@ -172,7 +172,7 @@ namespace Test
             var mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
 
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(new List<ProductType> { ProductType.B, ProductType.Y });
-            Protease protease = new Protease("kProtease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("kProtease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
 
             // modified version of protein

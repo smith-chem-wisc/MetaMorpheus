@@ -1,0 +1,116 @@
+CommonArtifacts
+ID   Deamidation
+TG   N or Q
+PP   Anywhere.
+MT   Artifact
+CF   H-1 N-1 O1
+//
+ID   Ammonia loss
+TG   Q or C
+PP   Peptide N-terminal.
+MT   Artifact
+CF   H-3 N-1
+//
+ID   Ammonia loss
+TG   N
+PP   Anywhere.
+MT   Artifact
+CF   H-3 N-1
+//
+ID   Sodium
+TG   D or E
+PP   Anywhere.
+MT   Artifact
+CF   H-1 Na1
+//
+ID   Potassium
+TG   D or E
+PP   Anywhere.
+MT   Artifact
+CF   H-1 K1
+//
+ID   Calcium
+TG   D or E
+PP   Anywhere.
+MT   Artifact
+CF   H-2 Ca1
+//
+ID   Fe[III]
+TG   D or E
+PP   Anywhere.
+MT   Artifact
+CF   H-3 Fe1
+//
+ID   Fe[II]
+TG   D or E
+PP   Anywhere.
+MT   Artifact
+CF   H-2 Fe1
+//
+ID   Sodium
+TG   X
+PP   Peptide C-terminal.
+MT   Artifact
+CF   H-1 Na1
+//
+ID   Potassium
+TG   X
+PP   Peptide C-terminal.
+MT   Artifact
+CF   H-1 K1
+//
+ID   Calcium
+TG   X
+PP   Peptide C-terminal.
+MT   Artifact
+CF   H-2 Ca1
+//
+ID   Fe[III]
+TG   X
+PP   Peptide C-terminal.
+MT   Artifact
+CF   H-3 Fe1
+//
+ID   Fe[II]
+TG   X
+PP   Peptide C-terminal.
+MT   Artifact
+CF   H-2 Fe1
+//
+ID   WaterLoss from PepNterm E
+TG   E
+PP   Peptide N-terminal.
+MT   Artifact
+CF   H-2 O-1
+//
+ID   Carbamyl
+TG   X
+PP   Peptide N-terminal.
+MT   Artifact
+CF   H1 C1 N1 O1
+//
+ID   Carbamyl
+TG   K or R or C or M
+PP   Anywhere.
+MT   Artifact
+CF   H1 C1 N1 O1
+//
+ID   Oxidation
+MT   Artifact
+TG   W
+PP   Anywhere.
+CF   O1
+MM   15.994915
+//
+ID   Dioxidation
+TG   W
+PP   Anywhere.
+MT   Artifact
+CF   O2
+//
+ID   Carboxymethylation
+TG   C
+PP   Anywhere.
+MT   Artifact
+CF   H2 C2 O2
+//
