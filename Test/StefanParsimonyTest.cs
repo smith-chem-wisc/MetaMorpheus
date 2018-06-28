@@ -52,7 +52,8 @@ namespace Test
             compactPeptideToProteinPeptideMatching[cp2].Add(pep2);
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            HashSet<DigestionParams> listOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(protease.Name, MinPeptideLength: 1) };
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, listOfDigestionParams, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             // check to make sure both peptides are associated with both proteins
@@ -102,7 +103,8 @@ namespace Test
             compactPeptideToProteinPeptideMatching[cp2].Add(pep2);
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            HashSet<DigestionParams> listOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(protease.Name, MinPeptideLength: 1) };
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, listOfDigestionParams, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             // check to make sure both peptides are associated with both proteins
@@ -147,7 +149,8 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(pep2.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep2 });
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            HashSet<DigestionParams> listOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(protease.Name, MinPeptideLength: 1) };
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, listOfDigestionParams, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             // check to make sure both peptides are NOT associated with both proteins
@@ -191,7 +194,8 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(pep2.CompactPeptide(terminusType), new HashSet<PeptideWithSetModifications> { pep2 });
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            HashSet<DigestionParams> listOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(protease.Name, MinPeptideLength: 1) };
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, listOfDigestionParams,modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             // check to make sure both peptides are associated with both proteins
@@ -236,8 +240,8 @@ namespace Test
                 {compactPeptide1, new HashSet<PeptideWithSetModifications>{pep1, pep2} },
                 {compactPeptide3, new HashSet<PeptideWithSetModifications>{pep3} }
             };
-
-            var cool = (ProteinParsimonyResults)new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, false, new List<string>()).Run();
+            HashSet<DigestionParams> listOfDigestionParams = new HashSet<DigestionParams> { digestionParams };
+            var cool = (ProteinParsimonyResults)new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, listOfDigestionParams, false, new List<string>()).Run();
 
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching.Count);
 

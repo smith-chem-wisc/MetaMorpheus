@@ -47,17 +47,20 @@ namespace EngineLayer
             List<CompactPeptideBase> keys = compactPeptideToProteinPeptideMatching.Keys.ToList();
             foreach (CompactPeptide key in keys)
             {
-                HashSet<PeptideWithSetModifications> value = compactPeptideToProteinPeptideMatching[key];
-                HashSet<PeptideWithSetModifications> resolvedValues = new HashSet<PeptideWithSetModifications>();
-                foreach (var PWSM in value)
-                {
-                    if (!PWSM.Protein.IsDecoy)
-                    {
-                        resolvedValues.Add(PWSM);
-                    }
-                }
-                compactPeptideToProteinPeptideMatching[key] = resolvedValues;
+               HashSet<PeptideWithSetModifications> value = compactPeptideToProteinPeptideMatching[key];
+                compactPeptideToProteinPeptideMatching[key] = new HashSet<PeptideWithSetModifications> { value.FirstOrDefault(b => !b.Protein.IsDecoy) ?? value.First() };
+                //    HashSet<PeptideWithSetModifications> resolvedValues = new HashSet<PeptideWithSetModifications>();
+                //    foreach (var PWSM in value)
+                //    {
+                //        if (!PWSM.Protein.IsDecoy)
+                //        {
+                //            resolvedValues.Add(PWSM);
+                //        }
+                //    }
+                //    compactPeptideToProteinPeptideMatching[key] = resolvedValues;
             }
+
+            
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -86,6 +89,7 @@ namespace EngineLayer
             Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
             { 
                 for (int i = fff.Item1; i < fff.Item2; i++)
+                //for(int i=0; i<proteins.Count; i++)
                 {
                     foreach (var digestionParam in collectionOfDigestionParams)
                     {

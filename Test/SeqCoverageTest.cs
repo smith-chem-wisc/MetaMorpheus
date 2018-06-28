@@ -76,8 +76,8 @@ namespace Test
                 psm2,
                 psm3,
             };
-
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new List<string>());
+            HashSet<DigestionParams> listOfDigestionParams = new HashSet<DigestionParams> { digestionParams };
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, listOfDigestionParams, true, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
             ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new List<string>());
