@@ -7,12 +7,12 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
+using System;
 
 namespace Test
 {
     [TestFixture]
-    public static class LocalizationTest
+    public static class LocalizationTest 
     {
         #region Public Methods
 
@@ -30,7 +30,6 @@ namespace Test
         [Test]
         public static void TestLocalization()
         {
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", null);
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);

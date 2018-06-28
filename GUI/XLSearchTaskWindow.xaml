@@ -113,10 +113,10 @@
                                                 <TextBox x:Name="txtUdXLKerName" Width="60" />
                                             </StackPanel>
                                             <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="1" Grid.Row="0" />
-                                                <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="1">
-                                                    <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" />
-                                                    <TextBox x:Name="txtUdXLkerTotalMs" Width="60"/>
-                                                </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="1">
+                                                <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" />
+                                                <TextBox x:Name="txtUdXLkerTotalMs" Width="60"/>
+                                            </StackPanel>
                                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2">
                                                 <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass"  />
                                                 <TextBox x:Name="txtUdXLkerShortMass" Width="60"  />
