@@ -126,7 +126,7 @@ namespace EngineLayer
                 ListOfModsFixed: this.ListOfModsFixed
             );
         }
-        
+
         public void SetProductMassTolerance(Tolerance ProductMassTolerance)
         {
             this.ProductMassTolerance = ProductMassTolerance;
