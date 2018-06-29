@@ -103,6 +103,7 @@ namespace EngineLayer
                     }
                 }
             });
+
             #endregion Match Sequences to PeptideWithSetModifications
 
             if (!reportAllAmbiguity)

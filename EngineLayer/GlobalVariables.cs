@@ -123,9 +123,13 @@ namespace EngineLayer
         public static string CheckLengthOfOutput(string psmString)
         {
             if (psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs)
+            {
                 return "Output too long for Excel";
+            }
             else
+            {
                 return psmString;
+            }
         }
 
         public static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
