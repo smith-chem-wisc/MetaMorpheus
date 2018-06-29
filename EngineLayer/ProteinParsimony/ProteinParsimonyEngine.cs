@@ -94,8 +94,10 @@ namespace EngineLayer
                     {
                         // list of proteins along with start/end residue in protein and the # missed cleavages
                         var peptideInProteinInfo = new List<Tuple<Protein, DigestionParams, int, int, int>>();
-                        foreach (var peptide in baseSequence.Value)// does this peptide have digestion param info?
+                        foreach (var peptide in baseSequence.Value)
+                        {
                             peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int>(peptide.Protein, peptide.digestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
+                        }                            
 
                         foreach (var peptide in baseSequence.Value)
                         {

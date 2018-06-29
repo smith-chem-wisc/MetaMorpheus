@@ -11,7 +11,7 @@ using IO.MzML;
 namespace Test
 {
     [TestFixture]
-    class MultiProteaseParsimonyTest
+    public static class MultiProteaseParsimonyTest
     {
 
         [Test]
@@ -145,8 +145,7 @@ namespace Test
 
             HashSet<DigestionParams> digestionParamsList = new HashSet<DigestionParams>();
             digestionParamsList.Add(digestionParams);
-            digestionParamsList.Add(digestionParams2);
-            // digestionParamsList.Add(digestionParams3);
+            digestionParamsList.Add(digestionParams2);           
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             ModificationWithMass mod = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
             List<ModificationWithMass> modVarList = new List<ModificationWithMass> { mod };
@@ -233,14 +232,7 @@ namespace Test
                 Assert.AreEqual("EFGABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(1).BaseSequence);
                 Assert.AreEqual("-XYZ-EFG", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(2).BaseSequence);
             }
-
-
-
-
-
-
-
-
+            
         }
 
         [Test]
@@ -264,7 +256,9 @@ namespace Test
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
+            {
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
+            }                
 
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1);
             DigestionParams digestionParams2 = new DigestionParams(protease: protease2.Name, MinPeptideLength: 1);
@@ -275,13 +269,8 @@ namespace Test
                 {
                     switch (peptide.BaseSequence)
                     {
-
                         case "ABC": peptideList.Add(peptide); break;
                         case "EFG": peptideList.Add(peptide); break;
-
-
-
-
                     }
                 }
                 foreach (var peptide in protein.Digest(digestionParams2, new List<ModificationWithMass>(), new List<ModificationWithMass>()))
@@ -291,9 +280,6 @@ namespace Test
 
                         case "ABC": peptideList.Add(peptide); break;
                         case "EFG": peptideList.Add(peptide); break;
-
-
-
                     }
                 }
 
@@ -313,10 +299,7 @@ namespace Test
                 peptides[i] = new CompactPeptide(peptideList.ElementAt(i), TerminusType.None);
                 PWSM[i] = peptideList.ElementAt(i);
             }
-
-
-
-
+            
             dictionary.Add(peptides[0], new HashSet<PeptideWithSetModifications> { PWSM[0], PWSM[3] });
             dictionary.Add(peptides[1], new HashSet<PeptideWithSetModifications> { PWSM[1], PWSM[2] });
 
