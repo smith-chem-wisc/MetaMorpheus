@@ -163,7 +163,7 @@ namespace Test
             Assert.That(proteaseDict.ContainsKey("Test2"));
             Assert.That(proteaseDict.ContainsKey("Test3"));
             GlobalVariables.ProteaseDictionary.Add("Test1", proteaseDict["Test1"]);
-         
+
             DigestionParams multiProtease1 = new DigestionParams(protease: "Test1", MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var digestedList1 = ParentProtein.Digest(multiProtease1, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
             GlobalVariables.ProteaseDictionary.Remove("Test1");

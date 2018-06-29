@@ -13,6 +13,7 @@ namespace EngineLayer
         #region Private Fields
 
         private readonly bool treatModPeptidesAsDifferentPeptides;
+        //dictionary with key being object contianing mass of the compact peptide and value being a hasset of peptides with set modifications having that mass
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly HashSet<DigestionParams> ListOfDigestionParams;
 
@@ -26,6 +27,7 @@ namespace EngineLayer
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
             this.ListOfDigestionParams = listOfDigestionParams;
         }
+
 
         #endregion Public Constructors
 
@@ -47,11 +49,9 @@ namespace EngineLayer
 
         private List<ProteinGroup> ApplyProteinParsimony()
         {
-
             if (!compactPeptideToProteinPeptideMatching.Values.Any())//if dictionary is empty return an empty list of protein groups
-            {
                 return new List<ProteinGroup>();
-            }
+
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
             if (!treatModPeptidesAsDifferentPeptides)//user want modified and unmodified peptides treated the same
             {
@@ -100,6 +100,7 @@ namespace EngineLayer
                         {
                             foreach (var proteinInfo in peptideInProteinInfo)
                             {
+
                                 var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5, peptide.allModsOneIsNterminus, peptide.numFixedMods);
                                 foreach (var compactPeptide in blah[peptide])
                                 {
@@ -118,8 +119,11 @@ namespace EngineLayer
             // peptide matched to fullseq (used depending on user preference)
             var compactPeptideToFullSeqMatch = compactPeptideToProteinPeptideMatching.ToDictionary(x => x.Key, x => x.Value.First().Sequence);
 
+
+
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
+
                 HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
                 if (proteinsAssociatedWithThisPeptide.Count == 1)
                 {
@@ -335,14 +339,46 @@ namespace EngineLayer
             {
                 parsimonyProteinList.Add(protein.Key, protein.Value);
             }
+            //For MultiProtease Parsimony, allows for proteins containing unique peptides for a given protease but not overall
+            //to be added back into the protein list
+            //For MultiProtease Parsimony!
+            //In MultiProtease Parsimony peptides with the same base sequence can be unique if they come from different proteolytic digestions
+            //In the formation of parsimonyProteinList duplicate peptides are remove by base sequence, this removes peptides 
+            //that are actually unique to a different protein
+            //Here we are adding back in these proteins that contain unique peptides to the parsimonyProteinList
+            HashSet<Protease> listOfProteases = new HashSet<Protease>();
+            foreach (var dp in ListOfDigestionParams)
+            {
+                if (!listOfProteases.Contains(dp.Protease))
+                {
+                    listOfProteases.Add(dp.Protease);
+                }
+            }
+            if (listOfProteases.Count > 1)
+            {
+                HashSet<Protein> parsimonyProteinSet = new HashSet<Protein>();
+                foreach (var protein in parsimonyProteinList)
+                {
+                    parsimonyProteinSet.Add(protein.Key);
+                }
+                // add back in proteins that contain unique peptides
+                foreach (var prot in proteinsWithUniquePeptides)
+                {
+                    if (!parsimonyProteinSet.Contains(prot.Key))
+                    {
+                        parsimonyProteinList.Add(prot.Key, proteinToPeptidesMatching[prot.Key]);
+                    }
 
+                }
+
+            }
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
                 kvp.Value.RemoveWhere(p => !parsimonyProteinList.ContainsKey(p.Protein));
             }
 
             Status("Finished Parsimony");
-
+            var testing = new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p));
             return ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(proteinsWithUniquePeptides.Values.SelectMany(p => p)), new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p)));
         }
 
