@@ -7,6 +7,8 @@ using Thermo.Interfaces.ExactiveAccess_V1;
 using Thermo.Interfaces.InstrumentAccess_V1.MsScanContainer;
 using IMsScan = Thermo.Interfaces.InstrumentAccess_V2.MsScanContainer.IMsScan;
 
+//[assembly: log4net.Config.XmlConfigurator(Watch = true)]
+
 namespace RealTimeGUI
 {
 	/// <summary>
@@ -37,9 +39,9 @@ namespace RealTimeGUI
 
         internal void ReceiveData()
         {
-            string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Start receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
+            string x = "\n" + DateTime.Now + "Start receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Start receive scans on detector " + ScanContainer.DetectorClass + ".";
-            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
+            //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
             log.Debug(x);
 
             ScanContainer.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
@@ -54,7 +56,8 @@ namespace RealTimeGUI
             ScanContainer.AcquisitionStreamOpening -= Orbitrap_AcquisitionStreamOpening;
             string x = "\n" + DateTime.Now + " Stop receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Stop receive scans on detector " + ScanContainer.DetectorClass + "...";
-            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
+            //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
+            log.Debug(x);
         }
 
         private void Orbitrap_MsScanArrived(object sender, MsScanEventArgs e)
@@ -66,8 +69,10 @@ namespace RealTimeGUI
 			{
                 //Console.WriteLine("\n{0:HH:mm:ss,fff} scan with {1} centroids arrived", DateTime.Now, scan.CentroidCount);
                 string x = "\n" + DateTime.Now + " " + Thread.CurrentThread.Name;
-                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
-                ListScan.Add(scan);
+                //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
+                //ListScan.Add(scan);
+                log.Debug(x);
+
             }
 		}
 

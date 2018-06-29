@@ -86,6 +86,7 @@ namespace RealTimeGUI
 
         private void BtnRealTimeData_Click(object sender, RoutedEventArgs e)
         {
+            log.Debug("Start Receive Data");
             DataReceiver.ReceiveData();
             Thread.CurrentThread.Join(DataReceiver.RTParameters.TimeScale);
             DataReceiver.StopReceiveData();
