@@ -16,13 +16,12 @@ namespace RealTimeGUI
 	/// </summary>
 	public class DataReceiver
 	{
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog logD = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         internal DataReceiver()
         {
             RTParameters = new RTParameters();
             ListScan = new List<IMsScan>();
-            LogWatcher = new LogWatcher();
         }
 
         public IExactiveInstrumentAccess InstrumentAccess { get; set; }
@@ -33,8 +32,6 @@ namespace RealTimeGUI
         
         public RTParameters RTParameters { get; set; }
 
-        public LogWatcher LogWatcher { get; set; }
-
         public static event EventHandler<NotificationEventArgs> DataReceiverNotificationEventHandler;
 
         internal void ReceiveData()
@@ -42,7 +39,7 @@ namespace RealTimeGUI
             string x = "\n" + DateTime.Now + "Start receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Start receive scans on detector " + ScanContainer.DetectorClass + ".";
             //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
-            log.Debug(x);
+            logD.Debug(x);
 
             ScanContainer.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
             ScanContainer.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
@@ -57,7 +54,7 @@ namespace RealTimeGUI
             string x = "\n" + DateTime.Now + " Stop receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Stop receive scans on detector " + ScanContainer.DetectorClass + "...";
             //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
-            log.Debug(x);
+            logD.Debug(x);
         }
 
         private void Orbitrap_MsScanArrived(object sender, MsScanEventArgs e)
@@ -71,7 +68,7 @@ namespace RealTimeGUI
                 string x = "\n" + DateTime.Now + " " + Thread.CurrentThread.Name;
                 //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
                 //ListScan.Add(scan);
-                log.Debug(x);
+                logD.Debug(x);
 
             }
 		}
@@ -86,6 +83,11 @@ namespace RealTimeGUI
 		{
             string x = "\n" + DateTime.Now + "Acquisition stream opens (start of method)" + "\n";
             DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
+        }
+
+        public void TestLog()
+        {
+            logD.Debug("Test log in DataReceiver");
         }
 	}
 }
