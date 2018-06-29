@@ -247,7 +247,7 @@ namespace EngineLayer.Calibration
             {
                 for (int i = 0; i < productType.Value.Length; i++)
                 {
-                    double theorMz = productType.Value[i].ToMz(1);
+                    double theorMz = productType.Value[i];
                     int ind = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theorMz).Value;
 
                     double exptPeakMz = ms2DataScan.MassSpectrum.XArray[ind];
