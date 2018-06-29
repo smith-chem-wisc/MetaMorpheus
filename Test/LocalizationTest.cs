@@ -7,12 +7,12 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
+using System;
 
 namespace Test
 {
     [TestFixture]
-    public static class LocalizationTest
+    public static class LocalizationTest 
     {
         #region Public Methods
 
@@ -30,7 +30,6 @@ namespace Test
         [Test]
         public static void TestLocalization()
         {
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", null);
             DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 1);
@@ -62,8 +61,8 @@ namespace Test
             f.Run();
 
             // Was single peak!!!
-            Assert.AreEqual(0, newPsm.MatchedIonMassesDict[ProductType.BnoB1ions].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.MatchedIonMassesDict[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.MatchedIonMassToChargeRatioDict[ProductType.BnoB1ions].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.MatchedIonMassToChargeRatioDict[ProductType.Y].Count(b => b > 0));
             Assert.AreEqual(0, newPsm.MatchedIonIntensitiesDict[ProductType.BnoB1ions].Count(b => b > 0));
             Assert.AreEqual(1, newPsm.MatchedIonIntensitiesDict[ProductType.Y].Count(b => b > 0));
             // If localizing, three match!!!

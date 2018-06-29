@@ -243,7 +243,7 @@ namespace EngineLayer.Calibration
             if (ms2DataScan.MassSpectrum.Size == 0)
                 return result;
 
-            foreach (var productType in identification.MatchedIonMassesDict)
+            foreach (var productType in identification.MatchedIonMassToChargeRatioDict)
             {
                 for (int i = 0; i < productType.Value.Length; i++)
                 {

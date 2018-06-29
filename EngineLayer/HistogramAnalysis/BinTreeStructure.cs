@@ -156,9 +156,9 @@ namespace EngineLayer.HistogramAnalysis
         private void OverlappingIonSequences()
         {
             foreach (Bin bin in FinalBins)
-                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy && b.Value.Item3.MatchedIonMassesDict.Any()))
+                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy && b.Value.Item3.MatchedIonMassToChargeRatioDict.Any()))
                 {
-                    var ya = hm.Value.Item3.MatchedIonMassesDict;
+                    var ya = hm.Value.Item3.MatchedIonMassToChargeRatioDict;
                     if (ya.ContainsKey(ProductType.B)
                         && ya.ContainsKey(ProductType.Y)
                         && ya[ProductType.B].Any(b => b > 0)
