@@ -14,10 +14,13 @@ namespace RealTimeGUI
 	/// </summary>
 	public class DataReceiver
 	{
-		internal DataReceiver()
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        internal DataReceiver()
         {
             RTParameters = new RTParameters();
             ListScan = new List<IMsScan>();
+            LogWatcher = new LogWatcher();
         }
 
         public IExactiveInstrumentAccess InstrumentAccess { get; set; }
@@ -28,13 +31,16 @@ namespace RealTimeGUI
         
         public RTParameters RTParameters { get; set; }
 
+        public LogWatcher LogWatcher { get; set; }
+
         public static event EventHandler<NotificationEventArgs> DataReceiverNotificationEventHandler;
 
         internal void ReceiveData()
         {
-            string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Start receive scans on detector " + ScanContainer.DetectorClass + "...";
+            string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Start receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Start receive scans on detector " + ScanContainer.DetectorClass + ".";
-            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x + Thread.CurrentThread.Name + "\n"));
+            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
+            log.Debug(x);
 
             ScanContainer.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
             ScanContainer.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
@@ -46,9 +52,9 @@ namespace RealTimeGUI
             ScanContainer.MsScanArrived -= Orbitrap_MsScanArrived;
             ScanContainer.AcquisitionStreamClosing -= Orbitrap_AcquisitionStreamClosing;
             ScanContainer.AcquisitionStreamOpening -= Orbitrap_AcquisitionStreamOpening;
-            string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Stop receive scans on detector " + ScanContainer.DetectorClass + "...";
+            string x = "\n" + DateTime.Now + " Stop receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Stop receive scans on detector " + ScanContainer.DetectorClass + "...";
-            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x + Thread.CurrentThread.Name + "\n"));
+            DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
         }
 
         private void Orbitrap_MsScanArrived(object sender, MsScanEventArgs e)
@@ -59,21 +65,21 @@ namespace RealTimeGUI
 			using (IMsScan scan = (IMsScan) e.GetScan())	// caution! You must dispose this, or you block shared memory!
 			{
                 //Console.WriteLine("\n{0:HH:mm:ss,fff} scan with {1} centroids arrived", DateTime.Now, scan.CentroidCount);
-                string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now;
-                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x + "S" + Thread.CurrentThread.Name));
+                string x = "\n" + DateTime.Now + " " + Thread.CurrentThread.Name;
+                DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
                 ListScan.Add(scan);
             }
 		}
 
 		private void Orbitrap_AcquisitionStreamClosing(object sender, EventArgs e)
 		{
-            string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream closed (end of method)" + "\n";
+            string x = "\n" + DateTime.Now + "Acquisition stream closed (end of method)" + "\n";
             DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
         }
 
 		private void Orbitrap_AcquisitionStreamOpening(object sender, MsAcquisitionOpeningEventArgs e)
 		{
-            string x = "\n{0:HH:mm:ss,fff} {1}" + DateTime.Now + "Acquisition stream opens (start of method)" + "\n";
+            string x = "\n" + DateTime.Now + "Acquisition stream opens (start of method)" + "\n";
             DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
         }
 	}

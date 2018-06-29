@@ -19,6 +19,9 @@ using System.IO;
 using EngineLayer;
 using Proteomics;
 
+
+[assembly: log4net.Config.XmlConfigurator(Watch = true)]
+
 namespace RealTimeGUI
 {
     /// <summary>
@@ -26,7 +29,11 @@ namespace RealTimeGUI
     /// </summary>
     public partial class MainWindow : Window
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
+        private LogWatcher logWatcher;
+
         public DataReceiver DataReceiver { get; set; }
         public RealTimeTask RealTimeTask { get; set; }
 
@@ -43,7 +50,10 @@ namespace RealTimeGUI
             MyFileManager.WarnHandler += GuiWarnHandler;
             RealTimeSearch.WarnHandler += GuiWarnHandler;
 
-            
+            // Create a LogFileWatcher to display the log and bind the log textbox to it
+            logWatcher = new LogWatcher();
+            logWatcher.Updated += logWatcher_Updated;
+            DataReceiver.LogWatcher.Updated += logWatcher_Updated;
 
         }
 
@@ -61,6 +71,7 @@ namespace RealTimeGUI
 
         private void BtnConnection_Click(object sender, RoutedEventArgs e)
         {
+            log.Debug("Start log");
             DataReceiver.InstrumentAccess = Connection.GetFirstInstrument();
             DataReceiver.ScanContainer = DataReceiver.InstrumentAccess.GetMsScanContainer(0);
             RtbNotifications.AppendText(DataReceiver.InstrumentAccess.InstrumentName);
@@ -78,6 +89,25 @@ namespace RealTimeGUI
             DataReceiver.ReceiveData();
             Thread.CurrentThread.Join(DataReceiver.RTParameters.TimeScale);
             DataReceiver.StopReceiveData();
+        }
+
+        public void logWatcher_Updated(object sender, EventArgs e)
+        {
+            UpdateLogTextbox(logWatcher.LogContent);
+        }
+
+        public void UpdateLogTextbox(string value)
+        {
+            // Check whether invoke is required and then invoke as necessary
+            if (!Dispatcher.CheckAccess())
+            {
+
+                Dispatcher.BeginInvoke(new Action(() => UpdateLogTextbox(value)));
+                return;
+            }
+
+            // Set the textbox value
+            RtbNotifications.AppendText(value);
         }
 
         private void UpdateParametersFromTask()
