@@ -50,8 +50,9 @@ namespace EngineLayer
         private List<ProteinGroup> ApplyProteinParsimony()
         {
             if (!compactPeptideToProteinPeptideMatching.Values.Any())//if dictionary is empty return an empty list of protein groups
+            {
                 return new List<ProteinGroup>();
-
+            }
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
             if (!treatModPeptidesAsDifferentPeptides)//user want modified and unmodified peptides treated the same
             {
@@ -128,9 +129,13 @@ namespace EngineLayer
                 if (proteinsAssociatedWithThisPeptide.Count == 1)
                 {
                     if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out HashSet<PeptideWithSetModifications> peptides))
+                    {
                         proteinsWithUniquePeptides.Add(kvp.Value.First().Protein, new HashSet<PeptideWithSetModifications>(kvp.Value));
+                    }
                     else
+                    {
                         peptides.UnionWith(kvp.Value);
+                    }
                 }
                 //for MultiProtease parsimony protein with the same base sequence can be unique if they 
                 //come from different proteolytic digestions
@@ -143,15 +148,18 @@ namespace EngineLayer
                     foreach (var peptide in kvp.Value)
                     {
                         Protease protease = peptide.digestionParams.Protease;
-                        int sameProteaseCount = kvp.Value.Count(v => v.digestionParams.Protease == protease); ;
-
+                        int sameProteaseCount = kvp.Value.Count(v => v.digestionParams.Protease == protease);
 
                         if (sameProteaseCount == 1)
                         {
                             if (!proteinsWithUniquePeptides.TryGetValue(peptide.Protein, out HashSet<PeptideWithSetModifications> peps))
+                            {
                                 proteinsWithUniquePeptides.Add(peptide.Protein, new HashSet<PeptideWithSetModifications> { peptide });
+                            }
                             else
+                            {
                                 peps.UnionWith(kvp.Value);
+                            }
 
                         }
                     }
@@ -159,11 +167,15 @@ namespace EngineLayer
 
                 // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
                 if (kvp.Value.Any(p => p.Protein.IsDecoy))
+                {
                     kvp.Value.RemoveWhere(p => !p.Protein.IsDecoy);
+                }
 
                 // if a peptide is associated with a contaminant protein, remove all target protein associations with the peptide
                 if (kvp.Value.Any(p => p.Protein.IsContaminant))
+                {
                     kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
+                }
 
             }
 
