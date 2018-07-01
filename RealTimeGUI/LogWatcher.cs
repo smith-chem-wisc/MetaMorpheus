@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using log4net;
 using log4net.Appender;
 using log4net.Core;
+using System.Runtime.Remoting.Messaging;
 
 namespace RealTimeGUI
 {
@@ -36,8 +37,8 @@ namespace RealTimeGUI
             this.logContent = GetEvents(memoryAppender);
 
             // Then alert the Updated event that the LogWatcher has been updated
-            Updated?.Invoke(this, new EventArgs());
-            //Updated?.BeginInvoke(this, new EventArgs(),);
+            //Updated?.BeginInvoke(this, new EventArgs());
+            Updated?.BeginInvoke(this, new EventArgs(), callBack, null);
         }
 
         private static bool GetMemoryAppender(IAppender appender)
@@ -79,6 +80,22 @@ namespace RealTimeGUI
 
             // Return the constructed output
             return output.ToString();
+        }
+
+        private void callBack(IAsyncResult asyncResult)
+        {
+            var syncResult = (AsyncResult)asyncResult;
+            var invokedMethod = (EventHandler)syncResult.AsyncDelegate;
+
+            try
+            {
+                invokedMethod.EndInvoke(asyncResult);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

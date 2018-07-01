@@ -71,7 +71,7 @@ namespace RealTimeGUI
         private void BtnConnection_Click(object sender, RoutedEventArgs e)
         {
             log.Debug("Start log");
-            DataReceiver.TestLog();
+            //DataReceiver.TestLog();
             DataReceiver.InstrumentAccess = Connection.GetFirstInstrument();
             DataReceiver.ScanContainer = DataReceiver.InstrumentAccess.GetMsScanContainer(0);
             RtbNotifications.AppendText(DataReceiver.InstrumentAccess.InstrumentName);
@@ -90,7 +90,7 @@ namespace RealTimeGUI
             DataReceiver.ReceiveData();
             Thread.CurrentThread.Join(DataReceiver.RTParameters.TimeScale);
             DataReceiver.StopReceiveData();
-            DataReceiver.TestLog();
+            //DataReceiver.TestLog();
         }
 
         public void logWatcher_Updated(object sender, EventArgs e)

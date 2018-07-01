@@ -37,10 +37,10 @@ namespace RealTimeGUI
 
         internal void ReceiveData()
         {
-            string x = "\n" + DateTime.Now + "Start receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
+            string x = "\n" + DateTime.Now + " Start receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Start receive scans on detector " + ScanContainer.DetectorClass + ".";
             //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
-            logD.Debug(x);
+            logD.Debug("Start receive scans on detector " + ScanContainer.DetectorClass);
 
             ScanContainer.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
             ScanContainer.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
@@ -55,7 +55,7 @@ namespace RealTimeGUI
             string x = "\n" + DateTime.Now + " Stop receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Stop receive scans on detector " + ScanContainer.DetectorClass + "...";
             //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
-            logD.Debug(x);
+            logD.Debug(" Stop receive scans on detector " + ScanContainer.DetectorClass);
         }
 
         private void Orbitrap_MsScanArrived(object sender, MsScanEventArgs e)
@@ -70,7 +70,7 @@ namespace RealTimeGUI
                 //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
                 DataReceiverNotificationEventHandler?.BeginInvoke(this, new NotificationEventArgs(x), callBack, null);
                 //ListScan.Add(scan);
-                //logD.Debug(x);
+                logD.Debug("Get one scan");
 
             }
 		}
@@ -90,7 +90,7 @@ namespace RealTimeGUI
         private void callBack(IAsyncResult asyncResult)
         {
             var syncResult = (AsyncResult)asyncResult;
-            var invokedMethod = (EventHandler)syncResult.AsyncDelegate;
+            var invokedMethod = (EventHandler<NotificationEventArgs>)syncResult.AsyncDelegate;
 
             try
             {
@@ -102,7 +102,6 @@ namespace RealTimeGUI
                 throw;
             }
         }
-
 
         public void TestLog()
         {
