@@ -37,6 +37,7 @@ namespace RealTimeGUI
 
             // Then alert the Updated event that the LogWatcher has been updated
             Updated?.Invoke(this, new EventArgs());
+            //Updated?.BeginInvoke(this, new EventArgs(),);
         }
 
         private static bool GetMemoryAppender(IAppender appender)

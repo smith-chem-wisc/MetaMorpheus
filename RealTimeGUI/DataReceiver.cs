@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Collections.Generic;
 using System.Windows;
+using System.Runtime.Remoting.Messaging;
 
 using Thermo.Interfaces.ExactiveAccess_V1;
 using Thermo.Interfaces.InstrumentAccess_V1.MsScanContainer;
@@ -67,8 +68,9 @@ namespace RealTimeGUI
                 //Console.WriteLine("\n{0:HH:mm:ss,fff} scan with {1} centroids arrived", DateTime.Now, scan.CentroidCount);
                 string x = "\n" + DateTime.Now + " " + Thread.CurrentThread.Name;
                 //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
+                DataReceiverNotificationEventHandler?.BeginInvoke(this, new NotificationEventArgs(x), callBack, null);
                 //ListScan.Add(scan);
-                logD.Debug(x);
+                //logD.Debug(x);
 
             }
 		}
@@ -85,9 +87,28 @@ namespace RealTimeGUI
             DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
         }
 
+        private void callBack(IAsyncResult asyncResult)
+        {
+            var syncResult = (AsyncResult)asyncResult;
+            var invokedMethod = (EventHandler)syncResult.AsyncDelegate;
+
+            try
+            {
+                invokedMethod.EndInvoke(asyncResult);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
         public void TestLog()
         {
             logD.Debug("Test log in DataReceiver");
         }
+
+
 	}
 }
