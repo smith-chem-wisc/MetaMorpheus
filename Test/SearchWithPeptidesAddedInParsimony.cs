@@ -27,7 +27,7 @@ namespace Test
                     DecoyType = DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(ScoreCutoff:1, DigestionParams: new DigestionParams(MinPeptideLength: 2)),
+                CommonParameters = new CommonParameters(scoreCutoff:1, digestionParams: new DigestionParams(MinPeptideLength: 2)),
             };
 
             string xmlName = "andguiaheow.xml";
@@ -35,8 +35,8 @@ namespace Test
             #region Generate protein and write to file
 
             CommonParameters CommonParameters = new CommonParameters(
-                ScoreCutoff: 1, 
-                DigestionParams: new DigestionParams(
+                scoreCutoff: 1, 
+                digestionParams: new DigestionParams(
                     MaxMissedCleavages: 0, 
                     MinPeptideLength: 1, 
                     MaxModificationIsoforms: 2, 

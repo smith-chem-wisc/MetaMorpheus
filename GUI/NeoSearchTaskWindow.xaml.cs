@@ -368,15 +368,15 @@ namespace MetaMorpheusGUI
             }
 
             CommonParameters CommonParamsToSave = new CommonParameters(
-                DigestionParams: digestionParamsToSave,
-                BIons: bCheckBox.IsChecked.Value,
-                YIons: yCheckBox.IsChecked.Value,
-                CIons: cCheckBox.IsChecked.Value,
-                ZdotIons: zdotCheckBox.IsChecked.Value,
-                ProductMassTolerance: ProductMassTolerance, 
-                PrecursorMassTolerance:PrecursorMassTolerance, 
-                ListOfModsFixed: listOfModsFixed, 
-                ListOfModsVariable: listOfModsVariable)
+                digestionParams: digestionParamsToSave,
+                bIons: bCheckBox.IsChecked.Value,
+                yIons: yCheckBox.IsChecked.Value,
+                cIons: cCheckBox.IsChecked.Value,
+                zDotIons: zdotCheckBox.IsChecked.Value,
+                productMassTolerance: ProductMassTolerance, 
+                precursorMassTolerance:PrecursorMassTolerance, 
+                listOfModsFixed: listOfModsFixed, 
+                listOfModsVariable: listOfModsVariable)
             {
                 TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask"
             };
