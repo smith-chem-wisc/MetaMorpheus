@@ -27,7 +27,7 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
                
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -120,10 +120,10 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    ListOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
-                    ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
-                    ProductMassTolerance: new AbsoluteTolerance(0.01)
+                    digestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
+                    listOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    productMassTolerance: new AbsoluteTolerance(0.01)
                 ),
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -134,8 +134,8 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    DigestionParams: new DigestionParams(),
-                    ProductMassTolerance: new AbsoluteTolerance(0.01)
+                    digestionParams: new DigestionParams(),
+                    productMassTolerance: new AbsoluteTolerance(0.01)
                 ),
             };
 
@@ -216,11 +216,11 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    DigestionParams : new DigestionParams(MinPeptideLength: 2),
+                    digestionParams : new DigestionParams(MinPeptideLength: 2),
 
-                    ScoreCutoff: 1,
-                    DeconvolutionIntensityRatio: 999,
-                    DeconvolutionMassTolerance : new PpmTolerance(50)
+                    scoreCutoff: 1,
+                    deconvolutionIntensityRatio: 999,
+                    deconvolutionMassTolerance : new PpmTolerance(50)
                 ),
                 SearchParameters = new SearchParameters
                 {
@@ -301,11 +301,11 @@ namespace Test
                 {
                     CommonParameters = new CommonParameters
                     (                       
-                        DigestionParams : new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                        ListOfModsVariable : new List<(string, string)>(),
-                        ListOfModsFixed : new List<(string, string)>(),
-                        ScoreCutoff : 1,
-                        PrecursorMassTolerance : new AbsoluteTolerance(1)
+                        digestionParams : new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        listOfModsVariable : new List<(string, string)>(),
+                        listOfModsFixed : new List<(string, string)>(),
+                        scoreCutoff : 1,
+                        precursorMassTolerance : new AbsoluteTolerance(1)
                     ),
 
                     GptmdParameters = new GptmdParameters
@@ -365,7 +365,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 (
                     
-                    DigestionParams : new DigestionParams(MinPeptideLength: 5)
+                    digestionParams : new DigestionParams(MinPeptideLength: 5)
                 ),
                 SearchParameters = new SearchParameters
                 {
