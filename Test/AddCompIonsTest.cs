@@ -166,10 +166,14 @@ namespace Test
             List<double> matchedDaErrorF = new List<double>();
             List<double> matchedPpmErrorF = new List<double>();
             List<double> matchedIonIntensityF = new List<double>();
+            List<int> matchedIonSeriesT = new List<int>();
+            List<int> matchedIonSeriesF = new List<int>();
 
-            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesT, matchedDaErrorT, matchedPpmErrorT, precursorMass, new List<DissociationType> { DissociationType.HCD }, true, matchedIonIntensityT);
-            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesF, matchedDaErrorF, matchedPpmErrorF, precursorMass, new List<DissociationType> { DissociationType.HCD }, false, matchedIonIntensityF);
+            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonSeriesT, matchedIonMassesT, matchedDaErrorT, matchedPpmErrorT, matchedIonIntensityT, precursorMass, ProductType.BnoB1ions, true);
+            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonSeriesF, matchedIonMassesF, matchedDaErrorF, matchedPpmErrorF, matchedIonIntensityF, precursorMass, ProductType.BnoB1ions, false);
 
+            //Test the number of series is doubled
+            Assert.IsTrue(matchedIonSeriesT.Count == matchedIonSeriesF.Count * 2);
             //Test the number of ions is doubled
             Assert.IsTrue(matchedIonMassesT.Count == matchedIonMassesF.Count * 2);
             //Test the number of da errors is doubled
