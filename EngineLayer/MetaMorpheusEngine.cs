@@ -82,13 +82,13 @@ namespace EngineLayer
 
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
-                    matchedIonMassesList.Add(currentTheoreticalMass);
+                    matchedIonSeries.Add(++currentTheoreticalIndex); //++ because there's no such thing as a y0 ion.
+                    matchedIonMassToChargeRatios.Add(currentTheoreticalMz);
                     matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]);
                     double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
-                    currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
@@ -131,7 +131,7 @@ namespace EngineLayer
                 double[] complementaryMasses = new double[numExperimentalPeaks];
                 double[] complementaryIntensities = new double[numExperimentalPeaks];
 
-                foreach (DissociationType dissociationType in dissociationTypes)
+                foreach (DissociationType dissociationType in DetermineDissociationType(new List<ProductType> { productType }))
                 {
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
@@ -159,12 +159,12 @@ namespace EngineLayer
                             // If found match
                             if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                             {
-                                matchedIonMassesList.Add(currentTheoreticalMass);
+                                matchedIonSeries.Add(++currentTheoreticalIndex);
+                                matchedIonMassToChargeRatios.Add(currentTheoreticalMass.ToMz(1)); //currentTheoreticalMz is not updated
                                 matchedIonIntensitiesList.Add(complementaryIntensities[experimentalIndex]);
                                 productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                                 productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
-                                currentTheoreticalIndex++;
                                 if (currentTheoreticalIndex == TotalProductsHere)
                                     break;
                                 currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
@@ -202,6 +202,15 @@ namespace EngineLayer
                     {
                         throw new NotImplementedException();
                     }
+                }
+            }
+
+            //matchedIonSeries assumes 1-n, but bnob1 has no b1, so we need to ++ each series number
+            if (productType == ProductType.BnoB1ions)
+            {
+                for (int i = 0; i < matchedIonSeries.Count; i++)
+                {
+                    matchedIonSeries[i]++;
                 }
             }
         }
@@ -468,11 +477,15 @@ namespace EngineLayer
         {
             List<DissociationType> dissociationTypes = new List<DissociationType>();
 
-            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
+            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y) || lp.Contains(ProductType.BnoB1ions))
+            {
                 dissociationTypes.Add(DissociationType.HCD);
+            }
 
             if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
+            {
                 dissociationTypes.Add(DissociationType.ETD);
+            }
 
             return dissociationTypes;
         }

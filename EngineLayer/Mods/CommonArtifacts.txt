@@ -77,9 +77,15 @@ PP   Peptide C-terminal.
 MT   Artifact
 CF   H-2 Fe1
 //
-ID   WaterLoss from PepNterm E
+ID   WaterLoss from PepNterm
 TG   E
 PP   Peptide N-terminal.
+MT   Artifact
+CF   H-2 O-1
+//
+ID   WaterLoss
+TG   T or L or I or P
+PP   Anywhere.
 MT   Artifact
 CF   H-2 O-1
 //
@@ -94,4 +100,23 @@ TG   K or R or C or M
 PP   Anywhere.
 MT   Artifact
 CF   H1 C1 N1 O1
+//
+ID   Oxidation
+MT   Artifact
+TG   W
+PP   Anywhere.
+CF   O1
+MM   15.994915
+//
+ID   Dioxidation
+TG   W
+PP   Anywhere.
+MT   Artifact
+CF   O2
+//
+ID   Carboxymethylation
+TG   C
+PP   Anywhere.
+MT   Artifact
+CF   H2 C2 O2
 //
