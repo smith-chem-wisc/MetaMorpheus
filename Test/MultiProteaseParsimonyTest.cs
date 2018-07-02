@@ -162,13 +162,11 @@ namespace Test
             Assert.AreEqual(2, CompactPeptidesToProteinPeptidesMatching.ElementAt(0).Value.Count);
             Assert.AreEqual("XYZ", CompactPeptidesToProteinPeptidesMatching.ElementAt(0).Value.ElementAt(0).BaseSequence);
             Assert.AreEqual("XYZ", CompactPeptidesToProteinPeptidesMatching.ElementAt(0).Value.ElementAt(1).BaseSequence);
-
-
+            
             Assert.AreEqual(2, CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.Count);
             Assert.AreEqual("ABC", CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.ElementAt(0).BaseSequence);
             Assert.AreEqual("ABC", CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.ElementAt(1).BaseSequence);
-
-
+            
             Assert.AreEqual(1, CompactPeptidesToProteinPeptidesMatching.ElementAt(2).Value.Count);
             Assert.AreEqual("EFGABC", CompactPeptidesToProteinPeptidesMatching.ElementAt(2).Value.ElementAt(0).BaseSequence);
             Assert.AreEqual("2", CompactPeptidesToProteinPeptidesMatching.ElementAt(2).Value.ElementAt(0).Protein.Accession);
@@ -178,7 +176,7 @@ namespace Test
             Assert.AreEqual("2", CompactPeptidesToProteinPeptidesMatching.ElementAt(3).Value.ElementAt(0).Protein.Accession);
 
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, digestionParamsList, false, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, false, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             List<ProteinGroup> proteinGroups = proteinAnalysisResults.ProteinGroups;
@@ -386,7 +384,7 @@ namespace Test
 
 
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, digestionParamsList, false, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, false, null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             List<ProteinGroup> proteinGroups = proteinAnalysisResults.ProteinGroups;

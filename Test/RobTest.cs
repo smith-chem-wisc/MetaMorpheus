@@ -116,7 +116,7 @@ namespace Test
             }
 
             // apply parsimony to dictionary
-            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, new HashSet<DigestionParams> { digestionParams}, false, new List<string>());
+            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, false, new List<string>());
             var hah = (ProteinParsimonyResults)ae.Run();
             var proteinGroups = hah.ProteinGroups;
 
@@ -338,7 +338,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, new HashSet<DigestionParams> { digestionParams}, true, new List<string> { "ff" });
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, true, new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
