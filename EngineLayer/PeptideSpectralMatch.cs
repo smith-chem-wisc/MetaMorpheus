@@ -497,6 +497,23 @@ namespace EngineLayer
                 {
                     info.sb.Append(blankEntry);
                 }
+<<<<<<< HEAD
+                matchedIonDiffPpm = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
+
+                //Intensities
+                sbTemp.Clear();
+                foreach (var kvp in peptide.MatchedIonIntensitiesDict)
+                {
+                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                }
+                matchedIonIntensities = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
+            }
+            s["Matched Ion Counts"] = matchedIonCounts;
+            s["Matched Ion Masses"] = matchedIonMasses;
+            s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
+            s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
+            s["Matched Ion Intesities"] = matchedIonIntensities; 
+=======
             }
 
             //write into input dictionary
@@ -506,6 +523,7 @@ namespace EngineLayer
             {
                 s[info.header] = info.sb.ToString();
             }
+>>>>>>> af25b8eb24e7192e9c681ba5f15db10fc72f254c
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
