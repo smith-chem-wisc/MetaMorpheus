@@ -435,7 +435,7 @@ namespace EngineLayer
             return matchedFragmentIons;
         }
 
-        public MzSpectrum GenerateComplementarySpectrum(MzSpectrum spectrum, double precursorMass, DissociationType dissociationType)
+        public static MzSpectrum GenerateComplementarySpectrum(MzSpectrum spectrum, double precursorMass, DissociationType dissociationType)
         {
             double protonMassShift = complementaryIonConversionDictionary[dissociationType].ToMass(1);
 
