@@ -148,6 +148,7 @@
     <Compile Include="ModTypeForLoc.cs" />
     <Compile Include="ModTypeForTreeView.cs" />
     <Compile Include="NotificationEventArgs.cs" />
+    <Compile Include="Notifications.cs" />
     <Compile Include="ProteinDbForDataGrid.cs" />
     <Compile Include="RealTimeSearch.cs" />
     <Compile Include="RTParameters.cs" />

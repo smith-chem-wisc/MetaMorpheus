@@ -36,7 +36,7 @@ namespace RealTimeGUI
 
         public DataReceiver DataReceiver { get; set; }
         public RealTimeTask RealTimeTask { get; set; }
-
+        public Notifications Notifications { get; set; }
 
         public MainWindow()
         {
@@ -45,6 +45,9 @@ namespace RealTimeGUI
 
             DataReceiver = new DataReceiver();
             dataGridProteinDatabases.DataContext = proteinDbObservableCollection;
+
+            Notifications = new Notifications();
+            DataContext = Notifications;
 
             DataReceiver.DataReceiverNotificationEventHandler += UpdateTbNotification;
             MyFileManager.WarnHandler += GuiWarnHandler;
@@ -71,10 +74,11 @@ namespace RealTimeGUI
         private void BtnConnection_Click(object sender, RoutedEventArgs e)
         {
             log.Debug("Start log");
+            Notifications.Notification = "AA";
             //DataReceiver.TestLog();
-            DataReceiver.InstrumentAccess = Connection.GetFirstInstrument();
-            DataReceiver.ScanContainer = DataReceiver.InstrumentAccess.GetMsScanContainer(0);
-            RtbNotifications.AppendText(DataReceiver.InstrumentAccess.InstrumentName);
+            //DataReceiver.InstrumentAccess = Connection.GetFirstInstrument();
+            //DataReceiver.ScanContainer = DataReceiver.InstrumentAccess.GetMsScanContainer(0);
+            //RtbNotifications.AppendText(DataReceiver.InstrumentAccess.InstrumentName);
         }
 
         private void BtnDisConnection_Click(object sender, RoutedEventArgs e)
@@ -109,7 +113,8 @@ namespace RealTimeGUI
             }
 
             // Set the textbox value
-            RtbNotifications.AppendText(value);
+            //RtbNotifications.AppendText(value);
+            Notifications.Notification = value;
         }
 
         private void UpdateParametersFromTask()
