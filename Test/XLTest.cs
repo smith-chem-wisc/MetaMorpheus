@@ -81,7 +81,7 @@ namespace Test
         public static void XlTest_BSA_DSSO()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(DoPrecursorDeconvolution: false, CIons: true, ZdotIons: true, ScoreCutoff: 2, DigestionParams: new DigestionParams(MinPeptideLength: 5));
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(MinPeptideLength: 5));
            
             var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
 
@@ -134,6 +134,7 @@ namespace Test
             var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
             var fragmentIndexAll = indexResults.FragmentIndex.Select((s,j)=> new {j, s }).Where(p => p.s != null).Select(t=> t.j).ToList();
             Assert.IsTrue(fragmentIndexAll.Count() > 0 );
+            
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
@@ -153,24 +154,22 @@ namespace Test
             {
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
+
             //Test newPsms
             Assert.AreEqual(newPsms.Count(), 3);
 
             //Test Output
-
             var task = new XLSearchTask();
             task.WriteAllToTsv(newPsms, TestContext.CurrentContext.TestDirectory, "allPsms", new List<string> { });
             task.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", new List<string> { });
             task.WriteSingleToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Singe).ToList(), TestContext.CurrentContext.TestDirectory, "singlePsms", new List<string> { });
-
-
+            
             //Test PsmCross.XlCalculateTotalProductMasses.
             var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
             var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
             var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker.CrosslinkerModSites);
             var productMassesAlphaList = PsmCross.XlCalculateTotalProductMasses(psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, true, false, linkPos);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 99);
-
         }
 
         [Test]
@@ -202,7 +201,7 @@ namespace Test
         public static void XlTest_DiffCrosslinkSites()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(DoPrecursorDeconvolution: false, ScoreCutoff: 1, DigestionParams: new DigestionParams(MinPeptideLength: 4));
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, scoreCutoff: 1, digestionParams: new DigestionParams(MinPeptideLength: 4));
            
             var xlSearchParameters = new XlSearchParameters
             {

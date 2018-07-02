@@ -314,22 +314,22 @@ namespace MetaMorpheusGUI
             }
             
             CommonParameters CommonParamsToSave = new CommonParameters(
-                DigestionParams: new DigestionParams(
+                digestionParams: new DigestionParams(
                     protease: protease.Name,
                     MaxMissedCleavages: MaxMissedCleavages,
                     MinPeptideLength: MinPeptideLength,
                     MaxPeptideLength: MaxPeptideLength,
                     MaxModificationIsoforms: MaxModificationIsoforms, 
                     InitiatorMethionineBehavior: InitiatorMethionineBehavior), 
-                    BIons: bCheckBox.IsChecked.Value, 
-                    YIons: yCheckBox.IsChecked.Value, 
-                    CIons: cCheckBox.IsChecked.Value, 
-                    ZdotIons: zdotCheckBox.IsChecked.Value, 
-                    ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                    PrecursorMassTolerance:PrecursorMassTolerance, 
-                    ProductMassTolerance: ProductMassTolerance,
-                    ListOfModsFixed:listOfModsFixed, 
-                    ListOfModsVariable: listOfModsVariable);
+                    bIons: bCheckBox.IsChecked.Value, 
+                    yIons: yCheckBox.IsChecked.Value, 
+                    cIons: cCheckBox.IsChecked.Value, 
+                    zDotIons: zdotCheckBox.IsChecked.Value, 
+                    scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    precursorMassTolerance:PrecursorMassTolerance, 
+                    productMassTolerance: ProductMassTolerance,
+                    listOfModsFixed:listOfModsFixed, 
+                    listOfModsVariable: listOfModsVariable);
 
             if (OutputFileNameTextBox.Text != "")
             {

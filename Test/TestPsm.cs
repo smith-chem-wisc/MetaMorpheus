@@ -52,7 +52,7 @@ namespace Test
             Tolerance fragmentTolerance = new PpmTolerance(10);
             List<ProductType> lp = new List<ProductType> { ProductType.B };
 
-            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false).Run();
+            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, lp, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance), new List<string>()).Run();
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 

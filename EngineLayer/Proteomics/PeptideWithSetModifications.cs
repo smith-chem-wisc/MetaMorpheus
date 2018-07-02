@@ -175,6 +175,37 @@ namespace EngineLayer
             }
         }
 
+        /// <summary>
+        /// Generates theoretical fragment ions for given product types for this peptide
+        /// </summary>
+        public List<TheoreticalFragmentIon> GetTheoreticalFragments(List<ProductType> productTypes)
+        {
+            // TODO: make this method more self-contained... right now it makes a CompactPeptide (deprecated) and fragments it
+            List<TheoreticalFragmentIon> theoreticalFragmentIons = new List<TheoreticalFragmentIon>();
+
+            foreach (var productType in productTypes)
+            {
+                int ionNumberAdd = 1;
+                if (productType == ProductType.BnoB1ions)
+                {
+                    // first generated b ion is b2, not b1, if we're skipping b1 ions
+                    ionNumberAdd++;
+                }
+
+                List<ProductType> temp = new List<ProductType> { productType };
+                TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(temp);
+
+                var productMasses = new CompactPeptide(this, terminusType).ProductMassesMightHaveDuplicatesAndNaNs(temp);
+
+                for (int i = 0; i < productMasses.Length; i++)
+                {
+                    theoreticalFragmentIons.Add(new TheoreticalFragmentIon(productMasses[i], double.NaN, 1, productType, i + ionNumberAdd));
+                }
+            }
+
+            return theoreticalFragmentIons;
+        }
+
         public int NumVariableMods { get { return this.NumMods - this.numFixedMods; } }
 
         #endregion Public Properties

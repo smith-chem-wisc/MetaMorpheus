@@ -13,21 +13,19 @@ namespace EngineLayer.Localization
         private readonly IEnumerable<PeptideSpectralMatch> allResultingIdentifications;
         private readonly List<ProductType> lp;
         private readonly MsDataFile myMsDataFile;
-        private readonly Tolerance fragmentTolerance;
-        private readonly bool addCompIons;
+        private readonly CommonParameters commonParameters;
         private readonly List<DissociationType> dissociationTypes;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.lp = lp;
             this.myMsDataFile = myMsDataFile;
-            this.fragmentTolerance = fragmentTolerance;
-            this.addCompIons = addCompIons;
+            this.commonParameters = commonParameters;
             this.dissociationTypes = DetermineDissociationType(lp);
         }
 
@@ -55,7 +53,7 @@ namespace EngineLayer.Localization
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
                     List<double> matchedIonIntensityList = new List<double>(); 
-                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons, matchedIonIntensityList); 
+                    MatchIonsOld(theScan, commonParameters.ProductMassTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, commonParameters.AddCompIons, matchedIonIntensityList); 
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
                     ok.MatchedIonMassesDict.Add(huh, matchedIonMassesOnlyMatches);
                     ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
@@ -81,7 +79,7 @@ namespace EngineLayer.Localization
 
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
-                    var score = CalculatePeptideScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons, 0);
+                    var score = CalculatePeptideScoreOld(theScan, commonParameters.ProductMassTolerance, gg, thePrecursorMass, dissociationTypes, commonParameters.AddCompIons, 0);
                     localizedScores.Add(score);
                 }
 

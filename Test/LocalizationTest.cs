@@ -58,7 +58,8 @@ namespace Test
             
             newPsm.MatchToProteinLinkedPeptides(matching);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);
+            CommonParameters commonParameters = new CommonParameters(productMassTolerance: fragmentTolerance);
+            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, commonParameters, new List<string>());
             f.Run();
 
             // Was single peak!!!
