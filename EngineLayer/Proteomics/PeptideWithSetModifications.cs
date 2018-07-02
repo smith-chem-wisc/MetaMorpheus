@@ -11,8 +11,10 @@ namespace EngineLayer
         #region Public Fields
 
         public readonly int numFixedMods;
-        public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;//dictionary of modifications on a peptide the N terminus is index 1
-        // key indicates which residue modification is on (with 1 being N terminus)
+        // dictionary of modifications on a peptide; the N terminus location is index 1
+        public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
+        public readonly DigestionParams digestionParams;
+
         #endregion Public Fields
 
         #region Private Fields
@@ -28,36 +30,29 @@ namespace EngineLayer
         #endregion Private Fields
 
         #region Public Constructors
-
-        public PeptideWithSetModifications(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription, int missedCleavages, 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-            : base(protein, oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, peptideDescription)
+        
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd)
+            : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, proteinOneBasedEnd - proteinOneBasedStart, modsFromThisOne.PeptideDescription)
         {
-            this.allModsOneIsNterminus = allModsOneIsNterminus;
-            this.numFixedMods = numFixedMods;
-        }
-
-        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) 
-            : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein,
-                  everythingElseFromThisOne.MissedCleavages, everythingElseFromThisOne.PeptideDescription)
-        {
-            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
-            this.numFixedMods = modsFromThisOne.numFixedMods;
-        }
-
-        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) 
-            : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, proteinOneBasedEnd- proteinOneBasedStart, modsFromThisOne.PeptideDescription)
-        {
-            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) 
+            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein)
             && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
         }
 
-        public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int missedCleavages = 0) 
+        public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd,
+            Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int missedCleavages = 0)
             : base(protein, proteinOneBasedStart, proteinOneBasedEnd, missedCleavages, null)
         {
             this.numFixedMods = numFixedMods;
             this.allModsOneIsNterminus = allModsOneIsNterminus ?? new Dictionary<int, ModificationWithMass>();
+        }
+
+        public PeptideWithSetModifications(Protein protein, DigestionParams digestionParams, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription, int missedCleavages,
+           Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
+           : base(protein, oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, peptideDescription)
+        {
+            this.allModsOneIsNterminus = allModsOneIsNterminus;
+            this.numFixedMods = numFixedMods;
+            this.digestionParams = digestionParams;
         }
 
         #endregion Public Constructors

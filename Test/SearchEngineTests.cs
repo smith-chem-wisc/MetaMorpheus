@@ -72,7 +72,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngineWithWeirdPeptide()
         {
-
+                        
             CommonParameters CommonParameters = new CommonParameters(
                 DigestionParams: new DigestionParams(
                     protease: "Customized Protease",
@@ -201,7 +201,7 @@ namespace Test
                 AddCompIons = true,
                 MaxFragmentSize = 1, // super small index
             };
-
+            
             CommonParameters CommonParameters = new CommonParameters(
                 ProductMassTolerance: new AbsoluteTolerance(100), // super large tolerance (100 Da)
                 DigestionParams: new DigestionParams(
@@ -294,6 +294,7 @@ namespace Test
                 SearchTarget = true,
             };
 
+            
             CommonParameters CommonParameters = new CommonParameters(
                 DigestionParams: new DigestionParams(
                     protease: "Customized Protease",
