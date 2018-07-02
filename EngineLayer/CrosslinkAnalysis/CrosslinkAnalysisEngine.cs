@@ -81,7 +81,7 @@ namespace EngineLayer.CrosslinkAnalysis
             int proteinsSeen = 0;
             int old_progress = 0;
             Status("Adding possible sources to peptide dictionary...");
-            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), fff =>
+            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {

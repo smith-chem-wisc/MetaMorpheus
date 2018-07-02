@@ -202,6 +202,7 @@ namespace MetaMorpheusGUI
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
+            maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
@@ -409,6 +410,11 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + maxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
+            if (!int.TryParse(maxThreadsTextBox.Text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads <= 0)
+            {
+                MessageBox.Show("Your current device has " + Environment.ProcessorCount + " processors. \n Please select a positive value less than or equal to this number.");
+                return;
+            }
 
             #endregion Check Task Validity
 
@@ -514,6 +520,11 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.CalculateEValue = eValueCheckBox.IsChecked.Value;
             CommonParamsToSave.UseDeltaScore = deltaScoreCheckBox.IsChecked.Value;
             CommonParamsToSave.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
+
+            if (!maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0))
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
 
             CommonParamsToSave.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
             var listOfModsVariable = new List<(string, string)>();

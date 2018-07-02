@@ -77,7 +77,7 @@ namespace EngineLayer.ClassicSearch
 
             if (proteins.Any())
             {
-                Parallel.ForEach(Partitioner.Create(0, proteins.Count), partitionRange =>
+                Parallel.ForEach(Partitioner.Create(0, proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, partitionRange =>
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {

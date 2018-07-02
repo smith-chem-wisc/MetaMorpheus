@@ -188,6 +188,7 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             txtNumberOfDatabaseSearches.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
+            maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             ckbAllResults.IsChecked = task.XlSearchParameters.XlOutAll;
             ckbPercolator.IsChecked = task.XlSearchParameters.XlOutPercolator;
@@ -340,6 +341,11 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
             CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
             CommonParamsToSave.TotalPartitions = int.Parse(txtNumberOfDatabaseSearches.Text, CultureInfo.InvariantCulture);
+
+            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
 
             TheTask.XlSearchParameters.XlOutPercolator = ckbPercolator.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutPepXML = ckbPepXML.IsChecked.Value;

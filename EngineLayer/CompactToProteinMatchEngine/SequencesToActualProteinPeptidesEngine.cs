@@ -17,12 +17,13 @@ namespace EngineLayer
         protected readonly TerminusType terminusType;
         protected readonly IEnumerable<DigestionParams> collectionOfDigestionParams;
         protected readonly bool reportAllAmbiguity;
+        protected readonly CommonParameters commonParameters;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.proteins = proteinList;
             this.allPsms = allPsms;
@@ -31,6 +32,7 @@ namespace EngineLayer
             this.terminusType = ProductTypeMethod.IdentifyTerminusType(ionTypes);
             this.collectionOfDigestionParams = collectionOfDigestionParams;
             this.reportAllAmbiguity = reportAllAmbiguity;
+            this.commonParameters = commonParameters;
         }
 
         #endregion Public Constructors
@@ -74,7 +76,7 @@ namespace EngineLayer
             double proteinsMatched = 0;
             int oldPercentProgress = 0;
 
-            Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
+            Parallel.ForEach(Partitioner.Create(0, proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {

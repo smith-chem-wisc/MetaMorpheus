@@ -86,6 +86,7 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CommonParameters.CIons;
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
@@ -270,6 +271,11 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + maxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
+            if (!int.TryParse(maxThreadsTextBox.Text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads <= 0)
+            {
+                MessageBox.Show("Your current device has " + Environment.ProcessorCount + ". \n Please select a positive value less than or equal to this number.");
+                return;
+            }
 
             #endregion Check Task Validity
 
@@ -317,6 +323,11 @@ namespace MetaMorpheusGUI
             CommonParamsToSave.CIons = cCheckBox.IsChecked.Value;
             CommonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
             CommonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+
+            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
 
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)

@@ -116,7 +116,9 @@
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
-                                        <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                    <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                         <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -175,6 +177,10 @@
                                     <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
                                         <CheckBox x:Name="cCheckBox" Content="c ions" />
                                         <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Set Number of Processors" />
+                                        <TextBox x:Name="maxThreadsTextBox" Width="45" />
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
