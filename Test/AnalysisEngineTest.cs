@@ -20,16 +20,17 @@ namespace Test
         [Test]
         public static void TestAnalysisEngineTests()
         {
-            Protease protease = new Protease("Custom Protease5", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("Custom Protease5", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 1042),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-                ProductMassTolerance = new PpmTolerance(10),
-            };
-
+            CommonParameters CommonParameters = new CommonParameters(
+                DigestionParams: new DigestionParams(
+                    protease: protease.Name, 
+                    MaxMissedCleavages: 0, 
+                    MinPeptideLength: 1, 
+                    MaxModificationIsoforms: 1042), 
+                ScoreCutoff: 1, 
+                ProductMassTolerance: new PpmTolerance(10));
+            
             List<ModificationWithMass> localizeableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
@@ -101,11 +102,10 @@ namespace Test
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
 
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-            var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
-
+           
             foreach (var huh in newPsms)
                 if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(res.CompactPeptideToProteinPeptideMatching);
 
             FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string> { "ff" });
 

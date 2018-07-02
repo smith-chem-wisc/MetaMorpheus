@@ -15,7 +15,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolForDoubleResolution = 1e-6;
-       
+
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
@@ -23,7 +23,6 @@ namespace EngineLayer
         #region Public Fields
 
         public const double tolForScoreDifferentiation = 1e-9;
-         
 
         #endregion Public Fields
 
@@ -44,12 +43,13 @@ namespace EngineLayer
             AddOrReplace(peptide, score, notch, true);
             this.AllScores = new List<double>();
             this.DigestionParams = digestionParams;
-            MatchedIonMassesDict = new Dictionary<ProductType, double[]>();
+            MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
+            MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
         }
-      
+
         #endregion Public Constructors
 
         #region Public Properties
@@ -81,8 +81,9 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public Dictionary<ProductType, double[]> MatchedIonMassesDict { get; internal set; }
-        public Dictionary<ProductType, double[]> MatchedIonIntensitiesDict { get; internal set; } //new
+        public Dictionary<ProductType, int[]> MatchedIonSeriesDict { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonMassToChargeRatioDict { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonIntensitiesDict { get; internal set; }
         public string ProteinAccesion { get; private set; }
         public string Organism { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
@@ -172,7 +173,7 @@ namespace EngineLayer
             ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
-        
+
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
@@ -216,7 +217,7 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-        
+
         #region Private Methods
 
         private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
@@ -297,7 +298,7 @@ namespace EngineLayer
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
-                return  new Tuple<string, double?>(returnString, null);
+                return new Tuple<string, double?>(returnString, null);
             }
         }
 
@@ -419,38 +420,84 @@ namespace EngineLayer
 
         private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
         {
-            string matchedIonCounts = " ";
-            string matchedIonMasses = " ";
-            string matchedIonDiffDa = " ";
-            string matchedIonDiffPpm = " ";
-            string matchedIonIntensities = " "; 
-            if (peptide != null && peptide.MatchedIonMassesDict.Any())
+            //sb for writing, format for double.ToString, header for input dictionary key
+            (StringBuilder sb, string format, string header)[] matchedIonInfo = new(StringBuilder, string, string)[]
             {
-                //Count
-                matchedIonCounts = string.Join(";", peptide.MatchedIonMassesDict.Select(b => b.Value.Count(c => c > 0)));
+                (new StringBuilder(), "F5", "Matched Ion Mass-To-Charge Ratios"),
+                (new StringBuilder(), "F5", "Matched Ion Mass Diff (Da)"),
+                (new StringBuilder(), "F2", "Matched Ion Mass Diff (Ppm)"),
+                (new StringBuilder(), "F0", "Matched Ion Intensities")
+            };
 
-                //Masses
-                StringBuilder sbTemp = new StringBuilder();
-                foreach (var kvp in peptide.MatchedIonMassesDict)
-                {
-                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
-                }
-                matchedIonMasses = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
+            const string blankEntry = " "; //the space prevents sorting issues in excel
+            string ionCounts = blankEntry;
+            string ionSeries = blankEntry;
 
-                //Mass error Da
-                sbTemp.Clear();
-                foreach (var kvp in peptide.ProductMassErrorDa)
-                {
-                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
-                }
-                matchedIonDiffDa = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
+            if (peptide != null && peptide.MatchedIonMassToChargeRatioDict.Any())
+            {
+                StringBuilder seriesStringBuilder = new StringBuilder(); //this one is used for series, all others are done in the dictionary
 
-                //Mass error ppm
-                sbTemp.Clear();
-                foreach (var kvp in peptide.ProductMassErrorPpm)
+                //Dictionary allows for easy iteration over the series, where the key is the interesting data and the value is a tuple of the string to build and the string used for double.ToString rounding
+                Dictionary<Dictionary<ProductType, double[]>, (StringBuilder sb, string format, string header)> peptideInfoToStringBuilderDict
+                    = new Dictionary<Dictionary<ProductType, double[]>, (StringBuilder sb, string format, string header)>
                 {
-                    sbTemp.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))) + "];");
+                    { peptide.MatchedIonMassToChargeRatioDict,  matchedIonInfo[0]},
+                    { peptide.ProductMassErrorDa, matchedIonInfo[1] },
+                    { peptide.ProductMassErrorPpm, matchedIonInfo[2] },
+                    { peptide.MatchedIonIntensitiesDict, matchedIonInfo[3] }
+                };
+
+                const string delimiter = ", "; //using ", " instead of "," improves human readability
+
+                foreach (ProductType productType in peptide.MatchedIonSeriesDict.Keys)
+                {
+                    string ionType = productType.ToString()[0].ToString().ToLower(); //gets the first char of the type (ie b, y, c, z)
+
+                    //Ion series
+                    string[] seriesToWrite = peptide.MatchedIonSeriesDict[productType].Select(x => ionType + x.ToString() + "+1").ToArray(); //assumes charge of +1
+                    seriesStringBuilder.Append("[" + string.Join(delimiter, seriesToWrite) + "];");
+
+                    //All other data present in dictionary
+                    //add bracket to the beginning of each stringbuilder in the dictionary for this product type
+                    foreach (var kvp in peptideInfoToStringBuilderDict)
+                    {
+                        kvp.Value.sb.Append("[");
+                    }
+
+                    //add all the data to the stringbuilder
+                    for (int i = 0; i < seriesToWrite.Length - 1; i++) //-1 so no delimiter for the last entry
+                    {
+                        string currentSeriesToWrite = seriesToWrite[i];
+                        foreach (var kvp in peptideInfoToStringBuilderDict)
+                        {
+                            kvp.Value.sb.Append(currentSeriesToWrite + ":" + kvp.Key[productType][i].ToString(kvp.Value.format, CultureInfo.InvariantCulture) + delimiter);
+                        }
+                    }
+                    //add the last data from each array without the delimiter
+                    if (seriesToWrite.Length != 0)//check it's not empty
+                    {
+                        string currentSeriesToWrite = seriesToWrite.Last();
+                        foreach (var kvp in peptideInfoToStringBuilderDict)
+                        {
+                            kvp.Value.sb.Append(currentSeriesToWrite + ":" + kvp.Key[productType].Last().ToString(kvp.Value.format, CultureInfo.InvariantCulture)); //no delimiter here!
+                        }
+                    }
+
+                    foreach (var kvp in peptideInfoToStringBuilderDict) //add bracket to the end of each stringbuilder in the dictionary
+                    {
+                        kvp.Value.sb.Append("];");
+                    }
                 }
+                ionCounts = string.Join(";", peptide.MatchedIonMassToChargeRatioDict.Select(b => b.Value.Count(c => c > 0)));
+                ionSeries = "[" + GlobalVariables.CheckLengthOfOutput(seriesStringBuilder.ToString()) + "]";
+            }
+            else
+            {
+                foreach (var info in matchedIonInfo)
+                {
+                    info.sb.Append(blankEntry);
+                }
+<<<<<<< HEAD
                 matchedIonDiffPpm = "[" + GlobalVariables.CheckLengthOfOutput(sbTemp.ToString()) + "]";
 
                 //Intensities
@@ -466,6 +513,17 @@ namespace EngineLayer
             s["Matched Ion Mass Diff (Da)"] = matchedIonDiffDa;
             s["Matched Ion Mass Diff (Ppm)"] = matchedIonDiffPpm;
             s["Matched Ion Intesities"] = matchedIonIntensities; 
+=======
+            }
+
+            //write into input dictionary
+            s["Matched Ion Counts"] = ionCounts;
+            s["Matched Ion Series"] = ionSeries;
+            foreach (var info in matchedIonInfo)
+            {
+                s[info.header] = info.sb.ToString();
+            }
+>>>>>>> af25b8eb24e7192e9c681ba5f15db10fc72f254c
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)

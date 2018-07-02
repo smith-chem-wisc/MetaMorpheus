@@ -119,15 +119,30 @@ namespace TaskLayer
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                 {
                     var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
-                    ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+
+                    try
+                    {
+                        ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+                    }
+                    catch (MzLibException ex)
+                    {
+                        Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
+                        continue;
+                    }
+
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                    {
                         ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                    }
+
                     if (doPrecursorDeconvolution)
+                    {
                         foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, 1, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance.Value, deconvolutionIntensityRatio))
                         {
                             var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
                             isolatedStuff.Add((monoPeakMz, envelope.charge));
                         }
+                    }
                 }
 
                 if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
@@ -158,9 +173,6 @@ namespace TaskLayer
             {
                 return commonParams;
             }
-
-            // clone the common parameters as a template for the file-specific params to override certain values
-            CommonParameters returnParams = commonParams.Clone();
             
             // set file-specific digestion parameters
             Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
@@ -169,15 +181,23 @@ namespace TaskLayer
             int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
             int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
             DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
-            returnParams.DigestionParams = fileSpecificDigestionParams;
-
+            
             // set the rest of the file-specific parameters
-            returnParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            returnParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            returnParams.BIons = fileSpecificParams.BIons ?? commonParams.BIons;
-            returnParams.YIons = fileSpecificParams.BIons ?? commonParams.YIons;
-            returnParams.CIons = fileSpecificParams.CIons ?? commonParams.CIons;
-            returnParams.ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
+            Tolerance PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            Tolerance ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            bool BIons = fileSpecificParams.BIons ?? commonParams.BIons;
+            bool YIons = fileSpecificParams.YIons ?? commonParams.YIons;
+            bool CIons = fileSpecificParams.CIons ?? commonParams.CIons;
+            bool ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
+
+            CommonParameters returnParams = new CommonParameters(
+                BIons: BIons,
+                YIons: YIons, 
+                CIons: CIons, 
+                ZdotIons: ZdotIons, 
+                PrecursorMassTolerance: PrecursorMassTolerance,
+                ProductMassTolerance: ProductMassTolerance, 
+                DigestionParams: fileSpecificDigestionParams);
 
             return returnParams;
         }
@@ -375,9 +395,9 @@ namespace TaskLayer
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
-        protected void Warn(string v)
+        protected static void Warn(string v)
         {
-            WarnHandler?.Invoke(this, new StringEventArgs(v, null));
+            WarnHandler?.Invoke(null, new StringEventArgs(v, null));
         }
 
         protected void Log(string v, List<string> nestedIds)
