@@ -147,6 +147,7 @@ CF   H-1 N-1 O1
 MM   0.984016
 MT   Biological
 DI   130.0975
+NL   43.0058
 //
 ID   S-nitrosocysteine
 TG   C
@@ -183,6 +184,7 @@ CF   C3 H2 O3
 MM   86.000394
 MT   Biological
 DI   126.0914 or 170.0812
+NL   43.9898
 //
 ID   N6-glutaryllysine
 TG   K
