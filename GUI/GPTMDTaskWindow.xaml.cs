@@ -305,12 +305,6 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-           
-
-            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
-            {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
 
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
@@ -340,6 +334,10 @@ namespace MetaMorpheusGUI
                     ListOfModsFixed:listOfModsFixed, 
                     ListOfModsVariable: listOfModsVariable);
 
+            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
             if (OutputFileNameTextBox.Text != "")
             {
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;

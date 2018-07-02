@@ -335,7 +335,8 @@ namespace TaskLayer
 
             var compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
                 (allPsms, proteinList, fixedModifications, variableModifications, productTypes, new List<DigestionParams> { combinedParameters.DigestionParams },
-                combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
+                combinedParameters.ReportAllAmbiguity, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
+
 
             foreach (var huh in allPsms)
             {

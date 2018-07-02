@@ -237,10 +237,6 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DigestionParams digestionParamsToSave = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms);
 
-            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
-            {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
             {
@@ -284,6 +280,10 @@ namespace MetaMorpheusGUI
                 ProductMassTolerance: ProductMassTolerance,
                 PrecursorMassTolerance: PrecursorMassTolerance);
 
+            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
             if (OutputFileNameTextBox.Text != "")
             {
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;

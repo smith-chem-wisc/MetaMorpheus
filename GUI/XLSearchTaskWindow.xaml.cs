@@ -315,11 +315,6 @@ namespace MetaMorpheusGUI
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
 
-            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
-            {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
-
             TheTask.XlSearchParameters.XlOutPercolator = ckbPercolator.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutPepXML = ckbPepXML.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutAll = ckbAllResults.IsChecked.Value;
@@ -355,6 +350,11 @@ namespace MetaMorpheusGUI
                 TotalPartitions: int.Parse(txtNumberOfDatabaseSearches.Text, CultureInfo.InvariantCulture),
                 ListOfModsVariable: listOfModsVariable,
                 ListOfModsFixed: listOfModsFixed);
+
+            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
             if (OutputFileNameTextBox.Text != "")
             {
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
