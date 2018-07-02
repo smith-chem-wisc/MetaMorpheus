@@ -209,12 +209,12 @@ namespace MetaMorpheusGUI
 
                     if (fileSpecificParams.PrecursorMassTolerance != null)
                     {
-                        tempCommonParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance;
+                        tempCommonParams.SetPrecursorMassTolerance(fileSpecificParams.PrecursorMassTolerance);
                         fileSpecificPrecursorMassTolEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.ProductMassTolerance != null)
                     {
-                        tempCommonParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance;
+                        tempCommonParams.SetProductMassTolerance(fileSpecificParams.ProductMassTolerance);
                         fileSpecificProductMassTolEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.Protease != null)
@@ -263,7 +263,7 @@ namespace MetaMorpheusGUI
                 MaxPeptideLength: tempMaxPeptideLength, 
                 MaxModsForPeptides: tempMaxModsForPeptide);
 
-            tempCommonParams.DigestionParams = digestParams;
+            tempCommonParams.SetDigestionParams(digestParams);
 
             // populate the GUI
             foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
