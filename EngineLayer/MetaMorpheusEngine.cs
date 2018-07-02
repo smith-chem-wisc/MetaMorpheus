@@ -47,7 +47,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static void MatchIonsOld(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, List<double> matchedIonIntensitiesList)
+        public static void MatchIonsOld(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<int> matchedIonSeries, List<double> matchedIonMassToChargeRatios, List<double> productMassErrorDa, List<double> productMassErrorPpm, List<double> matchedIonIntensitiesList, double precursorMass, ProductType productType, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)

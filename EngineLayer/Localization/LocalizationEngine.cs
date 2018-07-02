@@ -57,7 +57,7 @@ namespace EngineLayer.Localization
                     List<double> matchedIonIntensityList = new List<double>();
 
                     //populate the above lists
-                    MatchIons(theScan, fragmentTolerance, sortedTheoreticalProductMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensityList, thePrecursorMass, productType, addCompIons);
+                    MatchIonsOld(theScan, commonParameters.ProductMassTolerance, sortedTheoreticalProductMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensityList, thePrecursorMass, productType, commonParameters.AddCompIons);
 
                     psm.MatchedIonSeriesDict.Add(productType, matchedIonSeriesList.ToArray());
                     psm.MatchedIonMassToChargeRatioDict.Add(productType, matchedIonMassToChargeRatioList.ToArray());

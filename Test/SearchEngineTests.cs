@@ -204,7 +204,7 @@ namespace Test
                     protease: "Customized Protease", 
                     MinPeptideLength: 1),
                 scoreCutoff: 1,
-                AddCompIons: true);
+                addCompIons: true);
           
             var proteinList = new List<Protein> { new Protein("K", null) };
 
@@ -351,7 +351,7 @@ namespace Test
                 precursorMassTolerance: new PpmTolerance(5),
                 digestionParams: dp,
                 scoreCutoff: 1,
-                AddCompIons: true);
+                addCompIons: true);
             
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
@@ -401,7 +401,7 @@ namespace Test
                 digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 5),
                 precursorMassTolerance: new PpmTolerance(5),
                 scoreCutoff: 1,
-                AddCompIons: true);
+                addCompIons: true);
            
             new NonSpecificEnzymeSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, fragmentIndexDict, new List<ProductType> { ProductType.B }, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
@@ -445,7 +445,7 @@ namespace Test
                 digestionParams: dp,
                 scoreCutoff: 4,
                 precursorMassTolerance: new PpmTolerance(5),
-                AddCompIons: true);
+                addCompIons: true);
            
 
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
@@ -595,7 +595,7 @@ namespace Test
                 digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 5, MaxModsForPeptides: 2, SemiProteaseDigestion: true),
                 yIons: false,
                 scoreCutoff: 2,
-                AddCompIons: true);
+                addCompIons: true);
          
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, DecoyType.Reverse, digestParams, CommonParameters, 100000, new List<string>());
@@ -677,7 +677,7 @@ namespace Test
                 productMassTolerance: productMassTolerance,
                 digestionParams: new DigestionParams(protease: protease.Name, MaxMissedCleavages: 5, MinPeptideLength: 5, SemiProteaseDigestion: true, TerminusTypeSemiProtease: TerminusType.C),
                 bIons: false,
-                AddCompIons: true);
+                addCompIons: true);
            
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, DecoyType.Reverse, digestParams, CommonParameters, 30000, new List<string>());

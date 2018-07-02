@@ -19,7 +19,7 @@ namespace EngineLayer
 
         public CommonParameters(bool bIons = true, bool yIons = true, bool zDotIons = false, bool cIons = false, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
-            bool AddCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
+            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null)
         {
@@ -32,7 +32,7 @@ namespace EngineLayer
             this.DeconvolutionIntensityRatio = deconvolutionIntensityRatio;
             this.DeconvolutionMaxAssumedChargeState = deconvolutionMaxAssumedChargeState;
             this.ReportAllAmbiguity = reportAllAmbiguity;
-            this.AddCompIons = AddCompIons;
+            this.AddCompIons = addCompIons;
             this.TotalPartitions = totalPartitions;
             this.ScoreCutoff = scoreCutoff;
             this.TopNpeaks = topNpeaks;
@@ -108,7 +108,7 @@ namespace EngineLayer
                 deconvolutionIntensityRatio: this.DeconvolutionIntensityRatio,
                 deconvolutionMaxAssumedChargeState: this.DeconvolutionMaxAssumedChargeState,
                 reportAllAmbiguity: this.ReportAllAmbiguity,
-                AddCompIons: this.AddCompIons,
+                addCompIons: this.AddCompIons,
                 totalPartitions: this.TotalPartitions,
                 scoreCutoff: this.ScoreCutoff,
                 topNpeaks: this.TopNpeaks,

@@ -92,6 +92,7 @@ namespace EngineLayer
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
         public readonly DigestionParams DigestionParams;
         public List<double> AllScores { get; set; }
+        public List<MatchedFragmentIon> MatchedFragmentIons { get; private set; }
 
         public double[] Features
         {
