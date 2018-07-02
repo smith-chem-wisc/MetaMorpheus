@@ -268,7 +268,6 @@ namespace EngineLayer.Calibration
                             identification));
                 }
             }
-
             return result;
         }
 
