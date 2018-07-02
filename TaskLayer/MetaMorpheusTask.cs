@@ -119,15 +119,30 @@ namespace TaskLayer
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                 {
                     var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
-                    ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+
+                    try
+                    {
+                        ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+                    }
+                    catch (MzLibException ex)
+                    {
+                        Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
+                        continue;
+                    }
+
                     if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                    {
                         ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                    }
+
                     if (doPrecursorDeconvolution)
+                    {
                         foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, 1, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance.Value, deconvolutionIntensityRatio))
                         {
                             var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
                             isolatedStuff.Add((monoPeakMz, envelope.charge));
                         }
+                    }
                 }
 
                 if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
@@ -380,9 +395,9 @@ namespace TaskLayer
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
-        protected void Warn(string v)
+        protected static void Warn(string v)
         {
-            WarnHandler?.Invoke(this, new StringEventArgs(v, null));
+            WarnHandler?.Invoke(null, new StringEventArgs(v, null));
         }
 
         protected void Log(string v, List<string> nestedIds)

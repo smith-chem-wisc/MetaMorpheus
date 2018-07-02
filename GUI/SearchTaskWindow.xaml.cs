@@ -484,7 +484,7 @@ namespace MetaMorpheusGUI
                 trimMsMsPeaks: TrimMsMsPeaks, 
                 topNpeaks: TopNpeaks, 
                 minRatio: MinRatio,
-                AddCompIons: addCompIonCheckBox.IsChecked.Value);
+                addCompIons: addCompIonCheckBox.IsChecked.Value);
 
             if (OutputFileNameTextBox.Text != "")
             {
@@ -713,7 +713,7 @@ namespace MetaMorpheusGUI
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
         }
-
+        
         #endregion Private Methods
 
     }

@@ -128,7 +128,7 @@ namespace TaskLayer
                     {
                         break;
                     }
-                    
+
                     if (i == 1) // failed round 1
                     {
                         this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(20));
@@ -298,11 +298,9 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
         {
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
-            MassDiffAcceptor searchMode;
-            if (initPrecTol is PpmTolerance)
-                searchMode = new SinglePpmAroundZeroSearchMode(initPrecTol.Value);
-            else
-                searchMode = new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
+            MassDiffAcceptor searchMode = initPrecTol is PpmTolerance ?
+                (MassDiffAcceptor)new SinglePpmAroundZeroSearchMode(initPrecTol.Value) :
+                new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
             if (combinedParameters.BIons)
@@ -318,30 +316,34 @@ namespace TaskLayer
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
-            List<ProductType> lp = new List<ProductType>();
+            List<ProductType> productTypes = new List<ProductType>();
             if (combinedParameters.BIons)
-                lp.Add(ProductType.B);
+                productTypes.Add(ProductType.B);
             if (combinedParameters.YIons)
-                lp.Add(ProductType.Y);
+                productTypes.Add(ProductType.Y);
             if (combinedParameters.CIons)
-                lp.Add(ProductType.C);
+                productTypes.Add(ProductType.C);
             if (combinedParameters.ZdotIons)
-                lp.Add(ProductType.Zdot);
+                productTypes.Add(ProductType.Zdot);
 
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productTypes, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
 
             var compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
-                (allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams },
+                (allPsms, proteinList, fixedModifications, variableModifications, productTypes, new List<DigestionParams> { combinedParameters.DigestionParams },
                 combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
-            
+
             foreach (var huh in allPsms)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
