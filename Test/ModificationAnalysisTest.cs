@@ -93,7 +93,7 @@ namespace Test
             }
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(2, res.AllModsOnProteins.Count());
@@ -164,7 +164,7 @@ namespace Test
 
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(1, res.AllModsOnProteins.Count());

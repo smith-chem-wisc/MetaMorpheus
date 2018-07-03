@@ -40,7 +40,7 @@ namespace EngineLayer.Calibration
             int minMS2isotopicPeaksNeededForConfirmedIdentification,
             FragmentTypes fragmentTypesForCalibration,
             CommonParameters commonParameters,
-            List<string> nestedIds) : base(nestedIds)
+            List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.goodIdentifications = goodIdentifications;
             this.myMsDataFile = myMsDataFile;

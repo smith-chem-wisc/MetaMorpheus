@@ -27,7 +27,7 @@ namespace Test
         {
             #region Public Constructors
 
-            public TestEngine(int level) : base(new List<string>())
+            public TestEngine(int level) : base(new CommonParameters(), new List<string>())
             {
             }
 

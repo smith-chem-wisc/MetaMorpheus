@@ -33,7 +33,7 @@ namespace EngineLayer.CrosslinkAnalysis
 
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -44,7 +44,7 @@ namespace EngineLayer.CrosslinkAnalysis
             this.OutputFolder = OutputFolder;
             this.crosslinker = crosslinker;
             this.terminusType = terminusType;
-            this.CommonParameters = CommonParameters;
+            this.CommonParameters = commonParameters;
         }
 
         #endregion Public Constructors
