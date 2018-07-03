@@ -25,7 +25,7 @@ namespace Test
             { }
 
             protected ProteinLoaderTask()
-                : base(MyTask.Search)
+                : base(TaskType.Search)
             { }
 
             public void Run(string dbPath)

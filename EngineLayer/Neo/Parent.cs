@@ -2,21 +2,13 @@
 {
     public class Parent
     {
-        #region Public Constructors
-
         public Parent(string id, string seq)
         {
-            this.id = id;
-            this.seq = seq;
+            ID = id;
+            Seq = seq;
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
-        public string id { get; set; }
-        public string seq { get; set; }
-
-        #endregion Public Properties
+        public string ID { get; set; }
+        public string Seq { get; set; }
     }
 }

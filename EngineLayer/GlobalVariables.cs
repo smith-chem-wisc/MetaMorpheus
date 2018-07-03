@@ -1,5 +1,6 @@
 ﻿using Nett;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,18 +10,12 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
-        #region Private Fields
-
-        private static List<Modification> allModsKnown = new List<Modification>();
-        private static HashSet<string> allModTypesKnown = new HashSet<string>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private static List<Modification> _allModsKnown = new List<Modification>();
+        private static HashSet<string> _allModTypesKnown = new HashSet<string>();
 
         static GlobalVariables()
         {
-            #region Determine MetaMorpheusVersion
+            // Determine MetaMorpheusVersion
 
             MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
 
@@ -34,7 +29,7 @@ namespace EngineLayer
             }
             else
             {
-                // as of 0.0.277, AppVeyor appends the build number 
+                // as of 0.0.277, AppVeyor appends the build number
                 // this is intentional; it's to avoid conflicting AppVeyor build numbers
                 // trim the build number off the version number for displaying/checking versions, etc
                 var foundIndexes = new List<int>();
@@ -46,19 +41,17 @@ namespace EngineLayer
                 MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
             }
 
-            #endregion Determine MetaMorpheusVersion
+            // Figure out DataDir
 
-            #region Figure out DataDir
-
+            var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
             {
-                var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
-                    DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
-                else
-                    DataDir = AppDomain.CurrentDomain.BaseDirectory;
+                DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
             }
-
-            #endregion Figure out DataDir
+            else
+            {
+                DataDir = AppDomain.CurrentDomain.BaseDirectory;
+            }
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
@@ -71,65 +64,56 @@ namespace EngineLayer
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
+            {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+            }
             AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
             AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
-
-            ProteaseDictionary = LoadProteaseDictionary(Path.Combine(DataDir, @"Data", "proteases.tsv"));
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
-        // File locations
-        public static string DataDir { get; }
-
+        public static bool StopLoops { get; set; }
+        public static string DataDir { get; } // File locations
         public static string ElementsLocation { get; }
         public static string MetaMorpheusVersion { get; }
         public static IGlobalSettings GlobalSettings { get; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-        public static Dictionary<string, Protease> ProteaseDictionary;
-        public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
-        public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
+        public static IEnumerable<Modification> AllModsKnown { get { return _allModsKnown.AsEnumerable(); } }
+        public static IEnumerable<string> AllModTypesKnown { get { return _allModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public static void AddMods(IEnumerable<Modification> enumerable)
         {
             foreach (var ye in enumerable)
             {
                 if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
+                {
                     throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
+                }
                 if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType) && !b.Equals(ye)))
+                {
                     throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) + Environment.NewLine + Environment.NewLine);
+                }
                 else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
+                {
                     continue;
+                }
                 else
                 {
-                    allModsKnown.Add(ye);
-                    allModTypesKnown.Add(ye.modificationType);
+                    _allModsKnown.Add(ye);
+                    _allModTypesKnown.Add(ye.modificationType);
                 }
             }
         }
 
         public static string CheckLengthOfOutput(string psmString)
         {
-            if (psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs)
-            {
-                return "Output too long for Excel";
-            }
-            else
-            {
-                return psmString;
-            }
+            return psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs ?
+                "Output too long for Excel" :
+                psmString;
         }
 
         public static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
@@ -172,7 +156,5 @@ namespace EngineLayer
             }
             return dict;
         }
-
-        #endregion Public Methods
     }
 }

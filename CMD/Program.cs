@@ -13,15 +13,8 @@ namespace MetaMorpheusCommandLine
 {
     internal static class Program
     {
-        #region Private Fields
-
         private static bool inProgress;
-
         private static System.CodeDom.Compiler.IndentedTextWriter myWriter = new System.CodeDom.Compiler.IndentedTextWriter(Console.Out, "\t");
-
-        #endregion Private Fields
-
-        #region Private Methods
 
         private static void Main(string[] args)
         {
@@ -147,14 +140,14 @@ namespace MetaMorpheusCommandLine
 
                     List<string> startingRawFilenameList = p.Object.Spectra.Select(b => Path.GetFullPath(b)).ToList();
                     List<DbForTask> startingXmlDbFilenameList = p.Object.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
-                    
+
                     string outputFolder = p.Object.OutputFolder;
-                    if(outputFolder == null)
+                    if (outputFolder == null)
                     {
                         var pathOfFirstSpectraFile = Path.GetDirectoryName(startingRawFilenameList.First());
                         outputFolder = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
                     }
-                    
+
                     EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, outputFolder);
 
                     try
@@ -210,7 +203,7 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 myWriter.WriteLine();
             inProgress = false;
-            WriteMultiLineIndented("Finished writing file: " + e.writtenFile);
+            WriteMultiLineIndented("Finished writing file: " + e.WrittenFile);
         }
 
         private static void MyTaskEngine_finishedSingleTaskHandler(object sender, SingleTaskEventArgs e)
@@ -227,7 +220,7 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 myWriter.WriteLine();
             inProgress = false;
-            WriteMultiLineIndented("Starting engine: " + e.myEngine.GetType().Name + " " + e.myEngine.GetId());
+            WriteMultiLineIndented("Starting engine: " + e.MyEngine.GetType().Name + " " + e.MyEngine.GetId());
             myWriter.Indent++;
         }
 
@@ -238,12 +231,12 @@ namespace MetaMorpheusCommandLine
             inProgress = false;
             WriteMultiLineIndented("Engine results: " + e);
             myWriter.Indent--;
-            WriteMultiLineIndented("Finished engine: " + e.myResults.MyEngine.GetType().Name + " " + e.myResults.MyEngine.GetId());
+            WriteMultiLineIndented("Finished engine: " + e.MyResults.MyEngine.GetType().Name + " " + e.MyResults.MyEngine.GetId());
         }
 
         private static void MyEngine_outProgressHandler(object sender, ProgressEventArgs e)
         {
-            myWriter.Write(e.new_progress + " ");
+            myWriter.Write(e.NewProgress + " ");
             inProgress = true;
         }
 
@@ -263,23 +256,13 @@ namespace MetaMorpheusCommandLine
             WriteMultiLineIndented("Log: " + e.S);
         }
 
-        #endregion Private Methods
-
-        #region Public Classes
-
         public class ApplicationArguments
         {
-            #region Public Properties
-
             public List<string> Tasks { get; set; }
             public List<string> Databases { get; set; }
             public List<string> Spectra { get; set; }
             public List<string> MetaTasks { get; set; }
             public string OutputFolder { get; set; }
-
-            #endregion Public Properties
         }
-
-        #endregion Public Classes
     }
 }

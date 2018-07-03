@@ -1,20 +1,17 @@
-﻿using EngineLayer;
-using MzLibUtil;
+﻿using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EngineLayer
 {
     public class CommonParameters
     {
-        #region Public Constructors
-
-        // this parameterless constructor needs to exist to read the toml. 
+        // this parameterless constructor needs to exist to read the toml.
         // if you can figure out a way to get rid of it, feel free...
-        public CommonParameters() : this(digestionParams: null)
+        public CommonParameters()
+            : this(digestionParams: null)
         {
-
         }
 
         public CommonParameters(bool bIons = true, bool yIons = true, bool zDotIons = false, bool cIons = false, bool doPrecursorDeconvolution = true,
@@ -23,46 +20,42 @@ namespace EngineLayer
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null)
         {
-            this.BIons = bIons;
-            this.YIons = yIons;
-            this.ZdotIons = zDotIons;
-            this.CIons = cIons;
-            this.DoPrecursorDeconvolution = doPrecursorDeconvolution;
-            this.UseProvidedPrecursorInfo = useProvidedPrecursorInfo;
-            this.DeconvolutionIntensityRatio = deconvolutionIntensityRatio;
-            this.DeconvolutionMaxAssumedChargeState = deconvolutionMaxAssumedChargeState;
-            this.ReportAllAmbiguity = reportAllAmbiguity;
-            this.AddCompIons = addCompIons;
-            this.TotalPartitions = totalPartitions;
-            this.ScoreCutoff = scoreCutoff;
-            this.TopNpeaks = topNpeaks;
-            this.MinRatio = minRatio;
-            this.TrimMs1Peaks = trimMs1Peaks;
-            this.TrimMsMsPeaks = trimMsMsPeaks;
-            this.UseDeltaScore = useDeltaScore;
-            this.CalculateEValue = calculateEValue;
-            this.MaxThreadsToUsePerFile = maxThreadsToUsePerFile;
+            BIons = bIons;
+            YIons = yIons;
+            ZdotIons = zDotIons;
+            CIons = cIons;
+            DoPrecursorDeconvolution = doPrecursorDeconvolution;
+            UseProvidedPrecursorInfo = useProvidedPrecursorInfo;
+            DeconvolutionIntensityRatio = deconvolutionIntensityRatio;
+            DeconvolutionMaxAssumedChargeState = deconvolutionMaxAssumedChargeState;
+            ReportAllAmbiguity = reportAllAmbiguity;
+            AddCompIons = addCompIons;
+            TotalPartitions = totalPartitions;
+            ScoreCutoff = scoreCutoff;
+            TopNpeaks = topNpeaks;
+            MinRatio = minRatio;
+            TrimMs1Peaks = trimMs1Peaks;
+            TrimMsMsPeaks = trimMsMsPeaks;
+            UseDeltaScore = useDeltaScore;
+            CalculateEValue = calculateEValue;
+            MaxThreadsToUsePerFile = maxThreadsToUsePerFile;
 
-            this.ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
-            this.PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
-            this.DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
-            this.DigestionParams = digestionParams ?? new DigestionParams();
-            this.ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation of M") };
-            this.ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
+            ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
+            PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
+            DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
+            DigestionParams = digestionParams ?? new DigestionParams();
+            ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
 
             if (maxThreadsToUsePerFile == -1)
             {
-                this.MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;
+                MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;
             }
             else
             {
-                this.MaxThreadsToUsePerFile = maxThreadsToUsePerFile;
+                MaxThreadsToUsePerFile = maxThreadsToUsePerFile;
             }
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
         public string TaskDescriptor { get; set; }
@@ -92,56 +85,50 @@ namespace EngineLayer
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public CommonParameters Clone()
         {
             return new CommonParameters(
-                bIons: this.BIons,
-                yIons: this.YIons,
-                zDotIons: this.ZdotIons,
-                cIons: this.CIons,
-                doPrecursorDeconvolution: this.DoPrecursorDeconvolution,
-                useProvidedPrecursorInfo: this.UseProvidedPrecursorInfo,
-                deconvolutionIntensityRatio: this.DeconvolutionIntensityRatio,
-                deconvolutionMaxAssumedChargeState: this.DeconvolutionMaxAssumedChargeState,
-                reportAllAmbiguity: this.ReportAllAmbiguity,
-                addCompIons: this.AddCompIons,
-                totalPartitions: this.TotalPartitions,
-                scoreCutoff: this.ScoreCutoff,
-                topNpeaks: this.TopNpeaks,
-                minRatio: this.MinRatio,
-                trimMs1Peaks: this.TrimMs1Peaks,
-                trimMsMsPeaks: this.TrimMsMsPeaks,
-                useDeltaScore: this.UseDeltaScore,
-                calculateEValue: this.CalculateEValue,
-                productMassTolerance: this.ProductMassTolerance,
-                precursorMassTolerance: this.PrecursorMassTolerance,
-                deconvolutionMassTolerance: this.DeconvolutionMassTolerance,
-                maxThreadsToUsePerFile: this.MaxThreadsToUsePerFile,
-                digestionParams: this.DigestionParams,
-                listOfModsVariable: this.ListOfModsVariable,
-                listOfModsFixed: this.ListOfModsFixed
+                bIons: BIons,
+                yIons: YIons,
+                zDotIons: ZdotIons,
+                cIons: CIons,
+                doPrecursorDeconvolution: DoPrecursorDeconvolution,
+                useProvidedPrecursorInfo: UseProvidedPrecursorInfo,
+                deconvolutionIntensityRatio: DeconvolutionIntensityRatio,
+                deconvolutionMaxAssumedChargeState: DeconvolutionMaxAssumedChargeState,
+                reportAllAmbiguity: ReportAllAmbiguity,
+                addCompIons: AddCompIons,
+                totalPartitions: TotalPartitions,
+                scoreCutoff: ScoreCutoff,
+                topNpeaks: TopNpeaks,
+                minRatio: MinRatio,
+                trimMs1Peaks: TrimMs1Peaks,
+                trimMsMsPeaks: TrimMsMsPeaks,
+                useDeltaScore: UseDeltaScore,
+                calculateEValue: CalculateEValue,
+                productMassTolerance: ProductMassTolerance,
+                precursorMassTolerance: PrecursorMassTolerance,
+                deconvolutionMassTolerance: DeconvolutionMassTolerance,
+                maxThreadsToUsePerFile: MaxThreadsToUsePerFile,
+                digestionParams: DigestionParams,
+                listOfModsVariable: ListOfModsVariable,
+                listOfModsFixed: ListOfModsFixed
             );
         }
-        
-        public void SetProductMassTolerance(Tolerance ProductMassTolerance)
+
+        public void SetProductMassTolerance(Tolerance productMassTolerance)
         {
-            this.ProductMassTolerance = ProductMassTolerance;
+            ProductMassTolerance = productMassTolerance;
         }
 
-        public void SetPrecursorMassTolerance(Tolerance PrecursorMassTolerance)
+        public void SetPrecursorMassTolerance(Tolerance precursorMassTolerance)
         {
-            this.PrecursorMassTolerance = PrecursorMassTolerance;
+            PrecursorMassTolerance = precursorMassTolerance;
         }
 
-        public void SetDigestionParams(DigestionParams DigestionParams)
+        public void SetDigestionParams(DigestionParams digestionParams)
         {
-            this.DigestionParams = DigestionParams;
+            DigestionParams = digestionParams;
         }
-
-        #endregion Public Methods
     }
 }

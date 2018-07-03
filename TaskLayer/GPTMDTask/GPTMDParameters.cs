@@ -5,8 +5,6 @@ namespace EngineLayer
 {
     public class GptmdParameters
     {
-        #region Public Constructors
-
         public GptmdParameters()
         {
             ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
@@ -19,12 +17,6 @@ namespace EngineLayer
                 b.modificationType.Equals("ProteinTermMod")).Select(b => (b.modificationType, b.id)).ToList();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public List<(string, string)> ListOfModsGptmd { get; set; }
-
-        #endregion Public Properties
     }
 }

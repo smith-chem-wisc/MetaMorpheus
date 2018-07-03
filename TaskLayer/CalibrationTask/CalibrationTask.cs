@@ -1,27 +1,31 @@
 using EngineLayer;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
+using EngineLayer.FdrAnalysis;
+using EngineLayer.Localization;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using EngineLayer.FdrAnalysis;
-using EngineLayer.Localization;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
     public class CalibrationTask : MetaMorpheusTask
     {
-        #region Public Constructors
+        private int numRequiredPsms = 20;
+        private int numRequiredMs1Datapoints = 50;
+        private int numRequiredMs2Datapoints = 100;
+        private const string calibSuffix = "-calib";
 
-        public CalibrationTask() : base(MyTask.Calibrate)
+        public CalibrationTask() : base(TaskType.Calibrate)
         {
             CommonParameters = new CommonParameters(
                 productMassTolerance: new PpmTolerance(25),
@@ -33,34 +37,24 @@ namespace TaskLayer
             CalibrationParameters = new CalibrationParameters();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public CalibrationParameters CalibrationParameters { get; set; }
 
-        #endregion Public Properties
-
-        #region Protected Methods
-
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             // load modifications
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown
+                .OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown
+                .OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
-            if (CommonParameters.BIons)
-                ionTypes.Add(ProductType.BnoB1ions);
-            if (CommonParameters.YIons)
-                ionTypes.Add(ProductType.Y);
-            if (CommonParameters.ZdotIons)
-                ionTypes.Add(ProductType.Zdot);
-            if (CommonParameters.CIons)
-                ionTypes.Add(ProductType.C);
+            if (CommonParameters.BIons) {  ionTypes.Add(ProductType.BnoB1ions); }
+            if (CommonParameters.YIons) { ionTypes.Add(ProductType.Y); }
+            if (CommonParameters.ZdotIons) { ionTypes.Add(ProductType.Zdot); }
+            if (CommonParameters.CIons) { ionTypes.Add(ProductType.C); }
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
@@ -86,8 +80,8 @@ namespace TaskLayer
             Status("Calibrating...", new List<string> { taskId });
             MyTaskResults = new MyTaskResults(this)
             {
-                newSpectra = new List<string>(),
-                newFileSpecificTomls = new List<string>()
+                NewSpectra = new List<string>(),
+                NewFileSpecificTomls = new List<string>()
             };
 
             object lock1 = new object();
@@ -99,7 +93,7 @@ namespace TaskLayer
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 var originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".mzML");
+                string calibratedFilePath = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".mzML");
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -189,7 +183,7 @@ namespace TaskLayer
                 bool improvement = ImprovGlobal(preCalibrationPrecursorErrorIqr, preCalibrationProductErrorIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorErrorIqr, postCalibrationProductErrorIqr);
 
                 // write toml settings for the calibrated file
-                var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".toml");
+                var newTomlFileName = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".toml");
 
                 var fileSpecificParams = new FileSpecificParameters();
 
@@ -220,8 +214,8 @@ namespace TaskLayer
 
                 // finished calibrating this file
                 SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                MyTaskResults.newSpectra.Add(calibratedFilePath);
-                MyTaskResults.newFileSpecificTomls.Add(newTomlFileName);
+                MyTaskResults.NewSpectra.Add(calibratedFilePath);
+                MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
             }
@@ -255,26 +249,13 @@ namespace TaskLayer
                 }
             }
 
-            File.WriteAllLines(Path.Combine(OutputFolder, GlobalVariables.ExperimentalDesignFileName), newExperimentalDesignOutput);
+            File.WriteAllLines(Path.Combine(outputFolder, GlobalVariables.ExperimentalDesignFileName), newExperimentalDesignOutput);
 
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             return MyTaskResults;
         }
-
-        #endregion Protected Methods
-
-        #region Private Fields
-
-        private int numRequiredPsms = 20;
-        private int numRequiredMs1Datapoints = 50;
-        private int numRequiredMs2Datapoints = 100;
-        private const string calibSuffix = "-calib";
-
-        #endregion Private Fields
-
-        #region Private Methods
 
         private bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
         {
@@ -371,7 +352,5 @@ namespace TaskLayer
 
             return currentResult;
         }
-
-        #endregion Private Methods
     }
 }

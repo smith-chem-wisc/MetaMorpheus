@@ -8,7 +8,11 @@ namespace EngineLayer.Calibration
 {
     public class DataPointAquisitionResults : MetaMorpheusEngineResults
     {
-        #region Public Constructors
+        public readonly double PsmPrecursorMedianPpmError;
+        public readonly double PsmProductMedianPpmError;
+        public readonly double PsmPrecursorIqrPpmError;
+        public readonly double PsmProductIqrPpmError;
+        public readonly List<PeptideSpectralMatch> Psms;
 
         public DataPointAquisitionResults(
             MetaMorpheusEngine dataPointAcquisitionEngine,
@@ -26,11 +30,11 @@ namespace EngineLayer.Calibration
             Ms1List = ms1List;
             Ms2List = ms2List;
 
-            Ms1InfoTh = Ms1List.Select(b => b.experimentalMz - b.theoreticalMz).MeanStandardDeviation();
-            Ms2InfoTh = Ms2List.Select(b => b.experimentalMz - b.theoreticalMz).MeanStandardDeviation();
+            Ms1InfoTh = Ms1List.Select(b => b.ExperimentalMz - b.TheoreticalMz).MeanStandardDeviation();
+            Ms2InfoTh = Ms2List.Select(b => b.ExperimentalMz - b.TheoreticalMz).MeanStandardDeviation();
 
-            Ms1InfoPpm = Ms1List.Select(b => (b.experimentalMz - b.theoreticalMz) / b.theoreticalMz).MeanStandardDeviation();
-            Ms2InfoPpm = Ms2List.Select(b => (b.experimentalMz - b.theoreticalMz) / b.theoreticalMz).MeanStandardDeviation();
+            Ms1InfoPpm = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).MeanStandardDeviation();
+            Ms2InfoPpm = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).MeanStandardDeviation();
 
             NumMs1MassChargeCombinationsConsidered = numMs1MassChargeCombinationsConsidered;
             NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
@@ -46,10 +50,6 @@ namespace EngineLayer.Calibration
             PsmProductMedianPpmError = Statistics.Median(productErrors);
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public Tuple<double, double> Ms1InfoTh { get; }
         public Tuple<double, double> Ms2InfoTh { get; }
         public Tuple<double, double> Ms1InfoPpm { get; }
@@ -63,17 +63,7 @@ namespace EngineLayer.Calibration
         public List<LabeledDataPoint> Ms1List { get; }
         public List<LabeledDataPoint> Ms2List { get; }
 
-        public readonly double PsmPrecursorMedianPpmError;
-        public readonly double PsmProductMedianPpmError;
-        public readonly double PsmPrecursorIqrPpmError;
-        public readonly double PsmProductIqrPpmError;
-        public readonly List<PeptideSpectralMatch> Psms;
-
         public int Count { get { return Ms1List.Count + Ms2List.Count; } }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public override string ToString()
         {
@@ -88,7 +78,5 @@ namespace EngineLayer.Calibration
             sb.AppendLine("MS2 ppm error interquartile range: " + Math.Round(PsmProductIqrPpmError, 3));
             return sb.ToString();
         }
-
-        #endregion Public Methods
     }
 }

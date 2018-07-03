@@ -2,6 +2,7 @@
 using EngineLayer;
 using MzLibUtil;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -177,7 +178,7 @@ namespace TaskLayer
                 },
                 Inputs = new mzIdentML110.Generated.InputsType
                 {
-                    SearchDatabase = new mzIdentML110.Generated.SearchDatabaseType[databases.Count()],
+                    SearchDatabase = new mzIdentML110.Generated.SearchDatabaseType[databases.Count],
                     SpectraData = new mzIdentML110.Generated.SpectraDataType[filenames.Count]
                 }
             };
@@ -317,7 +318,7 @@ namespace TaskLayer
                             Modification = new mzIdentML110.Generated.ModificationType[peptide.NumMods]
                         };
                         int mod_id = 0;
-                        foreach (KeyValuePair<int, ModificationWithMass> mod in peptide.allModsOneIsNterminus)
+                        foreach (KeyValuePair<int, ModificationWithMass> mod in peptide.AllModsOneIsNterminus)
                         {
                             _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML110.Generated.ModificationType()
                             {

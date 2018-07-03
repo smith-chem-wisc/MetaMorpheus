@@ -2,33 +2,26 @@
 {
     public class LabeledDataPoint
     {
-        #region Public Fields
+        public readonly double ExperimentalMz;
+        public readonly double RetentionTime;
+        public readonly double LogTotalIonCurrent;
+        public readonly double LogInjectionTime;
+        public readonly double LogIntensity;
+        public readonly double TheoreticalMz;
+        public readonly double AbsoluteMzError;
+        public readonly PeptideSpectralMatch Identification;
 
-        public readonly double experimentalMz;
-        public readonly double rt;
-        public readonly double logTotalIonCurrent;
-        public readonly double logInjectionTime;
-        public readonly double logIntensity;
-        public readonly double theoreticalMz;
-        public readonly double absoluteMzError;
-        public readonly PeptideSpectralMatch identification;
-
-        #endregion Public Fields
-
-        #region Protected Constructors
-
-        public LabeledDataPoint(double experimentalMz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double theoreticalMz, PeptideSpectralMatch identification)
+        public LabeledDataPoint(double experimentalMz, double rt, double logTotalIonCurrent, double logInjectionTime,
+            double logIntensity, double theoreticalMz, PeptideSpectralMatch identification)
         {
-            this.experimentalMz = experimentalMz;
-            this.rt = rt;
-            this.logTotalIonCurrent = logTotalIonCurrent;
-            this.logInjectionTime = logInjectionTime;
-            this.logIntensity = logIntensity;
-            this.theoreticalMz = theoreticalMz;
-            this.identification = identification;
-            this.absoluteMzError = experimentalMz - theoreticalMz;
+            ExperimentalMz = experimentalMz;
+            RetentionTime = rt;
+            LogTotalIonCurrent = logTotalIonCurrent;
+            LogInjectionTime = logInjectionTime;
+            LogIntensity = logIntensity;
+            TheoreticalMz = theoreticalMz;
+            Identification = identification;
+            AbsoluteMzError = experimentalMz - theoreticalMz;
         }
-
-        #endregion Protected Constructors
     }
 }

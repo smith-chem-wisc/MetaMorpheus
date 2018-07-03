@@ -1,6 +1,8 @@
 ﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
+using MassSpectrometry;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -12,48 +14,33 @@ namespace EngineLayer
 {
     public class PeptideSpectralMatch
     {
-        #region Private Fields
-
-        private const double tolForDoubleResolution = 1e-6;
-
-        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
-
-        #endregion Private Fields
-
-        #region Public Fields
-
         public const double tolForScoreDifferentiation = 1e-9;
 
-        #endregion Public Fields
-
-        #region Public Constructors
+        private const double tolForDoubleResolution = 1e-6;
+        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
         {
-            this.ScanIndex = scanIndex;
-            this.FullFilePath = scan.FullFilePath;
-            this.ScanNumber = scan.OneBasedScanNumber;
-            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
-            this.ScanRetentionTime = scan.RetentionTime;
-            this.ScanExperimentalPeaks = scan.NumPeaks;
-            this.TotalIonCurrent = scan.TotalIonCurrent;
-            this.ScanPrecursorCharge = scan.PrecursorCharge;
-            this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
-            this.ScanPrecursorMass = scan.PrecursorMass;
+            ScanIndex = scanIndex;
+            FullFilePath = scan.FullFilePath;
+            ScanNumber = scan.OneBasedScanNumber;
+            PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
+            ScanRetentionTime = scan.RetentionTime;
+            ScanExperimentalPeaks = scan.NumPeaks;
+            TotalIonCurrent = scan.TotalIonCurrent;
+            ScanPrecursorCharge = scan.PrecursorCharge;
+            ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
+            ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
-            this.AllScores = new List<double>();
-            this.DigestionParams = digestionParams;
+            AllScores = new List<double>();
+            DigestionParams = digestionParams;
             MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
             MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-            this.MatchedFragmentIons = new List<MatchedFragmentIon>();
+            MatchedFragmentIons = new List<MatchedFragmentIon>();
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
@@ -101,10 +88,6 @@ namespace EngineLayer
                 return new[] { Math.Round(Score), Score - Math.Round(Score) };
             }
         }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public static string GetTabSeparatedHeader()
         {
@@ -176,8 +159,8 @@ namespace EngineLayer
             PeptideMonisotopicMass = Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).Item2;
             ProteinAccesion = Resolve(pepsWithMods.Select(b => b.Protein.Accession)).Item2;
             Organism = Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item2;
-            ModsIdentified = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus)).Item2;
-            ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
+            ModsIdentified = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).Item2;
+            ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
@@ -222,10 +205,6 @@ namespace EngineLayer
                 CalculateEValue = calculateEValue
             };
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
         {
@@ -385,11 +364,11 @@ namespace EngineLayer
             s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item1;
             s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Sequence)).Item1;
             s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).Item1;
-            s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus)).Item1;
+            s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).Item1;
             s["Mods Chemical Formulas"] = pepWithModsIsNull ? " " :
-                Resolve(pepsWithMods.Select(b => string.Join("|", b.allModsOneIsNterminus.OrderBy(c => c.Key)
+                Resolve(pepsWithMods.Select(b => string.Join("|", b.AllModsOneIsNterminus.OrderBy(c => c.Key)
                     .Where(c => c.Value is ModificationWithMassAndCf).Select(c => (c.Value as ModificationWithMassAndCf).chemicalFormula.Formula)))).Item1;
-            s["Mods Combined Chemical Formula"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1;
+            s["Mods Combined Chemical Formula"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1;
             s["Num Variable Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).Item1;
             s["Missed Cleavages"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).Item1;
             s["Peptide Monoisotopic Mass"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).Item1;
@@ -558,7 +537,5 @@ namespace EngineLayer
             s["eValue"] = eValue;
             s["eScore"] = eScore;
         }
-
-        #endregion Private Methods
     }
 }

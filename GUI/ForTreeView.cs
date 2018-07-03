@@ -6,15 +6,9 @@ namespace MetaMorpheusGUI
 {
     public class ForTreeView : INotifyPropertyChanged
     {
-        #region Private Fields
-
-        private string status;
-        private int progress;
-        private bool isIndeterminate;
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private string _status;
+        private int _progress;
+        private bool _isIndeterminate;
 
         public ForTreeView(string displayName, string id)
         {
@@ -23,34 +17,32 @@ namespace MetaMorpheusGUI
             Children = new ObservableCollection<ForTreeView>();
         }
 
-        #endregion Public Constructors
-
-        #region Public Events
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         public ObservableCollection<ForTreeView> Children { get; private set; }
 
         public string Status
         {
-            get { return status; }
+            get
+            {
+                return _status;
+            }
             set
             {
-                status = value;
+                _status = value;
                 OnPropertyChanged();
             }
         }
 
         public int Progress
         {
-            get { return progress; }
+            get
+            {
+                return _progress;
+            }
             set
             {
-                progress = value;
+                _progress = value;
                 OnPropertyChanged();
             }
         }
@@ -60,23 +52,20 @@ namespace MetaMorpheusGUI
 
         public bool IsIndeterminate
         {
-            get { return isIndeterminate; }
+            get
+            {
+                return _isIndeterminate;
+            }
             set
             {
-                isIndeterminate = value;
+                _isIndeterminate = value;
                 OnPropertyChanged();
             }
         }
-
-        #endregion Public Properties
-
-        #region Protected Methods
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-        #endregion Protected Methods
     }
 }

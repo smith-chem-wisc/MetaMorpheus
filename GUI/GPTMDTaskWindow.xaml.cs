@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,16 +18,10 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GptmdTaskWindow : Window
     {
-        #region Private Fields
-
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public GptmdTaskWindow()
         {
@@ -36,7 +31,7 @@ namespace MetaMorpheusGUI
             TheTask = new GptmdTask();
             UpdateFieldsFromTask(TheTask);
 
-            this.saveButton.Content = "Add the GPTMD Task";
+            saveButton.Content = "Add the GPTMD Task";
         }
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
@@ -48,15 +43,7 @@ namespace MetaMorpheusGUI
             UpdateFieldsFromTask(TheTask);
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal GptmdTask TheTask { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -180,7 +167,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
                 proteaseComboBox.Items.Add(protease);
             }
@@ -236,7 +223,7 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            #region Check Task Validity
+            // Check Task Validity
 
             if (missedCleavagesTextBox.Text.Length == 0)
             {
@@ -277,8 +264,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            #endregion Check Task Validity
-
+            // Save settings
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             int MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
@@ -295,7 +281,7 @@ namespace MetaMorpheusGUI
             {
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            
+
             Tolerance PrecursorMassTolerance;
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -311,27 +297,29 @@ namespace MetaMorpheusGUI
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
+
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
+
             CommonParameters CommonParamsToSave = new CommonParameters(
                 digestionParams: new DigestionParams(
                     protease: protease.Name,
-                    MaxMissedCleavages: MaxMissedCleavages,
-                    MinPeptideLength: MinPeptideLength,
-                    MaxPeptideLength: MaxPeptideLength,
-                    MaxModificationIsoforms: MaxModificationIsoforms, 
-                    InitiatorMethionineBehavior: InitiatorMethionineBehavior), 
-                    bIons: bCheckBox.IsChecked.Value, 
-                    yIons: yCheckBox.IsChecked.Value, 
-                    cIons: cCheckBox.IsChecked.Value, 
-                    zDotIons: zdotCheckBox.IsChecked.Value, 
+                    maxMissedCleavages: MaxMissedCleavages,
+                    minPeptideLength: MinPeptideLength,
+                    maxPeptideLength: MaxPeptideLength,
+                    maxModificationIsoforms: MaxModificationIsoforms,
+                    initiatorMethionineBehavior: InitiatorMethionineBehavior),
+                    bIons: bCheckBox.IsChecked.Value,
+                    yIons: yCheckBox.IsChecked.Value,
+                    cIons: cCheckBox.IsChecked.Value,
+                    zDotIons: zdotCheckBox.IsChecked.Value,
                     scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                    precursorMassTolerance:PrecursorMassTolerance, 
+                    precursorMassTolerance: PrecursorMassTolerance,
                     productMassTolerance: ProductMassTolerance,
-                    listOfModsFixed:listOfModsFixed, 
+                    listOfModsFixed: listOfModsFixed,
                     listOfModsVariable: listOfModsVariable);
 
             if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
@@ -346,7 +334,7 @@ namespace MetaMorpheusGUI
             {
                 CommonParamsToSave.TaskDescriptor = "GPTMDTask";
             }
-            
+
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
             {
@@ -368,7 +356,5 @@ namespace MetaMorpheusGUI
             return Array.TrueForAll(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
-        
-        #endregion Private Methods
     }
 }

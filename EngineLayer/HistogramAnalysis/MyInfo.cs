@@ -2,26 +2,14 @@
 {
     internal class MyInfo
     {
-        #region Internal Fields
+        internal string Infostring;
 
-        internal string infostring;
-
-        #endregion Internal Fields
-
-        #region Public Constructors
-
-        public MyInfo(double MassShift, string infostring)
+        public MyInfo(double massShift, string infostring)
         {
-            this.MassShift = MassShift;
-            this.infostring = infostring;
+            MassShift = massShift;
+            Infostring = infostring;
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public double MassShift { get; internal set; }
-
-        #endregion Public Properties
     }
 }
