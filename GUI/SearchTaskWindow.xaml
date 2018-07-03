@@ -424,7 +424,7 @@
                                     <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
-                                            <TextBox x:Name="maxThreadsTextBox" Width="45" >
+                                            <TextBox x:Name="maxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
