@@ -1,15 +1,31 @@
 CommonBiological
-ID   Phospho
-TG   S or T or Y
+ID   Phosphoserine
+TG   S
 PP   Anywhere.
 NL   H0 or H3 O4 P1
 MT   Biological
 CF   H1 O3 P1
 //
-ID   Acetyl_Internal
+ID   Phosphotyrosine
+TG   Y
+PP   Anywhere.
+NL   H0 or H3 O4 P1
+MT   Biological
+CF   H1 O3 P1
+DI   216.042
+//
+ID   Phosphothreonine
+TG   T
+PP   Anywhere.
+NL   H0 or H3 O4 P1
+MT   Biological
+CF   H1 O3 P1
+//
+ID   Acetyl_Internal_Lysine
 TG   K
 PP   Anywhere.
 MT   Biological
+DI   126.0913
 CF   H2 C2 O1
 //
 ID   Acetyl_N-terminal
@@ -55,19 +71,35 @@ PP   N-terminal.
 MT   Biological
 CF   C1 O1
 //
+ID   Formylation_Lysine
+TG   K
+PP   Anywhere.
+MT   Biological
+CF   C1 O1
+DI   112.0757
+//
 ID   N6-succinyllysine
 TG   K
 PP   Anywhere.
 CF   C4 H4 O3
 MM   100.016044
 MT   Biological
+DI   184.0968
 //
-ID   hydroxylation
-TG   P or K or N
+ID   Hydroxylation
+TG   K or N
 PP   Anywhere.
 CF   O1
 MM   15.994915
 MT   Biological
+//
+ID   Hydroxyproline
+TG   P
+PP   Anywhere.
+CF   O1
+MM   15.994915
+MT   Biological
+DI   171.0674
 //
 ID   N6-(2-hydroxyisobutyryl)lysine
 TG   K
@@ -75,6 +107,7 @@ PP   Anywhere.
 CF   C4 H6 O2
 MM   86.036780
 MT   Biological
+DI   170.1176
 //
 ID   N6-(beta-hydroxybutyryl)lysine
 TG   K
@@ -90,6 +123,7 @@ CF   C4 H4 O1
 MM   68.026215
 MA   68.07
 MT   Biological
+DI   152.107
 //
 ID   Sulfotyrosine
 TG   Y
@@ -112,6 +146,8 @@ PP   Anywhere.
 CF   H-1 N-1 O1
 MM   0.984016
 MT   Biological
+DI   130.0975
+NL   43.0058
 //
 ID   S-nitrosocysteine
 TG   C
@@ -147,6 +183,8 @@ PP   Anywhere.
 CF   C3 H2 O3
 MM   86.000394
 MT   Biological
+DI   126.0914 or 170.0812
+NL   43.9898
 //
 ID   N6-glutaryllysine
 TG   K
@@ -154,6 +192,7 @@ PP   Anywhere.
 CF   C5 H6 O3
 MM   114.031694
 MT   Biological
+DI   182.1176
 //
 ID   Allysine
 TG   K
