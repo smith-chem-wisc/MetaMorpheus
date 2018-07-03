@@ -22,7 +22,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.proteins = proteinList;
             this.allPsms = allPsms;
@@ -74,7 +74,7 @@ namespace EngineLayer
             double proteinsMatched = 0;
             int oldPercentProgress = 0;
 
-            Parallel.ForEach(Partitioner.Create(0, proteins.Count), fff =>
+            Parallel.ForEach(Partitioner.Create(0, proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
