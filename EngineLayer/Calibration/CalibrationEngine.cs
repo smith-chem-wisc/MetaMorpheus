@@ -28,7 +28,6 @@ namespace EngineLayer.Calibration
 
         private readonly MsDataFile myMsDataFile;
         private readonly DataPointAquisitionResults datapoints;
-        private readonly CommonParameters commonParameters;
 
         #endregion Private Fields
 

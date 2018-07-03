@@ -24,7 +24,6 @@ namespace EngineLayer.Calibration
         private readonly int minMS1isotopicPeaksNeededForConfirmedIdentification;
         private readonly int minMS2isotopicPeaksNeededForConfirmedIdentification;
         private readonly FragmentTypes fragmentTypesForCalibration;
-        private readonly CommonParameters commonParameters;
 
         #endregion Private Fields
 
@@ -50,7 +49,6 @@ namespace EngineLayer.Calibration
             this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
             this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
             this.fragmentTypesForCalibration = fragmentTypesForCalibration;
-            this.commonParameters = commonParameters;
         }
 
         #endregion Public Constructors

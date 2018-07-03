@@ -17,7 +17,6 @@ namespace EngineLayer
         protected readonly TerminusType terminusType;
         protected readonly IEnumerable<DigestionParams> collectionOfDigestionParams;
         protected readonly bool reportAllAmbiguity;
-        protected readonly CommonParameters commonParameters;
 
         #endregion Protected Fields
 
@@ -32,7 +31,6 @@ namespace EngineLayer
             this.terminusType = ProductTypeMethod.IdentifyTerminusType(ionTypes);
             this.collectionOfDigestionParams = collectionOfDigestionParams;
             this.reportAllAmbiguity = reportAllAmbiguity;
-            this.commonParameters = commonParameters;
         }
 
         #endregion Public Constructors

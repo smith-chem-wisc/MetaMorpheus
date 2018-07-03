@@ -29,8 +29,6 @@ namespace EngineLayer.ClassicSearch
 
         private readonly List<ProductType> lp;
 
-        private readonly CommonParameters commonParameters;
-
         private readonly List<DissociationType> dissociationTypes;
 
         #endregion Private Fields
@@ -48,7 +46,6 @@ namespace EngineLayer.ClassicSearch
             this.searchMode = searchMode;
             this.lp = lp;
             this.dissociationTypes = DetermineDissociationType(lp);
-            this.commonParameters = commonParameters;
         }
 
         #endregion Public Constructors

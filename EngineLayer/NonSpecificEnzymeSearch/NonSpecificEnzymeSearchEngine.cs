@@ -37,12 +37,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         {
             double progress = 0;
             int oldPercentProgress = 0;
-            ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
+            ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + currentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
             TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
 
-            byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
+            byte byteScoreCutoff = (byte)commonParameters.ScoreCutoff;
 
-            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, range =>
+            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
             {
                 byte[] scoringTable = new byte[peptideIndex.Count];
                 HashSet<int> idsOfPeptidesPossiblyObserved = new HashSet<int>();
@@ -62,8 +62,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                     //populate ids of possibly observed with those containing allowed precursor masses
                     List<int> binsToSearch = new List<int>();
-                    int obsPrecursorFloorMz = (int)Math.Floor(CommonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
-                    int obsPrecursorCeilingMz = (int)Math.Ceiling(CommonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
+                    int obsPrecursorFloorMz = (int)Math.Floor(commonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
+                    int obsPrecursorCeilingMz = (int)Math.Ceiling(commonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * fragmentBinsPerDalton);
                     for (int fragmentBin = obsPrecursorFloorMz; fragmentBin <= obsPrecursorCeilingMz; fragmentBin++)
                         binsToSearch.Add(fragmentBin);
 
@@ -110,7 +110,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
                         int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
-                        while (maxInitialScore > CommonParameters.ScoreCutoff)
+                        while (maxInitialScore > commonParameters.ScoreCutoff)
                         {
                             maxInitialScore--;
                             foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
@@ -118,7 +118,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 var candidatePeptide = peptideIndex[id];
                                 double[] fragmentMasses = candidatePeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).Distinct().Where(p => !Double.IsNaN(p)).OrderBy(p => p).ToArray();
 
-                                double peptideScore = CalculatePeptideScoreOld(scan.TheScan, CommonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, CommonParameters.AddCompIons, maximumMassThatFragmentIonScoreIsDoubled);
+                                double peptideScore = CalculatePeptideScoreOld(scan.TheScan, commonParameters.ProductMassTolerance, fragmentMasses, scan.PrecursorMass, dissociationTypes, commonParameters.AddCompIons, maximumMassThatFragmentIonScoreIsDoubled);
 
                                 Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, candidatePeptide, terminusType, massDiffAcceptor);
                                 if (notchAndPrecursor.Item1 >= 0)
@@ -126,9 +126,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, notchAndPrecursor.Item2);
 
                                     if (peptideSpectralMatches[i] == null)
-                                        peptideSpectralMatches[i] = new PeptideSpectralMatch(cp, notchAndPrecursor.Item1, peptideScore, i, scan, CommonParameters.DigestionParams);
+                                        peptideSpectralMatches[i] = new PeptideSpectralMatch(cp, notchAndPrecursor.Item1, peptideScore, i, scan, commonParameters.DigestionParams);
                                     else
-                                        peptideSpectralMatches[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, CommonParameters.ReportAllAmbiguity);
+                                        peptideSpectralMatches[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, commonParameters.ReportAllAmbiguity);
                                 }
                             }
                             if (peptideSpectralMatches[i] != null)
@@ -143,7 +143,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (percentProgress > oldPercentProgress)
                     {
                         oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing nonspecific search... " + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing nonspecific search... " + currentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
                     }
                 }
             });
@@ -157,7 +157,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private Tuple<int, double> Accepts(double scanPrecursorMass, CompactPeptide peptide, TerminusType terminusType, MassDiffAcceptor searchMode)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
-            int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength;
+            int localminPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
             if (terminusType == TerminusType.N)
             {
                 for (int i = localminPeptideLength; i < peptide.NTerminalMasses.Count(); i++)
