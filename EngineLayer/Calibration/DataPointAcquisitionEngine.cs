@@ -40,7 +40,7 @@ namespace EngineLayer.Calibration
             int minMS2isotopicPeaksNeededForConfirmedIdentification,
             FragmentTypes fragmentTypesForCalibration,
             CommonParameters commonParameters,
-            List<string> nestedIds) : base(nestedIds)
+            List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.goodIdentifications = goodIdentifications;
             this.myMsDataFile = myMsDataFile;
@@ -72,7 +72,6 @@ namespace EngineLayer.Calibration
             int numIdentifications = goodIdentifications.Count;
 
             // Loop over identifications
-
             HashSet<string> sequences = new HashSet<string>();
 
             object lockObj = new object();
@@ -109,7 +108,7 @@ namespace EngineLayer.Calibration
 
                     double[] theoreticalMasses = dist.Masses.ToArray();
                     double[] theoreticalIntensities = dist.Intensities.ToArray();
-                    
+
 
                     Array.Sort(theoreticalIntensities, theoreticalMasses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
@@ -246,27 +245,21 @@ namespace EngineLayer.Calibration
             if (ms2DataScan.MassSpectrum.Size == 0)
                 return result;
 
-            foreach (var productType in identification.MatchedIonMassToChargeRatioDict)
+            foreach (var matchedIon in identification.MatchedFragmentIons)
             {
-                for (int i = 0; i < productType.Value.Length; i++)
-                {
-                    double theorMz = productType.Value[i];
-                    int ind = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theorMz).Value;
+                double exptPeakMz = matchedIon.Mz;
+                double exptPeakIntensity = matchedIon.Intensity;
+                double injTime = ms2DataScan.InjectionTime ?? double.NaN;
 
-                    double exptPeakMz = ms2DataScan.MassSpectrum.XArray[ind];
-                    double exptPeakIntensity = ms2DataScan.MassSpectrum.YArray[ind];
-                    double injTime = ms2DataScan.InjectionTime ?? double.NaN;
-
-                    result.Add(
-                        new LabeledDataPoint(
-                            exptPeakMz,
-                            ms2DataScan.RetentionTime,
-                            Math.Log(ms2DataScan.TotalIonCurrent),
-                            Math.Log(injTime),
-                            Math.Log(exptPeakIntensity),
-                            theorMz,
-                            identification));
-                }
+                result.Add(
+                    new LabeledDataPoint(
+                        exptPeakMz,
+                        ms2DataScan.RetentionTime,
+                        Math.Log(ms2DataScan.TotalIonCurrent),
+                        Math.Log(injTime),
+                        Math.Log(exptPeakIntensity),
+                        matchedIon.TheoreticalFragmentIon.Mz,
+                        identification));
             }
             return result;
         }

@@ -269,16 +269,16 @@ namespace MetaMorpheusGUI
 
             }
             CommonParameters CommonParamsToSave = new CommonParameters(
-                DigestionParams: digestionParamsToSave,
-                BIons: bCheckBox.IsChecked.Value,
-                YIons: yCheckBox.IsChecked.Value,
-                CIons: cCheckBox.IsChecked.Value,
-                ZdotIons: zdotCheckBox.IsChecked.Value,
-                ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                ListOfModsFixed: listOfModsFixed,
-                ListOfModsVariable: listOfModsVariable,
-                ProductMassTolerance: ProductMassTolerance,
-                PrecursorMassTolerance: PrecursorMassTolerance);
+                digestionParams: digestionParamsToSave,
+                bIons: bCheckBox.IsChecked.Value,
+                yIons: yCheckBox.IsChecked.Value,
+                cIons: cCheckBox.IsChecked.Value,
+                zDotIons: zdotCheckBox.IsChecked.Value,
+                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                listOfModsFixed: listOfModsFixed,
+                listOfModsVariable: listOfModsVariable,
+                productMassTolerance: ProductMassTolerance,
+                precursorMassTolerance: PrecursorMassTolerance);
 
             if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
             {

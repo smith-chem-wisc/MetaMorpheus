@@ -28,10 +28,10 @@ namespace TaskLayer
             var tempDigParams = new DigestionParams(protease: "non-specific", MaxMissedCleavages: 12, MinPeptideLength: 8, MaxPeptideLength: 13);
 
             CommonParameters = new CommonParameters(
-                DigestionParams: tempDigParams,
-                DoPrecursorDeconvolution: false,
-                PrecursorMassTolerance: new PpmTolerance(double.MaxValue),
-                ProductMassTolerance: new PpmTolerance(double.MaxValue));
+                digestionParams: tempDigParams,
+                doPrecursorDeconvolution: false,
+                precursorMassTolerance: new PpmTolerance(double.MaxValue),
+                productMassTolerance: new PpmTolerance(double.MaxValue));
         }
 
         #endregion Public Constructors

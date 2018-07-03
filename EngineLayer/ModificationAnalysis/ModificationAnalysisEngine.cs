@@ -14,7 +14,7 @@ namespace EngineLayer.ModificationAnalysis
 
         #region Public Constructors
 
-        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, List<string> nestedIds) : base(nestedIds)
+        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.newPsms = newPsms;
         }

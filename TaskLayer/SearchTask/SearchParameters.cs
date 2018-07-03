@@ -11,7 +11,6 @@ namespace TaskLayer
         {
             // default search task parameters
             DisposeOfFileWhenDone = true;
-            AddCompIons = false;
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
@@ -54,7 +53,6 @@ namespace TaskLayer
         #region Public Properties
 
         public bool DisposeOfFileWhenDone { get; set; }
-        public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
