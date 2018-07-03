@@ -18,14 +18,17 @@ namespace EngineLayer
             { DissociationType.ETD, 2*Constants.protonMass }
         };
 
+        protected readonly CommonParameters commonParameters;
+
         protected readonly List<string> nestedIds;
 
         #endregion Protected Fields
 
         #region Protected Constructors
 
-        protected MetaMorpheusEngine(List<string> nestedIds)
+        protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
         {
+            this.commonParameters = commonParameters;
             this.nestedIds = nestedIds;
         }
 

@@ -24,6 +24,7 @@ namespace EngineLayer.Calibration
         private readonly int minMS1isotopicPeaksNeededForConfirmedIdentification;
         private readonly int minMS2isotopicPeaksNeededForConfirmedIdentification;
         private readonly FragmentTypes fragmentTypesForCalibration;
+        private readonly CommonParameters commonParameters;
 
         #endregion Private Fields
 
@@ -38,7 +39,8 @@ namespace EngineLayer.Calibration
             int minMS1isotopicPeaksNeededForConfirmedIdentification,
             int minMS2isotopicPeaksNeededForConfirmedIdentification,
             FragmentTypes fragmentTypesForCalibration,
-            List<string> nestedIds) : base(nestedIds)
+            CommonParameters commonParameters,
+            List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.goodIdentifications = goodIdentifications;
             this.myMsDataFile = myMsDataFile;
@@ -48,6 +50,7 @@ namespace EngineLayer.Calibration
             this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
             this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
             this.fragmentTypesForCalibration = fragmentTypesForCalibration;
+            this.commonParameters = commonParameters;
         }
 
         #endregion Public Constructors
@@ -73,7 +76,7 @@ namespace EngineLayer.Calibration
 
             object lockObj = new object();
             object lockObj2 = new object();
-            Parallel.ForEach(Partitioner.Create(0, numIdentifications), fff =>
+            Parallel.ForEach(Partitioner.Create(0, numIdentifications), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
             {
                 for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
                 {
@@ -258,7 +261,6 @@ namespace EngineLayer.Calibration
                         matchedIon.TheoreticalFragmentIon.Mz,
                         identification));
             }
-
             return result;
         }
 
