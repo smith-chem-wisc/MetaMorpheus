@@ -138,7 +138,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificMaxModNumEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                if (long.TryParse(txtMaxModNum.Text, out long i) && i >= 0)
+                if (int.TryParse(txtMaxModNum.Text, out int i) && i >= 0)
                 {
                     parametersToWrite.MaxModsForPeptide = i;
                 }
@@ -196,7 +196,7 @@ namespace MetaMorpheusGUI
             int tempMinPeptideLength = tempCommonParams.DigestionParams.MinPeptideLength;
             int tempMaxPeptideLength = tempCommonParams.DigestionParams.MaxPeptideLength;
             int tempMaxMissedCleavages = tempCommonParams.DigestionParams.MaxMissedCleavages;
-            long tempMaxModsForPeptide = tempCommonParams.DigestionParams.MaxModsForPeptide;
+            int tempMaxModsForPeptide = tempCommonParams.DigestionParams.MaxModsForPeptide;
             
             // do any of the selected files already have file-specific parameters specified?
             var spectraFiles = SelectedSpectra.Select(p => p.FilePath);

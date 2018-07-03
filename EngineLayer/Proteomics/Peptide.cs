@@ -91,7 +91,7 @@ namespace EngineLayer
         {
             int peptideLength = OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
             int maximumVariableModificationIsoforms = digestionParams.MaxModificationIsoforms;
-            long maxModsForPeptide = digestionParams.MaxModsForPeptide;
+            int maxModsForPeptide = digestionParams.MaxModsForPeptide;
             var twoBasedPossibleVariableAndLocalizeableModifications = new Dictionary<int, List<ModificationWithMass>>(peptideLength + 4);
 
             var pepNTermVariableMods = new List<ModificationWithMass>();
@@ -225,7 +225,7 @@ namespace EngineLayer
                     && (variableModification.terminusLocalization == TerminusLocalization.ProtC || variableModification.terminusLocalization == TerminusLocalization.PepC);
         }
 
-        private static IEnumerable<Dictionary<int, ModificationWithMass>> GetVariableModificationPatterns(Dictionary<int, List<ModificationWithMass>> possibleVariableModifications, long maxModsForPeptide, int peptideLength)
+        private static IEnumerable<Dictionary<int, ModificationWithMass>> GetVariableModificationPatterns(Dictionary<int, List<ModificationWithMass>> possibleVariableModifications, int maxModsForPeptide, int peptideLength)
         {
             if (possibleVariableModifications.Count == 0)
             {

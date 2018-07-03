@@ -59,7 +59,7 @@ namespace TaskLayer
         public int? MinPeptideLength { get; set; }
         public int? MaxPeptideLength { get; set; }
         public int? MaxMissedCleavages { get; set; }
-        public long? MaxModsForPeptide { get; set; }
+        public int? MaxModsForPeptide { get; set; }
         public bool? BIons { get; set; }
         public bool? YIons { get; set; }
         public bool? CIons { get; set; }

@@ -9,7 +9,7 @@ namespace EngineLayer
         public int MinPeptideLength { get; private set; }
         public int MaxPeptideLength { get; private set; }
         public int MaxModificationIsoforms { get; private set; }
-        public long MaxModsForPeptide { get; private set; }
+        public int MaxModsForPeptide { get; private set; }
         public Protease Protease { get; private set; }
         public bool SemiProteaseDigestion { get; private set; } //for nonspecific searching of proteases
         public TerminusType TerminusTypeSemiProtease { get; private set; }
@@ -24,7 +24,7 @@ namespace EngineLayer
         }
 
         public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
-            InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, long MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
+            InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
         {
             this.Protease = GlobalVariables.ProteaseDictionary[protease];
             this.MaxMissedCleavages = MaxMissedCleavages;
