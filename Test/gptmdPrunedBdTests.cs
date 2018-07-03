@@ -80,7 +80,7 @@ namespace Test
                         {"ConnorModType", 1}
                     }
                 },
-                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5))
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MinPeptideLength: 5))
                 
             };
 
@@ -190,7 +190,7 @@ namespace Test
                     SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
-                CommonParameters = new CommonParameters(ListOfModsFixed: listOfModsFixed)
+                CommonParameters = new CommonParameters(listOfModsFixed: listOfModsFixed)
             };
 
             task5.SearchParameters.ModsToWriteSelection["Mod"] = 0;

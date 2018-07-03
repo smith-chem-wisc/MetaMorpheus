@@ -86,7 +86,7 @@ namespace EngineLayer
         /// <param name="digestionParams"></param>
         /// <param name="variableModifications"></param>
         /// <returns></returns>
-        internal IEnumerable<PeptideWithSetModifications> GetModifiedPeptides(IEnumerable<ModificationWithMass> allKnownFixedModifications, 
+        internal IEnumerable<PeptideWithSetModifications> GetModifiedPeptides(IEnumerable<ModificationWithMass> allKnownFixedModifications,
             DigestionParams digestionParams, List<ModificationWithMass> variableModifications)
         {
             int peptideLength = OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
@@ -191,7 +191,7 @@ namespace EngineLayer
                         kvp.Add(ok.Key, ok.Value);
                     }
                 }
-                yield return new PeptideWithSetModifications(Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein,
+                yield return new PeptideWithSetModifications(Protein, digestionParams, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein,
                     PeptideDescription, MissedCleavages, kvp, numFixedMods);
                 variable_modification_isoforms++;
                 if (variable_modification_isoforms == maximumVariableModificationIsoforms)
@@ -310,7 +310,7 @@ namespace EngineLayer
             return modification_pattern;
         }
 
-        private Dictionary<int, ModificationWithMass> GetFixedModsOneIsNterminus(int peptideLength, 
+        private Dictionary<int, ModificationWithMass> GetFixedModsOneIsNterminus(int peptideLength,
             IEnumerable<ModificationWithMass> allKnownFixedModifications)
         {
             var fixedModsOneIsNterminus = new Dictionary<int, ModificationWithMass>(peptideLength + 3);

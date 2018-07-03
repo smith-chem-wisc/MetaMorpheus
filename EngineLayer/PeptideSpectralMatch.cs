@@ -48,6 +48,7 @@ namespace EngineLayer
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
+            this.MatchedFragmentIons = new List<MatchedFragmentIon>();
         }
 
         #endregion Public Constructors
@@ -91,6 +92,7 @@ namespace EngineLayer
         public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
         public readonly DigestionParams DigestionParams;
         public List<double> AllScores { get; set; }
+        public List<MatchedFragmentIon> MatchedFragmentIons { get; private set; }
 
         public double[] Features
         {
@@ -107,6 +109,11 @@ namespace EngineLayer
         public static string GetTabSeparatedHeader()
         {
             return String.Join("\t", DataDictionary(null, null).Keys);
+        }
+
+        public void SetMatchedFragments(List<MatchedFragmentIon> matchedFragmentIons)
+        {
+            MatchedFragmentIons = matchedFragmentIons;
         }
 
         public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
