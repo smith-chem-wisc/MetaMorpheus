@@ -23,6 +23,7 @@ namespace RealTimeGUI
         {
             RTParameters = new RTParameters();
             ListScan = new List<IMsScan>();
+            Notifications = new Notifications();
         }
 
         public IExactiveInstrumentAccess InstrumentAccess { get; set; }
@@ -33,6 +34,8 @@ namespace RealTimeGUI
         
         public RTParameters RTParameters { get; set; }
 
+        public Notifications Notifications { get; set; }
+
         public static event EventHandler<NotificationEventArgs> DataReceiverNotificationEventHandler;
 
         internal void ReceiveData()
@@ -40,7 +43,8 @@ namespace RealTimeGUI
             string x = "\n" + DateTime.Now + " Start receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Start receive scans on detector " + ScanContainer.DetectorClass + ".";
             //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
-            logD.Debug("Start receive scans on detector " + ScanContainer.DetectorClass);
+            //logD.Debug("Start receive scans on detector " + ScanContainer.DetectorClass);
+            this.Notifications.Notification += x;
 
             ScanContainer.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
             ScanContainer.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
@@ -55,7 +59,8 @@ namespace RealTimeGUI
             string x = "\n" + DateTime.Now + " Stop receive scans on detector " + ScanContainer.DetectorClass + "..." + "CurrentThread:" + Thread.CurrentThread.ManagedThreadId.ToString();
             //string x = "Stop receive scans on detector " + ScanContainer.DetectorClass + "...";
             //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
-            logD.Debug(" Stop receive scans on detector " + ScanContainer.DetectorClass);
+            //logD.Debug(" Stop receive scans on detector " + ScanContainer.DetectorClass);
+            this.Notifications.Notification += x;
         }
 
         private void Orbitrap_MsScanArrived(object sender, MsScanEventArgs e)
@@ -71,7 +76,8 @@ namespace RealTimeGUI
                 //DataReceiverNotificationEventHandler?.BeginInvoke(this, new NotificationEventArgs(x), callBack, null);
                 //ListScan.Add(scan);
                 //Dump("Specific", scan.SpecificInformation);
-                logD.Debug("Get one scan");
+                //logD.Debug("Get one scan");
+                this.Notifications.Notification += x;
 
             }
 		}

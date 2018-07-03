@@ -36,7 +36,7 @@ namespace RealTimeGUI
 
         public DataReceiver DataReceiver { get; set; }
         public RealTimeTask RealTimeTask { get; set; }
-        public Notifications Notifications { get; set; }
+        //public Notifications Notifications { get; set; }
 
         public MainWindow()
         {
@@ -46,8 +46,9 @@ namespace RealTimeGUI
             DataReceiver = new DataReceiver();
             dataGridProteinDatabases.DataContext = proteinDbObservableCollection;
 
-            Notifications = new Notifications();
-            DataContext = Notifications;
+            //Notifications = new Notifications();
+            //DataContext = Notifications;
+            DataContext = DataReceiver.Notifications;
 
             DataReceiver.DataReceiverNotificationEventHandler += UpdateTbNotification;
             MyFileManager.WarnHandler += GuiWarnHandler;
@@ -73,8 +74,9 @@ namespace RealTimeGUI
 
         private void BtnConnection_Click(object sender, RoutedEventArgs e)
         {
-            log.Debug("Start log");
-            Notifications.Notification = "AA";
+            //log.Debug("Start log");
+            //Notifications.Notification = "AA";
+            DataReceiver.Notifications.Notification += "AA";
             //DataReceiver.TestLog();
             DataReceiver.InstrumentAccess = Connection.GetFirstInstrument();
             DataReceiver.ScanContainer = DataReceiver.InstrumentAccess.GetMsScanContainer(0);
