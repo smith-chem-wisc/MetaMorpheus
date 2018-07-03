@@ -1,10 +1,12 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using TaskLayer;
 
 namespace MetaMorpheusGUI
@@ -136,7 +138,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificMaxModNumEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                if (int.TryParse(txtMaxModNum.Text, out int i) && i >= 0)
+                if (long.TryParse(txtMaxModNum.Text, out long i) && i >= 0)
                 {
                     parametersToWrite.MaxModsForPeptide = i;
                 }
@@ -194,7 +196,7 @@ namespace MetaMorpheusGUI
             int tempMinPeptideLength = tempCommonParams.DigestionParams.MinPeptideLength;
             int tempMaxPeptideLength = tempCommonParams.DigestionParams.MaxPeptideLength;
             int tempMaxMissedCleavages = tempCommonParams.DigestionParams.MaxMissedCleavages;
-            int tempMaxModsForPeptide = tempCommonParams.DigestionParams.MaxModsForPeptide;
+            long tempMaxModsForPeptide = tempCommonParams.DigestionParams.MaxModsForPeptide;
             
             // do any of the selected files already have file-specific parameters specified?
             var spectraFiles = SelectedSpectra.Select(p => p.FilePath);
@@ -297,6 +299,17 @@ namespace MetaMorpheusGUI
             //bCheckBox.IsChecked = tempCommonParams.BIons;
             //cCheckBox.IsChecked = tempCommonParams.CIons;
             //zdotCheckBox.IsChecked = tempCommonParams.ZdotIons;
+        }
+
+        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !TextBoxIntAllowed(e.Text);
+        }
+
+        private static bool TextBoxIntAllowed(String Text2)
+        {
+            return Array.TrueForAll(Text2.ToCharArray(),
+                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
 
         #endregion Private Methods

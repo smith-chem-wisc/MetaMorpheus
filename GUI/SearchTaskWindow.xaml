@@ -104,7 +104,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum intensity ratio" />
-                                        <TextBox x:Name="MinRatioTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MinRatioTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Peaks must be this intense compared to the base peak" />
                                             </ToolTipService.ToolTip>
@@ -121,7 +121,7 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Precursor Mass Tolerance" />
-                                <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <TextBox x:Name="precursorMassToleranceTextBox" PreviewTextInput="PreviewIfInt" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS1 peaks.
@@ -134,7 +134,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Product Mass Tolerance" />
-                                <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="PreviewIfInt" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS2 peaks.
@@ -424,7 +424,7 @@
                                     <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
-                                            <TextBox x:Name="maxThreadsTextBox" Width="45" >
+                                            <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="PreviewIfInt" Width="45" >
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
@@ -525,7 +525,7 @@
                             </StackPanel>-->
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
-                                <TextBox x:Name="minScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <TextBox x:Name="minScoreAllowed" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             The minimum MetaMorpheus score allowed for a PSM to be reportable.
@@ -697,7 +697,7 @@
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBox x:Name="quantPpmTolerance" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                                        <TextBox x:Name="quantPpmTolerance"  PreviewTextInput="PreviewIfInt" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                             </ToolTipService.ToolTip>
@@ -725,7 +725,7 @@
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Histogram bin width (Da):" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
-                                        <TextBox x:Name="histogramBinWidthTextBox" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                        <TextBox x:Name="histogramBinWidthTextBox" PreviewTextInput="PreviewIfInt" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>

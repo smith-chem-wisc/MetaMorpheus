@@ -77,6 +77,17 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
+        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !TextBoxIntAllowed(e.Text);
+        }
+
+        private static bool TextBoxIntAllowed(String Text2)
+        {
+            return Array.TrueForAll(Text2.ToCharArray(),
+                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
+        }
+
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
