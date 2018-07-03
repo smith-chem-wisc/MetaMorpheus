@@ -15,7 +15,7 @@ CF   H1 O3 P1
 DI   216.042
 //
 ID   Phosphothreonine
-TG   S or T or Y
+TG   T
 PP   Anywhere.
 NL   H0 or H3 O4 P1
 MT   Biological
