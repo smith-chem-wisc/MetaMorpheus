@@ -186,6 +186,7 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             txtNumberOfDatabaseSearches.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
+            maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             ckbAllResults.IsChecked = task.XlSearchParameters.XlOutAll;
             ckbPercolator.IsChecked = task.XlSearchParameters.XlOutPercolator;
@@ -333,22 +334,22 @@ namespace MetaMorpheusGUI
             }
 
             CommonParameters CommonParamsToSave = new CommonParameters(
-                ProductMassTolerance: ProductMassTolerance,
-                DoPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
-                UseProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
-                DigestionParams: digestionParamsToSave,
-                TrimMs1Peaks: trimMs1.IsChecked.Value,
-                TrimMsMsPeaks: trimMsMs.IsChecked.Value,
-                TopNpeaks: int.Parse(TopNPeaksCheckBox.Text),
-                MinRatio: double.Parse(MinRatioCheckBox.Text),
-                BIons: bCheckBox.IsChecked.Value,
-                YIons: yCheckBox.IsChecked.Value,
-                CIons: cCheckBox.IsChecked.Value,
-                ZdotIons: zdotCheckBox.IsChecked.Value,
-                ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                TotalPartitions: int.Parse(txtNumberOfDatabaseSearches.Text, CultureInfo.InvariantCulture),
-                ListOfModsVariable: listOfModsVariable,
-                ListOfModsFixed: listOfModsFixed);
+                productMassTolerance: ProductMassTolerance,
+                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
+                useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
+                digestionParams: digestionParamsToSave,
+                trimMs1Peaks: trimMs1.IsChecked.Value,
+                trimMsMsPeaks: trimMsMs.IsChecked.Value,
+                topNpeaks: int.Parse(TopNPeaksCheckBox.Text),
+                minRatio: double.Parse(MinRatioCheckBox.Text),
+                bIons: bCheckBox.IsChecked.Value,
+                yIons: yCheckBox.IsChecked.Value,
+                cIons: cCheckBox.IsChecked.Value,
+                zDotIons: zdotCheckBox.IsChecked.Value,
+                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                totalPartitions: int.Parse(txtNumberOfDatabaseSearches.Text, CultureInfo.InvariantCulture),
+                listOfModsVariable: listOfModsVariable,
+                listOfModsFixed: listOfModsFixed);
             if (OutputFileNameTextBox.Text != "")
             {
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;

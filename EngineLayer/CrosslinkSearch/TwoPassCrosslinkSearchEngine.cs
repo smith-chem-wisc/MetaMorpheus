@@ -51,7 +51,7 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Constructors
 
-        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds) : base(nestedIds)
+        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.globalPsmsCross = globalPsmsCross;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -59,7 +59,7 @@ namespace EngineLayer.CrosslinkSearch
             this.fragmentIndex = fragmentIndex;
             this.lp = lp;
             this.currentPartition = currentPartition + 1;
-            this.CommonParameters = CommonParameters;
+            this.CommonParameters = commonParameters;
             this.addCompIons = addCompIons;
             //Here use LowTheoreticalDiffAcceptor in practice doesn't work in 12/2/2017
             this.massDiffAcceptor = new OpenSearchMode();
@@ -283,7 +283,7 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     var productMasses = theScanBestPeptide[ind].BestPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(productMasses);
-                    double score = CalculatePeptideScore(theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, theScan.PrecursorMass, dissociationTypes, addCompIons, 0);
+                    double score = CalculatePeptideScoreOld(theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, theScan.PrecursorMass, dissociationTypes, addCompIons, 0);
                     var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, i, theScan, CommonParameters.DigestionParams);
                     psmCrossSingle.XLTotalScore = psmCrossSingle.Score;
                     psmCrossSingle.CrossType = PsmCrossType.Singe;

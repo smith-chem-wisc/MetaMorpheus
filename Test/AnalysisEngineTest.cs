@@ -23,13 +23,13 @@ namespace Test
             Protease protease = new Protease("Custom Protease5", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
-                DigestionParams: new DigestionParams(
+                digestionParams: new DigestionParams(
                     protease: protease.Name, 
                     MaxMissedCleavages: 0, 
                     MinPeptideLength: 1, 
                     MaxModificationIsoforms: 1042), 
-                ScoreCutoff: 1, 
-                ProductMassTolerance: new PpmTolerance(10));
+                scoreCutoff: 1, 
+                productMassTolerance: new PpmTolerance(10));
             
             List<ModificationWithMass> localizeableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
@@ -99,7 +99,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
 
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
            

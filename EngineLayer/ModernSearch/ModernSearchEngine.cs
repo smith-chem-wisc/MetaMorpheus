@@ -20,7 +20,6 @@ namespace EngineLayer.ModernSearch
         protected readonly List<ProductType> lp;
         protected readonly int currentPartition;
         protected readonly CommonParameters CommonParameters;
-        protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
         protected readonly double maximumMassThatFragmentIonScoreIsDoubled;
@@ -29,7 +28,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.peptideSpectralMatches = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -37,8 +36,7 @@ namespace EngineLayer.ModernSearch
             this.fragmentIndex = fragmentIndex;
             this.lp = lp;
             this.currentPartition = currentPartition + 1;
-            this.CommonParameters = CommonParameters;
-            this.addCompIons = addCompIons;
+            this.CommonParameters = commonParameters;
             this.massDiffAcceptor = massDiffAcceptor;
             this.dissociationTypes = DetermineDissociationType(lp);
             this.maximumMassThatFragmentIonScoreIsDoubled = maximumMassThatFragmentIonScoreIsDoubled;
@@ -109,7 +107,7 @@ namespace EngineLayer.ModernSearch
 
                         double scanPrecursorMass = scan.PrecursorMass;
 
-                        var thisScore = CalculatePeptideScore(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, addCompIons, 0);
+                        var thisScore = CalculatePeptideScoreOld(scan.TheScan, CommonParameters.ProductMassTolerance, productMasses, scanPrecursorMass, dissociationTypes, CommonParameters.AddCompIons, 0);
                         int notch = massDiffAcceptor.Accepts(scan.PrecursorMass, compactPeptide.MonoisotopicMassIncludingFixedMods);
 
                         bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
@@ -194,7 +192,7 @@ namespace EngineLayer.ModernSearch
                         binsToSearch.Add(fragmentBin);
 
                 // add complementary ions
-                if (addCompIons)
+                if (CommonParameters.AddCompIons)
                 {
                     //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
                     foreach (DissociationType dissociationType in dissociationTypes)

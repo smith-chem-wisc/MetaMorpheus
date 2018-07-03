@@ -77,7 +77,7 @@ namespace Test
             psm3.MatchToProteinLinkedPeptides(matching);
 
             var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
-            CommonParameters cp = new CommonParameters(CalculateEValue: true);
+            CommonParameters cp = new CommonParameters(calculateEValue: true);
            
             FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, cp, nestedIds);
 
@@ -102,7 +102,7 @@ namespace Test
         [Test]
         public static void TestDeltaValues()
         {
-            CommonParameters CommonParameters = new CommonParameters(ScoreCutoff: 1, UseDeltaScore: true, DigestionParams: new DigestionParams(MinPeptideLength: 5));
+            CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, useDeltaScore: true, digestionParams: new DigestionParams(MinPeptideLength: 5));
             
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -141,21 +141,21 @@ namespace Test
 
             //check better when using delta
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters, new List<string>()).Run();
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
             { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             PeptideSpectralMatch[] allPsmsArrayModern = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArrayModern, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, false, massDiffAcceptor, 0, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArrayModern, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, massDiffAcceptor, 0, new List<string>()).Run();
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = 
                 new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (proteinList.Any())
             {
                 SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsmsArray.ToList(), proteinList, fixedModifications, variableModifications, new List<ProductType>
-                { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+                { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                  compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
@@ -174,7 +174,7 @@ namespace Test
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModernDelta.PsmsWithin1PercentFdr == 3);
 
-            CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5));
+            CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MinPeptideLength: 5));
            
             //check worse when using score
             FdrAnalysisResults fdrResultsClassic = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
@@ -210,21 +210,21 @@ namespace Test
 
             //check no change when using delta
             allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters, new List<string>()).Run();
 
-            CommonParameters = new CommonParameters(UseDeltaScore: true, DigestionParams: new DigestionParams(MinPeptideLength: 5));
+            CommonParameters = new CommonParameters(useDeltaScore: true, digestionParams: new DigestionParams(MinPeptideLength: 5));
            
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
             { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             allPsmsArrayModern = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArrayModern, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, false, massDiffAcceptor, 0, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArrayModern, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, massDiffAcceptor, 0, new List<string>()).Run();
 
             var compactPeptideToProteinPeptideMatching2 = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (proteinList.Any())
             {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine2 = new SequencesToActualProteinPeptidesEngine(allPsmsArray.ToList(), proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine2 = new SequencesToActualProteinPeptidesEngine(allPsmsArray.ToList(), proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine2.Run();
                 compactPeptideToProteinPeptideMatching2 = res.CompactPeptideToProteinPeptideMatching;
             }
@@ -243,7 +243,7 @@ namespace Test
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModernDelta.PsmsWithin1PercentFdr == 3);
 
-            CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5));
+            CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MinPeptideLength: 5));
             
             //check no change when using score
             fdrResultsClassic = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());

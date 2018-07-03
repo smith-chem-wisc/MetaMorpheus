@@ -57,11 +57,11 @@ namespace Test
             
             newPsm.MatchToProteinLinkedPeptides(matching);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);
+            CommonParameters commonParameters = new CommonParameters(productMassTolerance: fragmentTolerance);
+            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, commonParameters, new List<string>());
             f.Run();
 
             // Was single peak!!!
-
             Assert.AreEqual(0, newPsm.MatchedIonMassToChargeRatioDict[ProductType.BnoB1ions].Count(b => b > 0));
             Assert.AreEqual(1, newPsm.MatchedIonMassToChargeRatioDict[ProductType.Y].Count(b => b > 0));
             Assert.AreEqual(0, newPsm.MatchedIonIntensitiesDict[ProductType.BnoB1ions].Count(b => b > 0));

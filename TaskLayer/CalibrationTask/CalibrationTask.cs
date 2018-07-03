@@ -24,11 +24,11 @@ namespace TaskLayer
         public CalibrationTask() : base(MyTask.Calibrate)
         {
             CommonParameters = new CommonParameters(
-                ProductMassTolerance: new PpmTolerance(25),
-                PrecursorMassTolerance: new PpmTolerance(15),
-                TrimMsMsPeaks: false,
-                DoPrecursorDeconvolution: false,
-                ScoreCutoff: 10);
+                productMassTolerance: new PpmTolerance(25),
+                precursorMassTolerance: new PpmTolerance(15),
+                trimMsMsPeaks: false,
+                doPrecursorDeconvolution: false,
+                scoreCutoff: 10);
 
             CalibrationParameters = new CalibrationParameters();
         }
@@ -174,7 +174,7 @@ namespace TaskLayer
 
                 // generate calibration function and shift data points
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                new CalibrationEngine(myMsDataFile, acquisitionResults, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }).Run();
+                new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }).Run();
 
                 // do another search to evaluate calibration results
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });
@@ -329,13 +329,14 @@ namespace TaskLayer
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productTypes, searchMode, false, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productTypes, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
 
             var compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
                 (allPsms, proteinList, fixedModifications, variableModifications, productTypes, new List<DigestionParams> { combinedParameters.DigestionParams },
-                combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
+                combinedParameters.ReportAllAmbiguity, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
+
 
             foreach (var huh in allPsms)
             {
@@ -355,30 +356,7 @@ namespace TaskLayer
             {
                 return new DataPointAquisitionResults(null, new List<PeptideSpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             }
-
-            foreach (var psm in allPsms)
-            {
-                var theScan = myMsDataFile.GetOneBasedScan(psm.ScanNumber);
-                double thePrecursorMass = psm.ScanPrecursorMass;
-
-                foreach (ProductType productType in productTypes)
-                {
-                    var ionMasses = psm.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { productType });
-                    Array.Sort(ionMasses);
-                    List<int> matchedIonSeriesList = new List<int>();
-                    List<double> matchedIonMassToChargeRatioList = new List<double>();
-                    List<double> productMassErrorDaList = new List<double>();
-                    List<double> productMassErrorPpmList = new List<double>();
-                    List<double> matchedIonIntensitiesList = new List<double>();
-                    MetaMorpheusEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensitiesList, thePrecursorMass, productType, false);
-                    psm.MatchedIonSeriesDict.Add(productType, matchedIonSeriesList.ToArray());
-                    psm.MatchedIonMassToChargeRatioDict.Add(productType, matchedIonMassToChargeRatioList.ToArray());
-                    psm.ProductMassErrorDa.Add(productType, productMassErrorDaList.ToArray());
-                    psm.ProductMassErrorPpm.Add(productType, productMassErrorPpmList.ToArray());
-                    psm.MatchedIonIntensitiesDict.Add(productType, matchedIonIntensitiesList.ToArray());
-                }
-            }
-
+            
             DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
                     goodIdentifications,
                     myMsDataFile,
@@ -388,6 +366,7 @@ namespace TaskLayer
                     CalibrationParameters.MinMS1IsotopicPeaksNeededForConfirmedIdentification,
                     CalibrationParameters.MinMS2IsotopicPeaksNeededForConfirmedIdentification,
                     fragmentTypesForCalibration,
+                    CommonParameters,
                     new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             return currentResult;

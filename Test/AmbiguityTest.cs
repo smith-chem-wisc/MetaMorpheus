@@ -20,7 +20,7 @@ namespace Test
         {
             Protease protease = new Protease("Custom Protease4", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1), ScoreCutoff: 1, ReportAllAmbiguity: false);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1), scoreCutoff: 1, reportAllAmbiguity: false);
             
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
@@ -39,15 +39,15 @@ namespace Test
 
             PeptideSpectralMatch[] allPsmsArrayt = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             PeptideSpectralMatch[] allPsmsArrayf = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArrayt, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
-            new ClassicSearchEngine(allPsmsArrayf, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArrayt, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArrayf, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters, new List<string>()).Run();
 
             var haht = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<PeptideSpectralMatch>
             { allPsmsArrayt[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType>
-            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, true, new List<string>()).Run();
+            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, true, CommonParameters, new List<string>()).Run();
             var hahf = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<PeptideSpectralMatch>
             { allPsmsArrayf[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType>
-            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>()).Run();
+            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>()).Run();
 
             foreach (var huh in allPsmsArrayt)
             {

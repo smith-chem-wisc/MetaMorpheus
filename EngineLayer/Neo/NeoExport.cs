@@ -12,6 +12,7 @@ namespace EngineLayer.Neo
 
         public static string path;
         public static string folder;
+        public static CommonParameters commonParameters;
 
         #endregion Public Fields
 
@@ -26,21 +27,21 @@ namespace EngineLayer.Neo
                 path += temp[i] + '\\';
 
             Directory.CreateDirectory(path + folder);
-            ExportCandidates(psms, spectra, path);
+            ExportCandidates(psms, spectra, path, commonParameters);
             // ExportFullFASTA(psms, databaseFileName, path);
             ExportFASTAAppendix(psms, databaseFileName, path);
 
             //  ExportFilteredFusionPeptideAppendix(psms, databaseFileName, path);
         }
 
-        public static void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path)
+        public static void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path, CommonParameters commonParameters)
         {
             using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesAll.txt"))
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
                 //double progress = 0;
-                Parallel.ForEach(psms, (psm) =>
+                Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
                     Ms2ScanWithSpecificMass spectrum = spectra[psm.scanNumber];
                     //printout the scan, the mass, the sequences with and without junctions, the number of potential sequences
@@ -197,7 +198,7 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                Parallel.ForEach(psms, (psm) =>
+                Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.TL))
                     {
@@ -314,7 +315,7 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                Parallel.ForEach(psms, (psm) =>
+                Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.NC))
                     {
@@ -431,7 +432,7 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                Parallel.ForEach(psms, (psm) =>
+                Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.TS))
                     {

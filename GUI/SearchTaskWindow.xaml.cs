@@ -185,7 +185,7 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-            addCompIonCheckBox.IsChecked = task.SearchParameters.AddCompIons;
+            addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             bCheckBox.IsChecked = task.CommonParameters.BIons;
             yCheckBox.IsChecked = task.CommonParameters.YIons;
             cCheckBox.IsChecked = task.CommonParameters.CIons;
@@ -202,6 +202,7 @@ namespace MetaMorpheusGUI
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
+            maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
@@ -399,6 +400,11 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + maxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
+            if (!int.TryParse(maxThreadsTextBox.Text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads <= 0)
+            {
+                MessageBox.Show("Your current device has " + Environment.ProcessorCount + " processors. \n Please select a positive value less than or equal to this number.");
+                return;
+            }
 
             #endregion Check Task Validity
 
@@ -444,7 +450,6 @@ namespace MetaMorpheusGUI
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
             TheTask.SearchParameters.MaxFragmentSize = Double.Parse(txtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
-            TheTask.SearchParameters.AddCompIons = addCompIonCheckBox.IsChecked.Value;
            
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
@@ -464,27 +469,28 @@ namespace MetaMorpheusGUI
             double MinRatio = double.Parse(MinRatioTextBox.Text);
 
             CommonParameters CommonParamsToSave = new CommonParameters(
-                UseDeltaScore: deltaScoreCheckBox.IsChecked.Value,
-                ReportAllAmbiguity: allAmbiguity.IsChecked.Value,
-                DeconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture), 
-                TotalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
-                DoPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value, 
-                UseProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
-                ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), 
-                CalculateEValue: eValueCheckBox.IsChecked.Value, 
-                ListOfModsFixed: listOfModsFixed, 
-                ListOfModsVariable:  listOfModsVariable, 
-                BIons: bCheckBox.IsChecked.Value, 
-                YIons: yCheckBox.IsChecked.Value, 
-                CIons: cCheckBox.IsChecked.Value, 
-                ZdotIons: zdotCheckBox.IsChecked.Value,
-                PrecursorMassTolerance: PrecursorMassTolerance,
-                ProductMassTolerance:ProductMassTolerance,
-                DigestionParams: digestionParamsToSave ,
-                TrimMs1Peaks: TrimMs1Peaks, 
-                TrimMsMsPeaks: TrimMsMsPeaks, 
-                TopNpeaks: TopNpeaks, 
-                MinRatio: MinRatio);
+                useDeltaScore: deltaScoreCheckBox.IsChecked.Value,
+                reportAllAmbiguity: allAmbiguity.IsChecked.Value,
+                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture), 
+                totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
+                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value, 
+                useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
+                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), 
+                calculateEValue: eValueCheckBox.IsChecked.Value, 
+                listOfModsFixed: listOfModsFixed, 
+                listOfModsVariable:  listOfModsVariable, 
+                bIons: bCheckBox.IsChecked.Value, 
+                yIons: yCheckBox.IsChecked.Value, 
+                cIons: cCheckBox.IsChecked.Value, 
+                zDotIons: zdotCheckBox.IsChecked.Value,
+                precursorMassTolerance: PrecursorMassTolerance,
+                productMassTolerance:ProductMassTolerance,
+                digestionParams: digestionParamsToSave ,
+                trimMs1Peaks: TrimMs1Peaks, 
+                trimMsMsPeaks: TrimMsMsPeaks, 
+                topNpeaks: TopNpeaks, 
+                minRatio: MinRatio,
+                addCompIons: addCompIonCheckBox.IsChecked.Value);
 
             if (OutputFileNameTextBox.Text != "")
             {
@@ -534,7 +540,11 @@ namespace MetaMorpheusGUI
             {
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             }
-            
+
+            if (!maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0))
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
             if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;

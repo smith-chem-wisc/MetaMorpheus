@@ -19,7 +19,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, List<string> nestedIds) : base(nestedIds)
+        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.allIdentifications = allIdentifications;
             this.gptmdModifications = gptmdModifications;

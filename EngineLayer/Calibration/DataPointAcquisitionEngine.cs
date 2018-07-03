@@ -24,6 +24,7 @@ namespace EngineLayer.Calibration
         private readonly int minMS1isotopicPeaksNeededForConfirmedIdentification;
         private readonly int minMS2isotopicPeaksNeededForConfirmedIdentification;
         private readonly FragmentTypes fragmentTypesForCalibration;
+        private readonly CommonParameters commonParameters;
 
         #endregion Private Fields
 
@@ -38,7 +39,8 @@ namespace EngineLayer.Calibration
             int minMS1isotopicPeaksNeededForConfirmedIdentification,
             int minMS2isotopicPeaksNeededForConfirmedIdentification,
             FragmentTypes fragmentTypesForCalibration,
-            List<string> nestedIds) : base(nestedIds)
+            CommonParameters commonParameters,
+            List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.goodIdentifications = goodIdentifications;
             this.myMsDataFile = myMsDataFile;
@@ -48,6 +50,7 @@ namespace EngineLayer.Calibration
             this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
             this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
             this.fragmentTypesForCalibration = fragmentTypesForCalibration;
+            this.commonParameters = commonParameters;
         }
 
         #endregion Public Constructors
@@ -69,12 +72,11 @@ namespace EngineLayer.Calibration
             int numIdentifications = goodIdentifications.Count;
 
             // Loop over identifications
-
             HashSet<string> sequences = new HashSet<string>();
 
             object lockObj = new object();
             object lockObj2 = new object();
-            Parallel.ForEach(Partitioner.Create(0, numIdentifications), fff =>
+            Parallel.ForEach(Partitioner.Create(0, numIdentifications), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
             {
                 for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
                 {
@@ -106,7 +108,7 @@ namespace EngineLayer.Calibration
 
                     double[] theoreticalMasses = dist.Masses.ToArray();
                     double[] theoreticalIntensities = dist.Intensities.ToArray();
-                    
+
 
                     Array.Sort(theoreticalIntensities, theoreticalMasses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
@@ -243,29 +245,22 @@ namespace EngineLayer.Calibration
             if (ms2DataScan.MassSpectrum.Size == 0)
                 return result;
 
-            foreach (var productType in identification.MatchedIonMassToChargeRatioDict)
+            foreach (var matchedIon in identification.MatchedFragmentIons)
             {
-                for (int i = 0; i < productType.Value.Length; i++)
-                {
-                    double theorMz = productType.Value[i];
-                    int ind = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theorMz).Value;
+                double exptPeakMz = matchedIon.Mz;
+                double exptPeakIntensity = matchedIon.Intensity;
+                double injTime = ms2DataScan.InjectionTime ?? double.NaN;
 
-                    double exptPeakMz = ms2DataScan.MassSpectrum.XArray[ind];
-                    double exptPeakIntensity = ms2DataScan.MassSpectrum.YArray[ind];
-                    double injTime = ms2DataScan.InjectionTime ?? double.NaN;
-
-                    result.Add(
-                        new LabeledDataPoint(
-                            exptPeakMz,
-                            ms2DataScan.RetentionTime,
-                            Math.Log(ms2DataScan.TotalIonCurrent),
-                            Math.Log(injTime),
-                            Math.Log(exptPeakIntensity),
-                            theorMz,
-                            identification));
-                }
+                result.Add(
+                    new LabeledDataPoint(
+                        exptPeakMz,
+                        ms2DataScan.RetentionTime,
+                        Math.Log(ms2DataScan.TotalIonCurrent),
+                        Math.Log(injTime),
+                        Math.Log(exptPeakIntensity),
+                        matchedIon.TheoreticalFragmentIon.Mz,
+                        identification));
             }
-
             return result;
         }
 

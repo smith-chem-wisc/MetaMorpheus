@@ -32,9 +32,10 @@ namespace Test
                                    };
 
             IEnumerable<Tuple<string, TerminusType>> sequencesInducingCleavage = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("A", TerminusType.C), new Tuple<string, TerminusType>("B", TerminusType.C), new Tuple<string, TerminusType>("C", TerminusType.C), new Tuple<string, TerminusType>("D", TerminusType.C), new Tuple<string, TerminusType>("E", TerminusType.C), new Tuple<string, TerminusType>("F", TerminusType.C), new Tuple<string, TerminusType>("G", TerminusType.C), new Tuple<string, TerminusType>("H", TerminusType.C), new Tuple<string, TerminusType>("I", TerminusType.C), new Tuple<string, TerminusType>("J", TerminusType.C), new Tuple<string, TerminusType>("-", TerminusType.C) };
-            var protease = new Protease("test1", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("test", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+                        
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -115,7 +116,7 @@ namespace Test
             }
 
             // apply parsimony to dictionary
-            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, false, new List<string>());
+            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, false, new CommonParameters(), new List<string>());
             var hah = (ProteinParsimonyResults)ae.Run();
             var proteinGroups = hah.ProteinGroups;
 
@@ -168,7 +169,7 @@ namespace Test
                 hm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
 
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new CommonParameters(), new List<string>());
             var ok = (ProteinScoringAndFdrResults)f.Run();
             proteinGroups = ok.sortedAndScoredProteinGroups;
 
@@ -337,7 +338,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, true, new List<string> { "ff" });
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, true, new CommonParameters(), new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
@@ -369,7 +370,7 @@ namespace Test
                 match2,
                 match3
             };
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new CommonParameters(), new List<string>());
             f.Run();
 
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);

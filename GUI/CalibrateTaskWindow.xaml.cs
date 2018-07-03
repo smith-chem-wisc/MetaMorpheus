@@ -65,6 +65,7 @@ namespace MetaMorpheusGUI
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
+            maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
@@ -221,6 +222,11 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + maxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
+            if (!int.TryParse(maxThreadsTextBox.Text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads <= 0)
+            {
+                MessageBox.Show("Your current device has " + Environment.ProcessorCount + ". \n Please select a positive value less than or equal to this number.");
+                return;
+            }
 
             #endregion Check Task Validity
 
@@ -263,17 +269,21 @@ namespace MetaMorpheusGUI
 
             }
             CommonParameters CommonParamsToSave = new CommonParameters(
-                DigestionParams: digestionParamsToSave,
-                BIons: bCheckBox.IsChecked.Value,
-                YIons: yCheckBox.IsChecked.Value,
-                CIons: cCheckBox.IsChecked.Value,
-                ZdotIons: zdotCheckBox.IsChecked.Value,
-                ScoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                ListOfModsFixed: listOfModsFixed,
-                ListOfModsVariable: listOfModsVariable,
-                ProductMassTolerance: ProductMassTolerance,
-                PrecursorMassTolerance: PrecursorMassTolerance);
+                digestionParams: digestionParamsToSave,
+                bIons: bCheckBox.IsChecked.Value,
+                yIons: yCheckBox.IsChecked.Value,
+                cIons: cCheckBox.IsChecked.Value,
+                zDotIons: zdotCheckBox.IsChecked.Value,
+                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                listOfModsFixed: listOfModsFixed,
+                listOfModsVariable: listOfModsVariable,
+                productMassTolerance: ProductMassTolerance,
+                precursorMassTolerance: PrecursorMassTolerance);
 
+            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
             if (OutputFileNameTextBox.Text != "")
             {
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
