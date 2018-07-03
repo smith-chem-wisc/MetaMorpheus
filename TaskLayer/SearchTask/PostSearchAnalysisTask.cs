@@ -93,14 +93,14 @@ namespace TaskLayer
                     {
                         new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, Parameters.AllPsms, Parameters.ProteinList, Parameters.FixedModifications,
                             Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
-                            Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId }).Run();
+                            Parameters.CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
                     }
                 }
                 else
                 {
                     SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(Parameters.AllPsms, Parameters.ProteinList,
                         Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
-                        Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId });
+                        Parameters.CommonParameters.ReportAllAmbiguity, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId });
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                     compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
                 }
@@ -109,7 +109,7 @@ namespace TaskLayer
             ProteinParsimonyResults proteinAnalysisResults = null;
             if (Parameters.SearchParameters.DoParsimony)
             {
-                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, new List<string> { Parameters.SearchTaskId }).Run());
+                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
             }
 
             Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });

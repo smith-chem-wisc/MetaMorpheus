@@ -21,7 +21,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreDifferent, List<string> nestedIds) : base(nestedIds)
+        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -321,8 +321,8 @@ namespace EngineLayer
                 var list = group.ToList();
                 if (parsimonyProteinsWithSameNumPeptides != null)
                 {
-                    Parallel.ForEach(Partitioner.Create(0, list.Count),
-                        new ParallelOptions { MaxDegreeOfParallelism = -1 },
+                    Parallel.ForEach(Partitioner.Create(0, list.Count), 
+                        new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                         (range, loopState) =>
                         {
                             for (int i = range.Item1; i < range.Item2; i++)

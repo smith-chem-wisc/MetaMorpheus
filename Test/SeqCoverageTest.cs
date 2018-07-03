@@ -81,7 +81,7 @@ namespace Test
                 psm3,
             };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new List<string>());
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new CommonParameters(), new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
             ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new List<string>());

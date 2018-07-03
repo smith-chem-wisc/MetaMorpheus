@@ -241,6 +241,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
@@ -262,6 +263,12 @@
                                         <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
                                             <CheckBox x:Name="cCheckBox" Content="c ions" />
                                             <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label Content="Set Number of Processors" />
+                                            <TextBox x:Name="maxThreadsTextBox" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
