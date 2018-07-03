@@ -15,12 +15,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private readonly MassDiffAcceptor massDiffAcceptor;
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM;
-
+        
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM, List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptor, bool reportAllAmbiguity, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM, List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptor, bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, commonParameters, nestedIds)
         {
             this.massDiffAcceptor = massDiffAcceptor;
             this.CPWMtoPWSM = CPWMtoPWSM;
@@ -64,7 +64,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //particularly tricky for single proteases, since each is more scan specific.
             if (terminusType == TerminusType.N)
             {
-                Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+                Parallel.ForEach(Partitioner.Create(0, totalProteins), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
                 {
                     //Digest protein into large peptide fragments and store in local1
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key as CompactPeptideBase, b => new HashSet<PeptideWithSetModifications>());
@@ -177,7 +177,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
             else //if (terminusType==TerminusType.C)
             {
-                Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+                Parallel.ForEach(Partitioner.Create(0, totalProteins), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
                 {
                     //Digest protein into large peptide fragments and store in local1
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());

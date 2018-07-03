@@ -116,7 +116,7 @@ namespace Test
             }
 
             // apply parsimony to dictionary
-            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, false, new List<string>());
+            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, false, new CommonParameters(), new List<string>());
             var hah = (ProteinParsimonyResults)ae.Run();
             var proteinGroups = hah.ProteinGroups;
 
@@ -169,7 +169,7 @@ namespace Test
                 hm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
 
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new CommonParameters(), new List<string>());
             var ok = (ProteinScoringAndFdrResults)f.Run();
             proteinGroups = ok.sortedAndScoredProteinGroups;
 
@@ -338,7 +338,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, true, new List<string> { "ff" });
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, true, new CommonParameters(), new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 
@@ -370,7 +370,7 @@ namespace Test
                 match2,
                 match3
             };
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new CommonParameters(), new List<string>());
             f.Run();
 
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);

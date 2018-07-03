@@ -29,15 +29,13 @@ namespace EngineLayer.ClassicSearch
 
         private readonly List<ProductType> lp;
 
-        private readonly CommonParameters commonParameters;
-
         private readonly List<DissociationType> dissociationTypes;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.peptideSpectralMatches = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -48,7 +46,6 @@ namespace EngineLayer.ClassicSearch
             this.searchMode = searchMode;
             this.lp = lp;
             this.dissociationTypes = DetermineDissociationType(lp);
-            this.commonParameters = CommonParameters;
         }
 
         #endregion Public Constructors
@@ -74,7 +71,7 @@ namespace EngineLayer.ClassicSearch
 
             if (proteins.Any())
             {
-                Parallel.ForEach(Partitioner.Create(0, proteins.Count), partitionRange =>
+                Parallel.ForEach(Partitioner.Create(0, proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, partitionRange =>
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {

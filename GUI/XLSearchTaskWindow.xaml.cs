@@ -186,6 +186,7 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             txtNumberOfDatabaseSearches.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
+            maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             ckbAllResults.IsChecked = task.XlSearchParameters.XlOutAll;
             ckbPercolator.IsChecked = task.XlSearchParameters.XlOutPercolator;

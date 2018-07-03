@@ -66,7 +66,7 @@ namespace EngineLayer
 
         //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
         public string TaskDescriptor { get; set; }
-        public int MaxThreadsToUsePerFile { get; private set; }
+        public int MaxThreadsToUsePerFile { get; set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
         public bool DoPrecursorDeconvolution { get; private set; }
