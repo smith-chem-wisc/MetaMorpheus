@@ -22,7 +22,6 @@ namespace EngineLayer.Indexing
         protected readonly int currentPartition;
         protected readonly DecoyType decoyType;
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
-        protected readonly CommonParameters commonParams;
         protected readonly double maxFragmentSize;
 
         #endregion Protected Fields
@@ -38,7 +37,6 @@ namespace EngineLayer.Indexing
             this.currentPartition = currentPartition + 1;
             this.decoyType = decoyType;
             this.CollectionOfDigestionParams = CollectionOfDigestionParams;
-            this.commonParams = commonParams;
             this.maxFragmentSize = maxFragmentSize;
         }
 
@@ -49,7 +47,7 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Partitions: " + currentPartition + "/" + commonParams.TotalPartitions);
+            sb.AppendLine("Partitions: " + currentPartition + "/" + commonParameters.TotalPartitions);
             sb.AppendLine("Search Decoys: " + decoyType);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
@@ -81,7 +79,7 @@ namespace EngineLayer.Indexing
             // digest database
             HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
 
-            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParams.MaxThreadsToUsePerFile }, range =>
+            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
             {
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
@@ -116,7 +114,7 @@ namespace EngineLayer.Indexing
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParams.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
+            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
             peptideToId = null;
 
             // create fragment index
