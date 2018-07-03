@@ -27,13 +27,12 @@ namespace EngineLayer.CrosslinkAnalysis
 
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly string OutputFolder;
-        private readonly CommonParameters CommonParameters;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -44,7 +43,6 @@ namespace EngineLayer.CrosslinkAnalysis
             this.OutputFolder = OutputFolder;
             this.crosslinker = crosslinker;
             this.terminusType = terminusType;
-            this.CommonParameters = CommonParameters;
         }
 
         #endregion Public Constructors
@@ -81,11 +79,11 @@ namespace EngineLayer.CrosslinkAnalysis
             int proteinsSeen = 0;
             int old_progress = 0;
             Status("Adding possible sources to peptide dictionary...");
-            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), fff =>
+            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    foreach (var peptideWithSetModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications))
+                    foreach (var peptideWithSetModifications in proteinList[i].Digest(commonParameters.DigestionParams, fixedModifications, variableModifications))
                     {
                         var compactPeptide = peptideWithSetModifications.CompactPeptide(terminusType);
                         if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out HashSet<PeptideWithSetModifications> peptidesWithSetMods))

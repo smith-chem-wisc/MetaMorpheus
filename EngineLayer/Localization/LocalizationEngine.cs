@@ -13,19 +13,17 @@ namespace EngineLayer.Localization
         private readonly IEnumerable<PeptideSpectralMatch> allResultingIdentifications;
         private readonly List<ProductType> productTypes;
         private readonly MsDataFile myMsDataFile;
-        private readonly CommonParameters commonParameters;
         private readonly List<DissociationType> dissociationTypes;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.productTypes = lp;
             this.myMsDataFile = myMsDataFile;
-            this.commonParameters = commonParameters;
             this.dissociationTypes = DetermineDissociationType(lp);
         }
 

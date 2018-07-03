@@ -1095,9 +1095,7 @@ namespace MetaMorpheusGUI
                     case MyTask.Search:
 
                         var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
-
                         searchDialog.ShowDialog();
-
                         preRunTask.DisplayName = "Task" + (staticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
 

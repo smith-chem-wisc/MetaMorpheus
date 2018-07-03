@@ -13,7 +13,6 @@ namespace Test
     [TestFixture]
     public static class MultiProteaseParsimonyTest
     {
-
         [Test]
         public static void MultiProteaseUniqueTest()
         {
@@ -133,7 +132,7 @@ namespace Test
             ModificationWithMass mod2 = new ModificationWithMass("Oxidation of M", "Common Variable", motif2, TerminusLocalization.Any, 15.99491461957);
             List<ModificationWithMass> modFixedList = new List<ModificationWithMass> { mod };
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine =
-            new SequencesToActualProteinPeptidesEngine(psms, p, modFixedList, modVarList, IonTypes, digestionParamsList, true, null);
+            new SequencesToActualProteinPeptidesEngine(psms, p, modFixedList, modVarList, IonTypes, digestionParamsList, true, new CommonParameters(), null);
             var results = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var CompactPeptidesToProteinPeptidesMatching = results.CompactPeptideToProteinPeptideMatching;
             Assert.AreEqual(4, CompactPeptidesToProteinPeptidesMatching.Count);
@@ -154,7 +153,7 @@ namespace Test
             Assert.AreEqual("-XYZ-EFG", CompactPeptidesToProteinPeptidesMatching.ElementAt(3).Value.ElementAt(0).BaseSequence);
             Assert.AreEqual("2", CompactPeptidesToProteinPeptidesMatching.ElementAt(3).Value.ElementAt(0).Protein.Accession);
             
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, false, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, false, new CommonParameters(), null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             List<ProteinGroup> proteinGroups = proteinAnalysisResults.ProteinGroups;
@@ -331,7 +330,7 @@ namespace Test
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif2);
             List<ModificationWithMass> modFixedList = new List<ModificationWithMass> { mod };
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine =
-            new SequencesToActualProteinPeptidesEngine(psms, p, modFixedList, modVarList, IonTypes, digestionParamsList, true, null);
+            new SequencesToActualProteinPeptidesEngine(psms, p, modFixedList, modVarList, IonTypes, digestionParamsList, true, new CommonParameters(), null);
             var results = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var CompactPeptidesToProteinPeptidesMatching = results.CompactPeptideToProteinPeptideMatching;
             Assert.AreEqual(2, CompactPeptidesToProteinPeptidesMatching.Count);
@@ -344,7 +343,7 @@ namespace Test
             Assert.AreEqual("EFG", CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.ElementAt(0).BaseSequence);
             Assert.AreEqual("EFG", CompactPeptidesToProteinPeptidesMatching.ElementAt(1).Value.ElementAt(1).BaseSequence);
             
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, false, null);
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(CompactPeptidesToProteinPeptidesMatching, false, new CommonParameters(), null);
             var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
 
             List<ProteinGroup> proteinGroups = proteinAnalysisResults.ProteinGroups;
