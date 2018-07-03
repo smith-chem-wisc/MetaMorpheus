@@ -70,7 +70,7 @@ namespace RealTimeGUI
                 //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
                 //DataReceiverNotificationEventHandler?.BeginInvoke(this, new NotificationEventArgs(x), callBack, null);
                 //ListScan.Add(scan);
-                Dump("Specific", scan.SpecificInformation);
+                //Dump("Specific", scan.SpecificInformation);
                 logD.Debug("Get one scan");
 
             }

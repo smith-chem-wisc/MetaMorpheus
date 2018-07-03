@@ -34,7 +34,8 @@ namespace RealTimeGUI
 
         public void HandleUpdate(object sender, EventArgs e)
         {
-            this.logContent = GetEvents(memoryAppender);
+            //Difference between += and =
+            this.logContent += GetEvents(memoryAppender);
 
             // Then alert the Updated event that the LogWatcher has been updated
             //Updated?.BeginInvoke(this, new EventArgs());

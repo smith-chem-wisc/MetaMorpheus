@@ -76,9 +76,9 @@ namespace RealTimeGUI
             log.Debug("Start log");
             Notifications.Notification = "AA";
             //DataReceiver.TestLog();
-            //DataReceiver.InstrumentAccess = Connection.GetFirstInstrument();
-            //DataReceiver.ScanContainer = DataReceiver.InstrumentAccess.GetMsScanContainer(0);
-            //RtbNotifications.AppendText(DataReceiver.InstrumentAccess.InstrumentName);
+            DataReceiver.InstrumentAccess = Connection.GetFirstInstrument();
+            DataReceiver.ScanContainer = DataReceiver.InstrumentAccess.GetMsScanContainer(0);
+            RtbNotifications.AppendText(DataReceiver.InstrumentAccess.InstrumentName);
         }
 
         private void BtnDisConnection_Click(object sender, RoutedEventArgs e)
@@ -95,6 +95,7 @@ namespace RealTimeGUI
             Thread.CurrentThread.Join(DataReceiver.RTParameters.TimeScale);
             DataReceiver.StopReceiveData();
             //DataReceiver.TestLog();
+            Notifications.Notification = "AB";
         }
 
         public void logWatcher_Updated(object sender, EventArgs e)
