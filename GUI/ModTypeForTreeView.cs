@@ -6,13 +6,7 @@ namespace MetaMorpheusGUI
 {
     public class ModTypeForTreeView : INotifyPropertyChanged
     {
-        #region Private Fields
-
         private bool? _isChecked;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public ModTypeForTreeView(string displayName, bool bad)
         {
@@ -24,15 +18,7 @@ namespace MetaMorpheusGUI
                 Background = new SolidColorBrush(Colors.Transparent);
         }
 
-        #endregion Public Constructors
-
-        #region Public Events
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         public bool? Use
         {
@@ -52,10 +38,6 @@ namespace MetaMorpheusGUI
 
         public Brush Background { get; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public void VerifyCheckState()
         {
             bool? state = null;
@@ -73,18 +55,10 @@ namespace MetaMorpheusGUI
             SetUseStatus(state);
         }
 
-        #endregion Public Methods
-
-        #region Protected Methods
-
         protected void RaisePropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private void SetUseStatus(bool? value)
         {
@@ -99,7 +73,5 @@ namespace MetaMorpheusGUI
 
             RaisePropertyChanged("Use");
         }
-
-        #endregion Private Methods
     }
 }

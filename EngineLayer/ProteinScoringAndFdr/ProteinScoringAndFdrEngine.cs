@@ -1,49 +1,36 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics.ProteolyticDigestion;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
 {
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
-        private readonly IEnumerable<PeptideSpectralMatch> newPsms;
-        private readonly bool noOneHitWonders;
-        private readonly bool treatModPeptidesAsDifferentPeptides;
-        private readonly bool mergeIndistinguishableProteinGroups;
-        private readonly List<ProteinGroup> proteinGroups;
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private readonly IEnumerable<PeptideSpectralMatch> NewPsms;
+        private readonly bool NoOneHitWonders;
+        private readonly bool TreatModPeptidesAsDifferentPeptides;
+        private readonly bool MergeIndistinguishableProteinGroups;
+        private readonly List<ProteinGroup> ProteinGroups;
 
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.newPsms = newPsms;
-            this.proteinGroups = proteinGroups;
-            this.noOneHitWonders = noOneHitWonders;
-            this.treatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
-            this.mergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
+            NewPsms = newPsms;
+            ProteinGroups = proteinGroups;
+            NoOneHitWonders = noOneHitWonders;
+            TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
+            MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
             Status("Running protein scoring and FDR engine!");
 
-            ScoreProteinGroups(proteinGroups, newPsms);
-            myAnalysisResults.sortedAndScoredProteinGroups = DoProteinFdr(proteinGroups);
+            ScoreProteinGroups(ProteinGroups, NewPsms);
+            myAnalysisResults.SortedAndScoredProteinGroups = DoProteinFdr(ProteinGroups);
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private static string StripDecoyIdentifier(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
         {
@@ -60,14 +47,18 @@ namespace EngineLayer
             {
                 if (psm.FdrInfo.QValueNotch < 0.01 && psm.FdrInfo.QValue < 0.01)
                 {
-                    if ((treatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!treatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
+                    if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
                         foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                         {
                             if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
+                            {
                                 peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
+                            }
                             else
+                            {
                                 psmsForThisPeptide.Add(psm);
+                            }
                         }
                     }
                 }
@@ -80,9 +71,13 @@ namespace EngineLayer
                 {
                     // build PSM list for scoring
                     if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<PeptideSpectralMatch> psms))
+                    {
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
+                    }
                     else
+                    {
                         pepsToRemove.Add(peptide);
+                    }
                 }
 
                 proteinGroup.AllPeptides.ExceptWith(pepsToRemove);
@@ -91,9 +86,11 @@ namespace EngineLayer
 
             // score the group
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.Score();
+            }
 
-            if (mergeIndistinguishableProteinGroups)
+            if (MergeIndistinguishableProteinGroups)
             {
                 // merge protein groups that are indistinguishable after scoring
                 var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
@@ -123,19 +120,21 @@ namespace EngineLayer
 
             // calculate sequence coverage
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.CalculateSequenceCoverage();
+            }
         }
 
         private List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
         {
             Status("Calculating protein FDR...");
 
-            if (noOneHitWonders)
+            if (NoOneHitWonders)
             {
-                if (treatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
+                if (TreatModPeptidesAsDifferentPeptides)
+                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
                 else
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
             }
 
             // pair decoys and targets by accession
@@ -148,9 +147,13 @@ namespace EngineLayer
                     string stippedAccession = StripDecoyIdentifier(protein.Accession);
 
                     if (accessionToProteinGroup.TryGetValue(stippedAccession, out List<ProteinGroup> groups))
+                    {
                         groups.Add(pg);
+                    }
                     else
+                    {
                         accessionToProteinGroup.Add(stippedAccession, new List<ProteinGroup> { pg });
+                    }
                 }
 
                 pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
@@ -178,10 +181,14 @@ namespace EngineLayer
 
             foreach (var proteinGroup in sortedProteinGroups)
             {
-                if (proteinGroup.isDecoy)
+                if (proteinGroup.IsDecoy)
+                {
                     cumulativeDecoy++;
+                }
                 else
+                {
                     cumulativeTarget++;
+                }
 
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
@@ -190,7 +197,5 @@ namespace EngineLayer
 
             return sortedProteinGroups;
         }
-
-        #endregion Private Methods
     }
 }

@@ -1,4 +1,6 @@
-﻿using Proteomics;
+﻿using MassSpectrometry;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,34 +10,28 @@ namespace EngineLayer
 {
     public class SequencesToActualProteinPeptidesEngine : MetaMorpheusEngine
     {
-        #region Protected Fields
+        protected readonly List<ModificationWithMass> FixedModifications;
+        protected readonly List<ModificationWithMass> VariableModifications;
+        protected readonly List<PeptideSpectralMatch> AllPsms;
+        protected readonly List<Protein> Proteins;
+        protected readonly TerminusType TerminusType;
+        protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
+        protected readonly bool ReportAllAmbiguity;
 
-        protected readonly List<ModificationWithMass> fixedModifications;
-        protected readonly List<ModificationWithMass> variableModifications;
-        protected readonly List<PeptideSpectralMatch> allPsms;
-        protected readonly List<Protein> proteins;
-        protected readonly TerminusType terminusType;
-        protected readonly IEnumerable<DigestionParams> collectionOfDigestionParams;
-        protected readonly bool reportAllAmbiguity;
-
-        #endregion Protected Fields
-
-        #region Public Constructors
-
-        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList,
+                List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications,
+                List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams,
+                bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds)
+            : base(commonParameters, nestedIds)
         {
-            this.proteins = proteinList;
-            this.allPsms = allPsms;
-            this.fixedModifications = fixedModifications;
-            this.variableModifications = variableModifications;
-            this.terminusType = ProductTypeMethod.IdentifyTerminusType(ionTypes);
-            this.collectionOfDigestionParams = collectionOfDigestionParams;
-            this.reportAllAmbiguity = reportAllAmbiguity;
+            Proteins = proteinList;
+            AllPsms = allPsms;
+            FixedModifications = fixedModifications;
+            VariableModifications = variableModifications;
+            TerminusType = ProductTypeMethods.IdentifyTerminusType(ionTypes);
+            CollectionOfDigestionParams = collectionOfDigestionParams;
+            ReportAllAmbiguity = reportAllAmbiguity;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected static void ResolveAmbiguities(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
         {
@@ -57,16 +53,17 @@ namespace EngineLayer
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
-            #region Match Sequences to PeptideWithSetModifications
-
-            foreach (var psm in allPsms)
+            // Match Sequences to PeptideWithSetModifications
+            foreach (var psm in AllPsms)
             {
                 if (psm != null)
                 {
                     foreach (var compactPeptide in psm.CompactPeptides)
                     {
                         if (!compactPeptideToProteinPeptideMatching.ContainsKey(compactPeptide.Key))
+                        {
                             compactPeptideToProteinPeptideMatching.Add(compactPeptide.Key, new HashSet<PeptideWithSetModifications>());
+                        }
                     }
                 }
             }
@@ -74,44 +71,54 @@ namespace EngineLayer
             double proteinsMatched = 0;
             int oldPercentProgress = 0;
 
-            Parallel.ForEach(Partitioner.Create(0, proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
+            Parallel.ForEach(Partitioner.Create(0, Proteins.Count), 
+                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, 
+                (fff, loopState) =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    foreach (var digestionParam in collectionOfDigestionParams)
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
                     {
-                        foreach (var peptide in proteins[i].Digest(digestionParam, fixedModifications, variableModifications))
+                        loopState.Stop();
+                        return;
+                    }
+
+                    foreach (var digestionParam in CollectionOfDigestionParams.ToList())
+                    {
+                        // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
+                        foreach (var peptide in Proteins[i].Digest(digestionParam, FixedModifications, VariableModifications))
                         {
-                            var compactPeptide = peptide.CompactPeptide(terminusType);
+                            var compactPeptide = peptide.CompactPeptide(TerminusType);
 
                             if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out var peptidesWithSetMods))
                             {
                                 lock (peptidesWithSetMods)
+                                {
                                     peptidesWithSetMods.Add(peptide);
+                                }
                             }
                         }
                     }
+                }
 
-                    // report progress (proteins matched so far out of total proteins in database)
-                    proteinsMatched++;
-                    var percentProgress = (int)((proteinsMatched / proteins.Count) * 100);
+                // report progress (proteins matched so far out of total proteins in database)
+                proteinsMatched++;
+                var percentProgress = (int)((proteinsMatched / Proteins.Count) * 100);
 
-                    if (percentProgress > oldPercentProgress)
-                    {
-                        oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", nestedIds));
-                    }
+                if (percentProgress > oldPercentProgress)
+                {
+                    oldPercentProgress = percentProgress;
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", NestedIds));
                 }
             });
 
-            #endregion Match Sequences to PeptideWithSetModifications
-
-            if (!reportAllAmbiguity)
+            if (!ReportAllAmbiguity)
+            {
                 ResolveAmbiguities(compactPeptideToProteinPeptideMatching);
+            }
 
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
-
-        #endregion Protected Methods
     }
 }

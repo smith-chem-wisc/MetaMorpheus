@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,15 +15,17 @@ namespace Test
     [TestFixture]
     public static class BinGenerationTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestBinGeneration()
         {
             SearchTask st = new SearchTask
             {
-                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
-               
+                CommonParameters = new CommonParameters(
+                    scoreCutoff: 1,
+                    digestionParams: new DigestionParams(
+                        minPeptideLength: 5,
+                        initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
@@ -78,12 +81,12 @@ namespace Test
             SearchTask st = new SearchTask()
             {
                 CommonParameters = new CommonParameters(
-                    scoreCutoff: 1, 
+                    scoreCutoff: 1,
                     digestionParams: new DigestionParams(
-                        MaxMissedCleavages: 0,
-                        MinPeptideLength: 5, 
-                        InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
-                
+                        maxMissedCleavages: 0,
+                        minPeptideLength: 5,
+                        initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
@@ -130,7 +133,5 @@ namespace Test
                 new List<string> { mzmlFilePath1, mzmlFilePath2, },
                 null);
         }
-
-        #endregion Public Methods
     }
 }

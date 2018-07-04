@@ -4,19 +4,12 @@ namespace MetaMorpheusGUI
 {
     public class InRunTask : ForTreeView
     {
-        #region Public Fields
+        public readonly MetaMorpheusTask Task;
 
-        public readonly MetaMorpheusTask task;
-
-        #endregion Public Fields
-
-        #region Public Constructors
-
-        public InRunTask(string displayName, MetaMorpheusTask task) : base(displayName, displayName)
+        public InRunTask(string displayName, MetaMorpheusTask task)
+            : base(displayName, displayName)
         {
-            this.task = task;
+            Task = task;
         }
-
-        #endregion Public Constructors
     }
 }

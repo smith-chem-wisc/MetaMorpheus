@@ -12,17 +12,15 @@ namespace Test
     [TestFixture]
     public static class TestToml
     {
-        #region Public Methods
-
         [Test]
         public static void TestTomlFunction()
         {
             SearchTask searchTask = new SearchTask
             {
-                CommonParameters = new CommonParameters (
-                    productMassTolerance: new PpmTolerance(666), 
+                CommonParameters = new CommonParameters(
+                    productMassTolerance: new PpmTolerance(666),
                     listOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") },
-                    listOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),                
+                    listOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),
             };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
@@ -37,7 +35,6 @@ namespace Test
 
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsVariable.Count(), searchTaskLoaded.CommonParameters.ListOfModsVariable.Count());
 
-            
             Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptorType, searchTaskLoaded.SearchParameters.MassDiffAcceptorType);
             Assert.AreEqual(searchTask.SearchParameters.CustomMdac, searchTaskLoaded.SearchParameters.CustomMdac);
 
@@ -73,7 +70,5 @@ namespace Test
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
         }
-
-        #endregion Public Methods
     }
 }

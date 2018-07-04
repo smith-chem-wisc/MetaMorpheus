@@ -7,15 +7,9 @@ namespace EngineLayer.Neo
 {
     public class NeoMassCalculator
     {
-        #region Public Fields
-
         public static double[] MONOISOTOPIC_AMINO_ACID_MASSES;
         public static double[] AVERAGE_AMINO_ACID_MASSES;
         public static DataTable ModificationsDT = new DataTable();
-
-        #endregion Public Fields
-
-        #region Public Methods
 
         public static void ImportMasses()
         {
@@ -50,11 +44,17 @@ namespace EngineLayer.Neo
                     }
                 }
                 if (ModificationOn == true) //only occurs if "(" already found
+                {
                     ModificationName += amino_acid;
+                }
                 if (amino_acid == '[') //start collecting PTM name
+                {
                     ModificationOn = true;
+                }
                 if (ModificationOn == false && amino_acid != ']')
+                {
                     monoisotopic_mass += GetMonoisotopicMass(amino_acid, baseSequence); //something making it here after (
+                }
             }
             return monoisotopic_mass;
         }
@@ -121,10 +121,6 @@ namespace EngineLayer.Neo
                 return 0;
             }
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static void AminoAcidMasses()
         {
@@ -220,7 +216,5 @@ namespace EngineLayer.Neo
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

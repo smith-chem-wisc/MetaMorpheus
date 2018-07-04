@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,18 +20,12 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
-        #region Private Fields
-
-        private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
+        private readonly DataContextForSearchTaskWindow DataContextForSearchTaskWindow;
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
-        private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-        private readonly ObservableCollection<ModTypeForGrid> modSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
+        private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
 
         public SearchTaskWindow()
         {
@@ -38,18 +33,16 @@ namespace MetaMorpheusGUI
             TheTask = new SearchTask();
 
             PopulateChoices();
-
             UpdateFieldsFromTask(TheTask);
+            SaveButton.Content = "Add the Search Task";
 
-            this.saveButton.Content = "Add the Search Task";
-
-            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
+            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
                 AnalysisExpanderTitle = "Some analysis properties...",
                 SearchModeExpanderTitle = "Some search properties..."
             };
-            this.DataContext = dataContextForSearchTaskWindow;
+            DataContext = DataContextForSearchTaskWindow;
         }
 
         public SearchTaskWindow(SearchTask task)
@@ -58,27 +51,18 @@ namespace MetaMorpheusGUI
             TheTask = task;
 
             PopulateChoices();
-
             UpdateFieldsFromTask(TheTask);
 
-            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
+            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
                 AnalysisExpanderTitle = "Some analysis properties...",
                 SearchModeExpanderTitle = "Some search properties..."
             };
-            this.DataContext = dataContextForSearchTaskWindow;
+            DataContext = DataContextForSearchTaskWindow;
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal SearchTask TheTask { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {
@@ -102,114 +86,114 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
-                proteaseComboBox.Items.Add(protease);
+                ProteaseComboBox.Items.Add(protease);
             }
-            proteaseComboBox.SelectedIndex = 12;
+            ProteaseComboBox.SelectedIndex = 12;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
             {
-                initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+                InitiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
-            productMassToleranceComboBox.Items.Add("Da");
-            productMassToleranceComboBox.Items.Add("ppm");
+            ProductMassToleranceComboBox.Items.Add("Da");
+            ProductMassToleranceComboBox.Items.Add("ppm");
 
-            precursorMassToleranceComboBox.Items.Add("Da");
-            precursorMassToleranceComboBox.Items.Add("ppm");
+            PrecursorMassToleranceComboBox.Items.Add("Da");
+            PrecursorMassToleranceComboBox.Items.Add("ppm");
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForGrid(hm.Key);
-                modSelectionGridItems.Add(theModType);
+                ModSelectionGridItems.Add(theModType);
             }
-            ModSelectionGrid.ItemsSource = modSelectionGridItems;
+            ModSelectionGrid.ItemsSource = ModSelectionGridItems;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
-                fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
                 }
             }
-            fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
+            fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
-                variableModTypeForTreeViewObservableCollection.Add(theModType);
+                VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
                 }
             }
-            variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+            variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
-                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
+                LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             }
         }
 
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
-            modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            nonSpecificSearchRadioButton1.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
-            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
-            txtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
-            checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
-            checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
-            checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
-            quantPpmTolerance.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
-            checkBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
-            checkBoxNormalize.IsChecked = task.SearchParameters.Normalize;
-            modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
-            checkBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
-            histogramBinWidthTextBox.Text = task.SearchParameters.HistogramBinTolInDaltons.ToString(CultureInfo.InvariantCulture);
-            checkBoxTarget.IsChecked = task.SearchParameters.SearchTarget;
-            checkBoxDecoy.IsChecked = task.SearchParameters.DecoyType != DecoyType.None;
-            radioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
-            radioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
-            missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
-            maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            txtMaxModNum.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
-            productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-            addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
-            bCheckBox.IsChecked = task.CommonParameters.BIons;
-            yCheckBox.IsChecked = task.CommonParameters.YIons;
-            cCheckBox.IsChecked = task.CommonParameters.CIons;
-            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
-            numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
-            deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
-            useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
+            ClassicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
+            ModernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
+            NonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
+            SemiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
+            TxtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
+            CheckBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
+            CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
+            CheckBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
+            QuantPpmTolerance.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
+            CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
+            CheckBoxNormalize.IsChecked = task.SearchParameters.Normalize;
+            ModPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
+            CheckBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
+            HistogramBinWidthTextBox.Text = task.SearchParameters.HistogramBinTolInDaltons.ToString(CultureInfo.InvariantCulture);
+            CheckBoxTarget.IsChecked = task.SearchParameters.SearchTarget;
+            CheckBoxDecoy.IsChecked = task.SearchParameters.DecoyType != DecoyType.None;
+            RadioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
+            RadioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
+            MissedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            TxtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
+            TxtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            MaxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            TxtMaxModNum.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
+            InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
+            ProductMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            ProductMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            PrecursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            AddCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
+            BCheckBox.IsChecked = task.CommonParameters.BIons;
+            YCheckBox.IsChecked = task.CommonParameters.YIons;
+            CCheckBox.IsChecked = task.CommonParameters.CIons;
+            ZdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
+            NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
+            DeconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
+            UseProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
+            AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
-            minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
-            eValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
-            deltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
-            trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
-            trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            EValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
+            DeltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
+            TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
+            TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
-            ckbMzId.IsChecked = task.SearchParameters.OutMzId;
+            CkbMzId.IsChecked = task.SearchParameters.OutMzId;
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
-                var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                var theModType = FixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
@@ -225,13 +209,13 @@ namespace MetaMorpheusGUI
                 else
                 {
                     theModType = new ModTypeForTreeView(mod.Item1, true);
-                    fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                    FixedModTypeForTreeViewObservableCollection.Add(theModType);
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
             foreach (var mod in task.CommonParameters.ListOfModsVariable)
             {
-                var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                var theModType = VariableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
@@ -247,21 +231,21 @@ namespace MetaMorpheusGUI
                 else
                 {
                     theModType = new ModTypeForTreeView(mod.Item1, true);
-                    variableModTypeForTreeViewObservableCollection.Add(theModType);
+                    VariableModTypeForTreeViewObservableCollection.Add(theModType);
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            
-            foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+
+            foreach (var heh in LocalizeModTypeForTreeViewObservableCollection)
             {
-                    heh.Use = false;
+                heh.Use = false;
             }
-           
-            foreach (var ye in variableModTypeForTreeViewObservableCollection)
+
+            foreach (var ye in VariableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
             }
-            foreach (var ye in fixedModTypeForTreeViewObservableCollection)
+            foreach (var ye in FixedModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
             }
@@ -289,48 +273,47 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            #region Check Task Validity
-
-            if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
+            // Check Task Validity
+            if (NonSpecificSearchRadioButton.IsChecked.Value || SemiSpecificSearchRadioButton.IsChecked.Value)
             {
-                if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
+                if ((BCheckBox.IsChecked.Value || CCheckBox.IsChecked.Value) && (YCheckBox.IsChecked.Value || ZdotCheckBox.IsChecked.Value))
                 {
                     //MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
-                    bCheckBox.IsChecked = false;
-                    cCheckBox.IsChecked = false;
+                    BCheckBox.IsChecked = false;
+                    CCheckBox.IsChecked = false;
                 }
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    proteaseComboBox.Items.MoveCurrentToFirst();
-                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                    if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                    ProteaseComboBox.Items.MoveCurrentToFirst();
+                    ProteaseComboBox.SelectedItem = ProteaseComboBox.Items.CurrentItem;
+                    if ((BCheckBox.IsChecked.Value || CCheckBox.IsChecked.Value))
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
+                        while (!((Protease)ProteaseComboBox.SelectedItem).Name.Equals("singleN"))
                         {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                            ProteaseComboBox.Items.MoveCurrentToNext();
+                            ProteaseComboBox.SelectedItem = ProteaseComboBox.Items.CurrentItem;
                         }
                     }
                     else
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
+                        while (!((Protease)ProteaseComboBox.SelectedItem).Name.Equals("singleC"))
                         {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                            ProteaseComboBox.Items.MoveCurrentToNext();
+                            ProteaseComboBox.SelectedItem = ProteaseComboBox.Items.CurrentItem;
                         }
                     }
                 }
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
+                if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
                 {
-                    proteaseComboBox.Items.MoveCurrentToFirst();
-                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                    while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("trypsin"))
+                    ProteaseComboBox.Items.MoveCurrentToFirst();
+                    ProteaseComboBox.SelectedItem = ProteaseComboBox.Items.CurrentItem;
+                    while (!((Protease)ProteaseComboBox.SelectedItem).Name.Equals("trypsin"))
                     {
-                        proteaseComboBox.Items.MoveCurrentToNext();
-                        proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                        ProteaseComboBox.Items.MoveCurrentToNext();
+                        ProteaseComboBox.SelectedItem = ProteaseComboBox.Items.CurrentItem;
                     }
                 }
-                if (!addCompIonCheckBox.IsChecked.Value)
+                if (!AddCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
             if (!int.TryParse(DeconvolutionMaxAssumedChargeStateTextBox.Text, out int deconMaxAssumedCharge) || deconMaxAssumedCharge < 1)
@@ -352,25 +335,25 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The minimum ratio was not set to a number between zero and one. \n You entered " + '"' + MinRatioTextBox.Text + '"');
                 return;
             }
-            if (!int.TryParse(numberOfDatabaseSearchesTextBox.Text, out int numberOfDatabaseSearches) || numberOfDatabaseSearches == 0)
+            if (!int.TryParse(NumberOfDatabaseSearchesTextBox.Text, out int numberOfDatabaseSearches) || numberOfDatabaseSearches == 0)
             {
                 MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
                 return;
             }
-            if (string.IsNullOrEmpty(missedCleavagesTextBox.Text))
+            if (string.IsNullOrEmpty(MissedCleavagesTextBox.Text))
             {
-                missedCleavagesTextBox.Text = int.MaxValue.ToString();
+                MissedCleavagesTextBox.Text = int.MaxValue.ToString();
             }
-            if (!int.TryParse(txtMinPeptideLength.Text, out int minPeptideLength) || minPeptideLength < 1)
+            if (!int.TryParse(TxtMinPeptideLength.Text, out int minPeptideLength) || minPeptideLength < 1)
             {
                 MessageBox.Show("The minimum peptide length must be a positive integer");
                 return;
             }
-            if (string.IsNullOrEmpty(txtMaxPeptideLength.Text))
+            if (string.IsNullOrEmpty(TxtMaxPeptideLength.Text))
             {
-                txtMaxPeptideLength.Text = int.MaxValue.ToString();
+                TxtMaxPeptideLength.Text = int.MaxValue.ToString();
             }
-            if (!int.TryParse(txtMaxPeptideLength.Text, out int maxPeptideLength) || maxPeptideLength < 1)
+            if (!int.TryParse(TxtMaxPeptideLength.Text, out int maxPeptideLength) || maxPeptideLength < 1)
             {
                 MessageBox.Show("The minimum peptide length must be a positive integer");
                 return;
@@ -380,24 +363,24 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The maximum peptide length must be greater than or equal to the minimum peptide length.");
                 return;
             }
-            if (!double.TryParse(precursorMassToleranceTextBox.Text, out double precursorMassTolerance) || precursorMassTolerance <= 0)
+            if (!double.TryParse(PrecursorMassToleranceTextBox.Text, out double precursorMassTolerance) || precursorMassTolerance <= 0)
             {
-                MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + precursorMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
+                MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + PrecursorMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(productMassToleranceTextBox.Text, out double productMassTolerance) || productMassTolerance <= 0)
+            if (!double.TryParse(ProductMassToleranceTextBox.Text, out double productMassTolerance) || productMassTolerance <= 0)
             {
-                MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
+                MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + ProductMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
-            if (!double.TryParse(minScoreAllowed.Text, out double minScore) || minScore < 1)
+            if (!double.TryParse(MinScoreAllowed.Text, out double minScore) || minScore < 1)
             {
-                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
+                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + MinScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
-            if (!int.TryParse(maxModificationIsoformsTextBox.Text, out int maxModificationIsoforms) || maxModificationIsoforms < 1)
+            if (!int.TryParse(MaxModificationIsoformsTextBox.Text, out int maxModificationIsoforms) || maxModificationIsoforms < 1)
             {
-                MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + maxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
+                MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + MaxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
                 return;
             }
             if (!int.TryParse(maxThreadsTextBox.Text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads <= 0)
@@ -406,83 +389,80 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            #endregion Check Task Validity
-
-            #region Save Parameters
-
-            Protease protease = (Protease)proteaseComboBox.SelectedItem;
-            bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
-            TerminusType terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C);
-            int maxMissedCleavages = (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
-            int minPeptideLengthValue = (int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int maxPeptideLengthValue = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int maxModificationIsoformsValue = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
-            int maxModsForPeptideValue = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
-            InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            // Save Parameters
+            Protease protease = (Protease)ProteaseComboBox.SelectedItem;
+            bool semiProteaseDigestion = (SemiSpecificSearchRadioButton.IsChecked.Value && ((Protease)ProteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)ProteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
+            TerminusType terminusTypeSemiProtease = (BCheckBox.IsChecked.Value || CCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C);
+            int maxMissedCleavages = (int.Parse(MissedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
+            int minPeptideLengthValue = (int.Parse(TxtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int maxPeptideLengthValue = (int.Parse(TxtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int maxModificationIsoformsValue = (int.Parse(MaxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
+            int maxModsForPeptideValue = (int.Parse(TxtMaxModNum.Text, CultureInfo.InvariantCulture));
+            InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                SemiProteaseDigestion: semiProteaseDigestion,
-                TerminusTypeSemiProtease: terminusTypeSemiProtease,
-                MaxMissedCleavages: maxMissedCleavages,
-                MinPeptideLength: minPeptideLengthValue,
-                MaxPeptideLength: maxPeptideLengthValue,
-                MaxModificationIsoforms: maxModificationIsoforms,
-                InitiatorMethionineBehavior: initiatorMethionineBehavior,
-                MaxModsForPeptides: maxModsForPeptideValue);
+                semiProteaseDigestion: semiProteaseDigestion,
+                terminusTypeSemiProtease: terminusTypeSemiProtease,
+                maxMissedCleavages: maxMissedCleavages,
+                minPeptideLength: minPeptideLengthValue,
+                maxPeptideLength: maxPeptideLengthValue,
+                maxModificationIsoforms: maxModificationIsoforms,
+                initiatorMethionineBehavior: initiatorMethionineBehavior,
+                maxModsForPeptides: maxModsForPeptideValue);
 
             Tolerance ProductMassTolerance;
-            if (productMassToleranceComboBox.SelectedIndex == 0)
+            if (ProductMassToleranceComboBox.SelectedIndex == 0)
             {
-                ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                ProductMassTolerance = new AbsoluteTolerance(double.Parse(ProductMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
             else
             {
-                ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                ProductMassTolerance = new PpmTolerance(double.Parse(ProductMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
 
             Tolerance PrecursorMassTolerance;
-            if (precursorMassToleranceComboBox.SelectedIndex == 0)
+            if (PrecursorMassToleranceComboBox.SelectedIndex == 0)
             {
-                PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(PrecursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
             else
             {
-                PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                PrecursorMassTolerance = new PpmTolerance(double.Parse(PrecursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            TheTask.SearchParameters.MaxFragmentSize = Double.Parse(txtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchParameters.MaxFragmentSize = Double.Parse(TxtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
            
             var listOfModsVariable = new List<(string, string)>();
-            foreach (var heh in variableModTypeForTreeViewObservableCollection)
+            foreach (var heh in VariableModTypeForTreeViewObservableCollection)
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            
+
             var listOfModsFixed = new List<(string, string)>();
-            foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+            foreach (var heh in FixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-           
-            bool TrimMs1Peaks = trimMs1.IsChecked.Value;
-            bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
+
+            bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
+            bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
             double MinRatio = double.Parse(MinRatioTextBox.Text);
 
             CommonParameters CommonParamsToSave = new CommonParameters(
-                useDeltaScore: deltaScoreCheckBox.IsChecked.Value,
-                reportAllAmbiguity: allAmbiguity.IsChecked.Value,
+                useDeltaScore: DeltaScoreCheckBox.IsChecked.Value,
+                reportAllAmbiguity: AllAmbiguity.IsChecked.Value,
                 deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture), 
-                totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
-                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value, 
-                useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
-                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), 
-                calculateEValue: eValueCheckBox.IsChecked.Value, 
+                totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
+                doPrecursorDeconvolution: DeconvolutePrecursors.IsChecked.Value, 
+                useProvidedPrecursorInfo: UseProvidedPrecursor.IsChecked.Value,
+                scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture), 
+                calculateEValue: EValueCheckBox.IsChecked.Value, 
                 listOfModsFixed: listOfModsFixed, 
                 listOfModsVariable:  listOfModsVariable, 
-                bIons: bCheckBox.IsChecked.Value, 
-                yIons: yCheckBox.IsChecked.Value, 
-                cIons: cCheckBox.IsChecked.Value, 
-                zDotIons: zdotCheckBox.IsChecked.Value,
+                bIons: BCheckBox.IsChecked.Value, 
+                yIons: YCheckBox.IsChecked.Value, 
+                cIons: CCheckBox.IsChecked.Value, 
+                zDotIons: ZdotCheckBox.IsChecked.Value,
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance:ProductMassTolerance,
                 digestionParams: digestionParamsToSave ,
@@ -490,7 +470,7 @@ namespace MetaMorpheusGUI
                 trimMsMsPeaks: TrimMsMsPeaks, 
                 topNpeaks: TopNpeaks, 
                 minRatio: MinRatio,
-                addCompIons: addCompIonCheckBox.IsChecked.Value);
+                addCompIons: AddCompIonCheckBox.IsChecked.Value);
 
             if (OutputFileNameTextBox.Text != "")
             {
@@ -501,11 +481,11 @@ namespace MetaMorpheusGUI
                 CommonParamsToSave.TaskDescriptor = "SearchTask";
             }
 
-            if (classicSearchRadioButton.IsChecked.Value)
+            if (ClassicSearchRadioButton.IsChecked.Value)
             {
                 TheTask.SearchParameters.SearchType = SearchType.Classic;
             }
-            else if (modernSearchRadioButton.IsChecked.Value)
+            else if (ModernSearchRadioButton.IsChecked.Value)
             {
                 TheTask.SearchParameters.SearchType = SearchType.Modern;
             }
@@ -514,26 +494,34 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
             }
 
-            TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
-            TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
-            TheTask.SearchParameters.DoQuantification = checkBoxQuantification.IsChecked.Value;
-            TheTask.SearchParameters.Normalize = checkBoxNormalize.IsChecked.Value;
-            TheTask.SearchParameters.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
-            TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
-            TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
-            TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
-            TheTask.SearchParameters.OutMzId = ckbMzId.IsChecked.Value;
+            TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
+            TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
+            TheTask.SearchParameters.DoQuantification = CheckBoxQuantification.IsChecked.Value;
+            TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
+            TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
+            TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
+            TheTask.SearchParameters.QuantifyPpmTol = double.Parse(QuantPpmTolerance.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchParameters.SearchTarget = CheckBoxTarget.IsChecked.Value;
+            TheTask.SearchParameters.OutMzId = CkbMzId.IsChecked.Value;
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
-            if (checkBoxDecoy.IsChecked.Value)
+            if (CheckBoxDecoy.IsChecked.Value)
             {
-                if (radioButtonReverseDecoy.IsChecked.Value)
+                if (RadioButtonReverseDecoy.IsChecked.Value)
                 {
                     TheTask.SearchParameters.DecoyType = DecoyType.Reverse;
                 }
-                else //if (radioButtonSlideDecoy.IsChecked.Value)
+                else if (RadioButtonSlideDecoy.IsChecked.Value)
                 {
                     TheTask.SearchParameters.DecoyType = DecoyType.Slide;
+                }
+                else if (RadioButtonShuffleDecoy.IsChecked.Value)
+                {
+                    TheTask.SearchParameters.DecoyType = DecoyType.Reverse;
+                }
+                else
+                {
+                    throw new ArgumentException("Decoys should be generated, but decoy selected either doesn't exist or hasn't been implemented.");
                 }
             }
             else
@@ -575,8 +563,8 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
             }
 
-            TheTask.SearchParameters.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
-            TheTask.SearchParameters.HistogramBinTolInDaltons = double.Parse(histogramBinWidthTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchParameters.DoHistogramAnalysis = CheckBoxHistogramAnalysis.IsChecked.Value;
+            TheTask.SearchParameters.HistogramBinTolInDaltons = double.Parse(HistogramBinWidthTextBox.Text, CultureInfo.InvariantCulture);
 
             TheTask.SearchParameters.WritePrunedDatabase = writePrunedDBCheckBox.IsChecked.Value;
 
@@ -584,23 +572,21 @@ namespace MetaMorpheusGUI
 
             TheTask.CommonParameters = CommonParamsToSave;
 
-            #endregion Save Parameters
-
             DialogResult = true;
         }
-
+        
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
-            dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
-            dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
-            dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
+            DataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
+            DataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
+            DataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
         }
 
         private void SetModSelectionForPrunedDB()
         {
             TheTask.SearchParameters.ModsToWriteSelection = new Dictionary<string, int>();
             //checks the grid values for which button is checked then sets paramaters accordingly
-            foreach (var modTypeInGrid in modSelectionGridItems)
+            foreach (var modTypeInGrid in ModSelectionGridItems)
             {
                 if (modTypeInGrid.Item3)
                 {
@@ -623,7 +609,7 @@ namespace MetaMorpheusGUI
         {
             foreach (var modType in TheTask.SearchParameters.ModsToWriteSelection)
             {
-                var huhb = modSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
+                var huhb = ModSelectionGridItems.FirstOrDefault(b => b.ModName == modType.Key);
                 if (huhb != null)
                 {
                     switch (modType.Value)
@@ -662,44 +648,44 @@ namespace MetaMorpheusGUI
 
         private void NonSpecificUsingNonSpecific(object sender, RoutedEventArgs e)
         {
-            if (nonSpecificSearchRadioButton1.IsChecked.Value)
+            if (NonSpecificSearchRadioButton.IsChecked.Value)
             {
-                proteaseComboBox.Items.MoveCurrentToFirst();
-                proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                while (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                ProteaseComboBox.Items.MoveCurrentToFirst();
+                ProteaseComboBox.SelectedItem = ProteaseComboBox.Items.CurrentItem;
+                while (!((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    proteaseComboBox.Items.MoveCurrentToNext();
-                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                    ProteaseComboBox.Items.MoveCurrentToNext();
+                    ProteaseComboBox.SelectedItem = ProteaseComboBox.Items.CurrentItem;
                 }
-                proteaseComboBox.IsEnabled = false;
-                addCompIonCheckBox.IsChecked = true;
+                ProteaseComboBox.IsEnabled = false;
+                AddCompIonCheckBox.IsChecked = true;
             }
             else
             {
-                proteaseComboBox.IsEnabled = true;
-                addCompIonCheckBox.IsChecked = false;
+                ProteaseComboBox.IsEnabled = true;
+                AddCompIonCheckBox.IsChecked = false;
             }
         }
 
         private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
         {
-            if(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
                 try
                 {
-                    System.Windows.Controls.TextBox textBox = (TextBox)sender;
+                    TextBox textBox = (TextBox)sender;
                     if (textBox.Name.Equals("txtMaxPeptideLength")) //if maxPeptideLength was modified
                     {
-                        if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString())) //prevents infinite loops
+                        if (!MissedCleavagesTextBox.Text.Equals((Convert.ToInt32(TxtMaxPeptideLength.Text) - 1).ToString())) //prevents infinite loops
                         {
-                            missedCleavagesTextBox.Text = (Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString();
+                            MissedCleavagesTextBox.Text = (Convert.ToInt32(TxtMaxPeptideLength.Text) - 1).ToString();
                         }
                     }
                     else //if missedCleavagesTextBox was modified
                     {
-                        if (!txtMaxPeptideLength.Text.Equals((Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
+                        if (!TxtMaxPeptideLength.Text.Equals((Convert.ToInt32(MissedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
                         {
-                            txtMaxPeptideLength.Text = (Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString();
+                            TxtMaxPeptideLength.Text = (Convert.ToInt32(MissedCleavagesTextBox.Text) + 1).ToString();
                         }
                     }
                 }
@@ -713,39 +699,38 @@ namespace MetaMorpheusGUI
         private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             const int maxLength = 25;
-            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
-                txtMaxPeptideLength.Text = maxLength.ToString();
+                TxtMaxPeptideLength.Text = maxLength.ToString();
             }
         }
 
         private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
         {
-            addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
+            AddCompIonCheckBox.IsChecked = SemiSpecificSearchRadioButton.IsChecked.Value;
         }
-        
-        #endregion Private Methods
 
+        private void RadioButtonReverseDecoy_Checked(object sender, RoutedEventArgs e)
+        {
+            TheTask.SearchParameters.NumDecoyDatabases = 1;
+            NumDecoyDatabasesTextBox.Text = 1.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private void RadioButtonSlideDecoy_Checked(object sender, RoutedEventArgs e)
+        {
+            TheTask.SearchParameters.NumDecoyDatabases = 1;
+            NumDecoyDatabasesTextBox.Text = 1.ToString(CultureInfo.InvariantCulture);
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
     {
-        #region Private Fields
-
         private string expanderTitle;
         private string searchModeExpanderTitle;
         private string modExpanderTitle;
         private string analysisExpanderTitle;
 
-        #endregion Private Fields
-
-        #region Public Events
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         public string ExpanderTitle
         {
@@ -788,15 +773,9 @@ namespace MetaMorpheusGUI
             }
         }
 
-        #endregion Public Properties
-
-        #region Protected Methods
-
         protected void RaisePropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-
-        #endregion Protected Methods
     }
 }

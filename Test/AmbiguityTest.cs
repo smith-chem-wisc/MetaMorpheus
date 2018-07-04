@@ -3,24 +3,29 @@ using EngineLayer.ClassicSearch;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
 using System;
+using MassSpectrometry;
 
 namespace Test
 {
     [TestFixture]
     internal static class AmbiguityTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestResolveAmbiguities()
         {
             Protease protease = new Protease("Custom Protease4", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1), scoreCutoff: 1, reportAllAmbiguity: false);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            CommonParameters CommonParameters = new CommonParameters(
+                    digestionParams: new DigestionParams(protease:
+                    protease.Name,
+                    minPeptideLength: 1), 
+                scoreCutoff: 1, 
+                reportAllAmbiguity: false);
             
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
@@ -72,7 +77,5 @@ namespace Test
             Assert.IsTrue(allPsmsArrayt[0].OneBasedStartResidueInProtein == null);
             Assert.IsTrue(allPsmsArrayf[0].OneBasedStartResidueInProtein == 6);
         }
-
-        #endregion Public Methods
     }
 }
