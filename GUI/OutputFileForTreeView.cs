@@ -9,3 +9,4 @@
 
         public string FullPath { get; }
     }
+}

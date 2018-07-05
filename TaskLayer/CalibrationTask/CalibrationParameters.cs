@@ -16,3 +16,4 @@
         public int MinMS2IsotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int NumFragmentsNeededForEveryIdentification { get; set; }
     }
+}
