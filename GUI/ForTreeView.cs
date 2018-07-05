@@ -6,15 +6,9 @@ namespace MetaMorpheusGUI
 {
     public class ForTreeView : INotifyPropertyChanged
     {
-        #region Private Fields
-
         private string status;
         private int progress;
         private bool isIndeterminate;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public ForTreeView(string displayName, string id)
         {
@@ -23,15 +17,7 @@ namespace MetaMorpheusGUI
             Children = new ObservableCollection<ForTreeView>();
         }
 
-        #endregion Public Constructors
-
-        #region Public Events
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         public ObservableCollection<ForTreeView> Children { get; private set; }
 
@@ -68,15 +54,9 @@ namespace MetaMorpheusGUI
             }
         }
 
-        #endregion Public Properties
-
-        #region Protected Methods
-
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-        #endregion Protected Methods
     }
 }

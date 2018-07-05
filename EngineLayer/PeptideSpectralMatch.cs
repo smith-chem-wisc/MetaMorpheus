@@ -12,21 +12,11 @@ namespace EngineLayer
 {
     public class PeptideSpectralMatch
     {
-        #region Private Fields
-
         private const double tolForDoubleResolution = 1e-6;
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
-        #endregion Private Fields
-
-        #region Public Fields
-
         public const double tolForScoreDifferentiation = 1e-9;
-
-        #endregion Public Fields
-
-        #region Public Constructors
 
         public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
         {
@@ -50,10 +40,6 @@ namespace EngineLayer
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
             this.MatchedFragmentIons = new List<MatchedFragmentIon>();
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
@@ -101,10 +87,6 @@ namespace EngineLayer
                 return new[] { Math.Round(Score), Score - Math.Round(Score) };
             }
         }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public static string GetTabSeparatedHeader()
         {
@@ -222,10 +204,6 @@ namespace EngineLayer
                 CalculateEValue = calculateEValue
             };
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
         {
@@ -558,7 +536,5 @@ namespace EngineLayer
             s["eValue"] = eValue;
             s["eScore"] = eScore;
         }
-
-        #endregion Private Methods
     }
 }

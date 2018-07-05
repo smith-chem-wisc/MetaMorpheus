@@ -8,8 +8,6 @@ namespace EngineLayer
 {
     public class SequencesToActualProteinPeptidesEngine : MetaMorpheusEngine
     {
-        #region Protected Fields
-
         protected readonly List<ModificationWithMass> fixedModifications;
         protected readonly List<ModificationWithMass> variableModifications;
         protected readonly List<PeptideSpectralMatch> allPsms;
@@ -17,10 +15,6 @@ namespace EngineLayer
         protected readonly TerminusType terminusType;
         protected readonly IEnumerable<DigestionParams> collectionOfDigestionParams;
         protected readonly bool reportAllAmbiguity;
-
-        #endregion Protected Fields
-
-        #region Public Constructors
 
         public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -32,10 +26,6 @@ namespace EngineLayer
             this.collectionOfDigestionParams = collectionOfDigestionParams;
             this.reportAllAmbiguity = reportAllAmbiguity;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected static void ResolveAmbiguities(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
         {
@@ -56,8 +46,6 @@ namespace EngineLayer
         {
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-
-            #region Match Sequences to PeptideWithSetModifications
 
             foreach (var psm in allPsms)
             {
@@ -104,14 +92,10 @@ namespace EngineLayer
                 }
             });
 
-            #endregion Match Sequences to PeptideWithSetModifications
-
             if (!reportAllAmbiguity)
                 ResolveAmbiguities(compactPeptideToProteinPeptideMatching);
 
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
-
-        #endregion Protected Methods
     }
 }

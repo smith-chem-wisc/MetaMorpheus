@@ -7,19 +7,17 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using System;
 
 namespace Test
 {
     [TestFixture]
     internal static class AddCompIonsTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestAddCompIonsClassic()
         {
@@ -38,8 +36,6 @@ namespace Test
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-            
 
             Protease protease = new Protease("Custom Protease3", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
@@ -102,7 +98,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1), scoreCutoff: 1);
             CommonParameters withCompIons = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1), scoreCutoff: 1, addCompIons: true);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications,
                 new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -192,7 +188,5 @@ namespace Test
             foreach (double d in matchedDaErrorT)
                 Assert.IsTrue(d <= 0.01);
         }
-
-        #endregion Public Methods
     }
 }

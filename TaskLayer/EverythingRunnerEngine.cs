@@ -11,16 +11,10 @@ namespace TaskLayer
 {
     public class EverythingRunnerEngine
     {
-        #region Private Fields
-
         private readonly List<(string, MetaMorpheusTask)> taskList;
         private string outputFolder;
         private List<string> currentRawDataFilenameList;
         private List<DbForTask> currentXmlDbFilenameList;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
@@ -30,10 +24,6 @@ namespace TaskLayer
             currentRawDataFilenameList = startingRawFilenameList;
             currentXmlDbFilenameList = startingXmlDbFilenameList;
         }
-
-        #endregion Public Constructors
-
-        #region Public Events
 
         public static event EventHandler<StringEventArgs> FinishedWritingAllResultsFileHandler;
 
@@ -48,10 +38,6 @@ namespace TaskLayer
         public static event EventHandler<StringListEventArgs> NewFileSpecificTomlHandler;
 
         public static event EventHandler<StringEventArgs> WarnHandler;
-
-        #endregion Public Events
-
-        #region Public Methods
 
         public void Run()
         {
@@ -124,10 +110,6 @@ namespace TaskLayer
             FinishedAllTasks(outputFolder);
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
         private void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, null));
@@ -157,7 +139,5 @@ namespace TaskLayer
         {
             NewDbsHandler?.Invoke(this, new XmlForTaskListEventArgs(newDatabases));
         }
-
-        #endregion Private Methods
     }
 }

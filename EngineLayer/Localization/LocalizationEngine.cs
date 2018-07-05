@@ -1,5 +1,4 @@
 ﻿using MassSpectrometry;
-using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,16 +7,10 @@ namespace EngineLayer.Localization
 {
     public class LocalizationEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private readonly IEnumerable<PeptideSpectralMatch> allResultingIdentifications;
         private readonly List<ProductType> productTypes;
         private readonly MsDataFile myMsDataFile;
         private readonly List<DissociationType> dissociationTypes;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -26,10 +19,6 @@ namespace EngineLayer.Localization
             this.myMsDataFile = myMsDataFile;
             this.dissociationTypes = DetermineDissociationType(lp);
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -92,7 +81,5 @@ namespace EngineLayer.Localization
             }
             return new LocalizationEngineResults(this);
         }
-
-        #endregion Protected Methods
     }
 }

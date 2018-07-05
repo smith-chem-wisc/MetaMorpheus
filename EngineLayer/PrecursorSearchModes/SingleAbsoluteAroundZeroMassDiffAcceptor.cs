@@ -6,22 +6,12 @@ namespace EngineLayer
 {
     public class SingleAbsoluteAroundZeroSearchMode : MassDiffAcceptor
     {
-        #region Private Fields
-
         private readonly double value;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public SingleAbsoluteAroundZeroSearchMode(double value) : base(value + "daltonsAroundZero")
         {
             this.value = value;
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
@@ -42,7 +32,5 @@ namespace EngineLayer
         {
             return (String.Format("{0:0.000}", value) + " Da around zero");
         }
-
-        #endregion Public Methods
     }
 }

@@ -14,7 +14,6 @@ namespace Test
     [TestFixture]
     public static class GptmdEngineTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestGptmdEngine()
@@ -108,6 +107,5 @@ namespace Test
             Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.id.Equals("16")).Count());
         }
 
-        #endregion Public Methods
     }
 }

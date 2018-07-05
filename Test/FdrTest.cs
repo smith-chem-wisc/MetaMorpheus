@@ -19,7 +19,6 @@ namespace Test
     [TestFixture]
     public static class FdrTest
     {
-        #region Public Methods
 
         [Test]
         public static void FdrTestMethod()
@@ -253,6 +252,5 @@ namespace Test
 
         }
 
-        #endregion Public Methods
     }
 }

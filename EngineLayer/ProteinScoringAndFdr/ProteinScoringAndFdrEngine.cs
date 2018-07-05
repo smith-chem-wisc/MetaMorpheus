@@ -5,17 +5,11 @@ namespace EngineLayer
 {
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private readonly IEnumerable<PeptideSpectralMatch> newPsms;
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly bool mergeIndistinguishableProteinGroups;
         private readonly List<ProteinGroup> proteinGroups;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -25,10 +19,6 @@ namespace EngineLayer
             this.treatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
             this.mergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -40,10 +30,6 @@ namespace EngineLayer
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private static string StripDecoyIdentifier(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
         {
@@ -190,7 +176,5 @@ namespace EngineLayer
 
             return sortedProteinGroups;
         }
-
-        #endregion Private Methods
     }
 }

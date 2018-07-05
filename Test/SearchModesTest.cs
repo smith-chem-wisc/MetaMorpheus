@@ -10,8 +10,6 @@ namespace Test
     [TestFixture]
     public static class SearchModesTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestSearchModeTest()
         {
@@ -73,22 +71,12 @@ namespace Test
             Assert.IsTrue(theList2[1].allowedInterval.Contains(1001));
         }
 
-        #endregion Public Methods
-
-        #region Private Classes
-
         // Accept if scanPrecursorMass*peptideMass>=1.
         private class TestSearchMode : MassDiffAcceptor
         {
-            #region Public Constructors
-
             public TestSearchMode(string fileNameAddition) : base(fileNameAddition)
             {
             }
-
-            #endregion Public Constructors
-
-            #region Public Methods
 
             public override int Accepts(double scanPrecursorMass, double peptideMass)
             {
@@ -104,10 +92,6 @@ namespace Test
             {
                 throw new NotImplementedException();
             }
-
-            #endregion Public Methods
         }
-
-        #endregion Private Classes
     }
 }

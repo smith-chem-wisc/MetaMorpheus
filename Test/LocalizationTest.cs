@@ -14,7 +14,6 @@ namespace Test
     [TestFixture]
     public static class LocalizationTest 
     {
-        #region Public Methods
 
         [Test]
         public static void TestNonSpecific()
@@ -94,6 +93,5 @@ namespace Test
             Assert.IsTrue(cOnly[0].Contains(ProductType.Zdot));
         }
 
-        #endregion Public Methods
     }
 }

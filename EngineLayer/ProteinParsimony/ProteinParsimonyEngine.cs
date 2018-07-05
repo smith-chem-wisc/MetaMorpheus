@@ -10,16 +10,12 @@ namespace EngineLayer
 {
     public class ProteinParsimonyEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private readonly bool treatModPeptidesAsDifferentPeptides;
+
         // dictionary with CompactPeptide (fragmentation info) as key, and PeptideWithSetMods (sequence/protein info) as value
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+
         private readonly HashSet<DigestionParams> ListOfDigestionParams;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -27,10 +23,6 @@ namespace EngineLayer
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
             this.ListOfDigestionParams = new HashSet<DigestionParams>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p.Select(v => v.digestionParams)));
         }
-        
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -41,10 +33,6 @@ namespace EngineLayer
             myAnalysisResults.ProteinGroups = ApplyProteinParsimony();
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private List<ProteinGroup> ApplyProteinParsimony()
         {
@@ -57,7 +45,7 @@ namespace EngineLayer
             if (!treatModPeptidesAsDifferentPeptides)//user want modified and unmodified peptides treated the same
             {
                 Dictionary<string, HashSet<PeptideWithSetModifications>> baseSeqToProteinMatch = new Dictionary<string, HashSet<PeptideWithSetModifications>>();
-                // dictionary where string key is the base sequence and the HashSet is all PeptidesWithSetModificatiosn with the same sequence 
+                // dictionary where string key is the base sequence and the HashSet is all PeptidesWithSetModificatiosn with the same sequence
                 // can access which protein these matching peptides came from through the PeptideWithSetModifications object
                 foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
                 {
@@ -97,13 +85,12 @@ namespace EngineLayer
                         foreach (var peptide in baseSequence.Value)
                         {
                             peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int>(peptide.Protein, peptide.digestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
-                        }                            
+                        }
 
                         foreach (var peptide in baseSequence.Value)
                         {
                             foreach (var proteinInfo in peptideInProteinInfo)
                             {
-
                                 var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5, peptide.allModsOneIsNterminus, peptide.numFixedMods);
                                 foreach (var compactPeptide in blah[peptide])
                                 {
@@ -121,7 +108,7 @@ namespace EngineLayer
 
             // peptide matched to fullseq (used depending on user preference)
             var compactPeptideToFullSeqMatch = compactPeptideToProteinPeptideMatching.ToDictionary(x => x.Key, x => x.Value.First().Sequence);
-            
+
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
                 HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
@@ -136,7 +123,7 @@ namespace EngineLayer
                         peptides.UnionWith(kvp.Value);
                     }
                 }
-                // multiprotease parsimony is "weird" because a peptide sequence can be shared between 
+                // multiprotease parsimony is "weird" because a peptide sequence can be shared between
                 // two proteins but technically be a "unique" peptide because it is unique in that protease digestion
                 // this code marks these types of peptides as unique
                 else
@@ -172,7 +159,7 @@ namespace EngineLayer
                     kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
                 }
             }
-            
+
             // makes dictionary with proteins as keys and list of associated peptides as the value (makes parsimony algo easier)
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
@@ -321,7 +308,7 @@ namespace EngineLayer
                 var list = group.ToList();
                 if (parsimonyProteinsWithSameNumPeptides != null)
                 {
-                    Parallel.ForEach(Partitioner.Create(0, list.Count), 
+                    Parallel.ForEach(Partitioner.Create(0, list.Count),
                         new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                         (range, loopState) =>
                         {
@@ -404,7 +391,5 @@ namespace EngineLayer
 
             return proteinGroups;
         }
-
-        #endregion Private Methods
     }
 }

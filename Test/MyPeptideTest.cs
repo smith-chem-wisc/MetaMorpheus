@@ -18,7 +18,6 @@ namespace Test
     [TestFixture]
     public static class MyPeptideTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestGoodPeptide()
@@ -345,6 +344,5 @@ namespace Test
             Assert.AreEqual(1, ye3.Count);
         }
 
-        #endregion Public Methods
     }
 }

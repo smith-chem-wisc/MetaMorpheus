@@ -5,15 +5,12 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
     [TestFixture]
     public static class StefanParsimonyTest
     {
-        #region Public Methods
-
         [Test]
         public static void ParsimonyVariableTreatAsUnique()
         {
@@ -249,14 +246,9 @@ namespace Test
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide3].Count);
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
         private static Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: 2, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, MaxModsForPeptides: 1), scoreCutoff: 1);
-            
 
             // Alanine = Glycine + CH2
             Protein protein1 = new Protein("MA", "protein1");
@@ -340,7 +332,5 @@ namespace Test
                 newPsms, compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );
         }
-
-        #endregion Private Methods
     }
 }

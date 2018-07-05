@@ -12,8 +12,6 @@ namespace EngineLayer.Calibration
 {
     public class DataPointAcquisitionEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private const double fineResolutionForIsotopeDistCalculation = 0.1;
 
         private readonly List<PeptideSpectralMatch> goodIdentifications;
@@ -24,10 +22,6 @@ namespace EngineLayer.Calibration
         private readonly int minMS1isotopicPeaksNeededForConfirmedIdentification;
         private readonly int minMS2isotopicPeaksNeededForConfirmedIdentification;
         private readonly FragmentTypes fragmentTypesForCalibration;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public DataPointAcquisitionEngine(
             List<PeptideSpectralMatch> goodIdentifications,
@@ -50,10 +44,6 @@ namespace EngineLayer.Calibration
             this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
             this.fragmentTypesForCalibration = fragmentTypesForCalibration;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -107,7 +97,6 @@ namespace EngineLayer.Calibration
                     double[] theoreticalMasses = dist.Masses.ToArray();
                     double[] theoreticalIntensities = dist.Intensities.ToArray();
 
-
                     Array.Sort(theoreticalIntensities, theoreticalMasses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
                     var ms1tupleBack = SearchMS1Spectra(theoreticalMasses, theoreticalIntensities, ms2scanNumber, -1, peptideCharge, identification);
@@ -137,10 +126,6 @@ namespace EngineLayer.Calibration
                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks
             );
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private (List<LabeledDataPoint>, int, int) SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, PeptideSpectralMatch identification)
         {
@@ -261,7 +246,5 @@ namespace EngineLayer.Calibration
             }
             return result;
         }
-
-        #endregion Private Methods
     }
 }

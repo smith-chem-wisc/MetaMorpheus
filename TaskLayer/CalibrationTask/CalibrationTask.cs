@@ -1,6 +1,7 @@
 using EngineLayer;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
+using EngineLayer.FdrAnalysis;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
@@ -10,17 +11,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using EngineLayer.FdrAnalysis;
-using EngineLayer.Localization;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
     public class CalibrationTask : MetaMorpheusTask
     {
-        #region Public Constructors
-
         public CalibrationTask() : base(MyTask.Calibrate)
         {
             CommonParameters = new CommonParameters(
@@ -33,15 +29,7 @@ namespace TaskLayer
             CalibrationParameters = new CalibrationParameters();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public CalibrationParameters CalibrationParameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -263,18 +251,10 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        #endregion Protected Methods
-
-        #region Private Fields
-
         private int numRequiredPsms = 20;
         private int numRequiredMs1Datapoints = 50;
         private int numRequiredMs2Datapoints = 100;
         private const string calibSuffix = "-calib";
-
-        #endregion Private Fields
-
-        #region Private Methods
 
         private bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
         {
@@ -337,7 +317,6 @@ namespace TaskLayer
                 (allPsms, proteinList, fixedModifications, variableModifications, productTypes, new List<DigestionParams> { combinedParameters.DigestionParams },
                 combinedParameters.ReportAllAmbiguity, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
 
-
             foreach (var huh in allPsms)
             {
                 if (huh != null)
@@ -356,7 +335,7 @@ namespace TaskLayer
             {
                 return new DataPointAquisitionResults(null, new List<PeptideSpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             }
-            
+
             DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
                     goodIdentifications,
                     myMsDataFile,
@@ -371,7 +350,5 @@ namespace TaskLayer
 
             return currentResult;
         }
-
-        #endregion Private Methods
     }
 }

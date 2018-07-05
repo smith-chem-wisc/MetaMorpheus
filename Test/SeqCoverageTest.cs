@@ -11,8 +11,6 @@ namespace Test
     [TestFixture]
     public static class SeqCoverageTest
     {
-        #region Public Methods
-
         [Test]
         public static void TryFailSequenceCoverage()
         {
@@ -195,6 +193,5 @@ namespace Test
             Assert.That(sequences3.Contains("OK"));
             Assert.That(sequences3.Contains("AREDY"));
         }
-        #endregion Public Methods
     }
 }

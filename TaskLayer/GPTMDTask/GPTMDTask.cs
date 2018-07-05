@@ -17,20 +17,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
     public class GptmdTask : MetaMorpheusTask
     {
-        #region Private Fields
-
         private const double tolForComboLoading = 1e-3;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public GptmdTask() : base(MyTask.Gptmd)
         {
@@ -38,15 +31,7 @@ namespace TaskLayer
             GptmdParameters = new GptmdParameters();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public GptmdParameters GptmdParameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -221,10 +206,6 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private static IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> modificationsThatCanBeCombined)
         {
             using (StreamReader r = new StreamReader(Path.Combine(GlobalVariables.DataDir, "Data", @"combos.txt")))
@@ -265,7 +246,5 @@ namespace TaskLayer
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

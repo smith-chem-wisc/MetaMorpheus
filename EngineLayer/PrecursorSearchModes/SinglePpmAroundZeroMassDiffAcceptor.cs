@@ -6,22 +6,12 @@ namespace EngineLayer
 {
     public class SinglePpmAroundZeroSearchMode : MassDiffAcceptor
     {
-        #region Private Fields
-
         private readonly double ppmTolerance;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public SinglePpmAroundZeroSearchMode(double ppmTolerance) : base(ppmTolerance + "ppmAroundZero")
         {
             this.ppmTolerance = ppmTolerance;
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
@@ -43,7 +33,5 @@ namespace EngineLayer
         {
             return FileNameAddition + " ppmAroundZero " + ppmTolerance;
         }
-
-        #endregion Public Methods
     }
 }

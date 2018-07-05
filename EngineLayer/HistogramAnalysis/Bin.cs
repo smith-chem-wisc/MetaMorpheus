@@ -8,26 +8,16 @@ namespace EngineLayer.HistogramAnalysis
 {
     public class Bin
     {
-        #region Public Fields
-
         public string AA = "-";
         public Dictionary<char, int> residueCount;
         public Dictionary<string, Tuple<string, string, PeptideSpectralMatch>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
-
-        #endregion Public Fields
-
-        #region Public Constructors
 
         public Bin(double massShift)
         {
             this.MassShift = massShift;
             uniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public int PepNlocCount { get; private set; }
         public int PepClocCount { get; private set; }
@@ -86,10 +76,6 @@ namespace EngineLayer.HistogramAnalysis
         public double FracWithSingle { get; set; }
 
         public double MedianLength { get; internal set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public void IdentifyResidues()
         {
@@ -192,10 +178,6 @@ namespace EngineLayer.HistogramAnalysis
             UnimodDiffs = string.Join("|", okDiff);
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
         internal void Add(PeptideSpectralMatch ok)
         {
             if (ok.FullSequence != null)
@@ -210,7 +192,5 @@ namespace EngineLayer.HistogramAnalysis
                     uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
             }
         }
-
-        #endregion Internal Methods
     }
 }

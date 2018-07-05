@@ -7,14 +7,8 @@ namespace EngineLayer
 {
     public class DotMassDiffAcceptor : MassDiffAcceptor
     {
-        #region Private Fields
-
         private readonly double[] acceptableSortedMassShifts;
         private readonly Tolerance tol;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public DotMassDiffAcceptor(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
         {
@@ -22,10 +16,6 @@ namespace EngineLayer
             this.tol = tol;
             this.NumNotches = acceptableSortedMassShifts.Length;
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
@@ -59,7 +49,5 @@ namespace EngineLayer
         {
             return (tol.ToString() + " around " + String.Join(",", acceptableSortedMassShifts) + " Da");
         }
-
-        #endregion Public Methods
     }
 }

@@ -7,24 +7,14 @@ namespace EngineLayer
 {
     public class IntervalMassDiffAcceptor : MassDiffAcceptor
     {
-        #region Private Fields
-
         private readonly List<DoubleRange> intervals;
         private readonly double[] means;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public IntervalMassDiffAcceptor(string fileNameAddition, IEnumerable<DoubleRange> doubleRanges) : base(fileNameAddition)
         {
             intervals = doubleRanges.OrderBy(b => b.Mean).ToList();
             means = intervals.Select(b => b.Mean).ToArray();
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
@@ -56,7 +46,5 @@ namespace EngineLayer
         {
             return ("the mass (Da) interval(s) " + String.Join(", ", intervals));
         }
-
-        #endregion Public Methods
     }
 }

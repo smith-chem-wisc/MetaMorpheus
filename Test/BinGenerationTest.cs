@@ -14,7 +14,6 @@ namespace Test
     [TestFixture]
     public static class BinGenerationTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestBinGeneration()
@@ -131,6 +130,5 @@ namespace Test
                 null);
         }
 
-        #endregion Public Methods
     }
 }

@@ -2,7 +2,6 @@
 using Proteomics;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -10,14 +9,8 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
-        #region Public Fields
-
         public readonly bool isDecoy;
         public readonly bool isContaminant;
-
-        #endregion Public Fields
-
-        #region Public Constructors
 
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
@@ -52,10 +45,6 @@ namespace EngineLayer
                 }
             }
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public List<SpectraFileInfo> FilesForQuantification { get; set; }
 
@@ -93,15 +82,7 @@ namespace EngineLayer
 
         public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
 
-        #endregion Public Properties
-
-        #region Private Properties
-
         private List<Protein> ListOfProteinsOrderedByAccession;
-
-        #endregion Private Properties
-
-        #region Public Methods
 
         public string GetTabSeparatedHeader()
         {
@@ -499,8 +480,5 @@ namespace EngineLayer
 
             return subsetPg;
         }
-
-        #endregion Public Methods
-
     }
 }

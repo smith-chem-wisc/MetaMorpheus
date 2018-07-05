@@ -7,17 +7,11 @@ namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private List<PeptideSpectralMatch> psms;
         private readonly int massDiffAcceptorNumNotches;
         private readonly bool UseDeltaScore;
         private readonly bool calculateEValue;
         private readonly double scoreCutoff;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -27,10 +21,6 @@ namespace EngineLayer.FdrAnalysis
             this.scoreCutoff = commonParameters.ScoreCutoff;
             this.calculateEValue = commonParameters.CalculateEValue;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -43,10 +33,6 @@ namespace EngineLayer.FdrAnalysis
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults)
         {
@@ -159,7 +145,7 @@ namespace EngineLayer.FdrAnalysis
             {
                 min_q_value_notch[i] = double.PositiveInfinity;
             }
-            //The idea here is to set previous qValues as thresholds, 
+            //The idea here is to set previous qValues as thresholds,
             //such that a lower scoring PSM can't have a higher confidence than a higher scoring PSM
             for (int i = psms.Count - 1; i >= 0; i--)
             {
@@ -201,7 +187,7 @@ namespace EngineLayer.FdrAnalysis
             // this will be overriden by the next few lines if there are enough scores in this PSM to estimate a null distribution
             double preValue = SpecialFunctions.GammaLowerRegularized(globalMeanScore, psm.Score);
             maximumLikelihood = globalMeanScore;
-            
+
             // calculate single-spectrum evalue if there are enough hits besides the best scoring peptide
             if (psm.Score == 0)
             {
@@ -211,8 +197,8 @@ namespace EngineLayer.FdrAnalysis
             else if (scoresWithoutBestHit.Any())
             {
                 maximumLikelihood = scoresWithoutBestHit.Average();
-                
-                // this is the cumulative distribution for the poisson at each score up to but not including the score of the winner. 
+
+                // this is the cumulative distribution for the poisson at each score up to but not including the score of the winner.
                 // This is the probability that the winner has of getting that score at random by matching against a SINGLE spectrum
                 if (maximumLikelihood > 0)
                 {
@@ -220,7 +206,7 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
-            // Now the probability of getting the winner's score goes up for each spectrum match. 
+            // Now the probability of getting the winner's score goes up for each spectrum match.
             // We multiply the preValue by the number of theoretical spectrum within the tolerance to get this new probability.
             int count = scoresWithoutBestHit.Count;
             if (count == 0)
@@ -251,7 +237,5 @@ namespace EngineLayer.FdrAnalysis
             }
             return cumulative_target;
         }
-
-        #endregion Private Methods
     }
 }

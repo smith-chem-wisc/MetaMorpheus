@@ -4,6 +4,7 @@ using Nett;
 using Newtonsoft.Json.Linq;
 using Proteomics;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
@@ -14,7 +15,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using System.Collections.Generic;
 
 namespace MetaMorpheusGUI
 {
@@ -23,17 +23,11 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        #region Private Fields
-
         private readonly ObservableCollection<RawDataForDataGrid> spectraFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public MainWindow()
         {
@@ -90,21 +84,9 @@ namespace MetaMorpheusGUI
             }
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public static string NewestKnownVersion { get; private set; }
 
-        #endregion Public Properties
-
-        #region Internal Properties
-
         internal GuiGlobalParams GuiGlobalParams { get; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         private static void GetVersionNumbersFromWeb()
         {
@@ -1344,8 +1326,5 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
         }
-
-        #endregion Private Methods
-
     }
 }

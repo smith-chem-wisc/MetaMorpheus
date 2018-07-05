@@ -13,36 +13,21 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
-        #region Public Constructor
-
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
         }
 
-        #endregion Public Constructor
-
-        #region Public Properties
-
         public PostSearchAnalysisParameters Parameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Private Properties
 
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
-
-        #endregion Private Properties
-
-        #region Public Method
 
         public MyTaskResults Run()
         {
@@ -63,18 +48,10 @@ namespace TaskLayer
             return Parameters.SearchTaskResults;
         }
 
-        #endregion Public Method
-
-        #region Protected Method
-
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             return null;
         }
-
-        #endregion Protected Method
-
-        #region Private Methods
 
         /// <summary>
         /// Group and order psms
@@ -797,7 +774,5 @@ namespace TaskLayer
 
             SucessfullyFinishedWritingFile(peaksPath, nestedIds);
         }
-
-        #endregion Private Methods
     }
 }

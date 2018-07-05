@@ -1,6 +1,4 @@
-﻿using EngineLayer;
-
-namespace EngineLayer
+﻿namespace EngineLayer
 {
     public class DigestionParams
     {
@@ -14,17 +12,14 @@ namespace EngineLayer
         public bool SemiProteaseDigestion { get; private set; } //for nonspecific searching of proteases
         public TerminusType TerminusTypeSemiProtease { get; private set; }
 
-        #region Public Constructors
-
-        // this parameterless constructor needs to exist to read the toml. 
+        // this parameterless constructor needs to exist to read the toml.
         // if you can figure out a way to get rid of it, feel free...
         public DigestionParams() : this("trypsin")
         {
-
         }
 
-        public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
-            InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
+        public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength = int.MaxValue, int MaxModificationIsoforms = 1024,
+            InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion = false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
         {
             this.Protease = GlobalVariables.ProteaseDictionary[protease];
             this.MaxMissedCleavages = MaxMissedCleavages;
@@ -36,10 +31,6 @@ namespace EngineLayer
             this.SemiProteaseDigestion = SemiProteaseDigestion;
             this.TerminusTypeSemiProtease = TerminusTypeSemiProtease;
         }
-
-        #endregion Public Constructors
-        
-        #region Public Methods
 
         public override bool Equals(object obj)
         {
@@ -65,7 +56,5 @@ namespace EngineLayer
                 ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
         }
-
-        #endregion Public Methods
     }
 }

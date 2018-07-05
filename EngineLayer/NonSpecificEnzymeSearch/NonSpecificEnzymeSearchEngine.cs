@@ -9,8 +9,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 {
     public class NonSpecificEnzymeSearchEngine : ModernSearch.ModernSearchEngine
     {
-        #region Private Fields
-
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
@@ -20,18 +18,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly int zdotBinShift = (int)Math.Round((oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass) * fragmentBinsPerDalton);
         private readonly List<int>[] fragmentIndexPrecursor;
 
-        #endregion Private Fields
-
-        #region Public Constructors
-
         public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<int>[] fragmentIndexPrecursor, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, lp, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
             this.fragmentIndexPrecursor = fragmentIndexPrecursor;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -150,10 +140,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private Tuple<int, double> Accepts(double scanPrecursorMass, CompactPeptide peptide, TerminusType terminusType, MassDiffAcceptor searchMode)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
@@ -212,7 +198,5 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
             return new Tuple<int, double>(-1, -1);
         }
-
-        #endregion Private Methods
     }
 }

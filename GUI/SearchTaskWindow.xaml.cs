@@ -19,18 +19,12 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
-        #region Private Fields
-
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> modSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public SearchTaskWindow()
         {
@@ -70,15 +64,7 @@ namespace MetaMorpheusGUI
             this.DataContext = dataContextForSearchTaskWindow;
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal SearchTask TheTask { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {
@@ -251,12 +237,12 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            
+
             foreach (var heh in localizeModTypeForTreeViewObservableCollection)
             {
-                    heh.Use = false;
+                heh.Use = false;
             }
-           
+
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
@@ -289,8 +275,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            #region Check Task Validity
-
             if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
             {
                 if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
@@ -406,10 +390,6 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            #endregion Check Task Validity
-
-            #region Save Parameters
-
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
             TerminusType terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C);
@@ -450,19 +430,19 @@ namespace MetaMorpheusGUI
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
             TheTask.SearchParameters.MaxFragmentSize = Double.Parse(txtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
-           
+
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            
+
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-           
+
             bool TrimMs1Peaks = trimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
@@ -471,24 +451,24 @@ namespace MetaMorpheusGUI
             CommonParameters CommonParamsToSave = new CommonParameters(
                 useDeltaScore: deltaScoreCheckBox.IsChecked.Value,
                 reportAllAmbiguity: allAmbiguity.IsChecked.Value,
-                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture), 
+                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
-                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value, 
+                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
                 useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
-                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), 
-                calculateEValue: eValueCheckBox.IsChecked.Value, 
-                listOfModsFixed: listOfModsFixed, 
-                listOfModsVariable:  listOfModsVariable, 
-                bIons: bCheckBox.IsChecked.Value, 
-                yIons: yCheckBox.IsChecked.Value, 
-                cIons: cCheckBox.IsChecked.Value, 
+                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                calculateEValue: eValueCheckBox.IsChecked.Value,
+                listOfModsFixed: listOfModsFixed,
+                listOfModsVariable: listOfModsVariable,
+                bIons: bCheckBox.IsChecked.Value,
+                yIons: yCheckBox.IsChecked.Value,
+                cIons: cCheckBox.IsChecked.Value,
                 zDotIons: zdotCheckBox.IsChecked.Value,
                 precursorMassTolerance: PrecursorMassTolerance,
-                productMassTolerance:ProductMassTolerance,
-                digestionParams: digestionParamsToSave ,
-                trimMs1Peaks: TrimMs1Peaks, 
-                trimMsMsPeaks: TrimMsMsPeaks, 
-                topNpeaks: TopNpeaks, 
+                productMassTolerance: ProductMassTolerance,
+                digestionParams: digestionParamsToSave,
+                trimMs1Peaks: TrimMs1Peaks,
+                trimMsMsPeaks: TrimMsMsPeaks,
+                topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value);
 
@@ -583,8 +563,6 @@ namespace MetaMorpheusGUI
             SetModSelectionForPrunedDB();
 
             TheTask.CommonParameters = CommonParamsToSave;
-
-            #endregion Save Parameters
 
             DialogResult = true;
         }
@@ -683,7 +661,7 @@ namespace MetaMorpheusGUI
 
         private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
         {
-            if(((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
                 try
                 {
@@ -723,29 +701,16 @@ namespace MetaMorpheusGUI
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
         }
-        
-        #endregion Private Methods
-
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
     {
-        #region Private Fields
-
         private string expanderTitle;
         private string searchModeExpanderTitle;
         private string modExpanderTitle;
         private string analysisExpanderTitle;
 
-        #endregion Private Fields
-
-        #region Public Events
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         public string ExpanderTitle
         {
@@ -788,15 +753,9 @@ namespace MetaMorpheusGUI
             }
         }
 
-        #endregion Public Properties
-
-        #region Protected Methods
-
         protected void RaisePropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-
-        #endregion Protected Methods
     }
 }

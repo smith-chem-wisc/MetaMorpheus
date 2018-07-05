@@ -8,8 +8,6 @@ namespace EngineLayer.Calibration
 {
     public class DataPointAquisitionResults : MetaMorpheusEngineResults
     {
-        #region Public Constructors
-
         public DataPointAquisitionResults(
             MetaMorpheusEngine dataPointAcquisitionEngine,
             List<PeptideSpectralMatch> psms,
@@ -46,10 +44,6 @@ namespace EngineLayer.Calibration
             PsmProductMedianPpmError = Statistics.Median(productErrors);
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public Tuple<double, double> Ms1InfoTh { get; }
         public Tuple<double, double> Ms2InfoTh { get; }
         public Tuple<double, double> Ms1InfoPpm { get; }
@@ -71,10 +65,6 @@ namespace EngineLayer.Calibration
 
         public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -88,7 +78,5 @@ namespace EngineLayer.Calibration
             sb.AppendLine("MS2 ppm error interquartile range: " + Math.Round(PsmProductIqrPpmError, 3));
             return sb.ToString();
         }
-
-        #endregion Public Methods
     }
 }
