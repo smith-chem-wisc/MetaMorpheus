@@ -16,7 +16,6 @@ namespace EngineLayer.ModificationAnalysis
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("Running modification analysis...");
-
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
             var confidentTargetPsms = NewPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
@@ -50,9 +49,12 @@ namespace EngineLayer.ModificationAnalysis
             {
                 var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
                 foreach (var modInProtein in singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein))
-
+                {
                     foreach (var huh in modInProtein.Value)
+                    {
                         modsOnProteins.Add((singlePeptide.Protein.Accession, huh.id, modInProtein.Key));
+                    }
+                }
             }
 
             // We do not want to double-count modifications. Hence the HashSet!!!
@@ -60,15 +62,21 @@ namespace EngineLayer.ModificationAnalysis
             foreach (var psm in forUnambiguouslyLocalized)
             {
                 var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
-                foreach (var nice in singlePeptide.allModsOneIsNterminus)
+                foreach (var nice in singlePeptide.AllModsOneIsNterminus)
                 {
                     int locInProtein;
                     if (nice.Key == 1)
+                    {
                         locInProtein = singlePeptide.OneBasedStartResidueInProtein;
+                    }
                     else if (nice.Key == singlePeptide.Length + 2)
+                    {
                         locInProtein = singlePeptide.OneBasedEndResidueInProtein;
+                    }
                     else
+                    {
                         locInProtein = singlePeptide.OneBasedStartResidueInProtein + nice.Key - 2;
+                    }
                     modsSeenAndLocalized.Add((singlePeptide.Protein.Accession, nice.Value.id, locInProtein));
                 }
             }
@@ -80,9 +88,13 @@ namespace EngineLayer.ModificationAnalysis
                 foreach (var modCountKvp in representativePsm.ModsIdentified)
                 {
                     if (ambiguousButLocalizedModsSeen.ContainsKey(modCountKvp.Key))
+                    {
                         ambiguousButLocalizedModsSeen[modCountKvp.Key] += modCountKvp.Value;
+                    }
                     else
+                    {
                         ambiguousButLocalizedModsSeen.Add(modCountKvp.Key, modCountKvp.Value);
+                    }
                 }
             }
 
@@ -93,9 +105,13 @@ namespace EngineLayer.ModificationAnalysis
                 foreach (var modCountKvp in representativePsm.ModsIdentified)
                 {
                     if (unlocalizedMods.ContainsKey(modCountKvp.Key))
+                    {
                         unlocalizedMods[modCountKvp.Key] += modCountKvp.Value;
+                    }
                     else
+                    {
                         unlocalizedMods.Add(modCountKvp.Key, modCountKvp.Value);
+                    }
                 }
             }
 
@@ -104,9 +120,13 @@ namespace EngineLayer.ModificationAnalysis
             foreach (var representativePsm in forChemicalFormulas.Select(b => b.First()))
             {
                 if (unlocalizedFormulas.ContainsKey(representativePsm.ModsChemicalFormula))
+                {
                     unlocalizedFormulas[representativePsm.ModsChemicalFormula] += 1;
+                }
                 else
+                {
                     unlocalizedFormulas.Add(representativePsm.ModsChemicalFormula, 1);
+                }
             }
 
             myAnalysisResults.AllModsOnProteins = modsOnProteins.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());

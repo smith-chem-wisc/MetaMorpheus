@@ -14,7 +14,6 @@ namespace MetaMorpheusCommandLine
     internal static class Program
     {
         private static bool InProgress;
-
         private static System.CodeDom.Compiler.IndentedTextWriter MyWriter = new System.CodeDom.Compiler.IndentedTextWriter(Console.Out, "\t");
 
         private static void Main(string[] args)

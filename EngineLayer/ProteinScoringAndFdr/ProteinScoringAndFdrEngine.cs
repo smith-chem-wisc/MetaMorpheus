@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics.ProteolyticDigestion;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
@@ -51,9 +52,13 @@ namespace EngineLayer
                         foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                         {
                             if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
+                            {
                                 peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
+                            }
                             else
+                            {
                                 psmsForThisPeptide.Add(psm);
+                            }
                         }
                     }
                 }
@@ -66,9 +71,13 @@ namespace EngineLayer
                 {
                     // build PSM list for scoring
                     if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<PeptideSpectralMatch> psms))
+                    {
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
+                    }
                     else
+                    {
                         pepsToRemove.Add(peptide);
+                    }
                 }
 
                 proteinGroup.AllPeptides.ExceptWith(pepsToRemove);
@@ -77,7 +86,9 @@ namespace EngineLayer
 
             // score the group
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.Score();
+            }
 
             if (MergeIndistinguishableProteinGroups)
             {
@@ -109,7 +120,9 @@ namespace EngineLayer
 
             // calculate sequence coverage
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.CalculateSequenceCoverage();
+            }
         }
 
         private List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
@@ -134,9 +147,13 @@ namespace EngineLayer
                     string stippedAccession = StripDecoyIdentifier(protein.Accession);
 
                     if (accessionToProteinGroup.TryGetValue(stippedAccession, out List<ProteinGroup> groups))
+                    {
                         groups.Add(pg);
+                    }
                     else
+                    {
                         accessionToProteinGroup.Add(stippedAccession, new List<ProteinGroup> { pg });
+                    }
                 }
 
                 pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
@@ -165,9 +182,13 @@ namespace EngineLayer
             foreach (var proteinGroup in sortedProteinGroups)
             {
                 if (proteinGroup.IsDecoy)
+                {
                     cumulativeDecoy++;
+                }
                 else
+                {
                     cumulativeTarget++;
+                }
 
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;

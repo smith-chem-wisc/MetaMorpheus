@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,8 @@ namespace Test
             };
 
             string xmlName = "andguiaheow.xml";
+
+            //#region Generate protein and write to file
 
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
@@ -67,11 +70,17 @@ namespace Test
 
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
 
+            //#endregion Generate protein and write to file
+
             string mzmlName = @"ajgdiu.mzML";
+
+            //#region Generate and write the mzml
 
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
+            //#endregion Generate and write the mzml
 
             st.RunTask("",
                 new List<DbForTask> { new DbForTask(xmlName, false) },

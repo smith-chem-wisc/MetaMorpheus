@@ -8,7 +8,8 @@ namespace EngineLayer.ModificationAnalysis
 {
     public class ModificationAnalysisResults : MetaMorpheusEngineResults
     {
-        public ModificationAnalysisResults(ModificationAnalysisEngine modificationAnalysisEngine) : base(modificationAnalysisEngine)
+        public ModificationAnalysisResults(ModificationAnalysisEngine modificationAnalysisEngine)
+            : base(modificationAnalysisEngine)
         {
         }
 

@@ -8,6 +8,12 @@ namespace EngineLayer.Calibration
 {
     public class DataPointAquisitionResults : MetaMorpheusEngineResults
     {
+        public readonly double PsmPrecursorMedianPpmError;
+        public readonly double PsmProductMedianPpmError;
+        public readonly double PsmPrecursorIqrPpmError;
+        public readonly double PsmProductIqrPpmError;
+        public readonly List<PeptideSpectralMatch> Psms;
+
         public DataPointAquisitionResults(
             MetaMorpheusEngine dataPointAcquisitionEngine,
             List<PeptideSpectralMatch> psms,
@@ -56,12 +62,6 @@ namespace EngineLayer.Calibration
 
         public List<LabeledDataPoint> Ms1List { get; }
         public List<LabeledDataPoint> Ms2List { get; }
-
-        public readonly double PsmPrecursorMedianPpmError;
-        public readonly double PsmProductMedianPpmError;
-        public readonly double PsmPrecursorIqrPpmError;
-        public readonly double PsmProductIqrPpmError;
-        public readonly List<PeptideSpectralMatch> Psms;
 
         public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 

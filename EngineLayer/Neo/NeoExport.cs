@@ -8,60 +8,60 @@ namespace EngineLayer.Neo
 {
     public static class NeoExport
     {
-        public static string path;
-        public static string folder;
-        public static CommonParameters commonParameters;
+        public static string Path;
+        public static string Folder;
+        public static CommonParameters CommonParameters;
 
         public static void ExportAll(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
-            folder = DateTime.Now.ToString("yyyy-MM-dd_hh-mm-ss");
-            path = "";
+            Folder = DateTime.Now.ToString("yyyy-MM-dd_hh-mm-ss");
+            Path = "";
             string[] temp = databaseFileName.Split('\\').ToArray();
-            for (int i = 0; i < temp.Count() - 1; i++)
-                path += temp[i] + '\\';
+            for (int i = 0; i < temp.Length - 1; i++)
+                Path += temp[i] + '\\';
 
-            Directory.CreateDirectory(path + folder);
-            ExportCandidates(psms, spectra, path, commonParameters);
+            Directory.CreateDirectory(Path + Folder);
+            ExportCandidates(psms, spectra, Path, CommonParameters);
             // ExportFullFASTA(psms, databaseFileName, path);
-            ExportFASTAAppendix(psms, databaseFileName, path);
+            ExportFASTAAppendix(psms, databaseFileName, Path);
 
             //  ExportFilteredFusionPeptideAppendix(psms, databaseFileName, path);
         }
 
         public static void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path, CommonParameters commonParameters)
         {
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesAll.txt"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "ExportedFusionCandidatesAll.txt"))
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
                 //double progress = 0;
                 Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
-                    Ms2ScanWithSpecificMass spectrum = spectra[psm.scanNumber];
+                    Ms2ScanWithSpecificMass spectrum = spectra[psm.ScanNumber];
                     //printout the scan, the mass, the sequences with and without junctions, the number of potential sequences
                     string allPossibleSequences = "";
                     string mostProbableSequences = "";
                     int indexOfFirstProbableSequence = -1;
                     string mostProbableParents = "";
                     string allPossibleParents = "";
-                    FusionCandidate.FusionType probableType = psm.fusionType;
-                    for (int fc = 0; fc < psm.candidates.Count(); fc++)
+                    FusionType probableType = psm.FusionType;
+                    for (int fc = 0; fc < psm.Candidates.Count; fc++)
                     {
-                        FusionCandidate fusionCandidate = psm.candidates[fc]; //need fc for indexOfFirstProbableSequence
-                        char[] tempArray = fusionCandidate.seq.ToCharArray();
+                        FusionCandidate fusionCandidate = psm.Candidates[fc]; //need fc for indexOfFirstProbableSequence
+                        char[] tempArray = fusionCandidate.Seq.ToCharArray();
                         //if most probable, add to all and most
-                        if (fusionCandidate.fusionType.Equals(probableType))
+                        if (fusionCandidate.FusionType.Equals(probableType))
                         {
                             //record sequences
                             if (indexOfFirstProbableSequence < 0)
                             {
                                 indexOfFirstProbableSequence = fc;
                             }
-                            for (int i = 0; i < tempArray.Count(); i++)
+                            for (int i = 0; i < tempArray.Length; i++)
                             {
                                 mostProbableSequences += tempArray[i];
                                 allPossibleSequences += tempArray[i];
-                                foreach (int junction in fusionCandidate.junctionIndexes)
+                                foreach (int junction in fusionCandidate.JunctionIndexes)
                                 {
                                     if (junction == i)
                                     {
@@ -102,10 +102,10 @@ namespace EngineLayer.Neo
                         else //not most probable, only add it to allPossibleSequences
                         {
                             //record sequences
-                            for (int i = 0; i < tempArray.Count(); i++)
+                            for (int i = 0; i < tempArray.Length; i++)
                             {
                                 allPossibleSequences += tempArray[i];
-                                if (fusionCandidate.junctionIndexes.Contains(i))
+                                if (fusionCandidate.JunctionIndexes.Contains(i))
                                 {
                                     allPossibleSequences += "-";
                                 }
@@ -124,11 +124,11 @@ namespace EngineLayer.Neo
                     mostProbableSequences = mostProbableSequences.Substring(0, mostProbableSequences.Length - 1); //remove last "|"
 
                     string ambiguity = "";
-                    NeoFindAmbiguity.FindIons(psm.candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
+                    NeoFindAmbiguity.FindIons(psm.Candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
                                                                                                             //      mutableError_message += e;
-                    bool[] foundIons = psm.candidates[indexOfFirstProbableSequence].foundIons;
-                    char[] firstSeq = psm.candidates[indexOfFirstProbableSequence].seq.ToCharArray();
-                    //   if(foundIons.Count()==firstSeq.Count()) //prevent crashing if something went wrong
+                    bool[] foundIons = psm.Candidates[indexOfFirstProbableSequence].FoundIons;
+                    char[] firstSeq = psm.Candidates[indexOfFirstProbableSequence].Seq.ToCharArray();
+                    //   if(foundIons.Length==firstSeq.Length) //prevent crashing if something went wrong
                     // {
                     bool ambiguous = false;
                     for (int i = 1; i < foundIons.Length; i++)
@@ -154,7 +154,9 @@ namespace EngineLayer.Neo
                     }
                     ambiguity += firstSeq[foundIons.Length - 1];
                     if (ambiguous)
+                    {
                         ambiguity += ")";
+                    }
                     string potentialFalsePositives = "";
                     //foreach (Variant v in psm.variants)
                     //{
@@ -176,40 +178,44 @@ namespace EngineLayer.Neo
                         allPossibleParents = allPossibleParents.Substring(0, 30000);
                     }
                     int score = 0;
-                    foreach (bool b in psm.candidates[indexOfFirstProbableSequence].foundIons)
+                    foreach (bool b in psm.Candidates[indexOfFirstProbableSequence].FoundIons)
+                    {
                         if (b)
+                        {
                             score++;
+                        }
+                    }
                     lock (file)
                     {
-                        file.WriteLine(psm.scanNumber.ToString() + '\t' + psm.expMass.ToString() + '\t' + psm.nInfo.seq + '\t' + psm.nInfo.score + '\t' + psm.cInfo.seq + '\t' + psm.cInfo.score + '\t' + psm.candidates[indexOfFirstProbableSequence].seq + '\t' + ambiguity + '\t' + psm.fusionType.ToString() + '\t' + mostProbableSequences + '\t' + mostProbableSequences.Replace("-", "") + '\t' + mostProbableParents + '\t' + allPossibleSequences + '\t' + allPossibleSequences.Replace("-", "") + '\t' + allPossibleParents + '\t' + psm.candidates.Count().ToString() + '\t' + potentialFalsePositives + '\t' + score);
+                        file.WriteLine(psm.ScanNumber.ToString() + '\t' + psm.ExpMass.ToString() + '\t' + psm.NInfo.Seq + '\t' + psm.NInfo.Score + '\t' + psm.CInfo.Seq + '\t' + psm.CInfo.Score + '\t' + psm.Candidates[indexOfFirstProbableSequence].Seq + '\t' + ambiguity + '\t' + psm.FusionType.ToString() + '\t' + mostProbableSequences + '\t' + mostProbableSequences.Replace("-", "") + '\t' + mostProbableParents + '\t' + allPossibleSequences + '\t' + allPossibleSequences.Replace("-", "") + '\t' + allPossibleParents + '\t' + psm.Candidates.Count.ToString() + '\t' + potentialFalsePositives + '\t' + score);
                         //progress++;
                         //this.worker.ReportProgress((int)(progress / psms.Count() * 100));
                     }
                 });
             }
 
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesTL.txt"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "ExportedFusionCandidatesTL.txt"))
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
                 Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
-                    if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.TL))
+                    if (psm.Candidates.Any(x => x.FusionType == FusionType.TL))
                     {
-                        Ms2ScanWithSpecificMass spectrum = spectra[psm.scanNumber];
+                        Ms2ScanWithSpecificMass spectrum = spectra[psm.ScanNumber];
                         //printout the scan, the mass, the sequences with and without junctions, the number of potential sequences
                         string allPossibleSequences = "";
                         string mostProbableSequences = "";
                         int indexOfFirstProbableSequence = -1;
                         string mostProbableParents = "";
                         string allPossibleParents = "";
-                        FusionCandidate.FusionType probableType = psm.fusionType;
-                        for (int fc = 0; fc < psm.candidates.Count(); fc++)
+                        FusionType probableType = psm.FusionType;
+                        for (int fc = 0; fc < psm.Candidates.Count; fc++)
                         {
-                            FusionCandidate fusionCandidate = psm.candidates[fc]; //need fc for indexOfFirstProbableSequence
-                            if (fusionCandidate.fusionType != FusionCandidate.FusionType.TL)
+                            FusionCandidate fusionCandidate = psm.Candidates[fc]; //need fc for indexOfFirstProbableSequence
+                            if (fusionCandidate.FusionType != FusionType.TL)
                                 continue;
-                            char[] tempArray = fusionCandidate.seq.ToCharArray();
+                            char[] tempArray = fusionCandidate.Seq.ToCharArray();
                             //if most probable, add to all and most
 
                             //record sequences
@@ -217,11 +223,11 @@ namespace EngineLayer.Neo
                             {
                                 indexOfFirstProbableSequence = fc;
                             }
-                            for (int i = 0; i < tempArray.Count(); i++)
+                            for (int i = 0; i < tempArray.Length; i++)
                             {
                                 mostProbableSequences += tempArray[i];
                                 allPossibleSequences += tempArray[i];
-                                foreach (int junction in fusionCandidate.junctionIndexes)
+                                foreach (int junction in fusionCandidate.JunctionIndexes)
                                 {
                                     if (junction == i)
                                     {
@@ -244,10 +250,10 @@ namespace EngineLayer.Neo
                         mostProbableSequences = mostProbableSequences.Substring(0, mostProbableSequences.Length - 1); //remove last "|"
 
                         string ambiguity = "";
-                        NeoFindAmbiguity.FindIons(psm.candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
+                        NeoFindAmbiguity.FindIons(psm.Candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
                                                                                                                 //      mutableError_message += e;
-                        bool[] foundIons = psm.candidates[indexOfFirstProbableSequence].foundIons;
-                        char[] firstSeq = psm.candidates[indexOfFirstProbableSequence].seq.ToCharArray();
+                        bool[] foundIons = psm.Candidates[indexOfFirstProbableSequence].FoundIons;
+                        char[] firstSeq = psm.Candidates[indexOfFirstProbableSequence].Seq.ToCharArray();
 
                         bool ambiguous = false;
                         for (int i = 1; i < foundIons.Length; i++)
@@ -273,14 +279,18 @@ namespace EngineLayer.Neo
                         }
                         ambiguity += firstSeq[foundIons.Length - 1];
                         if (ambiguous)
+                        {
                             ambiguity += ")";
+                        }
                         string potentialFalsePositives = "";
 
                         if (potentialFalsePositives.Length > 0)
                         {
                             potentialFalsePositives = potentialFalsePositives.Substring(0, potentialFalsePositives.Length - 1); //remove last |
                             if (potentialFalsePositives.Length > 30000)
+                            {
                                 potentialFalsePositives = potentialFalsePositives.Substring(0, 30000);
+                            }
                         }
                         //workarounds for excel. Actual limit is 32767, but that doesn't seem to work
                         if (mostProbableParents.Length > 30000)
@@ -292,12 +302,12 @@ namespace EngineLayer.Neo
                             allPossibleParents = allPossibleParents.Substring(0, 30000);
                         }
                         int score = 0;
-                        foreach (bool b in psm.candidates[indexOfFirstProbableSequence].foundIons)
+                        foreach (bool b in psm.Candidates[indexOfFirstProbableSequence].FoundIons)
                             if (b)
                                 score++;
                         lock (file)
                         {
-                            file.WriteLine(psm.scanNumber.ToString() + '\t' + psm.expMass.ToString() + '\t' + psm.nInfo.seq + '\t' + psm.nInfo.score + '\t' + psm.cInfo.seq + '\t' + psm.cInfo.score + '\t' + psm.candidates[indexOfFirstProbableSequence].seq + '\t' + ambiguity + '\t' + psm.fusionType.ToString() + '\t' + mostProbableSequences + '\t' + mostProbableSequences.Replace("-", "") + '\t' + mostProbableParents + '\t' + allPossibleSequences + '\t' + allPossibleSequences.Replace("-", "") + '\t' + allPossibleParents + '\t' + psm.candidates.Count().ToString() + '\t' + potentialFalsePositives + '\t' + score);
+                            file.WriteLine(psm.ScanNumber.ToString() + '\t' + psm.ExpMass.ToString() + '\t' + psm.NInfo.Seq + '\t' + psm.NInfo.Score + '\t' + psm.CInfo.Seq + '\t' + psm.CInfo.Score + '\t' + psm.Candidates[indexOfFirstProbableSequence].Seq + '\t' + ambiguity + '\t' + psm.FusionType.ToString() + '\t' + mostProbableSequences + '\t' + mostProbableSequences.Replace("-", "") + '\t' + mostProbableParents + '\t' + allPossibleSequences + '\t' + allPossibleSequences.Replace("-", "") + '\t' + allPossibleParents + '\t' + psm.Candidates.Count.ToString() + '\t' + potentialFalsePositives + '\t' + score);
                             //progress++;
                             //this.worker.ReportProgress((int)(progress / psms.Count() * 100));
                         }
@@ -305,28 +315,30 @@ namespace EngineLayer.Neo
                 });
             }
 
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesNC.txt"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "ExportedFusionCandidatesNC.txt"))
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
                 Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
-                    if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.NC))
+                    if (psm.Candidates.Any(x => x.FusionType == FusionType.NC))
                     {
-                        Ms2ScanWithSpecificMass spectrum = spectra[psm.scanNumber];
+                        Ms2ScanWithSpecificMass spectrum = spectra[psm.ScanNumber];
                         //printout the scan, the mass, the sequences with and without junctions, the number of potential sequences
                         string allPossibleSequences = "";
                         string mostProbableSequences = "";
                         int indexOfFirstProbableSequence = -1;
                         string mostProbableParents = "";
                         string allPossibleParents = "";
-                        FusionCandidate.FusionType probableType = psm.fusionType;
-                        for (int fc = 0; fc < psm.candidates.Count(); fc++)
+                        FusionType probableType = psm.FusionType;
+                        for (int fc = 0; fc < psm.Candidates.Count; fc++)
                         {
-                            FusionCandidate fusionCandidate = psm.candidates[fc]; //need fc for indexOfFirstProbableSequence
-                            if (fusionCandidate.fusionType != FusionCandidate.FusionType.NC)
+                            FusionCandidate fusionCandidate = psm.Candidates[fc]; //need fc for indexOfFirstProbableSequence
+                            if (fusionCandidate.FusionType != FusionType.NC)
+                            {
                                 continue;
-                            char[] tempArray = fusionCandidate.seq.ToCharArray();
+                            }
+                            char[] tempArray = fusionCandidate.Seq.ToCharArray();
                             //if most probable, add to all and most
 
                             //record sequences
@@ -334,11 +346,11 @@ namespace EngineLayer.Neo
                             {
                                 indexOfFirstProbableSequence = fc;
                             }
-                            for (int i = 0; i < tempArray.Count(); i++)
+                            for (int i = 0; i < tempArray.Length; i++)
                             {
                                 mostProbableSequences += tempArray[i];
                                 allPossibleSequences += tempArray[i];
-                                foreach (int junction in fusionCandidate.junctionIndexes)
+                                foreach (int junction in fusionCandidate.JunctionIndexes)
                                 {
                                     if (junction == i)
                                     {
@@ -361,10 +373,10 @@ namespace EngineLayer.Neo
                         mostProbableSequences = mostProbableSequences.Substring(0, mostProbableSequences.Length - 1); //remove last "|"
 
                         string ambiguity = "";
-                        NeoFindAmbiguity.FindIons(psm.candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
+                        NeoFindAmbiguity.FindIons(psm.Candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
                                                                                                                 //      mutableError_message += e;
-                        bool[] foundIons = psm.candidates[indexOfFirstProbableSequence].foundIons;
-                        char[] firstSeq = psm.candidates[indexOfFirstProbableSequence].seq.ToCharArray();
+                        bool[] foundIons = psm.Candidates[indexOfFirstProbableSequence].FoundIons;
+                        char[] firstSeq = psm.Candidates[indexOfFirstProbableSequence].Seq.ToCharArray();
 
                         bool ambiguous = false;
                         for (int i = 1; i < foundIons.Length; i++)
@@ -397,7 +409,9 @@ namespace EngineLayer.Neo
                         {
                             potentialFalsePositives = potentialFalsePositives.Substring(0, potentialFalsePositives.Length - 1); //remove last |
                             if (potentialFalsePositives.Length > 30000)
+                            {
                                 potentialFalsePositives = potentialFalsePositives.Substring(0, 30000);
+                            }
                         }
                         //workarounds for excel. Actual limit is 32767, but that doesn't seem to work
                         if (mostProbableParents.Length > 30000)
@@ -409,12 +423,16 @@ namespace EngineLayer.Neo
                             allPossibleParents = allPossibleParents.Substring(0, 30000);
                         }
                         int score = 0;
-                        foreach (bool b in psm.candidates[indexOfFirstProbableSequence].foundIons)
+                        foreach (bool b in psm.Candidates[indexOfFirstProbableSequence].FoundIons)
+                        {
                             if (b)
+                            {
                                 score++;
+                            }
+                        }
                         lock (file)
                         {
-                            file.WriteLine(psm.scanNumber.ToString() + '\t' + psm.expMass.ToString() + '\t' + psm.nInfo.seq + '\t' + psm.nInfo.score + '\t' + psm.cInfo.seq + '\t' + psm.cInfo.score + '\t' + psm.candidates[indexOfFirstProbableSequence].seq + '\t' + ambiguity + '\t' + psm.fusionType.ToString() + '\t' + mostProbableSequences + '\t' + mostProbableSequences.Replace("-", "") + '\t' + mostProbableParents + '\t' + allPossibleSequences + '\t' + allPossibleSequences.Replace("-", "") + '\t' + allPossibleParents + '\t' + psm.candidates.Count().ToString() + '\t' + potentialFalsePositives + '\t' + score);
+                            file.WriteLine(psm.ScanNumber.ToString() + '\t' + psm.ExpMass.ToString() + '\t' + psm.NInfo.Seq + '\t' + psm.NInfo.Score + '\t' + psm.CInfo.Seq + '\t' + psm.CInfo.Score + '\t' + psm.Candidates[indexOfFirstProbableSequence].Seq + '\t' + ambiguity + '\t' + psm.FusionType.ToString() + '\t' + mostProbableSequences + '\t' + mostProbableSequences.Replace("-", "") + '\t' + mostProbableParents + '\t' + allPossibleSequences + '\t' + allPossibleSequences.Replace("-", "") + '\t' + allPossibleParents + '\t' + psm.Candidates.Count.ToString() + '\t' + potentialFalsePositives + '\t' + score);
                             //progress++;
                             //this.worker.ReportProgress((int)(progress / psms.Count() * 100));
                         }
@@ -422,28 +440,28 @@ namespace EngineLayer.Neo
                 });
             }
 
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesTS.txt"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "ExportedFusionCandidatesTS.txt"))
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
                 Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
-                    if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.TS))
+                    if (psm.Candidates.Any(x => x.FusionType == FusionType.TS))
                     {
-                        Ms2ScanWithSpecificMass spectrum = spectra[psm.scanNumber];
+                        Ms2ScanWithSpecificMass spectrum = spectra[psm.ScanNumber];
                         //printout the scan, the mass, the sequences with and without junctions, the number of potential sequences
                         string allPossibleSequences = "";
                         string mostProbableSequences = "";
                         int indexOfFirstProbableSequence = -1;
                         string mostProbableParents = "";
                         string allPossibleParents = "";
-                        FusionCandidate.FusionType probableType = psm.fusionType;
-                        for (int fc = 0; fc < psm.candidates.Count(); fc++)
+                        FusionType probableType = psm.FusionType;
+                        for (int fc = 0; fc < psm.Candidates.Count; fc++)
                         {
-                            FusionCandidate fusionCandidate = psm.candidates[fc]; //need fc for indexOfFirstProbableSequence
-                            if (fusionCandidate.fusionType != FusionCandidate.FusionType.TS)
+                            FusionCandidate fusionCandidate = psm.Candidates[fc]; //need fc for indexOfFirstProbableSequence
+                            if (fusionCandidate.FusionType != FusionType.TS)
                                 continue;
-                            char[] tempArray = fusionCandidate.seq.ToCharArray();
+                            char[] tempArray = fusionCandidate.Seq.ToCharArray();
                             //if most probable, add to all and most
 
                             //record sequences
@@ -451,11 +469,11 @@ namespace EngineLayer.Neo
                             {
                                 indexOfFirstProbableSequence = fc;
                             }
-                            for (int i = 0; i < tempArray.Count(); i++)
+                            for (int i = 0; i < tempArray.Length; i++)
                             {
                                 mostProbableSequences += tempArray[i];
                                 allPossibleSequences += tempArray[i];
-                                foreach (int junction in fusionCandidate.junctionIndexes)
+                                foreach (int junction in fusionCandidate.JunctionIndexes)
                                 {
                                     if (junction == i)
                                     {
@@ -478,10 +496,10 @@ namespace EngineLayer.Neo
                         mostProbableSequences = mostProbableSequences.Substring(0, mostProbableSequences.Length - 1); //remove last "|"
 
                         string ambiguity = "";
-                        NeoFindAmbiguity.FindIons(psm.candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
+                        NeoFindAmbiguity.FindIons(psm.Candidates[indexOfFirstProbableSequence], psm, spectrum); //this should be carried over, but it's not...
                                                                                                                 //      mutableError_message += e;
-                        bool[] foundIons = psm.candidates[indexOfFirstProbableSequence].foundIons;
-                        char[] firstSeq = psm.candidates[indexOfFirstProbableSequence].seq.ToCharArray();
+                        bool[] foundIons = psm.Candidates[indexOfFirstProbableSequence].FoundIons;
+                        char[] firstSeq = psm.Candidates[indexOfFirstProbableSequence].Seq.ToCharArray();
 
                         bool ambiguous = false;
                         for (int i = 1; i < foundIons.Length; i++)
@@ -507,7 +525,9 @@ namespace EngineLayer.Neo
                         }
                         ambiguity += firstSeq[foundIons.Length - 1];
                         if (ambiguous)
+                        {
                             ambiguity += ")";
+                        }
                         string potentialFalsePositives = "";
 
                         if (potentialFalsePositives.Length > 0)
@@ -526,12 +546,16 @@ namespace EngineLayer.Neo
                             allPossibleParents = allPossibleParents.Substring(0, 30000);
                         }
                         int score = 0;
-                        foreach (bool b in psm.candidates[indexOfFirstProbableSequence].foundIons)
+                        foreach (bool b in psm.Candidates[indexOfFirstProbableSequence].FoundIons)
+                        {
                             if (b)
+                            {
                                 score++;
+                            }
+                        }
                         lock (file)
                         {
-                            file.WriteLine(psm.scanNumber.ToString() + '\t' + psm.expMass.ToString() + '\t' + psm.nInfo.seq + '\t' + psm.nInfo.score + '\t' + psm.cInfo.seq + '\t' + psm.cInfo.score + '\t' + psm.candidates[indexOfFirstProbableSequence].seq + '\t' + ambiguity + '\t' + psm.fusionType.ToString() + '\t' + mostProbableSequences + '\t' + mostProbableSequences.Replace("-", "") + '\t' + mostProbableParents + '\t' + allPossibleSequences + '\t' + allPossibleSequences.Replace("-", "") + '\t' + allPossibleParents + '\t' + psm.candidates.Count().ToString() + '\t' + potentialFalsePositives + '\t' + score);
+                            file.WriteLine(psm.ScanNumber.ToString() + '\t' + psm.ExpMass.ToString() + '\t' + psm.NInfo.Seq + '\t' + psm.NInfo.Score + '\t' + psm.CInfo.Seq + '\t' + psm.CInfo.Score + '\t' + psm.Candidates[indexOfFirstProbableSequence].Seq + '\t' + ambiguity + '\t' + psm.FusionType.ToString() + '\t' + mostProbableSequences + '\t' + mostProbableSequences.Replace("-", "") + '\t' + mostProbableParents + '\t' + allPossibleSequences + '\t' + allPossibleSequences.Replace("-", "") + '\t' + allPossibleParents + '\t' + psm.Candidates.Count.ToString() + '\t' + potentialFalsePositives + '\t' + score);
                             //progress++;
                             //this.worker.ReportProgress((int)(progress / psms.Count() * 100));
                         }
@@ -543,7 +567,7 @@ namespace EngineLayer.Neo
         private static void ExportFullFASTA(List<NeoPsm> psms, string databaseFileName, string path)
         {
             //@"C:\Users\Zach Rolfs\Desktop\Chemistry\Smith Research\Fusion Peptides\Neo\Results\"
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "FullFusionDatabase.fasta"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "FullFusionDatabase.fasta"))
             {
                 //copy database
                 string[] FASTARead = File.ReadAllLines(databaseFileName);
@@ -560,17 +584,21 @@ namespace EngineLayer.Neo
                     //fusionPeptides = Regex.Replace(candidateRow[5].ToString(), "(\\(.*?\\))", "");//remove PTM annotations
 
                     //the following code is for FASTA output
-                    string scan = psm.scanNumber.ToString();
-                    foreach (FusionCandidate fusionCandidate in psm.candidates)
+                    string scan = psm.ScanNumber.ToString();
+                    foreach (FusionCandidate fusionCandidate in psm.Candidates)
                     {
-                        file.WriteLine(">sp|" + scan + fusionCandidate.fusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.fusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
-                        string seq = fusionCandidate.seq;
-                        for (int i = 0; i < seq.Count(); i += 60) //60 used as number of AAs per line in a FASTA file. It is unlikely to observe something this large currently, but is here as a precaution.
+                        file.WriteLine(">sp|" + scan + fusionCandidate.FusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.FusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
+                        string seq = fusionCandidate.Seq;
+                        for (int i = 0; i < seq.Length; i += 60) //60 used as number of AAs per line in a FASTA file. It is unlikely to observe something this large currently, but is here as a precaution.
                         {
-                            if ((i + 60) < seq.Count())
+                            if ((i + 60) < seq.Length)
+                            {
                                 file.WriteLine(seq.Substring(i, 60));
+                            }
                             else
+                            {
                                 file.WriteLine(seq.Substring(i, seq.Length - i));
+                            }
                         }
                         fusNum++;
                     }
@@ -580,31 +608,35 @@ namespace EngineLayer.Neo
 
         private static void ExportFASTAAppendix(List<NeoPsm> psms, string databaseFileName, string path)
         {
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "FusionDatabaseAppendixAll.fasta"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "FusionDatabaseAppendixAll.fasta"))
             {
                 foreach (NeoPsm psm in psms)
                 {
                     int fusNum = 1;
 
                     //the following code is for FASTA output
-                    string scan = psm.scanNumber.ToString();
-                    foreach (FusionCandidate fusionCandidate in psm.candidates)
+                    string scan = psm.ScanNumber.ToString();
+                    foreach (FusionCandidate fusionCandidate in psm.Candidates)
                     {
-                        file.WriteLine(">sp|" + scan + fusionCandidate.fusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.fusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
-                        string seq = fusionCandidate.seq;
-                        for (int i = 0; i < seq.Count(); i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
+                        file.WriteLine(">sp|" + scan + fusionCandidate.FusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.FusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
+                        string seq = fusionCandidate.Seq;
+                        for (int i = 0; i < seq.Length; i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
                         {
-                            if ((i + 60) < seq.Count())
+                            if ((i + 60) < seq.Length)
+                            {
                                 file.WriteLine(seq.Substring(i, 60));
+                            }
                             else
+                            {
                                 file.WriteLine(seq.Substring(i, seq.Length - i));
+                            }
                         }
                         fusNum++;
                     }
                 }
             }
 
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "FusionDatabaseAppendixTL.fasta"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "FusionDatabaseAppendixTL.fasta"))
             {
                 foreach (NeoPsm psm in psms)
                 {
@@ -613,16 +645,46 @@ namespace EngineLayer.Neo
                     //fusionPeptides = Regex.Replace(candidateRow[5].ToString(), "(\\(.*?\\))", "");//remove PTM annotations
 
                     //the following code is for FASTA output
-                    string scan = psm.scanNumber.ToString();
-                    foreach (FusionCandidate fusionCandidate in psm.candidates)
+                    string scan = psm.ScanNumber.ToString();
+                    foreach (FusionCandidate fusionCandidate in psm.Candidates)
                     {
-                        if (fusionCandidate.fusionType != FusionCandidate.FusionType.TL)
+                        if (fusionCandidate.FusionType != FusionType.TL)
                             continue;
-                        file.WriteLine(">sp|" + scan + fusionCandidate.fusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.fusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
-                        string seq = fusionCandidate.seq;
-                        for (int i = 0; i < seq.Count(); i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
+                        file.WriteLine(">sp|" + scan + fusionCandidate.FusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.FusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
+                        string seq = fusionCandidate.Seq;
+                        for (int i = 0; i < seq.Length; i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
                         {
-                            if ((i + 60) < seq.Count())
+                            if ((i + 60) < seq.Length)
+                            {
+                                file.WriteLine(seq.Substring(i, 60));
+                            }
+                            else
+                            {
+                                file.WriteLine(seq.Substring(i, seq.Length - i));
+                            }
+                        }
+                        fusNum++;
+                    }
+                }
+            }
+
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "FusionDatabaseAppendixNC.fasta"))
+            {
+                foreach (NeoPsm psm in psms)
+                {
+                    int fusNum = 1;
+
+                    //the following code is for FASTA output
+                    string scan = psm.ScanNumber.ToString();
+                    foreach (FusionCandidate fusionCandidate in psm.Candidates)
+                    {
+                        if (fusionCandidate.FusionType != FusionType.NC)
+                            continue;
+                        file.WriteLine(">sp|" + scan + fusionCandidate.FusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.FusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
+                        string seq = fusionCandidate.Seq;
+                        for (int i = 0; i < seq.Length; i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
+                        {
+                            if ((i + 60) < seq.Length)
                                 file.WriteLine(seq.Substring(i, 60));
                             else
                                 file.WriteLine(seq.Substring(i, seq.Length - i));
@@ -632,23 +694,23 @@ namespace EngineLayer.Neo
                 }
             }
 
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "FusionDatabaseAppendixNC.fasta"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "FusionDatabaseAppendixTS.fasta"))
             {
                 foreach (NeoPsm psm in psms)
                 {
                     int fusNum = 1;
 
                     //the following code is for FASTA output
-                    string scan = psm.scanNumber.ToString();
-                    foreach (FusionCandidate fusionCandidate in psm.candidates)
+                    string scan = psm.ScanNumber.ToString();
+                    foreach (FusionCandidate fusionCandidate in psm.Candidates)
                     {
-                        if (fusionCandidate.fusionType != FusionCandidate.FusionType.NC)
+                        if (fusionCandidate.FusionType != FusionType.TS)
                             continue;
-                        file.WriteLine(">sp|" + scan + fusionCandidate.fusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.fusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
-                        string seq = fusionCandidate.seq;
-                        for (int i = 0; i < seq.Count(); i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
+                        file.WriteLine(">sp|" + scan + fusionCandidate.FusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.FusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
+                        string seq = fusionCandidate.Seq;
+                        for (int i = 0; i < seq.Length; i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
                         {
-                            if ((i + 60) < seq.Count())
+                            if ((i + 60) < seq.Length)
                                 file.WriteLine(seq.Substring(i, 60));
                             else
                                 file.WriteLine(seq.Substring(i, seq.Length - i));
@@ -658,49 +720,23 @@ namespace EngineLayer.Neo
                 }
             }
 
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "FusionDatabaseAppendixTS.fasta"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "FusionDatabaseAppendixTop.fasta"))
             {
                 foreach (NeoPsm psm in psms)
                 {
                     int fusNum = 1;
 
                     //the following code is for FASTA output
-                    string scan = psm.scanNumber.ToString();
-                    foreach (FusionCandidate fusionCandidate in psm.candidates)
+                    string scan = psm.ScanNumber.ToString();
+                    foreach (FusionCandidate fusionCandidate in psm.Candidates)
                     {
-                        if (fusionCandidate.fusionType != FusionCandidate.FusionType.TS)
+                        if (fusionCandidate.FusionType != psm.FusionType)
                             continue;
-                        file.WriteLine(">sp|" + scan + fusionCandidate.fusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.fusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
-                        string seq = fusionCandidate.seq;
-                        for (int i = 0; i < seq.Count(); i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
+                        file.WriteLine(">sp|" + scan + fusionCandidate.FusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.FusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
+                        string seq = fusionCandidate.Seq;
+                        for (int i = 0; i < seq.Length; i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
                         {
-                            if ((i + 60) < seq.Count())
-                                file.WriteLine(seq.Substring(i, 60));
-                            else
-                                file.WriteLine(seq.Substring(i, seq.Length - i));
-                        }
-                        fusNum++;
-                    }
-                }
-            }
-
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "FusionDatabaseAppendixTop.fasta"))
-            {
-                foreach (NeoPsm psm in psms)
-                {
-                    int fusNum = 1;
-
-                    //the following code is for FASTA output
-                    string scan = psm.scanNumber.ToString();
-                    foreach (FusionCandidate fusionCandidate in psm.candidates)
-                    {
-                        if (fusionCandidate.fusionType != psm.fusionType)
-                            continue;
-                        file.WriteLine(">sp|" + scan + fusionCandidate.fusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.fusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
-                        string seq = fusionCandidate.seq;
-                        for (int i = 0; i < seq.Count(); i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
-                        {
-                            if ((i + 60) < seq.Count())
+                            if ((i + 60) < seq.Length)
                                 file.WriteLine(seq.Substring(i, 60));
                             else
                                 file.WriteLine(seq.Substring(i, seq.Length - i));
@@ -722,22 +758,22 @@ namespace EngineLayer.Neo
 
         private static void ExportFilteredFusionPeptideAppendix(List<NeoPsm> psms, string databaseFileName, string path)
         {
-            using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "FilteredFusionDatabaseAppendix.fasta"))
+            using (StreamWriter file = new StreamWriter(path + Folder + @"\" + Folder + "FilteredFusionDatabaseAppendix.fasta"))
             {
                 foreach (NeoPsm psm in psms)
                 {
                     int fusNum = 1;
-                    if (!psm.fusionType.Equals(FusionCandidate.FusionType.TL))
+                    if (!psm.FusionType.Equals(FusionType.TL))
                     {
                         //the following code is for FASTA output
-                        string scan = psm.scanNumber.ToString();
-                        foreach (FusionCandidate fusionCandidate in psm.candidates)
+                        string scan = psm.ScanNumber.ToString();
+                        foreach (FusionCandidate fusionCandidate in psm.Candidates)
                         {
-                            file.WriteLine(">sp|" + scan + fusionCandidate.fusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.fusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
-                            string seq = fusionCandidate.seq;
-                            for (int i = 0; i < seq.Count(); i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
+                            file.WriteLine(">sp|" + scan + fusionCandidate.FusionType.ToString() + fusNum + "| " + scan + "-" + fusNum + " Proposed " + fusionCandidate.FusionType.ToString() + " fusion peptide GN=FUS PE=1 SV=1");
+                            string seq = fusionCandidate.Seq;
+                            for (int i = 0; i < seq.Length; i += 60) //60 used as number of AAs per line in a FASTA file. It is unliekly to observe something this large currently, but is here as a precaution.
                             {
-                                if ((i + 60) < seq.Count())
+                                if ((i + 60) < seq.Length)
                                     file.WriteLine(seq.Substring(i, 60));
                                 else
                                     file.WriteLine(seq.Substring(i, seq.Length - i));
@@ -754,7 +790,7 @@ namespace EngineLayer.Neo
             string output = "";
             foreach (TranslatedParent tlp in translatedParents)
             {
-                output += tlp.id + "_" + tlp.start + "-" + (tlp.start + tlp.peptideLength - 1) + "(" + tlp.seq.Substring(tlp.start, tlp.peptideLength) + ")" + "|";
+                output += tlp.ID + "_" + tlp.Start + "-" + (tlp.Start + tlp.PeptideLength - 1) + "(" + tlp.Seq.Substring(tlp.Start, tlp.PeptideLength) + ")" + "|";
             }
             foreach (CisParent cp in cisParents)
             {
@@ -762,8 +798,8 @@ namespace EngineLayer.Neo
                 {
                     foreach (int cs in cp.CStart)
                     {
-                        output += cp.id + "_" + ns + "-" + (ns + cp.NLength - 1) + "(" + cp.seq.Substring(ns, cp.NLength) + ")"
-                            + "&" + cs + "-" + (cs + cp.CLength - 1) + "(" + cp.seq.Substring(cs, cp.CLength) + ")" + "|";
+                        output += cp.ID + "_" + ns + "-" + (ns + cp.NLength - 1) + "(" + cp.Seq.Substring(ns, cp.NLength) + ")"
+                            + "&" + cs + "-" + (cs + cp.CLength - 1) + "(" + cp.Seq.Substring(cs, cp.CLength) + ")" + "|";
                     }
                 }
             }
@@ -771,12 +807,12 @@ namespace EngineLayer.Neo
             string cOutput = "";
             foreach (TransParent tp in transParents)
             {
-                if (tp.terminal.Equals(ParentInfo.terminal.N))
-                    foreach (int ts in tp.start)
-                        nOutput += tp.id + "_" + ts + "-" + (ts + tp.peptideLength - 1) + "(" + tp.seq.Substring(ts, tp.peptideLength) + ")" + "|";
+                if (tp.Terminal.Equals(ParentInfo.Terminal.N))
+                    foreach (int ts in tp.Start)
+                        nOutput += tp.ID + "_" + ts + "-" + (ts + tp.PeptideLength - 1) + "(" + tp.Seq.Substring(ts, tp.PeptideLength) + ")" + "|";
                 else
-                    foreach (int ts in tp.start)
-                        cOutput += tp.id + "_" + ts + "-" + (ts + tp.peptideLength - 1) + "(" + tp.seq.Substring(ts, tp.peptideLength) + ")" + "|";
+                    foreach (int ts in tp.Start)
+                        cOutput += tp.ID + "_" + ts + "-" + (ts + tp.PeptideLength - 1) + "(" + tp.Seq.Substring(ts, tp.PeptideLength) + ")" + "|";
             }
             if (nOutput.Length > 0) //if there was a trans, append and delimit the two lists
                 output += nOutput + "&&|" + cOutput;

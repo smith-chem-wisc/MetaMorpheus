@@ -5,32 +5,35 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
-using System;
 
 namespace Test
 {
     [TestFixture]
     public static class CoIsolationTests
     {
-
         [Test]
         public static void TestCoIsolation()
         {
             Protease protease = new Protease("CustProtease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, deconvolutionIntensityRatio: 50, digestionParams: new DigestionParams(protease.Name, minPeptideLength: 1));
-          
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            CommonParameters CommonParameters = new CommonParameters(
+                scoreCutoff: 1,
+                deconvolutionIntensityRatio: 50,
+                digestionParams: new DigestionParams(protease.Name, minPeptideLength: 1));
+
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
             var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null) };
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            Proteomics.Peptide pep1 = new Proteomics.Peptide("NNNK");
-            Proteomics.Peptide pep2 = new Proteomics.Peptide("NDNK");
+            Proteomics.AminoAcidPolymer.Peptide pep1 = new Proteomics.AminoAcidPolymer.Peptide("NNNK");
+            Proteomics.AminoAcidPolymer.Peptide pep2 = new Proteomics.AminoAcidPolymer.Peptide("NDNK");
 
             var dist1 = IsotopicDistribution.GetDistribution(pep1.GetChemicalFormula(), 0.1, 0.01);
 
@@ -87,6 +90,5 @@ namespace Test
             Assert.AreEqual("NNNK", allPsmsArray[0].BaseSequence);
             Assert.AreEqual("NDNK", allPsmsArray[1].BaseSequence);
         }
-
     }
 }

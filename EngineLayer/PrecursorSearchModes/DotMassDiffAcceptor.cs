@@ -12,9 +12,9 @@ namespace EngineLayer
 
         public DotMassDiffAcceptor(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
         {
-            AcceptableSortedMassShifts = acceptableMassShifts.OrderBy(b => b).ToArray();
-            Tolerance = tol;
-            NumNotches = AcceptableSortedMassShifts.Length;
+            this.AcceptableSortedMassShifts = acceptableMassShifts.OrderBy(b => b).ToArray();
+            this.Tolerance = tol;
+            this.NumNotches = AcceptableSortedMassShifts.Length;
         }
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)

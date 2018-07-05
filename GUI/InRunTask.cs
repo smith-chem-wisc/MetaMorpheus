@@ -6,7 +6,8 @@ namespace MetaMorpheusGUI
     {
         public readonly MetaMorpheusTask Task;
 
-        public InRunTask(string displayName, MetaMorpheusTask task) : base(displayName, displayName)
+        public InRunTask(string displayName, MetaMorpheusTask task)
+            : base(displayName, displayName)
         {
             Task = task;
         }

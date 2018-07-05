@@ -1,6 +1,8 @@
 ﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
+using MassSpectrometry;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -12,11 +14,10 @@ namespace EngineLayer
 {
     public class PeptideSpectralMatch
     {
-        private const double ToleranceForDoubleResolution = 1e-6;
-
-        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
-
         public const double ToleranceForScoreDifferentiation = 1e-9;
+
+        private const double ToleranceForDoubleResolution = 1e-6;
+        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
         {
@@ -158,8 +159,8 @@ namespace EngineLayer
             PeptideMonisotopicMass = Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).Item2;
             ProteinAccesion = Resolve(pepsWithMods.Select(b => b.Protein.Accession)).Item2;
             Organism = Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item2;
-            ModsIdentified = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus)).Item2;
-            ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
+            ModsIdentified = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).Item2;
+            ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
             Notch = Resolve(CompactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
@@ -363,11 +364,11 @@ namespace EngineLayer
             s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item1;
             s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Sequence)).Item1;
             s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).Item1;
-            s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus)).Item1;
+            s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).Item1;
             s["Mods Chemical Formulas"] = pepWithModsIsNull ? " " :
-                Resolve(pepsWithMods.Select(b => string.Join("|", b.allModsOneIsNterminus.OrderBy(c => c.Key)
+                Resolve(pepsWithMods.Select(b => string.Join("|", b.AllModsOneIsNterminus.OrderBy(c => c.Key)
                     .Where(c => c.Value is ModificationWithMassAndCf).Select(c => (c.Value as ModificationWithMassAndCf).chemicalFormula.Formula)))).Item1;
-            s["Mods Combined Chemical Formula"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1;
+            s["Mods Combined Chemical Formula"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1;
             s["Num Variable Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).Item1;
             s["Missed Cleavages"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).Item1;
             s["Peptide Monoisotopic Mass"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).Item1;

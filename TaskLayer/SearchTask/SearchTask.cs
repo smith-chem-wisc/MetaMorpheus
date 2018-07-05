@@ -3,10 +3,10 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
-using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,7 +17,7 @@ namespace TaskLayer
 {
     public class SearchTask : MetaMorpheusTask
     {
-        public SearchTask() : base(MyTask.Search)
+        public SearchTask() : base(TaskType.Search)
         {
             CommonParameters = new CommonParameters();
 
@@ -26,15 +26,22 @@ namespace TaskLayer
 
         public SearchParameters SearchParameters { get; set; }
 
+        private object IndexLock { get; } = new object();
+        private object PsmLock { get; } = new object();
+        private List<ModificationWithMass> VariableModifications { get; set; }
+        private List<ModificationWithMass> FixedModifications { get; set; }
+        private List<ProductType> IonTypes { get; set; }
+        private HashSet<DigestionParams> ListOfDigestionParams { get; set; }
+        private List<PeptideSpectralMatch> AllPsms { get; set; }
+
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
             switch (massDiffAcceptorType)
             {
                 case MassDiffAcceptorType.Exact:
-                    if (precursorMassTolerance is PpmTolerance)
-                        return new SinglePpmAroundZeroSearchMode(precursorMassTolerance.Value);
-                    else
-                        return new SingleAbsoluteAroundZeroSearchMode(precursorMassTolerance.Value);
+                    return precursorMassTolerance is PpmTolerance ?
+                        new SinglePpmAroundZeroSearchMode(precursorMassTolerance.Value) as MassDiffAcceptor :
+                        new SingleAbsoluteAroundZeroSearchMode(precursorMassTolerance.Value) as MassDiffAcceptor;
 
                 case MassDiffAcceptorType.OneMM:
                     return new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029 }, precursorMassTolerance);
@@ -59,8 +66,13 @@ namespace TaskLayer
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            // Load parameters
+            MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
+
             // disable quantification if a .mgf is being used
             if (SearchParameters.DoQuantification && currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
             {
@@ -69,22 +81,17 @@ namespace TaskLayer
 
             // load modifications
             Status("Loading modifications...", taskId);
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            VariableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            FixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // what types of fragment ions to search for
-            List<ProductType> ionTypes = new List<ProductType>();
-            if (CommonParameters.BIons && CommonParameters.AddCompIons)
-                ionTypes.Add(ProductType.B);
-            else if (CommonParameters.BIons)
-                ionTypes.Add(ProductType.BnoB1ions);
-            if (CommonParameters.YIons)
-                ionTypes.Add(ProductType.Y);
-            if (CommonParameters.ZdotIons)
-                ionTypes.Add(ProductType.Zdot);
-            if (CommonParameters.CIons)
-                ionTypes.Add(ProductType.C);
+            IonTypes = new List<ProductType>();
+            if (CommonParameters.BIons && CommonParameters.AddCompIons) { IonTypes.Add(ProductType.B); }
+            else if (CommonParameters.BIons) { IonTypes.Add(ProductType.BnoB1ions); }
+            if (CommonParameters.YIons) { IonTypes.Add(ProductType.Y); }
+            if (CommonParameters.ZdotIons) { IonTypes.Add(ProductType.Zdot); }
+            if (CommonParameters.CIons) { IonTypes.Add(ProductType.C); }
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
@@ -98,28 +105,20 @@ namespace TaskLayer
                 "maximum peptide length = unspecified; " :
                 "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
-            ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
-            ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
+            ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", FixedModifications.Select(m => m.id)) + "; ");
+            ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", VariableModifications.Select(m => m.id)) + "; ");
             ProseCreatedWhileRunning.Append("max mods per peptide = " + CommonParameters.DigestionParams.MaxModsForPeptide + "; ");
             ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
             ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             // start the search task
             MyTaskResults = new MyTaskResults(this);
-            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
-            FlashLFQResults flashLfqResults = null;
-
-            MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
-
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
-            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
+            AllPsms = new List<PeptideSpectralMatch>();
 
             int completedFiles = 0;
-            object indexLock = new object();
-            object psmLock = new object();
 
             Status("Searching files...", taskId);
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
@@ -127,6 +126,8 @@ namespace TaskLayer
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
+                if (GlobalVariables.StopLoops) { break; }
+
                 var origDataFile = currentRawFileList[spectraFileIndex];
 
                 // mark the file as in-progress
@@ -145,79 +146,9 @@ namespace TaskLayer
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
+                // TODO: shuffle peptides and such
                 var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
-                // modern search
-                if (SearchParameters.SearchType == SearchType.Modern)
-                {
-                    for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
-                    {
-                        List<CompactPeptide> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
-
-                        Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
-                        List<int>[] fragmentIndex = null;
-                        lock (indexLock)
-                        {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
-                        }
-
-                        Status("Searching files...", taskId);
-
-                        new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
-
-                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
-                    }
-                }
-                // nonspecific search
-                else if (SearchParameters.SearchType == SearchType.NonSpecific)
-                {
-                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(ionTypes);
-                    foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
-                    {
-                        for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
-                        {
-                            List<CompactPeptide> peptideIndex = null;
-                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
-
-                            List<int>[] fragmentIndex = new List<int>[1];
-
-                            Status("Getting fragment dictionary...", new List<string> { taskId });
-                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, terminusSpecificIons, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
-                            lock (indexLock)
-                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
-
-                            Status("Getting precursor dictionary...", new List<string> { taskId });
-                            List<CompactPeptide> peptideIndexPrecursor = null;
-                            List<Protein> proteinListSubsetPrecursor = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
-                            List<int>[] fragmentIndexPrecursor = new List<int>[1];
-                            var indexEnginePrecursor = new PrecursorIndexingEngine(proteinListSubsetPrecursor, variableModifications, fixedModifications, terminusSpecificIons, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, 0, new List<string> { taskId });
-                            lock (indexLock)
-                                GenerateIndexes(indexEnginePrecursor, dbFilenameList, ref peptideIndexPrecursor, ref fragmentIndexPrecursor, taskId);
-
-                            if (peptideIndex.Count != peptideIndexPrecursor.Count)
-                                throw new MetaMorpheusException("peptideIndex not identical between indexing engines");
-
-                            Status("Searching files...", taskId);
-
-                            new NonSpecificEnzymeSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, fragmentIndexPrecursor, terminusSpecificIons, currentPartition, combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
-
-                            ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
-                        }
-                    }
-                }
-                // classic search
-                else
-                {
-                    Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, massDiffAcceptor, combinedParams, thisId).Run();
-
-                    ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
-                }
-                lock (psmLock)
-                {
-                    allPsms.AddRange(fileSpecificPsms);
-                }
+                Search(taskId, proteinList, fileSpecificPsms, dbFilenameList, combinedParams, arrayOfMs2ScansSortedByMass, thisId, massDiffAcceptor);
 
                 completedFiles++;
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -232,22 +163,102 @@ namespace TaskLayer
             parameters.SearchParameters = SearchParameters;
             parameters.CommonParameters = CommonParameters;
             parameters.ProteinList = proteinList;
-            parameters.IonTypes = ionTypes;
-            parameters.AllPsms = allPsms;
-            parameters.FixedModifications = fixedModifications;
-            parameters.VariableModifications = variableModifications;
+            parameters.IonTypes = IonTypes;
+            parameters.AllPsms = AllPsms;
+            parameters.FixedModifications = FixedModifications;
+            parameters.VariableModifications = VariableModifications;
             parameters.ListOfDigestionParams = ListOfDigestionParams;
             parameters.CurrentRawFileList = currentRawFileList;
             parameters.MyFileManager = myFileManager;
             parameters.NumNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
-            parameters.OutputFolder = OutputFolder;
-            parameters.FlashLfqResults = flashLfqResults;
+            parameters.OutputFolder = outputFolder;
             parameters.FileSettingsList = fileSettingsList;
             parameters.NumMs2SpectraPerFile = numMs2SpectraPerFile;
             parameters.DatabaseFilenameList = dbFilenameList;
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask();
             postProcessing.Parameters = parameters;
             return postProcessing.Run();
+        }
+
+        private void Search(string taskId, List<Protein> proteinList, PeptideSpectralMatch[] fileSpecificPsms, List<DbForTask> dbFilenameList, CommonParameters combinedParams,
+            Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass, List<string> thisId, MassDiffAcceptor massDiffAcceptor)
+        {
+            // modern search
+            if (SearchParameters.SearchType == SearchType.Modern)
+            {
+                for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
+                {
+                    List<CompactPeptide> peptideIndex = null;
+                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
+
+                    Status("Getting fragment dictionary...", new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, VariableModifications, FixedModifications, IonTypes, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
+                    List<int>[] fragmentIndex = null;
+                    lock (IndexLock)
+                    {
+                        GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
+                    }
+
+                    Status("Searching files...", taskId);
+                    new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, IonTypes, currentPartition, combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                    ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                }
+            }
+            // nonspecific search
+            else if (SearchParameters.SearchType == SearchType.NonSpecific)
+            {
+                List<List<ProductType>> terminusSeparatedIons = ProductTypeMethods.SeparateIonsByTerminus(IonTypes);
+                foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
+                {
+                    for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
+                    {
+                        List<CompactPeptide> peptideIndex = null;
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
+
+                        List<int>[] fragmentIndex = new List<int>[1];
+
+                        // Generate indices for nonspecifc search
+                        Status("Getting fragment dictionary...", new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, VariableModifications, FixedModifications, terminusSpecificIons, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
+                        lock (IndexLock)
+                        {
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
+                        }
+
+                        // Generate indices for nonspecific search
+                        Status("Getting precursor dictionary...", new List<string> { taskId });
+                        List<CompactPeptide> peptideIndexPrecursor = null;
+                        List<Protein> proteinListSubsetPrecursor = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
+                        List<int>[] fragmentIndexPrecursor = new List<int>[1];
+                        var indexEnginePrecursor = new PrecursorIndexingEngine(proteinListSubsetPrecursor, VariableModifications, FixedModifications, terminusSpecificIons, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, 0, new List<string> { taskId });
+                        lock (IndexLock)
+                        {
+                            GenerateIndexes(indexEnginePrecursor, dbFilenameList, ref peptideIndexPrecursor, ref fragmentIndexPrecursor, taskId);
+                        }
+
+                        if (peptideIndex.Count != peptideIndexPrecursor.Count)
+                        {
+                            throw new MetaMorpheusException("peptideIndex not identical between indexing engines");
+                        }
+
+                        Status("Searching files...", taskId);
+                        new NonSpecificEnzymeSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, fragmentIndexPrecursor, terminusSpecificIons, currentPartition, combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                    }
+                }
+            }
+            // classic search
+            else
+            {
+                Status("Starting search...", thisId);
+                new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, VariableModifications, FixedModifications, proteinList, IonTypes, massDiffAcceptor, combinedParams, thisId).Run();
+
+                ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
+            }
+            lock (PsmLock)
+            {
+                AllPsms.AddRange(fileSpecificPsms);
+            }
         }
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
@@ -280,9 +291,13 @@ namespace TaskLayer
                     var newString = split[2].Replace("�", "");
                     var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
                     if (split[3].ToUpperInvariant().Equals("PPM"))
+                    {
                         ye = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
+                    }
                     else if (split[3].ToUpperInvariant().Equals("DA"))
+                    {
                         ye = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
+                    }
                     break;
 
                 case "interval":

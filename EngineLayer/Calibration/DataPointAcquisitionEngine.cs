@@ -1,7 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -64,10 +64,19 @@ namespace EngineLayer.Calibration
 
             object lockObj = new object();
             object lockObj2 = new object();
-            Parallel.ForEach(Partitioner.Create(0, numIdentifications), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
+            Parallel.ForEach(Partitioner.Create(0, numIdentifications),
+                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
+                (fff, loopState) =>
             {
                 for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
                 {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
+                    {
+                        loopState.Stop();
+                        return;
+                    }
+
                     PeptideSpectralMatch identification = GoodIdentifications[matchIndex];
 
                     // Each identification has an MS2 spectrum attached to it.
@@ -80,9 +89,9 @@ namespace EngineLayer.Calibration
 
                     // Get the peptide, don't forget to add the modifications!!!!
                     var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
-                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
+                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.AllModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
                         continue;
-                    Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
+                    Proteomics.AminoAcidPolymer.Peptide coolPeptide = new Proteomics.AminoAcidPolymer.Peptide(SequenceWithChemicalFormulas);
 
                     var ms2tuple = SearchMS2Spectrum(MyMsDataFile.GetOneBasedScan(ms2scanNumber), identification);
 
@@ -198,8 +207,9 @@ namespace EngineLayer.Calibration
                         break;
                     }
                     if ((trainingPointsToAverage.Count == 1 && theoreticalIntensities[0] < 0.65)
-                        || trainingPointsToAverage.Count < Math.Min(MinMS1isotopicPeaksNeededForConfirmedIdentification, theoreticalIntensities.Count()))
+                        || trainingPointsToAverage.Count < Math.Min(MinMS1isotopicPeaksNeededForConfirmedIdentification, theoreticalIntensities.Length))
                     {
+                        // do nothing?
                     }
                     else
                     {
@@ -207,12 +217,12 @@ namespace EngineLayer.Calibration
                         startingToAddCharges = true;
                         countForThisScan++;
                         result.Add(new LabeledDataPoint(trainingPointsToAverage.Select(b => b.ExperimentalMz).Average(),
-                                                             fullMS1scan.RetentionTime,
-                                                             Math.Log(fullMS1scan.TotalIonCurrent),
-                                                             fullMS1scan.InjectionTime.HasValue ? Math.Log(fullMS1scan.InjectionTime.Value) : double.NaN,
-                                                             trainingPointsToAverage.Select(b => b.LogIntensity).Average(),
-                                                             trainingPointsToAverage.Select(b => b.TheoreticalMz).Average(),
-                                                             identification));
+                            fullMS1scan.RetentionTime,
+                            Math.Log(fullMS1scan.TotalIonCurrent),
+                            fullMS1scan.InjectionTime.HasValue ? Math.Log(fullMS1scan.InjectionTime.Value) : double.NaN,
+                            trainingPointsToAverage.Select(b => b.LogIntensity).Average(),
+                            trainingPointsToAverage.Select(b => b.TheoreticalMz).Average(),
+                            identification));
                     }
                     chargeToLookAt++;
                 } while (chargeToLookAt <= highestKnownChargeForThisPeptide + 1);

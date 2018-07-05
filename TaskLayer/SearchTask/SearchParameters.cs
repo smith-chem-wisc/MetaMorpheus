@@ -3,6 +3,9 @@ using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
+    /// <summary>
+    /// Search parameters with default settings
+    /// </summary>
     public class SearchParameters
     {
         public SearchParameters()
@@ -23,6 +26,7 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = 30000.0;
+            NumDecoyDatabases = 1;
             ModsToWriteSelection = new Dictionary<string, int>
             {
                 //Key is modification type.
@@ -53,8 +57,9 @@ namespace TaskLayer
         public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
-        public bool SearchTarget { get; set; }
+        public bool SearchTarget { get; set; } = true;
         public DecoyType DecoyType { get; set; }
+        public int NumDecoyDatabases { get; set; }
         public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
@@ -66,7 +71,7 @@ namespace TaskLayer
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
-        public bool OutMzId { get; set; }
+        public bool OutMzId { get; set; } = true;
         public bool OutPepXML { get; set; }
     }
 }

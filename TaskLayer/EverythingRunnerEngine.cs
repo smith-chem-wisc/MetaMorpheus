@@ -20,7 +20,6 @@ namespace TaskLayer
         {
             TaskList = taskList;
             OutputFolder = outputFolder;
-
             CurrentRawDataFilenameList = startingRawFilenameList;
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;
         }
