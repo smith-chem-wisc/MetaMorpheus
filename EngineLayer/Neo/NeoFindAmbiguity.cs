@@ -1010,9 +1010,9 @@ namespace EngineLayer.Neo
             }
             foreach (CisParent cisParent in fusionCandidate.cisParents)
             {
-                if (cisParent.cisType < fusionCandidate.fusionType)
+                if (cisParent.CisType < fusionCandidate.fusionType)
                 {
-                    fusionCandidate.fusionType = cisParent.cisType;
+                    fusionCandidate.fusionType = cisParent.CisType;
                 }
             }
         }

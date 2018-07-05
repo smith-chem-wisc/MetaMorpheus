@@ -74,8 +74,8 @@ namespace TaskLayer
             Status("Calibrating...", new List<string> { taskId });
             MyTaskResults = new MyTaskResults(this)
             {
-                newSpectra = new List<string>(),
-                newFileSpecificTomls = new List<string>()
+                NewSpectra = new List<string>(),
+                NewFileSpecificTomls = new List<string>()
             };
 
             object lock1 = new object();
@@ -87,7 +87,7 @@ namespace TaskLayer
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 var originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".mzML");
+                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -112,7 +112,7 @@ namespace TaskLayer
                     acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
 
                     // enough data points to calibrate?
-                    if (acquisitionResults.Psms.Count >= numRequiredPsms && acquisitionResults.Ms1List.Count > numRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > numRequiredMs2Datapoints)
+                    if (acquisitionResults.Psms.Count >= NumRequiredPsms && acquisitionResults.Ms1List.Count > NumRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > NumRequiredMs2Datapoints)
                     {
                         break;
                     }
@@ -134,17 +134,17 @@ namespace TaskLayer
                     }
                     else // failed round 4
                     {
-                        if (acquisitionResults.Psms.Count < numRequiredPsms)
+                        if (acquisitionResults.Psms.Count < NumRequiredPsms)
                         {
-                            Warn("Calibration failure! Could not find enough high-quality PSMs. Required " + numRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
+                            Warn("Calibration failure! Could not find enough high-quality PSMs. Required " + NumRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
                         }
-                        if (acquisitionResults.Ms1List.Count < numRequiredMs1Datapoints)
+                        if (acquisitionResults.Ms1List.Count < NumRequiredMs1Datapoints)
                         {
-                            Warn("Calibration failure! Could not find enough MS1 datapoints. Required " + numRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
+                            Warn("Calibration failure! Could not find enough MS1 datapoints. Required " + NumRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
                         }
-                        if (acquisitionResults.Ms2List.Count < numRequiredMs2Datapoints)
+                        if (acquisitionResults.Ms2List.Count < NumRequiredMs2Datapoints)
                         {
-                            Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + numRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
+                            Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + NumRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
                         }
                         FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                         return MyTaskResults;
@@ -177,7 +177,7 @@ namespace TaskLayer
                 bool improvement = ImprovGlobal(preCalibrationPrecursorErrorIqr, preCalibrationProductErrorIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorErrorIqr, postCalibrationProductErrorIqr);
 
                 // write toml settings for the calibrated file
-                var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".toml");
+                var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
 
                 var fileSpecificParams = new FileSpecificParameters();
 
@@ -208,8 +208,8 @@ namespace TaskLayer
 
                 // finished calibrating this file
                 SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                MyTaskResults.newSpectra.Add(calibratedFilePath);
-                MyTaskResults.newFileSpecificTomls.Add(newTomlFileName);
+                MyTaskResults.NewSpectra.Add(calibratedFilePath);
+                MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
             }
@@ -232,7 +232,7 @@ namespace TaskLayer
                     else
                     {
                         var split = lines[i].Split('\t');
-                        string newline = Path.GetFileNameWithoutExtension(split[0]) + calibSuffix + "\t";
+                        string newline = Path.GetFileNameWithoutExtension(split[0]) + CalibSuffix + "\t";
                         for (int j = 1; j < split.Length; j++)
                         {
                             newline += split[j] + "\t";
@@ -251,10 +251,10 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        private int numRequiredPsms = 20;
-        private int numRequiredMs1Datapoints = 50;
-        private int numRequiredMs2Datapoints = 100;
-        private const string calibSuffix = "-calib";
+        private int NumRequiredPsms = 20;
+        private int NumRequiredMs1Datapoints = 50;
+        private int NumRequiredMs2Datapoints = 100;
+        private const string CalibSuffix = "-calib";
 
         private bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
         {

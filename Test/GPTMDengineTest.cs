@@ -34,7 +34,7 @@ namespace Test
 
             var parentProtein = new Protein("NNNNN", "accession");
 
-            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 5);
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).First();
 
@@ -76,7 +76,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (651.297638557 + 21.981943 + 15.994915).ToMz(1), 1, "filepath");
 
             var parentProtein = new Protein("NNNPPP", "accession");
-            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 5);
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).First();
 

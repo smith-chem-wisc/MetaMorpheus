@@ -26,27 +26,27 @@ namespace TaskLayer
     public abstract class MetaMorpheusTask
     {
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
-                        .ConfigureType<Tolerance>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
-                        .ConfigureType<PpmTolerance>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())))
-                        .ConfigureType<AbsoluteTolerance>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())))
-                        .ConfigureType<Protease>(type => type
-                            .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<List<string>>(type => type
-                             .WithConversionFor<TomlString>(convert => convert
-                                 .ToToml(custom => string.Join("\t", custom))
-                                 .FromToml(tmlString => GetModsTypesFromString(tmlString.Value))))
-                        .ConfigureType<List<(string, string)>>(type => type
-                             .WithConversionFor<TomlString>(convert => convert
-                                 .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
-                                 .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
+            .ConfigureType<Tolerance>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
+            .ConfigureType<PpmTolerance>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ToString())))
+            .ConfigureType<AbsoluteTolerance>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ToString())))
+            .ConfigureType<Protease>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ToString())
+                    .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
+            .ConfigureType<List<string>>(type => type
+                    .WithConversionFor<TomlString>(convert => convert
+                        .ToToml(custom => string.Join("\t", custom))
+                        .FromToml(tmlString => GetModsTypesFromString(tmlString.Value))))
+            .ConfigureType<List<(string, string)>>(type => type
+                    .WithConversionFor<TomlString>(convert => convert
+                        .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
+                        .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
@@ -82,13 +82,13 @@ namespace TaskLayer
         public CommonParameters CommonParameters { get; set; }
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(
-         MsDataFile myMSDataFile,
-         string fullFilePath,
-         bool doPrecursorDeconvolution,
-         bool useProvidedPrecursorInfo,
-         double deconvolutionIntensityRatio,
-         int deconvolutionMaxAssumedChargeState,
-         Tolerance deconvolutionMassTolerance)
+            MsDataFile myMSDataFile,
+            string fullFilePath,
+            bool doPrecursorDeconvolution,
+            bool useProvidedPrecursorInfo,
+            double deconvolutionIntensityRatio,
+            int deconvolutionMaxAssumedChargeState,
+            Tolerance deconvolutionMassTolerance)
         {
             foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1))
             {
@@ -153,27 +153,32 @@ namespace TaskLayer
 
             // set file-specific digestion parameters
             Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
-            int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            int MaxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
-            DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
+            int minPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+            int maxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+            int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            int maxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+            DigestionParams fileSpecificDigestionParams = new DigestionParams(
+                protease: protease.Name, 
+                maxMissedCleavages: maxMissedCleavages,
+                minPeptideLength: minPeptideLength,
+                maxPeptideLength: maxPeptideLength,
+                maxModsForPeptides: maxModsForPeptide);
 
             // set the rest of the file-specific parameters
-            Tolerance PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            Tolerance ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            bool BIons = fileSpecificParams.BIons ?? commonParams.BIons;
-            bool YIons = fileSpecificParams.YIons ?? commonParams.YIons;
-            bool CIons = fileSpecificParams.CIons ?? commonParams.CIons;
-            bool ZdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
+            Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            bool bIons = fileSpecificParams.BIons ?? commonParams.BIons;
+            bool yIons = fileSpecificParams.YIons ?? commonParams.YIons;
+            bool cIons = fileSpecificParams.CIons ?? commonParams.CIons;
+            bool zdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
 
             CommonParameters returnParams = new CommonParameters(
-                bIons: BIons,
-                yIons: YIons,
-                cIons: CIons,
-                zDotIons: ZdotIons,
-                precursorMassTolerance: PrecursorMassTolerance,
-                productMassTolerance: ProductMassTolerance,
+                bIons: bIons,
+                yIons: yIons,
+                cIons: cIons,
+                zDotIons: zdotIons,
+                precursorMassTolerance: precursorMassTolerance,
+                productMassTolerance: productMassTolerance,
                 digestionParams: fileSpecificDigestionParams);
 
             return returnParams;

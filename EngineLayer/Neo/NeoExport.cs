@@ -758,12 +758,12 @@ namespace EngineLayer.Neo
             }
             foreach (CisParent cp in cisParents)
             {
-                foreach (int ns in cp.nStart)
+                foreach (int ns in cp.NStart)
                 {
-                    foreach (int cs in cp.cStart)
+                    foreach (int cs in cp.CStart)
                     {
-                        output += cp.id + "_" + ns + "-" + (ns + cp.nLength - 1) + "(" + cp.seq.Substring(ns, cp.nLength) + ")"
-                            + "&" + cs + "-" + (cs + cp.cLength - 1) + "(" + cp.seq.Substring(cs, cp.cLength) + ")" + "|";
+                        output += cp.id + "_" + ns + "-" + (ns + cp.NLength - 1) + "(" + cp.seq.Substring(ns, cp.NLength) + ")"
+                            + "&" + cs + "-" + (cs + cp.CLength - 1) + "(" + cp.seq.Substring(cs, cp.CLength) + ")" + "|";
                     }
                 }
             }

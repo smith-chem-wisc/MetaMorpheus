@@ -11,18 +11,18 @@ namespace TaskLayer
 {
     public class EverythingRunnerEngine
     {
-        private readonly List<(string, MetaMorpheusTask)> taskList;
-        private string outputFolder;
-        private List<string> currentRawDataFilenameList;
-        private List<DbForTask> currentXmlDbFilenameList;
+        private readonly List<(string, MetaMorpheusTask)> TaskList;
+        private string OutputFolder;
+        private List<string> CurrentRawDataFilenameList;
+        private List<DbForTask> CurrentXmlDbFilenameList;
 
         public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
-            this.taskList = taskList;
-            this.outputFolder = outputFolder;
+            TaskList = taskList;
+            OutputFolder = outputFolder;
 
-            currentRawDataFilenameList = startingRawFilenameList;
-            currentXmlDbFilenameList = startingXmlDbFilenameList;
+            CurrentRawDataFilenameList = startingRawFilenameList;
+            CurrentXmlDbFilenameList = startingXmlDbFilenameList;
         }
 
         public static event EventHandler<StringEventArgs> FinishedWritingAllResultsFileHandler;
@@ -45,7 +45,7 @@ namespace TaskLayer
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            if (!currentRawDataFilenameList.Any())
+            if (!CurrentRawDataFilenameList.Any())
             {
                 Warn("No spectra files selected");
                 FinishedAllTasks(null);
@@ -54,52 +54,52 @@ namespace TaskLayer
 
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
-            outputFolder = outputFolder.Replace("$DATETIME", startTimeForAllFilenames);
+            OutputFolder = OutputFolder.Replace("$DATETIME", startTimeForAllFilenames);
 
             StringBuilder allResultsText = new StringBuilder();
 
-            for (int i = 0; i < taskList.Count; i++)
+            for (int i = 0; i < TaskList.Count; i++)
             {
-                if (!currentRawDataFilenameList.Any())
+                if (!CurrentRawDataFilenameList.Any())
                 {
                     Warn("Cannot proceed. No spectra files selected.");
-                    FinishedAllTasks(outputFolder);
+                    FinishedAllTasks(OutputFolder);
                     return;
                 }
-                if (!currentXmlDbFilenameList.Any())
+                if (!CurrentXmlDbFilenameList.Any())
                 {
                     Warn("Cannot proceed. No protein database files selected.");
-                    FinishedAllTasks(outputFolder);
+                    FinishedAllTasks(OutputFolder);
                     return;
                 }
-                var ok = taskList[i];
+                var ok = TaskList[i];
 
-                var outputFolderForThisTask = Path.Combine(outputFolder, ok.Item1);
+                var outputFolderForThisTask = Path.Combine(OutputFolder, ok.Item1);
 
                 if (!Directory.Exists(outputFolderForThisTask))
                     Directory.CreateDirectory(outputFolderForThisTask);
 
                 // Actual task running code
-                var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, currentXmlDbFilenameList, currentRawDataFilenameList, ok.Item1);
+                var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, CurrentXmlDbFilenameList, CurrentRawDataFilenameList, ok.Item1);
 
-                if (myTaskResults.newDatabases != null)
+                if (myTaskResults.NewDatabases != null)
                 {
-                    currentXmlDbFilenameList = myTaskResults.newDatabases;
-                    NewDBs(myTaskResults.newDatabases);
+                    CurrentXmlDbFilenameList = myTaskResults.NewDatabases;
+                    NewDBs(myTaskResults.NewDatabases);
                 }
-                if (myTaskResults.newSpectra != null)
+                if (myTaskResults.NewSpectra != null)
                 {
-                    currentRawDataFilenameList = myTaskResults.newSpectra;
-                    NewSpectras(myTaskResults.newSpectra);
+                    CurrentRawDataFilenameList = myTaskResults.NewSpectra;
+                    NewSpectras(myTaskResults.NewSpectra);
                 }
-                if (myTaskResults.newFileSpecificTomls != null)
+                if (myTaskResults.NewFileSpecificTomls != null)
                 {
-                    NewFileSpecificToml(myTaskResults.newFileSpecificTomls);
+                    NewFileSpecificToml(myTaskResults.NewFileSpecificTomls);
                 }
                 allResultsText.AppendLine(Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + myTaskResults.ToString());
             }
             stopWatch.Stop();
-            var resultsFileName = Path.Combine(outputFolder, "allResults.txt");
+            var resultsFileName = Path.Combine(OutputFolder, "allResults.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
                 file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
@@ -107,7 +107,7 @@ namespace TaskLayer
                 file.Write(allResultsText.ToString());
             }
             FinishedWritingAllResultsFileHandler?.Invoke(this, new StringEventArgs(resultsFileName, null));
-            FinishedAllTasks(outputFolder);
+            FinishedAllTasks(OutputFolder);
         }
 
         private void Warn(string v)

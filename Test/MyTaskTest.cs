@@ -25,7 +25,7 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
                
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -111,7 +111,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    digestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                    digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                     listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
                     listOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
                     productMassTolerance: new AbsoluteTolerance(0.01)
@@ -205,7 +205,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    digestionParams : new DigestionParams(MinPeptideLength: 2),
+                    digestionParams : new DigestionParams(minPeptideLength: 2),
 
                     scoreCutoff: 1,
                     deconvolutionIntensityRatio: 999,
@@ -280,7 +280,7 @@ namespace Test
                 {
                     CommonParameters = new CommonParameters
                     (                       
-                        digestionParams : new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        digestionParams : new DigestionParams(initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                         listOfModsVariable : new List<(string, string)>(),
                         listOfModsFixed : new List<(string, string)>(),
                         scoreCutoff : 1,
@@ -333,7 +333,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 (
                     
-                    digestionParams : new DigestionParams(MinPeptideLength: 5)
+                    digestionParams : new DigestionParams(minPeptideLength: 5)
                 ),
                 SearchParameters = new SearchParameters
                 {

@@ -4,16 +4,16 @@ namespace EngineLayer
 {
     public class SingleEngineFinishedEventArgs : EventArgs
     {
-        public readonly MetaMorpheusEngineResults myResults;
+        public readonly MetaMorpheusEngineResults MyResults;
 
         public SingleEngineFinishedEventArgs(MetaMorpheusEngineResults myResults)
         {
-            this.myResults = myResults;
+            MyResults = myResults;
         }
 
         public override string ToString()
         {
-            return myResults.ToString();
+            return MyResults.ToString();
         }
     }
 }

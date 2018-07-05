@@ -5,11 +5,11 @@ namespace TaskLayer
 {
     public class XmlForTaskListEventArgs : EventArgs
     {
-        public List<DbForTask> newDatabases;
+        public List<DbForTask> NewDatabases;
 
         public XmlForTaskListEventArgs(List<DbForTask> newDatabases)
         {
-            this.newDatabases = newDatabases;
+            NewDatabases = newDatabases;
         }
     }
 }

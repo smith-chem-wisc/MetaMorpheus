@@ -37,8 +37,8 @@ namespace Test
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
             }
 
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1);
-            DigestionParams digestionParams2 = new DigestionParams(protease: protease2.Name, MinPeptideLength: 1);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
+            DigestionParams digestionParams2 = new DigestionParams(protease: protease2.Name, minPeptideLength: 1);
 
             foreach (var protein in p)
             {
@@ -233,8 +233,8 @@ namespace Test
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
             }                
 
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1);
-            DigestionParams digestionParams2 = new DigestionParams(protease: protease2.Name, MinPeptideLength: 1);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
+            DigestionParams digestionParams2 = new DigestionParams(protease: protease2.Name, minPeptideLength: 1);
 
             foreach (var protein in p)
             {

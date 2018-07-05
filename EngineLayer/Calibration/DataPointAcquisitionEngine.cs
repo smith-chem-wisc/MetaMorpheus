@@ -12,16 +12,16 @@ namespace EngineLayer.Calibration
 {
     public class DataPointAcquisitionEngine : MetaMorpheusEngine
     {
-        private const double fineResolutionForIsotopeDistCalculation = 0.1;
+        private const double FineResolutionForIsotopeDistCalculation = 0.1;
 
-        private readonly List<PeptideSpectralMatch> goodIdentifications;
-        private readonly MsDataFile myMsDataFile;
-        private readonly int numFragmentsNeededForEveryIdentification;
-        private readonly Tolerance mzToleranceForMs1Search;
-        private readonly Tolerance mzToleranceForMs2Search;
-        private readonly int minMS1isotopicPeaksNeededForConfirmedIdentification;
-        private readonly int minMS2isotopicPeaksNeededForConfirmedIdentification;
-        private readonly FragmentTypes fragmentTypesForCalibration;
+        private readonly List<PeptideSpectralMatch> GoodIdentifications;
+        private readonly MsDataFile MyMsDataFile;
+        private readonly int NumFragmentsNeededForEveryIdentification;
+        private readonly Tolerance MzToleranceForMs1Search;
+        private readonly Tolerance MzToleranceForMs2Search;
+        private readonly int MinMS1isotopicPeaksNeededForConfirmedIdentification;
+        private readonly int MinMS2isotopicPeaksNeededForConfirmedIdentification;
+        private readonly FragmentTypes FragmentTypesForCalibration;
 
         public DataPointAcquisitionEngine(
             List<PeptideSpectralMatch> goodIdentifications,
@@ -35,14 +35,14 @@ namespace EngineLayer.Calibration
             CommonParameters commonParameters,
             List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.goodIdentifications = goodIdentifications;
-            this.myMsDataFile = myMsDataFile;
-            this.mzToleranceForMs1Search = mzToleranceForMs1Search;
-            this.mzToleranceForMs2Search = mzToleranceForMs2Search;
-            this.numFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
-            this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
-            this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
-            this.fragmentTypesForCalibration = fragmentTypesForCalibration;
+            GoodIdentifications = goodIdentifications;
+            MyMsDataFile = myMsDataFile;
+            MzToleranceForMs1Search = mzToleranceForMs1Search;
+            MzToleranceForMs2Search = mzToleranceForMs2Search;
+            NumFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
+            MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
+            MinMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
+            FragmentTypesForCalibration = fragmentTypesForCalibration;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -57,7 +57,7 @@ namespace EngineLayer.Calibration
             List<LabeledDataPoint> Ms1List = new List<LabeledDataPoint>();
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
 
-            int numIdentifications = goodIdentifications.Count;
+            int numIdentifications = GoodIdentifications.Count;
 
             // Loop over identifications
             HashSet<string> sequences = new HashSet<string>();
@@ -68,7 +68,7 @@ namespace EngineLayer.Calibration
             {
                 for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
                 {
-                    PeptideSpectralMatch identification = goodIdentifications[matchIndex];
+                    PeptideSpectralMatch identification = GoodIdentifications[matchIndex];
 
                     // Each identification has an MS2 spectrum attached to it.
                     int ms2scanNumber = identification.ScanNumber;
@@ -84,7 +84,7 @@ namespace EngineLayer.Calibration
                         continue;
                     Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
-                    var ms2tuple = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2scanNumber), identification);
+                    var ms2tuple = SearchMS2Spectrum(MyMsDataFile.GetOneBasedScan(ms2scanNumber), identification);
 
                     lock (lockObj2)
                     {
@@ -92,7 +92,7 @@ namespace EngineLayer.Calibration
                     }
 
                     // Calculate isotopic distribution of the full peptide
-                    var dist = IsotopicDistribution.GetDistribution(coolPeptide.GetChemicalFormula(), fineResolutionForIsotopeDistCalculation, 0.001);
+                    var dist = IsotopicDistribution.GetDistribution(coolPeptide.GetChemicalFormula(), FineResolutionForIsotopeDistCalculation, 0.001);
 
                     double[] theoreticalMasses = dist.Masses.ToArray();
                     double[] theoreticalIntensities = dist.Intensities.ToArray();
@@ -117,9 +117,9 @@ namespace EngineLayer.Calibration
 
             // datapoints are ordered because they were acquired in a parallized search and we want repeatable results
             return new DataPointAquisitionResults(this,
-                goodIdentifications,
-                Ms1List.OrderBy(p => p.rt).ThenBy(p => p.experimentalMz).ToList(),
-                Ms2List.OrderBy(p => p.rt).ThenBy(p => p.experimentalMz).ToList(),
+                GoodIdentifications,
+                Ms1List.OrderBy(p => p.RetentionTime).ThenBy(p => p.ExperimentalMz).ToList(),
+                Ms2List.OrderBy(p => p.RetentionTime).ThenBy(p => p.ExperimentalMz).ToList(),
                 numMs1MassChargeCombinationsConsidered,
                 numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
                 numMs2MassChargeCombinationsConsidered,
@@ -139,16 +139,16 @@ namespace EngineLayer.Calibration
             bool addedAscan = true;
 
             int highestKnownChargeForThisPeptide = peptideCharge;
-            while (theIndex >= 1 && theIndex <= myMsDataFile.NumSpectra && addedAscan)
+            while (theIndex >= 1 && theIndex <= MyMsDataFile.NumSpectra && addedAscan)
             {
                 int countForThisScan = 0;
-                if (myMsDataFile.GetOneBasedScan(theIndex).MsnOrder > 1)
+                if (MyMsDataFile.GetOneBasedScan(theIndex).MsnOrder > 1)
                 {
                     theIndex += direction;
                     continue;
                 }
                 addedAscan = false;
-                var fullMS1scan = myMsDataFile.GetOneBasedScan(theIndex);
+                var fullMS1scan = MyMsDataFile.GetOneBasedScan(theIndex);
                 var scanWindowRange = fullMS1scan.ScanWindowRange;
                 var fullMS1spectrum = fullMS1scan.MassSpectrum;
                 if (fullMS1spectrum.Size == 0)
@@ -170,7 +170,7 @@ namespace EngineLayer.Calibration
                     {
                         double theMZ = a.ToMz(chargeToLookAt);
 
-                        var npwr = fullMS1spectrum.NumPeaksWithinRange(mzToleranceForMs1Search.GetMinimumValue(theMZ), mzToleranceForMs1Search.GetMaximumValue(theMZ));
+                        var npwr = fullMS1spectrum.NumPeaksWithinRange(MzToleranceForMs1Search.GetMinimumValue(theMZ), MzToleranceForMs1Search.GetMaximumValue(theMZ));
                         if (npwr == 0)
                         {
                             break;
@@ -198,7 +198,7 @@ namespace EngineLayer.Calibration
                         break;
                     }
                     if ((trainingPointsToAverage.Count == 1 && theoreticalIntensities[0] < 0.65)
-                        || trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, theoreticalIntensities.Count()))
+                        || trainingPointsToAverage.Count < Math.Min(MinMS1isotopicPeaksNeededForConfirmedIdentification, theoreticalIntensities.Count()))
                     {
                     }
                     else
@@ -206,12 +206,12 @@ namespace EngineLayer.Calibration
                         addedAscan = true;
                         startingToAddCharges = true;
                         countForThisScan++;
-                        result.Add(new LabeledDataPoint(trainingPointsToAverage.Select(b => b.experimentalMz).Average(),
+                        result.Add(new LabeledDataPoint(trainingPointsToAverage.Select(b => b.ExperimentalMz).Average(),
                                                              fullMS1scan.RetentionTime,
                                                              Math.Log(fullMS1scan.TotalIonCurrent),
                                                              fullMS1scan.InjectionTime.HasValue ? Math.Log(fullMS1scan.InjectionTime.Value) : double.NaN,
-                                                             trainingPointsToAverage.Select(b => b.logIntensity).Average(),
-                                                             trainingPointsToAverage.Select(b => b.theoreticalMz).Average(),
+                                                             trainingPointsToAverage.Select(b => b.LogIntensity).Average(),
+                                                             trainingPointsToAverage.Select(b => b.TheoreticalMz).Average(),
                                                              identification));
                     }
                     chargeToLookAt++;

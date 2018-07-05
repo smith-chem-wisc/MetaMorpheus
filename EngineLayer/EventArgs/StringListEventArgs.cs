@@ -7,7 +7,7 @@ namespace EngineLayer
     {
         public StringListEventArgs(List<string> stringList)
         {
-            this.StringList = stringList;
+            StringList = stringList;
         }
 
         public IEnumerable<string> StringList { get; }

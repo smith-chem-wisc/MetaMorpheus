@@ -301,11 +301,11 @@ namespace MetaMorpheusGUI
             CommonParameters CommonParamsToSave = new CommonParameters(
                 digestionParams: new DigestionParams(
                     protease: protease.Name,
-                    MaxMissedCleavages: MaxMissedCleavages,
-                    MinPeptideLength: MinPeptideLength,
-                    MaxPeptideLength: MaxPeptideLength,
-                    MaxModificationIsoforms: MaxModificationIsoforms,
-                    InitiatorMethionineBehavior: InitiatorMethionineBehavior),
+                    maxMissedCleavages: MaxMissedCleavages,
+                    minPeptideLength: MinPeptideLength,
+                    maxPeptideLength: MaxPeptideLength,
+                    maxModificationIsoforms: MaxModificationIsoforms,
+                    initiatorMethionineBehavior: InitiatorMethionineBehavior),
                     bIons: bCheckBox.IsChecked.Value,
                     yIons: yCheckBox.IsChecked.Value,
                     cIons: cCheckBox.IsChecked.Value,

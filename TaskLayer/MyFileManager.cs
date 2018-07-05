@@ -21,9 +21,9 @@ namespace TaskLayer
     {
         public enum ThermoMsFileReaderVersionCheck { DllsNotFound, IncorrectVersion, CorrectVersion };
 
-        private readonly bool disposeOfFileWhenDone;
-        private readonly Dictionary<string, MsDataFile> myMsDataFiles = new Dictionary<string, MsDataFile>();
-        private readonly object fileLoadingLock = new object();
+        private readonly bool DisposeOfFileWhenDone;
+        private readonly Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
+        private readonly object FileLoadingLock = new object();
         private const string AssumedThermoMsFileReaderDllPath = @"C:\Program Files\Thermo\MSFileReader";
         private const string DesiredFileIoVersion = "3.0";
         private const string DesiredFregistryVersion = "3.0";
@@ -31,14 +31,14 @@ namespace TaskLayer
 
         public MyFileManager(bool disposeOfFileWhenDone)
         {
-            this.disposeOfFileWhenDone = disposeOfFileWhenDone;
+            DisposeOfFileWhenDone = disposeOfFileWhenDone;
         }
 
         public static event EventHandler<StringEventArgs> WarnHandler;
 
         public bool SeeIfOpen(string path)
         {
-            return (myMsDataFiles.ContainsKey(path) && myMsDataFiles[path] != null);
+            return (MyMsDataFiles.ContainsKey(path) && MyMsDataFiles[path] != null);
         }
 
         public static ThermoMsFileReaderVersionCheck ValidateThermoMsFileReaderVersion()
@@ -69,36 +69,36 @@ namespace TaskLayer
         internal MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
         {
             FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
-            if (myMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
+            if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
                 return value;
 
             // By now know that need to load this file!!!
-            lock (fileLoadingLock) // Lock because reading is sequential
+            lock (FileLoadingLock) // Lock because reading is sequential
             {
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
                 {
-                    myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter);
+                    MyMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter);
                 }
                 else if (Path.GetExtension(origDataFile).Equals(".mgf", StringComparison.OrdinalIgnoreCase))
                 {
-                    myMsDataFiles[origDataFile] = Mgf.LoadAllStaticData(origDataFile, filter);
+                    MyMsDataFiles[origDataFile] = Mgf.LoadAllStaticData(origDataFile, filter);
                 }
                 else
                 {
 #if NETFRAMEWORK
-                    myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, filter);
+                    MyMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, filter);
 #else
                     Warn("No capability for reading " + origDataFile);
 #endif
                 }
-                return myMsDataFiles[origDataFile];
+                return MyMsDataFiles[origDataFile];
             }
         }
 
         internal void DoneWithFile(string origDataFile)
         {
-            if (disposeOfFileWhenDone)
-                myMsDataFiles[origDataFile] = null;
+            if (DisposeOfFileWhenDone)
+                MyMsDataFiles[origDataFile] = null;
         }
 
         private void Warn(string v)

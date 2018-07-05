@@ -2,25 +2,25 @@
 {
     public class LabeledDataPoint
     {
-        public readonly double experimentalMz;
-        public readonly double rt;
-        public readonly double logTotalIonCurrent;
-        public readonly double logInjectionTime;
-        public readonly double logIntensity;
-        public readonly double theoreticalMz;
-        public readonly double absoluteMzError;
-        public readonly PeptideSpectralMatch identification;
+        public readonly double ExperimentalMz;
+        public readonly double RetentionTime;
+        public readonly double LogTotalIonCurrent;
+        public readonly double LogInjectionTime;
+        public readonly double LogIntensity;
+        public readonly double TheoreticalMz;
+        public readonly double AbsoluteMzError;
+        public readonly PeptideSpectralMatch Identification;
 
         public LabeledDataPoint(double experimentalMz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double theoreticalMz, PeptideSpectralMatch identification)
         {
-            this.experimentalMz = experimentalMz;
-            this.rt = rt;
-            this.logTotalIonCurrent = logTotalIonCurrent;
-            this.logInjectionTime = logInjectionTime;
-            this.logIntensity = logIntensity;
-            this.theoreticalMz = theoreticalMz;
-            this.identification = identification;
-            this.absoluteMzError = experimentalMz - theoreticalMz;
+            this.ExperimentalMz = experimentalMz;
+            this.RetentionTime = rt;
+            this.LogTotalIonCurrent = logTotalIonCurrent;
+            this.LogInjectionTime = logInjectionTime;
+            this.LogIntensity = logIntensity;
+            this.TheoreticalMz = theoreticalMz;
+            this.Identification = identification;
+            this.AbsoluteMzError = experimentalMz - theoreticalMz;
         }
     }
 }

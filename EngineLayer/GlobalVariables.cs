@@ -9,8 +9,8 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
-        private static List<Modification> allModsKnown = new List<Modification>();
-        private static HashSet<string> allModTypesKnown = new HashSet<string>();
+        private static List<Modification> _AllModsKnown = new List<Modification>();
+        private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
 
         static GlobalVariables()
         {
@@ -76,8 +76,8 @@ namespace EngineLayer
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
         public static Dictionary<string, Protease> ProteaseDictionary;
-        public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
-        public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
+        public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
+        public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
 
         public static void AddMods(IEnumerable<Modification> enumerable)
@@ -92,8 +92,8 @@ namespace EngineLayer
                     continue;
                 else
                 {
-                    allModsKnown.Add(ye);
-                    allModTypesKnown.Add(ye.modificationType);
+                    _AllModsKnown.Add(ye);
+                    _AllModTypesKnown.Add(ye.modificationType);
                 }
             }
         }

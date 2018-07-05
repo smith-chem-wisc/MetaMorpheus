@@ -25,7 +25,7 @@ namespace Test
                     DecoyType = DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(MinPeptideLength: 2)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 2)),
             };
 
             string xmlName = "andguiaheow.xml";
@@ -33,11 +33,11 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
                 digestionParams: new DigestionParams(
-                    MaxMissedCleavages: 0,
-                    MinPeptideLength: 1,
-                    MaxModificationIsoforms: 2,
-                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
-                    MaxModsForPeptides: 1));
+                    maxMissedCleavages: 0,
+                    minPeptideLength: 1,
+                    maxModificationIsoforms: 2,
+                    initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
+                    maxModsForPeptides: 1));
 
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
             ModificationWithMass alanineMod = new ModificationWithMass("111", "mt", motifA, TerminusLocalization.Any, 111);

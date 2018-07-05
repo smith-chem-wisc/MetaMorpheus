@@ -9,14 +9,14 @@ namespace EngineLayer.HistogramAnalysis
     public class Bin
     {
         public string AA = "-";
-        public Dictionary<char, int> residueCount;
-        public Dictionary<string, Tuple<string, string, PeptideSpectralMatch>> uniquePSMs;
-        public Dictionary<string, int> modsInCommon;
+        public Dictionary<char, int> ResidueCount;
+        public Dictionary<string, Tuple<string, string, PeptideSpectralMatch>> UniquePSMs;
+        public Dictionary<string, int> ModsInCommon;
 
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            uniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
+            UniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
         }
 
         public int PepNlocCount { get; private set; }
@@ -24,22 +24,17 @@ namespace EngineLayer.HistogramAnalysis
         public int ProtNlocCount { get; private set; }
         public int ProtClocCount { get; private set; }
         public string Combos { get; private set; } = "-";
-
         public string UnimodDiffs { get; private set; } = "-";
-
         public string UniprotID { get; private set; } = "-";
-
         public string UnimodFormulas { get; private set; } = "-";
-
         public string UnimodId { get; private set; } = "-";
-
         public double MassShift { get; }
 
         public int Count
         {
             get
             {
-                return uniquePSMs.Count;
+                return UniquePSMs.Count;
             }
         }
 
@@ -47,7 +42,7 @@ namespace EngineLayer.HistogramAnalysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => b.Item3.IsDecoy);
+                return UniquePSMs.Values.Count(b => b.Item3.IsDecoy);
             }
         }
 
@@ -63,34 +58,30 @@ namespace EngineLayer.HistogramAnalysis
         {
             get
             {
-                return uniquePSMs.Values.Where(b => b.Item3.LocalizedScores != null).Count(b => !b.Item3.IsDecoy && b.Item3.LocalizedScores.Max() >= b.Item3.Score + 1);
+                return UniquePSMs.Values.Where(b => b.Item3.LocalizedScores != null).Count(b => !b.Item3.IsDecoy && b.Item3.LocalizedScores.Max() >= b.Item3.Score + 1);
             }
         }
 
         public string Mine { get; internal set; }
-
         public Dictionary<char, int> AAsInCommon { get; internal set; }
-
         public int Overlapping { get; internal set; }
-
         public double FracWithSingle { get; set; }
-
         public double MedianLength { get; internal set; }
 
         public void IdentifyResidues()
         {
-            residueCount = new Dictionary<char, int>();
-            foreach (var hehe in uniquePSMs.Values.Where(b => b.Item3.LocalizedScores != null))
+            ResidueCount = new Dictionary<char, int>();
+            foreach (var hehe in UniquePSMs.Values.Where(b => b.Item3.LocalizedScores != null))
             {
                 double bestScore = hehe.Item3.LocalizedScores.Max();
                 if (bestScore >= hehe.Item3.Score + 1 && !hehe.Item3.IsDecoy)
                 {
                     for (int i = 0; i < hehe.Item1.Count(); i++)
                         if (bestScore - hehe.Item3.LocalizedScores[i] < 0.5)
-                            if (residueCount.ContainsKey(hehe.Item1[i]))
-                                residueCount[hehe.Item1[i]]++;
+                            if (ResidueCount.ContainsKey(hehe.Item1[i]))
+                                ResidueCount[hehe.Item1[i]]++;
                             else
-                                residueCount.Add(hehe.Item1[i], 1);
+                                ResidueCount.Add(hehe.Item1[i], 1);
                     if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores[0] < 0.5)
                     {
                         PepNlocCount++;
@@ -182,14 +173,14 @@ namespace EngineLayer.HistogramAnalysis
         {
             if (ok.FullSequence != null)
             {
-                if (uniquePSMs.ContainsKey(ok.FullSequence))
+                if (UniquePSMs.ContainsKey(ok.FullSequence))
                 {
-                    var current = uniquePSMs[ok.FullSequence];
+                    var current = UniquePSMs[ok.FullSequence];
                     if (current.Item3.Score < ok.Score)
-                        uniquePSMs[ok.FullSequence] = new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok);
+                        UniquePSMs[ok.FullSequence] = new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok);
                 }
                 else
-                    uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
+                    UniquePSMs.Add(ok.FullSequence, new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
             }
         }
     }
