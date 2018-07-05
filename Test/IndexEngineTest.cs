@@ -12,7 +12,6 @@ namespace Test
     [TestFixture]
     public static class IndexEngineTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestIndexEngine()
@@ -102,6 +101,5 @@ namespace Test
             Assert.AreEqual(30000000 + 1, results.FragmentIndex.Length);
         }
 
-        #endregion Public Methods
     }
 }

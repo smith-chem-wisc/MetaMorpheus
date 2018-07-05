@@ -13,8 +13,6 @@ namespace Test
     [TestFixture]
     public static class RobTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestParsimony()
         {
@@ -35,7 +33,7 @@ namespace Test
             var protease = new Protease("test", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-                        
+
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -379,8 +377,6 @@ namespace Test
         [Test]
         public static void TestProteinGroupsAccessionOutputOrder()
         {
-
-
             var p = new HashSet<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
 
@@ -397,7 +393,5 @@ namespace Test
             Assert.That(testGroup.ProteinGroupName.Equals("A|B"));
             Assert.That(testGroup.Proteins.First().Accession.Equals("B"));
         }
-
-        #endregion Public Methods
     }
 }

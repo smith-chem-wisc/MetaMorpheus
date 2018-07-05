@@ -2,8 +2,6 @@
 {
     public class LabeledDataPoint
     {
-        #region Public Fields
-
         public readonly double experimentalMz;
         public readonly double rt;
         public readonly double logTotalIonCurrent;
@@ -12,10 +10,6 @@
         public readonly double theoreticalMz;
         public readonly double absoluteMzError;
         public readonly PeptideSpectralMatch identification;
-
-        #endregion Public Fields
-
-        #region Protected Constructors
 
         public LabeledDataPoint(double experimentalMz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double theoreticalMz, PeptideSpectralMatch identification)
         {
@@ -28,7 +22,5 @@
             this.identification = identification;
             this.absoluteMzError = experimentalMz - theoreticalMz;
         }
-
-        #endregion Protected Constructors
     }
 }

@@ -1,20 +1,15 @@
-﻿using EngineLayer;
-using MzLibUtil;
+﻿using MzLibUtil;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EngineLayer
 {
     public class CommonParameters
     {
-        #region Public Constructors
-
-        // this parameterless constructor needs to exist to read the toml. 
+        // this parameterless constructor needs to exist to read the toml.
         // if you can figure out a way to get rid of it, feel free...
         public CommonParameters() : this(digestionParams: null)
         {
-
         }
 
         public CommonParameters(bool bIons = true, bool yIons = true, bool zDotIons = false, bool cIons = false, bool doPrecursorDeconvolution = true,
@@ -60,12 +55,9 @@ namespace EngineLayer
             }
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
         public string TaskDescriptor { get; set; }
+
         public int MaxThreadsToUsePerFile { get; set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
@@ -91,10 +83,6 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public CommonParameters Clone()
         {
@@ -126,7 +114,7 @@ namespace EngineLayer
                 listOfModsFixed: this.ListOfModsFixed
             );
         }
-        
+
         public void SetProductMassTolerance(Tolerance ProductMassTolerance)
         {
             this.ProductMassTolerance = ProductMassTolerance;
@@ -141,7 +129,5 @@ namespace EngineLayer
         {
             this.DigestionParams = DigestionParams;
         }
-
-        #endregion Public Methods
     }
 }

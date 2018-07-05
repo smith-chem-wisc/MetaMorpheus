@@ -2,20 +2,13 @@
 using Proteomics;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.CrosslinkAnalysis
 {
     public class CrosslinkAnalysisEngine : MetaMorpheusEngine
     {
-        #region Protected Fields
-
         protected readonly TerminusType terminusType;
-
-        #endregion Protected Fields
-
-        #region Private Fields
 
         private readonly List<PsmCross> newPsms;
         private readonly List<Protein> proteinList;
@@ -27,10 +20,6 @@ namespace EngineLayer.CrosslinkAnalysis
 
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly string OutputFolder;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -45,17 +34,11 @@ namespace EngineLayer.CrosslinkAnalysis
             this.terminusType = terminusType;
         }
 
-        #endregion Public Constructors
-
-        #region Protected Methods
-
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             CrosslinkAnalysisResults myAnalysisResults = new CrosslinkAnalysisResults(this);
             Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
-
-            #region Match Seqeunces to PeptideWithSetModifications
 
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             Status("Adding observed peptides to dictionary...");
@@ -103,8 +86,6 @@ namespace EngineLayer.CrosslinkAnalysis
                 }
             });
 
-            #endregion Match Seqeunces to PeptideWithSetModifications
-
             Status("Computing info about actual peptides with modifications...");
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
@@ -120,7 +101,5 @@ namespace EngineLayer.CrosslinkAnalysis
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
     }
 }

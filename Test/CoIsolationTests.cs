@@ -15,7 +15,6 @@ namespace Test
     [TestFixture]
     public static class CoIsolationTests
     {
-        #region Public Methods
 
         [Test]
         public static void TestCoIsolation()
@@ -89,6 +88,5 @@ namespace Test
             Assert.AreEqual("NDNK", allPsmsArray[1].BaseSequence);
         }
 
-        #endregion Public Methods
     }
 }

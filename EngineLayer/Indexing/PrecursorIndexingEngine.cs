@@ -11,15 +11,9 @@ namespace EngineLayer.Indexing
 {
     public class PrecursorIndexingEngine : IndexingEngine
     {
-        #region Public Constructors
-
         public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
         {
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override string ToString()
         {
@@ -43,10 +37,6 @@ namespace EngineLayer.Indexing
             sb.Append("Localizeable mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -135,7 +125,5 @@ namespace EngineLayer.Indexing
 
             return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
         }
-
-        #endregion Protected Methods
     }
 }

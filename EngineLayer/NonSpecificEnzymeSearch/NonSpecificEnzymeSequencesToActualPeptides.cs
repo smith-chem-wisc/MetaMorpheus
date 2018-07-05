@@ -10,25 +10,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 {
     public class NonSpecificEnzymeSequencesToActualPeptides : SequencesToActualProteinPeptidesEngine
     {
-        #region Private Fields
-
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private readonly MassDiffAcceptor massDiffAcceptor;
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM;
-        
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public NonSpecificEnzymeSequencesToActualPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM, List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> CollectionOfDigestionParams, MassDiffAcceptor massDiffAcceptor, bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, CollectionOfDigestionParams, reportAllAmbiguity, commonParameters, nestedIds)
         {
             this.massDiffAcceptor = massDiffAcceptor;
             this.CPWMtoPWSM = CPWMtoPWSM;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -319,10 +309,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private int ComputePeptideIndexes(PeptideWithSetModifications yyy, double[] prevMass, int oneBasedIndexToLookAt, int direction, double precursorMass, MassDiffAcceptor massDiffAcceptor)
         {
             ModificationWithMass residue_variable_mod = null;
@@ -359,7 +345,5 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             } while ((oneBasedIndexToLookAt >= 1 && direction == -1) || (oneBasedIndexToLookAt <= yyy.Length && direction == 1));
             return -1;
         }
-
-        #endregion Private Methods
     }
 }

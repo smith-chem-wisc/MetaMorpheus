@@ -17,15 +17,9 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CalibrateTaskWindow : Window
     {
-        #region Private Fields
-
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public CalibrateTaskWindow()
         {
@@ -47,15 +41,7 @@ namespace MetaMorpheusGUI
             UpdateFieldsFromTask(TheTask);
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal CalibrationTask TheTask { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
@@ -187,8 +173,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            #region Check Task Validity
-
             if (missedCleavagesTextBox.Text.Length == 0)
             {
                 missedCleavagesTextBox.Text = int.MaxValue.ToString();
@@ -228,8 +212,6 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            #endregion Check Task Validity
-
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             int MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
@@ -266,7 +248,6 @@ namespace MetaMorpheusGUI
             else
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
-
             }
             CommonParameters CommonParamsToSave = new CommonParameters(
                 digestionParams: digestionParamsToSave,
@@ -317,7 +298,5 @@ namespace MetaMorpheusGUI
             return Array.TrueForAll(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
-
-        #endregion Private Methods
     }
 }

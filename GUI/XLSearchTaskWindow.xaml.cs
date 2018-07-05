@@ -19,17 +19,11 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class XLSearchTaskWindow : Window
     {
-        #region Private Fields
-
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public XLSearchTaskWindow()
         {
@@ -67,15 +61,7 @@ namespace MetaMorpheusGUI
             this.DataContext = dataContextForSearchTaskWindow;
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal XLSearchTask TheTask { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -103,7 +89,7 @@ namespace MetaMorpheusGUI
             foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
-           
+
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
@@ -320,7 +306,7 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.XlOutAll = ckbAllResults.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
-            
+
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
             {
@@ -390,7 +376,5 @@ namespace MetaMorpheusGUI
             //if (!TheTask.WritePrunedDatabase)
             //    modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
         }
-
-        #endregion Private Methods
     }
 }

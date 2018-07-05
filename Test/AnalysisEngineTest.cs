@@ -15,7 +15,6 @@ namespace Test
     [TestFixture]
     public static class AnalysisEngineTests
     {
-        #region Public Methods
 
         [Test]
         public static void TestAnalysisEngineTests()
@@ -112,6 +111,5 @@ namespace Test
             engine.Run();
         }
 
-        #endregion Public Methods
     }
 }

@@ -7,8 +7,6 @@ namespace EngineLayer.Neo
 {
     public static class AggregateSearchFiles
     {
-        #region Public Methods
-
         public static void Combine(string primaryFilePath, string secondaryFilePath, string outputFilePath)
         {
             string header = "";
@@ -186,10 +184,6 @@ namespace EngineLayer.Neo
             return numConfidentSpliced;
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
         private static List<PsmTsvLine> AggregateDifferentDatabaseSearches(string[] primaryLines, string[] secondaryLines)
         {
             List<PsmTsvLine> primaryPsms = ImportPsmtsv.ImportLinesToAggregate(primaryLines);
@@ -288,7 +282,5 @@ namespace EngineLayer.Neo
             }
             return primaryPsms;
         }
-
-        #endregion Private Methods
     }
 }

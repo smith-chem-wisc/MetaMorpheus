@@ -11,8 +11,6 @@ namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private readonly MassDiffAcceptor searchMode;
 
         private readonly List<Protein> proteins;
@@ -31,10 +29,6 @@ namespace EngineLayer.ClassicSearch
 
         private readonly List<DissociationType> dissociationTypes;
 
-        #endregion Private Fields
-
-        #region Public Constructors
-
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.peptideSpectralMatches = globalPsms;
@@ -47,10 +41,6 @@ namespace EngineLayer.ClassicSearch
             this.lp = lp;
             this.dissociationTypes = DetermineDissociationType(lp);
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -93,7 +83,7 @@ namespace EngineLayer.ClassicSearch
                                         matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, peptideTheorIons, commonParameters));
                                     }
                                 }
-                                
+
                                 double thisScore = CalculatePeptideScore(scan.theScan.TheScan, matchedIons, 0);
 
                                 bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
@@ -159,10 +149,6 @@ namespace EngineLayer.ClassicSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)
         {
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
@@ -194,7 +180,5 @@ namespace EngineLayer.ClassicSearch
             // index of the first element that is larger than value
             return index;
         }
-
-        #endregion Private Methods
     }
 }

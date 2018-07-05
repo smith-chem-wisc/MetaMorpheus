@@ -9,19 +9,11 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
-        #region Private Fields
-
         private static List<Modification> allModsKnown = new List<Modification>();
         private static HashSet<string> allModTypesKnown = new HashSet<string>();
 
-        #endregion Private Fields
-
-        #region Public Constructors
-
         static GlobalVariables()
         {
-            #region Determine MetaMorpheusVersion
-
             MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
 
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
@@ -34,7 +26,7 @@ namespace EngineLayer
             }
             else
             {
-                // as of 0.0.277, AppVeyor appends the build number 
+                // as of 0.0.277, AppVeyor appends the build number
                 // this is intentional; it's to avoid conflicting AppVeyor build numbers
                 // trim the build number off the version number for displaying/checking versions, etc
                 var foundIndexes = new List<int>();
@@ -46,10 +38,6 @@ namespace EngineLayer
                 MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
             }
 
-            #endregion Determine MetaMorpheusVersion
-
-            #region Figure out DataDir
-
             {
                 var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
@@ -57,8 +45,6 @@ namespace EngineLayer
                 else
                     DataDir = AppDomain.CurrentDomain.BaseDirectory;
             }
-
-            #endregion Figure out DataDir
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
@@ -80,10 +66,6 @@ namespace EngineLayer
             ProteaseDictionary = LoadProteaseDictionary(Path.Combine(DataDir, @"Data", "proteases.tsv"));
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         // File locations
         public static string DataDir { get; }
 
@@ -97,10 +79,6 @@ namespace EngineLayer
         public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public static void AddMods(IEnumerable<Modification> enumerable)
         {
@@ -172,7 +150,5 @@ namespace EngineLayer
             }
             return dict;
         }
-
-        #endregion Public Methods
     }
 }

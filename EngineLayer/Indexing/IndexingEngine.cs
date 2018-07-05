@@ -11,8 +11,6 @@ namespace EngineLayer.Indexing
 {
     public class IndexingEngine : MetaMorpheusEngine
     {
-        #region Protected Fields
-
         protected const int fragmentBinsPerDalton = 1000;
         protected readonly List<Protein> proteinList;
 
@@ -23,10 +21,6 @@ namespace EngineLayer.Indexing
         protected readonly DecoyType decoyType;
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         protected readonly double maxFragmentSize;
-
-        #endregion Protected Fields
-
-        #region Public Constructors
 
         public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
         {
@@ -39,10 +33,6 @@ namespace EngineLayer.Indexing
             this.CollectionOfDigestionParams = CollectionOfDigestionParams;
             this.maxFragmentSize = maxFragmentSize;
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override string ToString()
         {
@@ -65,10 +55,6 @@ namespace EngineLayer.Indexing
             sb.Append("Localizeable mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -161,7 +147,5 @@ namespace EngineLayer.Indexing
 
             return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
         }
-
-        #endregion Protected Methods
     }
 }

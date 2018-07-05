@@ -19,13 +19,7 @@ namespace TaskLayer
 {
     public class MyFileManager
     {
-        #region Public Fields
-
         public enum ThermoMsFileReaderVersionCheck { DllsNotFound, IncorrectVersion, CorrectVersion };
-
-        #endregion Public Fields
-
-        #region Private Fields
 
         private readonly bool disposeOfFileWhenDone;
         private readonly Dictionary<string, MsDataFile> myMsDataFiles = new Dictionary<string, MsDataFile>();
@@ -35,24 +29,12 @@ namespace TaskLayer
         private const string DesiredFregistryVersion = "3.0";
         private const string DesiredXRawFileVersion = "3.0.29.0";
 
-        #endregion Private Fields
-
-        #region Public Constructors
-
         public MyFileManager(bool disposeOfFileWhenDone)
         {
             this.disposeOfFileWhenDone = disposeOfFileWhenDone;
         }
 
-        #endregion Public Constructors
-
-        #region Public Events
-
         public static event EventHandler<StringEventArgs> WarnHandler;
-
-        #endregion Public Events
-
-        #region Public Methods
 
         public bool SeeIfOpen(string path)
         {
@@ -83,10 +65,6 @@ namespace TaskLayer
 
             return ThermoMsFileReaderVersionCheck.DllsNotFound;
         }
-
-        #endregion Public Methods
-
-        #region Internal Methods
 
         internal MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
         {
@@ -123,15 +101,9 @@ namespace TaskLayer
                 myMsDataFiles[origDataFile] = null;
         }
 
-        #endregion Internal Methods
-
-        #region Private Methods
-
         private void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, null));
         }
-
-        #endregion Private Methods
     }
 }

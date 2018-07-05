@@ -1,26 +1,23 @@
 ﻿using MassSpectrometry;
+using SharpLearning.Common.Interfaces;
 using SharpLearning.Containers.Matrices;
 using SharpLearning.CrossValidation.TrainingTestSplitters;
-using SharpLearning.RandomForest.Learners;
-using SharpLearning.RandomForest.Models;
+using SharpLearning.GradientBoost.Learners;
+using SharpLearning.GradientBoost.Models;
 using SharpLearning.Metrics.Regression;
 using SharpLearning.Optimization;
-using Spectra;
+using SharpLearning.RandomForest.Learners;
+using SharpLearning.RandomForest.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SharpLearning.GradientBoost.Learners;
-using SharpLearning.GradientBoost.Models;
-using SharpLearning.Common.Interfaces;
 
 namespace EngineLayer.Calibration
 {
     public class CalibrationEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private const double maximumFracForTraining = 0.70;
         private const double maximumDatapointsToTrainWith = 20000;
         private const int trainingIterations = 30;
@@ -28,10 +25,6 @@ namespace EngineLayer.Calibration
 
         private readonly MsDataFile myMsDataFile;
         private readonly DataPointAquisitionResults datapoints;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -48,10 +41,6 @@ namespace EngineLayer.Calibration
                 randomSeed = myMsDataFile.NumSpectra;
             }
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -120,10 +109,6 @@ namespace EngineLayer.Calibration
             return new MetaMorpheusEngineResults(this);
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private void CalibrateSpectra(IPredictorModel<double> ms1predictor, IPredictorModel<double> ms2predictor)
         {
             Parallel.ForEach(Partitioner.Create(1, myMsDataFile.NumSpectra + 1), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
@@ -132,7 +117,7 @@ namespace EngineLayer.Calibration
                   {
                       var scan = myMsDataFile.GetOneBasedScan(i);
 
-                      if (scan.MsnOrder==2)
+                      if (scan.MsnOrder == 2)
                       {
                           var precursorScan = myMsDataFile.GetOneBasedScan(scan.OneBasedPrecursorScanNumber.Value);
 
@@ -182,7 +167,7 @@ namespace EngineLayer.Calibration
             var trainingSetX = splitData.TrainingSet.Observations;
             var trainingSetY = splitData.TrainingSet.Targets;
 
-            // parameter ranges for the optimizer 
+            // parameter ranges for the optimizer
             var parameters = new ParameterBounds[]
             {
                 new ParameterBounds(min: 100, max: 200, transform: Transform.Linear),           // trees
@@ -226,7 +211,7 @@ namespace EngineLayer.Calibration
             var result = optimizer.OptimizeBest(minimize);
             var best = result.ParameterSet;
 
-            // create the final learner using the best parameters 
+            // create the final learner using the best parameters
             // (parameters that resulted in the model with the least error)
             learner = new RegressionRandomForestLearner(
                     trees: (int)best[0],
@@ -273,7 +258,7 @@ namespace EngineLayer.Calibration
             // learn an initial model
             var myModel = learner.Learn(trainingSetX, trainingSetY);
 
-            // parameter ranges for the optimizer 
+            // parameter ranges for the optimizer
             var parameters = new ParameterBounds[]
             {
                 new ParameterBounds(min: 100, max: 300, transform: Transform.Linear),           // iterations
@@ -318,7 +303,7 @@ namespace EngineLayer.Calibration
             var result = optimizer.OptimizeBest(minimize);
             var best = result.ParameterSet;
 
-            // create the final learner using the best parameters 
+            // create the final learner using the best parameters
             // (parameters that resulted in the model with the least error)
             learner = new RegressionAbsoluteLossGradientBoostLearner(
                     iterations: (int)best[0],
@@ -336,7 +321,5 @@ namespace EngineLayer.Calibration
             // all done
             return myModel;
         }
-
-        #endregion Private Methods
     }
 }

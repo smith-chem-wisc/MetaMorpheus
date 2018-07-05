@@ -14,7 +14,6 @@ using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
-
     public enum MyTask
     {
         Search,
@@ -26,8 +25,6 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
-        #region Public Fields
-        
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -51,26 +48,14 @@ namespace TaskLayer
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
 
-        #endregion Public Fields
-
-        #region Protected Fields
-
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
         protected MyTaskResults MyTaskResults;
-
-        #endregion Protected Fields
-
-        #region Protected Constructors
 
         protected MetaMorpheusTask(MyTask taskType)
         {
             this.TaskType = taskType;
         }
-
-        #endregion Protected Constructors
-
-        #region Public Events
 
         public static event EventHandler<SingleTaskEventArgs> FinishedSingleTaskHandler;
 
@@ -92,17 +77,9 @@ namespace TaskLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
-        #endregion Public Events
-
-        #region Public Properties
-
         public MyTask TaskType { get; set; }
 
         public CommonParameters CommonParameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(
          MsDataFile myMSDataFile,
@@ -173,7 +150,7 @@ namespace TaskLayer
             {
                 return commonParams;
             }
-            
+
             // set file-specific digestion parameters
             Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
             int MinPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
@@ -181,7 +158,7 @@ namespace TaskLayer
             int MaxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
             int MaxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
             DigestionParams fileSpecificDigestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModsForPeptides: MaxModsForPeptide);
-            
+
             // set the rest of the file-specific parameters
             Tolerance PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance ProductMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
@@ -192,11 +169,11 @@ namespace TaskLayer
 
             CommonParameters returnParams = new CommonParameters(
                 bIons: BIons,
-                yIons: YIons, 
-                cIons: CIons, 
-                zDotIons: ZdotIons, 
+                yIons: YIons,
+                cIons: CIons,
+                zDotIons: ZdotIons,
                 precursorMassTolerance: PrecursorMassTolerance,
-                productMassTolerance: ProductMassTolerance, 
+                productMassTolerance: ProductMassTolerance,
                 digestionParams: fileSpecificDigestionParams);
 
             return returnParams;
@@ -206,13 +183,9 @@ namespace TaskLayer
         {
             StartingSingleTask(displayName);
 
-            #region write TOML
-
             var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
-
-            #endregion write TOML
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
@@ -273,8 +246,6 @@ namespace TaskLayer
                 throw;
             }
 
-            #region Write prose
-
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
                 using (StreamWriter file = new StreamWriter(proseFilePath))
@@ -295,15 +266,9 @@ namespace TaskLayer
                 SucessfullyFinishedWritingFile(proseFilePath, new List<string> { displayName });
             }
 
-            #endregion Write prose
-
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return MyTaskResults;
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes)
         {
@@ -351,6 +316,7 @@ namespace TaskLayer
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
+
         protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
@@ -410,10 +376,6 @@ namespace TaskLayer
             NewCollectionHandler?.Invoke(this, new StringEventArgs(displayName, nestedIds));
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private static List<string> GetModsTypesFromString(string value)
         {
             return value.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -438,7 +400,5 @@ namespace TaskLayer
         {
             StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(displayName));
         }
-
-        #endregion Private Methods
     }
 }

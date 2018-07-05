@@ -6,22 +6,12 @@ namespace EngineLayer.ModificationAnalysis
 {
     public class ModificationAnalysisEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private readonly List<PeptideSpectralMatch> newPsms;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.newPsms = newPsms;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -127,7 +117,5 @@ namespace EngineLayer.ModificationAnalysis
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
     }
 }

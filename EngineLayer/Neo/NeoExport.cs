@@ -8,15 +8,9 @@ namespace EngineLayer.Neo
 {
     public static class NeoExport
     {
-        #region Public Fields
-
         public static string path;
         public static string folder;
         public static CommonParameters commonParameters;
-
-        #endregion Public Fields
-
-        #region Public Methods
 
         public static void ExportAll(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
@@ -546,10 +540,6 @@ namespace EngineLayer.Neo
             }
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
         private static void ExportFullFASTA(List<NeoPsm> psms, string databaseFileName, string path)
         {
             //@"C:\Users\Zach Rolfs\Desktop\Chemistry\Smith Research\Fusion Peptides\Neo\Results\"
@@ -794,7 +784,5 @@ namespace EngineLayer.Neo
 
             return output;
         }
-
-        #endregion Private Methods
     }
 }

@@ -8,16 +8,10 @@ namespace EngineLayer.Gptmd
 {
     public class GptmdEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
         private readonly List<PeptideSpectralMatch> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<ModificationWithMass> gptmdModifications;
         private readonly Dictionary<string, Tolerance> filePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -26,10 +20,6 @@ namespace EngineLayer.Gptmd
             this.combos = combos;
             this.filePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public static bool ModFits(ModificationWithMass attemptToLocalize, Protein protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
         {
@@ -57,16 +47,12 @@ namespace EngineLayer.Gptmd
             return true;
         }
 
-        #endregion Public Methods
-
-        #region Protected Methods
-
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             var Mods = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
 
             int modsAdded = 0;
-            //foreach peptide in each psm and for each modification that matches the notch, 
+            //foreach peptide in each psm and for each modification that matches the notch,
             //add that modification to every allowed residue
             foreach (var psm in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy))
             {
@@ -107,10 +93,6 @@ namespace EngineLayer.Gptmd
             return new GptmdResults(this, Mods, modsAdded);
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private static IEnumerable<ModificationWithMass> GetPossibleMods(double totalMassToGetTo, IEnumerable<ModificationWithMass> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
         {
             foreach (var Mod in allMods)
@@ -139,7 +121,5 @@ namespace EngineLayer.Gptmd
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

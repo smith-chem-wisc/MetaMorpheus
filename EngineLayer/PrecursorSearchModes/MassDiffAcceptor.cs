@@ -4,24 +4,14 @@ namespace EngineLayer
 {
     public abstract class MassDiffAcceptor
     {
-        #region Protected Constructors
-
         protected MassDiffAcceptor(string fileNameAddition)
         {
             FileNameAddition = fileNameAddition;
             NumNotches = 1;
         }
 
-        #endregion Protected Constructors
-
-        #region Public Properties
-
         public int NumNotches { get; protected set; }
         public string FileNameAddition { get; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         /// <summary>
         /// If acceptable, returns 0 or greater, negative means does not accept
@@ -34,7 +24,5 @@ namespace EngineLayer
         public abstract IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
 
         public abstract string ToProseString();
-
-        #endregion Public Methods
     }
 }

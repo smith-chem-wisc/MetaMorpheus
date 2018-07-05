@@ -4,8 +4,6 @@ namespace EngineLayer.Neo
 {
     public class CisParent : Parent
     {
-        #region Public Constructors
-
         public CisParent(string id, string seq, List<int> nStart, int nLength, List<int> cStart, int cLength) : base(id, seq)
         {
             this.nStart = nStart;
@@ -20,16 +18,10 @@ namespace EngineLayer.Neo
                 this.cisType = FusionCandidate.FusionType.RC;
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public List<int> nStart { get; set; }
         public int nLength { get; set; }
         public List<int> cStart { get; set; }
         public int cLength { get; set; }
         public FusionCandidate.FusionType cisType { get; }
-
-        #endregion Public Properties
     }
 }

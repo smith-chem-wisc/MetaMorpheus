@@ -17,18 +17,12 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class NeoSearchTaskWindow : Window
     {
-        #region Private Fields
-
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
 
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public NeoSearchTaskWindow()
         {
@@ -64,15 +58,7 @@ namespace MetaMorpheusGUI
             this.saveButton.Content = "Add the Search Tasks";
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal NeoSearchTask TheTask { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Public Methods
 
         public void ReadAllTomls()
         {
@@ -81,10 +67,6 @@ namespace MetaMorpheusGUI
         public void ReadAllTomls(string filePath)
         {
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static Boolean TextBoxIntAllowed(String Text2)
         {
@@ -221,12 +203,12 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            
+
             foreach (var heh in localizeModTypeForTreeViewObservableCollection)
             {
                 heh.Use = true;
             }
-            
+
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
@@ -253,8 +235,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            #region Check Task Validity
-
             if (!int.TryParse(maxCandidatesPerSpectrumTextBox.Text, out int mcps) || mcps <= 0)
             {
                 MessageBox.Show("The number of maximum candidates per spectra contains unrecognized characters. \n You entered " + '"' + maxCandidatesPerSpectrumTextBox.Text + '"' + "\n Please enter a positive number.");
@@ -287,10 +267,6 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            #endregion Check Task Validity
-
-            #region Save Parameters
-            
             //Code for determining SemiSpecific
             NeoParameters neoParameters = new NeoParameters
             {
@@ -340,7 +316,7 @@ namespace MetaMorpheusGUI
             {
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            
+
             Tolerance PrecursorMassTolerance;
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -354,7 +330,7 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            
+
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
             {
@@ -373,18 +349,16 @@ namespace MetaMorpheusGUI
                 yIons: yCheckBox.IsChecked.Value,
                 cIons: cCheckBox.IsChecked.Value,
                 zDotIons: zdotCheckBox.IsChecked.Value,
-                productMassTolerance: ProductMassTolerance, 
-                precursorMassTolerance:PrecursorMassTolerance, 
-                listOfModsFixed: listOfModsFixed, 
+                productMassTolerance: ProductMassTolerance,
+                precursorMassTolerance: PrecursorMassTolerance,
+                listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable)
             {
                 TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask"
             };
-            
+
             TheTask.NeoParameters = neoParameters;
             TheTask.CommonParameters = CommonParamsToSave;
-
-            #endregion Save Parameters
 
             DialogResult = true;
         }
@@ -491,7 +465,5 @@ namespace MetaMorpheusGUI
         {
             calibrate.IsChecked = (precursorMassToleranceTextBox.Text.Length != 0 && productMassToleranceTextBox.Text.Length != 0) ? false : true;
         }
-
-        #endregion Private Methods
     }
 }

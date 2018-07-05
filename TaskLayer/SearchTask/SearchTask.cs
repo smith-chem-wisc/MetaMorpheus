@@ -12,14 +12,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace TaskLayer
 {
     public class SearchTask : MetaMorpheusTask
     {
-        #region Public Constructors
-
         public SearchTask() : base(MyTask.Search)
         {
             CommonParameters = new CommonParameters();
@@ -27,15 +24,7 @@ namespace TaskLayer
             SearchParameters = new SearchParameters();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public SearchParameters SearchParameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
@@ -69,10 +58,6 @@ namespace TaskLayer
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -168,7 +153,7 @@ namespace TaskLayer
                     {
                         List<CompactPeptide> peptideIndex = null;
                         List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
-                        
+
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
@@ -197,16 +182,10 @@ namespace TaskLayer
 
                             List<int>[] fragmentIndex = new List<int>[1];
 
-                            #region Generate indices for nonspecifc search
-
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, terminusSpecificIons, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
                             lock (indexLock)
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
-
-                            #endregion Generate indices for nonspecifc search
-
-                            #region Generate indices for nonspecific search
 
                             Status("Getting precursor dictionary...", new List<string> { taskId });
                             List<CompactPeptide> peptideIndexPrecursor = null;
@@ -218,8 +197,6 @@ namespace TaskLayer
 
                             if (peptideIndex.Count != peptideIndexPrecursor.Count)
                                 throw new MetaMorpheusException("peptideIndex not identical between indexing engines");
-
-                            #endregion Generate indices for nonspecific search
 
                             Status("Searching files...", taskId);
 
@@ -272,10 +249,6 @@ namespace TaskLayer
             postProcessing.Parameters = parameters;
             return postProcessing.Run();
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
@@ -348,7 +321,6 @@ namespace TaskLayer
                 {
                     return true;
                 }
-
             }
             return false;
         }
@@ -392,7 +364,6 @@ namespace TaskLayer
                     {
                         return possibleFolder.FullName;
                     }
-
                 }
             }
             return null;
@@ -459,7 +430,5 @@ namespace TaskLayer
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

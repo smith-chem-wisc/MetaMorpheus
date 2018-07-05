@@ -8,19 +8,9 @@ namespace EngineLayer.HistogramAnalysis
 {
     public class BinTreeStructure
     {
-        #region Private Fields
-
         private const int minAdditionalPsmsInBin = 1;
 
-        #endregion Private Fields
-
-        #region Public Properties
-
         public List<Bin> FinalBins { get; private set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public void GenerateBins(List<PeptideSpectralMatch> targetAndDecoyMatches, double dc)
         {
@@ -121,10 +111,6 @@ namespace EngineLayer.HistogramAnalysis
             IdentifyFracWithSingle();
             IdentifyMedianLength();
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static double GetSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
         {
@@ -330,7 +316,5 @@ namespace EngineLayer.HistogramAnalysis
                         bin.Mine = myInfo.infostring;
             }
         }
-
-        #endregion Private Methods
     }
 }

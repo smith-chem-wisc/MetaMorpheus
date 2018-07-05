@@ -7,33 +7,19 @@ namespace TaskLayer
 {
     public class MyTaskResults
     {
-        #region Public Fields
-
         public List<string> newSpectra; // calibration writes new calibrated spectra
         public List<DbForTask> newDatabases; // gptmd writes new annotated databases
         public List<string> newFileSpecificTomls; // calibration writes suggested ppm tolerances
         public TimeSpan Time;
 
-        #endregion Public Fields
-
-        #region Private Fields
-
         private readonly List<string> resultTexts;
 
         private readonly StringBuilder niceText = new StringBuilder();
-
-        #endregion Private Fields
-
-        #region Internal Constructors
 
         internal MyTaskResults(MetaMorpheusTask s)
         {
             resultTexts = new List<string>();
         }
-
-        #endregion Internal Constructors
-
-        #region Public Methods
 
         public override string ToString()
         {
@@ -80,10 +66,6 @@ namespace TaskLayer
             return sb.ToString();
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
         internal void AddResultText(string resultsText)
         {
             resultTexts.Add(resultsText);
@@ -93,7 +75,5 @@ namespace TaskLayer
         {
             niceText.AppendLine(niceTextString);
         }
-
-        #endregion Internal Methods
     }
 }

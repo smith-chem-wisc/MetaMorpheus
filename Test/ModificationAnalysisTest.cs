@@ -12,7 +12,6 @@ namespace Test
     [TestFixture]
     public static class ModificationAnalysisTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestModificationAnalysis()
@@ -179,12 +178,10 @@ namespace Test
             Assert.AreEqual(0, res.UnlocalizedFormulas.Count());
         }
 
-        #endregion Public Methods
     }
 
     internal class ThisTestScan : IScan
     {
-        #region Public Properties
 
         public string FullFilePath => null;
 
@@ -204,6 +201,5 @@ namespace Test
 
         public double PrecursorMass => 0;
 
-        #endregion Public Properties
     }
 }

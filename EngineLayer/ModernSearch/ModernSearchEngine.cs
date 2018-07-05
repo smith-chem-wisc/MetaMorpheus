@@ -10,8 +10,6 @@ namespace EngineLayer.ModernSearch
 {
     public class ModernSearchEngine : MetaMorpheusEngine
     {
-        #region Protected Fields
-
         protected const int fragmentBinsPerDalton = 1000;
         protected readonly List<int>[] fragmentIndex;
         protected readonly PeptideSpectralMatch[] peptideSpectralMatches;
@@ -22,10 +20,6 @@ namespace EngineLayer.ModernSearch
         protected readonly MassDiffAcceptor massDiffAcceptor;
         protected readonly List<DissociationType> dissociationTypes;
         protected readonly double maximumMassThatFragmentIonScoreIsDoubled;
-
-        #endregion Protected Fields
-
-        #region Public Constructors
 
         public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -39,10 +33,6 @@ namespace EngineLayer.ModernSearch
             this.dissociationTypes = DetermineDissociationType(lp);
             this.maximumMassThatFragmentIonScoreIsDoubled = maximumMassThatFragmentIonScoreIsDoubled;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -224,10 +214,6 @@ namespace EngineLayer.ModernSearch
             return binsToSearch;
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private int BinarySearchBinForPrecursorIndex(List<int> peptideIdsInThisBin, double peptideMassToLookFor)
         {
             int m = 0;
@@ -307,7 +293,5 @@ namespace EngineLayer.ModernSearch
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }
