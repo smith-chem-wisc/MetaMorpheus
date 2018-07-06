@@ -6,43 +6,31 @@ namespace EngineLayer
 {
     public class SingleAbsoluteAroundZeroSearchMode : MassDiffAcceptor
     {
-        #region Private Fields
-
-        private readonly double value;
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private readonly double Value;
 
         public SingleAbsoluteAroundZeroSearchMode(double value) : base(value + "daltonsAroundZero")
         {
-            this.value = value;
+            this.Value = value;
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            return Math.Abs(scanPrecursorMass - peptideMass) < value ? 0 : -1;
+            return Math.Abs(scanPrecursorMass - peptideMass) < Value ? 0 : -1;
         }
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - value, peptideMonoisotopicMass + value), 0);
+            yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - Value, peptideMonoisotopicMass + Value), 0);
         }
 
         public override string ToString()
         {
-            return FileNameAddition + " daltonsAroundZero " + value;
+            return FileNameAddition + " daltonsAroundZero " + Value;
         }
 
         public override string ToProseString()
         {
-            return (String.Format("{0:0.000}", value) + " Da around zero");
+            return (String.Format("{0:0.000}", Value) + " Da around zero");
         }
-
-        #endregion Public Methods
     }
 }

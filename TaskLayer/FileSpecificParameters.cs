@@ -6,13 +6,11 @@ namespace TaskLayer
 {
     public class FileSpecificParameters
     {
-        #region Public Constructors
-
         public FileSpecificParameters(TomlTable tomlTable)
         {
-            foreach(var keyValuePair in tomlTable)
+            foreach (var keyValuePair in tomlTable)
             {
-                switch(keyValuePair.Key)
+                switch (keyValuePair.Key)
                 {
                     // we're using the name of the variable here and not a fixed string
                     // in case the variable name changes at some point
@@ -49,10 +47,6 @@ namespace TaskLayer
             // everything initialized to null
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public Tolerance PrecursorMassTolerance { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Protease Protease { get; set; }
@@ -65,10 +59,6 @@ namespace TaskLayer
         public bool? CIons { get; set; }
         public bool? ZdotIons { get; set; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         // This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
         // It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.
         // The reason this method exists is to make sure toml settings are written and parsed consistently between the tasks
@@ -76,7 +66,7 @@ namespace TaskLayer
         public static void ValidateFileSpecificVariableNames()
         {
             CommonParameters temp = new CommonParameters();
-            
+
             if (!nameof(temp.PrecursorMassTolerance).Equals(nameof(PrecursorMassTolerance)))
                 throw new MetaMorpheusException("Precursor tol variable name is inconsistent");
             if (!nameof(temp.ProductMassTolerance).Equals(nameof(ProductMassTolerance)))
@@ -105,7 +95,5 @@ namespace TaskLayer
         {
             return (FileSpecificParameters)this.MemberwiseClone();
         }
-
-        #endregion Public Methods
     }
 }

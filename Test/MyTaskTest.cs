@@ -15,19 +15,17 @@ namespace Test
     [TestFixture]
     public static class MyTaskTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestEverythingRunner()
         {
-            #region Setup tasks
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
                
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -68,8 +66,6 @@ namespace Test
                 ("task3", task3),
                 ("task4", task4),};
 
-            #endregion Setup tasks
-
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
 
@@ -94,14 +90,10 @@ namespace Test
 
             Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
 
-            #region Write the files
-
             string mzmlName = @"ok.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string xmlName = "okk.xml";
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
-
-            #endregion Write the files
 
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
@@ -111,7 +103,6 @@ namespace Test
         [Test]
         public static void TestMultipleFilesRunner()
         {
-            #region Setup tasks
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
@@ -120,10 +111,10 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    ListOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
-                    ListOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
-                    ProductMassTolerance: new AbsoluteTolerance(0.01)
+                    digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
+                    listOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    productMassTolerance: new AbsoluteTolerance(0.01)
                 ),
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -134,8 +125,8 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    DigestionParams: new DigestionParams(),
-                    ProductMassTolerance: new AbsoluteTolerance(0.01)
+                    digestionParams: new DigestionParams(),
+                    productMassTolerance: new AbsoluteTolerance(0.01)
                 ),
             };
 
@@ -164,8 +155,6 @@ namespace Test
                 ("task2", task2),
                 ("task3", task3),
                 ("task4", task4),};
-
-            #endregion Setup tasks
 
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
@@ -216,11 +205,11 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    DigestionParams : new DigestionParams(MinPeptideLength: 2),
+                    digestionParams : new DigestionParams(minPeptideLength: 2),
 
-                    ScoreCutoff: 1,
-                    DeconvolutionIntensityRatio: 999,
-                    DeconvolutionMassTolerance : new PpmTolerance(50)
+                    scoreCutoff: 1,
+                    deconvolutionIntensityRatio: 999,
+                    deconvolutionMassTolerance : new PpmTolerance(50)
                 ),
                 SearchParameters = new SearchParameters
                 {
@@ -231,18 +220,12 @@ namespace Test
 
             string xmlName = "MakeSureFdrDoesntSkip.xml";
 
-            #region Generate protein and write to file
-
             {
                 Protein theProtein = new Protein("MG", "accession1");
                 ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
             }
 
-            #endregion Generate protein and write to file
-
             string mzmlName = @"MakeSureFdrDoesntSkip.mzML";
-
-            #region Generate and write the mzml
 
             {
                 var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
@@ -280,8 +263,6 @@ namespace Test
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
 
-            #endregion Generate and write the mzml
-
             // RUN!
             var theStringResult = task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1"));
@@ -292,8 +273,6 @@ namespace Test
         {
             MetaMorpheusTask task1;
 
-            #region Setup tasks
-
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
@@ -301,11 +280,11 @@ namespace Test
                 {
                     CommonParameters = new CommonParameters
                     (                       
-                        DigestionParams : new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                        ListOfModsVariable : new List<(string, string)>(),
-                        ListOfModsFixed : new List<(string, string)>(),
-                        ScoreCutoff : 1,
-                        PrecursorMassTolerance : new AbsoluteTolerance(1)
+                        digestionParams : new DigestionParams(initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        listOfModsVariable : new List<(string, string)>(),
+                        listOfModsFixed : new List<(string, string)>(),
+                        scoreCutoff : 1,
+                        precursorMassTolerance : new AbsoluteTolerance(1)
                     ),
 
                     GptmdParameters = new GptmdParameters
@@ -315,22 +294,14 @@ namespace Test
                 };
             }
 
-            #endregion Setup tasks
-
             string xmlName = "sweetness.xml";
-
-            #region Generate protein and write to file
 
             {
                 Protein theProtein = new Protein("MPEPTIDEKANTHE", "accession1");
                 ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
             }
 
-            #endregion Generate protein and write to file
-
             string mzmlName = @"ok.mzML";
-
-            #region Generate and write the mzml
 
             {
                 var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
@@ -348,8 +319,6 @@ namespace Test
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
 
-            #endregion Generate and write the mzml
-
             // RUN!
             var theStringResult = task1.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
@@ -358,14 +327,13 @@ namespace Test
         [Test]
         public static void TestPeptideCount()
         {
-            #region setup
 
             SearchTask testPeptides = new SearchTask
             {
                 CommonParameters = new CommonParameters
                 (
                     
-                    DigestionParams : new DigestionParams(MinPeptideLength: 5)
+                    digestionParams : new DigestionParams(minPeptideLength: 5)
                 ),
                 SearchParameters = new SearchParameters
                 {
@@ -388,10 +356,6 @@ namespace Test
                 testUniqeMod
             });
 
-            #endregion setup
-
-            #region mod setup and protein creation
-
             //create modification lists
 
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
@@ -406,10 +370,6 @@ namespace Test
             //protein Creation (One with mod and one without)
             Protein TestProtein = new Protein("PEPTID", "accession1", "organism", new List<Tuple<string, string>>(), modDictionary);
 
-            #endregion mod setup and protein creation
-
-            #region XML setup
-
             //First Write XML Database
 
             string xmlName = "singleProteinWithTwoMods.xml";
@@ -423,10 +383,6 @@ namespace Test
             modList.Add("test", Hash);
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProtein }, xmlName);
 
-            #endregion XML setup
-
-            #region MZML setup
-
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
@@ -436,10 +392,6 @@ namespace Test
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-
-            #endregion MZML setup
-
-            #region run
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
@@ -460,9 +412,7 @@ namespace Test
             }
             Assert.IsTrue(foundD);
 
-            #endregion run
         }
 
-        #endregion Public Methods
     }
 }

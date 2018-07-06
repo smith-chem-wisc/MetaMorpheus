@@ -5,8 +5,6 @@ namespace EngineLayer.Neo
 {
     public class FusionCandidate
     {
-        #region Public Constructors
-
         public FusionCandidate(String seq)
         {
             this.seq = seq;
@@ -19,19 +17,11 @@ namespace EngineLayer.Neo
             this.transParents = new List<TransParent>();
         }
 
-        #endregion Public Constructors
-
-        #region Public Enums
-
         //ordered by priority //translated, normalCis, reverseCis, trans
         public enum FusionType
         {
             TL, NC, RC, TS
         }
-
-        #endregion Public Enums
-
-        #region Public Properties
 
         public string seq { get; set; }
         public List<int> junctionIndexes { get; private set; }
@@ -41,10 +31,6 @@ namespace EngineLayer.Neo
         public List<CisParent> cisParents { get; set; }
         public List<TransParent> transParents { get; set; }
         public FusionType fusionType { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         //private List<FusionCandidate> fragSources;
         public void addJunctionIndex(int index)
@@ -74,7 +60,5 @@ namespace EngineLayer.Neo
                 this.foundIons[index] = original.foundIons[index];
             }
         }
-
-        #endregion Public Methods
     }
 }

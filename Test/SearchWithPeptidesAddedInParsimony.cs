@@ -13,8 +13,6 @@ namespace Test
     [TestFixture]
     public static class SearchWithPeptidesAddedInParsimony
     {
-        #region Public Methods
-
         [Test]
         public static void SearchWithPeptidesAddedInParsimonyTest()
         {
@@ -27,22 +25,20 @@ namespace Test
                     DecoyType = DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(ScoreCutoff:1, DigestionParams: new DigestionParams(MinPeptideLength: 2)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 2)),
             };
 
             string xmlName = "andguiaheow.xml";
 
-            #region Generate protein and write to file
-
             CommonParameters CommonParameters = new CommonParameters(
-                ScoreCutoff: 1, 
-                DigestionParams: new DigestionParams(
-                    MaxMissedCleavages: 0, 
-                    MinPeptideLength: 1, 
-                    MaxModificationIsoforms: 2, 
-                    InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, 
-                    MaxModsForPeptides: 1));
-            
+                scoreCutoff: 1,
+                digestionParams: new DigestionParams(
+                    maxMissedCleavages: 0,
+                    minPeptideLength: 1,
+                    maxModificationIsoforms: 2,
+                    initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
+                    maxModsForPeptides: 1));
+
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
             ModificationWithMass alanineMod = new ModificationWithMass("111", "mt", motifA, TerminusLocalization.Any, 111);
 
@@ -71,23 +67,15 @@ namespace Test
 
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
 
-            #endregion Generate protein and write to file
-
             string mzmlName = @"ajgdiu.mzML";
-
-            #region Generate and write the mzml
 
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
-            #endregion Generate and write the mzml
-
             st.RunTask("",
                 new List<DbForTask> { new DbForTask(xmlName, false) },
                 new List<string> { mzmlName }, "");
         }
-
-        #endregion Public Methods
     }
 }
