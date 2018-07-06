@@ -43,15 +43,15 @@ namespace EngineLayer
 
             // Figure out DataDir
 
-            var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
-            {
-                DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
-            }
-            else
-            {
-                DataDir = AppDomain.CurrentDomain.BaseDirectory;
-            }
+                var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+                {
+                    DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+                }
+                else
+                {
+                    DataDir = AppDomain.CurrentDomain.BaseDirectory;
+                }
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
@@ -64,9 +64,7 @@ namespace EngineLayer
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
-            {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-            }
             AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
             AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
 
@@ -90,17 +88,11 @@ namespace EngineLayer
             foreach (var ye in enumerable)
             {
                 if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
-                {
                     throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
-                }
                 if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType) && !b.Equals(ye)))
-                {
                     throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) + Environment.NewLine + Environment.NewLine);
-                }
                 else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
-                {
                     continue;
-                }
                 else
                 {
                     _AllModsKnown.Add(ye);
@@ -111,9 +103,14 @@ namespace EngineLayer
 
         public static string CheckLengthOfOutput(string psmString)
         {
-            return psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs ?
-                "Output too long for Excel" :
-                psmString;
+            if (psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs)
+            {
+                return "Output too long for Excel";
+            }
+            else
+            {
+                return psmString;
+            }
         }
 
         public static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)

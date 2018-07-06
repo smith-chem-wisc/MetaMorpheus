@@ -16,7 +16,7 @@ namespace EngineLayer.HistogramAnalysis
 
         public Bin(double massShift)
         {
-            MassShift = massShift;
+            this.MassShift = massShift;
             UniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
         }
 

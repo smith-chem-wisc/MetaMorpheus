@@ -7,8 +7,9 @@ namespace EngineLayer.Neo
 {
     public static class NeoSplicePeptides
     {
-        public static readonly int IonsUsedMassVer = 2;
-        public static double FixedModMass = 0.0;
+        public static readonly int ionsUsedMassVer = 2;
+        public static double fixedModMass = 0.0;
+
         //carbamidomethyl is defaulted at 0.
 
         public static List<NeoPsm> SplicePeptides(List<NeoPsm> psms)
@@ -19,24 +20,22 @@ namespace EngineLayer.Neo
             foreach (NeoPsm psm in psms)
             {
                 //preliminary filters can be removed if MassMatch calls to IonCrop are set to true.
-                string B = IonCrop(psm.NInfo.Seq, psm.ExpMass, 0, ProductType.B, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
-                string Y = IonCrop(psm.CInfo.Seq, psm.ExpMass, 0, ProductType.Y, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
-                for (int y = 0; y < Y.Length - IonsUsedMassVer; y++) //foreach y aa removed
+                string B = IonCrop(psm.nInfo.seq, psm.expMass, 0, ProductType.B, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
+                string Y = IonCrop(psm.cInfo.seq, psm.expMass, 0, ProductType.Y, true); //used as a preliminary filter to prevent longer searches from seq ID's that are larger than the precursor mass
+                for (int y = 0; y < Y.Length - ionsUsedMassVer; y++) //foreach y aa removed
                 {
-                    for (int b = 0; b < B.Length - IonsUsedMassVer; b++) //foreach b aa removed
+                    for (int b = 0; b < B.Length - ionsUsedMassVer; b++) //foreach b aa removed
                     {
                         MassMatch(B, Y, psm, b, y); //return a FusionCandidate
                     }
                 }
-                if (psm.Candidates.Count > 0) //match was found
+                if (psm.candidates.Count > 0) //match was found
                     candidates.Add(psm);
                 else
                 {
                     AutoFill(psm);
-                    if (psm.Candidates.Count > 0)
-                    {
+                    if (psm.candidates.Count > 0)
                         candidates.Add(psm);
-                    }
                 }
             }
             //DetermineCommonAminoAcids();
@@ -46,40 +45,38 @@ namespace EngineLayer.Neo
         //method was originally written recursively, but large peptides result in stackoverflow exceptions
         public static void MassMatch(string B, string Y, NeoPsm psm, int BIndex, int YIndex) //this is the workhorse of SpliceFragments
         {
-            double experimentalMass = psm.ExpMass;
+            double experimentalMass = psm.expMass;
             string bFrag = IonCrop(B, experimentalMass, BIndex, ProductType.B, false); //returns a B ion sequence that has a mass smaller than the experimental mass by cleaving C term AA
-            if (bFrag.Length < IonsUsedMassVer)//If the number of AA from the N-term peptide is less than desired amount, start over loop and remove a single aa from the C-term
+            if (bFrag.Length < ionsUsedMassVer)//If the number of AA from the N-term peptide is less than desired amount, start over loop and remove a single aa from the C-term
                 return;
             string yFrag = IonCrop(Y, experimentalMass, YIndex, ProductType.Y, false); //returns a Y ion sequence that has a mass smaller than the experimental mass by cleaving N term AA
-            if (yFrag.Length < IonsUsedMassVer)//If the number of AA from the C-term peptide is less than desired amount, end recursion.
+            if (yFrag.Length < ionsUsedMassVer)//If the number of AA from the C-term peptide is less than desired amount, end recursion.
                 return;
-            double theoreticalMass = NeoMassCalculator.MonoIsoptopicMass(bFrag) + NeoMassCalculator.MonoIsoptopicMass(yFrag) - NeoConstants.WATER_MONOISOTOPIC_MASS + FixedModMass; //water added once in b and once in y
+            double theoreticalMass = NeoMassCalculator.MonoIsoptopicMass(bFrag) + NeoMassCalculator.MonoIsoptopicMass(yFrag) - NeoConstants.WATER_MONOISOTOPIC_MASS + fixedModMass; //water added once in b and once in y
 
-            if (NeoMassCalculator.IdenticalMasses(experimentalMass, theoreticalMass, NeoFindAmbiguity.PrecursorMassTolerancePpm))//if match
+            if (NeoMassCalculator.IdenticalMasses(experimentalMass, theoreticalMass, NeoFindAmbiguity.precursorMassTolerancePpm))//if match
             {
                 string novelSeq = bFrag + yFrag;
-                if (!psm.Candidates.Any(x => x.Seq.Equals(novelSeq))) //if fusion sequence was not previously assigned to this psm
-                {
-                    psm.Candidates.Add(new FusionCandidate(novelSeq));
-                }
+                if (!psm.candidates.Any(x => x.seq.Equals(novelSeq))) //if fusion sequence was not previously assigned to this psm
+                    psm.candidates.Add(new FusionCandidate(novelSeq));
             }
         }
 
         public static void AutoFill(NeoPsm psm)
         {
-            double experimentalMass = psm.ExpMass;
+            double experimentalMass = psm.expMass;
             for (int i = 0; i < 2; i++)
             {
                 string ionSequence;
                 ProductType ion;
                 if (i == 0)
                 {
-                    ionSequence = psm.NInfo.Seq;
+                    ionSequence = psm.nInfo.seq;
                     ion = ProductType.B;
                 }
                 else
                 {
-                    ionSequence = psm.CInfo.Seq;
+                    ionSequence = psm.cInfo.seq;
                     ion = ProductType.Y;
                 }
 
@@ -123,7 +120,7 @@ namespace EngineLayer.Neo
                         List<string> combinations = new List<string>();
 
                         double closestPeak = double.NaN;
-                        var ipos = Array.BinarySearch(NeoFindAmbiguity.Keys, key);
+                        var ipos = Array.BinarySearch(NeoFindAmbiguity.keys, key);
                         if (ipos < 0)
                             ipos = ~ipos;
 
@@ -133,24 +130,24 @@ namespace EngineLayer.Neo
                             // Try down
                             while (downIpos >= 0)
                             {
-                                closestPeak = NeoFindAmbiguity.Keys[downIpos];
-                                if (NeoMassCalculator.IdenticalMasses(experimentalMass, closestPeak + theoreticalMass, NeoFindAmbiguity.PrecursorMassTolerancePpm))
-                                    foreach (string frag in NeoFindAmbiguity.MassDict[closestPeak])
+                                closestPeak = NeoFindAmbiguity.keys[downIpos];
+                                if (NeoMassCalculator.IdenticalMasses(experimentalMass, closestPeak + theoreticalMass, NeoFindAmbiguity.precursorMassTolerancePpm))
+                                    foreach (string frag in NeoFindAmbiguity.massDict[closestPeak])
                                         combinations.Add(frag);
                                 else
                                     break;
                                 downIpos--;
                             }
                         }
-                        if (ipos < NeoFindAmbiguity.Keys.Length)
+                        if (ipos < NeoFindAmbiguity.keys.Length)
                         {
                             var upIpos = ipos;
                             // Try here and up
-                            while (upIpos < NeoFindAmbiguity.Keys.Length)
+                            while (upIpos < NeoFindAmbiguity.keys.Length)
                             {
-                                closestPeak = NeoFindAmbiguity.Keys[upIpos];
-                                if (NeoMassCalculator.IdenticalMasses(experimentalMass, closestPeak + theoreticalMass, NeoFindAmbiguity.PrecursorMassTolerancePpm))
-                                    foreach (string frag in NeoFindAmbiguity.MassDict[closestPeak])
+                                closestPeak = NeoFindAmbiguity.keys[upIpos];
+                                if (NeoMassCalculator.IdenticalMasses(experimentalMass, closestPeak + theoreticalMass, NeoFindAmbiguity.precursorMassTolerancePpm))
+                                    foreach (string frag in NeoFindAmbiguity.massDict[closestPeak])
                                         combinations.Add(frag);
                                 else
                                     break;
@@ -162,9 +159,9 @@ namespace EngineLayer.Neo
                             foreach (string s in combinations)
                             {
                                 if (ion == ProductType.B)
-                                    psm.Candidates.Add(new FusionCandidate(ionFrag + s));
+                                    psm.candidates.Add(new FusionCandidate(ionFrag + s));
                                 else
-                                    psm.Candidates.Add(new FusionCandidate(s + ionFrag));
+                                    psm.candidates.Add(new FusionCandidate(s + ionFrag));
                             }
                             break;
                         }
@@ -214,7 +211,7 @@ namespace EngineLayer.Neo
                 else
                 {
                     double IonMass = NeoMassCalculator.MonoIsoptopicMass(ionFrag);
-                    if (NeoMassCalculator.IdenticalMasses(experimentalMass, IonMass, NeoFindAmbiguity.PrecursorMassTolerancePpm))
+                    if (NeoMassCalculator.IdenticalMasses(experimentalMass, IonMass, NeoFindAmbiguity.precursorMassTolerancePpm))
                     {
                         //Assume this ID is correct
                         return "";

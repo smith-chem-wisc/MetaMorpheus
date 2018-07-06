@@ -175,13 +175,13 @@ namespace TaskLayer
                     NeoExport.ExportAll(candidates, arrayOfMs2ScansSortedByMass, outputFolder);
 
                     //Switch databases
-                    string outputFolder2 = NeoExport.Path + NeoExport.Folder + @"\" + NeoExport.Folder + "FusionDatabaseAppendixNC.fasta";
+                    string outputFolder2 = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixNC.fasta";
                     dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder2, false) };
                 }
             }
             else //if SearchTransDb
             {
-                string outputFolder2 = NeoExport.Path + NeoExport.Folder + @"\" + NeoExport.Folder + "FusionDatabaseAppendixTS.fasta";
+                string outputFolder2 = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixTS.fasta";
                 dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder2, false) };
             }
 

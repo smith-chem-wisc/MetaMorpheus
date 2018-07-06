@@ -23,17 +23,14 @@ namespace EngineLayer.CrosslinkAnalysis
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CompactPeptideToProteinPeptideMatching;
         private readonly string OutputFolder;
 
-        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching,
-            List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> productTypes,
-            string outputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters commonParameters, List<string> nestedIds)
-            : base(commonParameters, nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string outputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             NewPsms = newPsms;
             CompactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
             ProteinList = proteinList;
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
-            ProductTypes = productTypes;
+            ProductTypes = lp;
             OutputFolder = outputFolder;
             Crosslinker = crosslinker;
             TerminusType = terminusType;
@@ -53,13 +50,13 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 if (psmpair != null)
                 {
-                    var cp = psmpair.CompactPeptide;
+                    var cp = psmpair.compactPeptide;
                     if (!CompactPeptideToProteinPeptideMatching.ContainsKey(cp))
                         CompactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
 
                     if (psmpair.BetaPsmCross != null)
                     {
-                        var cp1 = psmpair.BetaPsmCross.CompactPeptide;
+                        var cp1 = psmpair.BetaPsmCross.compactPeptide;
                         if (!CompactPeptideToProteinPeptideMatching.ContainsKey(cp1))
                             CompactPeptideToProteinPeptideMatching.Add(cp1, new HashSet<PeptideWithSetModifications>());
                     }
@@ -67,10 +64,10 @@ namespace EngineLayer.CrosslinkAnalysis
             }
 
             int proteinsSeen = 0;
-            int oldProgress = 0;
+            int old_progress = 0;
             Status("Adding possible sources to peptide dictionary...");
             Parallel.ForEach(Partitioner.Create(0, ProteinList.Count),
-                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
+                new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (fff, loopState) =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
@@ -82,7 +79,7 @@ namespace EngineLayer.CrosslinkAnalysis
                         return;
                     }
 
-                    foreach (var peptideWithSetModifications in ProteinList[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications))
+                    foreach (var peptideWithSetModifications in ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
                     {
                         var compactPeptide = peptideWithSetModifications.CompactPeptide(TerminusType);
                         if (CompactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out HashSet<PeptideWithSetModifications> peptidesWithSetMods))
@@ -92,12 +89,12 @@ namespace EngineLayer.CrosslinkAnalysis
                         }
                     }
                     proteinsSeen += fff.Item2 - fff.Item1;
-                    var newProgress = (int)((double)proteinsSeen / (ProteinList.Count) * 100);
-                    if (newProgress > oldProgress)
+                    var new_progress = (int)((double)proteinsSeen / (ProteinList.Count) * 100);
+                    if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(newProgress, "In adding possible" +
-                            " sources to peptide dictionary loop", NestedIds));
-                        oldProgress = newProgress;
+                        ReportProgress(new ProgressEventArgs(new_progress, "In adding possible" +
+                            " sources to peptide dictionary loop", nestedIds));
+                        old_progress = new_progress;
                     }
                 }
             });

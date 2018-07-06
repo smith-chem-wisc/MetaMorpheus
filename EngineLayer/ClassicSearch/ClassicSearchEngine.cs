@@ -22,10 +22,7 @@ namespace EngineLayer.ClassicSearch
         private readonly List<ProductType> ProductTypes;
         private readonly List<DissociationType> DissociationTypes;
 
-        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications,
-            List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> productType, MassDiffAcceptor searchMode,
-            CommonParameters commonParameters, List<string> nestedIds)
-            : base(commonParameters, nestedIds)
+        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -34,11 +31,9 @@ namespace EngineLayer.ClassicSearch
             FixedModifications = fixedModifications;
             Proteins = proteinList;
             SearchMode = searchMode;
-            ProductTypes = productType;
-            DissociationTypes = DetermineDissociationType(productType);
+            ProductTypes = lp;
+            DissociationTypes = DetermineDissociationType(lp);
         }
-
-        public static int x = 0;
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -59,9 +54,7 @@ namespace EngineLayer.ClassicSearch
 
             if (Proteins.Any())
             {
-                Parallel.ForEach(Partitioner.Create(0, Proteins.Count),
-                    new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
-                    (partitionRange, loopState) =>
+                Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (partitionRange, loopState) =>
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
@@ -73,31 +66,31 @@ namespace EngineLayer.ClassicSearch
                         }
 
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
-                        foreach (var peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications))
+                        foreach (var peptide in Proteins[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
                         {
                             var peptideTheorIons = peptide.GetTheoreticalFragments(ProductTypes);
                             var compactPeptide = peptide.CompactPeptide(terminusType);
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(compactPeptide.MonoisotopicMassIncludingFixedMods, SearchMode))
                             {
-                                var matchedIons = MatchFragmentIons(scan.TheScan.TheScan.MassSpectrum, peptideTheorIons, CommonParameters);
+                                var matchedIons = MatchFragmentIons(scan.TheScan.TheScan.MassSpectrum, peptideTheorIons, commonParameters);
 
-                                if (CommonParameters.AddCompIons)
+                                if (commonParameters.AddCompIons)
                                 {
                                     foreach (var dissociationType in DissociationTypes)
                                     {
                                         MzSpectrum complementarySpectrum = GenerateComplementarySpectrum(scan.TheScan.TheScan.MassSpectrum, scan.TheScan.PrecursorMass, dissociationType);
-                                        matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, peptideTheorIons, CommonParameters));
+                                        matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, peptideTheorIons, commonParameters));
                                     }
                                 }
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
 
-                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
+                                bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,
                                 // the lock combined with AddOrReplace method will ensure thread safety
-                                if (meetsScoreCutoff || CommonParameters.CalculateEValue)
+                                if (meetsScoreCutoff || commonParameters.CalculateEValue)
                                 {
                                     // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
                                     lock (myLocks[scan.ScanIndex])
@@ -108,18 +101,18 @@ namespace EngineLayer.ClassicSearch
                                         {
                                             if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(compactPeptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters.DigestionParams);
+                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(compactPeptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, commonParameters.DigestionParams);
                                             }
                                             else
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(compactPeptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity);
+                                                PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(compactPeptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity);
                                             }
 
                                             //TODO: move this into the PeptideSpectralMatch constructor
                                             PeptideSpectralMatches[scan.ScanIndex].SetMatchedFragments(matchedIons);
                                         }
 
-                                        if (CommonParameters.CalculateEValue)
+                                        if (commonParameters.CalculateEValue)
                                         {
                                             PeptideSpectralMatches[scan.ScanIndex].AllScores.Add(thisScore);
                                         }
@@ -135,18 +128,18 @@ namespace EngineLayer.ClassicSearch
                         if (percentProgress > oldPercentProgress)
                         {
                             oldPercentProgress = percentProgress;
-                            ReportProgress(new ProgressEventArgs(percentProgress, "Performing classic search... ", NestedIds));
+                            ReportProgress(new ProgressEventArgs(percentProgress, "Performing classic search... ", nestedIds));
                         }
                     }
                 });
             }
 
             // remove peptides below the score cutoff that were stored to calculate expectation values
-            if (CommonParameters.CalculateEValue)
+            if (commonParameters.CalculateEValue)
             {
                 for (int i = 0; i < PeptideSpectralMatches.Length; i++)
                 {
-                    if (PeptideSpectralMatches[i] != null && PeptideSpectralMatches[i].Score < CommonParameters.ScoreCutoff)
+                    if (PeptideSpectralMatches[i] != null && PeptideSpectralMatches[i].Score < commonParameters.ScoreCutoff)
                     {
                         PeptideSpectralMatches[i] = null;
                     }
@@ -161,20 +154,18 @@ namespace EngineLayer.ClassicSearch
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
             {
                 DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
-                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);
-                if (scanIndex < ArrayOfSortedMS2Scans.Length)
+                int ScanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);
+                if (ScanIndex < ArrayOfSortedMS2Scans.Length)
                 {
-                    var scanMass = MyScanPrecursorMasses[scanIndex];
+                    var scanMass = MyScanPrecursorMasses[ScanIndex];
                     while (scanMass <= allowedInterval.Maximum)
                     {
-                        var theScan = ArrayOfSortedMS2Scans[scanIndex];
-                        yield return new ScanWithIndexAndNotchInfo(theScan, allowedIntervalWithNotch.Notch, scanIndex);
-                        scanIndex++;
-                        if (scanIndex == ArrayOfSortedMS2Scans.Length)
-                        {
+                        var TheScan = ArrayOfSortedMS2Scans[ScanIndex];
+                        yield return new ScanWithIndexAndNotchInfo(TheScan, allowedIntervalWithNotch.Notch, ScanIndex);
+                        ScanIndex++;
+                        if (ScanIndex == ArrayOfSortedMS2Scans.Length)
                             break;
-                        }
-                        scanMass = MyScanPrecursorMasses[scanIndex];
+                        scanMass = MyScanPrecursorMasses[ScanIndex];
                     }
                 }
             }
@@ -184,9 +175,7 @@ namespace EngineLayer.ClassicSearch
         {
             int index = Array.BinarySearch(MyScanPrecursorMasses, minimum);
             if (index < 0)
-            {
                 index = ~index;
-            }
 
             // index of the first element that is larger than value
             return index;

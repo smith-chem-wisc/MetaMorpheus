@@ -23,10 +23,7 @@ namespace EngineLayer.Indexing
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         protected readonly double MaxFragmentSize;
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> protductTypes,
-            int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize,
-            List<string> nestedIds)
-            : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> protductTypes, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
@@ -41,7 +38,7 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Partitions: " + CurrentPartition + "/" + CommonParameters.TotalPartitions);
+            sb.AppendLine("Partitions: " + CurrentPartition + "/" + commonParameters.TotalPartitions);
             sb.AppendLine("Search Decoys: " + DecoyType);
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
@@ -70,7 +67,7 @@ namespace EngineLayer.Indexing
             HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
 
             Parallel.ForEach(Partitioner.Create(0, ProteinList.Count),
-                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
+                new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (range, loopState) =>
             {
                 for (int i = range.Item1; i < range.Item2; i++)
@@ -89,11 +86,13 @@ namespace EngineLayer.Indexing
                             CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
 
                             var observed = peptideToId.Contains(compactPeptide);
-                            if (observed) { continue; }
+                            if (observed)
+                                continue;
                             lock (peptideToId)
                             {
                                 observed = peptideToId.Contains(compactPeptide);
-                                if (observed) { continue; }
+                                if (observed)
+                                    continue;
                                 peptideToId.Add(compactPeptide);
                             }
                         }
@@ -104,13 +103,13 @@ namespace EngineLayer.Indexing
                     if (percentProgress > oldPercentProgress)
                     {
                         oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins...", NestedIds));
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins...", nestedIds));
                     }
                 }
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(CommonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
+            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
             peptideToId = null;
 
             // create fragment index
@@ -139,13 +138,9 @@ namespace EngineLayer.Indexing
                         int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
 
                         if (fragmentIndex[fragmentBin] == null)
-                        {
                             fragmentIndex[fragmentBin] = new List<int> { peptideId };
-                        }
                         else
-                        {
                             fragmentIndex[fragmentBin].Add(peptideId);
-                        }
                     }
                 }
 
@@ -154,7 +149,7 @@ namespace EngineLayer.Indexing
                 if (percentProgress > oldPercentProgress)
                 {
                     oldPercentProgress = percentProgress;
-                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index...", NestedIds));
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index...", nestedIds));
                 }
             }
 

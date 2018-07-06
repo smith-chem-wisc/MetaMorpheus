@@ -2,15 +2,14 @@
 {
     public class TranslatedParent : Parent
     {
-        public TranslatedParent(string id, string seq, int start, int length)
-            : base(id, seq)
+        public TranslatedParent(string id, string seq, int start, int length) : base(id, seq)
         {
-            Start = start;
-            PeptideLength = length;
+            this.start = start;
+            this.peptideLength = length;
         }
 
-        public int Start { get; set; }
-        public int PeptideLength { get; set; }
-        public FusionType Translated { get; }
+        public int start { get; set; }
+        public int peptideLength { get; set; }
+        public FusionCandidate.FusionType translated { get; }
     }
 }

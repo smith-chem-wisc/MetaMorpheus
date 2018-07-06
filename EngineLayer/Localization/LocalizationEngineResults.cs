@@ -2,8 +2,7 @@
 {
     internal class LocalizationEngineResults : MetaMorpheusEngineResults
     {
-        public LocalizationEngineResults(MetaMorpheusEngine s)
-            : base(s)
+        public LocalizationEngineResults(MetaMorpheusEngine s) : base(s)
         {
         }
     }

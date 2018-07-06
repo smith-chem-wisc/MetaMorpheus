@@ -10,19 +10,19 @@ namespace EngineLayer
 {
     public abstract class MetaMorpheusEngine
     {
-        protected readonly CommonParameters CommonParameters;
-        protected readonly List<string> NestedIds;
-
-        protected static readonly Dictionary<DissociationType, double> ComplementaryIonConversionDictionary = new Dictionary<DissociationType, double>
+        protected static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
         {
             { DissociationType.HCD, Constants.ProtonMass },
             { DissociationType.ETD, 2 * Constants.ProtonMass }
         };
 
+        protected readonly CommonParameters commonParameters;
+        protected readonly List<string> nestedIds;
+
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
         {
-            CommonParameters = commonParameters;
-            NestedIds = nestedIds;
+            this.commonParameters = commonParameters;
+            this.nestedIds = nestedIds;
         }
 
         public static event EventHandler<SingleEngineEventArgs> StartingSingleEngineHander;
@@ -39,9 +39,7 @@ namespace EngineLayer
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
-            {
                 return;
-            }
 
             int currentTheoreticalIndex = -1;
             double currentTheoreticalMass;
@@ -52,9 +50,7 @@ namespace EngineLayer
             } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sortedTheoreticalProductMassesForThisPeptide.Length - 1);
 
             if (double.IsNaN(currentTheoreticalMass))
-            {
                 return;
-            }
 
             double currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
             int testTheoreticalIndex;
@@ -82,9 +78,7 @@ namespace EngineLayer
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
                     if (currentTheoreticalIndex == TotalProductsHere)
-                    {
                         break;
-                    }
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
                     currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
                 }
@@ -94,9 +88,7 @@ namespace EngineLayer
                     // Move on to next index and never come back!
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
-                    {
                         break;
-                    }
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
                     currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
 
@@ -115,9 +107,7 @@ namespace EngineLayer
                         // Update test stuff!
                         testTheoreticalIndex++;
                         if (testTheoreticalIndex == TotalProductsHere)
-                        {
                             break;
-                        }
                         testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
                         testTheoreticalMz = testTheoreticalMass + Constants.ProtonMass;
                     }
@@ -131,7 +121,7 @@ namespace EngineLayer
 
                 foreach (DissociationType dissociationType in DetermineDissociationType(new List<ProductType> { productType }))
                 {
-                    if (ComplementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
+                    if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
                         currentTheoreticalIndex = -1;
                         do
@@ -164,9 +154,7 @@ namespace EngineLayer
                                 productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
                                 if (currentTheoreticalIndex == TotalProductsHere)
-                                {
                                     break;
-                                }
                                 currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
                             }
                             // Else if for sure passed a theoretical
@@ -175,9 +163,7 @@ namespace EngineLayer
                                 // Move on to next index and never come back!
                                 currentTheoreticalIndex++;
                                 if (currentTheoreticalIndex == TotalProductsHere)
-                                {
                                     break;
-                                }
                                 currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
 
                                 // Start with the current ones
@@ -193,9 +179,7 @@ namespace EngineLayer
                                     // Update test stuff!
                                     testTheoreticalIndex++;
                                     if (testTheoreticalIndex == TotalProductsHere)
-                                    {
                                         break;
-                                    }
                                     testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
                                 }
                                 experimentalIndex--;
@@ -265,9 +249,7 @@ namespace EngineLayer
 
                     currentTheoreticalIndex++; //prevent multi counting
                     if (currentTheoreticalIndex == TotalProductsHere)
-                    {
                         break;
-                    }
                     currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.ProtonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet
@@ -276,9 +258,7 @@ namespace EngineLayer
                     // Move on to next index and never come back!
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
-                    {
                         break;
-                    }
                     currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.ProtonMass;
 
                     // Start with the current ones
@@ -294,9 +274,7 @@ namespace EngineLayer
                         // Update test stuff!
                         testTheoreticalIndex++;
                         if (testTheoreticalIndex == TotalProductsHere)
-                        {
                             break;
-                        }
                         testTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex] + Constants.ProtonMass;
                     }
                     experimentalIndex--;
@@ -310,7 +288,7 @@ namespace EngineLayer
                 foreach (DissociationType dissociationType in dissociationTypes)
                 {
                     double testTheoreticalMass;
-                    if (ComplementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
+                    if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
                         currentTheoreticalIndex = -1;
                         do
@@ -459,7 +437,7 @@ namespace EngineLayer
 
         public static MzSpectrum GenerateComplementarySpectrum(MzSpectrum spectrum, double precursorMass, DissociationType dissociationType)
         {
-            double protonMassShift = ComplementaryIonConversionDictionary[dissociationType].ToMass(1);
+            double protonMassShift = complementaryIonConversionDictionary[dissociationType].ToMass(1);
 
             double[] newMzSpectrum = new double[spectrum.Size];
             double[] intensity = new double[spectrum.Size];
@@ -492,7 +470,7 @@ namespace EngineLayer
 
         public string GetId()
         {
-            return string.Join(",", NestedIds);
+            return string.Join(",", nestedIds);
         }
 
         public static List<DissociationType> DetermineDissociationType(List<ProductType> lp)
@@ -513,12 +491,12 @@ namespace EngineLayer
 
         protected void Warn(string v)
         {
-            WarnHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
+            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
         protected void Status(string v)
         {
-            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
+            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
         protected void ReportProgress(ProgressEventArgs v)

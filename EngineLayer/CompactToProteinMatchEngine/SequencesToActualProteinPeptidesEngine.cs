@@ -18,11 +18,7 @@ namespace EngineLayer
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         protected readonly bool ReportAllAmbiguity;
 
-        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList,
-                List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications,
-                List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams,
-                bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds)
-            : base(commonParameters, nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<PeptideSpectralMatch> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, List<ProductType> ionTypes, IEnumerable<DigestionParams> collectionOfDigestionParams, bool reportAllAmbiguity, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             Proteins = proteinList;
             AllPsms = allPsms;
@@ -61,9 +57,7 @@ namespace EngineLayer
                     foreach (var compactPeptide in psm.CompactPeptides)
                     {
                         if (!compactPeptideToProteinPeptideMatching.ContainsKey(compactPeptide.Key))
-                        {
                             compactPeptideToProteinPeptideMatching.Add(compactPeptide.Key, new HashSet<PeptideWithSetModifications>());
-                        }
                     }
                 }
             }
@@ -71,9 +65,7 @@ namespace EngineLayer
             double proteinsMatched = 0;
             int oldPercentProgress = 0;
 
-            Parallel.ForEach(Partitioner.Create(0, Proteins.Count),
-                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
-                (fff, loopState) =>
+            Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
@@ -94,29 +86,25 @@ namespace EngineLayer
                             if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out var peptidesWithSetMods))
                             {
                                 lock (peptidesWithSetMods)
-                                {
                                     peptidesWithSetMods.Add(peptide);
-                                }
                             }
                         }
                     }
-                }
 
-                // report progress (proteins matched so far out of total proteins in database)
-                proteinsMatched++;
-                var percentProgress = (int)((proteinsMatched / Proteins.Count) * 100);
+                    // report progress (proteins matched so far out of total proteins in database)
+                    proteinsMatched++;
+                    var percentProgress = (int)((proteinsMatched / Proteins.Count) * 100);
 
-                if (percentProgress > oldPercentProgress)
-                {
-                    oldPercentProgress = percentProgress;
-                    ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", NestedIds));
+                    if (percentProgress > oldPercentProgress)
+                    {
+                        oldPercentProgress = percentProgress;
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Matching peptides to proteins... ", nestedIds));
+                    }
                 }
             });
 
             if (!ReportAllAmbiguity)
-            {
                 ResolveAmbiguities(compactPeptideToProteinPeptideMatching);
-            }
 
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }

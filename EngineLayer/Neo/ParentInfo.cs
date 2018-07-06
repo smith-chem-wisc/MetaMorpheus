@@ -3,23 +3,21 @@ using System.Collections.Generic;
 
 namespace EngineLayer.Neo
 {
-    /// <summary>
-    /// Used for parents of a given sequence fragment for FusionCandidate objects
-    /// </summary>
+    //used for parents of a given sequence fragment for FusionCandidate objects
     public class ParentInfo
     {
-        public ParentInfo(List<Protein> proteins, Terminal parentType, string seqFound)
+        public ParentInfo(List<Protein> proteins, terminal parentType, string seqFound)
         {
-            TheoreticalProteins = proteins;
-            ParentType = parentType;
-            FragFound = seqFound;
+            this.theoreticalProteins = proteins;
+            this.parentType = parentType;
+            this.fragFound = seqFound;
         }
 
-        public enum Terminal { N, C };
+        public enum terminal { N, C };
 
-        public List<Protein> TheoreticalProteins { get; set; }
-        public string FragFound { get; set; }
-        public Terminal ParentType { get; set; }
+        public List<Protein> theoreticalProteins { get; set; }
+        public string fragFound { get; set; }
+        public terminal parentType { get; set; }
 
         //What terminus is the fragment from
     }

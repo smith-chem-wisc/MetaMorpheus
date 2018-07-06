@@ -9,7 +9,7 @@ namespace EngineLayer
 
         public MyRecursiveEventArgs(List<string> nestedIDs)
         {
-            NestedIDs = nestedIDs;
+            this.NestedIDs = nestedIDs;
         }
     }
 }

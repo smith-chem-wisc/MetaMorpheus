@@ -13,25 +13,24 @@ namespace EngineLayer.Localization
         private readonly MsDataFile MyMsDataFile;
         private readonly List<DissociationType> DissociationTypes;
 
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> productTypes, MsDataFile myMsDataFile,
-            CommonParameters commonParameters, List<string> nestedIds)
-            : base(commonParameters, nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             AllResultingIdentifications = allResultingIdentifications;
-            ProductTypes = productTypes;
+            ProductTypes = lp;
             MyMsDataFile = myMsDataFile;
-            DissociationTypes = DetermineDissociationType(productTypes);
+            DissociationTypes = DetermineDissociationType(lp);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
-            foreach (var psm in AllResultingIdentifications)
+            foreach (PeptideSpectralMatch psm in AllResultingIdentifications)
             {
                 if (GlobalVariables.StopLoops) { break; }
 
                 psm.MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
+                psm.MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
                 psm.MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
@@ -48,7 +47,7 @@ namespace EngineLayer.Localization
                     List<double> matchedIonIntensityList = new List<double>();
 
                     //populate the above lists
-                    MatchIonsOld(theScan, CommonParameters.ProductMassTolerance, sortedTheoreticalProductMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensityList, thePrecursorMass, productType, CommonParameters.AddCompIons);
+                    MatchIonsOld(theScan, commonParameters.ProductMassTolerance, sortedTheoreticalProductMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensityList, thePrecursorMass, productType, commonParameters.AddCompIons);
 
                     psm.MatchedIonSeriesDict.Add(productType, matchedIonSeriesList.ToArray());
                     psm.MatchedIonMassToChargeRatioDict.Add(productType, matchedIonMassToChargeRatioList.ToArray());
@@ -79,7 +78,7 @@ namespace EngineLayer.Localization
 
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
                     Array.Sort(gg);
-                    var score = CalculatePeptideScoreOld(theScan, CommonParameters.ProductMassTolerance, gg, thePrecursorMass, DissociationTypes, CommonParameters.AddCompIons, 0);
+                    var score = CalculatePeptideScoreOld(theScan, commonParameters.ProductMassTolerance, gg, thePrecursorMass, DissociationTypes, commonParameters.AddCompIons, 0);
                     localizedScores.Add(score);
                 }
 

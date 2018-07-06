@@ -64,9 +64,7 @@ namespace EngineLayer.Calibration
 
             object lockObj = new object();
             object lockObj2 = new object();
-            Parallel.ForEach(Partitioner.Create(0, numIdentifications),
-                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
-                (fff, loopState) =>
+            Parallel.ForEach(Partitioner.Create(0, numIdentifications), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
             {
                 for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
                 {

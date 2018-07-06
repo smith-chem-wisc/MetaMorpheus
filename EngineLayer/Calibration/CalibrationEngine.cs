@@ -26,8 +26,7 @@ namespace EngineLayer.Calibration
         private readonly MsDataFile MyMsDataFile;
         private readonly DataPointAquisitionResults Datapoints;
 
-        public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds)
-            : base(commonParameters, nestedIds)
+        public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             MyMsDataFile = myMSDataFile;
             Datapoints = datapoints;
@@ -112,9 +111,7 @@ namespace EngineLayer.Calibration
 
         private void CalibrateSpectra(IPredictorModel<double> ms1predictor, IPredictorModel<double> ms2predictor)
         {
-            Parallel.ForEach(Partitioner.Create(1, MyMsDataFile.NumSpectra + 1),
-                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
-                (fff, loopState) =>
+            Parallel.ForEach(Partitioner.Create(1, MyMsDataFile.NumSpectra + 1), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {

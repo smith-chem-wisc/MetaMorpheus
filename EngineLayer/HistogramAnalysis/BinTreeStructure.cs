@@ -28,13 +28,9 @@ namespace EngineLayer.HistogramAnalysis
                 var thisMassShift = listOfMassShifts[i];
 
                 while (thisMassShift - listOfMassShifts[firstIndex] > dc)
-                {
                     firstIndex++;
-                }
                 while (lastIndex + 1 < listOfMassShifts.Count && listOfMassShifts[lastIndex + 1] - thisMassShift <= dc)
-                {
                     lastIndex++;
-                }
 
                 p[i] = lastIndex - firstIndex;
             }
@@ -47,9 +43,7 @@ namespace EngineLayer.HistogramAnalysis
                 var thisMassShift = listOfMassShifts[i];
                 var thisP = p[i];
                 if (thisP == maxP)
-                {
                     sigma[i] = Math.Max(maxMassShift - thisMassShift, thisMassShift - minMassShift);
-                }
                 else
                 {
                     // SIGMA IS THE DISTANCE TO THE CLOSEST MASS SHIFT THAT HAS A HIGHER P VALUE THAN ITSELF
@@ -60,17 +54,13 @@ namespace EngineLayer.HistogramAnalysis
 
             var listokbin = new List<OkBin>();
             for (int i = 0; i < sigma.Length; i++)
-            {
                 listokbin.Add(new OkBin(listOfMassShifts[i], sigma[i], p[i]));
-            }
 
             var prelimBins = new HashSet<double>();
             foreach (OkBin okbin in listokbin.OrderByDescending(b => b.P))
             {
                 if (okbin.Sigma < dc || okbin.P < MinAdditionalPsmsInBin)
-                {
                     continue;
-                }
                 bool add = true;
                 foreach (double a in prelimBins)
                 {
@@ -81,38 +71,27 @@ namespace EngineLayer.HistogramAnalysis
                     }
                 }
                 if (add)
-                {
                     prelimBins.Add(okbin.MassShift);
-                }
             }
 
             var forFinalBins = new Dictionary<double, List<double>>();
             foreach (double ok in prelimBins)
-            {
                 forFinalBins.Add(ok, new List<double>());
-            }
             foreach (double a in listOfMassShifts)
-            {
                 foreach (double b in prelimBins)
-                {
                     if (Math.Abs(a - b) <= dc)
-                    {
                         forFinalBins[b].Add(a);
-                    }
-                }
-            }
+                    
+                
+            
 
             FinalBins = forFinalBins.Select(b => new Bin(b.Value.Average())).ToList();
 
             for (int i = 0; i < targetAndDecoyMatches.Count; i++)
             {
                 foreach (Bin bin in FinalBins)
-                {
                     if (targetAndDecoyMatches[i].PeptideMonisotopicMass.HasValue && Math.Abs(targetAndDecoyMatches[i].ScanPrecursorMass - targetAndDecoyMatches[i].PeptideMonisotopicMass.Value - bin.MassShift) <= dc)
-                    {
                         bin.Add(targetAndDecoyMatches[i]);
-                    }
-                }
             }
 
             FinalBins = FinalBins.Where(b => b.Count > 1).ToList();
@@ -171,7 +150,6 @@ namespace EngineLayer.HistogramAnalysis
         private void OverlappingIonSequences()
         {
             foreach (Bin bin in FinalBins)
-            {
                 foreach (var hm in bin.UniquePSMs.Where(b => !b.Value.Item3.IsDecoy && b.Value.Item3.MatchedIonMassToChargeRatioDict.Any()))
                 {
                     var ya = hm.Value.Item3.MatchedIonMassToChargeRatioDict;
@@ -180,11 +158,8 @@ namespace EngineLayer.HistogramAnalysis
                         && ya[ProductType.B].Any(b => b > 0)
                         && ya[ProductType.Y].Any(b => b > 0)
                         && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.PeptideMonisotopicMass.Value)
-                    {
                         bin.Overlapping++;
-                    }
                 }
-            }
         }
 
         private void IdentifyFracWithSingle()
@@ -193,9 +168,7 @@ namespace EngineLayer.HistogramAnalysis
             {
                 var numTarget = bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                {
                     bin.FracWithSingle = (double)bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.NumDifferentCompactPeptides == 1) / numTarget;
-                }
             }
         }
 
@@ -255,9 +228,7 @@ namespace EngineLayer.HistogramAnalysis
                         {
                             inModLevel++;
                             if (inModLevel == 1)
-                            {
                                 continue;
-                            }
                         }
                         else if (ye.Equals(']'))
                         {
@@ -265,9 +236,7 @@ namespace EngineLayer.HistogramAnalysis
                             if (inModLevel == 0)
                             {
                                 if (!currentMod.ToString().StartsWith("Common Fixed:"))
-                                {
                                     modsHere.Add(currentMod.ToString());
-                                }
                                 currentMod.Clear();
                             }
                             continue;
@@ -278,13 +247,9 @@ namespace EngineLayer.HistogramAnalysis
                     foreach (var modInHS in modsHere)
                     {
                         if (bin.ModsInCommon.ContainsKey(modInHS))
-                        {
                             bin.ModsInCommon[modInHS]++;
-                        }
                         else
-                        {
                             bin.ModsInCommon.Add(modInHS, 1);
-                        }
                     }
                 }
             }
@@ -375,7 +340,7 @@ namespace EngineLayer.HistogramAnalysis
                 {
                     if (Math.Abs(myInfo.MassShift - bin.MassShift) <= v)
                     {
-                        bin.Mine = myInfo.Infostring;
+                        bin.Mine = myInfo.infostring;
                     }
                 }
             }

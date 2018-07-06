@@ -9,8 +9,7 @@ namespace EngineLayer
     {
         // this parameterless constructor needs to exist to read the toml.
         // if you can figure out a way to get rid of it, feel free...
-        public CommonParameters()
-            : this(digestionParams: null)
+        public CommonParameters() : this(digestionParams: null)
         {
         }
 
@@ -89,47 +88,47 @@ namespace EngineLayer
         public CommonParameters Clone()
         {
             return new CommonParameters(
-                bIons: BIons,
-                yIons: YIons,
-                zDotIons: ZdotIons,
-                cIons: CIons,
-                doPrecursorDeconvolution: DoPrecursorDeconvolution,
-                useProvidedPrecursorInfo: UseProvidedPrecursorInfo,
-                deconvolutionIntensityRatio: DeconvolutionIntensityRatio,
-                deconvolutionMaxAssumedChargeState: DeconvolutionMaxAssumedChargeState,
-                reportAllAmbiguity: ReportAllAmbiguity,
-                addCompIons: AddCompIons,
-                totalPartitions: TotalPartitions,
-                scoreCutoff: ScoreCutoff,
-                topNpeaks: TopNpeaks,
-                minRatio: MinRatio,
-                trimMs1Peaks: TrimMs1Peaks,
-                trimMsMsPeaks: TrimMsMsPeaks,
-                useDeltaScore: UseDeltaScore,
-                calculateEValue: CalculateEValue,
-                productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance,
-                deconvolutionMassTolerance: DeconvolutionMassTolerance,
-                maxThreadsToUsePerFile: MaxThreadsToUsePerFile,
-                digestionParams: DigestionParams,
-                listOfModsVariable: ListOfModsVariable,
-                listOfModsFixed: ListOfModsFixed
+                bIons: this.BIons,
+                yIons: this.YIons,
+                zDotIons: this.ZdotIons,
+                cIons: this.CIons,
+                doPrecursorDeconvolution: this.DoPrecursorDeconvolution,
+                useProvidedPrecursorInfo: this.UseProvidedPrecursorInfo,
+                deconvolutionIntensityRatio: this.DeconvolutionIntensityRatio,
+                deconvolutionMaxAssumedChargeState: this.DeconvolutionMaxAssumedChargeState,
+                reportAllAmbiguity: this.ReportAllAmbiguity,
+                addCompIons: this.AddCompIons,
+                totalPartitions: this.TotalPartitions,
+                scoreCutoff: this.ScoreCutoff,
+                topNpeaks: this.TopNpeaks,
+                minRatio: this.MinRatio,
+                trimMs1Peaks: this.TrimMs1Peaks,
+                trimMsMsPeaks: this.TrimMsMsPeaks,
+                useDeltaScore: this.UseDeltaScore,
+                calculateEValue: this.CalculateEValue,
+                productMassTolerance: this.ProductMassTolerance,
+                precursorMassTolerance: this.PrecursorMassTolerance,
+                deconvolutionMassTolerance: this.DeconvolutionMassTolerance,
+                maxThreadsToUsePerFile: this.MaxThreadsToUsePerFile,
+                digestionParams: this.DigestionParams,
+                listOfModsVariable: this.ListOfModsVariable,
+                listOfModsFixed: this.ListOfModsFixed
             );
         }
 
-        public void SetProductMassTolerance(Tolerance productMassTolerance)
+        public void SetProductMassTolerance(Tolerance ProductMassTolerance)
         {
-            ProductMassTolerance = productMassTolerance;
+            this.ProductMassTolerance = ProductMassTolerance;
         }
 
-        public void SetPrecursorMassTolerance(Tolerance precursorMassTolerance)
+        public void SetPrecursorMassTolerance(Tolerance PrecursorMassTolerance)
         {
-            PrecursorMassTolerance = precursorMassTolerance;
+            this.PrecursorMassTolerance = PrecursorMassTolerance;
         }
 
-        public void SetDigestionParams(DigestionParams digestionParams)
+        public void SetDigestionParams(DigestionParams DigestionParams)
         {
-            DigestionParams = digestionParams;
+            this.DigestionParams = DigestionParams;
         }
     }
 }

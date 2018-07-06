@@ -5,8 +5,7 @@ namespace EngineLayer
     [Serializable]
     public class MetaMorpheusException : Exception
     {
-        public MetaMorpheusException(string message)
-            : base(message)
+        public MetaMorpheusException(string message) : base(message)
         {
         }
     }

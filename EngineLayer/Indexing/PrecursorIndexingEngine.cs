@@ -13,10 +13,7 @@ namespace EngineLayer.Indexing
 {
     public class PrecursorIndexingEngine : IndexingEngine
     {
-        public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications,
-                List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams,
-                double maxFragmentSize, List<string> nestedIds)
-            : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
+        public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
         {
         }
 
@@ -24,7 +21,7 @@ namespace EngineLayer.Indexing
         {
             var sb = new StringBuilder();
             sb.Append("Precursor Mass Only");
-            sb.AppendLine("Index partitions: " + CurrentPartition + "/" + CommonParameters.TotalPartitions);
+            sb.AppendLine("Index partitions: " + CurrentPartition + "/" + commonParameters.TotalPartitions);
             sb.AppendLine("Search Decoys: " + DecoyType);
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
@@ -53,7 +50,7 @@ namespace EngineLayer.Indexing
             HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
 
             Parallel.ForEach(Partitioner.Create(0, ProteinList.Count),
-                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
+                new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (range, loopState) =>
             {
                 for (int i = range.Item1; i < range.Item2; i++)
@@ -90,13 +87,13 @@ namespace EngineLayer.Indexing
                     if (percentProgress > oldPercentProgress)
                     {
                         oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins for precursor...", NestedIds));
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins for precursor...", nestedIds));
                     }
                 }
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(CommonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
+            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
             peptideToId = null;
 
             // create fragment index
@@ -133,7 +130,7 @@ namespace EngineLayer.Indexing
                 if (percentProgress > oldPercentProgress)
                 {
                     oldPercentProgress = percentProgress;
-                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index for precursor...", NestedIds));
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index for precursor...", nestedIds));
                 }
             }
 

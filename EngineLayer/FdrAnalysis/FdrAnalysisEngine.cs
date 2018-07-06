@@ -230,9 +230,7 @@ namespace EngineLayer.FdrAnalysis
                     }
                 }
                 else
-                {
                     cumulative_target++;
-                }
             }
             return cumulative_target;
         }

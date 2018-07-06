@@ -6,26 +6,26 @@ namespace EngineLayer.Neo
     {
         public NeoPsm(int scan, double expMass)
         {
-            ScanNumber = scan;
-            ExpMass = expMass;
-            FusionType = FusionType.TS; //default
-            Candidates = new List<FusionCandidate>();
+            this.scanNumber = scan;
+            this.expMass = expMass;
+            this.fusionType = FusionCandidate.FusionType.TS; //default
+            this.candidates = new List<FusionCandidate>();
         }
 
         public NeoPsm(int scan, double expMass, InitialID nInfo, InitialID cInfo)
         {
-            ScanNumber = scan;
-            ExpMass = expMass;
-            NInfo = nInfo;
-            CInfo = cInfo;
-            Candidates = new List<FusionCandidate>();
+            this.scanNumber = scan;
+            this.expMass = expMass;
+            this.nInfo = nInfo;
+            this.cInfo = cInfo;
+            this.candidates = new List<FusionCandidate>();
         }
 
-        public int ScanNumber { get; set; }
-        public double ExpMass { get; set; }
-        public InitialID NInfo { get; set; }
-        public InitialID CInfo { get; set; }
-        public List<FusionCandidate> Candidates { get; set; }
-        public FusionType FusionType { get; set; }
+        public int scanNumber { get; set; }
+        public double expMass { get; set; }
+        public InitialID nInfo { get; set; }
+        public InitialID cInfo { get; set; }
+        public List<FusionCandidate> candidates { get; set; }
+        public FusionCandidate.FusionType fusionType { get; set; }
     }
 }

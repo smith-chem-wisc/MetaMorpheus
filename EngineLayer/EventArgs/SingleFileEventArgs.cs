@@ -4,8 +4,7 @@ namespace EngineLayer
 {
     public class SingleFileEventArgs : MyRecursiveEventArgs
     {
-        public SingleFileEventArgs(string writtenFile, List<string> nestedIds)
-            : base(nestedIds)
+        public SingleFileEventArgs(string writtenFile, List<string> nestedIds) : base(nestedIds)
         {
             WrittenFile = writtenFile;
         }
