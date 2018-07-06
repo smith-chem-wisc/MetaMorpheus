@@ -234,7 +234,7 @@ namespace TaskLayer
                 && !p.IsDecoy
                 && p.FullSequence != null);
 
-            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
+            //var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -291,40 +291,72 @@ namespace TaskLayer
             // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
+            //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
+            Dictionary<Protease, List<PeptideSpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<PeptideSpectralMatch>>();
+            Dictionary<Protease, FlashLFQResults> proteaseSortedFlashLFQResults = new Dictionary<Protease, FlashLFQResults >();
+
+            foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
+            {
+                if (!proteaseSortedPsms.ContainsKey(dp.Protease))
+                {
+                    proteaseSortedPsms.Add(dp.Protease, new List<PeptideSpectralMatch>());
+                }
+            }
             foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
             {
                 if (!psmToProteinGroups.ContainsKey(psm))
                 {
                     psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
+
+                proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
             }
+
 
             // pass PSM info to FlashLFQ
-            var flashLFQIdentifications = new List<Identification>();
-            foreach (var spectraFile in psmsGroupedByFile)
-            {
-                var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
 
-                foreach (var psm in spectraFile)
+            Parameters.FlashLfqResults = null;
+            
+            foreach (var proteasePsms in proteaseSortedPsms)
+            {
+                var flashLFQIdentifications = new List<Identification>();
+                var psmsGroupedByFile = proteasePsms.Value.GroupBy(p => p.FullFilePath);
+                foreach (var spectraFile in psmsGroupedByFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
+
+                    foreach (var psm in spectraFile)
+                    {
+                        flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+                            psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    }
+                }
+
+                // run FlashLFQ
+                var FlashLfqEngine = new FlashLFQEngine(
+                    allIdentifications: flashLFQIdentifications,
+                    normalize: Parameters.SearchParameters.Normalize,
+                    ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+                    matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+                    silent: true,
+                    optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
+
+                if (flashLFQIdentifications.Any())
+                {
+                    //make specific to protease
+                    var results = FlashLfqEngine.Run();
+
+                    if(Parameters.FlashLfqResults == null)
+                    {
+                        Parameters.FlashLfqResults = results;
+                    }
+                    else
+                    {
+                        Parameters.FlashLfqResults.MergeResultsWith(results);
+                    }
                 }
             }
-
-            // run FlashLFQ
-            var FlashLfqEngine = new FlashLFQEngine(
-                allIdentifications: flashLFQIdentifications,
-                normalize: Parameters.SearchParameters.Normalize,
-                ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
-                matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
-                silent: true,
-                optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
-
-            if (flashLFQIdentifications.Any())
-            {
-                Parameters.FlashLfqResults = FlashLfqEngine.Run();
-            }
+                        
 
             // get protein intensity back from FlashLFQ
             if (ProteinGroups != null && Parameters.FlashLfqResults != null)
@@ -782,6 +814,8 @@ namespace TaskLayer
         {
             var baseSeqPath = Path.Combine(outputFolder, fileName + "BaseSequences.tsv");
             var fullSeqPath = Path.Combine(outputFolder, fileName + "FullSequences.tsv");
+
+
 
             flashLFQResults.WriteResults(null, fullSeqPath, baseSeqPath, null);
 
