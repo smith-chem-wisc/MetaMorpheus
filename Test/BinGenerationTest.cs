@@ -14,14 +14,13 @@ namespace Test
     [TestFixture]
     public static class BinGenerationTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestBinGeneration()
         {
             SearchTask st = new SearchTask
             {
-                CommonParameters = new CommonParameters(ScoreCutoff: 1, DigestionParams: new DigestionParams(MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
                
                 SearchParameters = new SearchParameters
                 {
@@ -78,11 +77,11 @@ namespace Test
             SearchTask st = new SearchTask()
             {
                 CommonParameters = new CommonParameters(
-                    ScoreCutoff: 1, 
-                    DigestionParams: new DigestionParams(
-                        MaxMissedCleavages: 0,
-                        MinPeptideLength: 5, 
-                        InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                    scoreCutoff: 1, 
+                    digestionParams: new DigestionParams(
+                        maxMissedCleavages: 0,
+                        minPeptideLength: 5, 
+                        initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
                 
                 SearchParameters = new SearchParameters
                 {
@@ -131,6 +130,5 @@ namespace Test
                 null);
         }
 
-        #endregion Public Methods
     }
 }

@@ -7,15 +7,9 @@ namespace EngineLayer.Neo
 {
     public class NeoMassCalculator
     {
-        #region Public Fields
-
         public static double[] MONOISOTOPIC_AMINO_ACID_MASSES;
         public static double[] AVERAGE_AMINO_ACID_MASSES;
         public static DataTable ModificationsDT = new DataTable();
-
-        #endregion Public Fields
-
-        #region Public Methods
 
         public static void ImportMasses()
         {
@@ -122,10 +116,6 @@ namespace EngineLayer.Neo
             }
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
         private static void AminoAcidMasses()
         {
             MONOISOTOPIC_AMINO_ACID_MASSES = new double['Z' - 'A' + 1]; //makes array with 26 0's
@@ -220,7 +210,5 @@ namespace EngineLayer.Neo
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

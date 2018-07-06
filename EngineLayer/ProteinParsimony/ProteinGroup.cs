@@ -2,7 +2,6 @@
 using Proteomics;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -10,14 +9,8 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
-        #region Public Fields
-
-        public readonly bool isDecoy;
-        public readonly bool isContaminant;
-
-        #endregion Public Fields
-
-        #region Public Constructors
+        public readonly bool IsDecoy;
+        public readonly bool IsContaminant;
 
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
@@ -33,8 +26,8 @@ namespace EngineLayer
             ProteinGroupScore = 0;
             BestPeptideScore = 0;
             QValue = 0;
-            isDecoy = false;
-            isContaminant = false;
+            IsDecoy = false;
+            IsContaminant = false;
             ModsInfo = new List<string>();
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
@@ -42,20 +35,16 @@ namespace EngineLayer
             {
                 if (protein.IsDecoy)
                 {
-                    isDecoy = true;
+                    IsDecoy = true;
                     break;
                 }
                 if (protein.IsContaminant)
                 {
-                    isContaminant = true;
+                    IsContaminant = true;
                     break;
                 }
             }
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public List<SpectraFileInfo> FilesForQuantification { get; set; }
 
@@ -93,15 +82,7 @@ namespace EngineLayer
 
         public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
 
-        #endregion Public Properties
-
-        #region Private Properties
-
         private List<Protein> ListOfProteinsOrderedByAccession;
-
-        #endregion Private Properties
-
-        #region Public Methods
 
         public string GetTabSeparatedHeader()
         {
@@ -245,9 +226,9 @@ namespace EngineLayer
             sb.Append("\t");
 
             // isDecoy
-            if (isDecoy)
+            if (IsDecoy)
                 sb.Append("D");
-            else if (isContaminant)
+            else if (IsContaminant)
                 sb.Append("C");
             else
                 sb.Append("T");
@@ -499,8 +480,5 @@ namespace EngineLayer
 
             return subsetPg;
         }
-
-        #endregion Public Methods
-
     }
 }

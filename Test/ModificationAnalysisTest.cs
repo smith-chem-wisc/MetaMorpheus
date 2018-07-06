@@ -12,7 +12,6 @@ namespace Test
     [TestFixture]
     public static class ModificationAnalysisTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestModificationAnalysis()
@@ -63,11 +62,11 @@ namespace Test
             CompactPeptideBase pep4 = new CompactPeptide(pwsm4, TerminusType.None);
 
             CommonParameters CommonParameters = new CommonParameters(
-                DigestionParams: new DigestionParams(
-                    MaxMissedCleavages: 0,
-                    MinPeptideLength: 1,
-                    MaxModificationIsoforms: int.MaxValue),
-                ScoreCutoff: 1);
+                digestionParams: new DigestionParams(
+                    maxMissedCleavages: 0,
+                    minPeptideLength: 1,
+                    maxModificationIsoforms: int.MaxValue),
+                scoreCutoff: 1);
            
             var newPsms = new List<PeptideSpectralMatch>
             {
@@ -85,7 +84,7 @@ namespace Test
 
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine
             (newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
-            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
             {
@@ -93,7 +92,7 @@ namespace Test
             }
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(2, res.AllModsOnProteins.Count());
@@ -139,7 +138,7 @@ namespace Test
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
-            CommonParameters CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1), ScoreCutoff: 1);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
             
             var newPsms = new List<PeptideSpectralMatch>
             {
@@ -151,7 +150,7 @@ namespace Test
             List<Protein> proteinList = new List<Protein> { protein1 };
 
            
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
@@ -164,7 +163,7 @@ namespace Test
 
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(1, res.AllModsOnProteins.Count());
@@ -179,12 +178,10 @@ namespace Test
             Assert.AreEqual(0, res.UnlocalizedFormulas.Count());
         }
 
-        #endregion Public Methods
     }
 
     internal class ThisTestScan : IScan
     {
-        #region Public Properties
 
         public string FullFilePath => null;
 
@@ -204,6 +201,5 @@ namespace Test
 
         public double PrecursorMass => 0;
 
-        #endregion Public Properties
     }
 }

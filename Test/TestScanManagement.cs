@@ -1,20 +1,16 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
 using TaskLayer;
-
-
 
 namespace Test
 {
     [TestFixture]
-    class TestScanManagement
+    internal class TestScanManagement
     {
-        #region Public Method
-
         //[Test]
         public static void TestGetCombinedMs2Scans()
         {
@@ -52,13 +48,11 @@ namespace Test
                                 var x = myMsDataFile.GetOneBasedScan(ms2scan.OneBasedScanNumber + i);
                                 //var x = myMsDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>().ElementAt(i);
 
-
                                 if (x.MsnOrder == 2 && x.SelectedIonMZ == ms2scan.SelectedIonMZ)
                                 {
                                     currentScanMS2OneBasedScanNumber.Add(x.OneBasedScanNumber);
                                     mz2.AddRange(x.MassSpectrum.XArray.ToList());
                                     intensities2.AddRange(x.MassSpectrum.YArray.ToList());
-
                                 }
                                 if (x.MsnOrder == 3 && currentScanMS2OneBasedScanNumber.Contains(x.OneBasedPrecursorScanNumber.Value))
                                 {
@@ -85,7 +79,5 @@ namespace Test
             //Assert.AreEqual(5, myMsDataFile.NumSpectra);
             //Assert.AreEqual(1, listOfSortedms2Scans2.Count());
         }
-
-        #endregion 
     }
 }

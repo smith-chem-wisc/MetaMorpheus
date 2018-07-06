@@ -5,13 +5,10 @@ namespace TaskLayer
 {
     public class SearchParameters
     {
-        #region Public Constructors
-
         public SearchParameters()
         {
             // default search task parameters
             DisposeOfFileWhenDone = true;
-            AddCompIons = false;
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
@@ -28,10 +25,10 @@ namespace TaskLayer
             MaxFragmentSize = 30000.0;
             ModsToWriteSelection = new Dictionary<string, int>
             {
-                //Key is modification type. 
-                //Select from: Common Fixed; Common Variable; Artifact; Biological; Crosslink; Detached; fallOffN; fallOffC; N-linked glycosylation; 
-                //O -linked glycosylation; Other glycosylation; missing; Deprecated_Mod; Deprecated_PeptideTermMod; Deprecated_Metal; 
-                //Deprecated_ProteinTermMod; Deprecated_TrypsinDigestedMod; Deprecated_AnpN_DigestedMode; RNA; 1 nucleotide substitution; 
+                //Key is modification type.
+                //Select from: Common Fixed; Common Variable; Artifact; Biological; Crosslink; Detached; fallOffN; fallOffC; N-linked glycosylation;
+                //O -linked glycosylation; Other glycosylation; missing; Deprecated_Mod; Deprecated_PeptideTermMod; Deprecated_Metal;
+                //Deprecated_ProteinTermMod; Deprecated_TrypsinDigestedMod; Deprecated_AnpN_DigestedMode; RNA; 1 nucleotide substitution;
                 //2 + nucleotide substitution; Surfactant; TandemMassTag; Unimod; UniProt
 
                 //Value is integer 0, 1, 2 and 3 interpreted as:
@@ -39,7 +36,6 @@ namespace TaskLayer
                 //   1:   Write if in DB and Observed
                 //   2:   Write if in DB
                 //   3:   Write if Observed
-
 
                 {"Biological", 3},
                 //{"ProteinTermMod", 3},
@@ -49,12 +45,7 @@ namespace TaskLayer
             OutPepXML = false;
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public bool DisposeOfFileWhenDone { get; set; }
-        public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
@@ -77,7 +68,5 @@ namespace TaskLayer
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool OutMzId { get; set; }
         public bool OutPepXML { get; set; }
-
-        #endregion Public Properties
     }
 }

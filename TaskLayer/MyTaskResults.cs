@@ -7,33 +7,19 @@ namespace TaskLayer
 {
     public class MyTaskResults
     {
-        #region Public Fields
-
-        public List<string> newSpectra; // calibration writes new calibrated spectra
-        public List<DbForTask> newDatabases; // gptmd writes new annotated databases
-        public List<string> newFileSpecificTomls; // calibration writes suggested ppm tolerances
+        public List<string> NewSpectra; // calibration writes new calibrated spectra
+        public List<DbForTask> NewDatabases; // gptmd writes new annotated databases
+        public List<string> NewFileSpecificTomls; // calibration writes suggested ppm tolerances
         public TimeSpan Time;
-
-        #endregion Public Fields
-
-        #region Private Fields
 
         private readonly List<string> resultTexts;
 
         private readonly StringBuilder niceText = new StringBuilder();
 
-        #endregion Private Fields
-
-        #region Internal Constructors
-
         internal MyTaskResults(MetaMorpheusTask s)
         {
             resultTexts = new List<string>();
         }
-
-        #endregion Internal Constructors
-
-        #region Public Methods
 
         public override string ToString()
         {
@@ -42,21 +28,21 @@ namespace TaskLayer
             sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
-            if ((newSpectra != null && newSpectra.Any()) || (newDatabases != null && newDatabases.Any()))
+            if ((NewSpectra != null && NewSpectra.Any()) || (NewDatabases != null && NewDatabases.Any()))
             {
                 sb.AppendLine();
                 sb.AppendLine();
                 sb.AppendLine("New files:");
-                if (newSpectra != null && newSpectra.Any())
+                if (NewSpectra != null && NewSpectra.Any())
                 {
                     sb.AppendLine("New spectra: ");
                     sb.AppendLine();
-                    sb.AppendLine(string.Join(Environment.NewLine + "\t", newSpectra));
+                    sb.AppendLine(string.Join(Environment.NewLine + "\t", NewSpectra));
                 }
-                if (newDatabases != null && newDatabases.Any())
+                if (NewDatabases != null && NewDatabases.Any())
                 {
                     sb.AppendLine("New databases: ");
-                    sb.AppendLine(string.Join(Environment.NewLine + "\t", newDatabases.Select(b => b.FilePath)).ToString());
+                    sb.AppendLine(string.Join(Environment.NewLine + "\t", NewDatabases.Select(b => b.FilePath)).ToString());
                 }
                 sb.AppendLine();
                 sb.AppendLine();
@@ -80,10 +66,6 @@ namespace TaskLayer
             return sb.ToString();
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
         internal void AddResultText(string resultsText)
         {
             resultTexts.Add(resultsText);
@@ -93,7 +75,5 @@ namespace TaskLayer
         {
             niceText.AppendLine(niceTextString);
         }
-
-        #endregion Internal Methods
     }
 }

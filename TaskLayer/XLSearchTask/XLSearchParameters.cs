@@ -6,8 +6,6 @@ namespace TaskLayer
 {
     public class XlSearchParameters
     {
-        #region Public Constructors
-
         public XlSearchParameters()
         {
             FragmentationType = FragmentaionType.MS2_HCD;
@@ -41,10 +39,6 @@ namespace TaskLayer
             XlCharge_2_3 = true;
             XlCharge_2_3_PrimeFragment = false;
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public FragmentaionType FragmentationType { get; set; }
         public DecoyType DecoyType { get; set; }
@@ -80,7 +74,5 @@ namespace TaskLayer
 
         public bool XlCharge_2_3 { get; set; }
         public bool XlCharge_2_3_PrimeFragment { get; set; }
-
-        #endregion Public Properties
     }
 }
