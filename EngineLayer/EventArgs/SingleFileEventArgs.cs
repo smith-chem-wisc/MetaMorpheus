@@ -6,9 +6,9 @@ namespace EngineLayer
     {
         public SingleFileEventArgs(string writtenFile, List<string> nestedIds) : base(nestedIds)
         {
-            this.writtenFile = writtenFile;
+            WrittenFile = writtenFile;
         }
 
-        public string writtenFile { get; private set; }
+        public string WrittenFile { get; private set; }
     }
 }

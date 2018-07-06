@@ -18,7 +18,7 @@ namespace TaskLayer
         public NeoSearchTask() : base(MyTask.Neo)
         {
             NeoParameters = new NeoParameters();
-            var tempDigParams = new DigestionParams(protease: "non-specific", MaxMissedCleavages: 12, MinPeptideLength: 8, MaxPeptideLength: 13);
+            var tempDigParams = new DigestionParams(protease: "non-specific", maxMissedCleavages: 12, minPeptideLength: 8, maxPeptideLength: 13);
 
             CommonParameters = new CommonParameters(
                 digestionParams: tempDigParams,

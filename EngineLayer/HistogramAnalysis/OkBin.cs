@@ -2,15 +2,15 @@
 {
     internal class OkBin
     {
-        internal double massShift;
-        internal double sigma;
-        internal int p;
+        internal double MassShift;
+        internal double Sigma;
+        internal int P;
 
         public OkBin(double massShift, double sigma, int p)
         {
-            this.massShift = massShift;
-            this.sigma = sigma;
-            this.p = p;
+            MassShift = massShift;
+            Sigma = sigma;
+            P = p;
         }
     }
 }

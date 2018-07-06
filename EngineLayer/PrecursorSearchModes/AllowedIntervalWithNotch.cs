@@ -4,12 +4,12 @@ namespace EngineLayer
 {
     public class AllowedIntervalWithNotch
     {
-        public DoubleRange allowedInterval;
+        public DoubleRange AllowedInterval;
 
         public AllowedIntervalWithNotch(DoubleRange doubleRange, int j)
         {
-            this.allowedInterval = doubleRange;
-            this.Notch = j;
+            AllowedInterval = doubleRange;
+            Notch = j;
         }
 
         public int Notch { get; }

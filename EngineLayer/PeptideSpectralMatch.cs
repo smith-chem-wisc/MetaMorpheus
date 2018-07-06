@@ -12,33 +12,33 @@ namespace EngineLayer
 {
     public class PeptideSpectralMatch
     {
-        private const double tolForDoubleResolution = 1e-6;
+        private const double ToleranceForDoubleResolution = 1e-6;
 
-        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
-        public const double tolForScoreDifferentiation = 1e-9;
+        public const double ToleranceForScoreDifferentiation = 1e-9;
 
         public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
         {
-            this.ScanIndex = scanIndex;
-            this.FullFilePath = scan.FullFilePath;
-            this.ScanNumber = scan.OneBasedScanNumber;
-            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
-            this.ScanRetentionTime = scan.RetentionTime;
-            this.ScanExperimentalPeaks = scan.NumPeaks;
-            this.TotalIonCurrent = scan.TotalIonCurrent;
-            this.ScanPrecursorCharge = scan.PrecursorCharge;
-            this.ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
-            this.ScanPrecursorMass = scan.PrecursorMass;
+            ScanIndex = scanIndex;
+            FullFilePath = scan.FullFilePath;
+            ScanNumber = scan.OneBasedScanNumber;
+            PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
+            ScanRetentionTime = scan.RetentionTime;
+            ScanExperimentalPeaks = scan.NumPeaks;
+            TotalIonCurrent = scan.TotalIonCurrent;
+            ScanPrecursorCharge = scan.PrecursorCharge;
+            ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
+            ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch, true);
-            this.AllScores = new List<double>();
-            this.DigestionParams = digestionParams;
+            AllScores = new List<double>();
+            DigestionParams = digestionParams;
             MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
             MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-            this.MatchedFragmentIons = new List<MatchedFragmentIon>();
+            MatchedFragmentIons = new List<MatchedFragmentIon>();
         }
 
         public ChemicalFormula ModsChemicalFormula { get; private set; }
@@ -52,8 +52,8 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
-        public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
-        public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
+        public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return _CompactPeptides.AsEnumerable(); } }
+        public int NumDifferentCompactPeptides { get { return _CompactPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
         public double DeltaScore { get; private set; }
@@ -100,23 +100,23 @@ namespace EngineLayer
 
         public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
         {
-            if (score - Score > tolForScoreDifferentiation) //if new score beat the old score, overwrite it
+            if (score - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
-                compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
+                _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
                 {
                     { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
                 };
-                if (Score - RunnerUpScore > tolForScoreDifferentiation)
+                if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
                 {
                     RunnerUpScore = Score;
                 }
                 Score = score;
             }
-            else if (score - Score > -tolForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
+            else if (score - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
-                compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
+                _CompactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
             }
-            else if (Score - RunnerUpScore > tolForScoreDifferentiation)
+            else if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
                 RunnerUpScore = score;
             }
@@ -125,7 +125,7 @@ namespace EngineLayer
         public void CompactCompactPeptides()
         {
             List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
-            foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in compactPeptides)
+            foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in CompactPeptides)
             {
                 //Change CPWM to reflect actual CP
                 Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
@@ -134,21 +134,21 @@ namespace EngineLayer
                     cps.Add(tempTuple);
                 }
             }
-            compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+            _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
             foreach (Tuple<CompactPeptideBase, int> cp in cps)
             {
-                compactPeptides[cp.Item1] = new Tuple<int, HashSet<PeptideWithSetModifications>>(cp.Item2, null);
+                _CompactPeptides[cp.Item1] = new Tuple<int, HashSet<PeptideWithSetModifications>>(cp.Item2, null);
             }
         }
 
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
-            foreach (var cpKey in compactPeptides.Keys.ToList())
+            foreach (var cpKey in _CompactPeptides.Keys.ToList())
             {
-                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matching[cpKey]);
+                _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1, matching[cpKey]);
             }
-            var pepsWithMods = compactPeptides.SelectMany(b => b.Value.Item2);
-            IsDecoy = compactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
+            var pepsWithMods = CompactPeptides.SelectMany(b => b.Value.Item2);
+            IsDecoy = CompactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
             FullSequence = Resolve(pepsWithMods.Select(b => b.Sequence)).Item2;
             BaseSequence = Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item2;
             PeptideLength = Resolve(pepsWithMods.Select(b => b.Length)).Item2;
@@ -160,7 +160,7 @@ namespace EngineLayer
             Organism = Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item2;
             ModsIdentified = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus)).Item2;
             ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
-            Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
+            Notch = Resolve(CompactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
         public override string ToString()
@@ -276,7 +276,7 @@ namespace EngineLayer
         private static Tuple<string, double?> ResolveF2(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
-            if (list.Max() - list.Min() < tolForDoubleResolution)
+            if (list.Max() - list.Min() < ToleranceForDoubleResolution)
             {
                 return new Tuple<string, double?>(list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
             }
@@ -290,7 +290,7 @@ namespace EngineLayer
         private static Tuple<string, double?> Resolve(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
-            if (list.Max() - list.Min() < tolForDoubleResolution)
+            if (list.Max() - list.Min() < ToleranceForDoubleResolution)
             {
                 return new Tuple<string, double?>(list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
             }
@@ -345,21 +345,21 @@ namespace EngineLayer
             s["Precursor Mass"] = peptide == null ? " " : peptide.ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture);
             s["Score"] = peptide == null ? " " : peptide.Score.ToString("F3", CultureInfo.InvariantCulture);
             s["Delta Score"] = peptide == null ? " " : peptide.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
-            s["Notch"] = peptide == null ? " " : Resolve(peptide.compactPeptides.Select(b => b.Value.Item1)).Item1; // Notch
+            s["Notch"] = peptide == null ? " " : Resolve(peptide.CompactPeptides.Select(b => b.Value.Item1)).Item1; // Notch
             s["Different Peak Matches"] = peptide == null ? " " : peptide.NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture);
         }
 
         private static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch peptide, IReadOnlyDictionary<string, int> ModsToWritePruned)
         {
-            bool pepWithModsIsNull = peptide == null || peptide.compactPeptides.First().Value.Item2 == null;
+            bool pepWithModsIsNull = peptide == null || peptide.CompactPeptides.First().Value.Item2 == null;
 
-            var pepsWithMods = pepWithModsIsNull ? null : peptide.compactPeptides.SelectMany(b => b.Value.Item2)
+            var pepsWithMods = pepWithModsIsNull ? null : peptide.CompactPeptides.SelectMany(b => b.Value.Item2)
                 .OrderBy(p => p.Sequence)
                 .ThenBy(p => p.Protein.Accession)
                 .ThenBy(p => p.OneBasedStartResidueInProtein).ToList();
 
             s["Peptides Sharing Same Peaks"] = pepWithModsIsNull ? " " :
-                GlobalVariables.CheckLengthOfOutput(string.Join("|", peptide.compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
+                GlobalVariables.CheckLengthOfOutput(string.Join("|", peptide.CompactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
             s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item1;
             s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Sequence)).Item1;
             s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).Item1;

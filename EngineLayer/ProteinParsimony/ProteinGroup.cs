@@ -9,8 +9,8 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
-        public readonly bool isDecoy;
-        public readonly bool isContaminant;
+        public readonly bool IsDecoy;
+        public readonly bool IsContaminant;
 
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
@@ -26,8 +26,8 @@ namespace EngineLayer
             ProteinGroupScore = 0;
             BestPeptideScore = 0;
             QValue = 0;
-            isDecoy = false;
-            isContaminant = false;
+            IsDecoy = false;
+            IsContaminant = false;
             ModsInfo = new List<string>();
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
@@ -35,12 +35,12 @@ namespace EngineLayer
             {
                 if (protein.IsDecoy)
                 {
-                    isDecoy = true;
+                    IsDecoy = true;
                     break;
                 }
                 if (protein.IsContaminant)
                 {
-                    isContaminant = true;
+                    IsContaminant = true;
                     break;
                 }
             }
@@ -226,9 +226,9 @@ namespace EngineLayer
             sb.Append("\t");
 
             // isDecoy
-            if (isDecoy)
+            if (IsDecoy)
                 sb.Append("D");
-            else if (isContaminant)
+            else if (IsContaminant)
                 sb.Append("C");
             else
                 sb.Append("T");

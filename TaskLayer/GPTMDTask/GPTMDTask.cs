@@ -86,7 +86,7 @@ namespace TaskLayer
             Status("Running G-PTM-D...", new List<string> { taskId });
             MyTaskResults = new MyTaskResults(this)
             {
-                newDatabases = new List<DbForTask>()
+                NewDatabases = new List<DbForTask>()
             };
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
             HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
@@ -176,7 +176,7 @@ namespace TaskLayer
 
                 SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
-                MyTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
                 MyTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddNiceText("Mods types and counts:");
                 MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
@@ -198,7 +198,7 @@ namespace TaskLayer
 
                 SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
-                MyTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
+                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
                 MyTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddNiceText("Mods types and counts:");
                 MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));

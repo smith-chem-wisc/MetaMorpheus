@@ -25,7 +25,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
                 (digestionParams: new DigestionParams(
                     protease: protease.Name,
-                    MinPeptideLength: 1),
+                    minPeptideLength: 1),
                 scoreCutoff: 1);
 
             var myMsDataFile = new TestDataFile();
@@ -72,8 +72,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
                     protease: "Customized Protease",
-                    MaxMissedCleavages: 0,
-                    MinPeptideLength: 1),
+                    maxMissedCleavages: 0,
+                    minPeptideLength: 1),
                 scoreCutoff: 1);
 
             var myMsDataFile = new TestDataFile();
@@ -125,7 +125,7 @@ namespace Test
                 precursorMassTolerance: new PpmTolerance(5),
                 digestionParams: new DigestionParams(
                     protease: "Customized Protease",
-                    MinPeptideLength: 1),
+                    minPeptideLength: 1),
                 scoreCutoff: 1);
 
             var myMsDataFile = new TestDataFile();
@@ -200,7 +200,7 @@ namespace Test
                 productMassTolerance: new AbsoluteTolerance(100), // super large tolerance (100 Da)
                 digestionParams: new DigestionParams(
                     protease: "Customized Protease",
-                    MinPeptideLength: 1),
+                    minPeptideLength: 1),
                 scoreCutoff: 1,
                 addCompIons: true);
 
@@ -292,7 +292,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
                     protease: "Customized Protease",
-                    MinPeptideLength: 1),
+                    minPeptideLength: 1),
                 scoreCutoff: 1);
 
             var myMsDataFile = new TestDataFile();
@@ -374,7 +374,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
             CommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1),
+                digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1),
                 precursorMassTolerance: new PpmTolerance(5),
                 scoreCutoff: 1);
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
@@ -395,7 +395,7 @@ namespace Test
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             CommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 5),
+                digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 5),
                 precursorMassTolerance: new PpmTolerance(5),
                 scoreCutoff: 1,
                 addCompIons: true);
@@ -411,7 +411,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
             CommonParameters = new CommonParameters(
-                 digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1),
+                 digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1),
                  precursorMassTolerance: new PpmTolerance(5),
                  scoreCutoff: 1);
 
@@ -466,7 +466,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
             CommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1),
+                digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1),
                 precursorMassTolerance: new PpmTolerance(5),
                 scoreCutoff: 4);
 
@@ -488,7 +488,7 @@ namespace Test
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             CommonParameters = new CommonParameters(
-               digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 5),
+               digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 5),
                precursorMassTolerance: new PpmTolerance(5),
                scoreCutoff: 4);
             var engine = new NonSpecificEnzymeSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, fragmentIndexDict, new List<ProductType> { ProductType.Y }, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
@@ -505,7 +505,7 @@ namespace Test
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
             CommonParameters = new CommonParameters(
-               digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 1),
+               digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1),
                precursorMassTolerance: new PpmTolerance(5),
                scoreCutoff: 4);
 
@@ -532,7 +532,7 @@ namespace Test
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915) };
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 5, MaxModsForPeptides: 3);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 3);
             var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
             Assert.AreEqual(ListOfModifiedPeptides.Count, 192);
 
@@ -549,7 +549,7 @@ namespace Test
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915, null) };
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 5, MaxModsForPeptides: 3);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 3);
             var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
             Assert.AreEqual(ListOfModifiedPeptides.Count, 132);
 
@@ -588,7 +588,7 @@ namespace Test
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: productMassTolerance,
-                digestionParams: new DigestionParams(protease: protease.Name, MinPeptideLength: 5, MaxModsForPeptides: 2, SemiProteaseDigestion: true),
+                digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 2, semiProteaseDigestion: true),
                 yIons: false,
                 scoreCutoff: 2,
                 addCompIons: true);
@@ -671,7 +671,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
                 productMassTolerance: productMassTolerance,
-                digestionParams: new DigestionParams(protease: protease.Name, MaxMissedCleavages: 5, MinPeptideLength: 5, SemiProteaseDigestion: true, TerminusTypeSemiProtease: TerminusType.C),
+                digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 5, minPeptideLength: 5, semiProteaseDigestion: true, terminusTypeSemiProtease: TerminusType.C),
                 bIons: false,
                 addCompIons: true);
 
@@ -748,7 +748,7 @@ namespace Test
             GlobalVariables.ProteaseDictionary.Add(protease2.Name, protease2);
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: productMassTolerance,
-                digestionParams: new DigestionParams(protease: protease.Name, MaxMissedCleavages: 5)
+                digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 5)
                 );
 
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
@@ -769,7 +769,7 @@ namespace Test
             CommonParameters CommonParameters2 = new CommonParameters
             (
                 productMassTolerance: productMassTolerance,
-                digestionParams: new DigestionParams(protease: protease2.Name, MaxMissedCleavages: 5)
+                digestionParams: new DigestionParams(protease: protease2.Name, maxMissedCleavages: 5)
             );
 
             HashSet<DigestionParams> digestParams2 = new HashSet<DigestionParams> { CommonParameters2.DigestionParams };
@@ -845,7 +845,7 @@ namespace Test
 
             var protease = new Protease("semi-Trypsin", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Semi, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            DigestionParams digestParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 2);
+            DigestionParams digestParams = new DigestionParams(protease: protease.Name, minPeptideLength: 2);
 
             //expect NNNQQQ, NNNQQ, NNNQ, NNN, NN and LK, KLK
             Dictionary<string, bool> found = new Dictionary<string, bool>

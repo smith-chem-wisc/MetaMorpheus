@@ -7,7 +7,7 @@ namespace EngineLayer
     {
         public SequencesToActualProteinPeptidesEngineResults(MetaMorpheusEngine s, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching) : base(s)
         {
-            this.CompactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
+            CompactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
         }
 
         public Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CompactPeptideToProteinPeptideMatching { get; }

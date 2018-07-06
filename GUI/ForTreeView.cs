@@ -6,9 +6,9 @@ namespace MetaMorpheusGUI
 {
     public class ForTreeView : INotifyPropertyChanged
     {
-        private string status;
-        private int progress;
-        private bool isIndeterminate;
+        private string _Status;
+        private int _Progress;
+        private bool _IsIndeterminate;
 
         public ForTreeView(string displayName, string id)
         {
@@ -23,20 +23,20 @@ namespace MetaMorpheusGUI
 
         public string Status
         {
-            get { return status; }
+            get { return _Status; }
             set
             {
-                status = value;
+                _Status = value;
                 OnPropertyChanged();
             }
         }
 
         public int Progress
         {
-            get { return progress; }
+            get { return _Progress; }
             set
             {
-                progress = value;
+                _Progress = value;
                 OnPropertyChanged();
             }
         }
@@ -46,10 +46,10 @@ namespace MetaMorpheusGUI
 
         public bool IsIndeterminate
         {
-            get { return isIndeterminate; }
+            get { return _IsIndeterminate; }
             set
             {
-                isIndeterminate = value;
+                _IsIndeterminate = value;
                 OnPropertyChanged();
             }
         }

@@ -6,11 +6,11 @@ namespace EngineLayer.ModificationAnalysis
 {
     public class ModificationAnalysisEngine : MetaMorpheusEngine
     {
-        private readonly List<PeptideSpectralMatch> newPsms;
+        private readonly List<PeptideSpectralMatch> NewPsms;
 
         public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.newPsms = newPsms;
+            NewPsms = newPsms;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -19,7 +19,7 @@ namespace EngineLayer.ModificationAnalysis
 
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
-            var confidentTargetPsms = newPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
+            var confidentTargetPsms = NewPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
 
             // For the database ones, only need un-ambiguous protein and location in protein
             var forObserved = confidentTargetPsms

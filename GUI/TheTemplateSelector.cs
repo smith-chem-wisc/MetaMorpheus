@@ -6,13 +6,9 @@ namespace MetaMorpheusGUI
     internal class TheTemplateSelector : DataTemplateSelector
     {
         public DataTemplate ComboBoxProtease { get; set; }
-
         public DataTemplate ComboBoxInit { get; set; }
-
         public DataTemplate ComboBoxTolerance { get; set; }
-
         public DataTemplate Bool { get; set; }
-
         public DataTemplate TextBox { get; set; }
 
         public override System.Windows.DataTemplate SelectTemplate(object item, System.Windows.DependencyObject container)

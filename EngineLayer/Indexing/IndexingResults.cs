@@ -7,8 +7,8 @@ namespace EngineLayer.Indexing
     {
         public IndexingResults(List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, IndexingEngine indexParams) : base(indexParams)
         {
-            this.PeptideIndex = peptideIndex;
-            this.FragmentIndex = fragmentIndex;
+            PeptideIndex = peptideIndex;
+            FragmentIndex = fragmentIndex;
         }
 
         public List<int>[] FragmentIndex { get; private set; }

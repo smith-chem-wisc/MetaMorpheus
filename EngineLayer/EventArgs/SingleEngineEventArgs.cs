@@ -6,9 +6,9 @@ namespace EngineLayer
     {
         public SingleEngineEventArgs(MetaMorpheusEngine myEngine)
         {
-            this.myEngine = myEngine;
+            MyEngine = myEngine;
         }
 
-        public MetaMorpheusEngine myEngine { get; private set; }
+        public MetaMorpheusEngine MyEngine { get; private set; }
     }
 }

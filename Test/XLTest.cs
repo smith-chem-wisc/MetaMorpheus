@@ -25,7 +25,7 @@ namespace Test
             var prot = new Protein("MNNNKQQQQ", null);
             Protease protease = new Protease("New Custom Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
@@ -77,7 +77,7 @@ namespace Test
         public static void XlTest_BSA_DSSO()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(MinPeptideLength: 5));
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
 
             var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
 
@@ -195,7 +195,7 @@ namespace Test
         public static void XlTest_DiffCrosslinkSites()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, scoreCutoff: 1, digestionParams: new DigestionParams(MinPeptideLength: 4));
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 4));
 
             var xlSearchParameters = new XlSearchParameters
             {

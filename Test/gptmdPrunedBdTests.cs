@@ -79,7 +79,7 @@ namespace Test
                         {"ConnorModType", 1}
                     }
                 },
-                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MinPeptideLength: 5))
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5))
                 
             };
 

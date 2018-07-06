@@ -8,7 +8,7 @@ namespace MetaMorpheusGUI
     internal class Parameter : INotifyPropertyChanged
     {
         private object _value;
-        private bool status;
+        private bool Status;
 
         public Parameter()
         {
@@ -51,12 +51,12 @@ namespace MetaMorpheusGUI
 
         public bool HasChanged
         {
-            get { return status; }
+            get { return Status; }
             set
             {
-                status = value;
-                if (value == status) return;
-                status = value;
+                Status = value;
+                if (value == Status) return;
+                Status = value;
             }
         }
 

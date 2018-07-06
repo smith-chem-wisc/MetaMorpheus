@@ -19,16 +19,16 @@ namespace EngineLayer.Calibration
             int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
             : base(dataPointAcquisitionEngine)
         {
-            this.Psms = psms;
+            Psms = psms;
 
             Ms1List = ms1List;
             Ms2List = ms2List;
 
-            Ms1InfoTh = Ms1List.Select(b => b.experimentalMz - b.theoreticalMz).MeanStandardDeviation();
-            Ms2InfoTh = Ms2List.Select(b => b.experimentalMz - b.theoreticalMz).MeanStandardDeviation();
+            Ms1InfoTh = Ms1List.Select(b => b.ExperimentalMz - b.TheoreticalMz).MeanStandardDeviation();
+            Ms2InfoTh = Ms2List.Select(b => b.ExperimentalMz - b.TheoreticalMz).MeanStandardDeviation();
 
-            Ms1InfoPpm = Ms1List.Select(b => (b.experimentalMz - b.theoreticalMz) / b.theoreticalMz).MeanStandardDeviation();
-            Ms2InfoPpm = Ms2List.Select(b => (b.experimentalMz - b.theoreticalMz) / b.theoreticalMz).MeanStandardDeviation();
+            Ms1InfoPpm = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).MeanStandardDeviation();
+            Ms2InfoPpm = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).MeanStandardDeviation();
 
             NumMs1MassChargeCombinationsConsidered = numMs1MassChargeCombinationsConsidered;
             NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;

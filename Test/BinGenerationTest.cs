@@ -20,7 +20,7 @@ namespace Test
         {
             SearchTask st = new SearchTask
             {
-                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
                
                 SearchParameters = new SearchParameters
                 {
@@ -79,9 +79,9 @@ namespace Test
                 CommonParameters = new CommonParameters(
                     scoreCutoff: 1, 
                     digestionParams: new DigestionParams(
-                        MaxMissedCleavages: 0,
-                        MinPeptideLength: 5, 
-                        InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                        maxMissedCleavages: 0,
+                        minPeptideLength: 5, 
+                        initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
                 
                 SearchParameters = new SearchParameters
                 {

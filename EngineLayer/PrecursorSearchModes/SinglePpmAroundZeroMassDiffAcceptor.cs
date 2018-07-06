@@ -6,32 +6,32 @@ namespace EngineLayer
 {
     public class SinglePpmAroundZeroSearchMode : MassDiffAcceptor
     {
-        private readonly double ppmTolerance;
+        private readonly double PpmTolerance;
 
         public SinglePpmAroundZeroSearchMode(double ppmTolerance) : base(ppmTolerance + "ppmAroundZero")
         {
-            this.ppmTolerance = ppmTolerance;
+            this.PpmTolerance = ppmTolerance;
         }
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            return Math.Abs((scanPrecursorMass - peptideMass) / (peptideMass) * 1e6) < ppmTolerance ? 0 : -1;
+            return Math.Abs((scanPrecursorMass - peptideMass) / (peptideMass) * 1e6) < PpmTolerance ? 0 : -1;
         }
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            var diff = ppmTolerance / 1e6 * peptideMonoisotopicMass;
+            var diff = PpmTolerance / 1e6 * peptideMonoisotopicMass;
             yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff), 0);
         }
 
         public override string ToProseString()
         {
-            return (String.Format("{0:0.0}", ppmTolerance) + " ppm around zero");
+            return (String.Format("{0:0.0}", PpmTolerance) + " ppm around zero");
         }
 
         public override string ToString()
         {
-            return FileNameAddition + " ppmAroundZero " + ppmTolerance;
+            return FileNameAddition + " ppmAroundZero " + PpmTolerance;
         }
     }
 }

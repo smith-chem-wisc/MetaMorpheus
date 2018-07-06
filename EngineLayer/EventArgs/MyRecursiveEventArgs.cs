@@ -5,11 +5,11 @@ namespace EngineLayer
 {
     public class MyRecursiveEventArgs : EventArgs
     {
-        public readonly List<string> nestedIDs;
+        public readonly List<string> NestedIDs;
 
         public MyRecursiveEventArgs(List<string> nestedIDs)
         {
-            this.nestedIDs = nestedIDs;
+            this.NestedIDs = nestedIDs;
         }
     }
 }

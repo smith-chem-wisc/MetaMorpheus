@@ -63,9 +63,9 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
-                    MaxMissedCleavages: 0,
-                    MinPeptideLength: 1,
-                    MaxModificationIsoforms: int.MaxValue),
+                    maxMissedCleavages: 0,
+                    minPeptideLength: 1,
+                    maxModificationIsoforms: int.MaxValue),
                 scoreCutoff: 1);
            
             var newPsms = new List<PeptideSpectralMatch>
@@ -138,7 +138,7 @@ namespace Test
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1), scoreCutoff: 1);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
             
             var newPsms = new List<PeptideSpectralMatch>
             {
