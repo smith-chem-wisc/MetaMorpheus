@@ -5,8 +5,6 @@ namespace EngineLayer
 {
     public class Ms2ScanWithSpecificMass : IScan
     {
-        #region Public Constructors
-
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath)
         {
             PrecursorMonoisotopicPeakMz = precursorMonoisotopicPeakMz;
@@ -16,10 +14,6 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public MsDataScan TheScan { get; }
         public double PrecursorMonoisotopicPeakMz { get; }
@@ -36,7 +30,5 @@ namespace EngineLayer
         public int NumPeaks => TheScan.MassSpectrum.Size;
 
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
-
-        #endregion Public Properties
     }
 }

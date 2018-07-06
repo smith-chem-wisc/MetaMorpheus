@@ -2,8 +2,6 @@
 {
     public class NeoParameters
     {
-        #region Public Constructors
-
         public NeoParameters()
         {
             Calibrate = true;
@@ -20,10 +18,6 @@
             NormalCis = true;
             ReverseCis = true;
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public bool Calibrate { get; set; }
         public double? PrecursorTolerancePPM { get; set; }
@@ -47,7 +41,5 @@
         public int MaxDistanceAllowed { get; set; }
         public bool NormalCis { get; set; }
         public bool ReverseCis { get; set; }
-
-        #endregion Public Properties
     }
 }

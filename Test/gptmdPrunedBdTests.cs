@@ -65,7 +65,6 @@ namespace Test
         [Test]
         public static void TestPrunedDatabase()
         {
-            #region setup
 
             //Create Search Task
             SearchTask task1 = new SearchTask
@@ -80,7 +79,7 @@ namespace Test
                         {"ConnorModType", 1}
                     }
                 },
-                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5))
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5))
                 
             };
 
@@ -99,10 +98,6 @@ namespace Test
                 connorMod
             });
 
-            #endregion setup
-
-            #region Protein and Mod Creation
-
             //create modification lists
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
                 (b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
@@ -117,10 +112,6 @@ namespace Test
             //protein Creation (One with mod and one without)
             Protein TestProteinWithMod = new Protein("PEPTID", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
 
-            #endregion Protein and Mod Creation
-
-            #region XML File
-
             //First Write XML Database
 
             string xmlName = "okkk.xml";
@@ -133,10 +124,6 @@ namespace Test
             };
             modList.Add("test", Hash);
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithMod }, xmlName);
-
-            #endregion XML File
-
-            #region MZML File
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true,
@@ -153,8 +140,6 @@ namespace Test
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-
-            #endregion MZML File
 
             //run!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
@@ -178,7 +163,6 @@ namespace Test
         [Test]
         public static void TestUserModSelectionInPrunedDB()
         {
-            #region setup
 
             List<(string, string)> listOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             //Create Search Task
@@ -190,7 +174,7 @@ namespace Test
                     SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
-                CommonParameters = new CommonParameters(ListOfModsFixed: listOfModsFixed)
+                CommonParameters = new CommonParameters(listOfModsFixed: listOfModsFixed)
             };
 
             task5.SearchParameters.ModsToWriteSelection["Mod"] = 0;
@@ -215,10 +199,6 @@ namespace Test
                 connorMod3,
                 connorMod4
             });
-
-            #endregion setup
-
-            #region Protein and Mod Creation
 
             //create modification lists
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains
@@ -250,10 +230,6 @@ namespace Test
             Protein TestProteinWithModForDB = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
             Protein TestProteinWithModObsevred = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere2);
 
-            #endregion Protein and Mod Creation
-
-            #region XML File
-
             //First Write XML Database
 
             string xmlName = "selectedMods.xml";
@@ -276,10 +252,6 @@ namespace Test
             modList.Add("test2", Hash);
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithModObsevred }, xmlName2);
 
-            #endregion XML File
-
-            #region MZML File
-
             //now create MZML data
             var protein = ProteinDbLoader.LoadProteinXML(xmlName2, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
@@ -296,8 +268,6 @@ namespace Test
             { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
             string mzmlName = @"newMzml.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-
-            #endregion MZML File
 
             //make sure this runs correctly
             //run!
