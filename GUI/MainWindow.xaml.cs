@@ -847,6 +847,23 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private List<Key> GreekPassword = new List<Key>
+        {
+            Key.Up,
+            Key.Up,
+            Key.Down,
+            Key.Down,
+            Key.Left,
+            Key.Right,
+            Key.Left,
+            Key.Right,
+            Key.B,
+            Key.A,
+            Key.Enter
+        };
+
+        private int GreekPasswordPosition = 0;
+
         // handles keyboard input in the main window
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
@@ -872,6 +889,23 @@ namespace MetaMorpheusGUI
                     MoveSelectedTask(sender, e, false);
                     e.Handled = true;
                 }
+            }
+
+            //Easter egg
+            if (e.Key == GreekPassword[GreekPasswordPosition])
+            {
+                GreekPasswordPosition++;
+                if (GreekPasswordPosition == GreekPassword.Count)
+                {
+                    GreekPasswordPosition = 0;
+                    System.Media.SoundPlayer player = new System.Media.SoundPlayer();
+                    player.SoundLocation = Path.Combine(GlobalVariables.DataDir, "EasterEggs", "TheIdealGreekDinnerParty3.wav");
+                    player.Play();
+                }
+            }
+            else
+            {
+                GreekPasswordPosition = 0;
             }
         }
 
