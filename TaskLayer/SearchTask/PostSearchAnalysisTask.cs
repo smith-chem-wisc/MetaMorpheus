@@ -58,8 +58,22 @@ namespace TaskLayer
         /// </summary>
         private void GroupAndOrderPSMs()
         {
+            Status("Running FDR analysis...", Parameters.SearchTaskId);
+            int massDiffAcceptorNumNotches = Parameters.NumNotches;
+            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+
+            var fdrFilteredPsms = new List<PeptideSpectralMatch>();
+            foreach (PeptideSpectralMatch psm in Parameters.AllPsms)
+            {
+                if (psm != null && psm.FdrInfo.QValue <= 0.0100 && psm.FdrInfo.QValueNotch <= 0.0100)
+                {
+                    fdrFilteredPsms.Add(psm);
+                }
+            }
+
             Status("Matching peptides to proteins...", Parameters.SearchTaskId);
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> fdrFilteredCompactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (Parameters.ProteinList.Any())
             {
                 if (Parameters.SearchParameters.SearchType == SearchType.NonSpecific)
@@ -71,6 +85,10 @@ namespace TaskLayer
                         new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, Parameters.AllPsms, Parameters.ProteinList, Parameters.FixedModifications,
                             Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
                             Parameters.CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+
+                        new NonSpecificEnzymeSequencesToActualPeptides(fdrFilteredCompactPeptideToProteinPeptideMatching, fdrFilteredPsms, Parameters.ProteinList, Parameters.FixedModifications,
+                           Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
+                           Parameters.CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
                     }
                 }
                 else
@@ -80,13 +98,19 @@ namespace TaskLayer
                         Parameters.CommonParameters.ReportAllAmbiguity, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId });
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                     compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+
+                    SequencesToActualProteinPeptidesEngine fdrFilteredSequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(fdrFilteredPsms, Parameters.ProteinList,
+                        Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
+                        Parameters.CommonParameters.ReportAllAmbiguity, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId });
+                    var results = (SequencesToActualProteinPeptidesEngineResults)fdrFilteredSequencesToActualProteinPeptidesEngine.Run();
+                    fdrFilteredCompactPeptideToProteinPeptideMatching = results.CompactPeptideToProteinPeptideMatching;
                 }
             }
 
             ProteinParsimonyResults proteinAnalysisResults = null;
             if (Parameters.SearchParameters.DoParsimony)
             {
-                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(fdrFilteredCompactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
             }
 
             Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
@@ -96,11 +120,7 @@ namespace TaskLayer
                 {
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
                 }
-            }
-
-            Status("Running FDR analysis...", Parameters.SearchTaskId);
-            int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            }                      
 
             //sort the list of psms by the score used for fdr calculation
             if (fdrAnalysisResults.DeltaScoreImprovement)
@@ -211,7 +231,7 @@ namespace TaskLayer
                 && !p.IsDecoy
                 && p.FullSequence != null);
 
-            //var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
+            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -289,50 +309,77 @@ namespace TaskLayer
                 proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
             }
 
-
             // pass PSM info to FlashLFQ
-
-            Parameters.FlashLfqResults = null;
-            
-            foreach (var proteasePsms in proteaseSortedPsms)
+            var flashLFQIdentifications = new List<Identification>();
+            foreach (var spectraFile in psmsGroupedByFile)
             {
-                var flashLFQIdentifications = new List<Identification>();
-                var psmsGroupedByFile = proteasePsms.Value.GroupBy(p => p.FullFilePath);
-                foreach (var spectraFile in psmsGroupedByFile)
+                var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
+
+                foreach (var psm in spectraFile)
                 {
-                    var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
-
-                    foreach (var psm in spectraFile)
-                    {
-                        flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                            psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
-                    }
-                }
-
-                // run FlashLFQ
-                var FlashLfqEngine = new FlashLFQEngine(
-                    allIdentifications: flashLFQIdentifications,
-                    normalize: Parameters.SearchParameters.Normalize,
-                    ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
-                    matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
-                    silent: true,
-                    optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
-
-                if (flashLFQIdentifications.Any())
-                {
-                    //make specific to protease
-                    var results = FlashLfqEngine.Run();
-
-                    if(Parameters.FlashLfqResults == null)
-                    {
-                        Parameters.FlashLfqResults = results;
-                    }
-                    else
-                    {
-                        Parameters.FlashLfqResults.MergeResultsWith(results);
-                    }
+                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
                 }
             }
+
+            // run FlashLFQ
+            var FlashLfqEngine = new FlashLFQEngine(
+                allIdentifications: flashLFQIdentifications,
+                normalize: Parameters.SearchParameters.Normalize,
+                ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+                matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+                silent: true,
+                optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
+
+            if (flashLFQIdentifications.Any())
+            {
+                Parameters.FlashLfqResults = FlashLfqEngine.Run();
+            }
+
+            //MultiProtease MBR capability code
+            //// pass PSM info to FlashLFQ
+
+            //Parameters.FlashLfqResults = null;
+            
+            //foreach (var proteasePsms in proteaseSortedPsms)
+            //{
+            //    var flashLFQIdentifications = new List<Identification>();
+            //    var psmsGroupedByFile = proteasePsms.Value.GroupBy(p => p.FullFilePath);
+            //    foreach (var spectraFile in psmsGroupedByFile)
+            //    {
+            //        var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
+
+            //        foreach (var psm in spectraFile)
+            //        {
+            //            flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+            //                psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+            //        }
+            //    }
+
+            //    // run FlashLFQ
+            //    var FlashLfqEngine = new FlashLFQEngine(
+            //        allIdentifications: flashLFQIdentifications,
+            //        normalize: Parameters.SearchParameters.Normalize,
+            //        ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+            //        matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+            //        silent: true,
+            //        optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
+
+            //    if (flashLFQIdentifications.Any())
+            //    {
+            //        //make specific to protease
+            //        var results = FlashLfqEngine.Run();
+
+            //        if(Parameters.FlashLfqResults == null)
+            //        {
+            //            Parameters.FlashLfqResults = results;
+            //        }
+            //        else
+            //        {
+            //            Parameters.FlashLfqResults.MergeResultsWith(results);
+            //        }
+            //    }
+            //}
                         
 
             // get protein intensity back from FlashLFQ
