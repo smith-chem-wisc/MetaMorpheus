@@ -306,13 +306,11 @@ namespace MetaMorpheusGUI
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            
             CommonParameters CommonParamsToSave = new CommonParameters(
                 DigestionParams: new DigestionParams(
                     protease: protease.Name,
