@@ -4,11 +4,11 @@
     {
         public Parent(string id, string seq)
         {
-            this.id = id;
-            this.seq = seq;
+            ID = id;
+            Seq = seq;
         }
 
-        public string id { get; set; }
-        public string seq { get; set; }
+        public string ID { get; set; }
+        public string Seq { get; set; }
     }
 }

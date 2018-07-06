@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
+﻿using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -14,7 +9,7 @@ namespace MetaMorpheusGUI
             FileName = Path.GetFileNameWithoutExtension(filename);
         }
 
-        public string FileName { get; private set; }      
+        public string FileName { get; private set; }
         public string Condition { get; set; }
         public string Biorep { get; set; }
         public string Fraction { get; set; }
@@ -24,14 +19,17 @@ namespace MetaMorpheusGUI
         {
             Condition = text;
         }
+
         public void SetQbioRepText(string text)
         {
             Biorep = text;
         }
+
         public void SetQfractionText(string text)
         {
             Fraction = text;
         }
+
         public void SetQtechRepText(string text)
         {
             Techrep = text;

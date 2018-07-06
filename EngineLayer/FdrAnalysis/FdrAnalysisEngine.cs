@@ -25,12 +25,9 @@ namespace EngineLayer.FdrAnalysis
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
-
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
-
             myAnalysisResults.PsmsWithin1PercentFdr = Psms.Count(b => b.FdrInfo.QValue < 0.01);
-
             return myAnalysisResults;
         }
 
@@ -233,7 +230,9 @@ namespace EngineLayer.FdrAnalysis
                     }
                 }
                 else
+                {
                     cumulative_target++;
+                }
             }
             return cumulative_target;
         }

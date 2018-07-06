@@ -1,5 +1,6 @@
 ﻿using MzLibUtil;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,18 +33,35 @@ namespace EngineLayer.Gptmd
             // Look up starting at and including the capital letter
             while (indexUp < motif.ToString().Length)
             {
-                if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= protein.Length || (!char.ToUpper(motif.ToString()[indexUp]).Equals('X') && !char.ToUpper(motif.ToString()[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))
+                if (indexUp + proteinToMotifOffset < 0
+                    || indexUp + proteinToMotifOffset >= protein.Length
+                    || (!char.ToUpper(motif.ToString()[indexUp]).Equals('X')
+                        && !char.ToUpper(motif.ToString()[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))
+                {
                     return false;
+                }
                 indexUp++;
             }
-            if (attemptToLocalize.terminusLocalization == TerminusLocalization.NProt && (proteinOneBasedIndex > 2))
+            if (attemptToLocalize.terminusLocalization == TerminusLocalization.NProt
+                && (proteinOneBasedIndex > 2))
+            {
                 return false;
-            if (attemptToLocalize.terminusLocalization == TerminusLocalization.NPep && peptideOneBasedIndex > 1)
+            }
+            if (attemptToLocalize.terminusLocalization == TerminusLocalization.NPep
+                && peptideOneBasedIndex > 1)
+            {
                 return false;
-            if (attemptToLocalize.terminusLocalization == TerminusLocalization.PepC && peptideOneBasedIndex < peptideLength)
+            }
+            if (attemptToLocalize.terminusLocalization == TerminusLocalization.PepC
+                && peptideOneBasedIndex < peptideLength)
+            {
                 return false;
-            if (attemptToLocalize.terminusLocalization == TerminusLocalization.ProtC && proteinOneBasedIndex < protein.Length)
+            }
+            if (attemptToLocalize.terminusLocalization == TerminusLocalization.ProtC
+                && proteinOneBasedIndex < protein.Length)
+            {
                 return false;
+            }
             return true;
         }
 
@@ -98,13 +116,19 @@ namespace EngineLayer.Gptmd
             foreach (var Mod in allMods)
             {
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass))
+                {
                     yield return Mod;
-                foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
+                }
+                foreach (var modOnPsm in peptideWithSetModifications.AllModsOneIsNterminus.Values)
+                {
                     if (modOnPsm.motif.Equals(Mod.motif))
                     {
                         if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
+                        {
                             yield return Mod;
+                        }
                     }
+                }
             }
 
             foreach (var combo in combos)
@@ -115,9 +139,13 @@ namespace EngineLayer.Gptmd
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + combined))
                 {
                     foreach (var mod in GetPossibleMods(totalMassToGetTo - m1, allMods, combos, precursorTolerance, peptideWithSetModifications))
+                    {
                         yield return mod;
+                    }
                     foreach (var mod in GetPossibleMods(totalMassToGetTo - m2, allMods, combos, precursorTolerance, peptideWithSetModifications))
+                    {
                         yield return mod;
+                    }
                 }
             }
         }

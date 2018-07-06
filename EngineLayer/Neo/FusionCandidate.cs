@@ -7,57 +7,51 @@ namespace EngineLayer.Neo
     {
         public FusionCandidate(String seq)
         {
-            this.seq = seq;
-            this.junctionIndexes = new List<int>();
-            //this.foundIons = new bool[seq.Length];
-            fusionType = FusionType.TS; //default
-            this.parentInfo = new List<ParentInfo>();
-            this.translatedParents = new List<TranslatedParent>();
-            this.cisParents = new List<CisParent>();
-            this.transParents = new List<TransParent>();
+            Seq = seq;
+            JunctionIndexes = new List<int>();
+            //FoundIons = new bool[seq.Length];
+            FusionType = FusionType.TS; //default
+            ParentInfo = new List<ParentInfo>();
+            TranslatedParents = new List<TranslatedParent>();
+            CisParents = new List<CisParent>();
+            TransParents = new List<TransParent>();
         }
 
-        //ordered by priority //translated, normalCis, reverseCis, trans
-        public enum FusionType
-        {
-            TL, NC, RC, TS
-        }
-
-        public string seq { get; set; }
-        public List<int> junctionIndexes { get; private set; }
-        public bool[] foundIons { get; private set; }
-        public List<ParentInfo> parentInfo { get; set; } //Will have a ParentInfo object for every possible fragment* (*every fragment with length of 6 or more OR just the first length that was found (<6))
-        public List<TranslatedParent> translatedParents { get; set; }
-        public List<CisParent> cisParents { get; set; }
-        public List<TransParent> transParents { get; set; }
-        public FusionType fusionType { get; set; }
+        public string Seq { get; set; }
+        public List<int> JunctionIndexes { get; private set; }
+        public bool[] FoundIons { get; private set; }
+        public List<ParentInfo> ParentInfo { get; set; } //Will have a ParentInfo object for every possible fragment* (*every fragment with length of 6 or more OR just the first length that was found (<6))
+        public List<TranslatedParent> TranslatedParents { get; set; }
+        public List<CisParent> CisParents { get; set; }
+        public List<TransParent> TransParents { get; set; }
+        public FusionType FusionType { get; set; }
 
         //private List<FusionCandidate> fragSources;
         public void addJunctionIndex(int index)
         {
-            this.junctionIndexes.Add(index);
+            JunctionIndexes.Add(index);
         }
 
         public void setFoundIons(bool[] foundIons)
         {
-            this.foundIons = foundIons;
+            FoundIons = foundIons;
         }
 
         public void makeFoundIons()
         {
-            this.foundIons = new bool[this.seq.Length]; //|A|B|C|D|E|F|K where the whole peptide peak is always placed arbitrarily at the n term
-            for (int i = 0; i < this.foundIons.Length; i++)
+            FoundIons = new bool[Seq.Length]; //|A|B|C|D|E|F|K where the whole peptide peak is always placed arbitrarily at the n term
+            for (int i = 0; i < FoundIons.Length; i++)
             {
-                this.foundIons[i] = false;
+                FoundIons[i] = false;
             }
         }
 
         public void deepCopyFoundIons(FusionCandidate original)
         {
-            this.foundIons = new bool[original.foundIons.Length];
-            for (int index = 0; index < this.foundIons.Length; index++)
+            FoundIons = new bool[original.FoundIons.Length];
+            for (int index = 0; index < FoundIons.Length; index++)
             {
-                this.foundIons[index] = original.foundIons[index];
+                FoundIons[index] = original.FoundIons[index];
             }
         }
     }

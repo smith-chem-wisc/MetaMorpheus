@@ -8,6 +8,7 @@ using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -20,7 +21,7 @@ namespace TaskLayer
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
         public PostSearchAnalysisTask()
-            : base(MyTask.Search)
+            : base(TaskType.Search)
         {
         }
 
@@ -31,6 +32,8 @@ namespace TaskLayer
 
         public MyTaskResults Run()
         {
+            if (GlobalVariables.StopLoops) { return Parameters.SearchTaskResults; }
+
             GroupAndOrderPSMs();
             ModificationAnalysis();
 
@@ -48,7 +51,7 @@ namespace TaskLayer
             return Parameters.SearchTaskResults;
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             return null;
         }
@@ -64,7 +67,7 @@ namespace TaskLayer
             {
                 if (Parameters.SearchParameters.SearchType == SearchType.NonSpecific)
                 {
-                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(Parameters.IonTypes);
+                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethods.SeparateIonsByTerminus(Parameters.IonTypes);
                     MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(Parameters.CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
                     foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
                     {
@@ -280,7 +283,7 @@ namespace TaskLayer
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
             {
-                var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
+                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
 
                 foreach (var psm in spectraFile)
                 {
@@ -478,7 +481,7 @@ namespace TaskLayer
             {
                 foreach (var file in Parameters.FlashLfqResults.peaks)
                 {
-                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, file.Key.filenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.fullFilePathWithExtension });
+                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
                 }
 
                 if (Parameters.CurrentRawFileList.Count > 1)
@@ -566,7 +569,7 @@ namespace TaskLayer
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (proteinToConfidentModifiedSequences.ContainsKey(protein))
                         {
-                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
+                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.AllModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
                         }
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
@@ -769,9 +772,7 @@ namespace TaskLayer
         private void WritePeakQuantificationResultsToTsv(FlashLFQResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
-
             flashLFQResults.WriteResults(peaksPath, null, null, null);
-
             SucessfullyFinishedWritingFile(peaksPath, nestedIds);
         }
     }

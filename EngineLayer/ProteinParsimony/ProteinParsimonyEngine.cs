@@ -1,4 +1,5 @@
 ﻿using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,17 +12,15 @@ namespace EngineLayer
     public class ProteinParsimonyEngine : MetaMorpheusEngine
     {
         private readonly bool TreatModPeptidesAsDifferentPeptides;
-
-        // dictionary with CompactPeptide (fragmentation info) as key, and PeptideWithSetMods (sequence/protein info) as value
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CompactPeptideToProteinPeptideMatching;
+        private readonly HashSet<DigestionParams> DigestionParams;
 
-        private readonly HashSet<DigestionParams> ListOfDigestionParams;
-
-        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<string> nestedIds)
+            : base(commonParameters, nestedIds)
         {
             TreatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
             CompactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
-            ListOfDigestionParams = new HashSet<DigestionParams>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p.Select(v => v.digestionParams)));
+            DigestionParams = new HashSet<DigestionParams>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p.Select(v => v.DigestionParams)));
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -36,8 +35,7 @@ namespace EngineLayer
 
         private List<ProteinGroup> ApplyProteinParsimony()
         {
-            //if dictionary is empty return an empty list of protein groups
-            if (!CompactPeptideToProteinPeptideMatching.Values.Any())
+            if (!CompactPeptideToProteinPeptideMatching.Values.Any())//if dictionary is empty return an empty list of protein groups
             {
                 return new List<ProteinGroup>();
             }
@@ -84,14 +82,14 @@ namespace EngineLayer
                         var peptideInProteinInfo = new List<Tuple<Protein, DigestionParams, int, int, int>>();
                         foreach (var peptide in baseSequence.Value)
                         {
-                            peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int>(peptide.Protein, peptide.digestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
+                            peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int>(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
                         }
 
                         foreach (var peptide in baseSequence.Value)
                         {
                             foreach (var proteinInfo in peptideInProteinInfo)
                             {
-                                var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5, peptide.allModsOneIsNterminus, peptide.numFixedMods);
+                                var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5, peptide.AllModsOneIsNterminus, peptide.NumFixedMods);
                                 foreach (var compactPeptide in blah[peptide])
                                 {
                                     CompactPeptideToProteinPeptideMatching[compactPeptide].Add(pep);
@@ -130,8 +128,8 @@ namespace EngineLayer
                 {
                     foreach (var peptide in kvp.Value)
                     {
-                        Protease protease = peptide.digestionParams.Protease;
-                        int sameProteaseCount = kvp.Value.Count(v => v.digestionParams.Protease == protease);
+                        Protease protease = peptide.DigestionParams.Protease;
+                        int sameProteaseCount = kvp.Value.Count(v => v.DigestionParams.Protease == protease);
 
                         if (sameProteaseCount == 1)
                         {
@@ -309,7 +307,7 @@ namespace EngineLayer
                 if (parsimonyProteinsWithSameNumPeptides != null)
                 {
                     Parallel.ForEach(Partitioner.Create(0, list.Count),
-                        new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                        new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
                         (range, loopState) =>
                         {
                             for (int i = range.Item1; i < range.Item2; i++)
@@ -317,7 +315,8 @@ namespace EngineLayer
                                 foreach (var parsimonyProteinWithThisNumPeptides in parsimonyProteinsWithSameNumPeptides)
                                 {
                                     if (parsimonyProteinWithThisNumPeptides.Key != list[i].Key
-                                    && proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key].SetEquals(proteinToPeptidesMatching[list[i].Key]))
+                                        && proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key]
+                                            .SetEquals(proteinToPeptidesMatching[list[i].Key]))
                                     {
                                         indistinguishableProteins.GetOrAdd(list[i].Key, proteinToPeptidesMatching[list[i].Key]);
                                     }
@@ -335,7 +334,7 @@ namespace EngineLayer
             // multiprotease parsimony:
             // this code is a workaround to add back proteins to the parsimonious list that were removed
             // because unique peptides were mistaken for shared peptides. see line 139 for more info
-            if (ListOfDigestionParams.Select(v => v.Protease).Distinct().Count() > 1)
+            if (DigestionParams.Select(v => v.Protease).Distinct().Count() > 1)
             {
                 HashSet<Protein> parsimonyProteinSet = new HashSet<Protein>(parsimonyProteinList.Keys);
 

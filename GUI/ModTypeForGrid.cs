@@ -1,6 +1,8 @@
-﻿//Object that is placed in the DataGrid for ModSelection when writing a pruned DB
-namespace MetaMorpheusGUI
+﻿namespace MetaMorpheusGUI
 {
+    /// <summary>
+    /// Object that is placed in the DataGrid for ModSelection when writing a pruned DB
+    /// </summary>
     public class ModTypeForGrid
     {
         public ModTypeForGrid(string modName)

@@ -1,4 +1,5 @@
 ﻿using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,22 +13,25 @@ namespace EngineLayer.Localization
         private readonly MsDataFile MyMsDataFile;
         private readonly List<DissociationType> DissociationTypes;
 
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> productTypes, MsDataFile myMsDataFile,
+            CommonParameters commonParameters, List<string> nestedIds)
+            : base(commonParameters, nestedIds)
         {
             AllResultingIdentifications = allResultingIdentifications;
-            ProductTypes = lp;
+            ProductTypes = productTypes;
             MyMsDataFile = myMsDataFile;
-            DissociationTypes = DetermineDissociationType(lp);
+            DissociationTypes = DetermineDissociationType(productTypes);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
-            foreach (PeptideSpectralMatch psm in AllResultingIdentifications)
+            foreach (var psm in AllResultingIdentifications)
             {
+                if (GlobalVariables.StopLoops) { break; }
+
                 psm.MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
-                psm.MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
                 psm.MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
@@ -44,7 +48,7 @@ namespace EngineLayer.Localization
                     List<double> matchedIonIntensityList = new List<double>();
 
                     //populate the above lists
-                    MatchIonsOld(theScan, commonParameters.ProductMassTolerance, sortedTheoreticalProductMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensityList, thePrecursorMass, productType, commonParameters.AddCompIons);
+                    MatchIonsOld(theScan, CommonParameters.ProductMassTolerance, sortedTheoreticalProductMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensityList, thePrecursorMass, productType, CommonParameters.AddCompIons);
 
                     psm.MatchedIonSeriesDict.Add(productType, matchedIonSeriesList.ToArray());
                     psm.MatchedIonMassToChargeRatioDict.Add(productType, matchedIonMassToChargeRatioList.ToArray());
@@ -56,6 +60,8 @@ namespace EngineLayer.Localization
 
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
+                if (GlobalVariables.StopLoops) { break; }
+
                 var theScan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 double thePrecursorMass = psm.ScanPrecursorMass;
 
@@ -73,7 +79,7 @@ namespace EngineLayer.Localization
 
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
                     Array.Sort(gg);
-                    var score = CalculatePeptideScoreOld(theScan, commonParameters.ProductMassTolerance, gg, thePrecursorMass, DissociationTypes, commonParameters.AddCompIons, 0);
+                    var score = CalculatePeptideScoreOld(theScan, CommonParameters.ProductMassTolerance, gg, thePrecursorMass, DissociationTypes, CommonParameters.AddCompIons, 0);
                     localizedScores.Add(score);
                 }
 

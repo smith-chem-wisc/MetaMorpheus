@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using Nett;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 
@@ -13,6 +14,7 @@ namespace TaskLayer
 
             string defaultFolderPath = Path.Combine(GlobalVariables.DataDir, @"Neo", @"TomlFiles");
 
+            // write TOML
             var tomlFileName = Path.Combine(defaultFolderPath, ye5.GetType().Name + "config.toml");
             Toml.WriteFile(ye5, tomlFileName, MetaMorpheusTask.tomlConfig);
 
@@ -99,6 +101,8 @@ namespace TaskLayer
             yeo5_4.NeoType = NeoSearchTask.NeoTaskType.AggregateNormalSplicedFiles;
             novelCollection.Add(yeo5_4);
 
+            // DeleteTomlFile
+
             File.Delete(tomlFileName);
 
             return novelCollection;
@@ -170,16 +174,24 @@ namespace TaskLayer
                     newTomlLines.Add(line);
             }
             using (StreamWriter file = new StreamWriter(fileName))
+            {
                 foreach (string line in newTomlLines)
+                {
                     file.WriteLine(line);
+                }
+            }
         }
 
         private static string GetCorrectValue(string parameter, string tomlFileName, string oldLine)
         {
             string[] newTomlLines = File.ReadAllLines(@tomlFileName);
             foreach (string line in newTomlLines)
+            {
                 if (line.Contains(parameter))
+                {
                     return line;
+                }
+            }
             return oldLine;
         }
     }

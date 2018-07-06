@@ -7,34 +7,34 @@ namespace EngineLayer.Neo
 {
     public static class ImportPsmtsv
     {
-        public static readonly string scanNumberHeader = "Scan Number";
-        public static readonly string scoreHeader = "Score";
-        public static readonly string baseHeader = "Base Sequence";
-        public static readonly string fullHeader = "Full Sequence";
-        public static readonly string accessionHeader = "Protein Accession";
-        public static readonly string proteinHeader = "Protein Name";
-        public static readonly string geneHeader = "Gene Name";
+        public static readonly string ScanNumberHeader = "Scan Number";
+        public static readonly string ScoreHeader = "Score";
+        public static readonly string BaseHeader = "Base Sequence";
+        public static readonly string FullHeader = "Full Sequence";
+        public static readonly string AccessionHeader = "Protein Accession";
+        public static readonly string ProteinHeader = "Protein Name";
+        public static readonly string GeneHeader = "Gene Name";
         public static readonly string DCTHeader = "Decoy/Contaminant/Target";
-        public static readonly string targetHeader = "Cumulative Target";
-        public static readonly string decoyHeader = "Cumulative Decoy";
-        public static readonly string qHeader = "QValue";
-        public static readonly string scanPrecursorMassHeader = "Precursor Mass";
-        public static readonly string matchedIonsHeader = "Matched Ion Masses";
-        public static readonly string matchedionCountsHeader = "Matched Ion Counts";
-        public static int scanNumberIndex = -1;
-        public static int scoreIndex = -1;
-        public static int baseIndex = -1;
-        public static int fullIndex = -1;
-        public static int accessionIndex = -1;
-        public static int proteinIndex = -1;
-        public static int geneIndex = -1;
+        public static readonly string TargetHeader = "Cumulative Target";
+        public static readonly string DecoyHeader = "Cumulative Decoy";
+        public static readonly string QHeader = "QValue";
+        public static readonly string ScanPrecursorMassHeader = "Precursor Mass";
+        public static readonly string MatchedIonsHeader = "Matched Ion Masses";
+        public static readonly string MatchedionCountsHeader = "Matched Ion Counts";
+        public static int ScanNumberIndex = -1;
+        public static int ScoreIndex = -1;
+        public static int BaseIndex = -1;
+        public static int FullIndex = -1;
+        public static int AccessionIndex = -1;
+        public static int ProteinIndex = -1;
+        public static int GeneIndex = -1;
         public static int DCTIndex = -1;
-        public static int targetIndex = -1;
-        public static int decoyIndex = -1;
-        public static int qIndex = -1;
-        public static int scanPrecursorMassIndex = -1;
-        public static int matchedIonsIndex = -1;
-        public static int matchedIonCountsIndex = -1;
+        public static int TargetIndex = -1;
+        public static int DecoyIndex = -1;
+        public static int QIndex = -1;
+        public static int ScanPrecursorMassIndex = -1;
+        public static int MatchedIonsIndex = -1;
+        public static int MatchedIonCountsIndex = -1;
 
         public static void ParseHeader(string header)
         {
@@ -42,35 +42,59 @@ namespace EngineLayer.Neo
             for (int i = 0; i < headerArray.Length; i++)
             {
                 string currentHeader = headerArray[i];
-                if (currentHeader.Equals(scanNumberHeader))
-                    scanNumberIndex = i;
-                else if (currentHeader.Equals(scoreHeader))
-                    scoreIndex = i;
-                else if (currentHeader.Equals(baseHeader))
+                if (currentHeader.Equals(ScanNumberHeader))
                 {
-                    baseIndex = i;
-                    fullIndex = i; //workaround for open mass searches generating thousands of combinations; eventually patch
+                    ScanNumberIndex = i;
                 }
-                else if (currentHeader.Equals(accessionHeader))
-                    accessionIndex = i;
-                else if (currentHeader.Equals(proteinHeader))
-                    proteinIndex = i;
-                else if (currentHeader.Equals(geneHeader))
-                    geneIndex = i;
+                else if (currentHeader.Equals(ScoreHeader))
+                {
+                    ScoreIndex = i;
+                }
+                else if (currentHeader.Equals(BaseHeader))
+                {
+                    BaseIndex = i;
+                    FullIndex = i; //workaround for open mass searches generating thousands of combinations; eventually patch
+                }
+                else if (currentHeader.Equals(AccessionHeader))
+                {
+                    AccessionIndex = i;
+                }
+                else if (currentHeader.Equals(ProteinHeader))
+                {
+                    ProteinIndex = i;
+                }
+                else if (currentHeader.Equals(GeneHeader))
+                {
+                    GeneIndex = i;
+                }
                 else if (currentHeader.Equals(DCTHeader))
+                {
                     DCTIndex = i;
-                else if (currentHeader.Equals(targetHeader))
-                    targetIndex = i;
-                else if (currentHeader.Equals(decoyHeader))
-                    decoyIndex = i;
-                else if (currentHeader.Equals(qHeader))
-                    qIndex = i;
-                else if (currentHeader.Equals(scanPrecursorMassHeader))
-                    scanPrecursorMassIndex = i;
-                else if (currentHeader.Equals(matchedIonsHeader))
-                    matchedIonsIndex = i;
-                else if (currentHeader.Equals(matchedionCountsHeader))
-                    matchedIonCountsIndex = i;
+                }
+                else if (currentHeader.Equals(TargetHeader))
+                {
+                    TargetIndex = i;
+                }
+                else if (currentHeader.Equals(DecoyHeader))
+                {
+                    DecoyIndex = i;
+                }
+                else if (currentHeader.Equals(QHeader))
+                {
+                    QIndex = i;
+                }
+                else if (currentHeader.Equals(ScanPrecursorMassHeader))
+                {
+                    ScanPrecursorMassIndex = i;
+                }
+                else if (currentHeader.Equals(MatchedIonsHeader))
+                {
+                    MatchedIonsIndex = i;
+                }
+                else if (currentHeader.Equals(MatchedionCountsHeader))
+                {
+                    MatchedIonCountsIndex = i;
+                }
             }
         }
 
@@ -82,9 +106,9 @@ namespace EngineLayer.Neo
             for (int i = 1; i < lines.Length; i++)
             {
                 string[] lineArray = lines[i].Split('\t');
-                results.Add(new PsmTsvLine(lineArray, Convert.ToInt32(lineArray[scanNumberIndex]), Convert.ToDouble(lineArray[scoreIndex]), lineArray[baseIndex], lineArray[fullIndex], lineArray[accessionIndex], lineArray[proteinIndex], lineArray[geneIndex], lineArray[DCTIndex], lineArray[targetIndex], lineArray[decoyIndex], lineArray[qIndex]));
+                results.Add(new PsmTsvLine(lineArray, Convert.ToInt32(lineArray[ScanNumberIndex]), Convert.ToDouble(lineArray[ScoreIndex]), lineArray[BaseIndex], lineArray[FullIndex], lineArray[AccessionIndex], lineArray[ProteinIndex], lineArray[GeneIndex], lineArray[DCTIndex], lineArray[TargetIndex], lineArray[DecoyIndex], lineArray[QIndex]));
             }
-            return results.OrderBy(x => x.scanNumber).ToList();
+            return results.OrderBy(x => x.ScanNumber).ToList();
         }
 
         public static List<NeoPsm> ImportNeoPsms(string nFileName, string cFileName)
@@ -97,36 +121,36 @@ namespace EngineLayer.Neo
             List<InitialID> nAssignment = new List<InitialID>();
             List<InitialID> cAssignment = new List<InitialID>();
 
-            for (int i = 1; i < nInput.Count(); i++)
+            for (int i = 1; i < nInput.Length; i++)
             {
                 string[] line = nInput[i].Split('\t').ToArray();
-                InitialID id = new InitialID(Convert.ToInt32(line[scanNumberIndex]), Convert.ToDouble(line[scanPrecursorMassIndex]), line[accessionIndex], line[fullIndex], line[matchedIonsIndex], line[scoreIndex]);
+                InitialID id = new InitialID(Convert.ToInt32(line[ScanNumberIndex]), Convert.ToDouble(line[ScanPrecursorMassIndex]), line[AccessionIndex], line[FullIndex], line[MatchedIonsIndex], line[ScoreIndex]);
                 nAssignment.Add(id);
             }
 
-            for (int i = 1; i < cInput.Count(); i++)
+            for (int i = 1; i < cInput.Length; i++)
             {
                 string[] line = cInput[i].Split('\t').ToArray();
-                InitialID id = new InitialID(Convert.ToInt32(line[scanNumberIndex]), Convert.ToDouble(line[scanPrecursorMassIndex]), line[accessionIndex], line[fullIndex], line[matchedIonsIndex], line[scoreIndex]);
+                InitialID id = new InitialID(Convert.ToInt32(line[ScanNumberIndex]), Convert.ToDouble(line[ScanPrecursorMassIndex]), line[AccessionIndex], line[FullIndex], line[MatchedIonsIndex], line[ScoreIndex]);
                 cAssignment.Add(id);
             }
             //sort by scan number
-            List<InitialID> nAssignmentSorted = nAssignment.OrderBy(o => o.scanNumber).ToList();
-            List<InitialID> cAssignmentSorted = cAssignment.OrderBy(o => o.scanNumber).ToList();
+            List<InitialID> nAssignmentSorted = nAssignment.OrderBy(o => o.ScanNumber).ToList();
+            List<InitialID> cAssignmentSorted = cAssignment.OrderBy(o => o.ScanNumber).ToList();
 
             //remove scans not found in both files
-            double maxCount = nAssignmentSorted.Count();
+            double maxCount = nAssignmentSorted.Count;
             for (int i = 0; i < maxCount; i++)
             {
-                if (i < cAssignmentSorted.Count())
+                if (i < cAssignmentSorted.Count)
                 {
-                    if (nAssignmentSorted[i].scanNumber.Equals(cAssignmentSorted[i].scanNumber))
+                    if (nAssignmentSorted[i].ScanNumber.Equals(cAssignmentSorted[i].ScanNumber))
                     {
-                        NeoPsm psm = new NeoPsm(nAssignmentSorted[i].scanNumber, nAssignmentSorted[i].expMass, nAssignmentSorted[i], cAssignmentSorted[i]);
+                        NeoPsm psm = new NeoPsm(nAssignmentSorted[i].ScanNumber, nAssignmentSorted[i].ExpMass, nAssignmentSorted[i], cAssignmentSorted[i]);
                         psms.Add(psm);
                         continue;
                     }
-                    else if (nAssignmentSorted[i].scanNumber < cAssignmentSorted[i].scanNumber) //no information was found for the b scan using y ions, so remove it
+                    else if (nAssignmentSorted[i].ScanNumber < cAssignmentSorted[i].ScanNumber) //no information was found for the b scan using y ions, so remove it
                     {
                         nAssignmentSorted.Remove(nAssignmentSorted[i]);
                         maxCount--;

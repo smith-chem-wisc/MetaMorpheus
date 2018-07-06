@@ -6,7 +6,7 @@ namespace MetaMorpheusGUI
 {
     public class ModTypeForTreeView : INotifyPropertyChanged
     {
-        private bool? _isChecked;
+        private bool? _IsChecked;
 
         public ModTypeForTreeView(string displayName, bool bad)
         {
@@ -24,7 +24,7 @@ namespace MetaMorpheusGUI
         {
             get
             {
-                return _isChecked;
+                return _IsChecked;
             }
             set
             {
@@ -65,7 +65,7 @@ namespace MetaMorpheusGUI
             if (value == Use)
                 return;
 
-            _isChecked = value;
+            _IsChecked = value;
 
             if (value.HasValue)
                 foreach (var child in Children)

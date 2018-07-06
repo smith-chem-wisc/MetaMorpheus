@@ -7,7 +7,7 @@ namespace EngineLayer
         public StringEventArgs(string s, List<string> nestedIDs)
             : base(nestedIDs)
         {
-            this.S = s;
+            S = s;
         }
 
         public string S { get; }

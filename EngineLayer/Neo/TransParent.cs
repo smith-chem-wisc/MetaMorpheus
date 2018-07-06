@@ -4,15 +4,16 @@ namespace EngineLayer.Neo
 {
     public class TransParent : Parent
     {
-        public TransParent(string id, string seq, List<int> start, int length, ParentInfo.terminal terminal) : base(id, seq)
+        public TransParent(string id, string seq, List<int> start, int length, ParentInfo.Terminal terminal)
+            : base(id, seq)
         {
-            this.start = start;
-            this.peptideLength = length;
-            this.terminal = terminal;
+            Start = start;
+            PeptideLength = length;
+            Terminal = terminal;
         }
 
-        public List<int> start { get; set; }
-        public int peptideLength { get; set; }
-        public ParentInfo.terminal terminal { get; set; }
+        public List<int> Start { get; set; }
+        public int PeptideLength { get; set; }
+        public ParentInfo.Terminal Terminal { get; set; }
     }
 }

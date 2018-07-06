@@ -4,75 +4,73 @@ namespace EngineLayer.Neo
 {
     public class PsmTsvLine
     {
-        public PsmTsvLine(string[] line, int scanNumber, double score, string baseSequence, string fullSequence, string accession, string proteinName, string geneName, string DCT, string target, string decoy, string q)
+        public PsmTsvLine(string[] line, int scanNumber, double score, string baseSequence, string fullSequence, string accession, string proteinName, string geneName, string dct, string target, string decoy, string q)
         {
-            this.line = line;
-            this.scanNumber = scanNumber;
-            this.score = score;
-            this.baseSequence = baseSequence;
-            this.fullSequence = fullSequence;
-            this.accession = accession;
-            this.proteinName = proteinName;
-            this.geneName = geneName;
-            this.DCT = DCT;
-            this.target = target;
-            this.decoy = decoy;
-            this.q = q;
-            neoType = null;
+            Line = line;
+            ScanNumber = scanNumber;
+            Score = score;
+            BaseSequence = baseSequence;
+            FullSequence = fullSequence;
+            Accession = accession;
+            ProteinName = proteinName;
+            GeneName = geneName;
+            DCT = dct;
+            Target = target;
+            Decoy = decoy;
+            Q = q;
+            NeoType = null;
         }
 
-        public enum NeoType { Normal, Spliced, DecoySpliced };
-
-        public string[] line { get; set; }
-        public int scanNumber { get; set; }
-        public double score { get; set; }
-        public string baseSequence { get; set; }
-        public string fullSequence { get; set; }
-        public string accession { get; set; }
-        public string proteinName { get; set; }
-        public string geneName { get; set; }
+        public string[] Line { get; set; }
+        public int ScanNumber { get; set; }
+        public double Score { get; set; }
+        public string BaseSequence { get; set; }
+        public string FullSequence { get; set; }
+        public string Accession { get; set; }
+        public string ProteinName { get; set; }
+        public string GeneName { get; set; }
         public string DCT { get; set; }
-        public string target { get; set; }
-        public string decoy { get; set; }
-        public string q { get; set; }
-        public NeoType? neoType { get; set; }
+        public string Target { get; set; }
+        public string Decoy { get; set; }
+        public string Q { get; set; }
+        public NeoType? NeoType { get; set; }
 
         public PsmTsvLine AggregateLine(PsmTsvLine secondary)
         {
-            baseSequence += "|" + secondary.baseSequence;
-            fullSequence += "|" + secondary.fullSequence;
-            accession += "|" + secondary.accession;
-            proteinName += "|" + secondary.proteinName;
-            geneName += "|" + secondary.geneName;
+            BaseSequence += "|" + secondary.BaseSequence;
+            FullSequence += "|" + secondary.FullSequence;
+            Accession += "|" + secondary.Accession;
+            ProteinName += "|" + secondary.ProteinName;
+            GeneName += "|" + secondary.GeneName;
             return this;
         }
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < line.Length; i++)
+            for (int i = 0; i < Line.Length; i++)
             {
-                if (i == ImportPsmtsv.baseIndex)
-                    sb.Append(baseSequence + '\t');
-                else if (i == ImportPsmtsv.fullIndex)
-                    sb.Append(fullSequence + '\t');
-                else if (i == ImportPsmtsv.accessionIndex)
-                    sb.Append(accession + '\t');
-                else if (i == ImportPsmtsv.proteinIndex)
-                    sb.Append(proteinName + '\t');
-                else if (i == ImportPsmtsv.geneIndex)
-                    sb.Append(geneName + '\t');
-                else if (i == ImportPsmtsv.targetIndex)
-                    sb.Append(target + '\t');
-                else if (i == ImportPsmtsv.decoyIndex)
-                    sb.Append(decoy + '\t');
-                else if (i == ImportPsmtsv.qIndex)
-                    sb.Append(q + '\t');
+                if (i == ImportPsmtsv.BaseIndex)
+                    sb.Append(BaseSequence + '\t');
+                else if (i == ImportPsmtsv.FullIndex)
+                    sb.Append(FullSequence + '\t');
+                else if (i == ImportPsmtsv.AccessionIndex)
+                    sb.Append(Accession + '\t');
+                else if (i == ImportPsmtsv.ProteinIndex)
+                    sb.Append(ProteinName + '\t');
+                else if (i == ImportPsmtsv.GeneIndex)
+                    sb.Append(GeneName + '\t');
+                else if (i == ImportPsmtsv.TargetIndex)
+                    sb.Append(Target + '\t');
+                else if (i == ImportPsmtsv.DecoyIndex)
+                    sb.Append(Decoy + '\t');
+                else if (i == ImportPsmtsv.QIndex)
+                    sb.Append(Q + '\t');
                 else
-                    sb.Append(line[i] + '\t');
+                    sb.Append(Line[i] + '\t');
             }
-            if (neoType != null)
-                sb.Append(neoType.ToString());
+            if (NeoType != null)
+                sb.Append(NeoType.ToString());
             return sb.ToString();
         }
     }

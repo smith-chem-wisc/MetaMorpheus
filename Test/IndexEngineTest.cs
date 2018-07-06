@@ -1,10 +1,12 @@
 ﻿using EngineLayer;
 using EngineLayer.Indexing;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
 using UsefulProteomicsDatabases;
 
 namespace Test
@@ -12,7 +14,6 @@ namespace Test
     [TestFixture]
     public static class IndexEngineTest
     {
-
         [Test]
         public static void TestIndexEngine()
         {
@@ -35,11 +36,15 @@ namespace Test
                 modsDictionary.Add(mod, (ushort)i);
                 i++;
             }
-            
+
             Protease p = new Protease("Custom Protease2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(p.Name,p);
-            CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(protease: p.Name, minPeptideLength: 1));
-           
+            ProteaseDictionary.Dictionary.Add(p.Name, p);
+            CommonParameters CommonParameters = new CommonParameters(
+                scoreCutoff: 1,
+                digestionParams: new DigestionParams(
+                    protease: p.Name,
+                    minPeptideLength: 1));
+
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
             { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
@@ -81,17 +86,17 @@ namespace Test
                 i++;
             }
 
-
             Protease protease = new Protease("Custom Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
-                    protease: protease.Name, 
-                    minPeptideLength: 1, 
-                    initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain), 
+                    protease: protease.Name,
+                    minPeptideLength: 1,
+                    initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                 scoreCutoff: 1);
-            
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1,
+                DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -100,6 +105,5 @@ namespace Test
             Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMassIncludingFixedMods);
             Assert.AreEqual(30000000 + 1, results.FragmentIndex.Length);
         }
-
     }
 }

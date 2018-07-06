@@ -12,16 +12,13 @@ namespace EngineLayer.Neo
             CLength = cLength;
 
             //determine cis type
-            if (NStart[0] <= CStart[cStart.Count - 1])
-                CisType = FusionCandidate.FusionType.NC;
-            else
-                CisType = FusionCandidate.FusionType.RC;
+            CisType = NStart[0] <= CStart[cStart.Count - 1] ? FusionType.NC : FusionType.RC;
         }
 
         public List<int> NStart { get; set; }
         public int NLength { get; set; }
         public List<int> CStart { get; set; }
         public int CLength { get; set; }
-        public FusionCandidate.FusionType CisType { get; }
+        public FusionType CisType { get; }
     }
 }

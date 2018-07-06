@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,6 +22,8 @@ namespace TaskLayer
 
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
             var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
+
+            // Add element to pepXML
 
             _pepxml.date = DateTime.Now;
             _pepxml.summary_xml = items[0].FullFilePath + ".pep.XML";
@@ -118,7 +121,7 @@ namespace TaskLayer
                 PeptideWithSetModifications peptide = psm.CompactPeptides.First().Value.Item2.First();
 
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                foreach (var mod in peptide.allModsOneIsNterminus)
+                foreach (var mod in peptide.AllModsOneIsNterminus)
                 {
                     var pepXmlMod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                     {
