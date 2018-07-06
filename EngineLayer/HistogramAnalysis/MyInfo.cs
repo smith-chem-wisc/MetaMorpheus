@@ -2,12 +2,12 @@
 {
     internal class MyInfo
     {
-        internal string infostring;
+        internal string Infostring;
 
-        public MyInfo(double MassShift, string infostring)
+        public MyInfo(double massShift, string infostring)
         {
-            this.MassShift = MassShift;
-            this.infostring = infostring;
+            MassShift = massShift;
+            Infostring = infostring;
         }
 
         public double MassShift { get; internal set; }

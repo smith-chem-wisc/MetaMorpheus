@@ -4,6 +4,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,8 +33,7 @@ namespace Test
             IEnumerable<Tuple<string, TerminusType>> sequencesInducingCleavage = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("A", TerminusType.C), new Tuple<string, TerminusType>("B", TerminusType.C), new Tuple<string, TerminusType>("C", TerminusType.C), new Tuple<string, TerminusType>("D", TerminusType.C), new Tuple<string, TerminusType>("E", TerminusType.C), new Tuple<string, TerminusType>("F", TerminusType.C), new Tuple<string, TerminusType>("G", TerminusType.C), new Tuple<string, TerminusType>("H", TerminusType.C), new Tuple<string, TerminusType>("I", TerminusType.C), new Tuple<string, TerminusType>("J", TerminusType.C), new Tuple<string, TerminusType>("-", TerminusType.C) };
             var protease = new Protease("test", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -290,7 +290,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
             var protease = new Protease("CustomProtease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>
             {

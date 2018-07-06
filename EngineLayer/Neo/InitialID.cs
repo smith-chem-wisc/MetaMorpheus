@@ -8,9 +8,9 @@ namespace EngineLayer.Neo
         public InitialID(int scan, double expMass, string id, string seq, string peaks, string scorem)
             : base(scan, expMass)
         {
-            this.seq = CleanSeq(seq);
-            this.id = id;
-            this.score = score;
+            Seq = CleanSeq(seq);
+            ID = id;
+            Score = Score;
             try
             {
                 SetPeakHits(peaks);
@@ -18,16 +18,16 @@ namespace EngineLayer.Neo
             catch
             {
                 double[] temp = new double[] { 0, 0 };
-                this.peakHits = temp;
+                PeakHits = temp;
             }
         }
 
-        public string id { get; set; }
-        public double[] peakHits { get; set; }
-        public Boolean target { get; set; }
-        public double qValue { get; set; }
-        public string seq { get; set; }
-        public string score { get; set; }
+        public string ID { get; set; }
+        public double[] PeakHits { get; set; }
+        public Boolean Target { get; set; }
+        public double QValue { get; set; }
+        public string Seq { get; set; }
+        public string Score { get; set; }
 
         public void SetPeakHits(string peakHits)
         {
@@ -49,7 +49,7 @@ namespace EngineLayer.Neo
             {
                 dbArray[i] = dbList[i];
             }
-            this.peakHits = dbArray;
+            PeakHits = dbArray;
         }
 
         //removes all modifications (in parenthesis) and returns the base sequence

@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -29,7 +30,7 @@ namespace MetaMorpheusGUI
             TheTask = new CalibrationTask();
             UpdateFieldsFromTask(TheTask);
 
-            this.saveButton.Content = "Add the Calibration Task";
+            saveButton.Content = "Add the Calibration Task";
         }
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
@@ -76,9 +77,13 @@ namespace MetaMorpheusGUI
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
                     if (theMod != null)
+                    {
                         theMod.Use = true;
+                    }
                     else
+                    {
                         theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    }
                 }
                 else
                 {
@@ -94,9 +99,13 @@ namespace MetaMorpheusGUI
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
                     if (theMod != null)
+                    {
                         theMod.Use = true;
+                    }
                     else
+                    {
                         theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    }
                 }
                 else
                 {
@@ -122,7 +131,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
                 proteaseComboBox.Items.Add(protease);
             }
@@ -173,6 +182,7 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            // Check Task Validity
             if (missedCleavagesTextBox.Text.Length == 0)
             {
                 missedCleavagesTextBox.Text = int.MaxValue.ToString();
@@ -212,6 +222,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            // Save Parameters
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             int MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
@@ -219,9 +230,9 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages, 
-                minPeptideLength: MinPeptideLength, 
-                maxPeptideLength: MaxPeptideLength, 
+                maxMissedCleavages: MaxMissedCleavages,
+                minPeptideLength: MinPeptideLength,
+                maxPeptideLength: MaxPeptideLength,
                 maxModificationIsoforms: MaxModificationIsoforms);
 
             var listOfModsVariable = new List<(string, string)>();
@@ -254,6 +265,7 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
+
             CommonParameters CommonParamsToSave = new CommonParameters(
                 digestionParams: digestionParamsToSave,
                 bIons: bCheckBox.IsChecked.Value,
@@ -264,12 +276,12 @@ namespace MetaMorpheusGUI
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
                 productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance);
+                precursorMassTolerance: PrecursorMassTolerance,
+                maxThreadsToUsePerFile:
+                    int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0 ?
+                    int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) :
+                    new CommonParameters().MaxThreadsToUsePerFile);
 
-            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
-            {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
             if (OutputFileNameTextBox.Text != "")
             {
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;

@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
+using Proteomics.ProteolyticDigestion;
 
 namespace TaskLayer
 {
@@ -68,27 +69,49 @@ namespace TaskLayer
             CommonParameters temp = new CommonParameters();
 
             if (!nameof(temp.PrecursorMassTolerance).Equals(nameof(PrecursorMassTolerance)))
+            {
                 throw new MetaMorpheusException("Precursor tol variable name is inconsistent");
+            }
             if (!nameof(temp.ProductMassTolerance).Equals(nameof(ProductMassTolerance)))
+            {
                 throw new MetaMorpheusException("Product tol variable name is inconsistent");
+            }
             if (!nameof(temp.DigestionParams.Protease).Equals(nameof(Protease)))
+            {
                 throw new MetaMorpheusException("Protease variable name is inconsistent");
+            }
             if (!nameof(temp.DigestionParams.MinPeptideLength).Equals(nameof(MinPeptideLength)))
+            {
                 throw new MetaMorpheusException("Min peptide length variable name is inconsistent");
+            }
             if (!nameof(temp.DigestionParams.MaxPeptideLength).Equals(nameof(MaxPeptideLength)))
+            {
                 throw new MetaMorpheusException("Max peptide length variable name is inconsistent");
+            }
             if (!nameof(temp.DigestionParams.MaxMissedCleavages).Equals(nameof(MaxMissedCleavages)))
+            {
                 throw new MetaMorpheusException("Max missed cleavages variable name is inconsistent");
+            }
             if (!nameof(temp.DigestionParams.MaxModsForPeptide).Equals(nameof(MaxModsForPeptide)))
+            {
                 throw new MetaMorpheusException("Max mods per peptide variable name is inconsistent");
+            }
             if (!nameof(temp.BIons).Equals(nameof(BIons)))
+            {
                 throw new MetaMorpheusException("B ion variable name is inconsistent");
+            }
             if (!nameof(temp.YIons).Equals(nameof(YIons)))
+            {
                 throw new MetaMorpheusException("Y ion variable name is inconsistent");
+            }
             if (!nameof(temp.ZdotIons).Equals(nameof(ZdotIons)))
+            {
                 throw new MetaMorpheusException("Zdot ion variable name is inconsistent");
+            }
             if (!nameof(temp.CIons).Equals(nameof(CIons)))
+            {
                 throw new MetaMorpheusException("C ion variable name is inconsistent");
+            }
         }
 
         public FileSpecificParameters Clone()

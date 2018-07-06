@@ -10,7 +10,7 @@ namespace EngineLayer
 
         public SinglePpmAroundZeroSearchMode(double ppmTolerance) : base(ppmTolerance + "ppmAroundZero")
         {
-            this.PpmTolerance = ppmTolerance;
+            PpmTolerance = ppmTolerance;
         }
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)

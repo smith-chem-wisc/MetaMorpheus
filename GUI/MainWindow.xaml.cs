@@ -101,7 +101,9 @@ namespace MetaMorpheusGUI
                     JObject deserialized = JObject.Parse(json);
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
                     if (!assets.Contains("MetaMorpheusInstaller.msi"))
+                    {
                         throw new MetaMorpheusException("Necessary files do not exist!");
+                    }
                     NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
             }
@@ -194,9 +196,13 @@ namespace MetaMorpheusGUI
             else
             {
                 foreach (var uu in ProteinDbObservableCollection)
+                {
                     uu.Use = false;
+                }
                 foreach (var uu in e.NewDatabases)
+                {
                     ProteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu));
+                }
                 dataGridProteinDatabases.Items.Refresh();
             }
         }
@@ -214,7 +220,9 @@ namespace MetaMorpheusGUI
                     uu.Use = false;
                 }
                 foreach (var newRawData in e.StringList)
+                {
                     SpectraFilesObservableCollection.Add(new RawDataForDataGrid(newRawData));
+                }
                 UpdateOutputFolderTextbox();
             }
         }
@@ -342,10 +350,12 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
+            {
                 foreach (var filepath in openPicker.FileNames.OrderBy(p => p))
                 {
                     AddAFile(filepath);
                 }
+            }
             dataGridProteinDatabases.Items.Refresh();
         }
 
@@ -359,10 +369,12 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
+            {
                 foreach (var rawDataFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(rawDataFromSelected);
                 }
+            }
             dataGridSpectraFiles.Items.Refresh();
         }
 
@@ -569,6 +581,9 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
+            GlobalVariables.StopLoops = false;
+            CancelButton.IsEnabled = true;
+
             // check for valid tasks/spectra files/protein databases
             if (!StaticTasksObservableCollection.Any())
             {
@@ -590,7 +605,7 @@ namespace MetaMorpheusGUI
 
             for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
             {
-                DynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + StaticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor, StaticTasksObservableCollection[i].metaMorpheusTask));
+                DynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + StaticTasksObservableCollection[i].MetaMorpheusTask.CommonParameters.TaskDescriptor, StaticTasksObservableCollection[i].MetaMorpheusTask));
             }
             tasksTreeView.DataContext = DynamicTasksObservableCollection;
 
@@ -610,8 +625,8 @@ namespace MetaMorpheusGUI
             // check that experimental design is defined if normalization is enabled
             // TODO: move all of this over to EverythingRunnerEngine
             var searchTasks = StaticTasksObservableCollection
-                .Where(p => p.metaMorpheusTask.TaskType == MyTask.Search)
-                .Select(p => (SearchTask)p.metaMorpheusTask);
+                .Where(p => p.MetaMorpheusTask.TaskType == TaskType.Search)
+                .Select(p => (SearchTask)p.MetaMorpheusTask);
 
             string pathToExperDesign = Directory.GetParent(SpectraFilesObservableCollection.First().FilePath).FullName;
             pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
@@ -647,12 +662,12 @@ namespace MetaMorpheusGUI
                 ProteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
                 outputFolder);
 
-            var t = new Task(a.Run);
+            var t = new System.Threading.Tasks.Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
             t.Start();
         }
 
-        private void EverythingRunnerExceptionHandler(Task obj)
+        private void EverythingRunnerExceptionHandler(System.Threading.Tasks.Task obj)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -725,7 +740,7 @@ namespace MetaMorpheusGUI
                 // this exists so that when a task is deleted, the remaining tasks are renamed to keep the task numbers correct
                 for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
                 {
-                    string newName = "Task" + (i + 1) + "-" + StaticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor;
+                    string newName = "Task" + (i + 1) + "-" + StaticTasksObservableCollection[i].MetaMorpheusTask.CommonParameters.TaskDescriptor;
                     StaticTasksObservableCollection[i].DisplayName = newName;
                 }
                 tasksTreeView.Items.Refresh();
@@ -1072,41 +1087,43 @@ namespace MetaMorpheusGUI
         {
             var a = sender as TreeView;
             if (a.SelectedItem is PreRunTask preRunTask)
-                switch (preRunTask.metaMorpheusTask.TaskType)
+                switch (preRunTask.MetaMorpheusTask.TaskType)
                 {
-                    case MyTask.Search:
+                    case TaskType.Search:
 
-                        var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
+                        var searchDialog = new SearchTaskWindow(preRunTask.MetaMorpheusTask as SearchTask);
+
                         searchDialog.ShowDialog();
+
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
 
                         return;
 
-                    case MyTask.Gptmd:
-                        var gptmddialog = new GptmdTaskWindow(preRunTask.metaMorpheusTask as GptmdTask);
+                    case TaskType.Gptmd:
+                        var gptmddialog = new GptmdTaskWindow(preRunTask.MetaMorpheusTask as GptmdTask);
                         gptmddialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + gptmddialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
 
                         return;
 
-                    case MyTask.Calibrate:
-                        var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
+                    case TaskType.Calibrate:
+                        var calibratedialog = new CalibrateTaskWindow(preRunTask.MetaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + calibratedialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
 
-                    case MyTask.XLSearch:
-                        var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
+                    case TaskType.XLSearch:
+                        var XLSearchdialog = new XLSearchTaskWindow(preRunTask.MetaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
 
-                    case MyTask.Neo:
-                        var Neodialog = new NeoSearchTaskWindow(preRunTask.metaMorpheusTask as NeoSearchTask);
+                    case TaskLayer.TaskType.Neo:
+                        var Neodialog = new NeoSearchTaskWindow(preRunTask.MetaMorpheusTask as NeoSearchTask);
                         Neodialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + Neodialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
@@ -1325,6 +1342,16 @@ namespace MetaMorpheusGUI
         {
             System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
+        }
+
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("Are you sure you want to cancel these tasks?", "Cancel Tasks", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+            {
+                GlobalVariables.StopLoops = true;
+                CancelButton.IsEnabled = false;
+                notificationsTextBox.AppendText("Canceling...\n");
+            }
         }
     }
 }

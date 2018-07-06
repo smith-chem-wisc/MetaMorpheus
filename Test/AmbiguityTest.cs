@@ -1,8 +1,10 @@
 using EngineLayer;
 using EngineLayer.ClassicSearch;
+using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,11 +19,11 @@ namespace Test
         public static void TestResolveAmbiguities()
         {
             Protease protease = new Protease("Custom Protease4", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(
-                    protease: protease.Name, 
-                    minPeptideLength: 1), 
+                    digestionParams: new DigestionParams(protease:
+                    protease.Name,
+                    minPeptideLength: 1),
                 scoreCutoff: 1,
                 reportAllAmbiguity: false);
 

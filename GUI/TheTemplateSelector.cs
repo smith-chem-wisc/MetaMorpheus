@@ -11,7 +11,7 @@ namespace MetaMorpheusGUI
         public DataTemplate Bool { get; set; }
         public DataTemplate TextBox { get; set; }
 
-        public override System.Windows.DataTemplate SelectTemplate(object item, System.Windows.DependencyObject container)
+        public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             if (item is Parameter)
             {

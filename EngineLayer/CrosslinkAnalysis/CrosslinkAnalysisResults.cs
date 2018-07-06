@@ -2,7 +2,8 @@
 {
     public class CrosslinkAnalysisResults : MetaMorpheusEngineResults
     {
-        public CrosslinkAnalysisResults(CrosslinkAnalysisEngine s) : base(s)
+        public CrosslinkAnalysisResults(CrosslinkAnalysisEngine s)
+            : base(s)
         {
         }
     }

@@ -12,13 +12,12 @@ namespace TaskLayer
         public List<string> NewFileSpecificTomls; // calibration writes suggested ppm tolerances
         public TimeSpan Time;
 
-        private readonly List<string> resultTexts;
-
-        private readonly StringBuilder niceText = new StringBuilder();
+        private readonly List<string> ResultTexts;
+        private readonly StringBuilder NiceText = new StringBuilder();
 
         internal MyTaskResults(MetaMorpheusTask s)
         {
-            resultTexts = new List<string>();
+            ResultTexts = new List<string>();
         }
 
         public override string ToString()
@@ -50,7 +49,7 @@ namespace TaskLayer
             }
             sb.AppendLine();
             sb.AppendLine();
-            sb.AppendLine(niceText.ToString());
+            sb.AppendLine(NiceText.ToString());
             sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
@@ -58,7 +57,7 @@ namespace TaskLayer
             sb.AppendLine();
             sb.AppendLine("Engine Results:");
             sb.AppendLine();
-            foreach (var ok in resultTexts)
+            foreach (var ok in ResultTexts)
             {
                 sb.AppendLine(ok);
                 sb.AppendLine();
@@ -68,12 +67,12 @@ namespace TaskLayer
 
         internal void AddResultText(string resultsText)
         {
-            resultTexts.Add(resultsText);
+            ResultTexts.Add(resultsText);
         }
 
         internal void AddNiceText(string niceTextString)
         {
-            niceText.AppendLine(niceTextString);
+            NiceText.AppendLine(niceTextString);
         }
     }
 }

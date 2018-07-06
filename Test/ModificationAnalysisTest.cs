@@ -1,18 +1,17 @@
 ﻿using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModificationAnalysis;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
-using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
     [TestFixture]
     public static class ModificationAnalysisTest
     {
-
         [Test]
         public static void TestModificationAnalysis()
         {
@@ -67,7 +66,7 @@ namespace Test
                     minPeptideLength: 1,
                     maxModificationIsoforms: int.MaxValue),
                 scoreCutoff: 1);
-           
+
             var newPsms = new List<PeptideSpectralMatch>
             {
                 new PeptideSpectralMatch(pep1, 0,10,0,scan,CommonParameters.DigestionParams),
@@ -80,11 +79,10 @@ namespace Test
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-          
-
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine
-            (newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
-            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine =
+                new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(),
+                    new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity,
+                    CommonParameters, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
             {
@@ -95,18 +93,18 @@ namespace Test
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(2, res.AllModsOnProteins.Count());
+            Assert.AreEqual(2, res.AllModsOnProteins.Count);
             Assert.AreEqual(2, res.AllModsOnProteins[mod1.id]);
             Assert.AreEqual(1, res.AllModsOnProteins[mod2.id]);
 
-            Assert.AreEqual(1, res.ModsSeenAndLocalized.Count());
+            Assert.AreEqual(1, res.ModsSeenAndLocalized.Count);
             Assert.AreEqual(2, res.ModsSeenAndLocalized[mod1.id]);
 
-            Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen.Count());
+            Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen.Count);
 
-            Assert.AreEqual(0, res.UnlocalizedMods.Count());
+            Assert.AreEqual(0, res.UnlocalizedMods.Count);
 
-            Assert.AreEqual(0, res.UnlocalizedFormulas.Count());
+            Assert.AreEqual(0, res.UnlocalizedFormulas.Count);
         }
 
         [Test]
@@ -139,7 +137,7 @@ namespace Test
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
-            
+
             var newPsms = new List<PeptideSpectralMatch>
             {
                 new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
@@ -149,8 +147,9 @@ namespace Test
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-           
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(),
+                new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams },
+                CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
@@ -160,46 +159,34 @@ namespace Test
 
             Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
 
-
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(1, res.AllModsOnProteins.Count());
+            Assert.AreEqual(1, res.AllModsOnProteins.Count);
             Assert.AreEqual(2, res.AllModsOnProteins[mod1.id]);
 
-            Assert.AreEqual(0, res.ModsSeenAndLocalized.Count());
+            Assert.AreEqual(0, res.ModsSeenAndLocalized.Count);
 
             Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen.Count);
 
             Assert.AreEqual(1, res.UnlocalizedMods[mod1.id]); // Saw it, but not sure where!
 
-            Assert.AreEqual(0, res.UnlocalizedFormulas.Count());
+            Assert.AreEqual(0, res.UnlocalizedFormulas.Count);
         }
-
     }
 
     internal class ThisTestScan : IScan
     {
-
         public string FullFilePath => null;
-
         public int OneBasedScanNumber => 0;
-
         public int? OneBasedPrecursorScanNumber => 0;
-
         public double RetentionTime => 0;
-
         public int NumPeaks => 0;
-
         public double TotalIonCurrent => 0;
-
         public int PrecursorCharge => 0;
-
         public double PrecursorMonoisotopicPeakMz => 0;
-
         public double PrecursorMass => 0;
-
     }
 }

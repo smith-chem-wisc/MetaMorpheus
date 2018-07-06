@@ -26,7 +26,8 @@ namespace EngineLayer.Calibration
         private readonly MsDataFile MyMsDataFile;
         private readonly DataPointAquisitionResults Datapoints;
 
-        public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds)
+            : base(commonParameters, nestedIds)
         {
             MyMsDataFile = myMSDataFile;
             Datapoints = datapoints;
@@ -111,35 +112,43 @@ namespace EngineLayer.Calibration
 
         private void CalibrateSpectra(IPredictorModel<double> ms1predictor, IPredictorModel<double> ms2predictor)
         {
-            Parallel.ForEach(Partitioner.Create(1, MyMsDataFile.NumSpectra + 1), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
-              {
-                  for (int i = fff.Item1; i < fff.Item2; i++)
-                  {
-                      var scan = MyMsDataFile.GetOneBasedScan(i);
+            Parallel.ForEach(Partitioner.Create(1, MyMsDataFile.NumSpectra + 1),
+                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
+                (fff, loopState) =>
+            {
+                for (int i = fff.Item1; i < fff.Item2; i++)
+                {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
+                    {
+                        loopState.Stop();
+                        return;
+                    }
 
-                      if (scan.MsnOrder == 2)
-                      {
-                          var precursorScan = MyMsDataFile.GetOneBasedScan(scan.OneBasedPrecursorScanNumber.Value);
+                    var scan = MyMsDataFile.GetOneBasedScan(i);
 
-                          if (!scan.SelectedIonMonoisotopicGuessIntensity.HasValue && scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                          {
-                              scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
-                          }
+                    if (scan.MsnOrder == 2)
+                    {
+                        var precursorScan = MyMsDataFile.GetOneBasedScan(scan.OneBasedPrecursorScanNumber.Value);
 
-                          double theFunc(MzPeak x) => x.Mz - ms2predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
+                        if (!scan.SelectedIonMonoisotopicGuessIntensity.HasValue && scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                        {
+                            scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
+                        }
 
-                          double theFuncForPrecursor(MzPeak x) => x.Mz - ms1predictor.Predict(new double[] { x.Mz, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
+                        double theFunc(MzPeak x) => x.Mz - ms2predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
 
-                          scan.TransformMzs(theFunc, theFuncForPrecursor);
-                      }
-                      else
-                      {
-                          Func<MzPeak, double> theFunc = x => x.Mz - ms1predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
-                          scan.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
-                      }
-                  }
-              }
-              );
+                        double theFuncForPrecursor(MzPeak x) => x.Mz - ms1predictor.Predict(new double[] { x.Mz, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
+
+                        scan.TransformMzs(theFunc, theFuncForPrecursor);
+                    }
+                    else
+                    {
+                        Func<MzPeak, double> theFunc = x => x.Mz - ms1predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
+                        scan.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
+                    }
+                }
+            });
         }
 
         private RegressionForestModel GetRandomForestModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining)

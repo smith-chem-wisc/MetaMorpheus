@@ -44,11 +44,17 @@ namespace EngineLayer.Neo
                     }
                 }
                 if (ModificationOn == true) //only occurs if "(" already found
+                {
                     ModificationName += amino_acid;
+                }
                 if (amino_acid == '[') //start collecting PTM name
+                {
                     ModificationOn = true;
+                }
                 if (ModificationOn == false && amino_acid != ']')
+                {
                     monoisotopic_mass += GetMonoisotopicMass(amino_acid, baseSequence); //something making it here after (
+                }
             }
             return monoisotopic_mass;
         }

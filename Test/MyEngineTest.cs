@@ -8,7 +8,6 @@ namespace Test
     [TestFixture]
     public static class MyEngineTest
     {
-
         [Test]
         public static void TestMyEngine()
         {
@@ -20,7 +19,6 @@ namespace Test
 
         private class TestEngine : MetaMorpheusEngine
         {
-
             public TestEngine(int level) : base(new CommonParameters(), new List<string>())
             {
             }
@@ -32,7 +30,6 @@ namespace Test
 
             private class TestResults : MetaMorpheusEngineResults
             {
-
                 public TestResults(MetaMorpheusEngine e) : base(e)
                 {
                 }
@@ -44,10 +41,7 @@ namespace Test
                     sb.Append("String for the TestResults results class");
                     return sb.ToString();
                 }
-
             }
-
         }
-
     }
 }

@@ -11,7 +11,6 @@
         }
 
         public bool WriteIntermediateFiles { get; set; }
-
         public int MinMS1IsotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int MinMS2IsotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int NumFragmentsNeededForEveryIdentification { get; set; }

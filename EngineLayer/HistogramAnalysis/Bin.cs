@@ -1,4 +1,5 @@
 ﻿using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,7 +16,7 @@ namespace EngineLayer.HistogramAnalysis
 
         public Bin(double massShift)
         {
-            this.MassShift = massShift;
+            MassShift = massShift;
             UniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
         }
 
@@ -76,7 +77,7 @@ namespace EngineLayer.HistogramAnalysis
                 double bestScore = hehe.Item3.LocalizedScores.Max();
                 if (bestScore >= hehe.Item3.Score + 1 && !hehe.Item3.IsDecoy)
                 {
-                    for (int i = 0; i < hehe.Item1.Count(); i++)
+                    for (int i = 0; i < hehe.Item1.Length; i++)
                         if (bestScore - hehe.Item3.LocalizedScores[i] < 0.5)
                             if (ResidueCount.ContainsKey(hehe.Item1[i]))
                                 ResidueCount[hehe.Item1[i]]++;

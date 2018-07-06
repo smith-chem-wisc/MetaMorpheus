@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -256,7 +257,7 @@ namespace MetaMorpheusGUI
             tempCommonParams.SetDigestionParams(digestParams);
 
             // populate the GUI
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
                 fileSpecificProtease.Items.Add(protease);
             }

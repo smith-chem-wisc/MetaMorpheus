@@ -11,16 +11,17 @@
         public readonly double AbsoluteMzError;
         public readonly PeptideSpectralMatch Identification;
 
-        public LabeledDataPoint(double experimentalMz, double rt, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double theoreticalMz, PeptideSpectralMatch identification)
+        public LabeledDataPoint(double experimentalMz, double rt, double logTotalIonCurrent, double logInjectionTime,
+            double logIntensity, double theoreticalMz, PeptideSpectralMatch identification)
         {
-            this.ExperimentalMz = experimentalMz;
-            this.RetentionTime = rt;
-            this.LogTotalIonCurrent = logTotalIonCurrent;
-            this.LogInjectionTime = logInjectionTime;
-            this.LogIntensity = logIntensity;
-            this.TheoreticalMz = theoreticalMz;
-            this.Identification = identification;
-            this.AbsoluteMzError = experimentalMz - theoreticalMz;
+            ExperimentalMz = experimentalMz;
+            RetentionTime = rt;
+            LogTotalIonCurrent = logTotalIonCurrent;
+            LogInjectionTime = logInjectionTime;
+            LogIntensity = logIntensity;
+            TheoreticalMz = theoreticalMz;
+            Identification = identification;
+            AbsoluteMzError = experimentalMz - theoreticalMz;
         }
     }
 }
