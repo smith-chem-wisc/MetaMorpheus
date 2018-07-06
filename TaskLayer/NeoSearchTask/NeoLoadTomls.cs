@@ -7,20 +7,14 @@ namespace TaskLayer
 {
     public static class NeoLoadTomls
     {
-        #region Public Methods
-
         public static List<MetaMorpheusTask> LoadTomls(NeoSearchTask ye5) //tomls are located in EngineLayer//Neo//Data//TomlFiles
         {
             List<MetaMorpheusTask> novelCollection = new List<MetaMorpheusTask>();
 
             string defaultFolderPath = Path.Combine(GlobalVariables.DataDir, @"Neo", @"TomlFiles");
 
-            #region write TOML
-
             var tomlFileName = Path.Combine(defaultFolderPath, ye5.GetType().Name + "config.toml");
             Toml.WriteFile(ye5, tomlFileName, MetaMorpheusTask.tomlConfig);
-
-            #endregion write TOML
 
             if (ye5.NeoParameters.Calibrate)
             {
@@ -105,18 +99,10 @@ namespace TaskLayer
             yeo5_4.NeoType = NeoSearchTask.NeoTaskType.AggregateNormalSplicedFiles;
             novelCollection.Add(yeo5_4);
 
-            #region DeleteTomlFile
-
             File.Delete(tomlFileName);
-
-            #endregion DeleteTomlFile
 
             return novelCollection;
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static void UpdateTomls(string tomlFileName, string fileName, CommonParameters ye5, TerminusType terminusType, bool spliceSearch)
         {
@@ -196,7 +182,5 @@ namespace TaskLayer
                     return line;
             return oldLine;
         }
-
-        #endregion Private Methods
     }
 }

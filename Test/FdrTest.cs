@@ -19,7 +19,6 @@ namespace Test
     [TestFixture]
     public static class FdrTest
     {
-        #region Public Methods
 
         [Test]
         public static void FdrTestMethod()
@@ -102,7 +101,7 @@ namespace Test
         [Test]
         public static void TestDeltaValues()
         {
-            CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, useDeltaScore: true, digestionParams: new DigestionParams(MinPeptideLength: 5));
+            CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, useDeltaScore: true, digestionParams: new DigestionParams(minPeptideLength: 5));
             
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -174,7 +173,7 @@ namespace Test
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModernDelta.PsmsWithin1PercentFdr == 3);
 
-            CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MinPeptideLength: 5));
+            CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
            
             //check worse when using score
             FdrAnalysisResults fdrResultsClassic = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
@@ -212,7 +211,7 @@ namespace Test
             allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters, new List<string>()).Run();
 
-            CommonParameters = new CommonParameters(useDeltaScore: true, digestionParams: new DigestionParams(MinPeptideLength: 5));
+            CommonParameters = new CommonParameters(useDeltaScore: true, digestionParams: new DigestionParams(minPeptideLength: 5));
            
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
             { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
@@ -243,7 +242,7 @@ namespace Test
             Assert.IsTrue(fdrResultsClassicDelta.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModernDelta.PsmsWithin1PercentFdr == 3);
 
-            CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MinPeptideLength: 5));
+            CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
             
             //check no change when using score
             fdrResultsClassic = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.ToList(), 1, CommonParameters, new List<string>()).Run());
@@ -253,6 +252,5 @@ namespace Test
 
         }
 
-        #endregion Public Methods
     }
 }

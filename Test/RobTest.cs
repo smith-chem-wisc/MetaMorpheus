@@ -13,8 +13,6 @@ namespace Test
     [TestFixture]
     public static class RobTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestParsimony()
         {
@@ -35,7 +33,7 @@ namespace Test
             var protease = new Protease("test", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-                        
+
             var p = new List<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
@@ -44,7 +42,7 @@ namespace Test
             p.Add(new Protein("-----F----**", "C1", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
             p.Add(new Protein("----E----**", "C2", null, gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
 
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
 
             foreach (var protein in p)
             {
@@ -171,7 +169,7 @@ namespace Test
 
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new CommonParameters(), new List<string>());
             var ok = (ProteinScoringAndFdrResults)f.Run();
-            proteinGroups = ok.sortedAndScoredProteinGroups;
+            proteinGroups = ok.SortedAndScoredProteinGroups;
 
             //prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
@@ -273,7 +271,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
             ModificationWithMass nTermAmmoniaLoss = new ModificationWithMass("ntermammonialoss", "mt", motif, TerminusLocalization.NPep, 0, neutralLosses: new List<double> { 0, -17 });
-            DigestionParams digestionParams = new DigestionParams(MinPeptideLength: 2);
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 2);
 
             var cool = p.Digest(digestionParams, new List<ModificationWithMass> { nTermAmmoniaLoss }, new List<ModificationWithMass>()).First();
             var nice = cool.CompactPeptide(TerminusType.None);
@@ -299,7 +297,7 @@ namespace Test
                 {variableModifications.Last(), 1 }
             };
 
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MaxMissedCleavages: 0, MinPeptideLength: 1);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1);
 
             var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep };
@@ -379,8 +377,6 @@ namespace Test
         [Test]
         public static void TestProteinGroupsAccessionOutputOrder()
         {
-
-
             var p = new HashSet<Protein>();
             List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
 
@@ -397,7 +393,5 @@ namespace Test
             Assert.That(testGroup.ProteinGroupName.Equals("A|B"));
             Assert.That(testGroup.Proteins.First().Accession.Equals("B"));
         }
-
-        #endregion Public Methods
     }
 }

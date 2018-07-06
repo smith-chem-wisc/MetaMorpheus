@@ -19,17 +19,11 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class XLSearchTaskWindow : Window
     {
-        #region Private Fields
-
-        private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
+        private readonly DataContextForSearchTaskWindow DataContextForSearchTaskWindow;
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
-        private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
 
         public XLSearchTaskWindow()
         {
@@ -41,13 +35,13 @@ namespace MetaMorpheusGUI
 
             this.saveButton.Content = "Add the XLSearch Task";
 
-            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
+            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
                 AnalysisExpanderTitle = "Some analysis properties...",
                 SearchModeExpanderTitle = "Some search properties..."
             };
-            this.DataContext = dataContextForSearchTaskWindow;
+            this.DataContext = DataContextForSearchTaskWindow;
         }
 
         public XLSearchTaskWindow(XLSearchTask task)
@@ -58,24 +52,16 @@ namespace MetaMorpheusGUI
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
 
-            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
+            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
                 AnalysisExpanderTitle = "Some analysis properties...",
                 SearchModeExpanderTitle = "Some search properties..."
             };
-            this.DataContext = dataContextForSearchTaskWindow;
+            this.DataContext = DataContextForSearchTaskWindow;
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal XLSearchTask TheTask { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -103,7 +89,7 @@ namespace MetaMorpheusGUI
             foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
-           
+
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
@@ -116,23 +102,23 @@ namespace MetaMorpheusGUI
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
-                fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
-            fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
+            fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
-                variableModTypeForTreeViewObservableCollection.Add(theModType);
+                VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
-            variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+            variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
-                localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
-            localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
+                LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
+            localizeModsTreeView.DataContext = LocalizeModTypeForTreeViewObservableCollection;
         }
 
         private void UpdateFieldsFromTask(XLSearchTask task)
@@ -197,7 +183,7 @@ namespace MetaMorpheusGUI
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
-                var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                var theModType = FixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
@@ -213,13 +199,13 @@ namespace MetaMorpheusGUI
                 else
                 {
                     theModType = new ModTypeForTreeView(mod.Item1, true);
-                    fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                    FixedModTypeForTreeViewObservableCollection.Add(theModType);
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
             foreach (var mod in task.CommonParameters.ListOfModsVariable)
             {
-                var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                var theModType = VariableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
@@ -235,20 +221,20 @@ namespace MetaMorpheusGUI
                 else
                 {
                     theModType = new ModTypeForTreeView(mod.Item1, true);
-                    variableModTypeForTreeViewObservableCollection.Add(theModType);
+                    VariableModTypeForTreeViewObservableCollection.Add(theModType);
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
 
-            foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+            foreach (var heh in LocalizeModTypeForTreeViewObservableCollection)
             {
                 heh.Use = false;
             }
-            foreach (var ye in variableModTypeForTreeViewObservableCollection)
+            foreach (var ye in VariableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
             }
-            foreach (var ye in fixedModTypeForTreeViewObservableCollection)
+            foreach (var ye in FixedModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
             }
@@ -303,7 +289,13 @@ namespace MetaMorpheusGUI
             int MaxPeptideLength = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
-            DigestionParams digestionParamsToSave = new DigestionParams(protease: protease.Name, MaxMissedCleavages: MaxMissedCleavages, MinPeptideLength: MinPeptideLength, MaxPeptideLength: MaxPeptideLength, MaxModificationIsoforms: MaxModificationIsoforms, InitiatorMethionineBehavior: InitiatorMethionineBehavior);
+            DigestionParams digestionParamsToSave = new DigestionParams(
+                protease: protease.Name,
+                maxMissedCleavages: MaxMissedCleavages, 
+                minPeptideLength: MinPeptideLength, 
+                maxPeptideLength: MaxPeptideLength, 
+                maxModificationIsoforms: MaxModificationIsoforms, 
+                initiatorMethionineBehavior: InitiatorMethionineBehavior);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -320,15 +312,15 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.XlOutAll = ckbAllResults.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
-            
+
             var listOfModsVariable = new List<(string, string)>();
-            foreach (var heh in variableModTypeForTreeViewObservableCollection)
+            foreach (var heh in VariableModTypeForTreeViewObservableCollection)
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
             var listOfModsFixed = new List<(string, string)>();
-            foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+            foreach (var heh in FixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
@@ -365,9 +357,9 @@ namespace MetaMorpheusGUI
 
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
-            dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
-            dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
-            dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
+            DataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
+            DataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
+            DataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
         }
 
         private void ModExpander_Expanded(object sender, RoutedEventArgs e)
@@ -390,7 +382,5 @@ namespace MetaMorpheusGUI
             //if (!TheTask.WritePrunedDatabase)
             //    modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
         }
-
-        #endregion Private Methods
     }
 }

@@ -17,20 +17,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
     public class GptmdTask : MetaMorpheusTask
     {
-        #region Private Fields
-
         private const double tolForComboLoading = 1e-3;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public GptmdTask() : base(MyTask.Gptmd)
         {
@@ -38,15 +31,7 @@ namespace TaskLayer
             GptmdParameters = new GptmdParameters();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public GptmdParameters GptmdParameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -101,7 +86,7 @@ namespace TaskLayer
             Status("Running G-PTM-D...", new List<string> { taskId });
             MyTaskResults = new MyTaskResults(this)
             {
-                newDatabases = new List<DbForTask>()
+                NewDatabases = new List<DbForTask>()
             };
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
             HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
@@ -191,7 +176,7 @@ namespace TaskLayer
 
                 SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
-                MyTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
                 MyTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddNiceText("Mods types and counts:");
                 MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
@@ -213,17 +198,13 @@ namespace TaskLayer
 
                 SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
-                MyTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
+                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
                 MyTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddNiceText("Mods types and counts:");
                 MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             return MyTaskResults;
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private static IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> modificationsThatCanBeCombined)
         {
@@ -265,7 +246,5 @@ namespace TaskLayer
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

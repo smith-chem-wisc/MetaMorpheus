@@ -5,13 +5,7 @@ namespace MetaMorpheusGUI
 {
     public class ModForTreeView : INotifyPropertyChanged
     {
-        #region Private Fields
-
         private bool _isChecked;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public ModForTreeView(string toolTip, bool use, string displayName, bool bad, ModTypeForTreeView parent)
         {
@@ -25,15 +19,7 @@ namespace MetaMorpheusGUI
                 Background = new SolidColorBrush(Colors.Transparent);
         }
 
-        #endregion Public Constructors
-
-        #region Public Events
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         public ModTypeForTreeView Parent { get; }
         public string ToolTipStuff { get; }
@@ -53,10 +39,6 @@ namespace MetaMorpheusGUI
         public string DisplayName { get; }
         public Brush Background { get; }
 
-        #endregion Public Properties
-
-        #region Internal Methods
-
         internal void SetUseStatus(bool value)
         {
             if (value == Use)
@@ -68,15 +50,9 @@ namespace MetaMorpheusGUI
             RaisePropertyChanged("Use");
         }
 
-        #endregion Internal Methods
-
-        #region Protected Methods
-
         protected void RaisePropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-
-        #endregion Protected Methods
     }
 }

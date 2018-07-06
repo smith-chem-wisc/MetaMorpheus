@@ -12,7 +12,6 @@ namespace Test
     [TestFixture]
     public static class ModificationAnalysisTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestModificationAnalysis()
@@ -64,9 +63,9 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
-                    MaxMissedCleavages: 0,
-                    MinPeptideLength: 1,
-                    MaxModificationIsoforms: int.MaxValue),
+                    maxMissedCleavages: 0,
+                    minPeptideLength: 1,
+                    maxModificationIsoforms: int.MaxValue),
                 scoreCutoff: 1);
            
             var newPsms = new List<PeptideSpectralMatch>
@@ -139,7 +138,7 @@ namespace Test
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1), scoreCutoff: 1);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
             
             var newPsms = new List<PeptideSpectralMatch>
             {
@@ -179,12 +178,10 @@ namespace Test
             Assert.AreEqual(0, res.UnlocalizedFormulas.Count());
         }
 
-        #endregion Public Methods
     }
 
     internal class ThisTestScan : IScan
     {
-        #region Public Properties
 
         public string FullFilePath => null;
 
@@ -204,6 +201,5 @@ namespace Test
 
         public double PrecursorMass => 0;
 
-        #endregion Public Properties
     }
 }
