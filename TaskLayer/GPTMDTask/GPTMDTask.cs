@@ -24,7 +24,7 @@ namespace TaskLayer
 {
     public class GptmdTask : MetaMorpheusTask
     {
-        private const double ToleranceForComboLoading = 1e-3;
+        private const double tolForComboLoading = 1e-3;
 
         public GptmdTask() : base(TaskType.Gptmd)
         {
@@ -34,25 +34,26 @@ namespace TaskLayer
 
         public GptmdParameters GptmdParameters { get; set; }
 
-        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             // load modifications
             Status("Loading modifications...", taskId);
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>()
-                .Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>()
-                .Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
             List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
-            List<ModificationWithMass> gptmdModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>()
-                .Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> gptmdModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.modificationType, b.id))).ToList();
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
             // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
-            if (CommonParameters.BIons) { ionTypes.Add(ProductType.BnoB1ions); }
-            if (CommonParameters.YIons) { ionTypes.Add(ProductType.Y); }
-            if (CommonParameters.ZdotIons) { ionTypes.Add(ProductType.Zdot); }
-            if (CommonParameters.CIons) { ionTypes.Add(ProductType.C); }
+            if (CommonParameters.BIons)
+                ionTypes.Add(ProductType.BnoB1ions);
+            if (CommonParameters.YIons)
+                ionTypes.Add(ProductType.Y);
+            if (CommonParameters.ZdotIons)
+                ionTypes.Add(ProductType.Zdot);
+            if (CommonParameters.CIons)
+                ionTypes.Add(ProductType.C);
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
@@ -126,9 +127,7 @@ namespace TaskLayer
 
             // Group and order psms
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest =
-                new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams,
-                CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { taskId });
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { taskId });
 
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
@@ -141,7 +140,7 @@ namespace TaskLayer
 
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, new List<string> { taskId }).Run();
 
-            var writtenFile = Path.Combine(outputFolder, "GPTMD_Candidates.psmtsv");
+            var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
             SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
 
@@ -172,7 +171,7 @@ namespace TaskLayer
                     bool compressed = theExtension.EndsWith("gz");
                     databaseNames.Add(compressed ? Path.GetFileNameWithoutExtension(dbName) : dbName);
                 }
-                string outputXMLdbFullName = Path.Combine(outputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
+                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
@@ -194,7 +193,7 @@ namespace TaskLayer
                     int indexOfFirstDot = dbName.IndexOf(".");
                     databaseNames.Add(dbName.Substring(0, indexOfFirstDot));
                 }
-                string outputXMLdbFullNameContaminants = Path.Combine(outputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
+                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
@@ -217,8 +216,8 @@ namespace TaskLayer
                     var line = r.ReadLine().Split(' ');
                     var mass1 = double.Parse(line[0]);
                     var mass2 = double.Parse(line[1]);
-                    if (modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass1) < ToleranceForComboLoading) &&
-                        modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass2) < ToleranceForComboLoading))
+                    if (modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass1) < tolForComboLoading) &&
+                        modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass2) < tolForComboLoading))
                         yield return new Tuple<double, double>(mass1, mass2);
                 }
             }

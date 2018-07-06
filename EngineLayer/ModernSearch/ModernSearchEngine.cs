@@ -48,7 +48,7 @@ namespace EngineLayer.ModernSearch
             }
 
             Parallel.ForEach(Partitioner.Create(0, ListOfSortedms2Scans.Length),
-                new ParallelOptions { MaxDegreeOfParallelism = base.commonParameters.MaxThreadsToUsePerFile },
+                new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (range, loopState) =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
@@ -144,7 +144,7 @@ namespace EngineLayer.ModernSearch
             });
 
             // remove peptides below the score cutoff that were stored to calculate expectation values
-            if (base.commonParameters.CalculateEValue)
+            if (commonParameters.CalculateEValue)
             {
                 for (int i = 0; i < PeptideSpectralMatches.Length; i++)
                 {

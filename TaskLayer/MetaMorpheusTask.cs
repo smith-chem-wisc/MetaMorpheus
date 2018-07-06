@@ -253,23 +253,23 @@ namespace TaskLayer
             }
 
             // Write prose
-            var proseFilePath = Path.Combine(outputFolder, "prose.txt");
-            using (StreamWriter file = new StreamWriter(proseFilePath))
-            {
-                file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
-                file.Write(ProseCreatedWhileRunning.ToString());
-                file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
-                file.WriteLine("The total time to perform the " + TaskType.ToString().ToLowerInvariant() + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
-                file.WriteLine();
-                file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
+                var proseFilePath = Path.Combine(outputFolder, "prose.txt");
+                using (StreamWriter file = new StreamWriter(proseFilePath))
+                {
+                    file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
+                    file.Write(ProseCreatedWhileRunning.ToString());
+                    file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
+                    file.WriteLine("The total time to perform the " + TaskType.ToString().ToLowerInvariant() + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
+                    file.WriteLine();
+                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
 
-                file.WriteLine();
-                file.WriteLine("Spectra files: ");
-                file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
-                file.WriteLine("Databases:");
-                file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
-            }
-            SucessfullyFinishedWritingFile(proseFilePath, new List<string> { displayName });
+                    file.WriteLine();
+                    file.WriteLine("Spectra files: ");
+                    file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
+                    file.WriteLine("Databases:");
+                    file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
+                }
+                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { displayName });
 
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return MyTaskResults;
@@ -304,6 +304,32 @@ namespace TaskLayer
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
             return proteinList;
+        }
+
+        private static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType,
+    List<string> localizeableModificationTypes, bool isContaminant,
+    out Dictionary<string, Modification> um, out int emptyEntriesCount)
+        {
+            List<string> dbErrors = new List<string>();
+            List<Protein> proteinList = new List<Protein>();
+
+            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
+            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
+            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
+
+            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
+            {
+                um = null;
+                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, out dbErrors);
+            }
+            else
+            {
+                List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
+                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um);
+            }
+
+            emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
+            return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
         protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath,
@@ -364,32 +390,6 @@ namespace TaskLayer
         protected void NewCollection(string displayName, List<string> nestedIds)
         {
             NewCollectionHandler?.Invoke(this, new StringEventArgs(displayName, nestedIds));
-        }
-
-        private static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType,
-            List<string> localizeableModificationTypes, bool isContaminant,
-            out Dictionary<string, Modification> um, out int emptyEntriesCount)
-        {
-            List<string> dbErrors = new List<string>();
-            List<Protein> proteinList = new List<Protein>();
-
-            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
-            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
-
-            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
-            {
-                um = null;
-                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, out dbErrors);
-            }
-            else
-            {
-                List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um);
-            }
-
-            emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
-            return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
         private static List<string> GetModsTypesFromString(string value)

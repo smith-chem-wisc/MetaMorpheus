@@ -18,7 +18,8 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class NeoSearchTaskWindow : Window
     {
-        private readonly DataContextForSearchTaskWindow DataContextForSearchTaskWindow;
+        private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
+
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
@@ -34,12 +35,12 @@ namespace MetaMorpheusGUI
 
             UpdateFieldsFromTask(TheTask);
 
-            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
+            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name))
             };
-            DataContext = DataContextForSearchTaskWindow;
-            saveButton.Content = "Add the Search Tasks";
+            this.DataContext = dataContextForSearchTaskWindow;
+            this.saveButton.Content = "Add the Search Tasks";
         }
 
         public NeoSearchTaskWindow(NeoSearchTask task)
@@ -50,12 +51,12 @@ namespace MetaMorpheusGUI
 
             UpdateFieldsFromTask(TheTask);
 
-            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
+            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name))
             };
-            DataContext = DataContextForSearchTaskWindow;
-            saveButton.Content = "Add the Search Tasks";
+            this.DataContext = dataContextForSearchTaskWindow;
+            this.saveButton.Content = "Add the Search Tasks";
         }
 
         internal NeoSearchTask TheTask { get; private set; }
@@ -81,9 +82,7 @@ namespace MetaMorpheusGUI
             proteaseComboBox.SelectedIndex = 12;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
-            {
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
-            }
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
@@ -96,9 +95,7 @@ namespace MetaMorpheusGUI
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-                }
             }
             fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
@@ -106,9 +103,7 @@ namespace MetaMorpheusGUI
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-                }
             }
             variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
@@ -116,9 +111,7 @@ namespace MetaMorpheusGUI
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 LocalizeModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-                }
             }
             localizeModsTreeView.DataContext = LocalizeModTypeForTreeViewObservableCollection;
         }
@@ -233,7 +226,7 @@ namespace MetaMorpheusGUI
 
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
-            DataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
+            dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -243,8 +236,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            // Check Task Validity
-
             if (!int.TryParse(maxCandidatesPerSpectrumTextBox.Text, out int mcps) || mcps <= 0)
             {
                 MessageBox.Show("The number of maximum candidates per spectra contains unrecognized characters. \n You entered " + '"' + maxCandidatesPerSpectrumTextBox.Text + '"' + "\n Please enter a positive number.");
@@ -277,8 +268,6 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            // Save Parameters
-
             //Code for determining SemiSpecific
             NeoParameters neoParameters = new NeoParameters
             {
@@ -298,37 +287,29 @@ namespace MetaMorpheusGUI
             };
 
             if (!searchTarget.IsChecked.Value)
-            {
                 neoParameters.TargetFilePath = targetPath.Text;
-            }
             if (!searchDecoy.IsChecked.Value)
-            {
                 neoParameters.DecoyFilePath = decoyPath.Text;
-            }
             if (!searchN.IsChecked.Value)
-            {
                 neoParameters.NFilePath = NPath.Text;
-            }
             if (!searchC.IsChecked.Value)
-            {
                 neoParameters.CFilePath = CPath.Text;
-            }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
-            int MaxMissedCleavages = (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
-            int MinPeptideLength = (int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int MaxPeptideLength = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
-            int MaxModsForPeptide = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
-            InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            int maxMissedCleavages = (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
+            int minPeptideLength = (int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int maxPeptideLength = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int maxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
+            int maxModsForPeptide = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
+            InitiatorMethionineBehavior initiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages,
-                minPeptideLength: MinPeptideLength,
-                maxPeptideLength: MaxPeptideLength,
-                maxModificationIsoforms: MaxModificationIsoforms,
-                initiatorMethionineBehavior: InitiatorMethionineBehavior,
-                maxModsForPeptides: MaxModsForPeptide);
+                maxMissedCleavages: maxMissedCleavages,
+                minPeptideLength: minPeptideLength, 
+                maxPeptideLength: maxPeptideLength, 
+                maxModificationIsoforms: maxModificationIsoforms, 
+                initiatorMethionineBehavior: initiatorMethionineBehavior, 
+                maxModsForPeptides: maxModsForPeptide);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)

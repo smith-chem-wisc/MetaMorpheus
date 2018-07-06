@@ -6,7 +6,7 @@ namespace TaskLayer
     {
         public SingleTaskEventArgs(string displayName)
         {
-            DisplayName = displayName;
+            this.DisplayName = displayName;
         }
 
         public string DisplayName { get; private set; }

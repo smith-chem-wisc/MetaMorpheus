@@ -19,6 +19,8 @@ namespace TaskLayer
 {
     public class MyFileManager
     {
+        public enum ThermoMsFileReaderVersionCheck { DllsNotFound, IncorrectVersion, CorrectVersion };
+
         private readonly bool DisposeOfFileWhenDone;
         private readonly Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
         private readonly object FileLoadingLock = new object();
@@ -33,13 +35,6 @@ namespace TaskLayer
         }
 
         public static event EventHandler<StringEventArgs> WarnHandler;
-
-        public enum ThermoMsFileReaderVersionCheck
-        {
-            DllsNotFound,
-            IncorrectVersion,
-            CorrectVersion
-        }
 
         public bool SeeIfOpen(string path)
         {

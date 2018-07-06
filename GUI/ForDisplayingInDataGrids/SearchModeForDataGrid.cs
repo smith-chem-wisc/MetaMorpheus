@@ -4,15 +4,27 @@ namespace MetaMorpheusGUI
 {
     internal class SearchModeForDataGrid
     {
-        public readonly MassDiffAcceptor SearchMode;
+        #region Public Fields
+
+        public readonly MassDiffAcceptor searchMode;
+
+        #endregion Public Fields
+
+        #region Public Constructors
 
         public SearchModeForDataGrid(MassDiffAcceptor searchMode)
         {
-            SearchMode = searchMode;
+            this.searchMode = searchMode;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
 
         public bool Use { get; set; }
 
-        public string Name { get { return SearchMode.ToString(); } }
+        public string Name { get { return searchMode.ToString(); } }
+
+        #endregion Public Properties
     }
 }

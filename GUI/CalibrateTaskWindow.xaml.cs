@@ -30,7 +30,7 @@ namespace MetaMorpheusGUI
             TheTask = new CalibrationTask();
             UpdateFieldsFromTask(TheTask);
 
-            saveButton.Content = "Add the Calibration Task";
+            this.saveButton.Content = "Add the Calibration Task";
         }
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
@@ -77,13 +77,9 @@ namespace MetaMorpheusGUI
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
                     if (theMod != null)
-                    {
                         theMod.Use = true;
-                    }
                     else
-                    {
                         theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
-                    }
                 }
                 else
                 {
@@ -99,13 +95,9 @@ namespace MetaMorpheusGUI
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
                     if (theMod != null)
-                    {
                         theMod.Use = true;
-                    }
                     else
-                    {
                         theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
-                    }
                 }
                 else
                 {
@@ -230,9 +222,9 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages,
-                minPeptideLength: MinPeptideLength,
-                maxPeptideLength: MaxPeptideLength,
+                maxMissedCleavages: MaxMissedCleavages, 
+                minPeptideLength: MinPeptideLength, 
+                maxPeptideLength: MaxPeptideLength, 
                 maxModificationIsoforms: MaxModificationIsoforms);
 
             var listOfModsVariable = new List<(string, string)>();
@@ -265,7 +257,6 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-
             CommonParameters CommonParamsToSave = new CommonParameters(
                 digestionParams: digestionParamsToSave,
                 bIons: bCheckBox.IsChecked.Value,
@@ -276,12 +267,12 @@ namespace MetaMorpheusGUI
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
                 productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance,
-                maxThreadsToUsePerFile:
-                    int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0 ?
-                    int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) :
-                    new CommonParameters().MaxThreadsToUsePerFile);
+                precursorMassTolerance: PrecursorMassTolerance);
 
+            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
+            {
+                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+            }
             if (OutputFileNameTextBox.Text != "")
             {
                 CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;

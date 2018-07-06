@@ -19,11 +19,7 @@ namespace TaskLayer
         public NeoSearchTask() : base(TaskType.Neo)
         {
             NeoParameters = new NeoParameters();
-            var tempDigParams = new DigestionParams(
-                protease: "non-specific",
-                maxMissedCleavages: 12,
-                minPeptideLength: 8,
-                maxPeptideLength: 13);
+            var tempDigParams = new DigestionParams(protease: "non-specific", maxMissedCleavages: 12, minPeptideLength: 8, maxPeptideLength: 13);
 
             CommonParameters = new CommonParameters(
                 digestionParams: tempDigParams,
@@ -32,15 +28,10 @@ namespace TaskLayer
                 productMassTolerance: new PpmTolerance(double.MaxValue));
         }
 
-        public enum NeoTaskType
-        {
-            AggregateTargetDecoyFiles,
-            GenerateSplicedPeptides,
-            AggregateNormalSplicedFiles,
-            SearchTransDb
-        }
+        public enum NeoTaskType { AggregateTargetDecoyFiles, GenerateSplicedPeptides, AggregateNormalSplicedFiles, SearchTransDb };
 
         public NeoTaskType NeoType { get; set; }
+
         public NeoParameters NeoParameters { get; set; }
 
         public NeoSearchTask Clone()
@@ -48,7 +39,7 @@ namespace TaskLayer
             return (NeoSearchTask)this.MemberwiseClone();
         }
 
-        protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
 
@@ -57,27 +48,27 @@ namespace TaskLayer
                 //getfolders
                 if (NeoParameters.DecoyFilePath == null)
                 {
-                    NeoParameters.DecoyFilePath = new DirectoryInfo(outputFolder).Name;
+                    NeoParameters.DecoyFilePath = new DirectoryInfo(OutputFolder).Name;
                     string taskString = NeoParameters.DecoyFilePath.Split('-')[0];
                     int taskNum = Convert.ToInt32(taskString.Substring(4, taskString.Length - 4));
                     taskNum--;
-                    NeoParameters.DecoyFilePath = outputFolder.Substring(0, outputFolder.Length - NeoParameters.DecoyFilePath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
+                    NeoParameters.DecoyFilePath = OutputFolder.Substring(0, OutputFolder.Length - NeoParameters.DecoyFilePath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
                     if (NeoParameters.TargetFilePath == null)
                     {
-                        NeoParameters.TargetFilePath = new DirectoryInfo(outputFolder).Name;
+                        NeoParameters.TargetFilePath = new DirectoryInfo(OutputFolder).Name;
                         taskNum--;
-                        NeoParameters.TargetFilePath = outputFolder.Substring(0, outputFolder.Length - NeoParameters.TargetFilePath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
+                        NeoParameters.TargetFilePath = OutputFolder.Substring(0, OutputFolder.Length - NeoParameters.TargetFilePath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
                     }
                 }
                 if (NeoParameters.TargetFilePath == null)
                 {
-                    NeoParameters.TargetFilePath = new DirectoryInfo(outputFolder).Name;
+                    NeoParameters.TargetFilePath = new DirectoryInfo(OutputFolder).Name;
                     string taskString = NeoParameters.TargetFilePath.Split('-')[0];
                     int taskNum = Convert.ToInt32(taskString.Substring(4, taskString.Length - 4));
                     taskNum--;
-                    NeoParameters.TargetFilePath = outputFolder.Substring(0, outputFolder.Length - NeoParameters.TargetFilePath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
+                    NeoParameters.TargetFilePath = OutputFolder.Substring(0, OutputFolder.Length - NeoParameters.TargetFilePath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
                 }
-                AggregateSearchFiles.Combine(NeoParameters.TargetFilePath, NeoParameters.DecoyFilePath, outputFolder + "\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]));
+                AggregateSearchFiles.Combine(NeoParameters.TargetFilePath, NeoParameters.DecoyFilePath, OutputFolder + "\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]));
             }
             else if (NeoType.Equals(NeoTaskType.AggregateNormalSplicedFiles))
             {
@@ -85,14 +76,14 @@ namespace TaskLayer
                 dbFilenameList = StoredDatabases;
 
                 string normalPath = "";
-                string cisPath = new DirectoryInfo(outputFolder).Name;
+                string cisPath = new DirectoryInfo(OutputFolder).Name;
                 string taskString = cisPath.Split('-')[0];
                 int taskNum = Convert.ToInt32(taskString.Substring(4, taskString.Length - 4));
                 taskNum -= 2;
-                string transPath = outputFolder.Substring(0, outputFolder.Length - cisPath.Length) + "Task" + (taskNum + 1) + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
-                cisPath = outputFolder.Substring(0, outputFolder.Length - cisPath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
-                AggregateSearchFiles.RecursiveNeoAggregation(normalPath, cisPath, outputFolder, "CisResults.psmtsv");
-                AggregateSearchFiles.RecursiveNeoAggregation(normalPath, transPath, outputFolder, "TransResults.psmtsv");
+                string transPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + (taskNum + 1) + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
+                cisPath = OutputFolder.Substring(0, OutputFolder.Length - cisPath.Length) + "Task" + taskNum + "-SearchTask\\" + Path.GetFileNameWithoutExtension(currentRawFileList[0]) + "_PSMs.psmtsv";
+                AggregateSearchFiles.RecursiveNeoAggregation(normalPath, cisPath, OutputFolder, "CisResults.psmtsv");
+                AggregateSearchFiles.RecursiveNeoAggregation(normalPath, transPath, OutputFolder, "TransResults.psmtsv");
             }
             else if (NeoType.Equals(NeoTaskType.GenerateSplicedPeptides))
             {
@@ -115,12 +106,13 @@ namespace TaskLayer
 
                     //Import Database
                     Status("Loading modifications...", taskId);
+
                     List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
                     List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
                     List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
                     // load proteins
-                    List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes); // no decoys generated
+                    List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes);
 
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;
@@ -131,7 +123,7 @@ namespace TaskLayer
                     {
                         //if no termini input
                         string taskHeader = "Task";
-                        string[] pathArray = outputFolder.Split('\\');
+                        string[] pathArray = OutputFolder.Split('\\');
                         string basePath = "";
                         for (int i = 0; i < pathArray.Length - 1; i++)
                             basePath += pathArray[i] + '\\';
@@ -172,17 +164,17 @@ namespace TaskLayer
 
                     //Export Results
                     Status("Exporting Results...", taskId);
-                    NeoExport.ExportAll(candidates, arrayOfMs2ScansSortedByMass, outputFolder);
+                    NeoExport.ExportAll(candidates, arrayOfMs2ScansSortedByMass, OutputFolder);
 
                     //Switch databases
-                    string outputFolder2 = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixNC.fasta";
-                    dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder2, false) };
+                    string outputFolder = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixNC.fasta";
+                    dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder, false) };
                 }
             }
             else //if SearchTransDb
             {
-                string outputFolder2 = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixTS.fasta";
-                dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder2, false) };
+                string outputFolder = NeoExport.path + NeoExport.folder + @"\" + NeoExport.folder + "FusionDatabaseAppendixTS.fasta";
+                dbFilenameList = new List<DbForTask>() { new DbForTask(outputFolder, false) };
             }
 
             return MyTaskResults;

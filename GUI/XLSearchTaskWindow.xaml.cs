@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
-using MzLibUtil;
 using Proteomics.ProteolyticDigestion;
+using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -34,7 +34,7 @@ namespace MetaMorpheusGUI
             TheTask = new XLSearchTask();
             UpdateFieldsFromTask(TheTask);
 
-            saveButton.Content = "Add the XLSearch Task";
+            this.saveButton.Content = "Add the XLSearch Task";
 
             DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
@@ -42,7 +42,7 @@ namespace MetaMorpheusGUI
                 AnalysisExpanderTitle = "Some analysis properties...",
                 SearchModeExpanderTitle = "Some search properties..."
             };
-            DataContext = DataContextForSearchTaskWindow;
+            this.DataContext = DataContextForSearchTaskWindow;
         }
 
         public XLSearchTaskWindow(XLSearchTask task)
@@ -59,7 +59,7 @@ namespace MetaMorpheusGUI
                 AnalysisExpanderTitle = "Some analysis properties...",
                 SearchModeExpanderTitle = "Some search properties..."
             };
-            DataContext = DataContextForSearchTaskWindow;
+            this.DataContext = DataContextForSearchTaskWindow;
         }
 
         internal XLSearchTask TheTask { get; private set; }
@@ -105,9 +105,7 @@ namespace MetaMorpheusGUI
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-                }
             }
             fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
@@ -115,16 +113,12 @@ namespace MetaMorpheusGUI
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
-                }
             }
             variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
-            {
                 LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
-            }
             localizeModsTreeView.DataContext = LocalizeModTypeForTreeViewObservableCollection;
         }
 
@@ -288,8 +282,6 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.UdXLkerDeadendMassTris = string.IsNullOrEmpty(txtUdXLkerDeadendTris.Text) ? (double?)null : double.Parse(txtUdXLkerDeadendTris.Text, CultureInfo.InvariantCulture);
             }
 
-            // either of these does not require the protease to be entered
-            // this may change if we want to use the aTDC method for xl tasks
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
@@ -300,10 +292,10 @@ namespace MetaMorpheusGUI
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages,
-                minPeptideLength: MinPeptideLength,
-                maxPeptideLength: MaxPeptideLength,
-                maxModificationIsoforms: MaxModificationIsoforms,
+                maxMissedCleavages: MaxMissedCleavages, 
+                minPeptideLength: MinPeptideLength, 
+                maxPeptideLength: MaxPeptideLength, 
+                maxModificationIsoforms: MaxModificationIsoforms, 
                 initiatorMethionineBehavior: InitiatorMethionineBehavior);
 
             Tolerance ProductMassTolerance;

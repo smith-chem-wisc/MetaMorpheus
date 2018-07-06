@@ -14,10 +14,11 @@ namespace EngineLayer
 {
     public class PeptideSpectralMatch
     {
-        public const double ToleranceForScoreDifferentiation = 1e-9;
-
         private const double ToleranceForDoubleResolution = 1e-6;
+
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+
+        public const double ToleranceForScoreDifferentiation = 1e-9;
 
         public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
         {

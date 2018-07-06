@@ -33,13 +33,13 @@ namespace EngineLayer.CrosslinkSearch
         private readonly Tolerance XLPrecusorMsTl;
 
         //private readonly Tolerance XLBetaPrecusorMsTl;
-        private MassDiffAcceptor XLPrecusorSearchMode;
-
         private readonly bool QuenchH2O;
+
         private readonly bool QuenchNH2;
         private readonly bool QuenchTris;
         private readonly bool Charge_2_3;
         private readonly bool Charge_2_3_PrimeFragment;
+        private MassDiffAcceptor XLPrecusorSearchMode;
 
         public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex,List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, Tolerance XlPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -54,7 +54,7 @@ namespace EngineLayer.CrosslinkSearch
             this.MassDiffAcceptor = new OpenSearchMode();
             this.DissociationTypes = DetermineDissociationType(lp);
             this.XLPrecusorMsTl = XlPrecusorMsTl;
-            this.XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(XlPrecusorMsTl.Value);
+            XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(XlPrecusorMsTl.Value);
             //if (XLBetaPrecusorMsTl.ToString().Contains("Absolute"))
             //{
             //    XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLPrecusorMsTl.Value);

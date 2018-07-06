@@ -30,7 +30,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             double progress = 0;
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + CurrentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             byte byteScoreCutoff = (byte)commonParameters.ScoreCutoff;
 

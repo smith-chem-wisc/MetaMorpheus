@@ -23,10 +23,7 @@ namespace MetaMorpheusGUI
 
         public string Status
         {
-            get
-            {
-                return _Status;
-            }
+            get { return _Status; }
             set
             {
                 _Status = value;
@@ -36,10 +33,7 @@ namespace MetaMorpheusGUI
 
         public int Progress
         {
-            get
-            {
-                return _Progress;
-            }
+            get { return _Progress; }
             set
             {
                 _Progress = value;
@@ -52,10 +46,7 @@ namespace MetaMorpheusGUI
 
         public bool IsIndeterminate
         {
-            get
-            {
-                return _IsIndeterminate;
-            }
+            get { return _IsIndeterminate; }
             set
             {
                 _IsIndeterminate = value;

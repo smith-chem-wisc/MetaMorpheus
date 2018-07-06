@@ -4,7 +4,7 @@ namespace MetaMorpheusGUI
 {
     public class ModTypeForLoc : INotifyPropertyChanged
     {
-        private bool? _IsChecked;
+        private bool? _isChecked;
 
         public ModTypeForLoc(string displayName)
         {
@@ -17,7 +17,7 @@ namespace MetaMorpheusGUI
         {
             get
             {
-                return _IsChecked;
+                return _isChecked;
             }
             set
             {
@@ -34,7 +34,8 @@ namespace MetaMorpheusGUI
 
         private void SetUseStatus(bool? value)
         {
-            _IsChecked = value;
+            _isChecked = value;
+
             RaisePropertyChanged("Use");
         }
     }

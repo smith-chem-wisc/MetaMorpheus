@@ -4,18 +4,34 @@ namespace MetaMorpheusGUI
 {
     internal class PreRunTask
     {
-        public readonly MetaMorpheusTask MetaMorpheusTask;
+        #region Public Fields
+
+        public readonly MetaMorpheusTask metaMorpheusTask;
+
+        #endregion Public Fields
+
+        #region Public Constructors
 
         public PreRunTask(MetaMorpheusTask theTask)
         {
-            MetaMorpheusTask = theTask;
+            this.metaMorpheusTask = theTask;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
 
         public string DisplayName { get; set; }
 
+        #endregion Public Properties
+
+        #region Public Methods
+
         public PreRunTask Clone()
         {
-            return (PreRunTask)MemberwiseClone();
+            return (PreRunTask)this.MemberwiseClone();
         }
+
+        #endregion Public Methods
     }
 }

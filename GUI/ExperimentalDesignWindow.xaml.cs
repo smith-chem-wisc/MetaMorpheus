@@ -13,8 +13,8 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class ExperimentalDesignWindow : Window
     {
-        private readonly ObservableCollection<ExperimentalDesignForDataGrid> SpectraFilesQuantSets = new ObservableCollection<ExperimentalDesignForDataGrid>();
-        private string OutputPath;
+        private readonly ObservableCollection<ExperimentalDesignForDataGrid> spectraFilesQuantSets = new ObservableCollection<ExperimentalDesignForDataGrid>();
+        private string outputPath;
 
         public ExperimentalDesignWindow(ObservableCollection<RawDataForDataGrid> spectraFilesObservableCollection)
         {
@@ -22,20 +22,20 @@ namespace MetaMorpheusGUI
 
             foreach (var item in spectraFilesObservableCollection.Where(p => p.Use).Select(p => p.FilePath))
             {
-                SpectraFilesQuantSets.Add(new ExperimentalDesignForDataGrid(item));
+                spectraFilesQuantSets.Add(new ExperimentalDesignForDataGrid(item));
             }
 
             if (spectraFilesObservableCollection.Any())
             {
-                OutputPath = Directory.GetParent(spectraFilesObservableCollection.Where(p => p.Use).First().FilePath).FullName;
-                OutputPath = Path.Combine(OutputPath, GlobalVariables.ExperimentalDesignFileName);
+                outputPath = Directory.GetParent(spectraFilesObservableCollection.Where(p => p.Use).First().FilePath).FullName;
+                outputPath = Path.Combine(outputPath, GlobalVariables.ExperimentalDesignFileName);
             }
 
-            DgQuant.DataContext = SpectraFilesQuantSets;
+            DgQuant.DataContext = spectraFilesQuantSets;
 
             try
             {
-                ReadExperDesignFromTsv(OutputPath);
+                ReadExperDesignFromTsv(outputPath);
             }
             catch (Exception ex)
             {
@@ -45,7 +45,7 @@ namespace MetaMorpheusGUI
 
         private void BtnSaveQuant_Click(object sender, RoutedEventArgs e)
         {
-            if (OutputPath == null)
+            if (outputPath == null)
             {
                 // no spectra files
                 DialogResult = true;
@@ -60,7 +60,7 @@ namespace MetaMorpheusGUI
 
             try
             {
-                WriteExperDesignToTsv(OutputPath);
+                WriteExperDesignToTsv(outputPath);
             }
             catch (Exception ex)
             {
@@ -81,7 +81,7 @@ namespace MetaMorpheusGUI
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                foreach (var spectraFile in SpectraFilesQuantSets)
+                foreach (var spectraFile in spectraFilesQuantSets)
                 {
                     output.WriteLine(spectraFile.FileName +
                         "\t" + spectraFile.Condition +
@@ -114,7 +114,7 @@ namespace MetaMorpheusGUI
                 }
                 else
                 {
-                    ExperimentalDesignForDataGrid file = SpectraFilesQuantSets.Where(p => p.FileName == split[typeToIndex["FileName"]]).FirstOrDefault();
+                    ExperimentalDesignForDataGrid file = spectraFilesQuantSets.Where(p => p.FileName == split[typeToIndex["FileName"]]).FirstOrDefault();
 
                     if (file == null)
                     {
@@ -132,7 +132,7 @@ namespace MetaMorpheusGUI
         public string CheckForExperimentalDesignErrors()
         {
             // check for basic parsing
-            foreach (var item in SpectraFilesQuantSets)
+            foreach (var item in spectraFilesQuantSets)
             {
                 if (string.IsNullOrEmpty(item.Condition))
                 {
@@ -172,7 +172,7 @@ namespace MetaMorpheusGUI
             }
 
             // check for correct iteration of integer values and duplicates
-            var conditions = SpectraFilesQuantSets.GroupBy(p => p.Condition);
+            var conditions = spectraFilesQuantSets.GroupBy(p => p.Condition);
 
             foreach (var condition in conditions)
             {

@@ -8,8 +8,7 @@ namespace EngineLayer
     {
         private readonly double Value;
 
-        public SingleAbsoluteAroundZeroSearchMode(double value)
-            : base(value + "daltonsAroundZero")
+        public SingleAbsoluteAroundZeroSearchMode(double value) : base(value + "daltonsAroundZero")
         {
             this.Value = value;
         }
