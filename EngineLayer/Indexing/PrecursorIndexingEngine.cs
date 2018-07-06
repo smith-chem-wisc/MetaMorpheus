@@ -1,4 +1,6 @@
-﻿using Proteomics;
+﻿using MassSpectrometry;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -42,15 +44,24 @@ namespace EngineLayer.Indexing
         {
             double progress = 0;
             int oldPercentProgress = 0;
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             // digest database
             HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
 
-            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
+            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count),
+                new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                (range, loopState) =>
             {
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
+                    {
+                        loopState.Stop();
+                        return;
+                    }
+
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
                         foreach (var pepWithSetMods in ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications))

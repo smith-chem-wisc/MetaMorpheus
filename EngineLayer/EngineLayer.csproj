@@ -7,18 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="mzLib" Version="1.0.319" />
-    <PackageReference Include="Nett" Version="0.8.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
-    <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.Containers" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.InputOutput" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.Metrics" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.Optimization" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.RandomForest" Version="0.26.9" />
+    <PackageReference Include="mzLib" Version="1.0.325" />
+    <PackageReference Include="Nett" Version="0.9.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="SharpLearning.Common.Interfaces" Version="[0.28.0]" />
+    <PackageReference Include="SharpLearning.Containers" Version="[0.28.0]" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="[0.28.0]" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="[0.28.0]" />
+    <PackageReference Include="SharpLearning.GradientBoost" Version="[0.28.0]" />
+    <PackageReference Include="SharpLearning.InputOutput" Version="[0.28.0]" />
+    <PackageReference Include="SharpLearning.Metrics" Version="[0.28.0]" />
+    <PackageReference Include="SharpLearning.Optimization" Version="[0.28.0]" />
+    <PackageReference Include="SharpLearning.RandomForest" Version="[0.28.0]" />
   </ItemGroup>
 
   <ItemGroup>
@@ -110,6 +110,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Neo\TomlFiles\SearchTaskTransconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ProteolyticDigestion\proteases.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="settings.toml">

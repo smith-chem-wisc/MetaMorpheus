@@ -5,20 +5,19 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
-using System;
 
 namespace Test
 {
     [TestFixture]
-    public static class LocalizationTest 
+    public static class LocalizationTest
     {
-
         [Test]
         public static void TestNonSpecific()
         {
-            Protease p = GlobalVariables.ProteaseDictionary["non-specific"];
+            Protease p = ProteaseDictionary.Dictionary["non-specific"];
             Protein prot = new Protein("MABCDEFGH", null);
 
             DigestionParams digestionParams = new DigestionParams(protease: p.Name, maxMissedCleavages: 8, minPeptideLength: 1, maxPeptideLength: 9, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
@@ -29,17 +28,16 @@ namespace Test
         [Test]
         public static void TestLocalization()
         {
-
             Protein parentProteinForMatch = new Protein("MEK", null);
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
-            Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
+            Assert.AreEqual(4, allPeptidesWithSetModifications.Count);
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
-            List<ProductType> lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
+            List<ProductType> productTypes = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
@@ -53,11 +51,11 @@ namespace Test
             {
                 {ps.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ ps} }
             };
-            
+
             newPsm.MatchToProteinLinkedPeptides(matching);
 
             CommonParameters commonParameters = new CommonParameters(productMassTolerance: fragmentTolerance);
-            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, commonParameters, new List<string>());
+            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, productTypes, myMsDataFile, commonParameters, new List<string>());
             f.Run();
 
             // Was single peak!!!
@@ -73,7 +71,7 @@ namespace Test
         public static void TestSeparateIonsByTerminus()
         {
             List<ProductType> allIonTypes = new List<ProductType> { ProductType.B, ProductType.C, ProductType.Zdot, ProductType.Y };
-            List<List<ProductType>> separated = ProductTypeMethod.SeparateIonsByTerminus(allIonTypes);
+            List<List<ProductType>> separated = ProductTypeMethods.SeparateIonsByTerminus(allIonTypes);
             Assert.IsTrue(separated.Count == 2);
             Assert.IsTrue(separated[0].Count == 2);
             Assert.IsTrue(separated[1].Count == 2);
@@ -81,17 +79,16 @@ namespace Test
             Assert.IsTrue(separated[0].Contains(ProductType.C));
             Assert.IsTrue(separated[1].Contains(ProductType.Y));
             Assert.IsTrue(separated[1].Contains(ProductType.Zdot));
-            List<List<ProductType>> nOnly = ProductTypeMethod.SeparateIonsByTerminus(separated[0]);
+            List<List<ProductType>> nOnly = ProductTypeMethods.SeparateIonsByTerminus(separated[0]);
             Assert.IsTrue(nOnly.Count == 1);
             Assert.IsTrue(nOnly[0].Count == 2);
             Assert.IsTrue(nOnly[0].Contains(ProductType.B));
             Assert.IsTrue(nOnly[0].Contains(ProductType.C));
-            List<List<ProductType>> cOnly = ProductTypeMethod.SeparateIonsByTerminus(separated[1]);
+            List<List<ProductType>> cOnly = ProductTypeMethods.SeparateIonsByTerminus(separated[1]);
             Assert.IsTrue(cOnly.Count == 1);
             Assert.IsTrue(cOnly[0].Count == 2);
             Assert.IsTrue(cOnly[0].Contains(ProductType.Y));
             Assert.IsTrue(cOnly[0].Contains(ProductType.Zdot));
         }
-
     }
 }

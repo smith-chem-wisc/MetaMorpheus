@@ -4,6 +4,7 @@ using EngineLayer.CrosslinkSearch;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,7 +17,7 @@ namespace TaskLayer
     {
         private const double binTolInDaltons = 0.003;
 
-        public XLSearchTask() : base(MyTask.XLSearch)
+        public XLSearchTask() : base(TaskType.XLSearch)
         {
             CommonParameters = new CommonParameters();
             XlSearchParameters = new XlSearchParameters();
@@ -48,7 +49,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.Zdot);
             if (CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ionTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ionTypes);
 
             var crosslinker = new CrosslinkerTypeClass();
             crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);

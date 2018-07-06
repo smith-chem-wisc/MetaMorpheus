@@ -12,6 +12,7 @@ using IO.Thermo;
 
 using MassSpectrometry;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace TaskLayer
     {
         private const double tolForComboLoading = 1e-3;
 
-        public GptmdTask() : base(MyTask.Gptmd)
+        public GptmdTask() : base(TaskType.Gptmd)
         {
             CommonParameters = new CommonParameters();
             GptmdParameters = new GptmdParameters();

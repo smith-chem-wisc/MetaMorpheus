@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -42,15 +43,26 @@ namespace EngineLayer.ModernSearch
 
             byte byteScoreCutoff = (byte)commonParameters.ScoreCutoff;
             if (commonParameters.CalculateEValue)
+            {
                 byteScoreCutoff = 1;
+            }
 
-            Parallel.ForEach(Partitioner.Create(0, ListOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
+            Parallel.ForEach(Partitioner.Create(0, ListOfSortedms2Scans.Length),
+                new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                (range, loopState) =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
 
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
+                    {
+                        loopState.Stop();
+                        return;
+                    }
+
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
@@ -176,8 +188,10 @@ namespace EngineLayer.ModernSearch
 
                 // search mass bins within a tolerance
                 for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
+                {
                     if (FragmentIndex[fragmentBin] != null)
                         binsToSearch.Add(fragmentBin);
+                }
 
                 // add complementary ions
                 if (commonParameters.AddCompIons)
@@ -197,17 +211,27 @@ namespace EngineLayer.ModernSearch
                                 compFragmentCeilingMass = FragmentIndex.Length - 1;
 
                                 if (compFragmentFloorMass >= FragmentIndex.Length)
+                                {
                                     compFragmentFloorMass = FragmentIndex.Length - 1;
+                                }
                             }
                             if (compFragmentFloorMass < 0)
+                            {
                                 compFragmentFloorMass = 0;
+                            }
 
                             for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                            {
                                 if (FragmentIndex[fragmentBin] != null)
+                                {
                                     binsToSearch.Add(fragmentBin);
+                                }
+                            }
                         }
                         else
+                        {
                             throw new NotImplementedException();
+                        }
                     }
                 }
             }
@@ -226,14 +250,22 @@ namespace EngineLayer.ModernSearch
                 m = l + ((r - l) / 2);
 
                 if (r - l < 2)
+                {
                     break;
+                }
                 if (PeptideIndex[peptideIdsInThisBin[m]].MonoisotopicMassIncludingFixedMods < peptideMassToLookFor)
+                {
                     l = m + 1;
+                }
                 else
+                {
                     r = m - 1;
+                }
             }
             if (m > 0)
+            {
                 m--;
+            }
             return m;
         }
 
@@ -259,9 +291,13 @@ namespace EngineLayer.ModernSearch
                         int nextId = peptideIdsInThisBin[j];
                         var nextPep = PeptideIndex[nextId];
                         if (nextPep.MonoisotopicMassIncludingFixedMods < highestMassPeptideToLookFor)
+                        {
                             highestPeptideMassIndex = j;
+                        }
                         else
+                        {
                             break;
+                        }
                     }
                 }
 
@@ -273,7 +309,9 @@ namespace EngineLayer.ModernSearch
 
                     // add possible search results to the hashset of id's
                     if (scoringTable[id] == byteScoreCutoff && MassDiffAcceptor.Accepts(scanPrecursorMass, PeptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
+                    {
                         idsOfPeptidesPossiblyObserved.Add(id);
+                    }
                 }
 
                 if (MaxMassThatFragmentIonScoreIsDoubled > 0)
@@ -287,7 +325,9 @@ namespace EngineLayer.ModernSearch
 
                             // add possible search results to the hashset of id's
                             if (scoringTable[id] == byteScoreCutoff && MassDiffAcceptor.Accepts(scanPrecursorMass, PeptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
+                            {
                                 idsOfPeptidesPossiblyObserved.Add(id);
+                            }
                         }
                     }
                 }

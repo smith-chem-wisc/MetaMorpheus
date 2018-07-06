@@ -1,4 +1,5 @@
 ﻿using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace EngineLayer
         {
             TreatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
             CompactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
-            ListOfDigestionParams = new HashSet<DigestionParams>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p.Select(v => v.digestionParams)));
+            ListOfDigestionParams = new HashSet<DigestionParams>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p.Select(v => v.DigestionParams)));
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -84,14 +85,14 @@ namespace EngineLayer
                         var peptideInProteinInfo = new List<Tuple<Protein, DigestionParams, int, int, int>>();
                         foreach (var peptide in baseSequence.Value)
                         {
-                            peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int>(peptide.Protein, peptide.digestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
+                            peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int>(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, (int)peptide.MissedCleavages));
                         }
 
                         foreach (var peptide in baseSequence.Value)
                         {
                             foreach (var proteinInfo in peptideInProteinInfo)
                             {
-                                var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5, peptide.allModsOneIsNterminus, peptide.numFixedMods);
+                                var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4, peptide.PeptideDescription, proteinInfo.Item5, peptide.AllModsOneIsNterminus, peptide.NumFixedMods);
                                 foreach (var compactPeptide in blah[peptide])
                                 {
                                     CompactPeptideToProteinPeptideMatching[compactPeptide].Add(pep);
@@ -130,8 +131,8 @@ namespace EngineLayer
                 {
                     foreach (var peptide in kvp.Value)
                     {
-                        Protease protease = peptide.digestionParams.Protease;
-                        int sameProteaseCount = kvp.Value.Count(v => v.digestionParams.Protease == protease);
+                        Protease protease = peptide.DigestionParams.Protease;
+                        int sameProteaseCount = kvp.Value.Count(v => v.DigestionParams.Protease == protease);
 
                         if (sameProteaseCount == 1)
                         {

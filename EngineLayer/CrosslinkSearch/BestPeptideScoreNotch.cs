@@ -1,4 +1,6 @@
-﻿namespace EngineLayer.CrosslinkSearch
+﻿using Proteomics.ProteolyticDigestion;
+
+namespace EngineLayer.CrosslinkSearch
 {
     internal class BestPeptideScoreNotch
     {

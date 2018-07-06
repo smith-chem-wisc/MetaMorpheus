@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -122,7 +123,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
                 proteaseComboBox.Items.Add(protease);
             }
@@ -173,6 +174,7 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            // Check Task Validity
             if (missedCleavagesTextBox.Text.Length == 0)
             {
                 missedCleavagesTextBox.Text = int.MaxValue.ToString();
@@ -212,6 +214,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            // Save Parameters
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             int MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);

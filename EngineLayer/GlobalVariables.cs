@@ -1,5 +1,6 @@
 ﻿using Nett;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +15,8 @@ namespace EngineLayer
 
         static GlobalVariables()
         {
+            // Determine MetaMorpheusVersion
+
             MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
 
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
@@ -38,13 +41,17 @@ namespace EngineLayer
                 MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
             }
 
-            {
+            // Figure out DataDir
+
                 var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+                {
                     DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+                }
                 else
+                {
                     DataDir = AppDomain.CurrentDomain.BaseDirectory;
-            }
+                }
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
@@ -62,20 +69,16 @@ namespace EngineLayer
             AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
-
-            ProteaseDictionary = LoadProteaseDictionary(Path.Combine(DataDir, @"Data", "proteases.tsv"));
         }
 
-        // File locations
-        public static string DataDir { get; }
-
+        public static bool StopLoops { get; set; }
+        public static string DataDir { get; } // File locations
         public static string ElementsLocation { get; }
         public static string MetaMorpheusVersion { get; }
         public static IGlobalSettings GlobalSettings { get; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-        public static Dictionary<string, Protease> ProteaseDictionary;
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }

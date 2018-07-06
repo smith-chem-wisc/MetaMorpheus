@@ -1,4 +1,5 @@
-﻿using MathNet.Numerics.Statistics;
+﻿using MassSpectrometry;
+using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +53,7 @@ namespace EngineLayer.HistogramAnalysis
             }
 
             var listokbin = new List<OkBin>();
-            for (int i = 0; i < sigma.Count(); i++)
+            for (int i = 0; i < sigma.Length; i++)
                 listokbin.Add(new OkBin(listOfMassShifts[i], sigma[i], p[i]));
 
             var prelimBins = new HashSet<double>();
@@ -80,6 +81,9 @@ namespace EngineLayer.HistogramAnalysis
                 foreach (double b in prelimBins)
                     if (Math.Abs(a - b) <= dc)
                         forFinalBins[b].Add(a);
+                    
+                
+            
 
             FinalBins = forFinalBins.Select(b => new Bin(b.Value.Average())).ToList();
 
@@ -126,14 +130,18 @@ namespace EngineLayer.HistogramAnalysis
                 {
                     lookingAtP = p[currentDown];
                     if (lookingAtP > thisP)
+                    {
                         return distDown;
+                    }
                     currentDown--;
                 }
                 else
                 {
                     lookingAtP = p[currentUp];
                     if (lookingAtP > thisP)
+                    {
                         return distUp;
+                    }
                     currentUp++;
                 }
             }
@@ -170,7 +178,9 @@ namespace EngineLayer.HistogramAnalysis
             {
                 var numTarget = bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
+                {
                     bin.MedianLength = Statistics.Median(bin.UniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Where(b => b.Item3.PeptideLength.HasValue).Select(b => (double)b.Item3.PeptideLength.Value));
+                }
             }
         }
 
@@ -182,13 +192,21 @@ namespace EngineLayer.HistogramAnalysis
                 foreach (var hehe in bin.UniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
                 {
                     var chars = new HashSet<char>();
-                    for (int i = 0; i < hehe.Item1.Count(); i++)
+                    for (int i = 0; i < hehe.Item1.Length; i++)
+                    {
                         chars.Add(hehe.Item1[i]);
+                    }
                     foreach (var ch in chars)
+                    {
                         if (bin.AAsInCommon.ContainsKey(ch))
+                        {
                             bin.AAsInCommon[ch]++;
+                        }
                         else
+                        {
                             bin.AAsInCommon.Add(ch, 1);
+                        }
+                    }
                 }
             }
         }
@@ -203,7 +221,7 @@ namespace EngineLayer.HistogramAnalysis
                     int inModLevel = 0;
                     StringBuilder currentMod = new StringBuilder();
                     HashSet<string> modsHere = new HashSet<string>();
-                    for (int i = 0; i < hehe.Item2.Count(); i++)
+                    for (int i = 0; i < hehe.Item2.Length; i++)
                     {
                         char ye = hehe.Item2[i];
                         if (ye.Equals('['))
@@ -268,9 +286,15 @@ namespace EngineLayer.HistogramAnalysis
 
             // For every non-zero bin
             foreach (var bin in FinalBins.Where(b => Math.Abs(b.MassShift) > v))
+            {
                 foreach (var bin2 in FinalBins.Where(b => Math.Abs(b.MassShift) > v))
+                {
                     if (bin.CountTarget * bin2.CountTarget >= totalTargetCount)
+                    {
                         ok.Add(new Tuple<double, double, double>(bin.MassShift, bin2.MassShift, Math.Min(bin.CountTarget, bin2.CountTarget)));
+                    }
+                }
+            }
 
             foreach (var bin in FinalBins)
             {
@@ -308,12 +332,17 @@ namespace EngineLayer.HistogramAnalysis
                         new MyInfo(71.000729, "H C2 N O2"),
                         new MyInfo(50.000394, "H2 O3")
                     };
+
             foreach (Bin bin in FinalBins)
             {
                 bin.Mine = "";
                 foreach (MyInfo myInfo in myInfos)
+                {
                     if (Math.Abs(myInfo.MassShift - bin.MassShift) <= v)
+                    {
                         bin.Mine = myInfo.infostring;
+                    }
+                }
             }
         }
     }

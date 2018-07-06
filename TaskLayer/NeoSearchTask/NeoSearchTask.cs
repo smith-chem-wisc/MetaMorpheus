@@ -3,6 +3,7 @@ using EngineLayer.Neo;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,7 +16,7 @@ namespace TaskLayer
     {
         private List<DbForTask> StoredDatabases = new List<DbForTask>();
 
-        public NeoSearchTask() : base(MyTask.Neo)
+        public NeoSearchTask() : base(TaskType.Neo)
         {
             NeoParameters = new NeoParameters();
             var tempDigParams = new DigestionParams(protease: "non-specific", maxMissedCleavages: 12, minPeptideLength: 8, maxPeptideLength: 13);

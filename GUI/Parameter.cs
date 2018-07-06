@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -23,7 +24,7 @@ namespace MetaMorpheusGUI
             InitList = new ObservableCollection<string>();
             ProductMassToleranceList = new ObservableCollection<string>();
 
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
                 ProtList.Add(protease);
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 InitList.Add(initiatior_methionine_behavior);

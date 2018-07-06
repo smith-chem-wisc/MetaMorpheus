@@ -1,4 +1,5 @@
 ﻿using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,10 +23,12 @@ namespace EngineLayer.Localization
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications)
             {
+                if (GlobalVariables.StopLoops) { break; }
+
                 psm.MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
                 psm.MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
@@ -56,6 +59,8 @@ namespace EngineLayer.Localization
 
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
+                if (GlobalVariables.StopLoops) { break; }
+
                 var theScan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 double thePrecursorMass = psm.ScanPrecursorMass;
 

@@ -1,4 +1,6 @@
-﻿using Proteomics;
+﻿using MassSpectrometry;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,7 +15,6 @@ namespace EngineLayer.Indexing
     {
         protected const int FragmentBinsPerDalton = 1000;
         protected readonly List<Protein> ProteinList;
-
         protected readonly List<ModificationWithMass> FixedModifications;
         protected readonly List<ModificationWithMass> VariableModifications;
         protected readonly List<ProductType> ProductTypes;
@@ -22,12 +23,12 @@ namespace EngineLayer.Indexing
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         protected readonly double MaxFragmentSize;
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> productTypes, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> protductTypes, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
-            ProductTypes = productTypes;
+            ProductTypes = protductTypes;
             CurrentPartition = currentPartition + 1;
             DecoyType = decoyType;
             CollectionOfDigestionParams = collectionOfDigestionParams;
@@ -60,15 +61,24 @@ namespace EngineLayer.Indexing
         {
             double progress = 0;
             int oldPercentProgress = 0;
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             // digest database
             HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
 
-            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
+            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count),
+                new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                (range, loopState) =>
             {
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
+                    {
+                        loopState.Stop();
+                        return;
+                    }
+
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
                         foreach (var pepWithSetMods in ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications))
@@ -90,7 +100,6 @@ namespace EngineLayer.Indexing
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);
-
                     if (percentProgress > oldPercentProgress)
                     {
                         oldPercentProgress = percentProgress;
@@ -137,7 +146,6 @@ namespace EngineLayer.Indexing
 
                 progress++;
                 var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
-
                 if (percentProgress > oldPercentProgress)
                 {
                     oldPercentProgress = percentProgress;

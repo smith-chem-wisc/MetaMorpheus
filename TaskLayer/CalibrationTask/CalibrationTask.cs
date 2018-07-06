@@ -3,6 +3,8 @@ using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using IO.MzML;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -17,7 +19,7 @@ namespace TaskLayer
 {
     public class CalibrationTask : MetaMorpheusTask
     {
-        public CalibrationTask() : base(MyTask.Calibrate)
+        public CalibrationTask() : base(TaskType.Calibrate)
         {
             CommonParameters = new CommonParameters(
                 productMassTolerance: new PpmTolerance(25),

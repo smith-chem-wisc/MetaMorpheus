@@ -19,32 +19,32 @@
             <MenuItem Header="_Help">
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" >
                     <MenuItem.Icon>
-                        <Image Source="update_20.bmp"/>
+                        <Image Source="Images\update_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Open MetaMorpheus Wiki Page" Click="MenuItem_Click" >
                     <MenuItem.Icon>
-                        <Image Source="wiki_20.bmp"/>
+                        <Image Source="Images\wiki_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" >
                     <MenuItem.Icon>
-                        <Image Source="git_20.bmp"/>
+                        <Image Source="Images\git_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Email Support at mm__support@chem.wisc.edu" Click="MenuItem_Click_4" >
                     <MenuItem.Icon>
-                        <Image Source="mail_20.bmp"/>
+                        <Image Source="Images\mail_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="MetaMorpheus YouTube Help Videos" Click="MenuItem_YouTube" >
                     <MenuItem.Icon>
-                        <Image Source="youtube_20.bmp"/>
+                        <Image Source="Images\youtube_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="News in Proteomics Research" Click="MenuItem_ProteomicsNewsBlog" >
                     <MenuItem.Icon>
-                        <Image Source="Blogger_20.bmp"/>
+                        <Image Source="Images\Blogger_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
@@ -208,6 +208,7 @@
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="DeleteSelectedTaskButton" Content="Delete Task" Click="DeleteSelectedTask" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
+                            <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_Click" IsEnabled="False" />
                         </StackPanel>
                         <DockPanel Margin="5" Grid.Row="4" LastChildFill="True">
                             <Button x:Name="OpenOutputFolderButton" Content="Open" Width="40" DockPanel.Dock="Right" Click="OpenOutputFolder_Click"></Button>

@@ -17,8 +17,8 @@ namespace Test
         [Test]
         public static void TestLoadAndRunMgf()
         {
-            //The purpose of this test is to ensure that mgfs can be run without crashing. 
-            //Whenever a new feature is added that may require things an mgf does not have, 
+            //The purpose of this test is to ensure that mgfs can be run without crashing.
+            //Whenever a new feature is added that may require things an mgf does not have,
             //there should be a check that prevents mgfs from using that feature.
             string mgfName = @"TestData\ok.mgf";
             string xmlName = @"TestData\okk.xml";

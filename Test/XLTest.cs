@@ -7,6 +7,8 @@ using MassSpectrometry;
 using Nett;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +26,7 @@ namespace Test
         {
             var prot = new Protein("MNNNKQQQQ", null);
             Protease protease = new Protease("New Custom Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
@@ -38,8 +40,8 @@ namespace Test
             Assert.AreEqual(Residue.GetResidue(crosslinker.CrosslinkerModSites).MonoisotopicMass, 128.09496301518999, 1e-9);
             var n = pep.CompactPeptide(TerminusType.None).NTerminalMasses;
             var c = pep.CompactPeptide(TerminusType.None).CTerminalMasses;
-            Assert.AreEqual(n.Count(), 4);
-            Assert.AreEqual(c.Count(), 4);
+            Assert.AreEqual(4, n.Length);
+            Assert.AreEqual(4, c.Length);
             Assert.AreEqual(c[0], 128.09496301518999, 1e-6);
             var x = PsmCross.XlPosCal(pep.CompactPeptide(TerminusType.None), crosslinker.CrosslinkerModSites).ToArray();
             Assert.AreEqual(x[0], 4);
@@ -48,8 +50,8 @@ namespace Test
             Assert.AreEqual("MNNNKQQQQ", pep2.BaseSequence);
             var n2 = pep2.CompactPeptide(TerminusType.None).NTerminalMasses;
             var c2 = pep2.CompactPeptide(TerminusType.None).CTerminalMasses;
-            Assert.AreEqual(n2.Count(), 8);
-            Assert.AreEqual(c2.Count(), 8);
+            Assert.AreEqual(8, n2.Length);
+            Assert.AreEqual(8, c2.Length);
             Assert.AreEqual(n2[4] - n2[3], 128.09496301518999, 1e-6);
             var x2 = PsmCross.XlPosCal(pep2.CompactPeptide(TerminusType.None), crosslinker.CrosslinkerModSites).ToArray();
             Assert.AreEqual(x2[0], 4);
@@ -129,8 +131,7 @@ namespace Test
 
             var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
             var fragmentIndexAll = indexResults.FragmentIndex.Select((s, j) => new { j, s }).Where(p => p.s != null).Select(t => t.j).ToList();
-            Assert.IsTrue(fragmentIndexAll.Count() > 0);
-
+            Assert.IsTrue(fragmentIndexAll.Count > 0);
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
@@ -152,7 +153,7 @@ namespace Test
             }
 
             //Test newPsms
-            Assert.AreEqual(newPsms.Count(), 3);
+            Assert.AreEqual(newPsms.Count, 3);
 
             //Test Output
             var task = new XLSearchTask();
@@ -258,7 +259,7 @@ namespace Test
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
             new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
-            Assert.AreEqual(newPsms.Count(), 1);
+            Assert.AreEqual(newPsms.Count, 1);
         }
     }
 
