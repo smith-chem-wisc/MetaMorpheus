@@ -12,8 +12,7 @@ namespace Test
     [TestFixture]
     public static class StefanParsimonyTest
     {
-        #region Public Methods
-
+        
         [Test]
         public static void ParsimonyVariableTreatAsUnique()
         {
@@ -250,10 +249,7 @@ namespace Test
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide3].Count);
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
+        
         private static Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: 2, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, maxModsForPeptides: 1), scoreCutoff: 1);
@@ -340,8 +336,6 @@ namespace Test
             (
                 newPsms, compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );
-        }
-
-        #endregion Private Methods
+        }       
     }
 }
