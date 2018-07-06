@@ -8,26 +8,31 @@ namespace TaskLayer
     /// </summary>
     public class SearchParameters
     {
-        public SearchParameters()
-        {
-            // default search task parameters
-            DisposeOfFileWhenDone = true;
-            DoParsimony = true;
-            NoOneHitWonders = false;
-            ModPeptidesAreDifferent = false;
-            DoQuantification = true;
-            QuantifyPpmTol = 5;
-            SearchTarget = true;
-            DecoyType = DecoyType.Reverse;
-            DoHistogramAnalysis = false;
-            HistogramBinTolInDaltons = 0.003;
-            DoLocalizationAnalysis = true;
-            WritePrunedDatabase = false;
-            KeepAllUniprotMods = true;
-            MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
-            MaxFragmentSize = 30000.0;
-            NumDecoyDatabases = 1;
-            ModsToWriteSelection = new Dictionary<string, int>
+        public bool DisposeOfFileWhenDone { get; set; } = true;
+        public bool DoParsimony { get; set; } = true;
+        public bool ModPeptidesAreDifferent { get; set; }
+        public bool NoOneHitWonders { get; set; }
+        public bool MatchBetweenRuns { get; set; }
+        public bool Normalize { get; set; }
+        public double QuantifyPpmTol { get; set; } = 5;
+        public bool DoHistogramAnalysis { get; set; }
+        public bool SearchTarget { get; set; } = true;
+        public DecoyType DecoyType { get; set; } = DecoyType.Reverse;
+        public int NumDecoyDatabases { get; set; } = 1;
+        public MassDiffAcceptorType MassDiffAcceptorType { get; set; } = MassDiffAcceptorType.OneMM;
+        public bool WritePrunedDatabase { get; set; }
+        public bool KeepAllUniprotMods { get; set; } = true;
+        public bool DoLocalizationAnalysis { get; set; } = true;
+        public bool DoQuantification { get; set; } = true;
+        public SearchType SearchType { get; set; }
+        public string CustomMdac { get; set; }
+        public double MaxFragmentSize { get; set; } = 30000.0;
+        public double HistogramBinTolInDaltons { get; set; } = 0.003;
+        public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
+        public bool OutMzId { get; set; } = true;
+        public bool OutPepXML { get; set; }
+
+        public Dictionary<string, int> ModsToWriteSelection { get; set; } = new Dictionary<string, int>
             {
                 //Key is modification type.
                 //Select from: Common Fixed; Common Variable; Artifact; Biological; Crosslink; Detached; fallOffN; fallOffC; N-linked glycosylation;
@@ -45,33 +50,5 @@ namespace TaskLayer
                 //{"ProteinTermMod", 3},
                 {"UniProt", 3},
             };
-            OutMzId = true;
-            OutPepXML = false;
-        }
-
-        public bool DisposeOfFileWhenDone { get; set; }
-        public bool DoParsimony { get; set; }
-        public bool ModPeptidesAreDifferent { get; set; }
-        public bool NoOneHitWonders { get; set; }
-        public bool MatchBetweenRuns { get; set; }
-        public bool Normalize { get; set; }
-        public double QuantifyPpmTol { get; set; }
-        public bool DoHistogramAnalysis { get; set; }
-        public bool SearchTarget { get; set; } = true;
-        public DecoyType DecoyType { get; set; }
-        public int NumDecoyDatabases { get; set; }
-        public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
-        public bool WritePrunedDatabase { get; set; }
-        public bool KeepAllUniprotMods { get; set; }
-        public bool DoLocalizationAnalysis { get; set; }
-        public bool DoQuantification { get; set; }
-        public SearchType SearchType { get; set; }
-        public string CustomMdac { get; set; }
-        public double MaxFragmentSize { get; set; }
-        public double HistogramBinTolInDaltons { get; set; }
-        public Dictionary<string, int> ModsToWriteSelection { get; set; }
-        public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
-        public bool OutMzId { get; set; } = true;
-        public bool OutPepXML { get; set; }
     }
 }

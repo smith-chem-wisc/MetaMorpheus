@@ -290,7 +290,8 @@ namespace TaskLayer
             foreach (var db in dbFilenameList)
             {
                 int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
+                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant,
+                    out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
                 dbProteinList = dbProteinList.SelectMany(p => p.GetVariantProteins().OfType<Protein>()).ToList();
                 proteinList = proteinList.Concat(dbProteinList).ToList();
                 emptyProteinEntries += emptyProteinEntriesForThisDb;
