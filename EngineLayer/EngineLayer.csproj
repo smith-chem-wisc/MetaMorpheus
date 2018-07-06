@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Mods\UserCustomModifications.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="mzLib" Version="1.0.319" />
     <PackageReference Include="Nett" Version="0.8.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />

@@ -32,8 +32,15 @@ namespace TaskLayer
         public MyTaskResults Run()
         {
             GroupAndOrderPSMs();
-            ModificationAnalysis();
 
+            if(Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen 
+                || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open
+                || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
+                )
+                    {
+                        ModificationAnalysis();  // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
+                    }
+                
             if (Parameters.SearchParameters.DoQuantification)
             {
                 QuantificationAnalysis();
