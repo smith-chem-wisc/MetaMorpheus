@@ -40,7 +40,7 @@ namespace MetaMorpheusGUI
 
         // write the toml settings file on clicking "save"
         private void Save_Click(object sender, RoutedEventArgs e)
-        {
+        {         
             var parametersToWrite = new FileSpecificParameters();
 
             // parse the file-specific parameters to text
@@ -95,7 +95,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificMinPeptideLengthEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                if (int.TryParse(txtMinPeptideLength.Text, out int i) && i > 0)
+                if (int.TryParse(MinPeptideLengthTextBox.Text, out int i) && i > 0)
                 {
                     parametersToWrite.MinPeptideLength = i;
                 }
@@ -108,11 +108,11 @@ namespace MetaMorpheusGUI
             if (fileSpecificMaxPeptideLengthEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                if (string.IsNullOrEmpty(txtMaxPeptideLength.Text))
+                if (string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text))
                 {
                     parametersToWrite.MaxPeptideLength = int.MaxValue;
                 }
-                else if (int.TryParse(txtMaxPeptideLength.Text, out int i) && i > 0)
+                else if (int.TryParse(MaxPeptideLengthTextBox.Text, out int i) && i > 0)
                 {
                     parametersToWrite.MaxPeptideLength = i;
                 }
@@ -138,7 +138,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificMaxModNumEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                if (int.TryParse(txtMaxModNum.Text, out int i) && i >= 0)
+                if (int.TryParse(MaxModNumTextBox.Text, out int i) && i >= 0)
                 {
                     parametersToWrite.MaxModsForPeptide = i;
                 }
@@ -160,6 +160,15 @@ namespace MetaMorpheusGUI
             //}
 
             // write parameters to toml files for the selected spectra files
+            string fieldNotUsed = "1";
+
+            if (!GlobalGuiSettings.CheckGeneralFilters(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+                 fieldNotUsed, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed,
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, MaxModNumTextBox.Text, fieldNotUsed))
+            {
+                return;
+            }
+
             var tomlPathsForSelectedFiles = SelectedSpectra.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
             foreach (var tomlToWrite in tomlPathsForSelectedFiles)
             {
@@ -285,14 +294,14 @@ namespace MetaMorpheusGUI
 
             precursorMassToleranceTextBox.Text = tempCommonParams.PrecursorMassTolerance.Value.ToString();
             productMassToleranceTextBox.Text = tempCommonParams.ProductMassTolerance.Value.ToString();
-            txtMinPeptideLength.Text = tempCommonParams.DigestionParams.MinPeptideLength.ToString();
+            MinPeptideLengthTextBox.Text = tempCommonParams.DigestionParams.MinPeptideLength.ToString();
 
             if (int.MaxValue != tempCommonParams.DigestionParams.MaxPeptideLength)
             {
-                txtMaxPeptideLength.Text = tempCommonParams.DigestionParams.MaxPeptideLength.ToString();
+                MaxPeptideLengthTextBox.Text = tempCommonParams.DigestionParams.MaxPeptideLength.ToString();
             }
 
-            txtMaxModNum.Text = tempCommonParams.DigestionParams.MaxModsForPeptide.ToString();
+            MaxModNumTextBox.Text = tempCommonParams.DigestionParams.MaxModsForPeptide.ToString();
             missedCleavagesTextBox.Text = tempCommonParams.DigestionParams.MaxMissedCleavages.ToString();
 
             //yCheckBox.IsChecked = tempCommonParams.YIons;
@@ -301,15 +310,9 @@ namespace MetaMorpheusGUI
             //zdotCheckBox.IsChecked = tempCommonParams.ZdotIons;
         }
 
-        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !TextBoxIntAllowed(e.Text);
-        }
-
-        private static bool TextBoxIntAllowed(String Text2)
-        {
-            return Array.TrueForAll(Text2.ToCharArray(),
-                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
+            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
 
         #endregion Private Methods

@@ -70,8 +70,8 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(GptmdTask task)
         {
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
+            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
@@ -237,52 +237,22 @@ namespace MetaMorpheusGUI
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             #region Check Task Validity
+            string fieldNotUsed = "1";
 
-            if (missedCleavagesTextBox.Text.Length == 0)
+            if (!GlobalGuiSettings.CheckGeneralFilters(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
+                fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
             {
-                missedCleavagesTextBox.Text = int.MaxValue.ToString();
-            }
-            if (txtMinPeptideLength.Text.Length == 0)
-            {
-                MessageBox.Show("The minimum peptide length must be a positive integer");
-                return;
-            }
-            if (txtMaxPeptideLength.Text.Length == 0)
-            {
-                txtMaxPeptideLength.Text = int.MaxValue.ToString();
-            }
-            if (!double.TryParse(productMassToleranceTextBox.Text, out double pmt) || pmt <= 0)
-            {
-                MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
-                return;
-            }
-            if (!double.TryParse(precursorMassToleranceTextBox.Text, out double premt) || premt <= 0)
-            {
-                MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + precursorMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
-                return;
-            }
-            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 1)
-            {
-                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
-                return;
-            }
-            if (!int.TryParse(maxModificationIsoformsTextBox.Text, out int mmi) || mmi < 1)
-            {
-                MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + maxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
-                return;
-            }
-            if (!int.TryParse(maxThreadsTextBox.Text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads <= 0)
-            {
-                MessageBox.Show("Your current device has " + Environment.ProcessorCount + ". \n Please select a positive value less than or equal to this number.");
                 return;
             }
 
+            
             #endregion Check Task Validity
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            int MinPeptideLength = int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
-            int MaxPeptideLength = int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int MinPeptideLength = int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int MaxPeptideLength = int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
 
@@ -295,7 +265,7 @@ namespace MetaMorpheusGUI
             {
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            
+
             Tolerance PrecursorMassTolerance;
             if (precursorMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -322,16 +292,16 @@ namespace MetaMorpheusGUI
                     MaxMissedCleavages: MaxMissedCleavages,
                     MinPeptideLength: MinPeptideLength,
                     MaxPeptideLength: MaxPeptideLength,
-                    MaxModificationIsoforms: MaxModificationIsoforms, 
-                    InitiatorMethionineBehavior: InitiatorMethionineBehavior), 
-                    bIons: bCheckBox.IsChecked.Value, 
-                    yIons: yCheckBox.IsChecked.Value, 
-                    cIons: cCheckBox.IsChecked.Value, 
-                    zDotIons: zdotCheckBox.IsChecked.Value, 
+                    MaxModificationIsoforms: MaxModificationIsoforms,
+                    InitiatorMethionineBehavior: InitiatorMethionineBehavior),
+                    bIons: bCheckBox.IsChecked.Value,
+                    yIons: yCheckBox.IsChecked.Value,
+                    cIons: cCheckBox.IsChecked.Value,
+                    zDotIons: zdotCheckBox.IsChecked.Value,
                     scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                    precursorMassTolerance:PrecursorMassTolerance, 
+                    precursorMassTolerance: PrecursorMassTolerance,
                     productMassTolerance: ProductMassTolerance,
-                    listOfModsFixed:listOfModsFixed, 
+                    listOfModsFixed: listOfModsFixed,
                     listOfModsVariable: listOfModsVariable);
 
             if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
@@ -346,7 +316,7 @@ namespace MetaMorpheusGUI
             {
                 CommonParamsToSave.TaskDescriptor = "GPTMDTask";
             }
-            
+
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
             {
@@ -358,17 +328,11 @@ namespace MetaMorpheusGUI
             DialogResult = true;
         }
 
-        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !TextBoxIntAllowed(e.Text);
+            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
 
-        private static bool TextBoxIntAllowed(String Text2)
-        {
-            return Array.TrueForAll(Text2.ToCharArray(),
-                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
-        }
-        
         #endregion Private Methods
     }
 }

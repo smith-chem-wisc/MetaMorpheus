@@ -80,15 +80,9 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
-        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !TextBoxIntAllowed(e.Text);
-        }
-
-        private static bool TextBoxIntAllowed(String Text2)
-        {
-            return Array.TrueForAll(Text2.ToCharArray(),
-                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
+            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -160,11 +154,11 @@ namespace MetaMorpheusGUI
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
             nonSpecificSearchRadioButton1.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
             semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
-            txtMaxFragmentSize.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
+            MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
-            quantPpmTolerance.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
+            peakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
             checkBoxNormalize.IsChecked = task.SearchParameters.Normalize;
             modPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
@@ -175,11 +169,11 @@ namespace MetaMorpheusGUI
             radioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
             radioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
+            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            txtMaxModNum.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
+            MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
@@ -251,12 +245,12 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            
+
             foreach (var heh in localizeModTypeForTreeViewObservableCollection)
             {
-                    heh.Use = false;
+                heh.Use = false;
             }
-           
+
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
@@ -333,76 +327,12 @@ namespace MetaMorpheusGUI
                 if (!addCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
-            if (!int.TryParse(DeconvolutionMaxAssumedChargeStateTextBox.Text, out int deconMaxAssumedCharge) || deconMaxAssumedCharge < 1)
+
+           if (!GlobalGuiSettings.CheckGeneralFilters(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+                maxModificationIsoformsTextBox.Text,MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
+                peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
+                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text))
             {
-                MessageBox.Show("The maximum assumed charge state for deconvolution contains unrecognized characters or was zero. \n You entered " + '"' + DeconvolutionMaxAssumedChargeStateTextBox.Text + '"' + "\n Please enter a positive number.");
-                return;
-            }
-            if (TopNPeaksTextBox.Text.Length == 0)
-            {
-                TopNPeaksTextBox.Text = int.MaxValue.ToString();
-            }
-            if (!int.TryParse(TopNPeaksTextBox.Text, out int numPeaks) || numPeaks < 1)
-            {
-                MessageBox.Show("The Top N Peaks to be retained must be greater than zero. \n You entered " + '"' + TopNPeaksTextBox.Text + '"' + "\n Please enter a positive number.");
-                return;
-            }
-            if (!double.TryParse(MinRatioTextBox.Text, out double minRatio) || minRatio < 0 || minRatio > 1)
-            {
-                MessageBox.Show("The minimum ratio was not set to a number between zero and one. \n You entered " + '"' + MinRatioTextBox.Text + '"');
-                return;
-            }
-            if (!int.TryParse(numberOfDatabaseSearchesTextBox.Text, out int numberOfDatabaseSearches) || numberOfDatabaseSearches == 0)
-            {
-                MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
-                return;
-            }
-            if (string.IsNullOrEmpty(missedCleavagesTextBox.Text))
-            {
-                missedCleavagesTextBox.Text = int.MaxValue.ToString();
-            }
-            if (!int.TryParse(txtMinPeptideLength.Text, out int minPeptideLength) || minPeptideLength < 1)
-            {
-                MessageBox.Show("The minimum peptide length must be a positive integer");
-                return;
-            }
-            if (string.IsNullOrEmpty(txtMaxPeptideLength.Text))
-            {
-                txtMaxPeptideLength.Text = int.MaxValue.ToString();
-            }
-            if (!int.TryParse(txtMaxPeptideLength.Text, out int maxPeptideLength) || maxPeptideLength < 1)
-            {
-                MessageBox.Show("The minimum peptide length must be a positive integer");
-                return;
-            }
-            if (maxPeptideLength < minPeptideLength)
-            {
-                MessageBox.Show("The maximum peptide length must be greater than or equal to the minimum peptide length.");
-                return;
-            }
-            if (!double.TryParse(precursorMassToleranceTextBox.Text, out double precursorMassTolerance) || precursorMassTolerance <= 0)
-            {
-                MessageBox.Show("The precursor mass tolerance contains unrecognized characters. \n You entered " + '"' + precursorMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
-                return;
-            }
-            if (!double.TryParse(productMassToleranceTextBox.Text, out double productMassTolerance) || productMassTolerance <= 0)
-            {
-                MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
-                return;
-            }
-            if (!double.TryParse(minScoreAllowed.Text, out double minScore) || minScore < 1)
-            {
-                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive, non-zero number.");
-                return;
-            }
-            if (!int.TryParse(maxModificationIsoformsTextBox.Text, out int maxModificationIsoforms) || maxModificationIsoforms < 1)
-            {
-                MessageBox.Show("The maximum number of modification isoforms contains unrecognized characters. \n You entered " + '"' + maxModificationIsoformsTextBox.Text + '"' + "\n Please enter a positive, non-zero number.");
-                return;
-            }
-            if (!int.TryParse(maxThreadsTextBox.Text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads <= 0)
-            {
-                MessageBox.Show("Your current device has " + Environment.ProcessorCount + " processors. \n Please select a positive value less than or equal to this number.");
                 return;
             }
 
@@ -414,10 +344,10 @@ namespace MetaMorpheusGUI
             bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
             TerminusType terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C);
             int maxMissedCleavages = (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
-            int minPeptideLengthValue = (int.Parse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
-            int maxPeptideLengthValue = (int.Parse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int minPeptideLengthValue = (int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int maxPeptideLengthValue = (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int maxModificationIsoformsValue = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
-            int maxModsForPeptideValue = (int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture));
+            int maxModsForPeptideValue = (int.Parse(MaxModNumTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
@@ -426,7 +356,7 @@ namespace MetaMorpheusGUI
                 MaxMissedCleavages: maxMissedCleavages,
                 MinPeptideLength: minPeptideLengthValue,
                 MaxPeptideLength: maxPeptideLengthValue,
-                MaxModificationIsoforms: maxModificationIsoforms,
+                MaxModificationIsoforms: maxModificationIsoformsValue,
                 InitiatorMethionineBehavior: initiatorMethionineBehavior,
                 MaxModsForPeptides: maxModsForPeptideValue);
 
@@ -449,20 +379,20 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            TheTask.SearchParameters.MaxFragmentSize = Double.Parse(txtMaxFragmentSize.Text, CultureInfo.InvariantCulture);
-           
+            TheTask.SearchParameters.MaxFragmentSize = Double.Parse(MaxFragmentMassTextBox.Text, CultureInfo.InvariantCulture);
+
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            
+
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-           
+
             bool TrimMs1Peaks = trimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
@@ -471,24 +401,24 @@ namespace MetaMorpheusGUI
             CommonParameters CommonParamsToSave = new CommonParameters(
                 useDeltaScore: deltaScoreCheckBox.IsChecked.Value,
                 reportAllAmbiguity: allAmbiguity.IsChecked.Value,
-                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture), 
+                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
-                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value, 
+                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
                 useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
-                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture), 
-                calculateEValue: eValueCheckBox.IsChecked.Value, 
-                listOfModsFixed: listOfModsFixed, 
-                listOfModsVariable:  listOfModsVariable, 
-                bIons: bCheckBox.IsChecked.Value, 
-                yIons: yCheckBox.IsChecked.Value, 
-                cIons: cCheckBox.IsChecked.Value, 
+                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                calculateEValue: eValueCheckBox.IsChecked.Value,
+                listOfModsFixed: listOfModsFixed,
+                listOfModsVariable: listOfModsVariable,
+                bIons: bCheckBox.IsChecked.Value,
+                yIons: yCheckBox.IsChecked.Value,
+                cIons: cCheckBox.IsChecked.Value,
                 zDotIons: zdotCheckBox.IsChecked.Value,
                 precursorMassTolerance: PrecursorMassTolerance,
-                productMassTolerance:ProductMassTolerance,
-                digestionParams: digestionParamsToSave ,
-                trimMs1Peaks: TrimMs1Peaks, 
-                trimMsMsPeaks: TrimMsMsPeaks, 
-                topNpeaks: TopNpeaks, 
+                productMassTolerance: ProductMassTolerance,
+                digestionParams: digestionParamsToSave,
+                trimMs1Peaks: TrimMs1Peaks,
+                trimMsMsPeaks: TrimMsMsPeaks,
+                topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value);
 
@@ -520,7 +450,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.Normalize = checkBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
-            TheTask.SearchParameters.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchParameters.QuantifyPpmTol = double.Parse(peakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.OutMzId = ckbMzId.IsChecked.Value;
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
@@ -690,16 +620,16 @@ namespace MetaMorpheusGUI
                     System.Windows.Controls.TextBox textBox = (TextBox)sender;
                     if (textBox.Name.Equals("txtMaxPeptideLength")) //if maxPeptideLength was modified
                     {
-                        if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString())) //prevents infinite loops
+                        if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString())) //prevents infinite loops
                         {
-                            missedCleavagesTextBox.Text = (Convert.ToInt32(txtMaxPeptideLength.Text) - 1).ToString();
+                            missedCleavagesTextBox.Text = (Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString();
                         }
                     }
                     else //if missedCleavagesTextBox was modified
                     {
-                        if (!txtMaxPeptideLength.Text.Equals((Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
+                        if (!MaxPeptideLengthTextBox.Text.Equals((Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
                         {
-                            txtMaxPeptideLength.Text = (Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString();
+                            MaxPeptideLengthTextBox.Text = (Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString();
                         }
                     }
                 }
@@ -715,7 +645,7 @@ namespace MetaMorpheusGUI
             const int maxLength = 25;
             if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
-                txtMaxPeptideLength.Text = maxLength.ToString();
+                MaxPeptideLengthTextBox.Text = maxLength.ToString();
             }
         }
 
@@ -723,7 +653,7 @@ namespace MetaMorpheusGUI
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
         }
-        
+
         #endregion Private Methods
 
     }

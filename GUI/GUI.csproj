@@ -154,6 +154,7 @@
     <Compile Include="CollectionForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\ExperimentalDesignForDataGrid.cs" />
     <Compile Include="ForTreeView.cs" />
+    <Compile Include="GlobalGuiSettings.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
       <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
     </Compile>
