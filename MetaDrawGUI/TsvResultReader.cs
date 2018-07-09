@@ -32,17 +32,18 @@ namespace MetaDrawGUI
                 MessageBox.Show("Please check the file.");
                 return null;
             }
+            MainWindow curr = (MainWindow)Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
             
-
             for (int i = 0; i < resultArray[0].Length; i++)
             {
-                    ids.Add(resultArray[0][i], i);         
+                ids.Add(resultArray[0][i], i);
+               
             }
-
+            
             for (int i = 1; i < resultArray.Length; i++)
             {
                 PsmDraw PSM = new PsmDraw();
-                PSM.ScanNumber = Convert.ToInt32(resultArray[i][ids["Scan Number"]]);
+                PSM.ScanNumber = (int)Convert.ToDouble(resultArray[i][ids["Scan Number"]]);
                 var baseSeq = resultArray[i][ids["Base Sequence"]];
                 var chargeState = resultArray[i][ids["Precursor Charge"]];
                 var fullSeq = resultArray[i][ids["Full Sequence"]];
@@ -52,7 +53,7 @@ namespace MetaDrawGUI
                     fullSeq = fullSeq.Split('|').First();
                 }
                 PSM.BaseSequence = baseSeq;
-                PSM.ScanPrecursorCharge = Convert.ToInt32(chargeState);
+                PSM.ScanPrecursorCharge = (int)Convert.ToDouble(chargeState);
                 PSM.FullSequence = fullSeq;
                 PSM.IsDecoy = (resultArray[i][ids["Decoy"]]=="N" ? false :true);
                 PSM.PeptideMonisotopicMass = Convert.ToDouble(resultArray[i][ids["Precursor Mass"]]);
@@ -60,7 +61,7 @@ namespace MetaDrawGUI
                 var mods = GetMods(PSM);
 
                 Dictionary<int, ModificationWithMass> allModsOneIsNterminus = new Dictionary<int, ModificationWithMass>();
-
+                
                 foreach (var item in mods)
                 {
                     //I don't really know why use as here.
@@ -80,7 +81,6 @@ namespace MetaDrawGUI
 
                 PSM.CompactPeptideDraw = compactPeptideDraw;
                 PSMs.Add(PSM);
-               
             }
 
             return PSMs;

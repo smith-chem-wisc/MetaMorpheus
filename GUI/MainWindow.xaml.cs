@@ -1353,6 +1353,13 @@ namespace MetaMorpheusGUI
         {
             RealTimeGUI.MainWindow realTimeGUI = new RealTimeGUI.MainWindow();
             realTimeGUI.Show();
+
+            MetaMorpheusTask.OutLabelStatusHandler -= NewoutLabelStatus;
+            MetaMorpheusTask.FinishedWritingFileHandler -= NewSuccessfullyFinishedWritingFile;
+
+            MetaMorpheusEngine.OutProgressHandler -= NewoutProgressBar;
+            MetaMorpheusTask.OutProgressHandler -= NewoutProgressBar;
+            App.Current.MainWindow.Close();
         }
 
         private void MenuItemClickMetaDrawGUI_Click(object sender, RoutedEventArgs e)
