@@ -33,14 +33,21 @@ namespace TaskLayer
         {
             GroupAndOrderPSMs();
 
-            if(Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen 
+            if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen
                 || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open
                 || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
                 )
-                    {
-                        ModificationAnalysis();  // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
-                    }
-                
+            {
+                // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
+                Parameters.SearchParameters.DoLocalizationAnalysis = true;
+            }
+            else
+            {
+                Parameters.SearchParameters.DoLocalizationAnalysis = false;
+            }
+
+            ModificationAnalysis();
+
             if (Parameters.SearchParameters.DoQuantification)
             {
                 QuantificationAnalysis();
