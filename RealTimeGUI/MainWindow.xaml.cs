@@ -48,7 +48,9 @@ namespace RealTimeGUI
 
             //Notifications = new Notifications();
             //DataContext = Notifications;
-            DataContext = DataReceiver.Notifications;
+
+            //DataContext = DataReceiver.Notifications;
+
 
             DataReceiver.DataReceiverNotificationEventHandler += UpdateTbNotification;
             MyFileManager.WarnHandler += GuiWarnHandler;
@@ -76,7 +78,9 @@ namespace RealTimeGUI
         {
             //log.Debug("Start log");
             //Notifications.Notification = "AA";
-            DataReceiver.Notifications.Notification += "AA";
+
+            //DataReceiver.Notifications.Notification += "AA";
+
             //DataReceiver.TestLog();
             DataReceiver.InstrumentAccess = Connection.GetFirstInstrument();
             DataReceiver.ScanContainer = DataReceiver.InstrumentAccess.GetMsScanContainer(0);
@@ -97,7 +101,9 @@ namespace RealTimeGUI
             Thread.CurrentThread.Join(DataReceiver.RTParameters.TimeScale);
             DataReceiver.StopReceiveData();
             //DataReceiver.TestLog();
-            Notifications.Notification = "AB";
+
+            //Notifications.Notification = "AB";
+
         }
 
         public void logWatcher_Updated(object sender, EventArgs e)
@@ -117,7 +123,9 @@ namespace RealTimeGUI
 
             // Set the textbox value
             //RtbNotifications.AppendText(value);
-            Notifications.Notification = value;
+
+            //Notifications.Notification = value;
+
         }
 
         private void UpdateParametersFromTask()
