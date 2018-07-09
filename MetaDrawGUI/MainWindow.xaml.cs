@@ -216,7 +216,7 @@ namespace MetaDrawGUI
             PSMs = TsvResultReader.ReadTsv(resultFilePath);
             foreach (var item in PSMs)
             {
-                spectrumNumsObservableCollection.Add(new SpectrumForDataGrid(item.ScanNumber));
+                spectrumNumsObservableCollection.Add(new SpectrumForDataGrid(item.ScanNumber, item.FullSequence));
             }
             dataGridScanNums.Items.Refresh();
             
