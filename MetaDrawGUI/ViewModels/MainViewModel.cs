@@ -49,7 +49,6 @@ namespace ViewModels
             // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
             this.privateModel = tmp;
         }
-
         public void UpdateScanModel(Ms2ScanWithSpecificMass MsScanForDraw)
         {
             var x = MsScanForDraw.TheScan.MassSpectrum.XArray;
@@ -81,22 +80,24 @@ namespace ViewModels
             this.Model = model;
 
         }
-
+        //Changes made
         public void UpdateForSingle(MsDataScan MsScanForDraw, PsmDraw psmParentsForDraw)
         {
             var x = MsScanForDraw.MassSpectrum.XArray;
             var y = MsScanForDraw.MassSpectrum.YArray;
-
+            
             string scanNum = psmParentsForDraw.ScanNumber.ToString();
             string sequence1 = psmParentsForDraw.FullSequence;
 
             var matchedIonDic1 = psmParentsForDraw.MatchedIonInfo;
 
-            PlotModel model = new PlotModel { Title = "Spectrum anotation of Scan " + scanNum + " for Crosslinked Peptide", DefaultFontSize = 15 };
+            PlotModel model = new PlotModel { Title = "Spectrum anotation of Scan " + scanNum, DefaultFontSize = 15 };
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = x.Max() * 1.02 });
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity(counts)", Minimum = 0, Maximum = y.Max() * 1.2 });
+            model.Axes[1].Zoom(0,y.Max());
             var textAnnoSeq1 = new TextAnnotation() { };
-            textAnnoSeq1.FontSize = 9; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;
+            //textAnnoSeq1.TextRotation=90;
+            textAnnoSeq1.FontSize = 12; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;
             model.Annotations.Add(textAnnoSeq1);
 
             LineSeries[] s0 = new LineSeries[x.Length];
@@ -117,9 +118,13 @@ namespace ViewModels
 
             for (int i = 0; i < matchedIonDic1.MatchedIonMz.Length; i++)
             {
-                OxyColor ionColor = OxyColors.Red;
                 if (matchedIonDic1.MatchedIonMz[i] > 0)
                 {
+                    OxyColor ionColor = (matchedIonDic1.MatchedIonName[i].Contains('b')) ? OxyColors.Red :
+                        (matchedIonDic1.MatchedIonName[i].Contains('y')) ? OxyColors.Blue :
+                        (matchedIonDic1.MatchedIonName[i].Contains('c')) ? OxyColors.Brown : OxyColors.Black;
+
+
                     s1[i] = new LineSeries();
                     s1[i].Color = ionColor;
                     s1[i].StrokeThickness = 0.2;
@@ -127,21 +132,24 @@ namespace ViewModels
                     s1[i].Points.Add(new DataPoint(matchedIonDic1.MatchedIonMz[i] + 1.007277, matchedIonDic1.MatchedIonIntensity[i]));
 
                     var textAnno1 = new TextAnnotation();
-                    textAnno1.FontSize = 6;
+                    textAnno1.TextRotation=90;
+                    textAnno1.Font = "Arial";
+                    textAnno1.FontSize = 12;
                     textAnno1.TextColor = ionColor;
                     textAnno1.StrokeThickness = 0;
                     textAnno1.TextPosition = s1[i].Points[1];
-                    textAnno1.Text = matchedIonDic1.MatchedIonMz[i].ToString("f3");
+                    textAnno1.Text = matchedIonDic1.MatchedIonName[i]+"-"+matchedIonDic1.MatchedIonMz[i].ToString("f3");
 
-                    var textAnno2 = new TextAnnotation();
-                    textAnno2.FontSize = 6;
-                    textAnno2.TextColor = ionColor;
-                    textAnno2.StrokeThickness = 0;
-                    textAnno2.TextPosition = new DataPoint(s1[i].Points[1].X, s1[i].Points[1].Y + y.Max() * 0.02);
-                    textAnno2.Text = matchedIonDic1.MatchedIonName[i];
+                    //var textAnno2 = new TextAnnotation();
+                    //textAnno2.TextRotation=90;
+                    //textAnno2.FontSize = 12;
+                    //textAnno2.TextColor = ionColor;
+                    //textAnno2.StrokeThickness = 0;
+                    //textAnno2.TextPosition = new DataPoint(s1[i].Points[1].X+40, s1[i].Points[1].Y);
+                    //textAnno2.Text = matchedIonDic1.MatchedIonName[i];
 
                     model.Annotations.Add(textAnno1);
-                    model.Annotations.Add(textAnno2);
+                    //model.Annotations.Add(textAnno2);
                     model.Series.Add(s1[i]);
                 }
 
@@ -169,9 +177,11 @@ namespace ViewModels
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = x.Max() * 1.02 });
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity(counts)", Minimum = 0, Maximum = y.Max() * 1.2 });
             var textAnnoSeq1 = new TextAnnotation() { };
-            textAnnoSeq1.FontSize = 9; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;
+            //textAnnoSeq1.TextRotation=90;
+            textAnnoSeq1.FontSize = 12; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;
             var textAnnoSeq2 = new TextAnnotation() { };
-            textAnnoSeq2.FontSize = 9; textAnnoSeq2.TextColor = OxyColors.Blue; textAnnoSeq2.StrokeThickness = 0; textAnnoSeq2.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.1); textAnnoSeq2.Text = sequence2;
+            //textAnnoSeq2.TextRotation=90;
+            textAnnoSeq2.FontSize = 12; textAnnoSeq2.TextColor = OxyColors.Blue; textAnnoSeq2.StrokeThickness = 0; textAnnoSeq2.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.1); textAnnoSeq2.Text = sequence2;
             model.Annotations.Add(textAnnoSeq1);
             model.Annotations.Add(textAnnoSeq2);
 
@@ -203,14 +213,16 @@ namespace ViewModels
                     s1[i].Points.Add(new DataPoint(matchedIonDic1.MatchedIonMz[i] + 1.007277, matchedIonDic1.MatchedIonIntensity[i]));
 
                     var textAnno1 = new TextAnnotation();
-                    textAnno1.FontSize = 6;
+                    //textAnno1.TextRotation=90;
+                    textAnno1.FontSize = 12;
                     textAnno1.TextColor = ionColor;
                     textAnno1.StrokeThickness = 0;
                     textAnno1.TextPosition = s1[i].Points[1];
                     textAnno1.Text = matchedIonDic1.MatchedIonMz[i].ToString("f3");
 
                     var textAnno2 = new TextAnnotation();
-                    textAnno2.FontSize = 6;
+                    //textAnno2.TextRotation=90;
+                    textAnno2.FontSize = 12;
                     textAnno2.TextColor = ionColor;
                     textAnno2.StrokeThickness = 0;
                     textAnno2.TextPosition = new DataPoint(s1[i].Points[1].X, s1[i].Points[1].Y + y.Max() * 0.02);
@@ -235,14 +247,16 @@ namespace ViewModels
                     s2[i].Points.Add(new DataPoint(matchedIonDic2.MatchedIonMz[i] + 1.007277, matchedIonDic2.MatchedIonIntensity[i]));
 
                     var textAnno1 = new TextAnnotation();
-                    textAnno1.FontSize = 6;
+                    //textAnno1.TextRotation=90;
+                    textAnno1.FontSize = 12;
                     textAnno1.TextColor = ionColor;
                     textAnno1.StrokeThickness = 0;
                     textAnno1.TextPosition = s2[i].Points[1];
                     textAnno1.Text = matchedIonDic2.MatchedIonMz[i].ToString("f3");
 
                     var textAnno2 = new TextAnnotation();
-                    textAnno2.FontSize = 6;
+                    //textAnno2.TextRotation=90;
+                    textAnno2.FontSize = 12;
                     textAnno2.TextColor = ionColor;
                     textAnno2.StrokeThickness = 0;
                     textAnno2.TextPosition = new DataPoint(s2[i].Points[1].X, s2[i].Points[1].Y + y.Max() * 0.02);
@@ -276,9 +290,11 @@ namespace ViewModels
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = x.Max() * 1.02 });
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity(counts)", Minimum = 0, Maximum = y.Max() * 1.2 });
             var textAnnoSeq1 = new TextAnnotation() { };
-            textAnnoSeq1.FontSize = 9; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;
+            //textAnnoSeq1.TextRotation=90;
+            textAnnoSeq1.FontSize = 12; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;
             var textAnnoSeq2 = new TextAnnotation() { };
-            textAnnoSeq2.FontSize = 9; textAnnoSeq2.TextColor = OxyColors.Blue; textAnnoSeq2.StrokeThickness = 0; textAnnoSeq2.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.1); textAnnoSeq2.Text = sequence2;
+            //textAnnoSeq2.TextRotation=90;
+            textAnnoSeq2.FontSize = 12; textAnnoSeq2.TextColor = OxyColors.Blue; textAnnoSeq2.StrokeThickness = 0; textAnnoSeq2.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.1); textAnnoSeq2.Text = sequence2;
             model.Annotations.Add(textAnnoSeq1);
             model.Annotations.Add(textAnnoSeq2);
 
@@ -310,14 +326,16 @@ namespace ViewModels
                     s1[i].Points.Add(new DataPoint(matchedIonDic1.MatchedIonMz[i] + 1.007277, matchedIonDic1.MatchedIonIntensity[i]));
 
                     var textAnno1 = new TextAnnotation();
-                    textAnno1.FontSize = 6;
+                    //textAnno1.TextRotation=90;
+                    textAnno1.FontSize = 12;
                     textAnno1.TextColor = ionColor;
                     textAnno1.StrokeThickness = 0;
                     textAnno1.TextPosition = s1[i].Points[1];
                     textAnno1.Text = matchedIonDic1.MatchedIonMz[i].ToString("f3");
 
                     var textAnno2 = new TextAnnotation();
-                    textAnno2.FontSize = 6;
+                    //textAnno2.TextRotation=90;
+                    textAnno2.FontSize = 12;
                     textAnno2.TextColor = ionColor;
                     textAnno2.StrokeThickness = 0;
                     textAnno2.TextPosition = new DataPoint(s1[i].Points[1].X, s1[i].Points[1].Y + y.Max() * 0.02);
@@ -342,14 +360,16 @@ namespace ViewModels
                     s2[i].Points.Add(new DataPoint(matchedIonDic2.MatchedIonMz[i] + 1.007277, matchedIonDic2.MatchedIonIntensity[i]));
 
                     var textAnno1 = new TextAnnotation();
-                    textAnno1.FontSize = 6;
+                    //textAnno1.TextRotation=90;
+                    textAnno1.FontSize = 12;
                     textAnno1.TextColor = ionColor;
                     textAnno1.StrokeThickness = 0;
                     textAnno1.TextPosition = s2[i].Points[1];
                     textAnno1.Text = matchedIonDic2.MatchedIonMz[i].ToString("f3");
 
                     var textAnno2 = new TextAnnotation();
-                    textAnno2.FontSize = 6;
+                    //textAnno2.TextRotation=90;
+                    textAnno2.FontSize = 12;
                     textAnno2.TextColor = ionColor;
                     textAnno2.StrokeThickness = 0;
                     textAnno2.TextPosition = new DataPoint(s2[i].Points[1].X, s2[i].Points[1].Y + y.Max() * 0.02);

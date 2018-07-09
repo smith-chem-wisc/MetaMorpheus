@@ -36,7 +36,6 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="btnAddFiles" Content="Add" Click="btnAddFiles_Click"/>
                             <Button x:Name="btnClearFiles" Content="Clear" Click="btnClearFiles_Click"/>
-                            <Button x:Name="btnLoadScans" Content="Run" Click="btnLoadScans_Click"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -47,40 +46,52 @@
                             <RowDefinition Height="30"/>
                             <RowDefinition Height="30"/>
                         </Grid.RowDefinitions>
-                        <DataGrid x:Name="dataGridResultFiles" ItemsSource="{Binding}" >
+                        <DataGrid x:Name="dataGridResultFiles" ItemsSource="{Binding}" Height="60" VerticalAlignment="Top" >
+
                             <DataGrid.Resources>
 
                             </DataGrid.Resources>
                         </DataGrid>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
-                            <Button x:Name="btnAddResultFiles" Content="Add" Click="btnAddFiles_Click"/>
+                            <Button x:Name="btnAddResultFiles" Content="Add" Click="btnAddResults_Click" Height="30" VerticalAlignment="Top"/>
                             <Button x:Name="btnClearResultFiles" Content="Clear" Click="btnClearFiles_Click"/>
-                            <Button x:Name="btnReadResultFile" Content="Read" IsEnabled="False" Click="btnReadResultFile_Click" />
                         </StackPanel>
-                        <StackPanel  Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left">
+                        <!--<StackPanel  Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left">
                             <Label Content=" Ouput Folder"/>
                             <TextBox x:Name="txtBoxOutputFolder" Width="150"/>
-                        </StackPanel>
+                        </StackPanel>-->
                     </Grid>
                 </GroupBox>
                 <GroupBox Header="Spectra" Name="gbSpectra" Grid.Row="3">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="30"/>
-
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="3*"/>
+                            <RowDefinition Height="1*"/>
                         </Grid.RowDefinitions>
-                        <DataGrid x:Name="dataGridScanNums" ItemsSource="{Binding}" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="0">
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"></ColumnDefinition>
+                                <ColumnDefinition Width="1*"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="btnReadResultFile" Margin="2,5,2,5" Grid.Column="0" Content="Begin" IsEnabled="True" Click="btnReadResultFile_Click"/>
+                            <Button x:Name="btnReset" Margin="2,5,2,5" Grid.Column="1" IsEnabled="False" Content="Reset" Click="btnReset_Click" />
+                        </Grid>
+                        <DataGrid x:Name="dataGridScanNums" VerticalAlignment="Stretch" ItemsSource="{Binding}" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="1" Margin="0,0,0,0">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridCell">
                                     <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick"/>
                                 </Style>
                             </DataGrid.Resources>
                         </DataGrid>
-                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBox Name="txtScanNum" Text="Scan Number" />
-                            <Button Name="btnDraw" Content="Draw" Click="btnDraw_Click" IsEnabled="False"/>
-                        </StackPanel>
+                        <Grid Grid.Row="2" HorizontalAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="6*"></ColumnDefinition>
+                                <ColumnDefinition Width="4*"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <TextBox FontStyle="Oblique" x:Name="txtScanNum" Grid.Column="0" Text="Scan Number" MaxHeight="26" GotFocus="clearText" LostFocus="restoreText"/>
+                            <Button x:Name="btnDraw" Grid.Column="1" Margin="2 0 0 0" Content="Draw" Click="btnDraw_Click" MaxHeight="26" IsEnabled="False"/>
+                        </Grid>
                     </Grid>
                 </GroupBox>
             </Grid>
@@ -95,7 +106,7 @@
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
                     <GroupBox Header="PSM" Name="gbPSM" Grid.Row="0">
-                        <oxy:PlotView x:Name="plotView" Model="{Binding Model}"/>
+                        <oxy:PlotView x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>
                     </GroupBox>
                 </Grid>
             </Grid>

@@ -38,7 +38,11 @@ namespace RealTimeGUI
             this.logContent += GetEvents(memoryAppender);
 
             // Then alert the Updated event that the LogWatcher has been updated
+
+            //Updated?.BeginInvoke(this, new EventArgs());
+
             //Updated?.Invoke(this, new EventArgs());
+
             Updated?.BeginInvoke(this, new EventArgs(), callBack, null);
         }
 

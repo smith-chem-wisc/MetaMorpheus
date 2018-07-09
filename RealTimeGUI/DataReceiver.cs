@@ -36,6 +36,7 @@ namespace RealTimeGUI
 
         //public Notifications Notifications { get; set; }
 
+
         public static event EventHandler<NotificationEventArgs> DataReceiverNotificationEventHandler;
 
         internal void ReceiveData()
@@ -44,7 +45,9 @@ namespace RealTimeGUI
             //string x = "Start receive scans on detector " + ScanContainer.DetectorClass + ".";
             //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
             //logD.Debug("Start receive scans on detector " + ScanContainer.DetectorClass);
+
             //this.Notifications.Notification += x;
+
 
             ScanContainer.AcquisitionStreamOpening += Orbitrap_AcquisitionStreamOpening;
             ScanContainer.AcquisitionStreamClosing += Orbitrap_AcquisitionStreamClosing;
@@ -60,7 +63,9 @@ namespace RealTimeGUI
             //string x = "Stop receive scans on detector " + ScanContainer.DetectorClass + "...";
             //DataReceiverNotificationEventHandler?.Invoke(this, new NotificationEventArgs(x));
             //logD.Debug(" Stop receive scans on detector " + ScanContainer.DetectorClass);
+
             //this.Notifications.Notification += x;
+
         }
 
         private void Orbitrap_MsScanArrived(object sender, MsScanEventArgs e)
@@ -77,7 +82,9 @@ namespace RealTimeGUI
                 //ListScan.Add(scan);
                 //Dump("Specific", scan.SpecificInformation);
                 //logD.Debug("Get one scan");
+
                 //this.Notifications.Notification += x;
+
 
             }
 		}

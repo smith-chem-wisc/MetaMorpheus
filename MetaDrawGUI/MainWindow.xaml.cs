@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using MzLibUtil;
 using System.Text.RegularExpressions;
 using MassSpectrometry;
-
+using OxyPlot;
 namespace MetaDrawGUI
 {
     /// <summary>
@@ -43,9 +43,7 @@ namespace MetaDrawGUI
             dataGridScanNums.DataContext = spectrumNumsObservableCollection;
 
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
-
-            UpdateOutputFolderTextbox();
-
+            
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -79,11 +77,16 @@ namespace MetaDrawGUI
 
         private void btnClearFiles_Click(object sender, RoutedEventArgs e)
         {
-            spectraFilesObservableCollection.Clear();
+            if ((sender as Button).Name == "btnClearResultFiles")
+                resultFilesObservableCollection.Clear();
+            else
+                spectraFilesObservableCollection.Clear();
+
         }
 
         private void btnAddFiles_Click(object sender, RoutedEventArgs e)
         {
+            btnReset.IsEnabled = true;
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
                 Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML",
@@ -97,6 +100,23 @@ namespace MetaDrawGUI
                     AddAFile(rawDataFromSelected);
                 }
             dataGridMassSpectraFiles.Items.Refresh();
+        }
+        private void btnAddResults_Click(object sender, RoutedEventArgs e)
+        {
+            btnReset.IsEnabled = true;
+            Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Result Files(*.csv;*..psmtsv)|*.csv;*.psmtsv",
+                FilterIndex = 1,
+                RestoreDirectory = true,
+                Multiselect = true
+            };
+            if (openFileDialog1.ShowDialog() == true)
+                foreach (var rawDataFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
+                {
+                    AddAFile(rawDataFromSelected);
+                }
+            dataGridResultFiles.Items.Refresh();
         }
 
         private void AddAFile(string draggedFilePath)
@@ -140,22 +160,10 @@ namespace MetaDrawGUI
         //Also limit to only one file per time. 
         private void btnLoadScans_Click(object sender, RoutedEventArgs e)
         {
-            if (!spectraFilesObservableCollection.Any())
-            {
-                return;
-            }
-
-            LoadScans loadScans = new LoadScans(spectraFilesObservableCollection.Where(b => b.Use).First().FilePath, txtBoxOutputFolder.Text);
-
-            MsDataFile = loadScans.Run();          
-
-            //arrayOfMs2ScansSortedByMass = loadScans.arrayOfMs2ScansSortedByMass.ToList();
-
-            btnLoadScans.IsEnabled = false;
-            btnReadResultFile.IsEnabled = true;
+            
         }
 
-        private void UpdateOutputFolderTextbox()
+        /*private void UpdateOutputFolderTextbox()
         {
             if (spectraFilesObservableCollection.Any())
             {
@@ -172,11 +180,10 @@ namespace MetaDrawGUI
                 // no spectra files; clear the output folder from the GUI
                 txtBoxOutputFolder.Clear();
             }
-        }
+        }*/
 
         private void btnDraw_Click(object sender, RoutedEventArgs e)
         {
-            btnLoadScans.IsEnabled = false;
 
             mainViewModel.Model.InvalidatePlot(true);
 
@@ -188,9 +195,25 @@ namespace MetaDrawGUI
 
         private void btnReadResultFile_Click(object sender, RoutedEventArgs e)
         {
+            btnReset.IsEnabled = true;
+
+            if (!spectraFilesObservableCollection.Any())
+            {
+                return;
+            }
+            
+            LoadScans loadScans = new LoadScans(spectraFilesObservableCollection.Where(b => b.Use).First().FilePath,null);
+
+            MsDataFile = loadScans.Run();
+
+            //arrayOfMs2ScansSortedByMass = loadScans.arrayOfMs2ScansSortedByMass.ToList();
+            
+            btnReadResultFile.IsEnabled = true;
+
             if (resultFilesObservableCollection.Count == 0)
             {
                 MessageBox.Show("Please add result files.");
+                return;
             }
             var resultFilePath = resultFilesObservableCollection.Where(b => b.Use).First().FilePath;
             PSMs = TsvResultReader.ReadTsv(resultFilePath);
@@ -199,6 +222,7 @@ namespace MetaDrawGUI
                 spectrumNumsObservableCollection.Add(new SpectrumForDataGrid(item.ScanNumber));
             }
             dataGridScanNums.Items.Refresh();
+            
 
             btnReadResultFile.IsEnabled = false;
             btnDraw.IsEnabled = true;
@@ -252,6 +276,35 @@ namespace MetaDrawGUI
 
             mainViewModel.UpdateForSingle(msScanForDraw, psmDraw);
 
+        }
+
+        private void btnReset_Click(object sender, RoutedEventArgs e)
+        {
+            btnReset.IsEnabled = false;
+
+            resultFilesObservableCollection.Clear();
+
+            spectraFilesObservableCollection.Clear();
+
+            spectrumNumsObservableCollection.Clear();
+
+            btnReadResultFile.IsEnabled = true;
+
+            mainViewModel = new MainViewModel();
+        }
+
+        private void clearText(object sender, RoutedEventArgs e)
+        {
+            TextBox tb = (TextBox)sender;
+            if (tb.Text.Equals("Scan Number"))
+                tb.Text = string.Empty;
+        }
+
+        private void restoreText(object sender, RoutedEventArgs e)
+        {
+            TextBox tb = (TextBox)sender;
+            if(tb.Text.Equals(string.Empty))
+                tb.Text = "Scan Number";
         }
     }
 }
