@@ -11,8 +11,6 @@ namespace Test
     [TestFixture]
     public static class SlicedTest
     {
-        #region Public Methods
-
         [Test]
         public static void SlicedTest1()
         {
@@ -38,7 +36,6 @@ namespace Test
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
         }
 
-
         [Test]
         public static void FaFormatTest()
         {
@@ -63,7 +60,5 @@ namespace Test
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
         }
-
-        #endregion Public Methods
     }
 }

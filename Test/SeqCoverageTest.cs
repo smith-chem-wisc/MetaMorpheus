@@ -1,7 +1,9 @@
 ﻿using EngineLayer;
 using NUnit.Framework;
 using Proteomics;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Test
@@ -9,8 +11,6 @@ namespace Test
     [TestFixture]
     public static class SeqCoverageTest
     {
-        #region Public Methods
-
         [Test]
         public static void TryFailSequenceCoverage()
         {
@@ -42,9 +42,11 @@ namespace Test
                 {8, mod5}
             };
 
-            var pwsm1 = new PeptideWithSetModifications(0, prot1, 1, 3, modsFor1);
-            var pwsm2 = new PeptideWithSetModifications(0, prot1, 4, 6, modsFor2);
-            var pwsm3 = new PeptideWithSetModifications(0, prot1, 1, 6, modsFor3);
+            DigestionParams digestionParams = new DigestionParams();
+            var pwsm1 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 3, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor1, numFixedMods: 0);
+            var pwsm2 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 4, oneBasedEndResidueInProtein: 6, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor2, numFixedMods: 0);
+            var pwsm3 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 6, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor3, numFixedMods: 0);
+
             HashSet<PeptideWithSetModifications> peptides = new HashSet<PeptideWithSetModifications>
             {
                 pwsm1,
@@ -58,7 +60,7 @@ namespace Test
                 { pwsm2.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm2 } },
                 { pwsm3.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm3 } },
             };
-            var digestionParams = new DigestionParams();
+
             IScan scan = new ThisTestScan();
             var psm1 = new PeptideSpectralMatch(pwsm1.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -66,7 +68,7 @@ namespace Test
             var psm2 = new PeptideSpectralMatch(pwsm2.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             psm2.MatchToProteinLinkedPeptides(matching);
-            var psm3 = new PeptideSpectralMatch(pwsm3.CompactPeptide(TerminusType.None), 0, 1, 0, scan,digestionParams);
+            var psm3 = new PeptideSpectralMatch(pwsm3.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             psm3.MatchToProteinLinkedPeptides(matching);
 
@@ -77,10 +79,10 @@ namespace Test
                 psm3,
             };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new List<string>());
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new CommonParameters(), new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new CommonParameters(), new List<string>());
 
             psafe.Run();
 
@@ -100,6 +102,96 @@ namespace Test
             Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5,info:occupancy=1.00(2/2)]"));
         }
 
-        #endregion Public Methods
+        [Test]
+        public static void MultipleProteaseSelectionTest()
+        {
+            Protein ParentProtein = new Protein("MOAT", "accession1");
+
+            var protease = new Protease("TestProtease1", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("O", TerminusType.C), new Tuple<string, TerminusType>("T", TerminusType.N) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            DigestionParams multiProtease = new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            var digestedList = ParentProtein.Digest(multiProtease, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
+            var sequences = digestedList.Select(p => p.BaseSequence).ToList();
+            Assert.That(sequences.Count == 3);
+            Assert.That(sequences.Contains("MO"));
+            Assert.That(sequences.Contains("A"));
+            Assert.That(sequences.Contains("T"));
+        }
+
+        [Test]
+        public static void MultipleProteaseSelectionTestMissedCleavage()
+        {
+            Protein ParentProtein = new Protein("MOAT", "accession1");
+
+            var protease = new Protease("TestProtease2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("O", TerminusType.C), new Tuple<string, TerminusType>("T", TerminusType.N) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            DigestionParams multiProtease = new DigestionParams(protease: protease.Name, maxMissedCleavages: 1, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            var digestedList = ParentProtein.Digest(multiProtease, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
+            var sequences = digestedList.Select(p => p.BaseSequence).ToList();
+            Assert.That(sequences.Count == 5);
+            Assert.That(sequences.Contains("MOA"));
+            Assert.That(sequences.Contains("AT"));
+            Assert.That(sequences.Contains("MO"));
+            Assert.That(sequences.Contains("A"));
+            Assert.That(sequences.Contains("T"));
+        }
+
+        [Test]
+        public static void MultipleProteaseSelectionTestPreventCleavage()
+        {
+            Protein ParentProtein = new Protein("MOAT", "accession1");
+
+            var protease = new Protease("TestProtease3", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("O", TerminusType.C), new Tuple<string, TerminusType>("T", TerminusType.N) }, new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("A", TerminusType.C) }, CleavageSpecificity.Full, null, null, null);
+            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            DigestionParams multiProtease = new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            var digestedList = ParentProtein.Digest(multiProtease, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
+            var sequences = digestedList.Select(p => p.BaseSequence).ToList();
+            Assert.That(sequences.Count == 2);
+            Assert.That(sequences.Contains("MOA"));
+            Assert.That(sequences.Contains("T"));
+        }
+
+        [Test]
+        public static void ReadCustomFile()
+        {
+            Protein ParentProtein = new Protein("OKAREDY", "accession1");
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DoubleProtease.tsv");
+            Assert.That(File.Exists(path));
+
+            var proteaseDict = GlobalVariables.LoadProteaseDictionary(path);
+            Assert.That(proteaseDict.ContainsKey("Test1"));
+            Assert.That(proteaseDict.ContainsKey("Test2"));
+            Assert.That(proteaseDict.ContainsKey("Test3"));
+            GlobalVariables.ProteaseDictionary.Add("Test1", proteaseDict["Test1"]);
+
+            DigestionParams multiProtease1 = new DigestionParams(protease: "Test1", maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            var digestedList1 = ParentProtein.Digest(multiProtease1, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
+            GlobalVariables.ProteaseDictionary.Remove("Test1");
+
+            var sequences = digestedList1.Select(p => p.BaseSequence).ToList();
+            Assert.That(sequences.Count == 3);
+            Assert.That(sequences.Contains("OK"));
+            Assert.That(sequences.Contains("A"));
+            Assert.That(sequences.Contains("REDY"));
+
+            GlobalVariables.ProteaseDictionary.Add("Test2", proteaseDict["Test2"]);
+            DigestionParams multiProtease2 = new DigestionParams(protease: "Test2", maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            var digestedList2 = ParentProtein.Digest(multiProtease2, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
+            GlobalVariables.ProteaseDictionary.Remove("Test2");
+            var sequences2 = digestedList2.Select(p => p.BaseSequence).ToList();
+            Assert.That(sequences2.Count == 3);
+            Assert.That(sequences2.Contains("OK"));
+            Assert.That(sequences2.Contains("ARED"));
+            Assert.That(sequences2.Contains("Y"));
+
+            GlobalVariables.ProteaseDictionary.Add("Test3", proteaseDict["Test3"]);
+            DigestionParams multiProtease3 = new DigestionParams(protease: "Test3", maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            var digestedList3 = ParentProtein.Digest(multiProtease3, new List<ModificationWithMass>(), new List<ModificationWithMass>()).ToList();
+            GlobalVariables.ProteaseDictionary.Remove("Test3");
+            var sequences3 = digestedList3.Select(p => p.BaseSequence).ToList();
+            Assert.That(sequences3.Count == 2);
+            Assert.That(sequences3.Contains("OK"));
+            Assert.That(sequences3.Contains("AREDY"));
+        }
     }
 }

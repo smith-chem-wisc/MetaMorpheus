@@ -116,7 +116,9 @@
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
-                                        <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                    <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                         <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -175,6 +177,18 @@
                                     <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
                                         <CheckBox x:Name="cCheckBox" Content="c ions" />
                                         <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Max Threads" />
+                                        <TextBox x:Name="maxThreadsTextBox" Width="45" PreviewTextInput="PreviewIfInt" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
+                                                        <LineBreak/>
+                                                        Enter a lower number to limit CPU usage.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
@@ -269,7 +283,7 @@
                 <GroupBox Header="G-PTM-D Modifications" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                     <GroupBox.ToolTip>
                         <TextBlock>
-                            Use for all mods that are possibly occuring in vivo (the more the merrier!)
+                            Use for all mods that are possibly occuring biologically or experimentally
                             <LineBreak/>
                             G-PTM-D will search the database and use characteristic precursor mass-differences to identify these PTMs.
                         </TextBlock>

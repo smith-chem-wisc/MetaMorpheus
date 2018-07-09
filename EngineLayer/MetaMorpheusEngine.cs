@@ -4,33 +4,27 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace EngineLayer
 {
     public abstract class MetaMorpheusEngine
     {
-        #region Protected Fields
-
         protected static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
         {
             { DissociationType.HCD, Constants.protonMass },
             { DissociationType.ETD, 2*Constants.protonMass }
         };
 
+        protected readonly CommonParameters commonParameters;
+
         protected readonly List<string> nestedIds;
 
-        #endregion Protected Fields
-
-        #region Protected Constructors
-
-        protected MetaMorpheusEngine(List<string> nestedIds)
+        protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
         {
+            this.commonParameters = commonParameters;
             this.nestedIds = nestedIds;
         }
-
-        #endregion Protected Constructors
-
-        #region Public Events
 
         public static event EventHandler<SingleEngineEventArgs> StartingSingleEngineHander;
 
@@ -42,11 +36,7 @@ namespace EngineLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
-        #endregion Public Events
-
-        #region Public Methods
-
-        public static void MatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, List<double> matchedIonIntensitiesList)
+        public static void MatchIonsOld(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<int> matchedIonSeries, List<double> matchedIonMassToChargeRatios, List<double> productMassErrorDa, List<double> productMassErrorPpm, List<double> matchedIonIntensitiesList, double precursorMass, ProductType productType, bool addCompIons)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -81,13 +71,13 @@ namespace EngineLayer
 
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
-                    matchedIonMassesList.Add(currentTheoreticalMass);
-                    matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]); 
+                    matchedIonSeries.Add(++currentTheoreticalIndex); //++ because there's no such thing as a y0 ion.
+                    matchedIonMassToChargeRatios.Add(currentTheoreticalMz);
+                    matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]);
                     double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
-                    currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
@@ -130,7 +120,7 @@ namespace EngineLayer
                 double[] complementaryMasses = new double[numExperimentalPeaks];
                 double[] complementaryIntensities = new double[numExperimentalPeaks];
 
-                foreach (DissociationType dissociationType in dissociationTypes)
+                foreach (DissociationType dissociationType in DetermineDissociationType(new List<ProductType> { productType }))
                 {
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
@@ -158,12 +148,12 @@ namespace EngineLayer
                             // If found match
                             if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                             {
-                                matchedIonMassesList.Add(currentTheoreticalMass);
+                                matchedIonSeries.Add(++currentTheoreticalIndex);
+                                matchedIonMassToChargeRatios.Add(currentTheoreticalMass.ToMz(1)); //currentTheoreticalMz is not updated
                                 matchedIonIntensitiesList.Add(complementaryIntensities[experimentalIndex]);
                                 productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                                 productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
-                                currentTheoreticalIndex++;
                                 if (currentTheoreticalIndex == TotalProductsHere)
                                     break;
                                 currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
@@ -203,9 +193,18 @@ namespace EngineLayer
                     }
                 }
             }
+
+            //matchedIonSeries assumes 1-n, but bnob1 has no b1, so we need to ++ each series number
+            if (productType == ProductType.BnoB1ions)
+            {
+                for (int i = 0; i < matchedIonSeries.Count; i++)
+                {
+                    matchedIonSeries[i]++;
+                }
+            }
         }
 
-        public static double CalculatePeptideScore(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, double maximumMassThatFragmentIonScoreIsDoubled)
+        public static double CalculatePeptideScoreOld(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes, bool addCompIons, double maximumMassThatFragmentIonScoreIsDoubled)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -360,6 +359,92 @@ namespace EngineLayer
             return (MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent);
         }
 
+        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
+        {
+            // scoring if some fragments get doubled for scoring purposes
+            if (maximumMassThatFragmentIonScoreIsDoubled > 0)
+            {
+                double score = 0;
+
+                foreach (var fragment in matchedFragmentIons)
+                {
+                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
+
+                    if (fragment.TheoreticalFragmentIon.Mass <= maximumMassThatFragmentIonScoreIsDoubled)
+                    {
+                        score += fragmentScore * 2;
+                    }
+                    else
+                    {
+                        score += fragmentScore;
+                    }
+                }
+
+                return score;
+            }
+
+            // normal scoring
+            return matchedFragmentIons.Count + (matchedFragmentIons.Sum(v => v.Intensity) / thisScan.TotalIonCurrent);
+        }
+
+        public static List<MatchedFragmentIon> MatchFragmentIons(MzSpectrum spectrum, List<TheoreticalFragmentIon> theoreticalFragmentIons, CommonParameters commonParameters)
+        {
+            var matchedFragmentIons = new List<MatchedFragmentIon>();
+            var alreadyCountedMzs = new HashSet<double>();
+
+            // if the spectrum has no peaks
+            if (spectrum.Size == 0)
+            {
+                return matchedFragmentIons;
+            }
+
+            //search for ions in the spectrum
+            foreach (var tIon in theoreticalFragmentIons)
+            {
+                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
+                if (double.IsNaN(tIon.Mass))
+                {
+                    continue;
+                }
+
+                // get the closest peak in the spectrum to the theoretical peak
+                int matchedPeakIndex = spectrum.GetClosestPeakIndex(tIon.Mz).Value;
+
+                double mz = spectrum.XArray[matchedPeakIndex];
+                double intensity = spectrum.YArray[matchedPeakIndex];
+
+                // is the mass error acceptable and has it been counted already?
+                if (commonParameters.ProductMassTolerance.Within(mz.ToMass(tIon.Charge), tIon.Mass) && !alreadyCountedMzs.Contains(mz))
+                {
+                    matchedFragmentIons.Add(new MatchedFragmentIon(tIon, mz, intensity));
+                    alreadyCountedMzs.Add(mz);
+                }
+            }
+
+            return matchedFragmentIons;
+        }
+
+        public static MzSpectrum GenerateComplementarySpectrum(MzSpectrum spectrum, double precursorMass, DissociationType dissociationType)
+        {
+            double protonMassShift = complementaryIonConversionDictionary[dissociationType].ToMass(1);
+
+            double[] newMzSpectrum = new double[spectrum.Size];
+            double[] intensity = new double[spectrum.Size];
+
+            for (int i = spectrum.Size - 1; i >= 0; i--)
+            {
+                int j = spectrum.Size - i - 1;
+
+                double mz = spectrum.XArray[i];
+                double compFragmentMass = (precursorMass + protonMassShift) - mz.ToMass(1);
+
+                newMzSpectrum[j] = compFragmentMass.ToMz(1);
+                intensity[j] = spectrum.YArray[i];
+            }
+
+            return new MzSpectrum(newMzSpectrum, intensity, false);
+        }
+
         public MetaMorpheusEngineResults Run()
         {
             StartingSingleEngine();
@@ -381,18 +466,18 @@ namespace EngineLayer
         {
             List<DissociationType> dissociationTypes = new List<DissociationType>();
 
-            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
+            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y) || lp.Contains(ProductType.BnoB1ions))
+            {
                 dissociationTypes.Add(DissociationType.HCD);
+            }
 
             if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
+            {
                 dissociationTypes.Add(DissociationType.ETD);
+            }
 
             return dissociationTypes;
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected void Warn(string v)
         {
@@ -411,10 +496,6 @@ namespace EngineLayer
 
         protected abstract MetaMorpheusEngineResults RunSpecific();
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private void StartingSingleEngine()
         {
             StartingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
@@ -424,7 +505,5 @@ namespace EngineLayer
         {
             FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
-
-        #endregion Private Methods
     }
 }

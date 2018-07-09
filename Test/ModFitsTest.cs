@@ -7,7 +7,6 @@ namespace Test
     [TestFixture]
     public static class ModFitsTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestModFits()
@@ -66,6 +65,5 @@ namespace Test
             Assert.IsFalse(GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
         }
 
-        #endregion Public Methods
     }
 }

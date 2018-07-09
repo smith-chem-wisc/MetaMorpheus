@@ -9,19 +9,11 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
-        #region Private Fields
-
-        private static List<Modification> allModsKnown = new List<Modification>();
-        private static HashSet<string> allModTypesKnown = new HashSet<string>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private static List<Modification> _AllModsKnown = new List<Modification>();
+        private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
 
         static GlobalVariables()
         {
-            #region Determine MetaMorpheusVersion
-
             MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
 
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
@@ -34,7 +26,7 @@ namespace EngineLayer
             }
             else
             {
-                // as of 0.0.277, AppVeyor appends the build number 
+                // as of 0.0.277, AppVeyor appends the build number
                 // this is intentional; it's to avoid conflicting AppVeyor build numbers
                 // trim the build number off the version number for displaying/checking versions, etc
                 var foundIndexes = new List<int>();
@@ -46,10 +38,6 @@ namespace EngineLayer
                 MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
             }
 
-            #endregion Determine MetaMorpheusVersion
-
-            #region Figure out DataDir
-
             {
                 var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
@@ -57,8 +45,6 @@ namespace EngineLayer
                 else
                     DataDir = AppDomain.CurrentDomain.BaseDirectory;
             }
-
-            #endregion Figure out DataDir
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
@@ -80,10 +66,6 @@ namespace EngineLayer
             ProteaseDictionary = LoadProteaseDictionary(Path.Combine(DataDir, @"Data", "proteases.tsv"));
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         // File locations
         public static string DataDir { get; }
 
@@ -94,13 +76,9 @@ namespace EngineLayer
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
         public static Dictionary<string, Protease> ProteaseDictionary;
-        public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
-        public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
-        public static string ExperimentalDesignFileName { get;  }
-
-        #endregion Public Properties
-
-        #region Public Methods
+        public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
+        public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
+        public static string ExperimentalDesignFileName { get; }
 
         public static void AddMods(IEnumerable<Modification> enumerable)
         {
@@ -114,8 +92,8 @@ namespace EngineLayer
                     continue;
                 else
                 {
-                    allModsKnown.Add(ye);
-                    allModTypesKnown.Add(ye.modificationType);
+                    _AllModsKnown.Add(ye);
+                    _AllModTypesKnown.Add(ye.modificationType);
                 }
             }
         }
@@ -123,16 +101,16 @@ namespace EngineLayer
         public static string CheckLengthOfOutput(string psmString)
         {
             if (psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs)
+            {
                 return "Output too long for Excel";
+            }
             else
+            {
                 return psmString;
+            }
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
-        private static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
+        public static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
         {
             Dictionary<string, Protease> dict = new Dictionary<string, Protease>();
             using (StreamReader proteases = new StreamReader(proteasesLocation))
@@ -142,23 +120,35 @@ namespace EngineLayer
                 while (proteases.Peek() != -1)
                 {
                     string line = proteases.ReadLine();
-                    string[] fields = line.Split('\t');
-
-                    string name = fields[0];
-                    string[] sequences_inducing_cleavage = fields[1].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                    string[] sequences_preventing_cleavage = fields[2].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                    var cleavage_terminus = (TerminusType)Enum.Parse(typeof(TerminusType), fields[3], true);
-                    var cleavage_specificity = (CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), fields[4], true);
-                    string psi_ms_accession_number = fields[5];
-                    string psi_ms_name = fields[6];
-                    string site_regexp = fields[7];
-                    var protease = new Protease(name, sequences_inducing_cleavage, sequences_preventing_cleavage, cleavage_terminus, cleavage_specificity, psi_ms_accession_number, psi_ms_name, site_regexp);
+                    string[][] fields = line.Split('\t').Select(x => x.Split('|')).ToArray();
+                    string name = fields[0][0];
+                    string[] preventing;
+                    List<Tuple<string, TerminusType>> sequences_inducing_cleavage = new List<Tuple<string, TerminusType>>();
+                    List<Tuple<string, TerminusType>> sequences_preventing_cleavage = new List<Tuple<string, TerminusType>>();
+                    for (int i = 0; i < fields[1].Length; i++)
+                    {
+                        if (!fields[1][i].Equals(""))
+                        {
+                            sequences_inducing_cleavage.Add(new Tuple<string, TerminusType>(fields[1][i], ((TerminusType)Enum.Parse(typeof(TerminusType), fields[3][i], true))));
+                            if (!fields[2].Contains(""))
+                            {
+                                preventing = (fields[2][i].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+                                for (int j = 0; j < preventing.Length; j++)
+                                {
+                                    sequences_preventing_cleavage.Add(new Tuple<string, TerminusType>(preventing[j], (TerminusType)Enum.Parse(typeof(TerminusType), fields[3][i], true)));
+                                }
+                            }
+                        }
+                    }
+                    var cleavage_specificity = ((CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), fields[4][0], true));
+                    string psi_ms_accession_number = fields[5][0];
+                    string psi_ms_name = fields[6][0];
+                    string site_regexp = fields[7][0];
+                    var protease = new Protease(name, sequences_inducing_cleavage, sequences_preventing_cleavage, cleavage_specificity, psi_ms_accession_number, psi_ms_name, site_regexp);
                     dict.Add(protease.Name, protease);
                 }
             }
             return dict;
         }
-
-        #endregion Private Methods
     }
 }

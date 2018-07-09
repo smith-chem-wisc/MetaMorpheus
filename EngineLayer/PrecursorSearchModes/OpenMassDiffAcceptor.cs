@@ -6,15 +6,9 @@ namespace EngineLayer
 {
     public class OpenSearchMode : MassDiffAcceptor
     {
-        #region Public Constructors
-
         public OpenSearchMode() : base("OpenSearch")
         {
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
@@ -35,7 +29,5 @@ namespace EngineLayer
         {
             return FileNameAddition + " OpenSearch";
         }
-
-        #endregion Public Methods
     }
 }

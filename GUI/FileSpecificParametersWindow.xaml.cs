@@ -14,9 +14,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class FileSpecificParametersWindow : Window
     {
-        #region Public Constructors
-
-        //Window that is opened if user wishes to change file specific settings (TOML) for 
+        //Window that is opened if user wishes to change file specific settings (TOML) for
         //individual or multiple spectra files. Creates a toml file where settings can be
         //viewed, loaded, and changed from it.
         public FileSpecificParametersWindow(ObservableCollection<RawDataForDataGrid> selectedSpectraFiles)
@@ -26,15 +24,7 @@ namespace MetaMorpheusGUI
             PopulateChoices();
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal ObservableCollection<RawDataForDataGrid> SelectedSpectra { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         // write the toml settings file on clicking "save"
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -195,7 +185,7 @@ namespace MetaMorpheusGUI
             int tempMaxPeptideLength = tempCommonParams.DigestionParams.MaxPeptideLength;
             int tempMaxMissedCleavages = tempCommonParams.DigestionParams.MaxMissedCleavages;
             int tempMaxModsForPeptide = tempCommonParams.DigestionParams.MaxModsForPeptide;
-            
+
             // do any of the selected files already have file-specific parameters specified?
             var spectraFiles = SelectedSpectra.Select(p => p.FilePath);
             foreach (string file in spectraFiles)
@@ -209,12 +199,12 @@ namespace MetaMorpheusGUI
 
                     if (fileSpecificParams.PrecursorMassTolerance != null)
                     {
-                        tempCommonParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance;
+                        tempCommonParams.SetPrecursorMassTolerance(fileSpecificParams.PrecursorMassTolerance);
                         fileSpecificPrecursorMassTolEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.ProductMassTolerance != null)
                     {
-                        tempCommonParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance;
+                        tempCommonParams.SetProductMassTolerance(fileSpecificParams.ProductMassTolerance);
                         fileSpecificProductMassTolEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.Protease != null)
@@ -257,13 +247,13 @@ namespace MetaMorpheusGUI
             }
 
             DigestionParams digestParams = new DigestionParams(
-                protease: tempProtease.Name, 
-                MaxMissedCleavages: tempMaxMissedCleavages, 
-                MinPeptideLength: tempMinPeptideLength, 
-                MaxPeptideLength: tempMaxPeptideLength, 
-                MaxModsForPeptides: tempMaxModsForPeptide);
+                protease: tempProtease.Name,
+                maxMissedCleavages: tempMaxMissedCleavages,
+                minPeptideLength: tempMinPeptideLength,
+                maxPeptideLength: tempMaxPeptideLength,
+                maxModsForPeptides: tempMaxModsForPeptide);
 
-            tempCommonParams.DigestionParams = digestParams;
+            tempCommonParams.SetDigestionParams(digestParams);
 
             // populate the GUI
             foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
@@ -298,7 +288,5 @@ namespace MetaMorpheusGUI
             //cCheckBox.IsChecked = tempCommonParams.CIons;
             //zdotCheckBox.IsChecked = tempCommonParams.ZdotIons;
         }
-
-        #endregion Private Methods
     }
 }
