@@ -1,6 +1,4 @@
-﻿using EngineLayer;
-
-namespace EngineLayer
+﻿namespace EngineLayer
 {
     public class DigestionParams
     {
@@ -14,47 +12,40 @@ namespace EngineLayer
         public bool SemiProteaseDigestion { get; private set; } //for nonspecific searching of proteases
         public TerminusType TerminusTypeSemiProtease { get; private set; }
 
-        #region Public Constructors
-
-        // this parameterless constructor needs to exist to read the toml. 
+        // this parameterless constructor needs to exist to read the toml.
         // if you can figure out a way to get rid of it, feel free...
         public DigestionParams() : this("trypsin")
         {
-
         }
 
-        public DigestionParams(string protease = "trypsin", int MaxMissedCleavages = 2, int MinPeptideLength = 7, int MaxPeptideLength=int.MaxValue, int MaxModificationIsoforms = 1024, 
-            InitiatorMethionineBehavior InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int MaxModsForPeptides = 2, bool SemiProteaseDigestion= false, TerminusType TerminusTypeSemiProtease = TerminusType.N)
+        public DigestionParams(string protease = "trypsin", int maxMissedCleavages = 2, int minPeptideLength = 7, int maxPeptideLength = int.MaxValue, int maxModificationIsoforms = 1024,
+            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable, int maxModsForPeptides = 2, bool semiProteaseDigestion = false, TerminusType terminusTypeSemiProtease = TerminusType.N)
         {
-            this.Protease = GlobalVariables.ProteaseDictionary[protease];
-            this.MaxMissedCleavages = MaxMissedCleavages;
-            this.MinPeptideLength = MinPeptideLength;
-            this.MaxPeptideLength = MaxPeptideLength;
-            this.MaxModificationIsoforms = MaxModificationIsoforms;
-            this.InitiatorMethionineBehavior = InitiatorMethionineBehavior;
-            this.MaxModsForPeptide = MaxModsForPeptides;
-            this.SemiProteaseDigestion = SemiProteaseDigestion;
-            this.TerminusTypeSemiProtease = TerminusTypeSemiProtease;
+            Protease = GlobalVariables.ProteaseDictionary[protease];
+            MaxMissedCleavages = maxMissedCleavages;
+            MinPeptideLength = minPeptideLength;
+            MaxPeptideLength = maxPeptideLength;
+            MaxModificationIsoforms = maxModificationIsoforms;
+            InitiatorMethionineBehavior = initiatorMethionineBehavior;
+            MaxModsForPeptide = maxModsForPeptides;
+            SemiProteaseDigestion = semiProteaseDigestion;
+            TerminusTypeSemiProtease = terminusTypeSemiProtease;
         }
-
-        #endregion Public Constructors
-        
-        #region Public Methods
 
         public override bool Equals(object obj)
         {
             DigestionParams a = obj as DigestionParams;
 
             return a != null
-                && this.MaxMissedCleavages.Equals(a.MaxMissedCleavages)
-                && this.MinPeptideLength.Equals(a.MinPeptideLength)
-                && this.MaxPeptideLength.Equals(a.MaxPeptideLength)
-                && this.InitiatorMethionineBehavior.Equals(a.InitiatorMethionineBehavior)
-                && this.MaxModificationIsoforms.Equals(a.MaxModificationIsoforms)
-                && this.MaxModsForPeptide.Equals(a.MaxModsForPeptide)
-                && this.Protease.Equals(a.Protease)
-                && this.SemiProteaseDigestion.Equals(a.SemiProteaseDigestion)
-                && this.TerminusTypeSemiProtease.Equals(a.TerminusTypeSemiProtease);
+                && MaxMissedCleavages.Equals(a.MaxMissedCleavages)
+                && MinPeptideLength.Equals(a.MinPeptideLength)
+                && MaxPeptideLength.Equals(a.MaxPeptideLength)
+                && InitiatorMethionineBehavior.Equals(a.InitiatorMethionineBehavior)
+                && MaxModificationIsoforms.Equals(a.MaxModificationIsoforms)
+                && MaxModsForPeptide.Equals(a.MaxModsForPeptide)
+                && Protease.Equals(a.Protease)
+                && SemiProteaseDigestion.Equals(a.SemiProteaseDigestion)
+                && TerminusTypeSemiProtease.Equals(a.TerminusTypeSemiProtease);
         }
 
         public override int GetHashCode()
@@ -65,7 +56,5 @@ namespace EngineLayer
                 ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
         }
-
-        #endregion Public Methods
     }
 }

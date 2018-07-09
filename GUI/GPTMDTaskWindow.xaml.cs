@@ -17,16 +17,10 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GptmdTaskWindow : Window
     {
-        #region Private Fields
-
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public GptmdTaskWindow()
         {
@@ -48,15 +42,7 @@ namespace MetaMorpheusGUI
             UpdateFieldsFromTask(TheTask);
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal GptmdTask TheTask { get; private set; }
-
-        #endregion Internal Properties
-
-        #region Private Methods
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -245,10 +231,8 @@ namespace MetaMorpheusGUI
             {
                 return;
             }
-
             
             #endregion Check Task Validity
-
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             int MinPeptideLength = int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
@@ -289,11 +273,11 @@ namespace MetaMorpheusGUI
             CommonParameters CommonParamsToSave = new CommonParameters(
                 digestionParams: new DigestionParams(
                     protease: protease.Name,
-                    MaxMissedCleavages: MaxMissedCleavages,
-                    MinPeptideLength: MinPeptideLength,
-                    MaxPeptideLength: MaxPeptideLength,
-                    MaxModificationIsoforms: MaxModificationIsoforms,
-                    InitiatorMethionineBehavior: InitiatorMethionineBehavior),
+                    maxMissedCleavages: MaxMissedCleavages,
+                    minPeptideLength: MinPeptideLength,
+                    maxPeptideLength: MaxPeptideLength,
+                    maxModificationIsoforms: MaxModificationIsoforms,
+                    initiatorMethionineBehavior: InitiatorMethionineBehavior),
                     bIons: bCheckBox.IsChecked.Value,
                     yIons: yCheckBox.IsChecked.Value,
                     cIons: cCheckBox.IsChecked.Value,

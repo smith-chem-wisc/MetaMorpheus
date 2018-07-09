@@ -5,21 +5,13 @@ namespace EngineLayer
     public class ProgressEventArgs : MyRecursiveEventArgs
 
     {
-        #region Public Fields
-
-        public int new_progress;
-        public string v;
-
-        #endregion Public Fields
-
-        #region Public Constructors
+        public int NewProgress;
+        public string V;
 
         public ProgressEventArgs(int newProgress, string v, List<string> nestedIDs) : base(nestedIDs)
         {
-            this.new_progress = newProgress;
-            this.v = v;
+            NewProgress = newProgress;
+            V = v;
         }
-
-        #endregion Public Constructors
     }
 }
