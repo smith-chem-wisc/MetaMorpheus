@@ -15,12 +15,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-<<<<<<< HEAD
-using System.Collections.Generic;
-using RealTimeGUI;
-using MetaDrawGUI;
-=======
->>>>>>> upstream/master
 
 namespace MetaMorpheusGUI
 {
@@ -1332,30 +1326,5 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
         }
-<<<<<<< HEAD
-
-        private void MenuItemClickRealTimeGUI_Click(object sender, RoutedEventArgs e)
-        {
-            RealTimeGUI.MainWindow realTimeGUI = new RealTimeGUI.MainWindow();
-            realTimeGUI.Show();
-
-            MetaMorpheusTask.OutLabelStatusHandler -= NewoutLabelStatus;
-            MetaMorpheusTask.FinishedWritingFileHandler -= NewSuccessfullyFinishedWritingFile;
-
-            MetaMorpheusEngine.OutProgressHandler -= NewoutProgressBar;
-            MetaMorpheusTask.OutProgressHandler -= NewoutProgressBar;
-            App.Current.MainWindow.Close();
-        }
-
-        private void MenuItemClickMetaDrawGUI_Click(object sender, RoutedEventArgs e)
-        {
-            MetaDrawGUI.MainWindow metaDrawGUI = new MetaDrawGUI.MainWindow();
-            metaDrawGUI.Show();
-        }
-
-        #endregion Private Methods
-
-=======
->>>>>>> upstream/master
     }
 }
