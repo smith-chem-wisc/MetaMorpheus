@@ -47,6 +47,7 @@
                             <RowDefinition Height="30"/>
                         </Grid.RowDefinitions>
                         <DataGrid x:Name="dataGridResultFiles" ItemsSource="{Binding}" Height="60" VerticalAlignment="Top" >
+
                             <DataGrid.Resources>
 
                             </DataGrid.Resources>
