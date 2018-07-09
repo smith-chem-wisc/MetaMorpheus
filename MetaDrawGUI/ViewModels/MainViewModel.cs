@@ -49,6 +49,8 @@ namespace ViewModels
             // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
             this.privateModel = tmp;
         }
+
+        //To Do: Just draw an scan w/o annotation
         public void UpdateScanModel(Ms2ScanWithSpecificMass MsScanForDraw)
         {
             var x = MsScanForDraw.TheScan.MassSpectrum.XArray;
@@ -80,77 +82,70 @@ namespace ViewModels
             this.Model = model;
 
         }
-        //Changes made
+
+        //Normal peptides
         public void UpdateForSingle(MsDataScan MsScanForDraw, PsmDraw psmParentsForDraw)
         {
+            // x is m/z, y is intensity
             var x = MsScanForDraw.MassSpectrum.XArray;
             var y = MsScanForDraw.MassSpectrum.YArray;
             
             string scanNum = psmParentsForDraw.ScanNumber.ToString();
-            string sequence1 = psmParentsForDraw.FullSequence;
+            string fullSeq = psmParentsForDraw.FullSequence;
 
-            var matchedIonDic1 = psmParentsForDraw.MatchedIonInfo;
+            var matchedIonDic = psmParentsForDraw.MatchedIonInfo;
 
             PlotModel model = new PlotModel { Title = "Spectrum anotation of Scan " + scanNum, DefaultFontSize = 15 };
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = x.Max() * 1.02 });
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity(counts)", Minimum = 0, Maximum = y.Max() * 1.2 });
             model.Axes[1].Zoom(0,y.Max());
-            var textAnnoSeq1 = new TextAnnotation() { };
+            var textAnnoTil = new TextAnnotation() { };
             //textAnnoSeq1.TextRotation=90;
-            textAnnoSeq1.FontSize = 12; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;
-            model.Annotations.Add(textAnnoSeq1);
+            textAnnoTil.FontSize = 12; textAnnoTil.TextColor = OxyColors.Red; textAnnoTil.StrokeThickness = 0; textAnnoTil.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoTil.Text = fullSeq;
+            model.Annotations.Add(textAnnoTil);
 
-            LineSeries[] s0 = new LineSeries[x.Length];
-            LineSeries[] s1 = new LineSeries[x.Length];
 
+            LineSeries[] sPeaks = new LineSeries[x.Length];
+            LineSeries[] sMatches = new LineSeries[x.Length];
 
             //Draw the ms/ms scan peaks
             for (int i = 0; i < x.Length; i++)
             {
-                s0[i] = new LineSeries();
-                s0[i].Color = OxyColors.DimGray;
-                s0[i].StrokeThickness = 0.15;
-                s0[i].Points.Add(new DataPoint(x[i], 0));
-                s0[i].Points.Add(new DataPoint(x[i], y[i]));
-                model.Series.Add(s0[i]);
+                sPeaks[i] = new LineSeries();
+                sPeaks[i].Color = OxyColors.DimGray;
+                sPeaks[i].StrokeThickness = 0.15;
+                sPeaks[i].Points.Add(new DataPoint(x[i], 0));
+                sPeaks[i].Points.Add(new DataPoint(x[i], y[i]));
+                model.Series.Add(sPeaks[i]);
             }
+
             //Draw the ms/ms scan matched peaks
-
-            for (int i = 0; i < matchedIonDic1.MatchedIonMz.Length; i++)
+            for (int i = 0; i < matchedIonDic.MatchedIonMz.Length; i++)
             {
-                if (matchedIonDic1.MatchedIonMz[i] > 0)
+                if (matchedIonDic.MatchedIonMz[i] > 0)
                 {
-                    OxyColor ionColor = (matchedIonDic1.MatchedIonName[i].Contains('b')) ? OxyColors.Red :
-                        (matchedIonDic1.MatchedIonName[i].Contains('y')) ? OxyColors.Blue :
-                        (matchedIonDic1.MatchedIonName[i].Contains('c')) ? OxyColors.Brown : OxyColors.Black;
+                    OxyColor ionColor = (matchedIonDic.MatchedIonName[i].Contains('b')) ? OxyColors.Red :
+                        (matchedIonDic.MatchedIonName[i].Contains('y')) ? OxyColors.Blue :
+                        (matchedIonDic.MatchedIonName[i].Contains('c')) ? OxyColors.Brown : OxyColors.Black;
 
 
-                    s1[i] = new LineSeries();
-                    s1[i].Color = ionColor;
-                    s1[i].StrokeThickness = 0.2;
-                    s1[i].Points.Add(new DataPoint(matchedIonDic1.MatchedIonMz[i] + 1.007277, 0));
-                    s1[i].Points.Add(new DataPoint(matchedIonDic1.MatchedIonMz[i] + 1.007277, matchedIonDic1.MatchedIonIntensity[i]));
+                    sMatches[i] = new LineSeries();
+                    sMatches[i].Color = ionColor;
+                    sMatches[i].StrokeThickness = 0.2;
+                    sMatches[i].Points.Add(new DataPoint(matchedIonDic.MatchedIonMz[i] + 1.007277, 0));
+                    sMatches[i].Points.Add(new DataPoint(matchedIonDic.MatchedIonMz[i] + 1.007277, matchedIonDic.MatchedIonIntensity[i]));
 
-                    var textAnno1 = new TextAnnotation();
-                    textAnno1.TextRotation=90;
-                    textAnno1.Font = "Arial";
-                    textAnno1.FontSize = 12;
-                    textAnno1.TextColor = ionColor;
-                    textAnno1.StrokeThickness = 0;
-                    textAnno1.TextPosition = s1[i].Points[1];
-                    textAnno1.Text = matchedIonDic1.MatchedIonName[i]+"-"+matchedIonDic1.MatchedIonMz[i].ToString("f3");
+                    var peakAnno = new TextAnnotation();
+                    peakAnno.TextRotation=90;
+                    peakAnno.Font = "Arial";
+                    peakAnno.FontSize = 12;
+                    peakAnno.TextColor = ionColor;
+                    peakAnno.StrokeThickness = 0;
+                    peakAnno.TextPosition = sMatches[i].Points[1];
+                    peakAnno.Text = matchedIonDic.MatchedIonName[i]+"-"+ matchedIonDic.MatchedIonMz[i].ToString("f3");
 
-                    //var textAnno2 = new TextAnnotation();
-                    //textAnno2.TextRotation=90;
-                    //textAnno2.FontSize = 12;
-                    //textAnno2.TextColor = ionColor;
-                    //textAnno2.StrokeThickness = 0;
-                    //textAnno2.TextPosition = new DataPoint(s1[i].Points[1].X+40, s1[i].Points[1].Y);
-                    //textAnno2.Text = matchedIonDic1.MatchedIonName[i];
-
-                    model.Annotations.Add(textAnno1);
-                    //model.Annotations.Add(textAnno2);
-                    model.Series.Add(s1[i]);
+                    model.Annotations.Add(peakAnno);
+                    model.Series.Add(sMatches[i]);
                 }
 
             }
@@ -161,6 +156,7 @@ namespace ViewModels
             this.Model = model;
         }
 
+        //To Do: Crosslink annotation
         public void UpdateCrosslinkModel(Ms2ScanWithSpecificMass MsScanForDraw, PsmCross psmParentsForDraw)
         {
             var x = MsScanForDraw.TheScan.MassSpectrum.XArray;
@@ -274,6 +270,7 @@ namespace ViewModels
             this.Model = model;
         }
 
+        //To Do: Draw to pdf file
         public void XLDrawMSMatchToPdf(Ms2ScanWithSpecificMass MsScanForDraw, PsmCross psmParentsForDraw, int order, string OutputFolder)
         {
             var x = MsScanForDraw.TheScan.MassSpectrum.XArray;

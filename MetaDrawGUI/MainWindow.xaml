@@ -7,13 +7,13 @@
         xmlns:local="clr-namespace:MetaDrawGUI"
         mc:Ignorable="d"
         Title="MetaDraw" 
-        Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1000">
+        Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
     <DockPanel>
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*"/>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="5*"/>
             </Grid.ColumnDefinitions>
             <Grid>
                 <Grid.RowDefinitions>
@@ -44,9 +44,8 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="30"/>
-                            <RowDefinition Height="30"/>
                         </Grid.RowDefinitions>
-                        <DataGrid x:Name="dataGridResultFiles" ItemsSource="{Binding}" Height="60" VerticalAlignment="Top" >
+                        <DataGrid x:Name="dataGridResultFiles" ItemsSource="{Binding}" >
 
                             <DataGrid.Resources>
 
@@ -56,10 +55,6 @@
                             <Button x:Name="btnAddResultFiles" Content="Add" Click="btnAddResults_Click" Height="30" VerticalAlignment="Top"/>
                             <Button x:Name="btnClearResultFiles" Content="Clear" Click="btnClearFiles_Click"/>
                         </StackPanel>
-                        <!--<StackPanel  Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left">
-                            <Label Content=" Ouput Folder"/>
-                            <TextBox x:Name="txtBoxOutputFolder" Width="150"/>
-                        </StackPanel>-->
                     </Grid>
                 </GroupBox>
                 <GroupBox Header="Spectra" Name="gbSpectra" Grid.Row="3">
@@ -68,6 +63,7 @@
                             <RowDefinition Height="1*"/>
                             <RowDefinition Height="3*"/>
                             <RowDefinition Height="1*"/>
+                            <RowDefinition Height="3*"/>
                         </Grid.RowDefinitions>
                         <Grid Grid.Row="0">
                             <Grid.ColumnDefinitions>
@@ -92,6 +88,27 @@
                             <TextBox FontStyle="Oblique" x:Name="txtScanNum" Grid.Column="0" Text="Scan Number" MaxHeight="26" GotFocus="clearText" LostFocus="restoreText"/>
                             <Button x:Name="btnDraw" Grid.Column="1" Margin="2 0 0 0" Content="Draw" Click="btnDraw_Click" MaxHeight="26" IsEnabled="False"/>
                         </Grid>
+                        <!--<StackPanel  Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Label Content=" Ouput Folder"/>
+                            <TextBox x:Name="txtBoxOutputFolder" Width="150"/>
+                        </StackPanel>-->
+                        <GroupBox Header="Fragment Ion match Parameters" Grid.Row="3">
+                            <Grid>
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
+                                        <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" TextChanged="productMassToleranceTextBox_TextChanged" />
+                                        <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left"  />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <CheckBox x:Name="bCheckBox" Content="b ions" Checked="bCheckBox_Checked" />
+                                        <CheckBox x:Name="yCheckBox" Content="y ions" Checked="yCheckBox_Checked" />
+                                        <CheckBox x:Name="cCheckBox" Content="c ions" Checked="cCheckBox_Checked" />
+                                        <CheckBox x:Name="zdotCheckBox" Content="zdot ions" Checked="zdotCheckBox_Checked" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
                     </Grid>
                 </GroupBox>
             </Grid>

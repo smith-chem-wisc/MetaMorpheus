@@ -12,6 +12,8 @@ using MzLibUtil;
 using System.Text.RegularExpressions;
 using MassSpectrometry;
 using OxyPlot;
+using System.Globalization;
+
 namespace MetaDrawGUI
 {
     /// <summary>
@@ -22,10 +24,10 @@ namespace MetaDrawGUI
         private readonly ObservableCollection<RawDataForDataGrid> spectraFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<RawDataForDataGrid> resultFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private MainViewModel mainViewModel = null;
-        private List<Ms2ScanWithSpecificMass> arrayOfMs2ScansSortedByMass = null;
         private MsDataFile MsDataFile = null;   
         private List<PsmDraw> PSMs = null;
         private readonly ObservableCollection<SpectrumForDataGrid> spectrumNumsObservableCollection = new ObservableCollection<SpectrumForDataGrid>();
+        private CommonParameters CommonParameters;
 
         public MainWindow()
         {
@@ -43,7 +45,11 @@ namespace MetaDrawGUI
             dataGridScanNums.DataContext = spectrumNumsObservableCollection;
 
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
-            
+
+            CommonParameters = new CommonParameters();
+            productMassToleranceComboBox.Items.Add("Da");
+            productMassToleranceComboBox.Items.Add("ppm");
+            UpdateFieldsFromPanel();
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -156,13 +162,6 @@ namespace MetaDrawGUI
             return false;
         }
 
-        //Reading the MS2 scans is time consuming and require lot of memory. There must be other ways to do this!. 
-        //Also limit to only one file per time. 
-        private void btnLoadScans_Click(object sender, RoutedEventArgs e)
-        {
-            
-        }
-
         /*private void UpdateOutputFolderTextbox()
         {
             if (spectraFilesObservableCollection.Any())
@@ -205,8 +204,6 @@ namespace MetaDrawGUI
             LoadScans loadScans = new LoadScans(spectraFilesObservableCollection.Where(b => b.Use).First().FilePath,null);
 
             MsDataFile = loadScans.Run();
-
-            //arrayOfMs2ScansSortedByMass = loadScans.arrayOfMs2ScansSortedByMass.ToList();
             
             btnReadResultFile.IsEnabled = true;
 
@@ -255,22 +252,33 @@ namespace MetaDrawGUI
                 return;
             }
 
-            //Only draw scan, maybe for future use 
-            //mainViewModel.UpdateScanModel(msScanForDraw);
-
             var msScanForDraw = MsDataFile.GetAllScansList().Where(p => p.OneBasedScanNumber == x).First();
 
             PsmDraw psmDraw = PSMs.Where(p => p.ScanNumber == x).First();
 
-            //The parameters below need to be set by users. Change GUI.
-            var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
-            Tolerance productMassTolerance = new PpmTolerance(20);
+            var lp = new List<ProductType>();
+            if (CommonParameters.BIons)
+            {
+                lp.Add(ProductType.BnoB1ions);
+            }
+            if (CommonParameters.YIons)
+            {
+                lp.Add(ProductType.Y);
+            }
+            if (CommonParameters.CIons)
+            {
+                lp.Add(ProductType.C);
+            }
+            if (CommonParameters.ZdotIons)
+            {
+                lp.Add(ProductType.Zdot);
+            }
 
             var pmm = PsmDraw.XlCalculateTotalProductMassesForSingle(psmDraw, lp, false);
 
             var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
 
-            double pmmScore = PsmCross.XlMatchIons(msScanForDraw, productMassTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+            double pmmScore = PsmCross.XlMatchIons(msScanForDraw, CommonParameters.ProductMassTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
 
             psmDraw.MatchedIonInfo = matchedIonMassesListPositiveIsMatch;
 
@@ -305,6 +313,48 @@ namespace MetaDrawGUI
             TextBox tb = (TextBox)sender;
             if(tb.Text.Equals(string.Empty))
                 tb.Text = "Scan Number";
+        }
+
+        private void bCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CommonParameters.BIons = true;
+        }
+
+        private void yCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CommonParameters.YIons = true;
+        }
+
+        private void cCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CommonParameters.CIons = true;
+        }
+
+        private void zdotCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CommonParameters.ZdotIons = true;
+        }
+
+        private void productMassToleranceTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (productMassToleranceComboBox.SelectedIndex == 0)
+            {
+                CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                CommonParameters.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            }
+        }
+
+        private void UpdateFieldsFromPanel()
+        {
+            bCheckBox.IsChecked = CommonParameters.BIons;
+            yCheckBox.IsChecked = CommonParameters.YIons;
+            cCheckBox.IsChecked = CommonParameters.CIons;
+            zdotCheckBox.IsChecked = CommonParameters.ZdotIons;
+            productMassToleranceTextBox.Text = CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            productMassToleranceComboBox.SelectedIndex = CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
         }
     }
 }
