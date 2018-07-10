@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

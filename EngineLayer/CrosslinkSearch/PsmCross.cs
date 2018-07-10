@@ -1,7 +1,8 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -65,7 +66,7 @@ namespace EngineLayer.CrosslinkSearch
             if (double.IsNaN(currentTheoreticalMass))
                 return 0;
 
-            double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+            double currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
 
             int testTheoreticalIndex;
             double testTheoreticalMZ;
@@ -87,7 +88,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet, move to next experimental
                 else if (currentExperimentalMZ < currentTheoreticalMz)
@@ -103,7 +104,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
 
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
@@ -123,7 +124,7 @@ namespace EngineLayer.CrosslinkSearch
                         if (testTheoreticalIndex == TotalProductsHere)
                             break;
                         testTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[testTheoreticalIndex];
-                        testTheoreticalMZ = testTheoreticalMass + Constants.protonMass;
+                        testTheoreticalMZ = testTheoreticalMass + Constants.ProtonMass;
                     }
 
                     experimentalIndex--;

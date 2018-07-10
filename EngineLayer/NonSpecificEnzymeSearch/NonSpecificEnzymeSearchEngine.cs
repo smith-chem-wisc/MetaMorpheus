@@ -1,4 +1,6 @@
 ﻿using Chemistry;
+using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -28,7 +30,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             double progress = 0;
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + CurrentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             byte byteScoreCutoff = (byte)commonParameters.ScoreCutoff;
 
@@ -162,7 +164,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 //if the theoretical and experimental have the same mass
                 if (peptide.NTerminalMasses.Count() > localminPeptideLength)
                 {
-                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
+                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.ProtonMass;
                     int notch = searchMode.Accepts(scanPrecursorMass, totalMass);
                     if (notch >= 0)
                     {
@@ -188,7 +190,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 //if the theoretical and experimental have the same mass
                 if (peptide.CTerminalMasses.Count() > localminPeptideLength)
                 {
-                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
+                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.ProtonMass;
                     int notch = searchMode.Accepts(scanPrecursorMass, totalMass);
                     if (notch >= 0)
                     {

@@ -12,8 +12,8 @@ namespace EngineLayer
     {
         protected static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
         {
-            { DissociationType.HCD, Constants.protonMass },
-            { DissociationType.ETD, 2*Constants.protonMass }
+            { DissociationType.HCD, Constants.ProtonMass },
+            { DissociationType.ETD, 2*Constants.ProtonMass }
         };
 
         protected readonly CommonParameters commonParameters;
@@ -53,7 +53,7 @@ namespace EngineLayer
             if (double.IsNaN(currentTheoreticalMass))
                 return;
 
-            double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+            double currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
             int testTheoreticalIndex;
             double testTheoreticalMass;
             double testTheoreticalMz;
@@ -74,14 +74,14 @@ namespace EngineLayer
                     matchedIonSeries.Add(++currentTheoreticalIndex); //++ because there's no such thing as a y0 ion.
                     matchedIonMassToChargeRatios.Add(currentTheoreticalMz);
                     matchedIonIntensitiesList.Add(experimental_intensities[experimentalIndex]);
-                    double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
+                    double currentExperimentalMass = currentExperimentalMz - Constants.ProtonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet
                 else if (currentExperimentalMz > currentTheoreticalMz)
@@ -91,7 +91,7 @@ namespace EngineLayer
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
 
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
@@ -110,7 +110,7 @@ namespace EngineLayer
                         if (testTheoreticalIndex == TotalProductsHere)
                             break;
                         testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
-                        testTheoreticalMz = testTheoreticalMass + Constants.protonMass;
+                        testTheoreticalMz = testTheoreticalMass + Constants.ProtonMass;
                     }
                     experimentalIndex--;
                 }
@@ -223,7 +223,7 @@ namespace EngineLayer
             if (double.IsNaN(currentTheoreticalMass))
                 return 0;
 
-            double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+            double currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
             int testTheoreticalIndex;
             double testTheoreticalMz;
 
@@ -247,7 +247,7 @@ namespace EngineLayer
                     currentTheoreticalIndex++; //prevent multi counting
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
+                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.ProtonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet
                 else if (currentExperimentalMz > currentTheoreticalMz)
@@ -256,7 +256,7 @@ namespace EngineLayer
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
+                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.ProtonMass;
 
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
@@ -272,7 +272,7 @@ namespace EngineLayer
                         testTheoreticalIndex++;
                         if (testTheoreticalIndex == TotalProductsHere)
                             break;
-                        testTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex] + Constants.protonMass;
+                        testTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex] + Constants.ProtonMass;
                     }
                     experimentalIndex--;
                 }

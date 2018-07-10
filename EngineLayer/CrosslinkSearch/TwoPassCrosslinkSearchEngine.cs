@@ -1,5 +1,6 @@
 ﻿using MassSpectrometry;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

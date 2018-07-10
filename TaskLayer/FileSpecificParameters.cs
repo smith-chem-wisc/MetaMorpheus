@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
+using Proteomics.ProteolyticDigestion;
 
 namespace TaskLayer
 {

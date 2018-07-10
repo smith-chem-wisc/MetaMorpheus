@@ -1,4 +1,5 @@
 ﻿using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Linq;
 /// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
 /// monoisopic searches.
 /// </summary>
-/// 
+///
 
 namespace EngineLayer.Localization
 {
@@ -30,7 +31,7 @@ namespace EngineLayer.Localization
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications)
             {

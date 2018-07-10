@@ -1,5 +1,7 @@
 ﻿using Chemistry;
+using MassSpectrometry;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
 using System.IO;

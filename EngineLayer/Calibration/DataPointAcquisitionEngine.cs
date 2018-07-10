@@ -1,7 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -80,9 +80,9 @@ namespace EngineLayer.Calibration
 
                     // Get the peptide, don't forget to add the modifications!!!!
                     var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
-                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
+                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.AllModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
                         continue;
-                    Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
+                    Proteomics.AminoAcidPolymer.Peptide coolPeptide = new Proteomics.AminoAcidPolymer.Peptide(SequenceWithChemicalFormulas);
 
                     var ms2tuple = SearchMS2Spectrum(MyMsDataFile.GetOneBasedScan(ms2scanNumber), identification);
 

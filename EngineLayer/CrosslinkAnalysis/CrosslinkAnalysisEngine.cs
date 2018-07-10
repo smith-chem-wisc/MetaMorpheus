@@ -1,5 +1,7 @@
 ﻿using EngineLayer.CrosslinkSearch;
+using MassSpectrometry;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
