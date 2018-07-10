@@ -36,11 +36,9 @@ namespace MetaMorpheusGUI
 
         #endregion Internal Properties
 
-        #region Private Methods
-
         // write the toml settings file on clicking "save"
         private void Save_Click(object sender, RoutedEventArgs e)
-        {         
+        {
             var parametersToWrite = new FileSpecificParameters();
 
             // parse the file-specific parameters to text
@@ -48,9 +46,9 @@ namespace MetaMorpheusGUI
             if (fileSpecificPrecursorMassTolEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                double value = 0;
-                if (double.TryParse(precursorMassToleranceTextBox.Text, out value))
+                if (GlobalGuiSettings.CheckPrecursorMassTolerance(precursorMassToleranceTextBox.Text))
                 {
+                    double value = double.Parse(precursorMassToleranceTextBox.Text);
                     if (precursorMassToleranceComboBox.SelectedIndex == 0)
                     {
                         parametersToWrite.PrecursorMassTolerance = new AbsoluteTolerance(value);
@@ -62,16 +60,15 @@ namespace MetaMorpheusGUI
                 }
                 else
                 {
-                    MessageBox.Show("Precursor tolerance must be a number", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                     return;
                 }
             }
             if (fileSpecificProductMassTolEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                double value = 0;
-                if (double.TryParse(productMassToleranceTextBox.Text, out value))
+                if (GlobalGuiSettings.CheckProductMassTolerance(productMassToleranceTextBox.Text))
                 {
+                    double value = double.Parse(productMassToleranceTextBox.Text);
                     if (productMassToleranceComboBox.SelectedIndex == 0)
                     {
                         parametersToWrite.ProductMassTolerance = new AbsoluteTolerance(value);
@@ -83,7 +80,6 @@ namespace MetaMorpheusGUI
                 }
                 else
                 {
-                    MessageBox.Show("Product tolerance must be a number", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                     return;
                 }
             }
@@ -101,50 +97,45 @@ namespace MetaMorpheusGUI
                 }
                 else
                 {
-                    MessageBox.Show("Min peptide length must be an integer larger than 0", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                    MessageBox.Show("The minimum peptide length must be a positive integer");
                     return;
                 }
             }
             if (fileSpecificMaxPeptideLengthEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                if (string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text))
+                string lengthMaxPeptide = GlobalGuiSettings.MaxValueConversion(MaxPeptideLengthTextBox.Text);
+                if (GlobalGuiSettings.CheckPeptideLength(MinPeptideLengthTextBox.Text, lengthMaxPeptide))
                 {
-                    parametersToWrite.MaxPeptideLength = int.MaxValue;
-                }
-                else if (int.TryParse(MaxPeptideLengthTextBox.Text, out int i) && i > 0)
-                {
-                    parametersToWrite.MaxPeptideLength = i;
+                    parametersToWrite.MaxPeptideLength = int.Parse(lengthMaxPeptide);
                 }
                 else
                 {
-                    MessageBox.Show("Max peptide length must be an integer larger than 0, or left blank", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                     return;
                 }
             }
             if (fileSpecificMissedCleavagesEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                if (int.TryParse(missedCleavagesTextBox.Text, out int i) && i >= 0)
+                string lengthCleavage = GlobalGuiSettings.MaxValueConversion(missedCleavagesTextBox.Text);
+                if (GlobalGuiSettings.CheckMaxMissedCleavages(lengthCleavage))
                 {
-                    parametersToWrite.MaxMissedCleavages = i;
+                    parametersToWrite.MaxMissedCleavages = int.Parse(lengthCleavage);
                 }
                 else
                 {
-                    MessageBox.Show("Missed cleavages must be an integer greater than or equal to 0", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                     return;
                 }
             }
             if (fileSpecificMaxModNumEnabled.IsChecked.Value)
             {
                 paramsToSaveCount++;
-                if (int.TryParse(MaxModNumTextBox.Text, out int i) && i >= 0)
+                if (GlobalGuiSettings.CheckMaxModsPerPeptide(MaxModNumTextBox.Text))
                 {
-                    parametersToWrite.MaxModsForPeptide = i;
+                    parametersToWrite.MaxModsForPeptide = int.Parse(MaxModNumTextBox.Text);
                 }
                 else
                 {
-                    MessageBox.Show("Mods per peptide must be an integer greater than or equal to 0", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                     return;
                 }
             }
@@ -160,14 +151,7 @@ namespace MetaMorpheusGUI
             //}
 
             // write parameters to toml files for the selected spectra files
-            string fieldNotUsed = "1";
 
-            if (!GlobalGuiSettings.CheckGeneralFilters(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
-                 fieldNotUsed, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, MaxModNumTextBox.Text, fieldNotUsed))
-            {
-                return;
-            }
 
             var tomlPathsForSelectedFiles = SelectedSpectra.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
             foreach (var tomlToWrite in tomlPathsForSelectedFiles)
@@ -206,7 +190,7 @@ namespace MetaMorpheusGUI
             int tempMaxPeptideLength = tempCommonParams.DigestionParams.MaxPeptideLength;
             int tempMaxMissedCleavages = tempCommonParams.DigestionParams.MaxMissedCleavages;
             int tempMaxModsForPeptide = tempCommonParams.DigestionParams.MaxModsForPeptide;
-            
+
             // do any of the selected files already have file-specific parameters specified?
             var spectraFiles = SelectedSpectra.Select(p => p.FilePath);
             foreach (string file in spectraFiles)
@@ -268,10 +252,10 @@ namespace MetaMorpheusGUI
             }
 
             DigestionParams digestParams = new DigestionParams(
-                protease: tempProtease.Name, 
-                MaxMissedCleavages: tempMaxMissedCleavages, 
-                MinPeptideLength: tempMinPeptideLength, 
-                MaxPeptideLength: tempMaxPeptideLength, 
+                protease: tempProtease.Name,
+                MaxMissedCleavages: tempMaxMissedCleavages,
+                MinPeptideLength: tempMinPeptideLength,
+                MaxPeptideLength: tempMaxPeptideLength,
                 MaxModsForPeptides: tempMaxModsForPeptide);
 
             tempCommonParams.SetDigestionParams(digestParams);
@@ -302,8 +286,10 @@ namespace MetaMorpheusGUI
             }
 
             MaxModNumTextBox.Text = tempCommonParams.DigestionParams.MaxModsForPeptide.ToString();
-            missedCleavagesTextBox.Text = tempCommonParams.DigestionParams.MaxMissedCleavages.ToString();
-
+            if (int.MaxValue != tempCommonParams.DigestionParams.MaxMissedCleavages)
+            {
+                missedCleavagesTextBox.Text = tempCommonParams.DigestionParams.MaxMissedCleavages.ToString();
+            }
             //yCheckBox.IsChecked = tempCommonParams.YIons;
             //bCheckBox.IsChecked = tempCommonParams.BIons;
             //cCheckBox.IsChecked = tempCommonParams.CIons;
@@ -314,7 +300,5 @@ namespace MetaMorpheusGUI
         {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
-
-        #endregion Private Methods
     }
 }
