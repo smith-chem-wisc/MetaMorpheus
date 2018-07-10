@@ -46,10 +46,10 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
-            //ensures that protein out put contins the correct number of proteins to match the folowing conditions.
-            // all proteins in DB have baseSequence!=null (not ambiguous)
-            // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(proteins.Count(), 18); //used to be 20 before I changed the list of mods
+            //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
+                // all proteins in DB have baseSequence!=null (not ambiguous)
+                // all proteins that belong to a protein group are written to DB
+            Assert.AreEqual(proteins.Count(),20);
             int totalNumberOfMods = 0;
             foreach (Protein p in proteins)
             {
@@ -110,7 +110,6 @@ namespace Test
             Protein TestProteinWithMod = new Protein("PEPTID", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
 
             //First Write XML Database
-
             string xmlName = "okkk.xml";
 
             //Add Mod to list and write XML input database
@@ -227,7 +226,6 @@ namespace Test
             Protein TestProteinWithModObsevred = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere2);
 
             //First Write XML Database
-
             string xmlName = "selectedMods.xml";
             string xmlName2 = "selectedModsObvs.xml";
 
