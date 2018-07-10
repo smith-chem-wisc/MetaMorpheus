@@ -111,10 +111,17 @@ namespace EngineLayer.Calibration
 
         private void CalibrateSpectra(IPredictorModel<double> ms1predictor, IPredictorModel<double> ms2predictor)
         {
-            Parallel.ForEach(Partitioner.Create(1, MyMsDataFile.NumSpectra + 1), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
+            Parallel.ForEach(Partitioner.Create(1, MyMsDataFile.NumSpectra + 1), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
               {
                   for (int i = fff.Item1; i < fff.Item2; i++)
                   {
+                      // Stop loop if canceled
+                      if (GlobalVariables.StopLoops)
+                      {
+                          loopState.Stop();
+                          return;
+                      }
+
                       var scan = MyMsDataFile.GetOneBasedScan(i);
 
                       if (scan.MsnOrder == 2)

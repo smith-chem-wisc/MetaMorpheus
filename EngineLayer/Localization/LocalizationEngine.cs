@@ -35,6 +35,9 @@ namespace EngineLayer.Localization
 
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications)
             {
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
                 psm.MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
                 psm.MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
@@ -65,6 +68,9 @@ namespace EngineLayer.Localization
 
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
                 var theScan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 double thePrecursorMass = psm.ScanPrecursorMass;
 
