@@ -5,6 +5,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,6 @@ namespace Test
     [TestFixture]
     public static class GptmdEngineTest
     {
-
         [Test]
         public static void TestGptmdEngine()
         {
@@ -47,7 +47,6 @@ namespace Test
                 {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
 
-           
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
             newPsm.MatchToProteinLinkedPeptides(matching);
@@ -89,7 +88,6 @@ namespace Test
                 {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
 
-          
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
@@ -106,6 +104,5 @@ namespace Test
             Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.id.Equals("21")).Count());
             Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.id.Equals("16")).Count());
         }
-
     }
 }

@@ -7,6 +7,8 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;

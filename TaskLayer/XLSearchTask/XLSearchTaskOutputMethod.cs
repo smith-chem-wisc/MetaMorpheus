@@ -349,14 +349,14 @@ namespace TaskLayer
             var searchHits = new List<pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit>();
             for (int i = 0; i < items.Count; i++)
             {
-                int modsFixedNum = items[i].CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Count;
+                int modsFixedNum = items[i].CompactPeptides.First().Value.Item2.First().AllModsOneIsNterminus.Count;
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
                 for (int j = 0; j < modsFixedNum; j++)
                 {
                     var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                     {
-                        mass = items[i].CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Values.Select(p => p.monoisotopicMass).ToList()[j],
-                        position = (items[i].CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Keys.ToList()[j] - 1).ToString()
+                        mass = items[i].CompactPeptides.First().Value.Item2.First().AllModsOneIsNterminus.Values.Select(p => p.monoisotopicMass).ToList()[j],
+                        position = (items[i].CompactPeptides.First().Value.Item2.First().AllModsOneIsNterminus.Keys.ToList()[j] - 1).ToString()
                     };
                     mods.Add(mod);
                 }
@@ -426,14 +426,14 @@ namespace TaskLayer
                 }
                 if (items[i].CrossType == PsmCrossType.Inter || items[i].CrossType == PsmCrossType.Intra || items[i].CrossType == PsmCrossType.Cross)
                 {
-                    int modsFixedNumBeta = items[i].BetaPsmCross.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Count;
+                    int modsFixedNumBeta = items[i].BetaPsmCross.CompactPeptides.First().Value.Item2.First().AllModsOneIsNterminus.Count;
                     var modsBeta = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
                     for (int j = 0; j < modsFixedNumBeta; j++)
                     {
                         var modBeta = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                         {
-                            mass = items[i].BetaPsmCross.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Values.Select(p => p.monoisotopicMass).ToList()[j],
-                            position = items[i].BetaPsmCross.CompactPeptides.First().Value.Item2.First().allModsOneIsNterminus.Keys.ToList()[j].ToString()
+                            mass = items[i].BetaPsmCross.CompactPeptides.First().Value.Item2.First().AllModsOneIsNterminus.Values.Select(p => p.monoisotopicMass).ToList()[j],
+                            position = items[i].BetaPsmCross.CompactPeptides.First().Value.Item2.First().AllModsOneIsNterminus.Keys.ToList()[j].ToString()
                         };
                         modsBeta.Add(modBeta);
                     }

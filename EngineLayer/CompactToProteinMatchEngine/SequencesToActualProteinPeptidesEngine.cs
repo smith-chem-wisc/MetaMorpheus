@@ -1,4 +1,6 @@
-﻿using Proteomics;
+﻿using MassSpectrometry;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +24,7 @@ namespace EngineLayer
             AllPsms = allPsms;
             FixedModifications = fixedModifications;
             VariableModifications = variableModifications;
-            TerminusType = ProductTypeMethod.IdentifyTerminusType(ionTypes);
+            TerminusType = ProductTypeMethods.IdentifyTerminusType(ionTypes);
             CollectionOfDigestionParams = collectionOfDigestionParams;
             ReportAllAmbiguity = reportAllAmbiguity;
         }

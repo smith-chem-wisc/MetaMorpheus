@@ -1,4 +1,5 @@
 ﻿using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 
