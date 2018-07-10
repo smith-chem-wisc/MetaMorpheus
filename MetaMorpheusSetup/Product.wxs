@@ -335,17 +335,6 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
       </Component>
-      <Component Id="Appsrc_Mods_CommonArtifacts.txt" Guid="36555bef-88bf-4e06-87c7-ff2b196d1d0a">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_Mods_CommonArtifacts.txt" Name="CommonArtifacts.txt" Source="$(var.GUI_TargetDir)Mods\CommonArtifacts.txt" />
-      </Component>
-      <Component Id="Appsrc_Mods_CommonBiological.txt" Guid="e6ec148f-5dc6-46d4-9ecf-272d3c553fdd">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_Mods_CommonBiological.txt" Name="CommonBiological.txt" Source="$(var.GUI_TargetDir)Mods\CommonBiological.txt" />
-      </Component>
-      
       <Component Id="Appsrc_Mods_Crosslink.txt" Guid="172f7116-4772-4f3b-a48b-b1e98a48b73d">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
@@ -356,11 +345,21 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_RNA.txt" Name="RNA.txt" Source="$(var.GUI_TargetDir)Mods\RNA.txt" />
       </Component>
+      <!--<Component Id="Appsrc_Mods_CommonArtifacts.txt" Guid="36555bef-88bf-4e06-87c7-ff2b196d1d0a">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_CommonArtifacts.txt" Name="CommonArtifacts.txt" Source="$(var.GUI_TargetDir)Mods\CommonArtifacts.txt" />
+      </Component>
+      <Component Id="Appsrc_Mods_CommonBiological.txt" Guid="e6ec148f-5dc6-46d4-9ecf-272d3c553fdd">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Mods_CommonBiological.txt" Name="CommonBiological.txt" Source="$(var.GUI_TargetDir)Mods\CommonBiological.txt" />
+      </Component>
       <Component Id="Appsrc_Mods_RareMods.txt" Guid="668ab900-9aa3-4efe-9644-976bc2e658b8">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_RareMods.txt" Name="RareMods.txt" Source="$(var.GUI_TargetDir)Mods\RareMods.txt" />
-      </Component>
+      </Component>-->
     </ComponentGroup>
   </Fragment>
 
