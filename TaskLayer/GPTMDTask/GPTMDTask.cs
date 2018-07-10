@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
+using Proteomics.ProteolyticDigestion;
 
 namespace TaskLayer
 {

@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -86,7 +87,7 @@ namespace MetaMorpheusGUI
             //cbbXLBetaprecusorMsTl.Items.Add("Absolute");
             //cbbXLBetaprecusorMsTl.Items.Add("ppm");
 
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
 
