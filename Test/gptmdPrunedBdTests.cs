@@ -14,7 +14,6 @@ namespace Test
     [TestFixture]
     public static class GptmdPrunedDbTests
     {
-        
         // want a psm whose base sequence is not ambigous but full sequence is (ptm is not localized): make sure this does not make it in DB
        
        [Test]
@@ -50,7 +49,7 @@ namespace Test
             //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
                 // all proteins in DB have baseSequence!=null (not ambiguous)
                 // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(proteins.Count(),18); //used to be 20 before I changed the list of mods
+            Assert.AreEqual(proteins.Count(),20); //used to be 20 before I changed the list of mods
             int totalNumberOfMods = 0;
             foreach (Protein p in proteins)
             {
@@ -65,7 +64,6 @@ namespace Test
         [Test]
         public static void TestPrunedDatabase()
         {
-
             //Create Search Task
             SearchTask task1 = new SearchTask
             {
@@ -80,7 +78,6 @@ namespace Test
                     }
                 },
                 CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5))
-                
             };
 
             //add task to task list
@@ -113,7 +110,6 @@ namespace Test
             Protein TestProteinWithMod = new Protein("PEPTID", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
 
             //First Write XML Database
-
             string xmlName = "okkk.xml";
 
             //Add Mod to list and write XML input database
@@ -163,7 +159,6 @@ namespace Test
         [Test]
         public static void TestUserModSelectionInPrunedDB()
         {
-
             List<(string, string)> listOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             //Create Search Task
             SearchTask task5 = new SearchTask
@@ -231,7 +226,6 @@ namespace Test
             Protein TestProteinWithModObsevred = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere2);
 
             //First Write XML Database
-
             string xmlName = "selectedMods.xml";
             string xmlName2 = "selectedModsObvs.xml";
 
@@ -297,6 +291,5 @@ namespace Test
             Assert.AreEqual(listOfLocalMods.Count, 3);
         }
     }
-
 }     
 
