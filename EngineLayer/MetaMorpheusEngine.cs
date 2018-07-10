@@ -10,8 +10,6 @@ namespace EngineLayer
 {
     public abstract class MetaMorpheusEngine
     {
-        #region Protected Fields
-
         protected static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
         {
             { DissociationType.HCD, Constants.protonMass },
@@ -22,19 +20,11 @@ namespace EngineLayer
 
         protected readonly List<string> nestedIds;
 
-        #endregion Protected Fields
-
-        #region Protected Constructors
-
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
         {
             this.commonParameters = commonParameters;
             this.nestedIds = nestedIds;
         }
-
-        #endregion Protected Constructors
-
-        #region Public Events
 
         public static event EventHandler<SingleEngineEventArgs> StartingSingleEngineHander;
 
@@ -45,10 +35,6 @@ namespace EngineLayer
         public static event EventHandler<StringEventArgs> WarnHandler;
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
-
-        #endregion Public Events
-
-        #region Public Methods
 
         public static void MatchIonsOld(MsDataScan thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<int> matchedIonSeries, List<double> matchedIonMassToChargeRatios, List<double> productMassErrorDa, List<double> productMassErrorPpm, List<double> matchedIonIntensitiesList, double precursorMass, ProductType productType, bool addCompIons)
         {
@@ -415,7 +401,7 @@ namespace EngineLayer
             //search for ions in the spectrum
             foreach (var tIon in theoreticalFragmentIons)
             {
-                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids 
+                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
                 if (double.IsNaN(tIon.Mass))
                 {
                     continue;
@@ -493,10 +479,6 @@ namespace EngineLayer
             return dissociationTypes;
         }
 
-        #endregion Public Methods
-
-        #region Protected Methods
-
         protected void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
@@ -514,10 +496,6 @@ namespace EngineLayer
 
         protected abstract MetaMorpheusEngineResults RunSpecific();
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private void StartingSingleEngine()
         {
             StartingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
@@ -527,7 +505,5 @@ namespace EngineLayer
         {
             FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
-
-        #endregion Private Methods
     }
 }

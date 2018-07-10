@@ -15,14 +15,13 @@ namespace Test
     [TestFixture]
     public static class CoIsolationTests
     {
-        #region Public Methods
 
         [Test]
         public static void TestCoIsolation()
         {
             Protease protease = new Protease("CustProtease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, deconvolutionIntensityRatio: 50, digestionParams: new DigestionParams(protease.Name, MinPeptideLength: 1));
+            CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, deconvolutionIntensityRatio: 50, digestionParams: new DigestionParams(protease.Name, minPeptideLength: 1));
           
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
@@ -89,6 +88,5 @@ namespace Test
             Assert.AreEqual("NDNK", allPsmsArray[1].BaseSequence);
         }
 
-        #endregion Public Methods
     }
 }

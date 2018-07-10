@@ -10,8 +10,6 @@ namespace EngineLayer.Neo
 {
     public static class NeoFindAmbiguity
     {
-        #region Public Fields
-
         //private BackgroundWorker worker = null;
         public static List<Protein> theoreticalProteins;
 
@@ -35,20 +33,12 @@ namespace EngineLayer.Neo
         public static Dictionary<string, List<Protein>> protDictionary = new Dictionary<string, List<Protein>>();
         public static char[] AANames = new char[20] { 'G', 'A', 'S', 'P', 'V', 'T', 'L', 'I', 'N', 'D', 'Q', 'K', 'E', 'M', 'H', 'F', 'R', 'C', 'Y', 'W' };
 
-        #endregion Public Fields
-
-        #region Private Fields
-
         private const int maxMissingConsecutivePeaks = 2;
         private const int maxNumPossibleSequences = 2000;
         private const int decimalDigitsForFragmentMassRounding = 3;
         private static readonly double waterMonoisotopicMass = Math.Round(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass, decimalDigitsForFragmentMassRounding);
 
-        #endregion Private Fields
-
         //20 common AA, ordered by mass assuming carbamido
-
-        #region Public Methods
 
         public static void FindAmbiguity(List<NeoPsm> candidates, List<Protein> theoreticalProteins, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
@@ -156,10 +146,6 @@ namespace EngineLayer.Neo
                 keys[i] = tempKeys[i];
             }
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static bool IsTooMessy(NeoPsm psm, Ms2ScanWithSpecificMass spectrum) //return true if too messy for confident identification
         {
@@ -1024,9 +1010,9 @@ namespace EngineLayer.Neo
             }
             foreach (CisParent cisParent in fusionCandidate.cisParents)
             {
-                if (cisParent.cisType < fusionCandidate.fusionType)
+                if (cisParent.CisType < fusionCandidate.fusionType)
                 {
-                    fusionCandidate.fusionType = cisParent.cisType;
+                    fusionCandidate.fusionType = cisParent.CisType;
                 }
             }
         }
@@ -1154,7 +1140,5 @@ namespace EngineLayer.Neo
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

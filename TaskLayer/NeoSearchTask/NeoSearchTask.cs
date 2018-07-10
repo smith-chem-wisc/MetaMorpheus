@@ -7,25 +7,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
     public class NeoSearchTask : MetaMorpheusTask
     {
-        #region Private Fields
-
         private List<DbForTask> StoredDatabases = new List<DbForTask>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public NeoSearchTask() : base(MyTask.Neo)
         {
             NeoParameters = new NeoParameters();
-            var tempDigParams = new DigestionParams(protease: "non-specific", MaxMissedCleavages: 12, MinPeptideLength: 8, MaxPeptideLength: 13);
+            var tempDigParams = new DigestionParams(protease: "non-specific", maxMissedCleavages: 12, minPeptideLength: 8, maxPeptideLength: 13);
 
             CommonParameters = new CommonParameters(
                 digestionParams: tempDigParams,
@@ -34,32 +27,16 @@ namespace TaskLayer
                 productMassTolerance: new PpmTolerance(double.MaxValue));
         }
 
-        #endregion Public Constructors
-
-        #region Public Enums
-
         public enum NeoTaskType { AggregateTargetDecoyFiles, GenerateSplicedPeptides, AggregateNormalSplicedFiles, SearchTransDb };
-
-        #endregion Public Enums
-
-        #region Public Properties
 
         public NeoTaskType NeoType { get; set; }
 
         public NeoParameters NeoParameters { get; set; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public NeoSearchTask Clone()
         {
             return (NeoSearchTask)this.MemberwiseClone();
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -129,13 +106,9 @@ namespace TaskLayer
                     //Import Database
                     Status("Loading modifications...", taskId);
 
-                    #region Load modifications
-
                     List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
                     List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
                     List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
-
-                    #endregion Load modifications
 
                     // load proteins
                     List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes);
@@ -205,7 +178,5 @@ namespace TaskLayer
 
             return MyTaskResults;
         }
-
-        #endregion Protected Methods
     }
 }

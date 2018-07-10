@@ -1,50 +1,47 @@
 ﻿using MassSpectrometry;
-using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+/// <summary>
+/// The mass difference between an experimental precursor and the theoretical mass of the assigned peptide is determined. The LocalizationEngine attempts
+/// to localize this mass to one of the residues. It does this by adding the mass difference to each theoretical ion mass and looking for additional matches
+/// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
+/// monoisopic searches.
+/// </summary>
+/// 
 
 namespace EngineLayer.Localization
 {
     public class LocalizationEngine : MetaMorpheusEngine
     {
-        #region Private Fields
-
-        private readonly IEnumerable<PeptideSpectralMatch> allResultingIdentifications;
-        private readonly List<ProductType> productTypes;
-        private readonly MsDataFile myMsDataFile;
-        private readonly List<DissociationType> dissociationTypes;
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private readonly IEnumerable<PeptideSpectralMatch> AllResultingIdentifications;
+        private readonly List<ProductType> ProductTypes;
+        private readonly MsDataFile MyMsDataFile;
+        private readonly List<DissociationType> DissociationTypes;
 
         public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.allResultingIdentifications = allResultingIdentifications;
-            this.productTypes = lp;
-            this.myMsDataFile = myMsDataFile;
-            this.dissociationTypes = DetermineDissociationType(lp);
+            AllResultingIdentifications = allResultingIdentifications;
+            ProductTypes = lp;
+            MyMsDataFile = myMsDataFile;
+            DissociationTypes = DetermineDissociationType(lp);
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(productTypes);
+            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
 
-            foreach (PeptideSpectralMatch psm in allResultingIdentifications)
+            foreach (PeptideSpectralMatch psm in AllResultingIdentifications)
             {
                 psm.MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
                 psm.MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
                 psm.MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
-                var theScan = myMsDataFile.GetOneBasedScan(psm.ScanNumber);
+                var theScan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 double thePrecursorMass = psm.ScanPrecursorMass;
-                foreach (ProductType productType in productTypes)
+                foreach (ProductType productType in ProductTypes)
                 {
                     var sortedTheoreticalProductMasses = psm.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { productType });
                     Array.Sort(sortedTheoreticalProductMasses);
@@ -65,9 +62,9 @@ namespace EngineLayer.Localization
                 }
             }
 
-            foreach (PeptideSpectralMatch psm in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
+            foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
-                var theScan = myMsDataFile.GetOneBasedScan(psm.ScanNumber);
+                var theScan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 double thePrecursorMass = psm.ScanPrecursorMass;
 
                 if (psm.FullSequence == null)
@@ -82,9 +79,9 @@ namespace EngineLayer.Localization
                 {
                     PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, psm.ScanPrecursorMass - representative.MonoisotopicMass);
 
-                    var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(productTypes);
+                    var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
                     Array.Sort(gg);
-                    var score = CalculatePeptideScoreOld(theScan, commonParameters.ProductMassTolerance, gg, thePrecursorMass, dissociationTypes, commonParameters.AddCompIons, 0);
+                    var score = CalculatePeptideScoreOld(theScan, commonParameters.ProductMassTolerance, gg, thePrecursorMass, DissociationTypes, commonParameters.AddCompIons, 0);
                     localizedScores.Add(score);
                 }
 
@@ -92,7 +89,5 @@ namespace EngineLayer.Localization
             }
             return new LocalizationEngineResults(this);
         }
-
-        #endregion Protected Methods
     }
 }

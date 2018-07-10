@@ -15,7 +15,6 @@ namespace Test
     [TestFixture]
     public static class AnalysisEngineTests
     {
-        #region Public Methods
 
         [Test]
         public static void TestAnalysisEngineTests()
@@ -25,9 +24,9 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
                     protease: protease.Name, 
-                    MaxMissedCleavages: 0, 
-                    MinPeptideLength: 1, 
-                    MaxModificationIsoforms: 1042), 
+                    maxMissedCleavages: 0, 
+                    minPeptideLength: 1, 
+                    maxModificationIsoforms: 1042), 
                 scoreCutoff: 1, 
                 productMassTolerance: new PpmTolerance(10));
             
@@ -112,6 +111,5 @@ namespace Test
             engine.Run();
         }
 
-        #endregion Public Methods
     }
 }
