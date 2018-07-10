@@ -1,4 +1,5 @@
 ﻿using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

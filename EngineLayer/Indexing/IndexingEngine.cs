@@ -1,4 +1,6 @@
-﻿using Proteomics;
+﻿using MassSpectrometry;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -60,7 +62,7 @@ namespace EngineLayer.Indexing
         {
             double progress = 0;
             int oldPercentProgress = 0;
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             // digest database
             HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();

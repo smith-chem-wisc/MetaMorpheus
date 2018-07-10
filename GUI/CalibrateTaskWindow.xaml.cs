@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
+using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -122,7 +123,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
                 proteaseComboBox.Items.Add(protease);
             }

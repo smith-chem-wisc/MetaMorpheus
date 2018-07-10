@@ -4,6 +4,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -38,7 +39,7 @@ namespace TaskLayer
             .ConfigureType<Protease>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())
-                    .FromToml(tmlString => GlobalVariables.ProteaseDictionary[tmlString.Value])))
+                    .FromToml(tmlString => ProteaseDictionary.Dictionary[tmlString.Value])))
             .ConfigureType<List<string>>(type => type
                     .WithConversionFor<TomlString>(convert => convert
                         .ToToml(custom => string.Join("\t", custom))
@@ -158,7 +159,7 @@ namespace TaskLayer
             int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
             int maxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxModsForPeptide;
             DigestionParams fileSpecificDigestionParams = new DigestionParams(
-                protease: protease.Name, 
+                protease: protease.Name,
                 maxMissedCleavages: maxMissedCleavages,
                 minPeptideLength: minPeptideLength,
                 maxPeptideLength: maxPeptideLength,

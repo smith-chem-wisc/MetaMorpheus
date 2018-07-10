@@ -8,6 +8,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using TaskLayer;
+using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -261,7 +262,7 @@ namespace MetaMorpheusGUI
             tempCommonParams.SetDigestionParams(digestParams);
 
             // populate the GUI
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
                 fileSpecificProtease.Items.Add(protease);
             }

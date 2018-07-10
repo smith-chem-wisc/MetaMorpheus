@@ -1,5 +1,6 @@
 ﻿using MzLibUtil;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -99,7 +100,7 @@ namespace EngineLayer.Gptmd
             {
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass))
                     yield return Mod;
-                foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
+                foreach (var modOnPsm in peptideWithSetModifications.AllModsOneIsNterminus.Values)
                     if (modOnPsm.motif.Equals(Mod.motif))
                     {
                         if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))

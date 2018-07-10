@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using Nett;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 

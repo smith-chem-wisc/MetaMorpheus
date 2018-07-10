@@ -1,6 +1,7 @@
 ﻿using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ namespace EngineLayer.ClassicSearch
 
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
             var myLocks = new object[PeptideSpectralMatches.Length];
