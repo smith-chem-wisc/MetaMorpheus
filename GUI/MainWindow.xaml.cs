@@ -1340,5 +1340,11 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
         }
+
+        private void MenuItemClickMetaDrawGUI_Click(object sender, RoutedEventArgs e)
+        {
+            MetaDrawGUI.MainWindow metaDrawGUI = new MetaDrawGUI.MainWindow();
+            metaDrawGUI.Show();
+        }
     }
 }
