@@ -54,10 +54,17 @@ namespace EngineLayer.ClassicSearch
 
             if (Proteins.Any())
             {
-                Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, partitionRange =>
+                Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (partitionRange, loopState) =>
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops)
+                        {
+                            loopState.Stop();
+                            return;
+                        }
+
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (var peptide in Proteins[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
                         {
