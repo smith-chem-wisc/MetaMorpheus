@@ -90,9 +90,17 @@ namespace TaskLayer
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
-           
+            Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
+            foreach (var huh in Parameters.AllPsms)
+            {
+                if (huh != null)
+                {
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
+
             var fdrFilteredPsms = Parameters.AllPsms.Where(p => p != null && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01);// can filter ambiguity with && here
-            
+                        
             var fdrFilteredPeptides = new HashSet<PeptideWithSetModifications>(fdrFilteredPsms.SelectMany(p => p.CompactPeptides.SelectMany(v => v.Value.Item2)));// contains ambiguous peptide ids
             var fdrFilteredCompactPepToProteinPepDictionary = compactPeptideToProteinPeptideMatching.ToDictionary(p => p.Key, p => new HashSet<PeptideWithSetModifications>(p.Value.Where(v => fdrFilteredPeptides.Contains(v))));
             fdrFilteredCompactPepToProteinPepDictionary = fdrFilteredCompactPepToProteinPepDictionary.Where(p => p.Value.Count > 0).ToDictionary(p => p.Key, p => p.Value);
@@ -103,14 +111,7 @@ namespace TaskLayer
                 proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(fdrFilteredCompactPepToProteinPepDictionary, Parameters.SearchParameters.ModPeptidesAreDifferent, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
             }
 
-            Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
-            foreach (var huh in Parameters.AllPsms)
-            {
-                if (huh != null)
-                {
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                }
-            }                      
+                                
 
             //sort the list of psms by the score used for fdr calculation
             if (fdrAnalysisResults.DeltaScoreImprovement)

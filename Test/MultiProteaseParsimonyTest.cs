@@ -28,7 +28,7 @@ namespace Test
 
             var protease = new Protease("test11", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("test2", sequencesInducingCleavage2, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("test12", sequencesInducingCleavage2, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease2.Name, protease2);
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
@@ -176,11 +176,11 @@ namespace Test
                 Assert.AreEqual("XYZ", proteinGroups.ElementAt(1).AllPeptides.ElementAt(0).BaseSequence);
                 Assert.AreEqual("test11", proteinGroups.ElementAt(1).AllPeptides.ElementAt(0).digestionParams.Protease.Name);
                 Assert.AreEqual("ABC", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).BaseSequence);
-                Assert.AreEqual("test2", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
+                Assert.AreEqual("test12", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
                 Assert.AreEqual("EFGABC", proteinGroups.ElementAt(1).AllPeptides.ElementAt(2).BaseSequence);
                 Assert.AreEqual("test11", proteinGroups.ElementAt(1).AllPeptides.ElementAt(2).digestionParams.Protease.Name);
                 Assert.AreEqual("-XYZ-EFG", proteinGroups.ElementAt(1).AllPeptides.ElementAt(3).BaseSequence);
-                Assert.AreEqual("test2", proteinGroups.ElementAt(1).AllPeptides.ElementAt(3).digestionParams.Protease.Name);
+                Assert.AreEqual("test12", proteinGroups.ElementAt(1).AllPeptides.ElementAt(3).digestionParams.Protease.Name);
                 Assert.AreEqual("ABC", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).BaseSequence);
                 Assert.AreEqual("EFGABC", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(1).BaseSequence);
                 Assert.AreEqual("-XYZ-EFG", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(2).BaseSequence);
@@ -200,11 +200,11 @@ namespace Test
                 Assert.AreEqual("XYZ", proteinGroups.ElementAt(0).AllPeptides.ElementAt(0).BaseSequence);
                 Assert.AreEqual("test11", proteinGroups.ElementAt(0).AllPeptides.ElementAt(0).digestionParams.Protease.Name);
                 Assert.AreEqual("ABC", proteinGroups.ElementAt(0).AllPeptides.ElementAt(1).BaseSequence);
-                Assert.AreEqual("test2", proteinGroups.ElementAt(0).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
+                Assert.AreEqual("test12", proteinGroups.ElementAt(0).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
                 Assert.AreEqual("EFGABC", proteinGroups.ElementAt(0).AllPeptides.ElementAt(2).BaseSequence);
-                Assert.AreEqual("test1", proteinGroups.ElementAt(0).AllPeptides.ElementAt(2).digestionParams.Protease.Name);
+                Assert.AreEqual("test11", proteinGroups.ElementAt(0).AllPeptides.ElementAt(2).digestionParams.Protease.Name);
                 Assert.AreEqual("-XYZ-EFG", proteinGroups.ElementAt(0).AllPeptides.ElementAt(3).BaseSequence);
-                Assert.AreEqual("test2", proteinGroups.ElementAt(0).AllPeptides.ElementAt(3).digestionParams.Protease.Name);
+                Assert.AreEqual("test12", proteinGroups.ElementAt(0).AllPeptides.ElementAt(3).digestionParams.Protease.Name);
                 Assert.AreEqual("ABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).BaseSequence);
                 Assert.AreEqual("EFGABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(1).BaseSequence);
                 Assert.AreEqual("-XYZ-EFG", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(2).BaseSequence);
@@ -381,9 +381,9 @@ namespace Test
             List<Tuple<string, TerminusType>> sequencesInducingCleavage = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("-", TerminusType.C), new Tuple<string, TerminusType>("Z", TerminusType.C) };
             List<Tuple<string, TerminusType>> sequencesInducingCleavage2 = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) };
 
-            var protease = new Protease("test1", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("testC", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("test2", sequencesInducingCleavage2, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("testD", sequencesInducingCleavage2, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             GlobalVariables.ProteaseDictionary.Add(protease2.Name, protease2);
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
