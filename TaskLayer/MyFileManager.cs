@@ -66,7 +66,7 @@ namespace TaskLayer
             return ThermoMsFileReaderVersionCheck.DllsNotFound;
         }
 
-        public MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
+        internal MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
         {
             FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
             if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)

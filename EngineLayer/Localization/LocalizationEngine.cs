@@ -10,11 +10,7 @@ using System.Linq;
 /// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
 /// monoisopic searches.
 /// </summary>
-<<<<<<< HEAD
 ///
-=======
-/// 
->>>>>>> b33bc8f2bfd02376747c31307ea98452972b29ea
 
 namespace EngineLayer.Localization
 {
