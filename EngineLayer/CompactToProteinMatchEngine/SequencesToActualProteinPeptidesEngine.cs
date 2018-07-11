@@ -64,10 +64,17 @@ namespace EngineLayer
             double proteinsMatched = 0;
             int oldPercentProgress = 0;
 
-            Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
+            Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
+                    {
+                        loopState.Stop();
+                        return;
+                    }
+
                     foreach (var digestionParam in CollectionOfDigestionParams)
                     {
                         foreach (var peptide in Proteins[i].Digest(digestionParam, FixedModifications, VariableModifications))

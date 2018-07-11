@@ -93,6 +93,7 @@ namespace TaskLayer
         {
             foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1))
             {
+                if (GlobalVariables.StopLoops) { break; }
                 List<(double, int)> isolatedStuff = new List<(double, int)>();
                 if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                 {
@@ -202,6 +203,7 @@ namespace TaskLayer
                 FileSpecificParameters[] fileSettingsList = new FileSpecificParameters[currentRawDataFilepathList.Count];
                 for (int i = 0; i < currentRawDataFilepathList.Count; i++)
                 {
+                    if (GlobalVariables.StopLoops) { break; }
                     string rawFilePath = currentRawDataFilepathList[i];
                     string directory = Directory.GetParent(rawFilePath).ToString();
                     string fileSpecificTomlPath = Path.Combine(directory, Path.GetFileNameWithoutExtension(rawFilePath)) + ".toml";

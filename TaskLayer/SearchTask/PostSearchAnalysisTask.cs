@@ -32,6 +32,9 @@ namespace TaskLayer
 
         public MyTaskResults Run()
         {
+            // Stop loop if canceled
+            if (GlobalVariables.StopLoops) { return Parameters.SearchTaskResults; }
+
             GroupAndOrderPSMs();
 
             if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen

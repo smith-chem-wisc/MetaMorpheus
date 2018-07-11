@@ -128,6 +128,8 @@ namespace TaskLayer
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
+                if (GlobalVariables.StopLoops) { break; }
+
                 var origDataFile = currentRawFileList[spectraFileIndex];
 
                 // mark the file as in-progress

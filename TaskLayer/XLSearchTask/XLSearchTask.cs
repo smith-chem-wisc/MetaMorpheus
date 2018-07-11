@@ -93,6 +93,8 @@ namespace TaskLayer
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
+                if (GlobalVariables.StopLoops) { break; }
+
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
                 List<PsmCross> newPsms = new List<PsmCross>();
