@@ -51,7 +51,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
-                                        <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="precursorMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS1 peaks.
@@ -66,7 +66,7 @@
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="productMassToleranceLabel" Content="Product Mass Tolerance" />
-                                        <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     Accepted tolerance between experimental and theoretical MS2 peaks.
@@ -87,7 +87,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxMissedCleavageLabel" Content="Max Missed Cleavages" />
-                                        <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     Maximum number of missed proteolytic cleavages allowed.
@@ -109,7 +109,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                        <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The minimum allowed peptide length. Must be a positive, non-zero integer.
@@ -119,7 +119,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                     <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                        <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The maximum allowed peptide length. Leave empty for no limitation.
@@ -129,7 +129,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="minimumScoreLabel" Content="Minimum score allowed:" />
-                                        <TextBox x:Name="minScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The minimum MetaMorpheus score allowed for a PSM to be reportable.
@@ -153,7 +153,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxModificationIsoformsLabel" Content="Max Modification Isoforms" />
-                                        <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The maximum number of isoforms (sequences with modifications) allowed from a given unmodified "base-sequence". 
@@ -180,7 +180,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Max Threads" />
-                                        <TextBox x:Name="maxThreadsTextBox" Width="45" PreviewTextInput="PreviewIfInt" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.

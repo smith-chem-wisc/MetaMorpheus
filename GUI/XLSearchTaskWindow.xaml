@@ -65,12 +65,12 @@
                                 </StackPanel>-->
                                 <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
-                                    <TextBox x:Name="txtXLPrecusorMsTl" Width="45" />
+                                    <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                     <ComboBox x:Name="cbbXLprecusorMsTl" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
                                     <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
-                                    <TextBox x:Name="txtXLTopNum" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
+                                    <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblXLMSMS" Content="Crosslink MS/MS Search Properties" />
@@ -115,19 +115,19 @@
                                             <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="1" Grid.Row="0" />
                                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="1">
                                                 <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" />
-                                                <TextBox x:Name="txtUdXLkerTotalMs" Width="60"/>
+                                                <TextBox x:Name="txtUdXLkerTotalMs" PreviewTextInput="CheckIfNumber" Width="60"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2">
                                                 <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass"  />
-                                                <TextBox x:Name="txtUdXLkerShortMass" Width="60"  />
+                                                <TextBox x:Name="txtUdXLkerShortMass" PreviewTextInput="CheckIfNumber" Width="60"  />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="3">
                                                 <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" />
-                                                <TextBox x:Name="txtUdXLkerLongMass" Width="60" />
+                                                <TextBox x:Name="txtUdXLkerLongMass" PreviewTextInput="CheckIfNumber" Width="60" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="4">
                                                 <Label x:Name="lblUdXLkerLoopMass" Content="Crosslinker Loop Mass" />
-                                                <TextBox x:Name="txtUdXLkerLoopMass" Width="60" />
+                                                <TextBox x:Name="txtUdXLkerLoopMass" PreviewTextInput="CheckIfNumber" Width="60" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1">
                                                 <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acids" />
@@ -189,11 +189,11 @@
                                     <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks"/>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
+                                        <TextBox x:Name="TopNPeaksTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum ratio" />
-                                        <TextBox x:Name="MinRatioCheckBox" Width="45" />
+                                        <TextBox x:Name="MinRatioTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -207,7 +207,7 @@
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox"  Width="45" />
+                                            <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber"  Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label_Copy" Content="Protease" />
@@ -215,7 +215,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="txtNumberOfDatabaseSearches" Width="45" />
+                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -225,13 +225,13 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" Width="45" />
+                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="txtMinPeptideLength"  Width="45" />
+                                            <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="txtMaxPeptideLength"  Width="45" />
+                                            <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -246,12 +246,12 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
-                                            <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                            <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
-                                            <TextBox x:Name="minScoreAllowed" Width="45" />
+                                            <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -268,7 +268,7 @@
                                     <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
-                                            <TextBox x:Name="maxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
