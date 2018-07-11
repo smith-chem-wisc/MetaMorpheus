@@ -36,6 +36,9 @@ namespace EngineLayer.FdrAnalysis
 
         private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults)
         {
+            // Stop if canceled
+            if (GlobalVariables.StopLoops) { return; }
+
             // generate the null distribution for e-value calculations
             double globalMeanScore = 0;
             int globalMeanCount = 0;
@@ -109,6 +112,9 @@ namespace EngineLayer.FdrAnalysis
             //Assign FDR values to PSMs
             for (int i = 0; i < Psms.Count; i++)
             {
+                // Stop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
                 var psm = Psms[i];
                 var isDecoy = psm.IsDecoy;
                 int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
@@ -145,6 +151,7 @@ namespace EngineLayer.FdrAnalysis
             {
                 min_q_value_notch[i] = double.PositiveInfinity;
             }
+
             //The idea here is to set previous qValues as thresholds,
             //such that a lower scoring PSM can't have a higher confidence than a higher scoring PSM
             for (int i = Psms.Count - 1; i >= 0; i--)

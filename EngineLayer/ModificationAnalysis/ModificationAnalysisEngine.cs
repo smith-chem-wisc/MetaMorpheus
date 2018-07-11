@@ -60,7 +60,7 @@ namespace EngineLayer.ModificationAnalysis
             foreach (var psm in forUnambiguouslyLocalized)
             {
                 var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
-                foreach (var nice in singlePeptide.allModsOneIsNterminus)
+                foreach (var nice in singlePeptide.AllModsOneIsNterminus)
                 {
                     int locInProtein;
                     if (nice.Key == 1)
