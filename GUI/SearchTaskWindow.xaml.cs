@@ -67,9 +67,8 @@ namespace MetaMorpheusGUI
 
         internal SearchTask TheTask { get; private set; }
 
-        #endregion Internal Properties
-
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
+        { 
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
 
@@ -341,7 +340,7 @@ namespace MetaMorpheusGUI
                 maxMissedCleavages: maxMissedCleavages,
                 minPeptideLength: minPeptideLengthValue,
                 maxPeptideLength: maxPeptideLengthValue,
-                maxModificationIsoforms: maxModificationIsoforms,
+                maxModificationIsoforms: maxModificationIsoformsValue,
                 initiatorMethionineBehavior: initiatorMethionineBehavior,
                 maxModsForPeptides: maxModsForPeptideValue);
 

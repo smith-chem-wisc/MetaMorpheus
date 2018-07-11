@@ -17,7 +17,6 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class FileSpecificParametersWindow : Window
     {
-        #region Public Constructors
 
         //Window that is opened if user wishes to change file specific settings (TOML) for 
         //individual or multiple spectra files. Creates a toml file where settings can be
@@ -29,13 +28,7 @@ namespace MetaMorpheusGUI
             PopulateChoices();
         }
 
-        #endregion Public Constructors
-
-        #region Internal Properties
-
         internal ObservableCollection<RawDataForDataGrid> SelectedSpectra { get; private set; }
-
-        #endregion Internal Properties
 
         // write the toml settings file on clicking "save"
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -254,10 +247,10 @@ namespace MetaMorpheusGUI
 
             DigestionParams digestParams = new DigestionParams(
                 protease: tempProtease.Name,
-                MaxMissedCleavages: tempMaxMissedCleavages,
-                MinPeptideLength: tempMinPeptideLength,
-                MaxPeptideLength: tempMaxPeptideLength,
-                MaxModsForPeptides: tempMaxModsForPeptide);
+                maxMissedCleavages: tempMaxMissedCleavages,
+                minPeptideLength: tempMinPeptideLength,
+                maxPeptideLength: tempMaxPeptideLength,
+                maxModsForPeptides: tempMaxModsForPeptide);
 
             tempCommonParams.SetDigestionParams(digestParams);
 
