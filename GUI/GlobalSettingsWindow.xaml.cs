@@ -7,13 +7,9 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GlobalSettingsWindow : Window
     {
-        #region Public Constructors
-
         public GlobalSettingsWindow()
         {
             InitializeComponent();
         }
-
-        #endregion Public Constructors
     }
 }

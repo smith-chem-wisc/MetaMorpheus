@@ -1,8 +1,8 @@
 ﻿using FlashLFQ;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -10,14 +10,8 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
-        #region Public Fields
-
-        public readonly bool isDecoy;
-        public readonly bool isContaminant;
-
-        #endregion Public Fields
-
-        #region Public Constructors
+        public readonly bool IsDecoy;
+        public readonly bool IsContaminant;
 
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
@@ -33,8 +27,8 @@ namespace EngineLayer
             ProteinGroupScore = 0;
             BestPeptideScore = 0;
             QValue = 0;
-            isDecoy = false;
-            isContaminant = false;
+            IsDecoy = false;
+            IsContaminant = false;
             ModsInfo = new List<string>();
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
@@ -42,20 +36,16 @@ namespace EngineLayer
             {
                 if (protein.IsDecoy)
                 {
-                    isDecoy = true;
+                    IsDecoy = true;
                     break;
                 }
                 if (protein.IsContaminant)
                 {
-                    isContaminant = true;
+                    IsContaminant = true;
                     break;
                 }
             }
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public List<SpectraFileInfo> FilesForQuantification { get; set; }
 
@@ -93,15 +83,7 @@ namespace EngineLayer
 
         public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
 
-        #endregion Public Properties
-
-        #region Private Properties
-
         private List<Protein> ListOfProteinsOrderedByAccession;
-
-        #endregion Private Properties
-
-        #region Public Methods
 
         public string GetTabSeparatedHeader()
         {
@@ -124,7 +106,7 @@ namespace EngineLayer
             {
                 for (int i = 0; i < FilesForQuantification.Count; i++)
                 {
-                    sb.Append("Intensity_" + FilesForQuantification[i].filenameWithoutExtension + '\t');
+                    sb.Append("Intensity_" + FilesForQuantification[i].FilenameWithoutExtension + '\t');
                 }
             }
             sb.Append("Number of PSMs" + '\t');
@@ -164,7 +146,7 @@ namespace EngineLayer
             {
                 try
                 {
-                    masses.Add(new Proteomics.Peptide(sequence).MonoisotopicMass);
+                    masses.Add(new Proteomics.AminoAcidPolymer.Peptide(sequence).MonoisotopicMass);
                 }
                 catch (System.Exception)
                 {
@@ -245,9 +227,9 @@ namespace EngineLayer
             sb.Append("\t");
 
             // isDecoy
-            if (isDecoy)
+            if (IsDecoy)
                 sb.Append("D");
-            else if (isContaminant)
+            else if (IsContaminant)
                 sb.Append("C");
             else
                 sb.Append("T");
@@ -369,7 +351,7 @@ namespace EngineLayer
                     var modsOnThisProtein = new HashSet<KeyValuePair<int, ModificationWithMass>>();
                     foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                     {
-                        foreach (var mod in pep.allModsOneIsNterminus)
+                        foreach (var mod in pep.AllModsOneIsNterminus)
                         {
                             if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
                                 modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
@@ -404,7 +386,7 @@ namespace EngineLayer
 
                         foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                         {
-                            foreach (var mod in pep.allModsOneIsNterminus)
+                            foreach (var mod in pep.AllModsOneIsNterminus)
                             {
                                 int tempPepNumTotal = 0; //For one mod, The total Pep Num
                                 if (!mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed") && !mod.Value.terminusLocalization.Equals(TerminusLocalization.PepC) && !mod.Value.terminusLocalization.Equals(TerminusLocalization.NPep))
@@ -484,7 +466,7 @@ namespace EngineLayer
             SpectraFileInfo spectraFileInfo = null;
             if (FilesForQuantification != null)
             {
-                spectraFileInfo = FilesForQuantification.Where(p => p.fullFilePathWithExtension == fullFilePath).First();
+                spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath).First();
                 subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
             }
 
@@ -499,8 +481,5 @@ namespace EngineLayer
 
             return subsetPg;
         }
-
-        #endregion Public Methods
-
     }
 }

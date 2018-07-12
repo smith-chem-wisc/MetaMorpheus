@@ -1,7 +1,8 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,13 +11,7 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class PsmCross : PeptideSpectralMatch
     {
-        #region Public Fields
-
         public CompactPeptide compactPeptide;
-
-        #endregion Public Fields
-
-        #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
@@ -24,18 +19,10 @@ namespace EngineLayer.CrosslinkSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
 
-        #endregion Private Fields
-
-        #region Public Constructors
-
         public PsmCross(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams) : base(theBestPeptide, notch, score, scanIndex, scan, digestionParams)
         {
             compactPeptide = theBestPeptide;
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public double XLBestScore { get; set; }
         public MatchedIonInfo MatchedIonInfo { get; set; }
@@ -52,10 +39,6 @@ namespace EngineLayer.CrosslinkSearch
         public PsmCross BetaPsmCross { get; set; }
         public PsmCrossType CrossType { get; set; }
         public double DScore { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         //Calculate score based on Product Masses.
         public static double XlMatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, string[] sorted_theoretical_product_name_for_this_peptide, MatchedIonInfo matchedIonMassesListPositiveIsMatch)
@@ -83,7 +66,7 @@ namespace EngineLayer.CrosslinkSearch
             if (double.IsNaN(currentTheoreticalMass))
                 return 0;
 
-            double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+            double currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
 
             int testTheoreticalIndex;
             double testTheoreticalMZ;
@@ -105,7 +88,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet, move to next experimental
                 else if (currentExperimentalMZ < currentTheoreticalMz)
@@ -121,7 +104,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.ProtonMass;
 
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
@@ -141,7 +124,7 @@ namespace EngineLayer.CrosslinkSearch
                         if (testTheoreticalIndex == TotalProductsHere)
                             break;
                         testTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[testTheoreticalIndex];
-                        testTheoreticalMZ = testTheoreticalMass + Constants.protonMass;
+                        testTheoreticalMZ = testTheoreticalMass + Constants.ProtonMass;
                     }
 
                     experimentalIndex--;
@@ -439,48 +422,40 @@ namespace EngineLayer.CrosslinkSearch
                             {
                                 x.Add(pmmh.ProductMz[i]);
                                 y.Add(pmmh.ProductName[i]);
-
                             }
                             if ((cr == 'y' || cr == 'z') && nm < length - linkPos[jpos] + 1)
                             {
                                 x.Add(pmmh.ProductMz[i]);
                                 y.Add(pmmh.ProductName[i]);
-
                             }
                             if (cr == 'b' && nm >= linkPos[jpos] + 1)
                             {
                                 x.Add(pmmh.ProductMz[i] + modMass);
                                 y.Add("t1b" + nm.ToString());
-
                             }
 
                             if (cr == 'c' && nm >= linkPos[jpos] + 1)
                             {
                                 x.Add(pmmh.ProductMz[i] + modMass);
                                 y.Add("t1c" + nm.ToString());
-
                             }
 
                             if (cr == 'y' && (nm >= length - linkPos[ipos] + 1))
                             {
                                 x.Add(pmmh.ProductMz[i] + modMass);
                                 y.Add("t1y" + nm.ToString());
-
-
                             }
 
                             if (cr == 'z' && (nm >= length - linkPos[ipos] + 1))
                             {
                                 x.Add(pmmh.ProductMz[i] + modMass);
                                 y.Add("t1z" + nm.ToString());
-
                             }
                         }
                         pmmhCurr.ProductMz = x.ToArray();
                         pmmhCurr.ProductName = y.ToArray();
                         Array.Sort(pmmhCurr.ProductMz, pmmhCurr.ProductName);
                         pmmhList.Add(pmmhCurr);
-
                     }
                 }
             }
@@ -598,7 +573,5 @@ namespace EngineLayer.CrosslinkSearch
             }
             return productMassMightHave;
         }
-
-        #endregion Public Methods
     }
 }

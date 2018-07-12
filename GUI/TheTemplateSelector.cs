@@ -5,21 +5,11 @@ namespace MetaMorpheusGUI
 {
     internal class TheTemplateSelector : DataTemplateSelector
     {
-        #region Public Properties
-
         public DataTemplate ComboBoxProtease { get; set; }
-
         public DataTemplate ComboBoxInit { get; set; }
-
         public DataTemplate ComboBoxTolerance { get; set; }
-
         public DataTemplate Bool { get; set; }
-
         public DataTemplate TextBox { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public override System.Windows.DataTemplate SelectTemplate(object item, System.Windows.DependencyObject container)
         {
@@ -49,7 +39,5 @@ namespace MetaMorpheusGUI
             }
             return null;
         }
-
-        #endregion Public Methods
     }
 }

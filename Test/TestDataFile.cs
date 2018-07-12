@@ -1,6 +1,6 @@
 ﻿using Chemistry;
-using EngineLayer;
 using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +9,6 @@ namespace Test
 {
     internal class TestDataFile : MsDataFile
     {
-        #region Public Constructors
-
         public TestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
             var mz1 = new double[] { 50, 60, 70, 80, 90, 402.18629720155.ToMz(2) };
@@ -34,7 +32,7 @@ namespace Test
             var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
 
             var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1") };
-            var mz2 = new double[] { 50, 60, 70, 147.0764, 258.132 - closeMassDifference - Constants.protonMass, 258.132 - Constants.protonMass, 275.1350 };
+            var mz2 = new double[] { 50, 60, 70, 147.0764, 258.132 - closeMassDifference - Constants.ProtonMass, 258.132 - Constants.ProtonMass, 275.1350 };
             var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
             var MassSpectrum2 = new MzSpectrum(mz2, intensities2, false);
             ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 2,
@@ -194,7 +192,6 @@ namespace Test
             var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1") };
 
-
             var mz2 = new double[] { 52, 62, 72, 147.0764, 257.1244, 258.127, 275.1350, 502 };
             var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1, 1 };
             var MassSpectrum2 = new MzSpectrum(mz2, intensities2, false);
@@ -222,10 +219,6 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public string FilePath
         {
             get
@@ -242,10 +235,6 @@ namespace Test
             }
         }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public void ReplaceFirstScanArrays(double[] mz, double[] intensities)
         {
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
@@ -261,7 +250,5 @@ namespace Test
         {
             throw new NotImplementedException();
         }
-
-        #endregion Public Methods
     }
 }

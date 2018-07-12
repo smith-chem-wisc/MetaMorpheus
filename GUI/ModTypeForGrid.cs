@@ -3,17 +3,11 @@ namespace MetaMorpheusGUI
 {
     public class ModTypeForGrid
     {
-        #region Public Constructors
-
         public ModTypeForGrid(string modName)
         {
             ModName = modName;
             Item2 = true;
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         //types
         public string ModName { get; set; }
@@ -25,7 +19,5 @@ namespace MetaMorpheusGUI
         public bool Item4 { get; set; }
 
         public bool Item5 { get; set; }
-
-        #endregion Public Properties
     }
 }

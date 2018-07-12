@@ -5,19 +5,11 @@ namespace TaskLayer
 {
     public class XmlForTaskListEventArgs : EventArgs
     {
-        #region Public Fields
-
-        public List<DbForTask> newDatabases;
-
-        #endregion Public Fields
-
-        #region Public Constructors
+        public List<DbForTask> NewDatabases;
 
         public XmlForTaskListEventArgs(List<DbForTask> newDatabases)
         {
-            this.newDatabases = newDatabases;
+            NewDatabases = newDatabases;
         }
-
-        #endregion Public Constructors
     }
 }

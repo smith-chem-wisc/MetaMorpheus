@@ -6,15 +6,9 @@ namespace EngineLayer
 {
     public class OpenLowTheoSearchMode : MassDiffAcceptor
     {
-        #region Public Constructors
-
         public OpenLowTheoSearchMode() : base("OpenLow")
         {
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
@@ -35,7 +29,5 @@ namespace EngineLayer
         {
             return FileNameAddition + " OpenHighSearch";
         }
-
-        #endregion Public Methods
     }
 }

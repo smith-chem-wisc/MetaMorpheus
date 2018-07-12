@@ -1,55 +1,40 @@
 ﻿using EngineLayer.CrosslinkSearch;
+using MassSpectrometry;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.CrosslinkAnalysis
 {
     public class CrosslinkAnalysisEngine : MetaMorpheusEngine
     {
-        #region Protected Fields
+        protected readonly TerminusType TerminusType;
 
-        protected readonly TerminusType terminusType;
+        private readonly List<PsmCross> NewPsms;
+        private readonly List<Protein> ProteinList;
+        private readonly List<ModificationWithMass> VariableModifications;
+        private readonly List<ModificationWithMass> FixedModifications;
 
-        #endregion Protected Fields
+        private readonly List<ProductType> ProductTypes;
+        private readonly CrosslinkerTypeClass Crosslinker;
 
-        #region Private Fields
-
-        private readonly List<PsmCross> newPsms;
-        private readonly List<Protein> proteinList;
-        private readonly List<ModificationWithMass> variableModifications;
-        private readonly List<ModificationWithMass> fixedModifications;
-
-        private readonly List<ProductType> lp;
-        private readonly CrosslinkerTypeClass crosslinker;
-
-        private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+        private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CompactPeptideToProteinPeptideMatching;
         private readonly string OutputFolder;
-        private readonly CommonParameters CommonParameters;
 
-        #endregion Private Fields
-
-        #region Public Constructors
-
-        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, string outputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.newPsms = newPsms;
-            this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
-            this.proteinList = proteinList;
-            this.variableModifications = variableModifications;
-            this.fixedModifications = fixedModifications;
-            this.lp = lp;
-            this.OutputFolder = OutputFolder;
-            this.crosslinker = crosslinker;
-            this.terminusType = terminusType;
-            this.CommonParameters = CommonParameters;
+            NewPsms = newPsms;
+            CompactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
+            ProteinList = proteinList;
+            VariableModifications = variableModifications;
+            FixedModifications = fixedModifications;
+            ProductTypes = lp;
+            OutputFolder = outputFolder;
+            Crosslinker = crosslinker;
+            TerminusType = terminusType;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -57,23 +42,21 @@ namespace EngineLayer.CrosslinkAnalysis
             Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
 
-            #region Match Seqeunces to PeptideWithSetModifications
-
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             Status("Adding observed peptides to dictionary...");
-            foreach (var psmpair in newPsms)
+            foreach (var psmpair in NewPsms)
             {
                 if (psmpair != null)
                 {
                     var cp = psmpair.compactPeptide;
-                    if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                        compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                    if (!CompactPeptideToProteinPeptideMatching.ContainsKey(cp))
+                        CompactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
 
                     if (psmpair.BetaPsmCross != null)
                     {
                         var cp1 = psmpair.BetaPsmCross.compactPeptide;
-                        if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp1))
-                            compactPeptideToProteinPeptideMatching.Add(cp1, new HashSet<PeptideWithSetModifications>());
+                        if (!CompactPeptideToProteinPeptideMatching.ContainsKey(cp1))
+                            CompactPeptideToProteinPeptideMatching.Add(cp1, new HashSet<PeptideWithSetModifications>());
                     }
                 }
             }
@@ -81,21 +64,28 @@ namespace EngineLayer.CrosslinkAnalysis
             int proteinsSeen = 0;
             int old_progress = 0;
             Status("Adding possible sources to peptide dictionary...");
-            Parallel.ForEach(Partitioner.Create(0, proteinList.Count), fff =>
+            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    foreach (var peptideWithSetModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications))
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
                     {
-                        var compactPeptide = peptideWithSetModifications.CompactPeptide(terminusType);
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out HashSet<PeptideWithSetModifications> peptidesWithSetMods))
+                        loopState.Stop();
+                        return;
+                    }
+
+                    foreach (var peptideWithSetModifications in ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
+                    {
+                        var compactPeptide = peptideWithSetModifications.CompactPeptide(TerminusType);
+                        if (CompactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out HashSet<PeptideWithSetModifications> peptidesWithSetMods))
                         {
                             lock (peptidesWithSetMods)
                                 peptidesWithSetMods.Add(peptideWithSetModifications);
                         }
                     }
                     proteinsSeen += fff.Item2 - fff.Item1;
-                    var new_progress = (int)((double)proteinsSeen / (proteinList.Count) * 100);
+                    var new_progress = (int)((double)proteinsSeen / (ProteinList.Count) * 100);
                     if (new_progress > old_progress)
                     {
                         ReportProgress(new ProgressEventArgs(new_progress, "In adding possible" +
@@ -105,24 +95,20 @@ namespace EngineLayer.CrosslinkAnalysis
                 }
             });
 
-            #endregion Match Seqeunces to PeptideWithSetModifications
-
             Status("Computing info about actual peptides with modifications...");
-            for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
+            for (int myScanWithMassIndex = 0; myScanWithMassIndex < NewPsms.Count; myScanWithMassIndex++)
             {
-                if (newPsms[myScanWithMassIndex] != null)
+                if (NewPsms[myScanWithMassIndex] != null)
                 {
-                    newPsms[myScanWithMassIndex].MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                    if (newPsms[myScanWithMassIndex].BetaPsmCross != null)
+                    NewPsms[myScanWithMassIndex].MatchToProteinLinkedPeptides(CompactPeptideToProteinPeptideMatching);
+                    if (NewPsms[myScanWithMassIndex].BetaPsmCross != null)
                     {
-                        newPsms[myScanWithMassIndex].BetaPsmCross.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                        NewPsms[myScanWithMassIndex].BetaPsmCross.MatchToProteinLinkedPeptides(CompactPeptideToProteinPeptideMatching);
                     }
                 }
             }
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
     }
 }
