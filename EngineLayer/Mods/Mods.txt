@@ -329,7 +329,6 @@ PP   Anywhere.
 MT   Artifact
 CF   H2 C2 O2
 //
-###########################################################################
 ID   Deamidation
 TG   N or Q
 PP   Anywhere.
