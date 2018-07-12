@@ -281,11 +281,10 @@ namespace MetaMorpheusGUI
                 }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    proteaseComboBox.Items.MoveCurrentToFirst();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                     if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN")) //singleN needs to appear after non-specific in list
                         {
                             proteaseComboBox.Items.MoveCurrentToNext();
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -293,7 +292,7 @@ namespace MetaMorpheusGUI
                     }
                     else
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC")) //singleC needs to appear after non-specific in list
                         {
                             proteaseComboBox.Items.MoveCurrentToNext();
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -600,7 +599,7 @@ namespace MetaMorpheusGUI
                 try
                 {
                     System.Windows.Controls.TextBox textBox = (TextBox)sender;
-                    if (textBox.Name.Equals("txtMaxPeptideLength")) //if maxPeptideLength was modified
+                    if (textBox.Name.Equals("MaxPeptideLengthTextBox")) //if maxPeptideLength was modified
                     {
                         if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString())) //prevents infinite loops
                         {
