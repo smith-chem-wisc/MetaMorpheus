@@ -8,7 +8,6 @@ namespace Test
     [TestFixture]
     public static class MyEngineTest
     {
-        #region Public Methods
 
         [Test]
         public static void TestMyEngine()
@@ -19,42 +18,24 @@ namespace Test
             level0engine.Run();
         }
 
-        #endregion Public Methods
-
-        #region Private Classes
-
         private class TestEngine : MetaMorpheusEngine
         {
-            #region Public Constructors
 
-            public TestEngine(int level) : base(new List<string>())
+            public TestEngine(int level) : base(new CommonParameters(), new List<string>())
             {
             }
-
-            #endregion Public Constructors
-
-            #region Protected Methods
 
             protected override MetaMorpheusEngineResults RunSpecific()
             {
                 return new TestResults(this);
             }
 
-            #endregion Protected Methods
-
-            #region Private Classes
-
             private class TestResults : MetaMorpheusEngineResults
             {
-                #region Public Constructors
 
                 public TestResults(MetaMorpheusEngine e) : base(e)
                 {
                 }
-
-                #endregion Public Constructors
-
-                #region Public Methods
 
                 public override string ToString()
                 {
@@ -64,12 +45,9 @@ namespace Test
                     return sb.ToString();
                 }
 
-                #endregion Public Methods
             }
 
-            #endregion Private Classes
         }
 
-        #endregion Private Classes
     }
 }

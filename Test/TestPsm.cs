@@ -4,18 +4,16 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
-using System;
 
 namespace Test
 {
     [TestFixture]
     public static class TestPsm
     {
-        #region Public Methods
-
         [Test]
         public static void TestPsmHeader()
         {
@@ -44,7 +42,6 @@ namespace Test
                 { pepWithSetMods.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
 
-           
             psm.MatchToProteinLinkedPeptides(matching);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
@@ -52,7 +49,7 @@ namespace Test
             Tolerance fragmentTolerance = new PpmTolerance(10);
             List<ProductType> lp = new List<ProductType> { ProductType.B };
 
-            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false).Run();
+            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, lp, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance), new List<string>()).Run();
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
@@ -60,7 +57,5 @@ namespace Test
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
         }
-
-        #endregion Public Methods
     }
 }

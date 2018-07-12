@@ -8,14 +8,9 @@ namespace EngineLayer.Neo
 {
     public static class NeoExport
     {
-        #region Public Fields
-
         public static string path;
         public static string folder;
-
-        #endregion Public Fields
-
-        #region Public Methods
+        public static CommonParameters commonParameters;
 
         public static void ExportAll(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string databaseFileName)
         {
@@ -26,21 +21,21 @@ namespace EngineLayer.Neo
                 path += temp[i] + '\\';
 
             Directory.CreateDirectory(path + folder);
-            ExportCandidates(psms, spectra, path);
+            ExportCandidates(psms, spectra, path, commonParameters);
             // ExportFullFASTA(psms, databaseFileName, path);
             ExportFASTAAppendix(psms, databaseFileName, path);
 
             //  ExportFilteredFusionPeptideAppendix(psms, databaseFileName, path);
         }
 
-        public static void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path)
+        public static void ExportCandidates(List<NeoPsm> psms, Ms2ScanWithSpecificMass[] spectra, string path, CommonParameters commonParameters)
         {
             using (StreamWriter file = new StreamWriter(path + folder + @"\" + folder + "ExportedFusionCandidatesAll.txt"))
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
                 //double progress = 0;
-                Parallel.ForEach(psms, (psm) =>
+                Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
                     Ms2ScanWithSpecificMass spectrum = spectra[psm.scanNumber];
                     //printout the scan, the mass, the sequences with and without junctions, the number of potential sequences
@@ -197,7 +192,7 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                Parallel.ForEach(psms, (psm) =>
+                Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.TL))
                     {
@@ -314,7 +309,7 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                Parallel.ForEach(psms, (psm) =>
+                Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.NC))
                     {
@@ -431,7 +426,7 @@ namespace EngineLayer.Neo
             {
                 file.WriteLine("Scan" + '\t' + "ExperimentalMass" + '\t' + "OriginalNSequence" + '\t' + "OriginalNScore" + '\t' + "OriginalCSequence" + '\t' + "OriginalCScore" + '\t' + "SampleSequence" + '\t' + "Ambiguity" + '\t' + "ProbableType" + '\t' + "MostProbableSequenceJunctions" + '\t' + "MostProbableSequence(s)" + '\t' + "MostProbableParents" + '\t' + "AllPossibleSequenceJunctions" + '\t' + "AllPossibleSequence(s)" + '\t' + "AllPossibleParent(s)" + '\t' + "NumberOfPossibleSequences" + '\t' + "PotentialFalsePositives" + '\t' + "TotalScore");
 
-                Parallel.ForEach(psms, (psm) =>
+                Parallel.ForEach(psms, new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (psm) =>
                 {
                     if (psm.candidates.Any(x => x.fusionType == FusionCandidate.FusionType.TS))
                     {
@@ -544,10 +539,6 @@ namespace EngineLayer.Neo
                 });
             }
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static void ExportFullFASTA(List<NeoPsm> psms, string databaseFileName, string path)
         {
@@ -767,12 +758,12 @@ namespace EngineLayer.Neo
             }
             foreach (CisParent cp in cisParents)
             {
-                foreach (int ns in cp.nStart)
+                foreach (int ns in cp.NStart)
                 {
-                    foreach (int cs in cp.cStart)
+                    foreach (int cs in cp.CStart)
                     {
-                        output += cp.id + "_" + ns + "-" + (ns + cp.nLength - 1) + "(" + cp.seq.Substring(ns, cp.nLength) + ")"
-                            + "&" + cs + "-" + (cs + cp.cLength - 1) + "(" + cp.seq.Substring(cs, cp.cLength) + ")" + "|";
+                        output += cp.id + "_" + ns + "-" + (ns + cp.NLength - 1) + "(" + cp.seq.Substring(ns, cp.NLength) + ")"
+                            + "&" + cs + "-" + (cs + cp.CLength - 1) + "(" + cp.seq.Substring(cs, cp.CLength) + ")" + "|";
                     }
                 }
             }
@@ -793,7 +784,5 @@ namespace EngineLayer.Neo
 
             return output;
         }
-
-        #endregion Private Methods
     }
 }

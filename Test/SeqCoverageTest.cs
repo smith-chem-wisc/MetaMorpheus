@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,8 +10,6 @@ namespace Test
     [TestFixture]
     public static class SeqCoverageTest
     {
-        #region Public Methods
-
         [Test]
         public static void TryFailSequenceCoverage()
         {
@@ -42,9 +41,11 @@ namespace Test
                 {8, mod5}
             };
 
-            var pwsm1 = new PeptideWithSetModifications(0, prot1, 1, 3, modsFor1);
-            var pwsm2 = new PeptideWithSetModifications(0, prot1, 4, 6, modsFor2);
-            var pwsm3 = new PeptideWithSetModifications(0, prot1, 1, 6, modsFor3);
+            DigestionParams digestionParams = new DigestionParams();
+            var pwsm1 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 3, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor1, numFixedMods: 0);
+            var pwsm2 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 4, oneBasedEndResidueInProtein: 6, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor2, numFixedMods: 0);
+            var pwsm3 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 6, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor3, numFixedMods: 0);
+
             HashSet<PeptideWithSetModifications> peptides = new HashSet<PeptideWithSetModifications>
             {
                 pwsm1,
@@ -58,7 +59,7 @@ namespace Test
                 { pwsm2.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm2 } },
                 { pwsm3.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm3 } },
             };
-            var digestionParams = new DigestionParams();
+
             IScan scan = new ThisTestScan();
             var psm1 = new PeptideSpectralMatch(pwsm1.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -77,10 +78,10 @@ namespace Test
                 psm3,
             };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new List<string>());
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new CommonParameters(), new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new CommonParameters(), new List<string>());
 
             psafe.Run();
 
@@ -100,6 +101,10 @@ namespace Test
             Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5,info:occupancy=1.00(2/2)]"));
         }
 
-        #endregion Public Methods
+        //[Test] MOVED TO MZLIB
+        //public static void MultipleProteaseSelectionTest()
+        //public static void MultipleProteaseSelectionTestMissedCleavage()
+        //public static void MultipleProteaseSelectionTestPreventCleavage()
+        //public static void ReadCustomFile()
     }
 }

@@ -1,5 +1,6 @@
 ﻿using MzLibUtil;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,28 +9,18 @@ namespace EngineLayer.Gptmd
 {
     public class GptmdEngine : MetaMorpheusEngine
     {
-        #region Private Fields
+        private readonly List<PeptideSpectralMatch> AllIdentifications;
+        private readonly IEnumerable<Tuple<double, double>> Combos;
+        private readonly List<ModificationWithMass> GptmdModifications;
+        private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
 
-        private readonly List<PeptideSpectralMatch> allIdentifications;
-        private readonly IEnumerable<Tuple<double, double>> combos;
-        private readonly List<ModificationWithMass> gptmdModifications;
-        private readonly Dictionary<string, Tolerance> filePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
-
-        #endregion Private Fields
-
-        #region Public Constructors
-
-        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, List<string> nestedIds) : base(nestedIds)
+        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.allIdentifications = allIdentifications;
-            this.gptmdModifications = gptmdModifications;
-            this.combos = combos;
-            this.filePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
+            AllIdentifications = allIdentifications;
+            GptmdModifications = gptmdModifications;
+            Combos = combos;
+            FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public static bool ModFits(ModificationWithMass attemptToLocalize, Protein protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
         {
@@ -57,26 +48,22 @@ namespace EngineLayer.Gptmd
             return true;
         }
 
-        #endregion Public Methods
-
-        #region Protected Methods
-
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             var Mods = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
 
             int modsAdded = 0;
-            //foreach peptide in each psm and for each modification that matches the notch, 
+            //foreach peptide in each psm and for each modification that matches the notch,
             //add that modification to every allowed residue
-            foreach (var psm in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy))
+            foreach (var psm in AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy))
             {
                 // get file-specific precursor tolerance
-                Tolerance precursorMassTolerance = filePathToPrecursorMassTolerance[psm.FullFilePath];
+                Tolerance precursorMassTolerance = FilePathToPrecursorMassTolerance[psm.FullFilePath];
 
                 // get mods to annotate database with
                 foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                 {
-                    foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, pepWithSetMods))
+                    foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, GptmdModifications, Combos, precursorMassTolerance, pepWithSetMods))
                     {
                         var proteinAccession = pepWithSetMods.Protein.Accession;
 
@@ -107,17 +94,13 @@ namespace EngineLayer.Gptmd
             return new GptmdResults(this, Mods, modsAdded);
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private static IEnumerable<ModificationWithMass> GetPossibleMods(double totalMassToGetTo, IEnumerable<ModificationWithMass> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
         {
             foreach (var Mod in allMods)
             {
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass))
                     yield return Mod;
-                foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
+                foreach (var modOnPsm in peptideWithSetModifications.AllModsOneIsNterminus.Values)
                     if (modOnPsm.motif.Equals(Mod.motif))
                     {
                         if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
@@ -139,7 +122,5 @@ namespace EngineLayer.Gptmd
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

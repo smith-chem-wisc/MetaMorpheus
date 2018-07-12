@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,10 +15,9 @@ namespace Test
     [TestFixture]
     public static class GptmdPrunedDbTests
     {
-        
         // want a psm whose base sequence is not ambigous but full sequence is (ptm is not localized): make sure this does not make it in DB
-       
-       [Test]
+
+        [Test]
         public static void TestPrunedGeneration()
         {
             //Create GPTMD Task
@@ -25,13 +25,12 @@ namespace Test
             GptmdTask task1 = new GptmdTask
             {
                 CommonParameters = new CommonParameters(),
-                
             };
 
             SearchTask task2 = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
-                
+
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -40,12 +39,12 @@ namespace Test
                     SearchType = SearchType.Classic
                 }
             };
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2)};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2) };
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
             engine.Run();
-            string final = Path.Combine(MySetUpClass.outputFolder, "task2","DbForPrunedDbGPTMDproteinPruned.xml");
+            string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
             //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
                 // all proteins in DB have baseSequence!=null (not ambiguous)
@@ -55,18 +54,16 @@ namespace Test
             foreach (Protein p in proteins)
             {
                 int numberOfMods = p.OneBasedPossibleLocalizedModifications.Count();
-                totalNumberOfMods=totalNumberOfMods + numberOfMods;
+                totalNumberOfMods = totalNumberOfMods + numberOfMods;
             }
             //tests that modifications are being done correctly
             Assert.AreEqual(totalNumberOfMods, 0);
-
         }
+
         //test if prunedDatabase matches expected output
         [Test]
         public static void TestPrunedDatabase()
         {
-            #region setup
-
             //Create Search Task
             SearchTask task1 = new SearchTask
             {
@@ -80,8 +77,7 @@ namespace Test
                         {"ConnorModType", 1}
                     }
                 },
-                CommonParameters = new CommonParameters(DigestionParams: new DigestionParams(MinPeptideLength: 5))
-                
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5))
             };
 
             //add task to task list
@@ -99,10 +95,6 @@ namespace Test
                 connorMod
             });
 
-            #endregion setup
-
-            #region Protein and Mod Creation
-
             //create modification lists
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
                 (b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
@@ -117,12 +109,7 @@ namespace Test
             //protein Creation (One with mod and one without)
             Protein TestProteinWithMod = new Protein("PEPTID", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
 
-            #endregion Protein and Mod Creation
-
-            #region XML File
-
             //First Write XML Database
-
             string xmlName = "okkk.xml";
 
             //Add Mod to list and write XML input database
@@ -133,10 +120,6 @@ namespace Test
             };
             modList.Add("test", Hash);
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithMod }, xmlName);
-
-            #endregion XML File
-
-            #region MZML File
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true,
@@ -154,15 +137,13 @@ namespace Test
             string mzmlName = @"hello.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
-            #endregion MZML File
-
             //run!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
                 new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
 
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
-            
+
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
@@ -178,8 +159,6 @@ namespace Test
         [Test]
         public static void TestUserModSelectionInPrunedDB()
         {
-            #region setup
-
             List<(string, string)> listOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             //Create Search Task
             SearchTask task5 = new SearchTask
@@ -190,7 +169,7 @@ namespace Test
                     SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
-                CommonParameters = new CommonParameters(ListOfModsFixed: listOfModsFixed)
+                CommonParameters = new CommonParameters(listOfModsFixed: listOfModsFixed)
             };
 
             task5.SearchParameters.ModsToWriteSelection["Mod"] = 0;
@@ -215,10 +194,6 @@ namespace Test
                 connorMod3,
                 connorMod4
             });
-
-            #endregion setup
-
-            #region Protein and Mod Creation
 
             //create modification lists
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains
@@ -250,12 +225,7 @@ namespace Test
             Protein TestProteinWithModForDB = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
             Protein TestProteinWithModObsevred = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere2);
 
-            #endregion Protein and Mod Creation
-
-            #region XML File
-
             //First Write XML Database
-
             string xmlName = "selectedMods.xml";
             string xmlName2 = "selectedModsObvs.xml";
 
@@ -276,10 +246,6 @@ namespace Test
             modList.Add("test2", Hash);
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithModObsevred }, xmlName2);
 
-            #endregion XML File
-
-            #region MZML File
-
             //now create MZML data
             var protein = ProteinDbLoader.LoadProteinXML(xmlName2, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
@@ -297,8 +263,6 @@ namespace Test
             string mzmlName = @"newMzml.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
-            #endregion MZML File
-
             //make sure this runs correctly
             //run!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
@@ -306,7 +270,7 @@ namespace Test
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             var Dlist = proteins[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
-            Assert.AreEqual(Dlist[0].numFixedMods, 1);
+            Assert.AreEqual(Dlist[0].NumFixedMods, 1);
 
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 3);
@@ -327,6 +291,4 @@ namespace Test
             Assert.AreEqual(listOfLocalMods.Count, 3);
         }
     }
-
-}     
-
+}

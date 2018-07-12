@@ -8,45 +8,48 @@ using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
-        #region Public Constructor
-
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
         }
 
-        #endregion Public Constructor
-
-        #region Public Properties
-
         public PostSearchAnalysisParameters Parameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Private Properties
 
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
 
-        #endregion Private Properties
-
-        #region Public Method
-
         public MyTaskResults Run()
         {
+            // Stop loop if canceled
+            if (GlobalVariables.StopLoops) { return Parameters.SearchTaskResults; }
+
             GroupAndOrderPSMs();
+
+            if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen
+                || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open
+                || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
+                )
+            {
+                // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
+                Parameters.SearchParameters.DoLocalizationAnalysis = true;
+            }
+            else
+            {
+                Parameters.SearchParameters.DoLocalizationAnalysis = false;
+            }
+
             ModificationAnalysis();
 
             if (Parameters.SearchParameters.DoQuantification)
@@ -63,18 +66,10 @@ namespace TaskLayer
             return Parameters.SearchTaskResults;
         }
 
-        #endregion Public Method
-
-        #region Protected Method
-
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             return null;
         }
-
-        #endregion Protected Method
-
-        #region Private Methods
 
         /// <summary>
         /// Group and order psms
@@ -87,20 +82,20 @@ namespace TaskLayer
             {
                 if (Parameters.SearchParameters.SearchType == SearchType.NonSpecific)
                 {
-                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(Parameters.IonTypes);
+                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethods.SeparateIonsByTerminus(Parameters.IonTypes);
                     MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(Parameters.CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
                     foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
                     {
                         new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, Parameters.AllPsms, Parameters.ProteinList, Parameters.FixedModifications,
                             Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
-                            Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId }).Run();
+                            Parameters.CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
                     }
                 }
                 else
                 {
                     SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(Parameters.AllPsms, Parameters.ProteinList,
                         Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
-                        Parameters.CommonParameters.ReportAllAmbiguity, new List<string> { Parameters.SearchTaskId });
+                        Parameters.CommonParameters.ReportAllAmbiguity, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId });
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                     compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
                 }
@@ -109,7 +104,7 @@ namespace TaskLayer
             ProteinParsimonyResults proteinAnalysisResults = null;
             if (Parameters.SearchParameters.DoParsimony)
             {
-                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, new List<string> { Parameters.SearchTaskId }).Run());
+                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
             }
 
             Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
@@ -144,8 +139,8 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoParsimony)
             {
                 var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, Parameters.AllPsms,
-                    Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent, true, new List<string> { Parameters.SearchTaskId }).Run();
-                ProteinGroups = proteinScoringAndFdrResults.sortedAndScoredProteinGroups;
+                    Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent, true, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+                ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
             }
         }
 
@@ -162,13 +157,13 @@ namespace TaskLayer
                     Status("Running localization analysis...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
                     MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                     new LocalizationEngine(Parameters.AllPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), Parameters.IonTypes,
-                        myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }, Parameters.SearchParameters.AddCompIons).Run();
+                        myMsDataFile, combinedParams, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }).Run();
                     Parameters.MyFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }));
                 }
             }
 
-            new ModificationAnalysisEngine(Parameters.AllPsms, new List<string> { Parameters.SearchTaskId }).Run();
+            new ModificationAnalysisEngine(Parameters.AllPsms, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
         }
 
         private void QuantificationAnalysis()
@@ -303,7 +298,7 @@ namespace TaskLayer
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
             {
-                var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
+                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
 
                 foreach (var psm in spectraFile)
                 {
@@ -399,7 +394,7 @@ namespace TaskLayer
 
             if (Parameters.SearchParameters.DoParsimony)
             {
-                Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue < 0.01 && !b.isDecoy) + Environment.NewLine);
+                Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue < 0.01 && !b.IsDecoy) + Environment.NewLine);
             }
 
             PsmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
@@ -470,10 +465,10 @@ namespace TaskLayer
 
                     var subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
                         Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent,
-                        false, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }).Run();
-                    subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.sortedAndScoredProteinGroups;
+                        false, CommonParameters, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }).Run();
+                    subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
-                    Parameters.SearchTaskResults.AddNiceText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue < 0.01 && !b.isDecoy));
+                    Parameters.SearchTaskResults.AddNiceText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue < 0.01 && !b.IsDecoy));
 
                     WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, Parameters.OutputFolder, strippedFileName + "_ProteinGroups", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, new List<string> { fullFilePath });
                     if (Parameters.SearchParameters.OutMzId)
@@ -501,7 +496,7 @@ namespace TaskLayer
             {
                 foreach (var file in Parameters.FlashLfqResults.peaks)
                 {
-                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, file.Key.filenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.fullFilePathWithExtension });
+                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
                 }
 
                 if (Parameters.CurrentRawFileList.Count > 1)
@@ -589,7 +584,7 @@ namespace TaskLayer
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (proteinToConfidentModifiedSequences.ContainsKey(protein))
                         {
-                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
+                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.AllModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
                         }
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
@@ -717,9 +712,9 @@ namespace TaskLayer
                         + "\t" + bin.UnimodDiffs
                         + "\t" + bin.AA
                         + "\t" + bin.Combos
-                        + "\t" + string.Join(",", bin.modsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + ((double)b.Value / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)))
+                        + "\t" + string.Join(",", bin.ModsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + ((double)b.Value / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)))
                         + "\t" + string.Join(",", bin.AAsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + ((double)b.Value / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)))
-                        + "\t" + string.Join(",", bin.residueCount.OrderByDescending(b => b.Value).Select(b => b.Key + ":" + b.Value))
+                        + "\t" + string.Join(",", bin.ResidueCount.OrderByDescending(b => b.Value).Select(b => b.Key + ":" + b.Value))
                         + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.ProtNlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.PepNlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.PepClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
@@ -797,7 +792,5 @@ namespace TaskLayer
 
             SucessfullyFinishedWritingFile(peaksPath, nestedIds);
         }
-
-        #endregion Private Methods
     }
 }

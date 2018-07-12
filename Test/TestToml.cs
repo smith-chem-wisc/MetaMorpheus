@@ -12,17 +12,15 @@ namespace Test
     [TestFixture]
     public static class TestToml
     {
-        #region Public Methods
-
         [Test]
         public static void TestTomlFunction()
         {
             SearchTask searchTask = new SearchTask
             {
-                CommonParameters = new CommonParameters (
-                    ProductMassTolerance: new PpmTolerance(666), 
-                    ListOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") },
-                    ListOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),                
+                CommonParameters = new CommonParameters(
+                    productMassTolerance: new PpmTolerance(666),
+                    listOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") },
+                    listOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),
             };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
@@ -37,7 +35,6 @@ namespace Test
 
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsVariable.Count(), searchTaskLoaded.CommonParameters.ListOfModsVariable.Count());
 
-            
             Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptorType, searchTaskLoaded.SearchParameters.MassDiffAcceptorType);
             Assert.AreEqual(searchTask.SearchParameters.CustomMdac, searchTaskLoaded.SearchParameters.CustomMdac);
 
@@ -60,7 +57,7 @@ namespace Test
             var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
             Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "Asp-N");
-            Assert.IsFalse(tomlSettingsList.ContainsKey("MaxMissedCleavages"));
+            Assert.IsFalse(tomlSettingsList.ContainsKey("maxMissedCleavages"));
             Assert.IsFalse(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
 
             FileSpecificParameters f = new FileSpecificParameters(fileSpecificToml);
@@ -73,7 +70,5 @@ namespace Test
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
         }
-
-        #endregion Public Methods
     }
 }
