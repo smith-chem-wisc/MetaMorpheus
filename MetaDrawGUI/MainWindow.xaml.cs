@@ -288,6 +288,7 @@ namespace MetaDrawGUI
 
             double pmmScore = PsmCross.XlMatchIons(msScanForDraw, DrawParameters.ProductMassTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
 
+
             psmDraw.MatchedIonInfo = matchedIonMassesListPositiveIsMatch;
 
             mainViewModel.UpdateForSingle(msScanForDraw, psmDraw);
