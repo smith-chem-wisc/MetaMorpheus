@@ -71,7 +71,7 @@ namespace TaskLayer
             Status("Loading modifications...", taskId);
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
+            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList(); 
 
             // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
