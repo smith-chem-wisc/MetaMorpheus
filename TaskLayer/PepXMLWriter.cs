@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +11,7 @@ namespace TaskLayer
 {
     public static class PepXMLWriter
     {
-        public static void WritePepXML(List<PeptideSpectralMatch> items, List<DbForTask> database, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters,string outputPath)
+        public static void WritePepXML(List<PeptideSpectralMatch> items, List<DbForTask> database, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, string outputPath)
         {
             // TODO: needs a unit test
             // TODO: filter output by q-value as an option
@@ -21,8 +22,6 @@ namespace TaskLayer
 
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
             var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
-
-            #region Add element to pepXML
 
             _pepxml.date = DateTime.Now;
             _pepxml.summary_xml = items[0].FullFilePath + ".pep.XML";
@@ -87,7 +86,7 @@ namespace TaskLayer
                          base_name = filePathNoExtension,
 
                          // TODO: get MetaMorpheus recognized as a search engine type
-                         //search_engine = pepXML.Generated.engineType.MetaMorpheus 
+                         //search_engine = pepXML.Generated.engineType.MetaMorpheus
                          search_engine_version = GlobalVariables.MetaMorpheusVersion,
                          precursor_mass_type = pepXML.Generated.massType.monoisotopic,
                          fragment_mass_type = pepXML.Generated.massType.monoisotopic,
@@ -96,7 +95,7 @@ namespace TaskLayer
                          //TODO: multiple databases
                          search_database = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summarySearch_database
                          {
-                             local_path = database.First().FilePath, 
+                             local_path = database.First().FilePath,
                              type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summarySearch_databaseType.AA,
                          },
                          enzymatic_search_constraint = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summaryEnzymatic_search_constraint
@@ -114,13 +113,13 @@ namespace TaskLayer
             _pepxml.msms_run_summary[0].spectrum_query = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query[items.Count];
 
             var searchHits = new List<pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit>();
-          
-            foreach(var psm in items)
+
+            foreach (var psm in items)
             {
                 PeptideWithSetModifications peptide = psm.CompactPeptides.First().Value.Item2.First();
 
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                foreach (var mod in peptide.allModsOneIsNterminus)
+                foreach (var mod in peptide.AllModsOneIsNterminus)
                 {
                     var pepXmlMod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                     {
@@ -178,8 +177,6 @@ namespace TaskLayer
                     }
                 };
             }
-
-            #endregion Add element to pepXML
 
             TextWriter writer = new StreamWriter(Path.Combine(outputPath));
             _indexedSerializer.Serialize(writer, _pepxml);

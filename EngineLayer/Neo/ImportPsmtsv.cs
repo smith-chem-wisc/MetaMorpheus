@@ -7,8 +7,6 @@ namespace EngineLayer.Neo
 {
     public static class ImportPsmtsv
     {
-        #region Public Fields
-
         public static readonly string scanNumberHeader = "Scan Number";
         public static readonly string scoreHeader = "Score";
         public static readonly string baseHeader = "Base Sequence";
@@ -37,10 +35,6 @@ namespace EngineLayer.Neo
         public static int scanPrecursorMassIndex = -1;
         public static int matchedIonsIndex = -1;
         public static int matchedIonCountsIndex = -1;
-
-        #endregion Public Fields
-
-        #region Public Methods
 
         public static void ParseHeader(string header)
         {
@@ -148,7 +142,5 @@ namespace EngineLayer.Neo
 
             return psms;
         }
-
-        #endregion Public Methods
     }
 }
