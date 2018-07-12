@@ -7,5 +7,4 @@
         MS2_CID_MS2_ETD,
         MS2_CID_EthCD_MS3_HCD
     }
-
 }

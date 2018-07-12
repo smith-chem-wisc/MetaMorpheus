@@ -11,19 +11,9 @@ namespace Test
     [SetUpFixture]
     public class MySetUpClass
     {
-        #region Public Fields
-
         public static string outputFolder = "";
 
-        #endregion Public Fields
-
-        #region Private Fields
-
         private const string elementsLocation = @"elements.dat";
-
-        #endregion Private Fields
-
-        #region Public Methods
 
         [OneTimeSetUp]
         public static void Setup()
@@ -37,10 +27,6 @@ namespace Test
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
         }
 
-        #endregion Public Methods
-
-        #region Private Methods
-
         private static void SuccessfullyFinishedAllTasks(object sender, StringEventArgs rootOutputFolderPath)
         {
             outputFolder = rootOutputFolderPath.S;
@@ -50,7 +36,5 @@ namespace Test
         {
             Console.WriteLine(e.S);
         }
-
-        #endregion Private Methods
     }
 }

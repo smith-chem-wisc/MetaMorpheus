@@ -1,34 +1,33 @@
 ﻿using Chemistry;
 using EngineLayer;
-using EngineLayer.CrosslinkSearch;
 using EngineLayer.CrosslinkAnalysis;
+using EngineLayer.CrosslinkSearch;
 using EngineLayer.Indexing;
 using MassSpectrometry;
+using Nett;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Nett;
-using System;
-using System.IO;
-
 
 namespace Test
 {
     [TestFixture]
     public static class XLTest
     {
-        #region Public Methods
-
         [Test]
         public static void XlTestXlPosCal()
         {
             var prot = new Protein("MNNNKQQQQ", null);
-            Protease protease = new Protease("New Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, MinPeptideLength: 1, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            Protease protease = new Protease("New Custom Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
             var ye = prot.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
@@ -80,19 +79,11 @@ namespace Test
         public static void XlTest_BSA_DSSO()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters
-            {
-                DoPrecursorDeconvolution = false,
-                CIons = true,
-                ZdotIons = true,
-                ScoreCutoff = 2,
-                DigestionParams = new DigestionParams(MinPeptideLength: 5)
-
-            };
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
 
             var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
 
-            //Create databases contain two protein. 
+            //Create databases contain two protein.
             var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -141,6 +132,7 @@ namespace Test
             var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
             var fragmentIndexAll = indexResults.FragmentIndex.Select((s, j) => new { j, s }).Where(p => p.s != null).Select(t => t.j).ToList();
             Assert.IsTrue(fragmentIndexAll.Count() > 0);
+
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
@@ -160,16 +152,15 @@ namespace Test
             {
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
+
             //Test newPsms
             Assert.AreEqual(newPsms.Count(), 3);
 
             //Test Output
-
             var task = new XLSearchTask();
             task.WriteAllToTsv(newPsms, TestContext.CurrentContext.TestDirectory, "allPsms", new List<string> { });
             task.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", new List<string> { });
             task.WriteSingleToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Singe).ToList(), TestContext.CurrentContext.TestDirectory, "singlePsms", new List<string> { });
-
 
             //Test PsmCross.XlCalculateTotalProductMasses.
             var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
@@ -177,7 +168,6 @@ namespace Test
             var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker.CrosslinkerModSites);
             var productMassesAlphaList = PsmCross.XlCalculateTotalProductMasses(psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, true, false, linkPos);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 99);
-
         }
 
         [Test]
@@ -188,7 +178,6 @@ namespace Test
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA_DSS_23747.mzML");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"XlTestData")).Run();
-
         }
 
         [Test]
@@ -202,20 +191,13 @@ namespace Test
             xlSearchParameters.UdXLkerTotalMass = -18.01056;
             var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
             Assert.AreEqual(crosslinker.DeadendMassH2O, (double)9999);
-
         }
 
         [Test]
         public static void XlTest_DiffCrosslinkSites()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters
-            {
-                DoPrecursorDeconvolution = false,
-                ScoreCutoff = 1,
-                DigestionParams = new DigestionParams(MinPeptideLength: 4)
-
-            };
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 4));
 
             var xlSearchParameters = new XlSearchParameters
             {
@@ -226,7 +208,7 @@ namespace Test
                 UdXLkerTotalMass = -18.01056
             };
 
-            //Create databases contain two protein. 
+            //Create databases contain two protein.
             var proteinList = new List<Protein> { new Protein("VLTAR", "Fake01"), new Protein("LCQK", "Fake02") };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
@@ -280,14 +262,11 @@ namespace Test
             new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
             Assert.AreEqual(newPsms.Count(), 1);
         }
-
-        #endregion Public Methods
     }
 
     internal class XLTestDataFile : MsDataFile
     {
-        #region Public Constructors
-        //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match. 
+        //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match.
         public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
             var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1005.498.ToMz(1), 1093.544.ToMz(1), 1043.561.ToMz(1) };
@@ -319,10 +298,6 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public string FilePath
         {
             get
@@ -339,23 +314,16 @@ namespace Test
             }
         }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public void ReplaceFirstScanArrays(double[] mz, double[] intensities)
         {
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
         }
-
-        #endregion Public Methods
     }
 
     internal class XLTestDataFileDiffSite : MsDataFile
     {
-        #region Public Constructors
-        //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match. 
+        //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match.
         public XLTestDataFileDiffSite() : base(2, new SourceFile(null, null, null, null, null))
         {
             var mz1 = new double[] { 100, 1030.5956.ToMz(1) };
@@ -373,10 +341,6 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public string FilePath
         {
             get
@@ -393,7 +357,10 @@ namespace Test
             }
         }
 
-        #endregion Public Properties
-
+        public void ReplaceFirstScanArrays(double[] mz, double[] intensities)
+        {
+            MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
+            Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
+        }
     }
 }

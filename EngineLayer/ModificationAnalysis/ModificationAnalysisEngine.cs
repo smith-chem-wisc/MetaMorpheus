@@ -6,22 +6,12 @@ namespace EngineLayer.ModificationAnalysis
 {
     public class ModificationAnalysisEngine : MetaMorpheusEngine
     {
-        #region Private Fields
+        private readonly List<PeptideSpectralMatch> NewPsms;
 
-        private readonly List<PeptideSpectralMatch> newPsms;
-
-        #endregion Private Fields
-
-        #region Public Constructors
-
-        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, List<string> nestedIds) : base(nestedIds)
+        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.newPsms = newPsms;
+            NewPsms = newPsms;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -29,7 +19,7 @@ namespace EngineLayer.ModificationAnalysis
 
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
-            var confidentTargetPsms = newPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
+            var confidentTargetPsms = NewPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
 
             // For the database ones, only need un-ambiguous protein and location in protein
             var forObserved = confidentTargetPsms
@@ -70,7 +60,7 @@ namespace EngineLayer.ModificationAnalysis
             foreach (var psm in forUnambiguouslyLocalized)
             {
                 var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
-                foreach (var nice in singlePeptide.allModsOneIsNterminus)
+                foreach (var nice in singlePeptide.AllModsOneIsNterminus)
                 {
                     int locInProtein;
                     if (nice.Key == 1)
@@ -127,7 +117,5 @@ namespace EngineLayer.ModificationAnalysis
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
     }
 }

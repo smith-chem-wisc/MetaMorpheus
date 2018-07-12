@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Linq;
-using EngineLayer;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using Proteomics.AminoAcidPolymer;
 
 namespace MetaDrawGUI
 {

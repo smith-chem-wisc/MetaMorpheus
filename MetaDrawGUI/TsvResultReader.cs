@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using Proteomics;
 using MzLibUtil;
 using System.Windows;
+using Proteomics.ProteolyticDigestion;
 
 namespace MetaDrawGUI
 {

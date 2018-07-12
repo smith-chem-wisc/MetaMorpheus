@@ -1,50 +1,37 @@
 using EngineLayer;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
+using EngineLayer.FdrAnalysis;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using EngineLayer.FdrAnalysis;
-using EngineLayer.Localization;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
     public class CalibrationTask : MetaMorpheusTask
     {
-        #region Public Constructors
-
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            CommonParameters = new CommonParameters
-            {
-                ProductMassTolerance = new PpmTolerance(25),
-                PrecursorMassTolerance = new PpmTolerance(15),
-                TrimMs1Peaks = false,
-                TrimMsMsPeaks = false,
-                DoPrecursorDeconvolution = false,
-                ScoreCutoff = 10
-            };
+            CommonParameters = new CommonParameters(
+                productMassTolerance: new PpmTolerance(25),
+                precursorMassTolerance: new PpmTolerance(15),
+                trimMsMsPeaks: false,
+                doPrecursorDeconvolution: false,
+                scoreCutoff: 10);
 
             CalibrationParameters = new CalibrationParameters();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public CalibrationParameters CalibrationParameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -52,7 +39,7 @@ namespace TaskLayer
             Status("Loading modifications...", new List<string> { taskId });
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-            List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
+            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // what types of fragment ions to search for
             List<ProductType> ionTypes = new List<ProductType>();
@@ -89,22 +76,22 @@ namespace TaskLayer
             Status("Calibrating...", new List<string> { taskId });
             MyTaskResults = new MyTaskResults(this)
             {
-                newSpectra = new List<string>(),
-                newFileSpecificTomls = new List<string>()
+                NewSpectra = new List<string>(),
+                NewFileSpecificTomls = new List<string>()
             };
 
             object lock1 = new object();
 
-            ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
-
             var myFileManager = new MyFileManager(true);
 
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
+                if (GlobalVariables.StopLoops) { break; }
+
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 var originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".mzML");
+                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -129,48 +116,43 @@ namespace TaskLayer
                     acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
 
                     // enough data points to calibrate?
-                    if (acquisitionResults.Psms.Count >= numRequiredPsms && acquisitionResults.Ms1List.Count > numRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > numRequiredMs2Datapoints)
+                    if (acquisitionResults.Psms.Count >= NumRequiredPsms && acquisitionResults.Ms1List.Count > NumRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > NumRequiredMs2Datapoints)
                     {
                         break;
                     }
 
-                    // not enough datapoints seen; open the tolerance and try again
-                    var newParameters = ((CommonParameters)CommonParameters).Clone();
-
                     if (i == 1) // failed round 1
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(20);
-                        newParameters.ProductMassTolerance = new PpmTolerance(50);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(20));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(50));
                     }
                     else if (i == 2) // failed round 2
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(30);
-                        newParameters.ProductMassTolerance = new PpmTolerance(100);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(30));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(100));
                     }
                     else if (i == 3) // failed round 3
                     {
-                        newParameters.PrecursorMassTolerance = new PpmTolerance(40);
-                        newParameters.ProductMassTolerance = new PpmTolerance(150);
+                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(40));
+                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(150));
                     }
                     else // failed round 4
                     {
-                        if (acquisitionResults.Psms.Count < numRequiredPsms)
+                        if (acquisitionResults.Psms.Count < NumRequiredPsms)
                         {
-                            Warn("Calibration failure! Could not find enough high-quality PSMs. Required " + numRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
+                            Warn("Calibration failure! Could not find enough high-quality PSMs. Required " + NumRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
                         }
-                        if (acquisitionResults.Ms1List.Count < numRequiredMs1Datapoints)
+                        if (acquisitionResults.Ms1List.Count < NumRequiredMs1Datapoints)
                         {
-                            Warn("Calibration failure! Could not find enough MS1 datapoints. Required " + numRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
+                            Warn("Calibration failure! Could not find enough MS1 datapoints. Required " + NumRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
                         }
-                        if (acquisitionResults.Ms2List.Count < numRequiredMs2Datapoints)
+                        if (acquisitionResults.Ms2List.Count < NumRequiredMs2Datapoints)
                         {
-                            Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + numRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
+                            Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + NumRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
                         }
                         FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        return;
+                        return MyTaskResults;
                     }
-
-                    CommonParameters = newParameters;
 
                     Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
                     Math.Round(CommonParameters.PrecursorMassTolerance.Value, 2) + " ppm precursor and " +
@@ -184,7 +166,7 @@ namespace TaskLayer
 
                 // generate calibration function and shift data points
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                new CalibrationEngine(myMsDataFile, acquisitionResults, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }).Run();
+                new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }).Run();
 
                 // do another search to evaluate calibration results
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });
@@ -199,7 +181,7 @@ namespace TaskLayer
                 bool improvement = ImprovGlobal(preCalibrationPrecursorErrorIqr, preCalibrationProductErrorIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorErrorIqr, postCalibrationProductErrorIqr);
 
                 // write toml settings for the calibrated file
-                var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + calibSuffix + ".toml");
+                var newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
 
                 var fileSpecificParams = new FileSpecificParameters();
 
@@ -230,11 +212,11 @@ namespace TaskLayer
 
                 // finished calibrating this file
                 SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                MyTaskResults.newSpectra.Add(calibratedFilePath);
-                MyTaskResults.newFileSpecificTomls.Add(newTomlFileName);
+                MyTaskResults.NewSpectra.Add(calibratedFilePath);
+                MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
-            });
+            }
 
             // re-write experimental design (if it has been defined) with new calibrated file names
             string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
@@ -254,8 +236,8 @@ namespace TaskLayer
                     else
                     {
                         var split = lines[i].Split('\t');
-                        string newline = Path.GetFileNameWithoutExtension(split[0]) + calibSuffix + "\t";
-                        for(int j = 1; j < split.Length; j++)
+                        string newline = Path.GetFileNameWithoutExtension(split[0]) + CalibSuffix + "\t";
+                        for (int j = 1; j < split.Length; j++)
                         {
                             newline += split[j] + "\t";
                         }
@@ -273,18 +255,10 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        #endregion Protected Methods
-
-        #region Private Fields
-
-        private int numRequiredPsms = 20;
-        private int numRequiredMs1Datapoints = 50;
-        private int numRequiredMs2Datapoints = 100;
-        private const string calibSuffix = "-calib";
-
-        #endregion Private Fields
-
-        #region Private Methods
+        private int NumRequiredPsms = 20;
+        private int NumRequiredMs1Datapoints = 50;
+        private int NumRequiredMs2Datapoints = 100;
+        private const string CalibSuffix = "-calib";
 
         private bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
         {
@@ -308,11 +282,9 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
         {
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
-            MassDiffAcceptor searchMode;
-            if (initPrecTol is PpmTolerance)
-                searchMode = new SinglePpmAroundZeroSearchMode(initPrecTol.Value);
-            else
-                searchMode = new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
+            MassDiffAcceptor searchMode = initPrecTol is PpmTolerance ?
+                (MassDiffAcceptor)new SinglePpmAroundZeroSearchMode(initPrecTol.Value) :
+                new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
             if (combinedParameters.BIons)
@@ -328,28 +300,34 @@ namespace TaskLayer
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
-            List<ProductType> lp = new List<ProductType>();
+            List<ProductType> productTypes = new List<ProductType>();
             if (combinedParameters.BIons)
-                lp.Add(ProductType.B);
+                productTypes.Add(ProductType.B);
             if (combinedParameters.YIons)
-                lp.Add(ProductType.Y);
+                productTypes.Add(ProductType.Y);
             if (combinedParameters.CIons)
-                lp.Add(ProductType.C);
+                productTypes.Add(ProductType.C);
             if (combinedParameters.ZdotIons)
-                lp.Add(ProductType.Zdot);
+                productTypes.Add(ProductType.Zdot);
 
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchMode, false, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productTypes, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, lp, new List<DigestionParams> { combinedParameters.DigestionParams }, combinedParameters.ReportAllAmbiguity, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
+            var compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
+                (allPsms, proteinList, fixedModifications, variableModifications, productTypes, new List<DigestionParams> { combinedParameters.DigestionParams },
+                combinedParameters.ReportAllAmbiguity, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run()).CompactPeptideToProteinPeptideMatching;
 
             foreach (var huh in allPsms)
+            {
                 if (huh != null)
+                {
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }
+            }
 
             allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
@@ -362,28 +340,6 @@ namespace TaskLayer
                 return new DataPointAquisitionResults(null, new List<PeptideSpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             }
 
-            var dissociationTypes = MetaMorpheusEngine.DetermineDissociationType(lp);
-            foreach (var psm in allPsms)
-            {
-                var theScan = myMsDataFile.GetOneBasedScan(psm.ScanNumber);
-                double thePrecursorMass = psm.ScanPrecursorMass;
-
-                foreach (var huh in lp)
-                {
-                    var ionMasses = psm.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
-                    Array.Sort(ionMasses);
-                    List<double> matchedIonMassesList = new List<double>();
-                    List<double> productMassErrorDaList = new List<double>();
-                    List<double> productMassErrorPpmList = new List<double>();
-                    List<double> matchedIonIntensitiesList = new List<double>();
-                    LocalizationEngine.MatchIons(theScan, initProdTol, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, false, matchedIonIntensitiesList);
-                    double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    psm.MatchedIonMassesDict.Add(huh, matchedIonMassesOnlyMatches);
-                    psm.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
-                    psm.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
-                }
-            }
-
             DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
                     goodIdentifications,
                     myMsDataFile,
@@ -393,11 +349,10 @@ namespace TaskLayer
                     CalibrationParameters.MinMS1IsotopicPeaksNeededForConfirmedIdentification,
                     CalibrationParameters.MinMS2IsotopicPeaksNeededForConfirmedIdentification,
                     fragmentTypesForCalibration,
+                    CommonParameters,
                     new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             return currentResult;
         }
-
-        #endregion Private Methods
     }
 }

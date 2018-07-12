@@ -13,6 +13,8 @@ using System.Text.RegularExpressions;
 using MassSpectrometry;
 using OxyPlot;
 using System.Globalization;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 
 namespace MetaDrawGUI
 {
@@ -27,7 +29,7 @@ namespace MetaDrawGUI
         private MsDataFile MsDataFile = null;   
         private List<PsmDraw> PSMs = null;
         private readonly ObservableCollection<SpectrumForDataGrid> spectrumNumsObservableCollection = new ObservableCollection<SpectrumForDataGrid>();
-        private CommonParameters CommonParameters;
+        private DrawParams DrawParameters;
 
         public MainWindow()
         {
@@ -46,7 +48,7 @@ namespace MetaDrawGUI
 
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
 
-            CommonParameters = new CommonParameters();
+            DrawParameters = new DrawParams();
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
             UpdateFieldsFromPanel();
@@ -232,8 +234,14 @@ namespace MetaDrawGUI
             {
                 try
                 {
+                    var cellPar = VisualTreeHelper.GetParent(sender as DependencyObject);
+                    while ((cellPar as DataGridCellsPresenter) == null)
+                    {
+                        cellPar = VisualTreeHelper.GetParent(cellPar);
+                    }
+                    DataGridCell senderCell =(DataGridCell)(cellPar as DataGridCellsPresenter).ItemContainerGenerator.ContainerFromIndex(0);
                     Regex regex = new Regex(@"\d+");
-                    int x = Convert.ToInt32(regex.Match(sender.ToString()).Value);
+                    int x = Convert.ToInt32(regex.Match(senderCell.ToString()).Value);
                     UpdateModel(x);
 
                 }
@@ -257,19 +265,19 @@ namespace MetaDrawGUI
             PsmDraw psmDraw = PSMs.Where(p => p.ScanNumber == x).First();
 
             var lp = new List<ProductType>();
-            if (CommonParameters.BIons)
+            if (DrawParameters.BIons)
             {
                 lp.Add(ProductType.BnoB1ions);
             }
-            if (CommonParameters.YIons)
+            if (DrawParameters.YIons)
             {
                 lp.Add(ProductType.Y);
             }
-            if (CommonParameters.CIons)
+            if (DrawParameters.CIons)
             {
                 lp.Add(ProductType.C);
             }
-            if (CommonParameters.ZdotIons)
+            if (DrawParameters.ZdotIons)
             {
                 lp.Add(ProductType.Zdot);
             }
@@ -278,7 +286,8 @@ namespace MetaDrawGUI
 
             var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
 
-            double pmmScore = PsmCross.XlMatchIons(msScanForDraw, CommonParameters.ProductMassTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+            double pmmScore = PsmCross.XlMatchIons(msScanForDraw, DrawParameters.ProductMassTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+
 
             psmDraw.MatchedIonInfo = matchedIonMassesListPositiveIsMatch;
 
@@ -298,7 +307,7 @@ namespace MetaDrawGUI
 
             btnReadResultFile.IsEnabled = true;
 
-            mainViewModel = new MainViewModel();
+            mainViewModel.Model = new PlotModel { Title = "Spectrum Annotation", Subtitle = "using OxyPlot" }; 
         }
 
         private void clearText(object sender, RoutedEventArgs e)
@@ -317,44 +326,44 @@ namespace MetaDrawGUI
 
         private void bCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            CommonParameters.BIons = true;
+            DrawParameters.BIons = true;
         }
 
         private void yCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            CommonParameters.YIons = true;
+            DrawParameters.YIons = true;
         }
 
         private void cCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            CommonParameters.CIons = true;
+            DrawParameters.CIons = true;
         }
 
         private void zdotCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            CommonParameters.ZdotIons = true;
+            DrawParameters.ZdotIons = true;
         }
 
         private void productMassToleranceTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (productMassToleranceComboBox.SelectedIndex == 0)
             {
-                CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                DrawParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
             else
             {
-                CommonParameters.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                DrawParameters.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
         }
 
         private void UpdateFieldsFromPanel()
         {
-            bCheckBox.IsChecked = CommonParameters.BIons;
-            yCheckBox.IsChecked = CommonParameters.YIons;
-            cCheckBox.IsChecked = CommonParameters.CIons;
-            zdotCheckBox.IsChecked = CommonParameters.ZdotIons;
-            productMassToleranceTextBox.Text = CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            bCheckBox.IsChecked = DrawParameters.BIons;
+            yCheckBox.IsChecked = DrawParameters.YIons;
+            cCheckBox.IsChecked = DrawParameters.CIons;
+            zdotCheckBox.IsChecked = DrawParameters.ZdotIons;
+            productMassToleranceTextBox.Text = DrawParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            productMassToleranceComboBox.SelectedIndex = DrawParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
         }
     }
 }

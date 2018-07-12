@@ -15,10 +15,7 @@
             </MenuItem>
             <MenuItem Header="Data">
                 <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
-            </MenuItem>
-            <MenuItem Header="Advanced">
-                <MenuItem Header="Instrument control and real-time search" Click="MenuItemClickRealTimeGUI_Click"></MenuItem>
-                <MenuItem Header="MetaDraw: Spectrum Annotation" Click="MenuItemClickMetaDrawGUI_Click"></MenuItem>
+                <MenuItem Header="MetaDraw: Spectrum Annotation" Click="MenuItemClickMetaDrawGUI_Click"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" >
@@ -152,14 +149,11 @@
                         Width="5" />
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="69*" />
-                    <RowDefinition Height="228*"/>
+                    <RowDefinition Height="2*" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="16*" />
-                    <RowDefinition Height="11*"/>
-                    <RowDefinition Height="122*"/>
+                    <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
-                <GroupBox Header="Tasks" Name="tasksGroupBox" Grid.RowSpan="2">
+                <GroupBox Header="Tasks" Name="tasksGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="20" />
@@ -215,6 +209,7 @@
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="DeleteSelectedTaskButton" Content="Delete Task" Click="DeleteSelectedTask" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
+                            <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_Click" IsEnabled="False" />
                         </StackPanel>
                         <DockPanel Margin="5" Grid.Row="4" LastChildFill="True">
                             <Button x:Name="OpenOutputFolderButton" Content="Open" Width="40" DockPanel.Dock="Right" Click="OpenOutputFolder_Click"></Button>
@@ -224,12 +219,12 @@
                         <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="5" />
                     </Grid>
                 </GroupBox>
-                <GridSplitter Grid.Row="2"
+                <GridSplitter Grid.Row="1"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Stretch"
                         Background="Silver"
                         Height="5" />
-                <GroupBox Header="Notifications" Grid.Row="3" Grid.RowSpan="3">
+                <GroupBox Header="Notifications" Grid.Row="2">
                     <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
                         <RichTextBox.Resources>
                             <Style TargetType="{x:Type Paragraph}">

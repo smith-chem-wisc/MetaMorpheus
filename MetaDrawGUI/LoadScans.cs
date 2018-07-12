@@ -31,11 +31,11 @@ namespace MetaDrawGUI
         {
             SearchParameters searchParameters = new SearchParameters();
 
-            CommonParameters commonParameters = new CommonParameters();
+            DrawParams DrawParameters = new DrawParams();
 
             MyFileManager myFileManager = new MyFileManager(searchParameters.DisposeOfFileWhenDone);
 
-            var msDataScans = myFileManager.LoadFile(currentRawDataFilename, commonParameters.TopNpeaks, commonParameters.MinRatio, commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
+            var msDataScans = myFileManager.LoadFile(currentRawDataFilename, DrawParameters.TopNpeaks, DrawParameters.MinRatio, DrawParameters.TrimMs1Peaks, DrawParameters.TrimMsMsPeaks);
 
             return msDataScans;
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MassSpectrometry;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,16 +7,10 @@ namespace EngineLayer.Neo
 {
     public static class NeoSplicePeptides
     {
-        #region Public Fields
-
         public static readonly int ionsUsedMassVer = 2;
         public static double fixedModMass = 0.0;
 
-        #endregion Public Fields
-
         //carbamidomethyl is defaulted at 0.
-
-        #region Public Methods
 
         public static List<NeoPsm> SplicePeptides(List<NeoPsm> psms)
         {
@@ -229,7 +224,5 @@ namespace EngineLayer.Neo
             }
             while (true);
         }
-
-        #endregion Public Methods
     }
 }
