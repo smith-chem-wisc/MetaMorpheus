@@ -284,18 +284,24 @@ namespace MetaMorpheusGUI
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                     if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN")) //singleN needs to appear after non-specific in list
+                        for (int i = 0; i < proteaseComboBox.Items.Count; i++)
                         {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                            if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleN"))
+                            {
+                                proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
+                                break;
+                            }
                         }
                     }
                     else
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC")) //singleC needs to appear after non-specific in list
+                        for (int i = 0; i < proteaseComboBox.Items.Count; i++)
                         {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                            if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleC"))
+                            {
+                                proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
+                                break;
+                            }
                         }
                     }
                 }
