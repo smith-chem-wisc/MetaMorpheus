@@ -433,7 +433,7 @@
     </ComponentGroup>
   </Fragment>
 
-  <!--Builds the App Neo\ProteolyticDigestion folder-->
+  <!--Builds the App ProteolyticDigestion folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
       <Component Id="RemoveProteolyticDigestion">
