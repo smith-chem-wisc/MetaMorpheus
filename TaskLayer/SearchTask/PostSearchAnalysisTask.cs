@@ -37,18 +37,20 @@ namespace TaskLayer
 
             GroupAndOrderPSMs();
 
-            if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen
-                || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open
-                || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
-                )
-            {
-                // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
-                Parameters.SearchParameters.DoLocalizationAnalysis = true;
-            }
-            else
-            {
-                Parameters.SearchParameters.DoLocalizationAnalysis = false;
-            }
+            // this code block is true/makes sense, but all the matched ion info is written in the localization engine
+            // need to rework some more code before we can skip the localization engine entirely
+            //if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen
+            //    || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open
+            //    || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
+            //    )
+            //{
+            //    // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
+            //    Parameters.SearchParameters.DoLocalizationAnalysis = true;
+            //}
+            //else
+            //{
+            //    Parameters.SearchParameters.DoLocalizationAnalysis = false;
+            //}
 
             ModificationAnalysis();
 
