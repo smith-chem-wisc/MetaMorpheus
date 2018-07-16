@@ -103,13 +103,7 @@ namespace TaskLayer
                     compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
                 }
             }
-
-            ProteinParsimonyResults preFilterproteinAnalysisResults = null;
-            if (Parameters.SearchParameters.DoParsimony)
-            {
-                preFilterproteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, Parameters.SearchParameters.ModPeptidesAreDifferent, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
-            }
-
+                        
             Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
             foreach (var huh in Parameters.AllPsms)
             {
