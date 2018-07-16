@@ -79,7 +79,12 @@ namespace Test
         public static void XlTest_BSA_DSSO()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
+            var commonParams = new CommonParameters();
+            commonParams.DoPrecursorDeconvolution = false;
+            commonParams.CIons = true;
+            commonParams.ZdotIons = true;
+            commonParams.ScoreCutoff = 2;
+            commonParams.DigestionParams = new DigestionParams(minPeptideLength: 5);
 
             var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
 
@@ -114,7 +119,7 @@ namespace Test
             List<PeptideWithSetModifications> digestedList = new List<PeptideWithSetModifications>();
             foreach (var item in proteinList)
             {
-                var digested = item.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+                var digested = item.Digest(commonParams.DigestionParams, fixedModifications, variableModifications).ToList();
                 digestedList.AddRange(digested);
             }
 
@@ -125,7 +130,7 @@ namespace Test
 
             //Run index engine
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams>
-            { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            { commonParams.DigestionParams }, commonParams, 30000, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -135,7 +140,7 @@ namespace Test
 
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParams.DoPrecursorDeconvolution, commonParams.UseProvidedPrecursorInfo, commonParams.DeconvolutionIntensityRatio, commonParams.DeconvolutionMaxAssumedChargeState, commonParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
             //Generate crosslinker, which is DSSO here.
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
@@ -143,11 +148,11 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParams, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
 
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
-            new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, crosslinker, TerminusType.None, commonParameters, new List<string> { }).Run();
+            new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, crosslinker, TerminusType.None, commonParams, new List<string> { }).Run();
             foreach (var item in newPsms)
             {
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -163,8 +168,8 @@ namespace Test
             task.WriteSingleToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Singe).ToList(), TestContext.CurrentContext.TestDirectory, "singlePsms", new List<string> { });
 
             //Test PsmCross.XlCalculateTotalProductMasses.
-            var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
-            var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
+            var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParams.DigestionParams);
+            var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParams.DigestionParams);
             var linkPos = PsmCross.XlPosCal(psmCrossAlpha.compactPeptide, crosslinker.CrosslinkerModSites);
             var productMassesAlphaList = PsmCross.XlCalculateTotalProductMasses(psmCrossAlpha, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass, crosslinker, lp, true, false, linkPos);
             Assert.AreEqual(productMassesAlphaList[0].ProductMz.Length, 99);
@@ -197,7 +202,10 @@ namespace Test
         public static void XlTest_DiffCrosslinkSites()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 4));
+            var commonParameters = new CommonParameters();
+            commonParameters.DoPrecursorDeconvolution = false;
+            commonParameters.ScoreCutoff = 1;
+            commonParameters.DigestionParams = new DigestionParams(minPeptideLength: 4);
 
             var xlSearchParameters = new XlSearchParameters
             {

@@ -18,6 +18,10 @@ namespace Test
         public static void SearchWithPeptidesAddedInParsimonyTest()
         {
             // Make sure can run the complete search task when multiple compact peptides may correspond to a single PWSM
+            CommonParameters c = new CommonParameters();
+            c.ScoreCutoff = 1;
+            c.DigestionParams = new DigestionParams(minPeptideLength: 2);
+
             SearchTask st = new SearchTask
             {
                 SearchParameters = new SearchParameters
@@ -26,19 +30,19 @@ namespace Test
                     DecoyType = DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 2)),
+                CommonParameters = c
             };
 
             string xmlName = "andguiaheow.xml";
 
-            CommonParameters CommonParameters = new CommonParameters(
-                scoreCutoff: 1,
-                digestionParams: new DigestionParams(
-                    maxMissedCleavages: 0,
-                    minPeptideLength: 1,
-                    maxModificationIsoforms: 2,
-                    initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
-                    maxModsForPeptides: 1));
+            CommonParameters commonParameters = new CommonParameters();
+            commonParameters.ScoreCutoff = 1;
+            commonParameters.DigestionParams = new DigestionParams(
+                maxMissedCleavages: 0,
+                minPeptideLength: 1,
+                maxModificationIsoforms: 2,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
+                maxModsForPeptides: 1);
 
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
             ModificationWithMass alanineMod = new ModificationWithMass("111", "mt", motifA, TerminusLocalization.Any, 111);
@@ -61,10 +65,10 @@ namespace Test
                 };
             Protein protein2 = new Protein("MG", "protein3", oneBasedModifications: oneBasedModifications2);
 
-            PeptideWithSetModifications pepMA = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
-            PeptideWithSetModifications pepMA111 = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).Last();
+            PeptideWithSetModifications pepMA = protein1.Digest(commonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
+            PeptideWithSetModifications pepMA111 = protein1.Digest(commonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).Last();
 
-            var pepMG = protein2.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
+            var pepMG = protein2.Digest(commonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
 
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
 

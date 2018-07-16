@@ -1,14 +1,13 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
-using System;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using TaskLayer;
-using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -17,8 +16,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class FileSpecificParametersWindow : Window
     {
-
-        //Window that is opened if user wishes to change file specific settings (TOML) for 
+        //Window that is opened if user wishes to change file specific settings (TOML) for
         //individual or multiple spectra files. Creates a toml file where settings can be
         //viewed, loaded, and changed from it.
         public FileSpecificParametersWindow(ObservableCollection<RawDataForDataGrid> selectedSpectraFiles)
@@ -146,7 +144,6 @@ namespace MetaMorpheusGUI
 
             // write parameters to toml files for the selected spectra files
 
-
             var tomlPathsForSelectedFiles = SelectedSpectra.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
             foreach (var tomlToWrite in tomlPathsForSelectedFiles)
             {
@@ -198,12 +195,12 @@ namespace MetaMorpheusGUI
 
                     if (fileSpecificParams.PrecursorMassTolerance != null)
                     {
-                        tempCommonParams.SetPrecursorMassTolerance(fileSpecificParams.PrecursorMassTolerance);
+                        tempCommonParams.PrecursorMassTolerance = fileSpecificParams.PrecursorMassTolerance;
                         fileSpecificPrecursorMassTolEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.ProductMassTolerance != null)
                     {
-                        tempCommonParams.SetProductMassTolerance(fileSpecificParams.ProductMassTolerance);
+                        tempCommonParams.ProductMassTolerance = fileSpecificParams.ProductMassTolerance;
                         fileSpecificProductMassTolEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.Protease != null)
@@ -252,7 +249,7 @@ namespace MetaMorpheusGUI
                 maxPeptideLength: tempMaxPeptideLength,
                 maxModsForPeptides: tempMaxModsForPeptide);
 
-            tempCommonParams.SetDigestionParams(digestParams);
+            tempCommonParams.DigestionParams = digestParams;
 
             // populate the GUI
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)

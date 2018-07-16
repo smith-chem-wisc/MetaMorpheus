@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,7 +12,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -68,7 +68,7 @@ namespace MetaMorpheusGUI
         {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
-        
+
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -306,10 +306,10 @@ namespace MetaMorpheusGUI
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages, 
-                minPeptideLength: MinPeptideLength, 
-                maxPeptideLength: MaxPeptideLength, 
-                maxModificationIsoforms: MaxModificationIsoforms, 
+                maxMissedCleavages: MaxMissedCleavages,
+                minPeptideLength: MinPeptideLength,
+                maxPeptideLength: MaxPeptideLength,
+                maxModificationIsoforms: MaxModificationIsoforms,
                 initiatorMethionineBehavior: InitiatorMethionineBehavior);
 
             Tolerance ProductMassTolerance;
@@ -340,32 +340,33 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
-            CommonParameters CommonParamsToSave = new CommonParameters(
-                productMassTolerance: ProductMassTolerance,
-                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
-                useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
-                digestionParams: digestionParamsToSave,
-                trimMs1Peaks: trimMs1.IsChecked.Value,
-                trimMsMsPeaks: trimMsMs.IsChecked.Value,
-                topNpeaks: int.Parse(TopNPeaksTextBox.Text),
-                minRatio: double.Parse(MinRatioTextBox.Text),
-                bIons: bCheckBox.IsChecked.Value,
-                yIons: yCheckBox.IsChecked.Value,
-                cIons: cCheckBox.IsChecked.Value,
-                zDotIons: zdotCheckBox.IsChecked.Value,
-                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
-                listOfModsVariable: listOfModsVariable,
-                listOfModsFixed: listOfModsFixed);
+            CommonParameters commonParamsToSave = new CommonParameters();
+            commonParamsToSave.ProductMassTolerance = ProductMassTolerance;
+            commonParamsToSave.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
+            commonParamsToSave.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+            commonParamsToSave.DigestionParams = digestionParamsToSave;
+            commonParamsToSave.TrimMs1Peaks = trimMs1.IsChecked.Value;
+            commonParamsToSave.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
+            commonParamsToSave.TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
+            commonParamsToSave.MinRatio = double.Parse(MinRatioTextBox.Text);
+            commonParamsToSave.BIons = bCheckBox.IsChecked.Value;
+            commonParamsToSave.YIons = yCheckBox.IsChecked.Value;
+            commonParamsToSave.CIons = cCheckBox.IsChecked.Value;
+            commonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            commonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            commonParamsToSave.TotalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
+            commonParamsToSave.ListOfModsVariable = listOfModsVariable;
+            commonParamsToSave.ListOfModsFixed = listOfModsFixed;
+
             if (OutputFileNameTextBox.Text != "")
             {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
+                commonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
             }
             else
             {
-                CommonParamsToSave.TaskDescriptor = "XLSearchTask";
+                commonParamsToSave.TaskDescriptor = "XLSearchTask";
             }
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }

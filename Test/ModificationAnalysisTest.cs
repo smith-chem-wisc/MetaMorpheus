@@ -61,20 +61,20 @@ namespace Test
             PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(0, protein1, 1, 9, allModsOneIsNterminus4);
             CompactPeptideBase pep4 = new CompactPeptide(pwsm4, TerminusType.None);
 
-            CommonParameters CommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(
+            CommonParameters commonParameters = new CommonParameters();
+            commonParameters.DigestionParams = new DigestionParams(
                     maxMissedCleavages: 0,
                     minPeptideLength: 1,
-                    maxModificationIsoforms: int.MaxValue),
-                scoreCutoff: 1);
+                    maxModificationIsoforms: int.MaxValue);
+            commonParameters.ScoreCutoff = 1;
 
             var newPsms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1, 0,10,0,scan,CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep2, 0,10,0,scan, CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep3, 0,10,0,scan, CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep4, 0,10,0,scan,CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan,commonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep1, 0,10,0,scan, commonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep2, 0,10,0,scan, commonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep3, 0,10,0,scan, commonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep4, 0,10,0,scan,commonParameters.DigestionParams),
             };
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
@@ -82,13 +82,13 @@ namespace Test
 
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine
             (newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
-            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
+            { ProductType.B, ProductType.Y }, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters.ReportAllAmbiguity, commonParameters, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
             {
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
             }
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, commonParameters, new List<string>());
             fdrAnalysisEngine.Run();
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
@@ -136,18 +136,20 @@ namespace Test
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
+            CommonParameters commonParameters = new CommonParameters();
+            commonParameters.DigestionParams = new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1);
+            commonParameters.ScoreCutoff = 1;
 
             var newPsms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep3, 0,10,0,scan, CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep1, 0, 10, 0, scan, commonParameters.DigestionParams),
+                new PeptideSpectralMatch(pep3, 0, 10, 0, scan, commonParameters.DigestionParams),
             };
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters.ReportAllAmbiguity, commonParameters, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms)
@@ -157,7 +159,7 @@ namespace Test
 
             Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
 
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, commonParameters, new List<string>());
             fdrAnalysisEngine.Run();
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();

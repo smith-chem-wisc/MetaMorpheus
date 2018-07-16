@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,7 +10,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -269,35 +269,35 @@ namespace MetaMorpheusGUI
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            CommonParameters CommonParamsToSave = new CommonParameters(
-                digestionParams: new DigestionParams(
-                    protease: protease.Name,
-                    maxMissedCleavages: MaxMissedCleavages,
-                    minPeptideLength: MinPeptideLength,
-                    maxPeptideLength: MaxPeptideLength,
-                    maxModificationIsoforms: MaxModificationIsoforms,
-                    initiatorMethionineBehavior: InitiatorMethionineBehavior),
-                    bIons: bCheckBox.IsChecked.Value,
-                    yIons: yCheckBox.IsChecked.Value,
-                    cIons: cCheckBox.IsChecked.Value,
-                    zDotIons: zdotCheckBox.IsChecked.Value,
-                    scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                    precursorMassTolerance: PrecursorMassTolerance,
-                    productMassTolerance: ProductMassTolerance,
-                    listOfModsFixed: listOfModsFixed,
-                    listOfModsVariable: listOfModsVariable);
+            CommonParameters commonParamsToSave = new CommonParameters();
+            commonParamsToSave.DigestionParams = new DigestionParams(
+                protease: protease.Name,
+                maxMissedCleavages: MaxMissedCleavages,
+                minPeptideLength: MinPeptideLength,
+                maxPeptideLength: MaxPeptideLength,
+                maxModificationIsoforms: MaxModificationIsoforms,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior);
+            commonParamsToSave.BIons = bCheckBox.IsChecked.Value;
+            commonParamsToSave.YIons = yCheckBox.IsChecked.Value;
+            commonParamsToSave.CIons = cCheckBox.IsChecked.Value;
+            commonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            commonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            commonParamsToSave.PrecursorMassTolerance = PrecursorMassTolerance;
+            commonParamsToSave.ProductMassTolerance = ProductMassTolerance;
+            commonParamsToSave.ListOfModsFixed = listOfModsFixed;
+            commonParamsToSave.ListOfModsVariable = listOfModsVariable;
 
             if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
             {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+                commonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
             }
             if (OutputFileNameTextBox.Text != "")
             {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
+                commonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
             }
             else
             {
-                CommonParamsToSave.TaskDescriptor = "GPTMDTask";
+                commonParamsToSave.TaskDescriptor = "GPTMDTask";
             }
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
@@ -306,7 +306,7 @@ namespace MetaMorpheusGUI
                 TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }

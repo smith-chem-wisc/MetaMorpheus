@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,7 +10,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -305,10 +305,10 @@ namespace MetaMorpheusGUI
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: maxMissedCleavages,
-                minPeptideLength: minPeptideLength, 
-                maxPeptideLength: maxPeptideLength, 
-                maxModificationIsoforms: maxModificationIsoforms, 
-                initiatorMethionineBehavior: initiatorMethionineBehavior, 
+                minPeptideLength: minPeptideLength,
+                maxPeptideLength: maxPeptideLength,
+                maxModificationIsoforms: maxModificationIsoforms,
+                initiatorMethionineBehavior: initiatorMethionineBehavior,
                 maxModsForPeptides: maxModsForPeptide);
 
             Tolerance ProductMassTolerance;
@@ -351,22 +351,20 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
-            CommonParameters CommonParamsToSave = new CommonParameters(
-                digestionParams: digestionParamsToSave,
-                bIons: bCheckBox.IsChecked.Value,
-                yIons: yCheckBox.IsChecked.Value,
-                cIons: cCheckBox.IsChecked.Value,
-                zDotIons: zdotCheckBox.IsChecked.Value,
-                productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance,
-                listOfModsFixed: listOfModsFixed,
-                listOfModsVariable: listOfModsVariable)
-            {
-                TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask"
-            };
+            CommonParameters c = new CommonParameters();
+            c.DigestionParams = digestionParamsToSave;
+            c.BIons = bCheckBox.IsChecked.Value;
+            c.YIons = yCheckBox.IsChecked.Value;
+            c.CIons = cCheckBox.IsChecked.Value;
+            c.ZdotIons = zdotCheckBox.IsChecked.Value;
+            c.ProductMassTolerance = ProductMassTolerance;
+            c.PrecursorMassTolerance = PrecursorMassTolerance;
+            c.ListOfModsFixed = listOfModsFixed;
+            c.ListOfModsVariable = listOfModsVariable;
+            c.TaskDescriptor = (OutputFileNameTextBox.Text != "") ? OutputFileNameTextBox.Text : "NeoSearchTask";
 
             TheTask.NeoParameters = neoParameters;
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = c;
 
             DialogResult = true;
         }
