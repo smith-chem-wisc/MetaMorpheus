@@ -1,5 +1,6 @@
 ﻿using Nett;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -62,20 +63,17 @@ namespace EngineLayer
             AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
-
-            ProteaseDictionary = LoadProteaseDictionary(Path.Combine(DataDir, @"Data", "proteases.tsv"));
         }
 
         // File locations
         public static string DataDir { get; }
-
+        public static bool StopLoops { get; set; }
         public static string ElementsLocation { get; }
         public static string MetaMorpheusVersion { get; }
         public static IGlobalSettings GlobalSettings { get; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-        public static Dictionary<string, Protease> ProteaseDictionary;
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }

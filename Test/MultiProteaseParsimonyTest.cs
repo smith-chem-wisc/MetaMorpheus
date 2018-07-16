@@ -7,6 +7,7 @@ using MassSpectrometry;
 using Proteomics;
 using System.Linq;
 using IO.MzML;
+using Proteomics.ProteolyticDigestion;
 using EngineLayer.FdrAnalysis;
 
 namespace Test
@@ -96,12 +97,12 @@ namespace Test
                     switch (peptide.BaseSequence)
                     {
                         case "ABC":
-                            if (peptide.digestionParams == digestionParams)
+                            if (peptide.DigestionParams == digestionParams)
                             {
                                 psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams));
                                 break;
                             }
-                            if (peptide.digestionParams == digestionParams2)
+                            if (peptide.DigestionParams == digestionParams2)
                             {
                                 psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2));
                                 break;
@@ -223,9 +224,9 @@ namespace Test
             List<Tuple<string, TerminusType>> sequencesInducingCleavage2 = new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) };
 
             var protease = new Protease("testA", sequencesInducingCleavage, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             var protease2 = new Protease("testB", sequencesInducingCleavage2, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease2.Name, protease2);
+            ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
             var p = new List<Protein>();
@@ -288,12 +289,12 @@ namespace Test
                     switch (peptide.BaseSequence)
                     {
                         case "ABC":
-                            if (peptide.digestionParams == digestionParams)
+                            if (peptide.DigestionParams == digestionParams)
                             {
                                 psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams));
                                 break;
                             }
-                            if (peptide.digestionParams == digestionParams2)
+                            if (peptide.DigestionParams == digestionParams2)
                             {
                                 psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2));
                                 break;
@@ -301,12 +302,12 @@ namespace Test
                             else { break; }
 
                         case "EFG":
-                            if (peptide.digestionParams == digestionParams)
+                            if (peptide.DigestionParams == digestionParams)
                             {
                                 psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams));
                                 break;
                             }
-                            if (peptide.digestionParams == digestionParams2)
+                            if (peptide.DigestionParams == digestionParams2)
                             {
                                 psms.Add(new PeptideSpectralMatch(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan, digestionParams2));
                                 break;
@@ -354,18 +355,18 @@ namespace Test
             Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
             Assert.AreEqual(2, proteinGroups.ElementAt(0).UniquePeptides.Count);
             Assert.AreEqual("ABC", proteinGroups.ElementAt(0).AllPeptides.ElementAt(0).BaseSequence);
-            Assert.AreEqual("testA", proteinGroups.ElementAt(0).AllPeptides.ElementAt(0).digestionParams.Protease.Name);
+            Assert.AreEqual("testA", proteinGroups.ElementAt(0).AllPeptides.ElementAt(0).DigestionParams.Protease.Name);
             Assert.AreEqual("EFG", proteinGroups.ElementAt(0).AllPeptides.ElementAt(1).BaseSequence);
-            Assert.AreEqual("testA", proteinGroups.ElementAt(0).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
+            Assert.AreEqual("testA", proteinGroups.ElementAt(0).AllPeptides.ElementAt(1).DigestionParams.Protease.Name);
             Assert.AreEqual("ABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).BaseSequence);
             Assert.AreEqual("EFG", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(1).BaseSequence);
 
             Assert.AreEqual(2, proteinGroups.ElementAt(1).AllPeptides.Count);
             Assert.AreEqual(2, proteinGroups.ElementAt(1).UniquePeptides.Count);
             Assert.AreEqual("ABC", proteinGroups.ElementAt(1).AllPeptides.ElementAt(0).BaseSequence);
-            Assert.AreEqual("testB", proteinGroups.ElementAt(1).AllPeptides.ElementAt(0).digestionParams.Protease.Name);
+            Assert.AreEqual("testB", proteinGroups.ElementAt(1).AllPeptides.ElementAt(0).DigestionParams.Protease.Name);
             Assert.AreEqual("EFG", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).BaseSequence);
-            Assert.AreEqual("testB", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).digestionParams.Protease.Name);
+            Assert.AreEqual("testB", proteinGroups.ElementAt(1).AllPeptides.ElementAt(1).DigestionParams.Protease.Name);
             Assert.AreEqual("ABC", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).BaseSequence);
             Assert.AreEqual("EFG", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(1).BaseSequence);
         }
