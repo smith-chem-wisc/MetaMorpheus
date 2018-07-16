@@ -372,7 +372,7 @@ namespace Test
         }
     
         [Test]
-        public static void fdrFilteringPsmsTest()
+        public static void FdrFilteringPsmsTest()
         {
             string[] sequences = {
                 "-XYZ--ABC",
@@ -509,7 +509,7 @@ namespace Test
             Assert.AreEqual(false, test6);
         }
         [Test]
-        public static void fdrFilteredParsimonyTest()
+        public static void FdrFilteredParsimonyTest()
         {
             SearchTask Task1 = new SearchTask
             {
