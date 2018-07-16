@@ -21,11 +21,11 @@ namespace TaskLayer
             NeoParameters = new NeoParameters();
             var tempDigParams = new DigestionParams(protease: "non-specific", maxMissedCleavages: 12, minPeptideLength: 8, maxPeptideLength: 13);
 
-            CommonParameters = new CommonParameters(
-                digestionParams: tempDigParams,
-                doPrecursorDeconvolution: false,
-                precursorMassTolerance: new PpmTolerance(double.MaxValue),
-                productMassTolerance: new PpmTolerance(double.MaxValue));
+            CommonParameters = new CommonParameters();
+            CommonParameters.DigestionParams = tempDigParams;
+            CommonParameters.DoPrecursorDeconvolution = false;
+            CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.MaxValue);
+            CommonParameters.ProductMassTolerance = new PpmTolerance(double.MaxValue);
         }
 
         public enum NeoTaskType { AggregateTargetDecoyFiles, GenerateSplicedPeptides, AggregateNormalSplicedFiles, SearchTransDb };

@@ -174,15 +174,14 @@ namespace TaskLayer
             bool cIons = fileSpecificParams.CIons ?? commonParams.CIons;
             bool zdotIons = fileSpecificParams.ZdotIons ?? commonParams.ZdotIons;
 
-            CommonParameters returnParams = new CommonParameters(
-                bIons: bIons,
-                yIons: yIons,
-                cIons: cIons,
-                zDotIons: zdotIons,
-                precursorMassTolerance: precursorMassTolerance,
-                productMassTolerance: productMassTolerance,
-                digestionParams: fileSpecificDigestionParams);
-
+            CommonParameters returnParams = new CommonParameters();
+            returnParams.BIons = bIons;
+            returnParams.YIons = yIons;
+            returnParams.CIons = cIons;
+            returnParams.ZdotIons = zdotIons;
+            returnParams.PrecursorMassTolerance = precursorMassTolerance;
+            returnParams.ProductMassTolerance = productMassTolerance;
+            returnParams.DigestionParams = fileSpecificDigestionParams;
             return returnParams;
         }
 

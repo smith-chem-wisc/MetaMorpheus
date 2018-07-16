@@ -249,7 +249,14 @@ namespace Test
 
         private static Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: 2, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, maxModsForPeptides: 1), scoreCutoff: 1);
+            CommonParameters commonParams = new CommonParameters();
+            commonParams.DigestionParams = new DigestionParams(
+                maxMissedCleavages: 0,
+                minPeptideLength: 1,
+                maxModificationIsoforms: 2,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
+                maxModsForPeptides: 1);
+            commonParams.ScoreCutoff = 1;
 
             // Alanine = Glycine + CH2
             Protein protein1 = new Protein("MA", "protein1");
@@ -283,11 +290,11 @@ namespace Test
                 protein3 = new Protein("MA", "protein3");
             }
 
-            var pepWithSetModifications1 = protein1.Digest(CommonParameters.DigestionParams, allKnownFixedModifications, variableModifications).First();
+            var pepWithSetModifications1 = protein1.Digest(commonParams.DigestionParams, allKnownFixedModifications, variableModifications).First();
 
-            var pepWithSetModifications2 = protein2.Digest(CommonParameters.DigestionParams, allKnownFixedModifications, variableModifications).First();
+            var pepWithSetModifications2 = protein2.Digest(commonParams.DigestionParams, allKnownFixedModifications, variableModifications).First();
 
-            var pepWithSetModifications3 = protein3.Digest(CommonParameters.DigestionParams, allKnownFixedModifications, variableModifications).Last();
+            var pepWithSetModifications3 = protein3.Digest(commonParams.DigestionParams, allKnownFixedModifications, variableModifications).Last();
 
             CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1, TerminusType.None);
             CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2, TerminusType.None);
@@ -302,11 +309,11 @@ namespace Test
             int scanIndex = 0;
             double score = 0;
             int notch = 0;
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(compactPeptide1, notch, score, scanIndex, scan, CommonParameters.DigestionParams);
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(compactPeptide1, notch, score, scanIndex, scan, commonParams.DigestionParams);
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(compactPeptide1, notch, score, scanIndex, scan, CommonParameters.DigestionParams);
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(compactPeptide1, notch, score, scanIndex, scan, commonParams.DigestionParams);
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(compactPeptide2, notch, score, scanIndex, scan, CommonParameters.DigestionParams);
+            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(compactPeptide2, notch, score, scanIndex, scan, commonParams.DigestionParams);
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             var newPsms = new List<PeptideSpectralMatch>
             {
@@ -317,7 +324,7 @@ namespace Test
 
             MassDiffAcceptor massDiffAcceptors = new SinglePpmAroundZeroSearchMode(5);
             SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 },
-                allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new CommonParameters(), new List<string>());
+                allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { commonParams.DigestionParams }, commonParams.ReportAllAmbiguity, new CommonParameters(), new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;

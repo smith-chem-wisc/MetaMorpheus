@@ -18,10 +18,12 @@ namespace Test
         [Test]
         public static void TestBinGeneration()
         {
+            CommonParameters c = new CommonParameters();
+            c.ScoreCutoff = 1;
+            c.DigestionParams = new DigestionParams(minPeptideLength: 5, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             SearchTask st = new SearchTask
             {
-                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
-
+                CommonParameters = c,
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
@@ -74,15 +76,15 @@ namespace Test
         [Test]
         public static void TestProteinSplitAcrossFiles()
         {
-            SearchTask st = new SearchTask()
+            CommonParameters c = new CommonParameters();
+            c.ScoreCutoff = 1;
+            c.DigestionParams = new DigestionParams(
+                maxMissedCleavages: 0,
+                minPeptideLength: 5,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
+            SearchTask st = new SearchTask
             {
-                CommonParameters = new CommonParameters(
-                    scoreCutoff: 1,
-                    digestionParams: new DigestionParams(
-                        maxMissedCleavages: 0,
-                        minPeptideLength: 5,
-                        initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
-
+                CommonParameters = c,
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,

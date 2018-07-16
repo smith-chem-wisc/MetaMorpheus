@@ -15,13 +15,13 @@ namespace Test
         [Test]
         public static void TestTomlFunction()
         {
-            SearchTask searchTask = new SearchTask
-            {
-                CommonParameters = new CommonParameters(
-                    productMassTolerance: new PpmTolerance(666),
-                    listOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") },
-                    listOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),
-            };
+            CommonParameters c = new CommonParameters();
+            c.ProductMassTolerance = new PpmTolerance(666);
+            c.ListOfModsFixed = new List<(string, string)> { ("a", "b"), ("c", "d") };
+            c.ListOfModsVariable = new List<(string, string)> { ("e", "f"), ("g", "h") };
+
+            SearchTask searchTask = new SearchTask { CommonParameters = c };
+
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
 

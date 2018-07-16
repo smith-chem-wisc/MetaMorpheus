@@ -54,7 +54,9 @@ namespace Test
 
             newPsm.MatchToProteinLinkedPeptides(matching);
 
-            CommonParameters commonParameters = new CommonParameters(productMassTolerance: fragmentTolerance);
+            CommonParameters commonParameters = new CommonParameters();
+            commonParameters.ProductMassTolerance = fragmentTolerance;
+
             LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, commonParameters, new List<string>());
             f.Run();
 

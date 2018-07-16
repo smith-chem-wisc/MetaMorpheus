@@ -46,10 +46,10 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
-            //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
-                // all proteins in DB have baseSequence!=null (not ambiguous)
-                // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(proteins.Count(),20);
+            //ensures that protein out put contins the correct number of proteins to match the folowing conditions.
+            // all proteins in DB have baseSequence!=null (not ambiguous)
+            // all proteins that belong to a protein group are written to DB
+            Assert.AreEqual(proteins.Count(), 20);
             int totalNumberOfMods = 0;
             foreach (Protein p in proteins)
             {
@@ -64,6 +64,9 @@ namespace Test
         [Test]
         public static void TestPrunedDatabase()
         {
+            CommonParameters c = new CommonParameters();
+            c.DigestionParams = new DigestionParams(minPeptideLength: 5);
+
             //Create Search Task
             SearchTask task1 = new SearchTask
             {
@@ -77,7 +80,7 @@ namespace Test
                         {"ConnorModType", 1}
                     }
                 },
-                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5))
+                CommonParameters = c
             };
 
             //add task to task list
@@ -160,6 +163,9 @@ namespace Test
         public static void TestUserModSelectionInPrunedDB()
         {
             List<(string, string)> listOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
+            CommonParameters c = new CommonParameters();
+            c.ListOfModsFixed = listOfModsFixed;
+
             //Create Search Task
             SearchTask task5 = new SearchTask
             {
@@ -169,7 +175,7 @@ namespace Test
                     SearchTarget = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 },
-                CommonParameters = new CommonParameters(listOfModsFixed: listOfModsFixed)
+                CommonParameters = c
             };
 
             task5.SearchParameters.ModsToWriteSelection["Mod"] = 0;

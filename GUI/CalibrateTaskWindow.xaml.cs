@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,7 +10,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -190,9 +190,9 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages, 
-                minPeptideLength: MinPeptideLength, 
-                maxPeptideLength: MaxPeptideLength, 
+                maxMissedCleavages: MaxMissedCleavages,
+                minPeptideLength: MinPeptideLength,
+                maxPeptideLength: MaxPeptideLength,
                 maxModificationIsoforms: MaxModificationIsoforms);
 
             var listOfModsVariable = new List<(string, string)>();
@@ -225,32 +225,32 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            CommonParameters CommonParamsToSave = new CommonParameters(
-                digestionParams: digestionParamsToSave,
-                bIons: bCheckBox.IsChecked.Value,
-                yIons: yCheckBox.IsChecked.Value,
-                cIons: cCheckBox.IsChecked.Value,
-                zDotIons: zdotCheckBox.IsChecked.Value,
-                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                listOfModsFixed: listOfModsFixed,
-                listOfModsVariable: listOfModsVariable,
-                productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance);
+            CommonParameters commonParamsToSave = new CommonParameters();
+            commonParamsToSave.DigestionParams = digestionParamsToSave;
+            commonParamsToSave.BIons = bCheckBox.IsChecked.Value;
+            commonParamsToSave.YIons = yCheckBox.IsChecked.Value;
+            commonParamsToSave.CIons = cCheckBox.IsChecked.Value;
+            commonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            commonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            commonParamsToSave.ListOfModsFixed = listOfModsFixed;
+            commonParamsToSave.ListOfModsVariable = listOfModsVariable;
+            commonParamsToSave.ProductMassTolerance = ProductMassTolerance;
+            commonParamsToSave.PrecursorMassTolerance = PrecursorMassTolerance;
 
             if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
             {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+                commonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
             }
             if (OutputFileNameTextBox.Text != "")
             {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
+                commonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
             }
             else
             {
-                CommonParamsToSave.TaskDescriptor = "CalibrateTask";
+                commonParamsToSave.TaskDescriptor = "CalibrateTask";
             }
 
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }

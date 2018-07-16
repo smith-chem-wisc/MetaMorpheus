@@ -21,14 +21,14 @@ namespace Test
         {
             Protease protease = new Protease("Custom Protease5", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            CommonParameters CommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(
-                    protease: protease.Name,
-                    maxMissedCleavages: 0,
-                    minPeptideLength: 1,
-                    maxModificationIsoforms: 1042),
-                scoreCutoff: 1,
-                productMassTolerance: new PpmTolerance(10));
+            CommonParameters commonParams = new CommonParameters();
+            commonParams.DigestionParams = new DigestionParams(
+                protease: protease.Name,
+                maxMissedCleavages: 0,
+                minPeptideLength: 1,
+                maxModificationIsoforms: 1042);
+            commonParams.ScoreCutoff = 1;
+            commonParams.ProductMassTolerance = new PpmTolerance(10);
 
             List<ModificationWithMass> localizeableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
@@ -50,18 +50,18 @@ namespace Test
             }
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
-            var modPep = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).Last();
+            var modPep = proteinList.First().Digest(commonParams.DigestionParams, fixedModifications, variableModifications).Last();
             HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep };
             CompactPeptide compactPeptide1 = new CompactPeptide(value1.First(), TerminusType.None);
 
             Assert.AreEqual("QQQ", value1.First().BaseSequence);
-            var modPep2 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).First();
+            var modPep2 = proteinList.First().Digest(commonParams.DigestionParams, fixedModifications, variableModifications).First();
             HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2 };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
-            var modPep3 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[1];
+            var modPep3 = proteinList.First().Digest(commonParams.DigestionParams, fixedModifications, variableModifications).ToList()[1];
             HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3 };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
@@ -74,9 +74,9 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 3, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=2", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 2 + 132.040, 1, null);
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 4, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=3", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 3, 1, null);
 
-            PeptideSpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 0, 0, scanA, CommonParameters.DigestionParams);
-            PeptideSpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 0, 0, scanB, CommonParameters.DigestionParams);
-            PeptideSpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 0, 0, scanC, CommonParameters.DigestionParams);
+            PeptideSpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 0, 0, scanA, commonParams.DigestionParams);
+            PeptideSpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 0, 0, scanB, commonParams.DigestionParams);
+            PeptideSpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 0, 0, scanC, commonParams.DigestionParams);
 
             var newPsms = new List<PeptideSpectralMatch> { matchA, matchB, matchC };
 
@@ -98,7 +98,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { commonParams.DigestionParams }, commonParams.ReportAllAmbiguity, commonParams, new List<string>());
 
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
 
@@ -106,7 +106,7 @@ namespace Test
                 if (huh != null)
                     huh.MatchToProteinLinkedPeptides(res.CompactPeptideToProteinPeptideMatching);
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string> { "ff" });
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, commonParams, new List<string> { "ff" });
 
             engine.Run();
         }

@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,7 +12,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -68,7 +68,7 @@ namespace MetaMorpheusGUI
         internal SearchTask TheTask { get; private set; }
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        { 
+        {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
 
@@ -270,7 +270,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-
             if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
             {
                 if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
@@ -319,12 +318,10 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
 
-
-            
-           if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
-                maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
-                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text))
+            if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
+                 peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
+                 MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text))
             {
                 return;
             }
@@ -387,37 +384,37 @@ namespace MetaMorpheusGUI
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
             double MinRatio = double.Parse(MinRatioTextBox.Text);
 
-            CommonParameters CommonParamsToSave = new CommonParameters(
-                useDeltaScore: deltaScoreCheckBox.IsChecked.Value,
-                reportAllAmbiguity: allAmbiguity.IsChecked.Value,
-                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
-                totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
-                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
-                useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
-                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                calculateEValue: eValueCheckBox.IsChecked.Value,
-                listOfModsFixed: listOfModsFixed,
-                listOfModsVariable: listOfModsVariable,
-                bIons: bCheckBox.IsChecked.Value,
-                yIons: yCheckBox.IsChecked.Value,
-                cIons: cCheckBox.IsChecked.Value,
-                zDotIons: zdotCheckBox.IsChecked.Value,
-                precursorMassTolerance: PrecursorMassTolerance,
-                productMassTolerance: ProductMassTolerance,
-                digestionParams: digestionParamsToSave,
-                trimMs1Peaks: TrimMs1Peaks,
-                trimMsMsPeaks: TrimMsMsPeaks,
-                topNpeaks: TopNpeaks,
-                minRatio: MinRatio,
-                addCompIons: addCompIonCheckBox.IsChecked.Value);
+            CommonParameters commonParamsToSave = new CommonParameters();
+            commonParamsToSave.UseDeltaScore = deltaScoreCheckBox.IsChecked.Value;
+            commonParamsToSave.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
+            commonParamsToSave.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
+            commonParamsToSave.TotalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
+            commonParamsToSave.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
+            commonParamsToSave.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+            commonParamsToSave.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+            commonParamsToSave.CalculateEValue = eValueCheckBox.IsChecked.Value;
+            commonParamsToSave.ListOfModsFixed = listOfModsFixed;
+            commonParamsToSave.ListOfModsVariable = listOfModsVariable;
+            commonParamsToSave.BIons = bCheckBox.IsChecked.Value;
+            commonParamsToSave.YIons = yCheckBox.IsChecked.Value;
+            commonParamsToSave.CIons = cCheckBox.IsChecked.Value;
+            commonParamsToSave.ZdotIons = zdotCheckBox.IsChecked.Value;
+            commonParamsToSave.PrecursorMassTolerance = PrecursorMassTolerance;
+            commonParamsToSave.ProductMassTolerance = ProductMassTolerance;
+            commonParamsToSave.DigestionParams = digestionParamsToSave;
+            commonParamsToSave.TrimMs1Peaks = TrimMs1Peaks;
+            commonParamsToSave.TrimMsMsPeaks = TrimMsMsPeaks;
+            commonParamsToSave.TopNpeaks = TopNpeaks;
+            commonParamsToSave.MinRatio = MinRatio;
+            commonParamsToSave.AddCompIons = addCompIonCheckBox.IsChecked.Value;
 
             if (OutputFileNameTextBox.Text != "")
             {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
+                commonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
             }
             else
             {
-                CommonParamsToSave.TaskDescriptor = "SearchTask";
+                commonParamsToSave.TaskDescriptor = "SearchTask";
             }
 
             if (classicSearchRadioButton.IsChecked.Value)
@@ -462,7 +459,7 @@ namespace MetaMorpheusGUI
 
             if (!maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0))
             {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+                commonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
             }
             if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
             {
@@ -501,7 +498,7 @@ namespace MetaMorpheusGUI
 
             SetModSelectionForPrunedDB();
 
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }
