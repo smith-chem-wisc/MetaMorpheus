@@ -197,7 +197,7 @@ namespace Test
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 MaxFragmentSize = 1, // super small index
             };
-
+            
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: new AbsoluteTolerance(100), // super large tolerance (100 Da)
                 digestionParams: new DigestionParams(
@@ -291,6 +291,7 @@ namespace Test
                 SearchTarget = true,
             };
 
+            
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
                     protease: "Customized Protease",
