@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics.ProteolyticDigestion;
+using System.Collections.Generic;
 using System.Text;
 
 namespace EngineLayer.Indexing

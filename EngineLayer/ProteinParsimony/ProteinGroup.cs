@@ -1,5 +1,6 @@
 ﻿using FlashLFQ;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -105,7 +106,7 @@ namespace EngineLayer
             {
                 for (int i = 0; i < FilesForQuantification.Count; i++)
                 {
-                    sb.Append("Intensity_" + FilesForQuantification[i].filenameWithoutExtension + '\t');
+                    sb.Append("Intensity_" + FilesForQuantification[i].FilenameWithoutExtension + '\t');
                 }
             }
             sb.Append("Number of PSMs" + '\t');
@@ -145,7 +146,7 @@ namespace EngineLayer
             {
                 try
                 {
-                    masses.Add(new Proteomics.Peptide(sequence).MonoisotopicMass);
+                    masses.Add(new Proteomics.AminoAcidPolymer.Peptide(sequence).MonoisotopicMass);
                 }
                 catch (System.Exception)
                 {
@@ -350,7 +351,7 @@ namespace EngineLayer
                     var modsOnThisProtein = new HashSet<KeyValuePair<int, ModificationWithMass>>();
                     foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                     {
-                        foreach (var mod in pep.allModsOneIsNterminus)
+                        foreach (var mod in pep.AllModsOneIsNterminus)
                         {
                             if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
                                 modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
@@ -385,7 +386,7 @@ namespace EngineLayer
 
                         foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                         {
-                            foreach (var mod in pep.allModsOneIsNterminus)
+                            foreach (var mod in pep.AllModsOneIsNterminus)
                             {
                                 int tempPepNumTotal = 0; //For one mod, The total Pep Num
                                 if (!mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed") && !mod.Value.terminusLocalization.Equals(TerminusLocalization.PepC) && !mod.Value.terminusLocalization.Equals(TerminusLocalization.NPep))
@@ -465,7 +466,7 @@ namespace EngineLayer
             SpectraFileInfo spectraFileInfo = null;
             if (FilesForQuantification != null)
             {
-                spectraFileInfo = FilesForQuantification.Where(p => p.fullFilePathWithExtension == fullFilePath).First();
+                spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath).First();
                 subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
             }
 

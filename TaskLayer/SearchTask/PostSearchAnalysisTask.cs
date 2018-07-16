@@ -8,6 +8,7 @@ using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -31,6 +32,9 @@ namespace TaskLayer
 
         public MyTaskResults Run()
         {
+            // Stop loop if canceled
+            if (GlobalVariables.StopLoops) { return Parameters.SearchTaskResults; }
+
             GroupAndOrderPSMs();
 
             if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen
@@ -45,6 +49,21 @@ namespace TaskLayer
             {
                 Parameters.SearchParameters.DoLocalizationAnalysis = false;
             }
+
+            // this code block is true/makes sense, but all the matched ion info is written in the localization engine
+            // need to rework some more code before we can skip the localization engine entirely
+            //if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen
+            //    || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open
+            //    || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
+            //    )
+            //{
+            //    // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
+            //    Parameters.SearchParameters.DoLocalizationAnalysis = true;
+            //}
+            //else
+            //{
+            //    Parameters.SearchParameters.DoLocalizationAnalysis = false;
+            //}
 
             ModificationAnalysis();
 
@@ -78,7 +97,7 @@ namespace TaskLayer
             {
                 if (Parameters.SearchParameters.SearchType == SearchType.NonSpecific)
                 {
-                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethod.SeparateIonsByTerminus(Parameters.IonTypes);
+                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethods.SeparateIonsByTerminus(Parameters.IonTypes);
                     MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(Parameters.CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
                     foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
                     {
@@ -294,7 +313,7 @@ namespace TaskLayer
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
             {
-                var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
+                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
 
                 foreach (var psm in spectraFile)
                 {
@@ -492,7 +511,7 @@ namespace TaskLayer
             {
                 foreach (var file in Parameters.FlashLfqResults.peaks)
                 {
-                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, file.Key.filenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.fullFilePathWithExtension });
+                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
                 }
 
                 if (Parameters.CurrentRawFileList.Count > 1)
@@ -580,7 +599,7 @@ namespace TaskLayer
                         HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
                         if (proteinToConfidentModifiedSequences.ContainsKey(protein))
                         {
-                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
+                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.AllModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
                         }
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();

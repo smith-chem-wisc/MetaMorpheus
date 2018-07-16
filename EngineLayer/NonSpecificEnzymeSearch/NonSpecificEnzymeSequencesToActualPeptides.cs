@@ -1,5 +1,8 @@
 ﻿using Chemistry;
+using MassSpectrometry;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -84,7 +87,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 //Determine if the precursor mass can be obtained within the acceptable margin of error.
                                 double initialMass = 0;
-                                if (pwsm.allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
+                                if (pwsm.AllModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                                 {
                                     foreach (double nl in pep_n_term_variable_mod.neutralLosses)
                                     {
@@ -198,7 +201,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 //Determine if the precursor mass can be obtained within the acceptable margin of error.
                                 double initialMass = 0;
-                                if (pwsm.allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
+                                if (pwsm.AllModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                                 {
                                     foreach (double nl in pep_n_term_variable_mod.neutralLosses)
                                     {
@@ -316,7 +319,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 prevMass[0] += Residue.ResidueMonoisotopicMass[yyy[oneBasedIndexToLookAt - 1]];
 
-                yyy.allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
+                yyy.AllModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
                 if (residue_variable_mod == null)
                 {
                     if (massDiffAcceptor.Accepts(precursorMass, prevMass[0]) >= 0)

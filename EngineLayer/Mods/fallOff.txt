@@ -1,253 +1,260 @@
-fallOffN
-ID   fallOffN W
-PP   Peptide N-terminal.
-TG   W
-MT   fallOffN
-CF   C-11H-10N-2O-1
+Glycosylations
+ID   HexNAc
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C8H13NO5
+CF   C8H13NO5
+MT   N-linked glycosylation
 //
-ID   fallOffN Y
-PP   Peptide N-terminal.
-TG   Y
-MT   fallOffN
-CF   C-9H-9N-1O-2
+ID   HexNAc
+TG   S or T
+PP   Anywhere.
+NL   C8H13NO5
+CF   C8H13NO5
+MT   O-linked glycosylation
 //
-ID   fallOffN R
-PP   Peptide N-terminal.
-TG   R
-MT   fallOffN
-CF   C-6H-12N-4O-1
-//
-ID   fallOffN U
-PP   Peptide N-terminal.
-TG   U
-MT   fallOffN
-CF   C-3H-5N-1O-1Se-1
-//
-ID   fallOffN F
-PP   Peptide N-terminal.
-TG   F
-MT   fallOffN
-CF   C-9H-9N-1O-1
-//
-ID   fallOffN H
-PP   Peptide N-terminal.
-TG   H
-MT   fallOffN
-CF   C-6H-7N-3O-1
-//
-ID   fallOffN M
-PP   Peptide N-terminal.
-TG   M
-MT   fallOffN
-CF   C-5H-9N-1O-1S-1
-//
-ID   fallOffN E
-PP   Peptide N-terminal.
-TG   E
-MT   fallOffN
-CF   C-5H-7N-1O-3
-//
-ID   fallOffN K
-PP   Peptide N-terminal.
-TG   K
-MT   fallOffN
-CF   C-6H-12N-2O-1
-//
-ID   fallOffN Q
-PP   Peptide N-terminal.
-TG   Q
-MT   fallOffN
-CF   C-5H-8N-2O-2
-//
-ID   fallOffN D
-PP   Peptide N-terminal.
-TG   D
-MT   fallOffN
-CF   C-4H-5N-1O-3
-//
-ID   fallOffN N
-PP   Peptide N-terminal.
-TG   N
-MT   fallOffN
-CF   C-4H-6N-2O-2
-//
-ID   fallOffN I
-PP   Peptide N-terminal.
-TG   I
-MT   fallOffN
-CF   C-6H-11N-1O-1
-//
-ID   fallOffN L
-PP   Peptide N-terminal.
-TG   L
-MT   fallOffN
-CF   C-6H-11N-1O-1
-//
-ID   fallOffN C
-PP   Peptide N-terminal.
+ID   HexNAc
 TG   C
-MT   fallOffN
-CF   C-3H-5N-1O-1S-1
+PP   Anywhere.
+NL   C8H13NO5
+CF   C8H13NO5
+MT   Other glycosylation
 //
-ID   fallOffN T
+ID   Hex
+TG   X
 PP   Peptide N-terminal.
-TG   T
-MT   fallOffN
-CF   C-4H-7N-1O-2
+NL   C6H10O5
+CF   C6H10O5
+MT   Other glycosylation
 //
-ID   fallOffN V
-PP   Peptide N-terminal.
-TG   V
-MT   fallOffN
-CF   C-5H-9N-1O-1
+ID   Hex
+TG   Nxs or Nxt or R
+PP   Anywhere.
+NL   C6H10O5
+CF   C6H10O5
+MT   N-linked glycosylation
 //
-ID   fallOffN P
-PP   Peptide N-terminal.
-TG   P
-MT   fallOffN
-CF   C-5H-7N-1O-1
+ID   Hex
+TG   S or T or Y
+PP   Anywhere.
+NL   C6H10O5
+CF   C6H10O5
+MT   O-linked glycosylation
 //
-ID   fallOffN S
-PP   Peptide N-terminal.
-TG   S
-MT   fallOffN
-CF   C-3H-5N-1O-2
+ID   Hex
+TG   K or W or C
+PP   Anywhere.
+NL   C6H10O5
+CF   C6H10O5
+MT   Other glycosylation
 //
-ID   fallOffN A
-PP   Peptide N-terminal.
-TG   A
-MT   fallOffN
-CF   C-3H-5N-1O-1
+ID   Hex(2)HexNAc(2)dHex(1)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C34H56N2O24
+CF   C34H56N2O24
+MT   N-linked glycosylation
 //
-ID   fallOffN G
-PP   Peptide N-terminal.
-TG   G
-MT   fallOffN
-CF   C-2H-3N-1O-1
+ID   Hex(2)HexNAc(2)dHex(1)
+TG   S or T
+PP   Anywhere.
+NL   C34H56N2O24
+CF   C34H56N2O24
+MT   O-linked glycosylation
 //
-ID   fallOffC W
-PP   Peptide C-terminal.
-TG   W
-MT   fallOffC
-CF   C-11H-10N-2O-1
+ID   Hex(5)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C46H76N2O35
+CF   C46H76N2O35
+MT   N-linked glycosylation
 //
-ID   fallOffC Y
-PP   Peptide C-terminal.
-TG   Y
-MT   fallOffC
-CF   C-9H-9N-1O-2
+ID   Hex(7)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C58H96N2O45
+CF   C58H96N2O45
+MT   N-linked glycosylation
 //
-ID   fallOffC R
-PP   Peptide C-terminal.
-TG   R
-MT   fallOffC
-CF   C-6H-12N-4O-1
+ID   Hex(8)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C64H106N2O50
+CF   C64H106N2O50
+MT   N-linked glycosylation
 //
-ID   fallOffC U
-PP   Peptide C-terminal.
-TG   U
-MT   fallOffC
-CF   C-3H-5N-1O-1Se-1
+ID   Hex(1)HexNAc(1)NeuAc(1)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C46H76N2O35
+CF   C46H76N2O35
+MT   N-linked glycosylation
 //
-ID   fallOffC F
-PP   Peptide C-terminal.
-TG   F
-MT   fallOffC
-CF   C-9H-9N-1O-1
+ID   Hex(1)HexNAc(1)NeuAc(1)
+TG   S or T
+PP   Anywhere.
+NL   C46H76N2O35
+CF   C46H76N2O35
+MT   O-linked glycosylation
 //
-ID   fallOffC H
-PP   Peptide C-terminal.
-TG   H
-MT   fallOffC
-CF   C-6H-7N-3O-1
+ID   Hex(2)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C28H46N2O20
+CF   C28H46N2O20
+MT   N-linked glycosylation
 //
-ID   fallOffC M
-PP   Peptide C-terminal.
-TG   M
-MT   fallOffC
-CF   C-5H-9N-1O-1S-1
+ID   Hex(2)HexNAc(2)
+TG   S or T
+PP   Anywhere.
+NL   C28H46N2O20
+CF   C28H46N2O20
+MT   O-linked glycosylation
 //
-ID   fallOffC E
-PP   Peptide C-terminal.
-TG   E
-MT   fallOffC
-CF   C-5H-7N-1O-3
+ID   Hex(1)HexNAc(1)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C14H23NO10
+CF   C14H23NO10
+MT   N-linked glycosylation
 //
-ID   fallOffC K
-PP   Peptide C-terminal.
+ID   Hex(1)HexNAc(1)
+TG   S or T
+PP   Anywhere.
+NL   C14H23NO10
+CF   C14H23NO10
+MT   O-linked glycosylation
+//
+ID   Hex(6)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C52H86N2O40
+CF   C52H86N2O40
+MT   N-linked glycosylation
+//
+ID   Galactosyl
 TG   K
-MT   fallOffC
-CF   C-6H-12N-2O-1
+PP   Anywhere.
+NL   C6H10O6
+CF   C6H10O6
+MT   Other glycosylation
 //
-ID   fallOffC Q
-PP   Peptide C-terminal.
-TG   Q
-MT   fallOffC
-CF   C-5H-8N-2O-2
+ID   Galactosyl on N-term
+TG   X
+PP   N-terminal.
+NL   C6H10O6
+CF   C6H10O6
+MT   Other glycosylation
 //
-ID   fallOffC D
-PP   Peptide C-terminal.
-TG   D
-MT   fallOffC
-CF   C-4H-5N-1O-3
+ID   Hex(1)HexNAc(1)NeuAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C36H57N3O26
+CF   C36H57N3O26
+MT   N-linked glycosylation
 //
-ID   fallOffC N
-PP   Peptide C-terminal.
-TG   N
-MT   fallOffC
-CF   C-4H-6N-2O-2
+ID   Hex(1)HexNAc(1)NeuAc(2)
+TG   S or T
+PP   Anywhere.
+NL   C36H57N3O26
+CF   C36H57N3O26
+MT   O-linked glycosylation
 //
-ID   fallOffC I
-PP   Peptide C-terminal.
-TG   I
-MT   fallOffC
-CF   C-6H-11N-1O-1
+ID   Hex(1)HexNAc(1)NeuAc(1)NeuGc(1)
+TG   S or T
+PP   Anywhere.
+NL   C36H57N3O27
+CF   C36H57N3O27
+MT   O-linked glycosylation
 //
-ID   fallOffC L
-PP   Peptide C-terminal.
-TG   L
-MT   fallOffC
-CF   C-6H-11N-1O-1
+ID   HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C16H26N2O10
+CF   C16H26N2O10
+MT   N-linked glycosylation
 //
-ID   fallOffC C
-PP   Peptide C-terminal.
-TG   C
-MT   fallOffC
-CF   C-3H-5N-1O-1S-1
+ID   HexNAc(2)
+TG   S or T
+PP   Anywhere.
+NL   C16H26N2O10
+CF   C16H26N2O10
+MT   O-linked glycosylation
 //
-ID   fallOffC T
-PP   Peptide C-terminal.
-TG   T
-MT   fallOffC
-CF   C-4H-7N-1O-2
+ID   Hex(4)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C40H66N2O30
+CF   C40H66N2O30
+MT   N-linked glycosylation
 //
-ID   fallOffC V
-PP   Peptide C-terminal.
-TG   V
-MT   fallOffC
-CF   C-5H-9N-1O-1
+ID   dHex
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C6H10O4
+CF   C6H10O4
+MT   N-linked glycosylation
 //
-ID   fallOffC P
-PP   Peptide C-terminal.
-TG   P
-MT   fallOffC
-CF   C-5H-7N-1O-1
+ID   dHex
+TG   S or T
+PP   Anywhere.
+NL   C6H10O4
+CF   C6H10O4
+MT   O-linked glycosylation
 //
-ID   fallOffC S
-PP   Peptide C-terminal.
-TG   S
-MT   fallOffC
-CF   C-3H-5N-1O-2
+ID   Glucosylgalactosyl
+TG   K
+PP   Anywhere.
+NL   C12H20O11
+CF   C12H20O11
+MT   Other glycosylation
 //
-ID   fallOffC A
-PP   Peptide C-terminal.
-TG   A
-MT   fallOffC
-CF   C-3H-5N-1O-1
+ID   Glucuronyl
+TG   S or T
+PP   Anywhere.
+NL   C6H8O6
+CF   C6H8O6
+MT   O-linked glycosylation
 //
-ID   fallOffC G
-PP   Peptide C-terminal.
-TG   G
-MT   fallOffC
-CF   C-2H-3N-1O-1
+ID   Glucuronyl
+TG   X
+PP   N-terminal.
+NL   C6H8O6
+CF   C6H8O6
+MT   Other glycosylation
+//
+ID   Hex(1)HexNAc(1)NeuGc(1)
+TG   S or T
+PP   Anywhere.
+NL   C25H40N2O19
+CF   C25H40N2O19
+MT   O-linked glycosylation
+//
+ID   dHex(1)Hex(3)HexNAc(2)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C40H66N2O29
+CF   C40H66N2O29
+MT   N-linked glycosylation
+//
+ID   dHex(1)Hex(3)HexNAc(2)
+TG   S or T
+PP   Anywhere.
+NL   C40H66N2O29
+CF   C40H66N2O29
+MT   O-linked glycosylation
+//
+ID   HexNAc(1)dHex(1)
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C14H23NO9
+CF   C14H23NO9
+MT   N-linked glycosylation
+//
+ID   HexNAc(1)dHex(1)
+TG   S or T
+PP   Anywhere.
+NL   C14H23NO9
+CF   C14H23NO9
+MT   O-linked glycosylation
 //
