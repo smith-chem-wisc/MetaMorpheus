@@ -1,49 +1,36 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics.ProteolyticDigestion;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
 {
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
-        #region Private Fields
+        private readonly IEnumerable<PeptideSpectralMatch> NewPsms;
+        private readonly bool NoOneHitWonders;
+        private readonly bool TreatModPeptidesAsDifferentPeptides;
+        private readonly bool MergeIndistinguishableProteinGroups;
+        private readonly List<ProteinGroup> ProteinGroups;
 
-        private readonly IEnumerable<PeptideSpectralMatch> newPsms;
-        private readonly bool noOneHitWonders;
-        private readonly bool treatModPeptidesAsDifferentPeptides;
-        private readonly bool mergeIndistinguishableProteinGroups;
-        private readonly List<ProteinGroup> proteinGroups;
-
-        #endregion Private Fields
-
-        #region Public Constructors
-
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, List<string> nestedIds) : base(nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.newPsms = newPsms;
-            this.proteinGroups = proteinGroups;
-            this.noOneHitWonders = noOneHitWonders;
-            this.treatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
-            this.mergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
+            NewPsms = newPsms;
+            ProteinGroups = proteinGroups;
+            NoOneHitWonders = noOneHitWonders;
+            TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
+            MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
             Status("Running protein scoring and FDR engine!");
 
-            ScoreProteinGroups(proteinGroups, newPsms);
-            myAnalysisResults.sortedAndScoredProteinGroups = DoProteinFdr(proteinGroups);
+            ScoreProteinGroups(ProteinGroups, NewPsms);
+            myAnalysisResults.SortedAndScoredProteinGroups = DoProteinFdr(ProteinGroups);
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private static string StripDecoyIdentifier(string proteinGroupName) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
         {
@@ -58,9 +45,9 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValueNotch < 0.01&& psm.FdrInfo.QValue < 0.01)
+                if (psm.FdrInfo.QValueNotch < 0.01 && psm.FdrInfo.QValue < 0.01)
                 {
-                    if((treatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!treatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
+                    if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
                         foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                         {
@@ -93,7 +80,7 @@ namespace EngineLayer
             foreach (var proteinGroup in proteinGroups)
                 proteinGroup.Score();
 
-            if (mergeIndistinguishableProteinGroups)
+            if (MergeIndistinguishableProteinGroups)
             {
                 // merge protein groups that are indistinguishable after scoring
                 var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
@@ -130,12 +117,12 @@ namespace EngineLayer
         {
             Status("Calculating protein FDR...");
 
-            if (noOneHitWonders)
+            if (NoOneHitWonders)
             {
-                if (treatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
+                if (TreatModPeptidesAsDifferentPeptides)
+                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
                 else
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
             }
 
             // pair decoys and targets by accession
@@ -158,7 +145,7 @@ namespace EngineLayer
             }
 
             // pick the best notch-QValue for each paired accession
-            foreach(var accession in accessionToProteinGroup)
+            foreach (var accession in accessionToProteinGroup)
             {
                 if (accession.Value.Count > 1)
                 {
@@ -168,17 +155,17 @@ namespace EngineLayer
                     proteinGroups = proteinGroups.Except(pgList).ToList();
                 }
             }
-            
+
             // order protein groups by notch-QValue
             var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
 
             // calculate protein QValues
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
-            
+
             foreach (var proteinGroup in sortedProteinGroups)
             {
-                if (proteinGroup.isDecoy)
+                if (proteinGroup.IsDecoy)
                     cumulativeDecoy++;
                 else
                     cumulativeTarget++;
@@ -187,10 +174,8 @@ namespace EngineLayer
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
             }
-            
+
             return sortedProteinGroups;
         }
-
-        #endregion Private Methods
     }
 }

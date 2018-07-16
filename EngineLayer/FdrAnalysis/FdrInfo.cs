@@ -2,8 +2,6 @@
 {
     public class FdrInfo
     {
-        #region Public Properties
-
         public int CumulativeTarget { get; set; }
         public int CumulativeDecoy { get; set; }
         public int CumulativeTargetNotch { get; set; }
@@ -14,7 +12,5 @@
         public double MaximumLikelihood { get; set; }
         public double EValue { get; set; }
         public double EScore { get; set; }
-
-        #endregion Public Properties
     }
 }

@@ -2,19 +2,14 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
     internal class Parameter : INotifyPropertyChanged
     {
-        #region Private Fields
-
         private object _value;
-        private bool status;
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private bool Status;
 
         public Parameter()
         {
@@ -29,7 +24,7 @@ namespace MetaMorpheusGUI
             InitList = new ObservableCollection<string>();
             ProductMassToleranceList = new ObservableCollection<string>();
 
-            foreach (Protease protease in GlobalVariables.ProteaseDictionary.Values)
+            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
                 ProtList.Add(protease);
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 InitList.Add(initiatior_methionine_behavior);
@@ -37,15 +32,7 @@ namespace MetaMorpheusGUI
             ProductMassToleranceList.Add("ppm");
         }
 
-        #endregion Public Constructors
-
-        #region Public Events
-
         public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         public string ParamName { get; set; }
 
@@ -65,12 +52,12 @@ namespace MetaMorpheusGUI
 
         public bool HasChanged
         {
-            get { return status; }
+            get { return Status; }
             set
             {
-                status = value;
-                if (value == status) return;
-                status = value;
+                Status = value;
+                if (value == Status) return;
+                Status = value;
             }
         }
 
@@ -80,10 +67,6 @@ namespace MetaMorpheusGUI
 
         public ObservableCollection<string> ProductMassToleranceList { get; private set; }
 
-        #endregion Public Properties
-
-        #region Protected Methods
-
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
@@ -92,7 +75,5 @@ namespace MetaMorpheusGUI
 
             this.HasChanged = true;
         }
-
-        #endregion Protected Methods
     }
 }

@@ -10,7 +10,7 @@
 
     public class CrosslinkerTypeClass
     {
-        public CrosslinkerTypeClass(string crosslinkerModSites, string crosslinkerModSites2, string crosslinkerName, bool cleavable, double totalMass, 
+        public CrosslinkerTypeClass(string crosslinkerModSites, string crosslinkerModSites2, string crosslinkerName, bool cleavable, double totalMass,
             double cleaveMassShort, double cleaveMassLong, double loopMass, double deadendMassH2O, double deadendMassNH2, double deadendMassTris)
         {
             CrosslinkerModSites = crosslinkerModSites;
@@ -26,9 +26,9 @@
             DeadendMassTris = deadendMassTris;
         }
 
-        public CrosslinkerTypeClass() { }
-
-        #region Public Properties
+        public CrosslinkerTypeClass()
+        {
+        }
 
         public string CrosslinkerModSites { get; set; }
         public string CrosslinkerModSites2 { get; set; }
@@ -41,10 +41,6 @@
         public double DeadendMassH2O { get; set; }
         public double DeadendMassNH2 { get; set; }
         public double DeadendMassTris { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public CrosslinkerTypeClass SelectCrosslinker(CrosslinkerType name)
         {
@@ -88,7 +84,5 @@
 
             return this;
         }
-
-        #endregion Public Methods
     }
 }

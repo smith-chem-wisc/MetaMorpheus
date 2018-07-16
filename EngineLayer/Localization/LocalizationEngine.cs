@@ -1,92 +1,100 @@
 ﻿using MassSpectrometry;
-using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+/// <summary>
+/// The mass difference between an experimental precursor and the theoretical mass of the assigned peptide is determined. The LocalizationEngine attempts
+/// to localize this mass to one of the residues. It does this by adding the mass difference to each theoretical ion mass and looking for additional matches
+/// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
+/// monoisopic searches.
+/// </summary>
+///
 
 namespace EngineLayer.Localization
 {
     public class LocalizationEngine : MetaMorpheusEngine
     {
-        #region Private Fields
+        private readonly IEnumerable<PeptideSpectralMatch> AllResultingIdentifications;
+        private readonly List<ProductType> ProductTypes;
+        private readonly MsDataFile MyMsDataFile;
+        private readonly List<DissociationType> DissociationTypes;
 
-        private readonly IEnumerable<PeptideSpectralMatch> allResultingIdentifications;
-        private readonly List<ProductType> lp;
-        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-        private readonly Tolerance fragmentTolerance;
-        private readonly bool addCompIons;
-        private readonly List<DissociationType> dissociationTypes;
-
-        #endregion Private Fields
-
-        #region Public Constructors
-
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.allResultingIdentifications = allResultingIdentifications;
-            this.lp = lp;
-            this.myMsDataFile = myMsDataFile;
-            this.fragmentTolerance = fragmentTolerance;
-            this.addCompIons = addCompIons;
-            this.dissociationTypes = DetermineDissociationType(lp);
+            AllResultingIdentifications = allResultingIdentifications;
+            ProductTypes = lp;
+            MyMsDataFile = myMsDataFile;
+            DissociationTypes = DetermineDissociationType(lp);
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
-            foreach (var ok in allResultingIdentifications)
+            foreach (PeptideSpectralMatch psm in AllResultingIdentifications)
             {
-                ok.MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
-                ok.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
-                ok.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-                var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
-                double thePrecursorMass = ok.ScanPrecursorMass;
-                foreach (var huh in lp)
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
+                psm.MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
+                psm.MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
+                psm.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
+                psm.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
+                psm.MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
+                var theScan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
+                double thePrecursorMass = psm.ScanPrecursorMass;
+                foreach (ProductType productType in ProductTypes)
                 {
-                    var ionMasses = ok.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
-                    Array.Sort(ionMasses);
-                    List<double> matchedIonMassesList = new List<double>();
+                    var sortedTheoreticalProductMasses = psm.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { productType });
+                    Array.Sort(sortedTheoreticalProductMasses);
+                    List<int> matchedIonSeriesList = new List<int>();
+                    List<double> matchedIonMassToChargeRatioList = new List<double>();
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
-                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons);
-                    double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    ok.MatchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
-                    ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
-                    ok.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
+                    List<double> matchedIonIntensityList = new List<double>();
+
+                    //populate the above lists
+                    MatchIonsOld(theScan, commonParameters.ProductMassTolerance, sortedTheoreticalProductMasses, matchedIonSeriesList, matchedIonMassToChargeRatioList, productMassErrorDaList, productMassErrorPpmList, matchedIonIntensityList, thePrecursorMass, productType, commonParameters.AddCompIons);
+
+                    psm.MatchedIonSeriesDict.Add(productType, matchedIonSeriesList.ToArray());
+                    psm.MatchedIonMassToChargeRatioDict.Add(productType, matchedIonMassToChargeRatioList.ToArray());
+                    psm.ProductMassErrorDa.Add(productType, productMassErrorDaList.ToArray());
+                    psm.ProductMassErrorPpm.Add(productType, productMassErrorPpmList.ToArray());
+                    psm.MatchedIonIntensitiesDict.Add(productType, matchedIonIntensityList.ToArray());
                 }
             }
 
-            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
+            foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
-                var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
-                double thePrecursorMass = ok.ScanPrecursorMass;
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops) { break; }
 
-                if (ok.FullSequence == null)
+                var theScan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
+                double thePrecursorMass = psm.ScanPrecursorMass;
+
+                if (psm.FullSequence == null)
+                {
                     continue;
+                }
 
-                var representative = ok.CompactPeptides.First().Value.Item2.First();
+                PeptideWithSetModifications representative = psm.CompactPeptides.First().Value.Item2.First();
 
                 var localizedScores = new List<double>();
                 for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
                 {
-                    PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ok.ScanPrecursorMass - representative.MonoisotopicMass);
+                    PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, psm.ScanPrecursorMass - representative.MonoisotopicMass);
 
-                    var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                    var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
                     Array.Sort(gg);
-                    var score = CalculatePeptideScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons, 0);
+                    var score = CalculatePeptideScoreOld(theScan, commonParameters.ProductMassTolerance, gg, thePrecursorMass, DissociationTypes, commonParameters.AddCompIons, 0);
                     localizedScores.Add(score);
                 }
 
-                ok.LocalizedScores = localizedScores;
+                psm.LocalizedScores = localizedScores;
             }
             return new LocalizationEngineResults(this);
         }
-
-        #endregion Protected Methods
     }
 }
