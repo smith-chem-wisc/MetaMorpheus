@@ -3,6 +3,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,18 +16,16 @@ namespace Test
     [TestFixture]
     public static class MyTaskTest
     {
-
         [Test]
         public static void TestEverythingRunner()
         {
-
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask
             {
                 CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
-               
+
                 CalibrationParameters = new CalibrationParameters
                 {
                     WriteIntermediateFiles = true,
@@ -36,13 +35,12 @@ namespace Test
             GptmdTask task2 = new GptmdTask
             {
                 CommonParameters = new CommonParameters()
-                
             };
 
             SearchTask task3 = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
-                
+
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -54,7 +52,7 @@ namespace Test
             SearchTask task4 = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
-                
+
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
@@ -103,7 +101,6 @@ namespace Test
         [Test]
         public static void TestMultipleFilesRunner()
         {
-
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
@@ -113,7 +110,7 @@ namespace Test
                 (
                     digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                     listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
-                    listOfModsFixed : new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
                     productMassTolerance: new AbsoluteTolerance(0.01)
                 ),
                 CalibrationParameters = new CalibrationParameters
@@ -133,7 +130,7 @@ namespace Test
             SearchTask task3 = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
-                
+
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -144,7 +141,7 @@ namespace Test
             SearchTask task4 = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
-                
+
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
@@ -205,11 +202,11 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    digestionParams : new DigestionParams(minPeptideLength: 2),
+                    digestionParams: new DigestionParams(minPeptideLength: 2),
 
                     scoreCutoff: 1,
                     deconvolutionIntensityRatio: 999,
-                    deconvolutionMassTolerance : new PpmTolerance(50)
+                    deconvolutionMassTolerance: new PpmTolerance(50)
                 ),
                 SearchParameters = new SearchParameters
                 {
@@ -279,12 +276,12 @@ namespace Test
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
-                    (                       
-                        digestionParams : new DigestionParams(initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                        listOfModsVariable : new List<(string, string)>(),
-                        listOfModsFixed : new List<(string, string)>(),
-                        scoreCutoff : 1,
-                        precursorMassTolerance : new AbsoluteTolerance(1)
+                    (
+                        digestionParams: new DigestionParams(initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        listOfModsVariable: new List<(string, string)>(),
+                        listOfModsFixed: new List<(string, string)>(),
+                        scoreCutoff: 1,
+                        precursorMassTolerance: new AbsoluteTolerance(1)
                     ),
 
                     GptmdParameters = new GptmdParameters
@@ -327,13 +324,12 @@ namespace Test
         [Test]
         public static void TestPeptideCount()
         {
-
             SearchTask testPeptides = new SearchTask
             {
                 CommonParameters = new CommonParameters
                 (
-                    
-                    digestionParams : new DigestionParams(minPeptideLength: 5)
+
+                    digestionParams: new DigestionParams(minPeptideLength: 5)
                 ),
                 SearchParameters = new SearchParameters
                 {
@@ -411,8 +407,6 @@ namespace Test
                 }
             }
             Assert.IsTrue(foundD);
-
         }
-
     }
 }

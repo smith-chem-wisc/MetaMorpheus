@@ -1,18 +1,18 @@
 ﻿using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModificationAnalysis;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
     [TestFixture]
     public static class ModificationAnalysisTest
     {
-
         [Test]
         public static void TestModificationAnalysis()
         {
@@ -67,7 +67,7 @@ namespace Test
                     minPeptideLength: 1,
                     maxModificationIsoforms: int.MaxValue),
                 scoreCutoff: 1);
-           
+
             var newPsms = new List<PeptideSpectralMatch>
             {
                 new PeptideSpectralMatch(pep1, 0,10,0,scan,CommonParameters.DigestionParams),
@@ -79,8 +79,6 @@ namespace Test
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
-
-          
 
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine
             (newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
@@ -139,7 +137,7 @@ namespace Test
             CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
 
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
-            
+
             var newPsms = new List<PeptideSpectralMatch>
             {
                 new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
@@ -149,7 +147,6 @@ namespace Test
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-           
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
@@ -159,7 +156,6 @@ namespace Test
             }
 
             Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
-
 
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
@@ -177,12 +173,10 @@ namespace Test
 
             Assert.AreEqual(0, res.UnlocalizedFormulas.Count());
         }
-
     }
 
     internal class ThisTestScan : IScan
     {
-
         public string FullFilePath => null;
 
         public int OneBasedScanNumber => 0;
@@ -200,6 +194,5 @@ namespace Test
         public double PrecursorMonoisotopicPeakMz => 0;
 
         public double PrecursorMass => 0;
-
     }
 }

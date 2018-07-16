@@ -3,9 +3,11 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
+using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +23,7 @@ namespace Test
         public static void TestClassicSearchEngine()
         {
             Protease protease = new Protease("Customized Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
                 (digestionParams: new DigestionParams(
                     protease: protease.Name,
@@ -343,7 +345,7 @@ namespace Test
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
             };
             Protease protease = new Protease("single N", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.None), new Tuple<string, TerminusType>("G", TerminusType.None) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.SingleN, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams dp = new DigestionParams(protease: protease.Name);
             CommonParameters CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(5),
@@ -437,7 +439,7 @@ namespace Test
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
             };
             Protease protease = new Protease("single C", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.None), new Tuple<string, TerminusType>("G", TerminusType.None) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.SingleC, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             var dp = new DigestionParams(protease: protease.Name);
 
             CommonParameters CommonParameters = new CommonParameters(
@@ -530,7 +532,7 @@ namespace Test
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
             var protease = new Protease("singleN2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.None), new Tuple<string, TerminusType>("G", TerminusType.None), new Tuple<string, TerminusType>("M", TerminusType.None), new Tuple<string, TerminusType>("N", TerminusType.None), new Tuple<string, TerminusType>("Q", TerminusType.None) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.SingleN, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915) };
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 3);
@@ -547,7 +549,7 @@ namespace Test
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
             var protease = new Protease("singleC2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.None), new Tuple<string, TerminusType>("G", TerminusType.None), new Tuple<string, TerminusType>("M", TerminusType.None), new Tuple<string, TerminusType>("N", TerminusType.None), new Tuple<string, TerminusType>("Q", TerminusType.None) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.SingleC, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915, null) };
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 3);
@@ -586,7 +588,7 @@ namespace Test
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
             var protease = new Protease("singleN3", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.None, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: productMassTolerance,
                 digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 2, semiProteaseDigestion: true),
@@ -668,7 +670,7 @@ namespace Test
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
             var protease = new Protease("singleC3", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.None, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
                 productMassTolerance: productMassTolerance,
@@ -745,8 +747,8 @@ namespace Test
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
             var protease = new Protease("semi-trypsin1", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Semi, null, null, null);
             var protease2 = new Protease("semi-trypsin2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("N", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Semi, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
-            GlobalVariables.ProteaseDictionary.Add(protease2.Name, protease2);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: productMassTolerance,
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 5)
@@ -845,7 +847,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
             var protease = new Protease("semi-Trypsin", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("G", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Semi, null, null, null);
-            GlobalVariables.ProteaseDictionary.Add(protease.Name, protease);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams digestParams = new DigestionParams(protease: protease.Name, minPeptideLength: 2);
 
             //expect NNNQQQ, NNNQQ, NNNQ, NNN, NN and LK, KLK

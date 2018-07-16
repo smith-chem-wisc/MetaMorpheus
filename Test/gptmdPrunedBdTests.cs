@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,10 +15,9 @@ namespace Test
     [TestFixture]
     public static class GptmdPrunedDbTests
     {
-        
         // want a psm whose base sequence is not ambigous but full sequence is (ptm is not localized): make sure this does not make it in DB
-       
-       [Test]
+
+        [Test]
         public static void TestPrunedGeneration()
         {
             //Create GPTMD Task
@@ -25,13 +25,12 @@ namespace Test
             GptmdTask task1 = new GptmdTask
             {
                 CommonParameters = new CommonParameters(),
-                
             };
 
             SearchTask task2 = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
-                
+
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -40,32 +39,31 @@ namespace Test
                     SearchType = SearchType.Classic
                 }
             };
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2)};
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2) };
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
             engine.Run();
-            string final = Path.Combine(MySetUpClass.outputFolder, "task2","DbForPrunedDbGPTMDproteinPruned.xml");
+            string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
             //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
                 // all proteins in DB have baseSequence!=null (not ambiguous)
                 // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(proteins.Count(),22); //used to be 18 may now be 22 after psm filtered
+            Assert.AreEqual(proteins.Count(),20);
             int totalNumberOfMods = 0;
             foreach (Protein p in proteins)
             {
                 int numberOfMods = p.OneBasedPossibleLocalizedModifications.Count();
-                totalNumberOfMods=totalNumberOfMods + numberOfMods;
+                totalNumberOfMods = totalNumberOfMods + numberOfMods;
             }
             //tests that modifications are being done correctly
             Assert.AreEqual(totalNumberOfMods, 0);
-
         }
+
         //test if prunedDatabase matches expected output
         [Test]
         public static void TestPrunedDatabase()
         {
-
             //Create Search Task
             SearchTask task1 = new SearchTask
             {
@@ -80,7 +78,6 @@ namespace Test
                     }
                 },
                 CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5))
-                
             };
 
             //add task to task list
@@ -113,7 +110,6 @@ namespace Test
             Protein TestProteinWithMod = new Protein("PEPTID", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
 
             //First Write XML Database
-
             string xmlName = "okkk.xml";
 
             //Add Mod to list and write XML input database
@@ -147,7 +143,7 @@ namespace Test
             engine.Run();
 
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
-            
+
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
@@ -163,7 +159,6 @@ namespace Test
         [Test]
         public static void TestUserModSelectionInPrunedDB()
         {
-
             List<(string, string)> listOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             //Create Search Task
             SearchTask task5 = new SearchTask
@@ -231,7 +226,6 @@ namespace Test
             Protein TestProteinWithModObsevred = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere2);
 
             //First Write XML Database
-
             string xmlName = "selectedMods.xml";
             string xmlName2 = "selectedModsObvs.xml";
 
@@ -276,7 +270,7 @@ namespace Test
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             var Dlist = proteins[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
-            Assert.AreEqual(Dlist[0].numFixedMods, 1);
+            Assert.AreEqual(Dlist[0].NumFixedMods, 1);
 
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 3);
@@ -297,6 +291,4 @@ namespace Test
             Assert.AreEqual(listOfLocalMods.Count, 3);
         }
     }
-
-}     
-
+}

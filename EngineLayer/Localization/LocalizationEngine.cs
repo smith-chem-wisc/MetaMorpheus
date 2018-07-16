@@ -1,7 +1,16 @@
 ﻿using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+/// <summary>
+/// The mass difference between an experimental precursor and the theoretical mass of the assigned peptide is determined. The LocalizationEngine attempts
+/// to localize this mass to one of the residues. It does this by adding the mass difference to each theoretical ion mass and looking for additional matches
+/// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
+/// monoisopic searches.
+/// </summary>
+///
 
 namespace EngineLayer.Localization
 {
@@ -22,10 +31,13 @@ namespace EngineLayer.Localization
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications)
             {
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
                 psm.MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
                 psm.MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
                 psm.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
@@ -56,6 +68,9 @@ namespace EngineLayer.Localization
 
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
                 var theScan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 double thePrecursorMass = psm.ScanPrecursorMass;
 

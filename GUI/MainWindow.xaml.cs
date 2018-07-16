@@ -569,6 +569,9 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
+            GlobalVariables.StopLoops = false;
+            CancelButton.IsEnabled = true;
+
             // check for valid tasks/spectra files/protein databases
             if (!StaticTasksObservableCollection.Any())
             {
@@ -1253,6 +1256,17 @@ namespace MetaMorpheusGUI
             foreach (RawDataForDataGrid rdoc in rDOC)
                 if (rdoc.FileName == zzz.FileName) { return true; }
             return false;
+        }
+
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            string grammar = StaticTasksObservableCollection.Count <= 1 ? "this task" : "these tasks";
+            if (MessageBox.Show("Are you sure you want to cancel " + grammar + "?", "Cancel Tasks", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+            {
+                GlobalVariables.StopLoops = true;
+                CancelButton.IsEnabled = false;
+                notificationsTextBox.AppendText("Canceling...\n");
+            }
         }
 
         private void ChangeFileParameters_Click(object sender, RoutedEventArgs e)

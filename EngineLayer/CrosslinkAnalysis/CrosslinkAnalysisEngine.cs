@@ -1,5 +1,7 @@
 ﻿using EngineLayer.CrosslinkSearch;
+using MassSpectrometry;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -62,10 +64,17 @@ namespace EngineLayer.CrosslinkAnalysis
             int proteinsSeen = 0;
             int old_progress = 0;
             Status("Adding possible sources to peptide dictionary...");
-            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, fff =>
+            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
+                    {
+                        loopState.Stop();
+                        return;
+                    }
+
                     foreach (var peptideWithSetModifications in ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
                     {
                         var compactPeptide = peptideWithSetModifications.CompactPeptide(TerminusType);

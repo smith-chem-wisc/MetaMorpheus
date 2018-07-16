@@ -1,6 +1,7 @@
 ﻿using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ namespace EngineLayer.ClassicSearch
 
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(ProductTypes);
+            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
             var myLocks = new object[PeptideSpectralMatches.Length];
@@ -53,10 +54,17 @@ namespace EngineLayer.ClassicSearch
 
             if (Proteins.Any())
             {
-                Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, partitionRange =>
+                Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (partitionRange, loopState) =>
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops)
+                        {
+                            loopState.Stop();
+                            return;
+                        }
+
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (var peptide in Proteins[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
                         {
