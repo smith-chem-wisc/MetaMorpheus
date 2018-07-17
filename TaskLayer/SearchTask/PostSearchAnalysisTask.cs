@@ -125,7 +125,16 @@ namespace TaskLayer
                 var fdrFilteredCompactPepToProteinPepDictionary = compactPeptideToProteinPeptideMatching.ToDictionary(p => p.Key, p => new HashSet<PeptideWithSetModifications>(p.Value.Where(v => fdrFilteredPeptides.Contains(v))));
                 fdrFilteredCompactPepToProteinPepDictionary = fdrFilteredCompactPepToProteinPepDictionary.Where(p => p.Value.Count > 0).ToDictionary(p => p.Key, p => p.Value);
                 proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(fdrFilteredCompactPepToProteinPepDictionary, Parameters.SearchParameters.ModPeptidesAreDifferent, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+                Status("Resolving most probable peptide...", new List<string> { Parameters.SearchTaskId });
+                foreach (var huh in fdrFilteredPsms)
+                {
+                    if (huh != null)
+                    {
+                        huh.MatchToProteinLinkedPeptides(fdrFilteredCompactPepToProteinPepDictionary);
+                    }
+                }
             }
+                       
 
             //sort the list of psms by the score used for fdr calculation
             if (fdrAnalysisResults.DeltaScoreImprovement)
