@@ -269,7 +269,8 @@ namespace MetaMorpheusGUI
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-            CommonParameters CommonParamsToSave = new CommonParameters(
+            CommonParameters commonParamsToSave = new CommonParameters(
+                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GPTMDTask",
                 digestionParams: new DigestionParams(
                     protease: protease.Name,
                     maxMissedCleavages: MaxMissedCleavages,
@@ -277,27 +278,19 @@ namespace MetaMorpheusGUI
                     maxPeptideLength: MaxPeptideLength,
                     maxModificationIsoforms: MaxModificationIsoforms,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior),
-                    bIons: bCheckBox.IsChecked.Value,
-                    yIons: yCheckBox.IsChecked.Value,
-                    cIons: cCheckBox.IsChecked.Value,
-                    zDotIons: zdotCheckBox.IsChecked.Value,
-                    scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                    precursorMassTolerance: PrecursorMassTolerance,
-                    productMassTolerance: ProductMassTolerance,
-                    listOfModsFixed: listOfModsFixed,
-                    listOfModsVariable: listOfModsVariable);
+                bIons: bCheckBox.IsChecked.Value,
+                yIons: yCheckBox.IsChecked.Value,
+                cIons: cCheckBox.IsChecked.Value,
+                zDotIons: zdotCheckBox.IsChecked.Value,
+                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                precursorMassTolerance: PrecursorMassTolerance,
+                productMassTolerance: ProductMassTolerance,
+                listOfModsFixed: listOfModsFixed,
+                listOfModsVariable: listOfModsVariable);
 
             if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
             {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
-            if (OutputFileNameTextBox.Text != "")
-            {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
-            }
-            else
-            {
-                CommonParamsToSave.TaskDescriptor = "GPTMDTask";
+                commonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
             }
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
@@ -306,7 +299,7 @@ namespace MetaMorpheusGUI
                 TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }

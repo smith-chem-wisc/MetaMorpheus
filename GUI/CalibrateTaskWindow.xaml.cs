@@ -225,7 +225,8 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            CommonParameters CommonParamsToSave = new CommonParameters(
+            CommonParameters commonParamsToSave = new CommonParameters(
+                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
                 digestionParams: digestionParamsToSave,
                 bIons: bCheckBox.IsChecked.Value,
                 yIons: yCheckBox.IsChecked.Value,
@@ -239,18 +240,10 @@ namespace MetaMorpheusGUI
 
             if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
             {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
-            if (OutputFileNameTextBox.Text != "")
-            {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
-            }
-            else
-            {
-                CommonParamsToSave.TaskDescriptor = "CalibrateTask";
+                commonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
             }
 
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }

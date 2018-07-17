@@ -123,18 +123,18 @@ namespace TaskLayer
 
                     if (i == 1) // failed round 1
                     {
-                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(20));
-                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(50));
+                        CommonParameters.PrecursorMassTolerance = new PpmTolerance(20);
+                        CommonParameters.ProductMassTolerance = new PpmTolerance(50);
                     }
                     else if (i == 2) // failed round 2
                     {
-                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(30));
-                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(100));
+                        CommonParameters.PrecursorMassTolerance = new PpmTolerance(30);
+                        CommonParameters.ProductMassTolerance = new PpmTolerance(100);
                     }
                     else if (i == 3) // failed round 3
                     {
-                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(40));
-                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(150));
+                        CommonParameters.PrecursorMassTolerance = new PpmTolerance(40);
+                        CommonParameters.ProductMassTolerance = new PpmTolerance(150);
                     }
                     else // failed round 4
                     {
