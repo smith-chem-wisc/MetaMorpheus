@@ -116,16 +116,14 @@ namespace TaskLayer
             Status("Running FDR analysis...", Parameters.SearchTaskId);
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
-
-            var fdrFilteredPsms = Parameters.AllPsms.Where(p => p != null && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01);// can filter ambiguity with && here
-
-            var fdrFilteredPeptides = new HashSet<PeptideWithSetModifications>(fdrFilteredPsms.SelectMany(p => p.CompactPeptides.SelectMany(v => v.Value.Item2)));// contains ambiguous peptide ids
-            var fdrFilteredCompactPepToProteinPepDictionary = compactPeptideToProteinPeptideMatching.ToDictionary(p => p.Key, p => new HashSet<PeptideWithSetModifications>(p.Value.Where(v => fdrFilteredPeptides.Contains(v))));
-            fdrFilteredCompactPepToProteinPepDictionary = fdrFilteredCompactPepToProteinPepDictionary.Where(p => p.Value.Count > 0).ToDictionary(p => p.Key, p => p.Value);
-
+          
             ProteinParsimonyResults proteinAnalysisResults = null;
             if (Parameters.SearchParameters.DoParsimony)
             {
+                var fdrFilteredPsms = Parameters.AllPsms.Where(p => p != null && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01);// can filter ambiguity with && here
+                var fdrFilteredPeptides = new HashSet<PeptideWithSetModifications>(fdrFilteredPsms.SelectMany(p => p.CompactPeptides.SelectMany(v => v.Value.Item2)));// contains ambiguous peptide ids
+                var fdrFilteredCompactPepToProteinPepDictionary = compactPeptideToProteinPeptideMatching.ToDictionary(p => p.Key, p => new HashSet<PeptideWithSetModifications>(p.Value.Where(v => fdrFilteredPeptides.Contains(v))));
+                fdrFilteredCompactPepToProteinPepDictionary = fdrFilteredCompactPepToProteinPepDictionary.Where(p => p.Value.Count > 0).ToDictionary(p => p.Key, p => p.Value);
                 proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(fdrFilteredCompactPepToProteinPepDictionary, Parameters.SearchParameters.ModPeptidesAreDifferent, Parameters.CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
             }
 
