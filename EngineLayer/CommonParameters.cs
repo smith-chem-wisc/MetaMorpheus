@@ -72,13 +72,14 @@ namespace EngineLayer
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
         }
 
-        // Note:
-        // Any new property must not be nullable (int?) or else if it is null,
-        // the null setting will not be written to a toml
-        // and the default will override (so it's okay if the default is null)
+        // Notes:
+        // 1) Any new property must not be nullable (int?) or else if it is null,
+        //    the null setting will not be written to a toml
+        //    and the default will override (so it's okay if the default is null)
+        // 2) All setters should be private unless necessary
 
         public string TaskDescriptor { get; private set; }
-        public int MaxThreadsToUsePerFile { get; set; }
+        public int MaxThreadsToUsePerFile { get; private set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
         public bool DoPrecursorDeconvolution { get; private set; }
