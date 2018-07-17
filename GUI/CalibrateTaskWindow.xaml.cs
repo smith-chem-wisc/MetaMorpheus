@@ -225,7 +225,12 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            CommonParameters CommonParamsToSave = new CommonParameters(
+
+            bool parseMaxThreadsPerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
+
+            CommonParameters commonParamsToSave = new CommonParameters(
+                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
+                maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 digestionParams: digestionParamsToSave,
                 bIons: bCheckBox.IsChecked.Value,
                 yIons: yCheckBox.IsChecked.Value,
@@ -237,20 +242,7 @@ namespace MetaMorpheusGUI
                 productMassTolerance: ProductMassTolerance,
                 precursorMassTolerance: PrecursorMassTolerance);
 
-            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
-            {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
-            if (OutputFileNameTextBox.Text != "")
-            {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
-            }
-            else
-            {
-                CommonParamsToSave.TaskDescriptor = "CalibrateTask";
-            }
-
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }
