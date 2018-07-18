@@ -38,6 +38,7 @@
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <ComponentGroupRef Id="Appsrc_NeoData_files" />
       <ComponentGroupRef Id="Appsrc_NeoTomlFiles_files" />
+      <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
       <ComponentRef Id="RemoveNeo"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
@@ -61,6 +62,7 @@
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="DataFolder" Name="Data" />
           <Directory Id="ModsFolder" Name="Mods" />
+          <Directory Id="ProteolyticDigestionFolder" Name="ProteolyticDigestion" />
           <Directory Id="NeoFolder" Name="Neo">
             <Directory Id="NeoDataFolder" Name="Data" />
             <Directory Id="NeoTomlFilesFolder" Name="TomlFiles" />
@@ -90,6 +92,7 @@
           </Component>
           <Directory Id="MetaAppDataFolder" Name="Data" />
           <Directory Id="MetaAppModsFolder" Name="Mods" />
+          <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
           <Directory Id="NeoAppFolder" Name="Neo">
             <Directory Id="MetaAppNeoDataFolder" Name="Data" />
             <Directory Id="MetaAppNeoTomlFilesFolder" Name="TomlFiles" />
@@ -146,6 +149,9 @@
       </Component>
       <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="18bed74c-eedb-4efa-a6e3-1592ac7022e3">
         <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)UnmanagedThermoHelperLayer.dll" />
+      </Component>
+      <Component Id="Chromatography.dll">
+        <File Id="src_Chromatography.dll" Name="Chromatography.dll" Source="$(var.GUI_TargetDir)Chromatography.dll" />
       </Component>
       <Component Id="src_Thermo.dll">
         <File Id="src_Thermo.dll" Name="Thermo.dll" Source="$(var.GUI_TargetDir)Thermo.dll" />
@@ -290,84 +296,84 @@
         <RemoveFolder Id="MetaAppModsFolder" On="both"/>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
-      
+
       <!-- aListOfmods.txt -->
       <Component Id="Appsrc_Mods_aListOfmods.txt" Guid="0aa9b5ed-b47d-4a78-93b1-49ebc104d011">
         <File ReadOnly="no" Id="Appsrc_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
-      
+
       <!-- detachers.txt -->
       <Component Id="Appsrc_Mods_detachers.txt" Guid="9224cf63-edb0-4e30-83c2-b10fff7af13e">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_detachers.txt" Name="detachers.txt" Source="$(var.GUI_TargetDir)Mods\detachers.txt" />
       </Component>
-      
+
       <!-- fallOff.txt -->
       <Component Id="Appsrc_Mods_fallOff.txt" Guid="233836d8-d981-4ea9-a8fc-f62cdbc7b01a">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_fallOff.txt" Name="fallOff.txt" Source="$(var.GUI_TargetDir)Mods\fallOff.txt" />
       </Component>
-      
+
       <!-- glyco.txt -->
       <Component Id="Appsrc_Mods_glyco.txt" Guid="1707b26b-070e-46d5-9632-f1bc8bf4d281">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)Mods\glyco.txt" />
       </Component>
-      
+
       <!-- missing.txt -->
       <Component Id="Appsrc_Mods_missing.txt" Guid="0f659a4e-3ea9-4d3a-9a0f-65cda1015b01">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_missing.txt" Name="missing.txt" Source="$(var.GUI_TargetDir)Mods\missing.txt" />
       </Component>
-      
+
       <!-- Mods.txt -->
       <Component Id="Appsrc_Mods_Mods.txt" Guid="9be193e3-266c-4c1d-9973-341f0a5d108a">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
       </Component>
-      
+
       <!-- substitutions.txt -->
       <Component Id="Appsrc_Mods_substitutions.txt" Guid="f108606b-f9eb-4c3c-893b-7ec33c88a1d1">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)Mods\substitutions.txt" />
       </Component>
-      
+
       <!-- surfactants.txt -->
       <Component Id="Appsrc_Mods_surfactants.txt" Guid="937d6734-a4c0-469a-b070-64bf5de84b13">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)Mods\surfactants.txt" />
       </Component>
-      
+
       <!-- tmt.txt -->
       <Component Id="Appsrc_Mods_tmt.txt" Guid="f064b7a0-c650-4a40-8a9f-301cc6cb946e">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
       </Component>
-      
+
       <!-- Crosslink.txt -->
       <Component Id="Appsrc_Mods_Crosslink.txt" Guid="172f7116-4772-4f3b-a48b-b1e98a48b73d">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_Crosslink.txt" Name="Crosslink.txt" Source="$(var.GUI_TargetDir)Mods\Crosslink.txt" />
       </Component>
-      
+
       <!-- RNA.txt -->
       <Component Id="Appsrc_Mods_RNA.txt" Guid="99f09cd8-fbe1-454d-8cb3-9cc46de33515">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Mods_RNA.txt" Name="RNA.txt" Source="$(var.GUI_TargetDir)Mods\RNA.txt" />
       </Component>
-      
+
       <!--<Component Id="Appsrc_Mods_CommonArtifacts.txt" Guid="36555bef-88bf-4e06-87c7-ff2b196d1d0a">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
@@ -423,6 +429,22 @@
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Data_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)Data\proteases.tsv" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!--Builds the App ProteolyticDigestion folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
+      <Component Id="RemoveProteolyticDigestion">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppProteolyticDigestionFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      <Component Id="Appsrc_ProteolyticDigestion_proteases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_ProteolyticDigestion_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)ProteolyticDigestion\proteases.tsv" />
       </Component>
     </ComponentGroup>
   </Fragment>
