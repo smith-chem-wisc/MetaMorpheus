@@ -159,8 +159,7 @@ namespace EngineLayer
                 {
                     kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
                 }
-            }
-
+            }            
             // makes dictionary with proteins as keys and list of associated peptides as the value (makes parsimony algo easier)
             foreach (var kvp in CompactPeptideToProteinPeptideMatching)
             {
