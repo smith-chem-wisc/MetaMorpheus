@@ -125,7 +125,7 @@ namespace TaskLayer
 
                 lock (psmLock)
                 {
-                    allPsms.AddRange(newPsms);
+                    allPsms.AddRange(newPsms.Where(p => p != null));
                 }
 
                 completedFiles++;
@@ -137,7 +137,7 @@ namespace TaskLayer
             Status("Crosslink analysis engine", taskId);
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, OutputFolder, crosslinker, terminusType, CommonParameters, new List<string> { taskId }).Run();
-            allPsms = allPsms.Where(p => p != null).ToList();
+            allPsms = allPsms.ToList();
             if (XlSearchParameters.XlOutAll)
             {
                 try
