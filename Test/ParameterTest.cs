@@ -1,14 +1,9 @@
-﻿using Chemistry;
-using EngineLayer;
-using MassSpectrometry;
+﻿using EngineLayer;
 using MzLibUtil;
 using NUnit.Framework;
-using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using TaskLayer;
 
 namespace Test

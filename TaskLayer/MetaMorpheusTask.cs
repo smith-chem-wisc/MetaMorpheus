@@ -190,7 +190,7 @@ namespace TaskLayer
                 productMassTolerance: productMassTolerance,
                 digestionParams: fileSpecificDigestionParams,
 
-               //NEED THESE OR THEY'LL BE OVERWRITTEN
+                //NEED THESE OR THEY'LL BE OVERWRITTEN
                 doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
                 useProvidedPrecursorInfo: commonParams.UseProvidedPrecursorInfo,
                 deconvolutionIntensityRatio: commonParams.DeconvolutionIntensityRatio,
