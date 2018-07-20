@@ -33,7 +33,7 @@ namespace MetaDrawGUI
                 MessageBox.Show("Please check the file.");
                 return null;
             }
-            MainWindow curr = (MainWindow)Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
+            MetaDraw curr = (MetaDraw)Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive);
             
             for (int i = 0; i < resultArray[0].Length; i++)
             {

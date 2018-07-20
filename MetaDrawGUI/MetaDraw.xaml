@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaDrawGUI.MainWindow"
+﻿<Window x:Class="MetaDrawGUI.MetaDraw"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:oxy ="http://oxyplot.org/wpf"

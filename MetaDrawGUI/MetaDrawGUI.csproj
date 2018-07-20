@@ -137,7 +137,7 @@
     <Compile Include="DataGrids\SpectrumForDataGrid.cs" />
     <Compile Include="TsvResultReader.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
-    <Page Include="MainWindow.xaml">
+    <Page Include="MetaDraw.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -145,8 +145,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
+    <Compile Include="MetaDraw.xaml.cs">
+      <DependentUpon>MetaDraw.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

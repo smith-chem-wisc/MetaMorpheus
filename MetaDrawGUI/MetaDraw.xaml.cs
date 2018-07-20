@@ -19,9 +19,9 @@ using System.Windows.Media;
 namespace MetaDrawGUI
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for MetaDraw.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MetaDraw : Window
     {
         private readonly ObservableCollection<RawDataForDataGrid> spectraFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<RawDataForDataGrid> resultFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
@@ -31,7 +31,7 @@ namespace MetaDrawGUI
         private readonly ObservableCollection<SpectrumForDataGrid> spectrumNumsObservableCollection = new ObservableCollection<SpectrumForDataGrid>();
         private DrawParams DrawParameters;
 
-        public MainWindow()
+        public MetaDraw()
         {
 
             InitializeComponent();

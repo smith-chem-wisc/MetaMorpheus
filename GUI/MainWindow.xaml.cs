@@ -1343,7 +1343,7 @@ namespace MetaMorpheusGUI
 
         private void MetaDrawMenu_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawGUI.MainWindow metaDrawGUI = new MetaDrawGUI.MainWindow();
+            MetaDrawGUI.MetaDraw metaDrawGUI = new MetaDrawGUI.MetaDraw();
             metaDrawGUI.Show();
         }
     }
