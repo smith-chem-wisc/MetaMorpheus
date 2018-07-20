@@ -329,7 +329,19 @@ namespace EngineLayer
             }
             foreach (var protein in indistinguishableProteins)
             {
-                parsimonyProteinList.Add(protein.Key, protein.Value);
+                if (parsimonyProteinList.ContainsKey(protein.Key))
+                {                    
+                    foreach (var cpb in protein.Value)
+                    {
+                        parsimonyProteinList[protein.Key].Add(cpb);
+                    }
+                    
+                }
+                else
+                {
+                    parsimonyProteinList.Add(protein.Key, protein.Value);
+                }
+                
             }
 
             // multiprotease parsimony:
