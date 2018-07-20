@@ -164,7 +164,14 @@ namespace TaskLayer
                 maxMissedCleavages: maxMissedCleavages,
                 minPeptideLength: minPeptideLength,
                 maxPeptideLength: maxPeptideLength,
-                maxModsForPeptides: maxModsForPeptide);
+                maxModsForPeptides: maxModsForPeptide,
+
+                //NEED THESE OR THEY'LL BE OVERWRITTEN
+                maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
+                initiatorMethionineBehavior: commonParams.DigestionParams.InitiatorMethionineBehavior,
+                semiProteaseDigestion: commonParams.DigestionParams.SemiProteaseDigestion,
+                terminusTypeSemiProtease: commonParams.DigestionParams.TerminusTypeSemiProtease
+                );
 
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
@@ -181,7 +188,28 @@ namespace TaskLayer
                 zDotIons: zdotIons,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
-                digestionParams: fileSpecificDigestionParams);
+                digestionParams: fileSpecificDigestionParams,
+
+               //NEED THESE OR THEY'LL BE OVERWRITTEN
+                doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
+                useProvidedPrecursorInfo: commonParams.UseProvidedPrecursorInfo,
+                deconvolutionIntensityRatio: commonParams.DeconvolutionIntensityRatio,
+                deconvolutionMaxAssumedChargeState: commonParams.DeconvolutionMaxAssumedChargeState,
+                reportAllAmbiguity: commonParams.ReportAllAmbiguity,
+                addCompIons: commonParams.AddCompIons,
+                totalPartitions: commonParams.TotalPartitions,
+                scoreCutoff: commonParams.ScoreCutoff,
+                topNpeaks: commonParams.TopNpeaks,
+                minRatio: commonParams.MinRatio,
+                trimMs1Peaks: commonParams.TrimMs1Peaks,
+                trimMsMsPeaks: commonParams.TrimMsMsPeaks,
+                useDeltaScore: commonParams.UseDeltaScore,
+                calculateEValue: commonParams.CalculateEValue,
+                deconvolutionMassTolerance: commonParams.DeconvolutionMassTolerance,
+                maxThreadsToUsePerFile: commonParams.MaxThreadsToUsePerFile,
+                listOfModsVariable: commonParams.ListOfModsVariable,
+                listOfModsFixed: commonParams.ListOfModsFixed
+                );
 
             return returnParams;
         }

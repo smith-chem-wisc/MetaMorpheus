@@ -13,6 +13,7 @@ namespace EngineLayer
         {
         }
 
+        //if defaults are changed, please update TestFileSpecifcParameterOverwrite in ParameterTest.cs
         public CommonParameters(bool bIons = true, bool yIons = true, bool zDotIons = false, bool cIons = false, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
@@ -56,7 +57,7 @@ namespace EngineLayer
             }
         }
 
-        //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
+        //Any new property must NOT be nullable (such as int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay ONLY if the default is null)
         public string TaskDescriptor { get; set; }
 
         public int MaxThreadsToUsePerFile { get; set; }
@@ -84,37 +85,6 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
-
-        public CommonParameters Clone()
-        {
-            return new CommonParameters(
-                bIons: this.BIons,
-                yIons: this.YIons,
-                zDotIons: this.ZdotIons,
-                cIons: this.CIons,
-                doPrecursorDeconvolution: this.DoPrecursorDeconvolution,
-                useProvidedPrecursorInfo: this.UseProvidedPrecursorInfo,
-                deconvolutionIntensityRatio: this.DeconvolutionIntensityRatio,
-                deconvolutionMaxAssumedChargeState: this.DeconvolutionMaxAssumedChargeState,
-                reportAllAmbiguity: this.ReportAllAmbiguity,
-                addCompIons: this.AddCompIons,
-                totalPartitions: this.TotalPartitions,
-                scoreCutoff: this.ScoreCutoff,
-                topNpeaks: this.TopNpeaks,
-                minRatio: this.MinRatio,
-                trimMs1Peaks: this.TrimMs1Peaks,
-                trimMsMsPeaks: this.TrimMsMsPeaks,
-                useDeltaScore: this.UseDeltaScore,
-                calculateEValue: this.CalculateEValue,
-                productMassTolerance: this.ProductMassTolerance,
-                precursorMassTolerance: this.PrecursorMassTolerance,
-                deconvolutionMassTolerance: this.DeconvolutionMassTolerance,
-                maxThreadsToUsePerFile: this.MaxThreadsToUsePerFile,
-                digestionParams: this.DigestionParams,
-                listOfModsVariable: this.ListOfModsVariable,
-                listOfModsFixed: this.ListOfModsFixed
-            );
-        }
 
         public void SetProductMassTolerance(Tolerance ProductMassTolerance)
         {
