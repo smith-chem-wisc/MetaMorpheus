@@ -104,5 +104,15 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
+
+        public CommonParameters Clone()
+        {
+            CommonParameters c = new CommonParameters();
+            foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
+            {
+                property.SetValue(c, property.GetValue(this));
+            }
+            return c;
+        }
     }
 }
