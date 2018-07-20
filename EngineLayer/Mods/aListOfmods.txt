@@ -1,0 +1,22 @@
+﻿Fixed modifications
+ID   Carbamidomethyl of C
+TG   C
+PP   Anywhere.
+MT   Common Fixed
+CF   H3 C2 N O
+DR   Unimod; 4.
+//
+ID   Carbamidomethyl of U
+TG   U
+PP   Anywhere.
+MT   Common Fixed
+CF   H3 C2 N O
+DR   Unimod; 4.
+//
+ID   Oxidation of M
+TG   M
+PP   Anywhere.
+MT   Common Variable
+CF   O1
+DR   Unimod; 35.
+//
