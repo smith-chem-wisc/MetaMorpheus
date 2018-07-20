@@ -219,7 +219,7 @@ namespace TaskLayer
                 }
                 lock (psmLock)
                 {
-                    allPsms.AddRange(fileSpecificPsms);
+                    allPsms.AddRange(fileSpecificPsms.Where(p => p != null));
                 }
 
                 completedFiles++;
@@ -250,6 +250,7 @@ namespace TaskLayer
             parameters.DatabaseFilenameList = dbFilenameList;
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask();
             postProcessing.Parameters = parameters;
+
             return postProcessing.Run();
         }
 
