@@ -15,7 +15,6 @@ namespace EngineLayer
         {
         }
 
-        //if defaults are changed, please update TestFileSpecifcParameterOverwrite in ParameterTest.cs
         public CommonParameters(
             string taskDescriptor = null,
             bool bIons = true,
