@@ -16,7 +16,7 @@ using System.Globalization;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 
-namespace MetaDrawGUI
+namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Interaction logic for MetaDraw.xaml
@@ -26,7 +26,7 @@ namespace MetaDrawGUI
         private readonly ObservableCollection<RawDataForDataGrid> spectraFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<RawDataForDataGrid> resultFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private MainViewModel mainViewModel = null;
-        private MsDataFile MsDataFile = null;   
+        private MsDataFile MsDataFile = null;
         private List<PsmDraw> PSMs = null;
         private readonly ObservableCollection<SpectrumForDataGrid> spectrumNumsObservableCollection = new ObservableCollection<SpectrumForDataGrid>();
         private DrawParams DrawParameters;
@@ -185,13 +185,17 @@ namespace MetaDrawGUI
 
         private void btnDraw_Click(object sender, RoutedEventArgs e)
         {
-
             mainViewModel.Model.InvalidatePlot(true);
 
-            int x = Convert.ToInt32(txtScanNum.Text);
-
-            UpdateModel(x);
-
+            if (int.TryParse(txtScanNum.Text, out int scanNumber))
+            {
+                UpdateModel(scanNumber);
+            }
+            else
+            {
+                MessageBox.Show("The input scan number is not an integer.");
+                return;
+            }
         }
 
         private void btnReadResultFile_Click(object sender, RoutedEventArgs e)
@@ -202,11 +206,11 @@ namespace MetaDrawGUI
             {
                 return;
             }
-            
-            LoadScans loadScans = new LoadScans(spectraFilesObservableCollection.Where(b => b.Use).First().FilePath,null);
+
+            LoadScans loadScans = new LoadScans(spectraFilesObservableCollection.Where(b => b.Use).First().FilePath, null);
 
             MsDataFile = loadScans.Run();
-            
+
             btnReadResultFile.IsEnabled = true;
 
             if (resultFilesObservableCollection.Count == 0)
@@ -221,7 +225,7 @@ namespace MetaDrawGUI
                 spectrumNumsObservableCollection.Add(new SpectrumForDataGrid(item.ScanNumber, item.FullSequence));
             }
             dataGridScanNums.Items.Refresh();
-            
+
 
             btnReadResultFile.IsEnabled = false;
             btnDraw.IsEnabled = true;
@@ -239,7 +243,7 @@ namespace MetaDrawGUI
                     {
                         cellPar = VisualTreeHelper.GetParent(cellPar);
                     }
-                    DataGridCell senderCell =(DataGridCell)(cellPar as DataGridCellsPresenter).ItemContainerGenerator.ContainerFromIndex(0);
+                    DataGridCell senderCell = (DataGridCell)(cellPar as DataGridCellsPresenter).ItemContainerGenerator.ContainerFromIndex(0);
                     Regex regex = new Regex(@"\d+");
                     int x = Convert.ToInt32(regex.Match(senderCell.ToString()).Value);
                     UpdateModel(x);
@@ -307,7 +311,7 @@ namespace MetaDrawGUI
 
             btnReadResultFile.IsEnabled = true;
 
-            mainViewModel.Model = new PlotModel { Title = "Spectrum Annotation", Subtitle = "using OxyPlot" }; 
+            mainViewModel.Model = new PlotModel { Title = "Spectrum Annotation", Subtitle = "using OxyPlot" };
         }
 
         private void clearText(object sender, RoutedEventArgs e)
@@ -320,7 +324,7 @@ namespace MetaDrawGUI
         private void restoreText(object sender, RoutedEventArgs e)
         {
             TextBox tb = (TextBox)sender;
-            if(tb.Text.Equals(string.Empty))
+            if (tb.Text.Equals(string.Empty))
                 tb.Text = "Scan Number";
         }
 

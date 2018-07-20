@@ -43,7 +43,7 @@
     <LangVersion>7</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>MMnice.ico</ApplicationIcon>
+    <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup>
@@ -85,6 +85,12 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot, Version=1.0.0.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
+      <HintPath>..\packages\OxyPlot.Core.1.0.0\lib\net45\OxyPlot.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot.Wpf, Version=1.0.0.0, Culture=neutral, PublicKeyToken=75e952ba404cdbb0, processorArchitecture=MSIL">
+      <HintPath>..\packages\OxyPlot.Wpf.1.0.0\lib\net45\OxyPlot.Wpf.dll</HintPath>
     </Reference>
     <Reference Include="PepXML, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.329\lib\net471\PepXML.dll</HintPath>
@@ -144,29 +150,37 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="BooleanInverter.cs" />
+    <Compile Include="ForDisplayingInDataGrids\SpectrumForDataGrid.cs" />
+    <Compile Include="MetaDraw.xaml.cs">
+      <DependentUpon>MetaDraw.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="FileSpecificParametersWindow.xaml.cs">
       <DependentUpon>FileSpecificParametersWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CollectionForTreeView.cs" />
+    <Compile Include="Util\CollectionForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\ExperimentalDesignForDataGrid.cs" />
-    <Compile Include="ForTreeView.cs" />
-    <Compile Include="GlobalGuiSettings.cs" />
+    <Compile Include="Util\CompactPeptideDraw.cs" />
+    <Compile Include="Util\DrawParams.cs" />
+    <Compile Include="Util\ForTreeView.cs" />
+    <Compile Include="Util\GlobalGuiSettings.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
       <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GuiGlobalParams.cs" />
+    <Compile Include="Util\GuiGlobalParams.cs" />
     <Compile Include="MetaUpdater.xaml.cs">
       <DependentUpon>MetaUpdater.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ModForTreeView.cs" />
-    <Compile Include="ModTypeForGrid.cs" />
-    <Compile Include="ModTypeForLoc.cs" />
-    <Compile Include="ModTypeForTreeView.cs" />
-    <Compile Include="OutputFileForTreeView.cs" />
+    <Compile Include="Util\LoadScans.cs" />
+    <Compile Include="Util\MainViewModel.cs" />
+    <Compile Include="Util\ModForTreeView.cs" />
+    <Compile Include="Util\ModTypeForGrid.cs" />
+    <Compile Include="Util\ModTypeForLoc.cs" />
+    <Compile Include="Util\ModTypeForTreeView.cs" />
+    <Compile Include="Util\OutputFileForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForCalibrationTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForGptmdTask.cs" />
@@ -177,7 +191,7 @@
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\PreRunTask.cs" />
-    <Compile Include="Parameter.cs" />
+    <Compile Include="Util\Parameter.cs" />
     <Compile Include="ExperimentalDesignWindow.xaml.cs">
       <DependentUpon>ExperimentalDesignWindow.xaml</DependentUpon>
     </Compile>
@@ -185,11 +199,14 @@
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
-    <Compile Include="InRunTask.cs" />
-    <Compile Include="TheTemplateSelector.cs" />
+    <Compile Include="Util\InRunTask.cs" />
+    <Compile Include="Util\PepWithSetModForCompactPep.cs" />
+    <Compile Include="Util\PsmDraw.cs" />
+    <Compile Include="Util\TheTemplateSelector.cs" />
     <Compile Include="NeoSearchTaskWindow.xaml.cs">
       <DependentUpon>NeoSearchTaskWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Util\TsvResultReader.cs" />
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
@@ -221,6 +238,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="MetaDraw.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MetaUpdater.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -285,27 +306,23 @@
       <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
       <Name>EngineLayer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetaDrawGUI\MetaDrawGUI.csproj">
-      <Project>{2963ffc2-52a5-4781-83be-7e327c3e57e9}</Project>
-      <Name>MetaDrawGUI</Name>
-    </ProjectReference>
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
       <Name>TaskLayer</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="MMnice.ico" />
+    <Resource Include="Icons\MMnice.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="wiki_20.bmp" />
+    <Resource Include="Icons\wiki_20.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Blogger_20.bmp" />
-    <Resource Include="git_20.bmp" />
-    <Resource Include="mail_20.bmp" />
-    <Resource Include="update_20.bmp" />
-    <Resource Include="youtube_20.bmp" />
+    <Resource Include="Icons\Blogger_20.bmp" />
+    <Resource Include="Icons\git_20.bmp" />
+    <Resource Include="Icons\mail_20.bmp" />
+    <Resource Include="Icons\update_20.bmp" />
+    <Resource Include="Icons\youtube_20.bmp" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

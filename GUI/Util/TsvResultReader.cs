@@ -12,7 +12,7 @@ using MzLibUtil;
 using System.Windows;
 using Proteomics.ProteolyticDigestion;
 
-namespace MetaDrawGUI
+namespace MetaMorpheusGUI
 {
     public class TsvResultReader
     {

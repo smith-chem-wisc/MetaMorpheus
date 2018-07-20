@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace MetaDrawGUI
+namespace MetaMorpheusGUI
 {
     class SpectrumForDataGrid
     {

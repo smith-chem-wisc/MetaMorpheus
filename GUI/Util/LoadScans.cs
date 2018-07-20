@@ -12,7 +12,7 @@ using MzLibUtil;
 using Chemistry;
 using TaskLayer;
 
-namespace MetaDrawGUI
+namespace MetaMorpheusGUI
 {
     class LoadScans
     {

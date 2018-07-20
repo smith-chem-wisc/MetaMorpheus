@@ -5,7 +5,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using Proteomics.AminoAcidPolymer;
 
-namespace MetaDrawGUI
+namespace MetaMorpheusGUI
 {
 
     [Serializable]

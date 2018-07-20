@@ -6,7 +6,7 @@ using Chemistry;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 
-namespace MetaDrawGUI
+namespace MetaMorpheusGUI
 {
     //public class PsmDraw : PeptideSpectralMatch
     public class PsmDraw
