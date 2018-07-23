@@ -1,6 +1,7 @@
 using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -407,6 +408,47 @@ namespace Test
                 }
             }
             Assert.IsTrue(foundD);
+        }
+
+        [Test]
+        public static void TestFileOutput()
+        {
+            var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
+
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
+            string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ok.mzML");
+            EverythingRunnerEngine singleMassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SingleMassSpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, Environment.CurrentDirectory);
+            EverythingRunnerEngine multipleMassSpectraFiles = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("MultipleMassSpectraFileOutput", task) }, new List<string> { raw, raw2 }, new List<DbForTask> { db }, Environment.CurrentDirectory);
+
+            singleMassSpectraFile.Run();
+            multipleMassSpectraFiles.Run();
+
+            
+            var thisTaskOutputFolder = MySetUpClass.outputFolder;
+            string[] files = Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput"));
+            Assert.That(files.Length == 9);
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "AllProteinGroups.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "AllPSMs.psmtsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "AllQuantifiedPeaks.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "AllQuantifiedPeptidesBaseSequences.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "AllQuantifiedPeptidesFullSequences.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "sliced-raw.mzid")));
+
+            string[] files2 = Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput"));
+            Assert.That(files2.Length == 10);
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "AllProteinGroups.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "AllPSMs.psmtsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "AllQuantifiedPeaks.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "AllQuantifiedPeptidesBaseSequences.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "AllQuantifiedPeptidesFullSequences.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "ok.mzid")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "sliced-raw.mzid")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "sliced-raw_forPercolator.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "sliced-raw_Peptides.psmtsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "sliced-raw_ProteinGroups.tsv")));
+            Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "sliced-raw_QuantifiedPeaks.tsv")));
+
         }
     }
 }
