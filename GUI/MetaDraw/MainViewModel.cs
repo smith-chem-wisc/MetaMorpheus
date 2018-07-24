@@ -64,58 +64,41 @@ namespace ViewModels
             var spectrumIntensities = msDataScan.MassSpectrum.YArray;
 
             PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = psmToDraw.FullSequence };
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.02 });
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2 });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.02, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
             model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
-            
+
             LineSeries[] allIons = new LineSeries[spectrumMzs.Length];
 
             // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
             if (psmToDraw != null)
             {
-                List<ProductType> p = new List<ProductType>();
-                if (drawParams.BIons)
-                    p.Add(ProductType.BnoB1ions);
-                if (drawParams.CIons)
-                    p.Add(ProductType.C);
-                if (drawParams.ZdotIons)
-                    p.Add(ProductType.Zdot);
-                if (drawParams.YIons)
-                    p.Add(ProductType.Y);
-
-                CommonParameters c = new CommonParameters(productMassTolerance: drawParams.ProductMassTolerance);
-
-                var matchedIons = MetaMorpheusEngine.MatchFragmentIons(msDataScan.MassSpectrum, psmToDraw.Peptide.GetTheoreticalFragments(p), c);
-
-                foreach (var peak in matchedIons)
+                foreach (var peak in psmToDraw.FragmentIons)
                 {
-                    ProductType peakProductType = peak.TheoreticalFragmentIon.ProductType;
-                    if (peakProductType == ProductType.BnoB1ions)
-                    {
-                        peakProductType = ProductType.B;
-                    }
-
-                    OxyColor ionColor = productTypeDrawColors[peak.TheoreticalFragmentIon.ProductType];
+                    OxyColor ionColor = productTypeDrawColors[peak.ProductType];
 
                     int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.Mz).Value;
 
+                    // peak line
                     allIons[i] = new LineSeries();
                     allIons[i].Color = ionColor;
                     allIons[i].StrokeThickness = STROKE_THICKNESS_ANNOTATED;
                     allIons[i].Points.Add(new DataPoint(peak.Mz, 0));
-                    allIons[i].Points.Add(new DataPoint(peak.Mz, peak.Intensity));
+                    allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
+                    // peak annotation
                     var peakAnnotation = new TextAnnotation();
-                    peakAnnotation.TextRotation = 45;
+                    peakAnnotation.TextRotation = -60;
                     peakAnnotation.Font = "Arial";
                     peakAnnotation.FontSize = 12;
                     peakAnnotation.FontWeight = 2.0;
                     peakAnnotation.TextColor = ionColor;
                     peakAnnotation.StrokeThickness = 0;
-                    peakAnnotation.TextPosition = allIons[i].Points[1];
-                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + ") " + peakProductType.ToString().ToLower() + "-" + peak.TheoreticalFragmentIon.IonNumber;
-
+                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + ") " + peak.ProductType.ToString().ToLower() + "-" + peak.IonNumber;
+                    peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
+                    peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
                     model.Annotations.Add(peakAnnotation);
+
                     model.Series.Add(allIons[i]);
                 }
             }
@@ -157,8 +140,8 @@ namespace ViewModels
             var matchedIonDic2 = psmParentsForDraw.BetaPsmCross.MatchedIonInfo;
 
             PlotModel model = new PlotModel { Title = "Spectrum anotation of Scan " + scanNum + " for Crosslinked Peptide", DefaultFontSize = 15 };
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = x.Max() * 1.02 });
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity(counts)", Minimum = 0, Maximum = y.Max() * 1.2 });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = x.Max() * 1.02, AbsoluteMinimum = 0 });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity(counts)", Minimum = 0, Maximum = y.Max() * 1.2, AbsoluteMinimum = 0 });
             var textAnnoSeq1 = new TextAnnotation() { };
             //textAnnoSeq1.TextRotation=90;
             textAnnoSeq1.FontSize = 12; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;
@@ -271,8 +254,8 @@ namespace ViewModels
             var matchedIonDic2 = psmParentsForDraw.BetaPsmCross.MatchedIonInfo;
 
             PlotModel model = new PlotModel { Title = "Spectrum anotation of Scan " + scanNum + " for Crosslinked Peptide", DefaultFontSize = 15 };
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = x.Max() * 1.02 });
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity(counts)", Minimum = 0, Maximum = y.Max() * 1.2 });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = x.Max() * 1.02, AbsoluteMinimum = 0 });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity(counts)", Minimum = 0, Maximum = y.Max() * 1.2, AbsoluteMinimum = 0 });
             var textAnnoSeq1 = new TextAnnotation() { };
             //textAnnoSeq1.TextRotation=90;
             textAnnoSeq1.FontSize = 12; textAnnoSeq1.TextColor = OxyColors.Red; textAnnoSeq1.StrokeThickness = 0; textAnnoSeq1.TextPosition = new DataPoint(x.Max() / 2, y.Max() * 1.15); textAnnoSeq1.Text = sequence1;

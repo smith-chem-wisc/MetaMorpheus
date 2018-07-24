@@ -1,9 +1,5 @@
-﻿using Proteomics.ProteolyticDigestion;
-using System;
+﻿using MassSpectrometry;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MetaMorpheusGUI
 {
@@ -11,13 +7,15 @@ namespace MetaMorpheusGUI
     {
         public int ScanNum { get; private set; }
         public string FullSequence { get; private set; }
-        public PeptideWithSetModifications Peptide { get; private set; }
+        public string FileName { get; private set; }
+        public List<TheoreticalFragmentIon> FragmentIons { get; private set; }
 
-        public MetaDrawPsm(int oneBasedScanNumber, PeptideWithSetModifications peptide)
+        public MetaDrawPsm(int oneBasedScanNumber, string fileName, string fullSequence, List<TheoreticalFragmentIon> fragmentIons)
         {
             this.ScanNum = oneBasedScanNumber;
-            this.FullSequence = peptide.Sequence;
-            this.Peptide = peptide;
+            this.FileName = fileName;
+            this.FullSequence = fullSequence;
+            this.FragmentIons = fragmentIons;
         }
     }
 }

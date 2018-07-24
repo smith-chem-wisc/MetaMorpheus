@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using EngineLayer;
-using EngineLayer.CrosslinkSearch;
 using System.Text.RegularExpressions;
-using Proteomics;
-using MzLibUtil;
 using System.Windows;
-using Proteomics.ProteolyticDigestion;
+using MassSpectrometry;
+using Chemistry;
 
 namespace MetaMorpheusGUI
 {
@@ -18,7 +13,11 @@ namespace MetaMorpheusGUI
     {
         private const string FULL_SEQUENCE_HEADER = "Full Sequence";
         private const string SCAN_NUMBER_HEADER = "Scan Number";
+        private const string FILENAME_HEADER = "File Name";
+        private const string MATCHED_MZ_HEADER = "Matched Ion Mass-To-Charge Ratios";
+        private static Regex ionParser = new Regex(@"([a-zA-Z]+)(\d+)");
         private static char[] split = new char[] { '\t' };
+        private static char[] mzSplit = new char[] { '[', ',', ']', ';' };
 
         public static List<MetaDrawPsm> ReadTsv(string filePath)
         {
@@ -38,6 +37,8 @@ namespace MetaMorpheusGUI
             int lineCount = 0;
             int fullSeqIndex = -1;
             int scanNumberIndex = -1;
+            int fileNameIndex = -1;
+            int matchedMzIndex = -1;
             string line;
             while (reader.Peek() > 0)
             {
@@ -50,91 +51,73 @@ namespace MetaMorpheusGUI
                 {
                     fullSeqIndex = Array.IndexOf(spl, FULL_SEQUENCE_HEADER);
                     scanNumberIndex = Array.IndexOf(spl, SCAN_NUMBER_HEADER);
+                    fileNameIndex = Array.IndexOf(spl, FILENAME_HEADER);
+                    matchedMzIndex = Array.IndexOf(spl, MATCHED_MZ_HEADER);
+                }
+
+                if (fullSeqIndex < 0 || scanNumberIndex < 0 || fileNameIndex < 0 || matchedMzIndex < 0)
+                {
+                    MessageBox.Show("Could not read PSMs file. Is it from an older version of MetaMorpheus?");
+                    return psms;
                 }
 
                 try
                 {
                     int oneBasedScanNumber = int.Parse(spl[scanNumberIndex]);
                     string peptideSequence = spl[fullSeqIndex];
-                    PeptideWithSetModifications peptide = ReadPeptideFromString(peptideSequence);
+                    string fileName = spl[fileNameIndex];
+                    string matchedPeaks = spl[matchedMzIndex];
+                    List<TheoreticalFragmentIon> peaks = ReadFragmentIonsFromString(matchedPeaks);
 
-                    psms.Add(new MetaDrawPsm(oneBasedScanNumber, peptide));
+                    psms.Add(new MetaDrawPsm(oneBasedScanNumber, fileName, peptideSequence, peaks));
                 }
                 catch (Exception)
                 {
                     // TODO: write some kind of warning here?
-                    // will skip ambiguous PSMs... and unreadable mods
                 }
             }
 
             reader.Close();
 
+            if ((lineCount - 1) != psms.Count)
+            {
+                MessageBox.Show("Warning: " + ((lineCount - 1) - psms.Count) + " PSMs were not read.");
+            }
+
             return psms;
         }
 
-        private static PeptideWithSetModifications ReadPeptideFromString(string sequence)
+        private static List<TheoreticalFragmentIon> ReadFragmentIonsFromString(string matchedMzString)
         {
-            // kind of weird... need to turn the peptide sequence into a protein and then digest it to get the peptide object...
-            // TODO: make a FromString method in PeptideWithSetModifications to parse from string instead of doing this
+            var peaks = matchedMzString.Split(mzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim());
+            List<TheoreticalFragmentIon> matchedIons = new List<TheoreticalFragmentIon>();
 
-            // read amino acid sequence and mods
-            string aminoAcidSequence = "";
-            int position = 0;
-
-            Dictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>();
-            int currentModPosition = 0;
-            string currentMod = "";
-            bool readingMod = false;
-            
-            for (int r = 0; r < sequence.Length; r++)
+            foreach (var peak in peaks)
             {
-                switch (sequence[r])
-                {
-                    case '[':
-                        // new mod
-                        readingMod = true;
-                        currentModPosition = r;
-                        break;
-                    case ']':
-                        // add the mod
-                        var sp = currentMod.Split(new char[] { ':' });
-                        string modType = sp[0];
-                        string modId = sp[1];
+                var split = peak.Split(new char[] { '+', ':' });
 
-                        var theMod = GlobalVariables.AllModsKnown.Where(v => v.id == modId && v.modificationType == modType).First() as ModificationWithMass;
-                        if (oneBasedModifications.TryGetValue(currentModPosition, out var alreadyObservedMods))
-                        {
-                            alreadyObservedMods.Add(theMod);
-                        }
-                        else
-                        {
-                            oneBasedModifications.Add(currentModPosition, new List<Modification> { theMod });
-                        }
+                string ionTypeAndNumber = split[0];
+                Match result = ionParser.Match(ionTypeAndNumber);
+                string ionType = result.Groups[1].Value;
+                int ionNumber = int.Parse(result.Groups[2].Value);
 
-                        readingMod = false;
-                        currentMod = "";
-                        break;
-                    default:
-                        // amino acid sequence or mod info
-                        if (!readingMod)
-                        {
-                            aminoAcidSequence += sequence[r];
-                            position++;
-                        }
-                        else
-                        {
-                            currentMod += sequence[r];
-                        }
-                        break;
-                }
+                ProductType p = ProductType.None;
+                if (ionType.Contains("b"))
+                    p = ProductType.B;
+                else if (ionType.Contains("y"))
+                    p = ProductType.Y;
+                else if (ionType.Contains("c"))
+                    p = ProductType.C;
+                else if (ionType.Contains("z"))
+                    p = ProductType.Zdot;
+
+                int z = int.Parse(split[1]);
+                double mz = double.Parse(split[2]);
+
+                matchedIons.Add(new TheoreticalFragmentIon(mz.ToMass(z), double.NaN, z, p, ionNumber));
             }
 
-            // create the peptide object w/ mods
-            PeptideWithSetModifications peptide = new Protein(aminoAcidSequence, "", oneBasedModifications: oneBasedModifications)
-                .Digest(new DigestionParams(protease: "top-down"), 
-                new List<ModificationWithMass>(), new List<ModificationWithMass>()).Where(v => v.Sequence == sequence).First();
-
-            return peptide;
+            return matchedIons;
         }
     }
 }
