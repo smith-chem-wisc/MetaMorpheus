@@ -21,14 +21,6 @@ namespace EngineLayer.Calibration
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            //Status("Generating MS1 calibration function");
-            //var ms1Model = GetRandomForestModel(myMs1DataPoints, ms1fracForTraining);
-            //var ms1Model = GetGradientBoostModel(myMs1DataPoints, ms1fracForTraining);
-
-            //Status("Generating MS2 calibration function");
-            //var ms2Model = GetRandomForestModel(myMs2DataPoints, ms2fracForTraining);
-            //var ms2Model = GetGradientBoostModel(myMs2DataPoints, ms2fracForTraining);
-
             Status("Calibrating spectra");
             List<LabeledDataPoint> ms1Points = Datapoints.Ms1List;
             List<LabeledDataPoint> ms2Points = Datapoints.Ms2List;
@@ -52,8 +44,6 @@ namespace EngineLayer.Calibration
             //index for scanNumber to scan placement and vice versa
             int[] ms1PlacementToScanNumber = ms1Scans.Select(x => x.OneBasedScanNumber).ToArray();
             int[] ms2PlacementToScanNumber = ms2Scans.Select(x => x.OneBasedScanNumber).ToArray();
-            //Ms1ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms1PlacementToScanNumber.Length * FractionOfFileUsedForSmoothing) / 2);
-            //Ms2ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms2PlacementToScanNumber.Length * FractionOfFileUsedForSmoothing) / 2);
 
             int[] scanNumberToScanPlacement = new int[originalScans.Max(x => x.OneBasedScanNumber) + 1];
             for (int i = 0; i < ms1PlacementToScanNumber.Length; i++)

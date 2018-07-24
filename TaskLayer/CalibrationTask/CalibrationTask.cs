@@ -168,20 +168,22 @@ namespace TaskLayer
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                 CalibrationEngine engine = new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 engine.Run();
+
+                //update file
                 myMsDataFile = engine.CalibratedDataFile;
               
                 // do another search to evaluate calibration results
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });
                 acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
 
+                // write the calibrated mzML file
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
+                myFileManager.DoneWithFile(originalUncalibratedFilePath);
+
                 // stats after calibration
                 int postCalibrationPsmCount = acquisitionResults.Psms.Count;
                 double postCalibrationPrecursorErrorIqr = acquisitionResults.PsmPrecursorIqrPpmError;
                 double postCalibrationProductErrorIqr = acquisitionResults.PsmProductIqrPpmError;
-
-                // write the calibrated mzML file
-                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
-                myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // did the data improve? (not used for anything yet...)
                 bool improvement = ImprovGlobal(preCalibrationPrecursorErrorIqr, preCalibrationProductErrorIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorErrorIqr, postCalibrationProductErrorIqr);
