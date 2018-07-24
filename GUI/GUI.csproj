@@ -150,10 +150,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ForDisplayingInDataGrids\SpectrumForDataGrid.cs" />
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MetaDraw\MetaDrawPsm.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
@@ -163,8 +163,7 @@
     </Compile>
     <Compile Include="Util\CollectionForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\ExperimentalDesignForDataGrid.cs" />
-    <Compile Include="Util\CompactPeptideDraw.cs" />
-    <Compile Include="Util\DrawParams.cs" />
+    <Compile Include="MetaDraw\DrawParams.cs" />
     <Compile Include="Util\ForTreeView.cs" />
     <Compile Include="Util\GlobalGuiSettings.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
@@ -174,8 +173,7 @@
     <Compile Include="MetaUpdater.xaml.cs">
       <DependentUpon>MetaUpdater.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Util\LoadScans.cs" />
-    <Compile Include="Util\MainViewModel.cs" />
+    <Compile Include="MetaDraw\MainViewModel.cs" />
     <Compile Include="Util\ModForTreeView.cs" />
     <Compile Include="Util\ModTypeForGrid.cs" />
     <Compile Include="Util\ModTypeForLoc.cs" />
@@ -200,13 +198,11 @@
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Compile Include="Util\InRunTask.cs" />
-    <Compile Include="Util\PepWithSetModForCompactPep.cs" />
-    <Compile Include="Util\PsmDraw.cs" />
     <Compile Include="Util\TheTemplateSelector.cs" />
     <Compile Include="NeoSearchTaskWindow.xaml.cs">
       <DependentUpon>NeoSearchTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Util\TsvResultReader.cs" />
+    <Compile Include="MetaDraw\TsvResultReader.cs" />
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>

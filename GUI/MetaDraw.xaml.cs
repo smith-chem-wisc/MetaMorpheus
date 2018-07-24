@@ -6,15 +6,12 @@ using System.Collections.ObjectModel;
 using System.IO;
 using ViewModels;
 using EngineLayer;
-using EngineLayer.CrosslinkSearch;
 using System.Collections.Generic;
 using MzLibUtil;
-using System.Text.RegularExpressions;
 using MassSpectrometry;
 using OxyPlot;
 using System.Globalization;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
+using TaskLayer;
 
 namespace MetaMorpheusGUI
 {
@@ -25,15 +22,15 @@ namespace MetaMorpheusGUI
     {
         private readonly ObservableCollection<RawDataForDataGrid> spectraFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<RawDataForDataGrid> resultFilesObservableCollection = new ObservableCollection<RawDataForDataGrid>();
-        private MainViewModel mainViewModel = null;
-        private MsDataFile MsDataFile = null;
-        private List<PsmDraw> PSMs = null;
-        private readonly ObservableCollection<SpectrumForDataGrid> spectrumNumsObservableCollection = new ObservableCollection<SpectrumForDataGrid>();
+        private MainViewModel mainViewModel;
+        private MyFileManager fileManager;
+        private MsDataFile MsDataFile;
+        private List<MetaDrawPsm> peptideSpectralMatches;
+        private readonly ObservableCollection<MetaDrawPsm> spectrumNumsObservableCollection = new ObservableCollection<MetaDrawPsm>();
         private DrawParams DrawParameters;
 
         public MetaDraw()
         {
-
             InitializeComponent();
 
             mainViewModel = new MainViewModel();
@@ -45,41 +42,32 @@ namespace MetaMorpheusGUI
             dataGridResultFiles.DataContext = resultFilesObservableCollection;
 
             dataGridScanNums.DataContext = spectrumNumsObservableCollection;
-
+            
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
 
             DrawParameters = new DrawParams();
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
             UpdateFieldsFromPanel();
+            fileManager = new MyFileManager(true);
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            if (true)
+            string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
+
+            if (files != null)
             {
-                string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
-
-                if (files != null)
+                foreach (var draggedFilePath in files)
                 {
-                    foreach (var draggedFilePath in files)
+                    if (File.Exists(draggedFilePath))
                     {
-                        if (Directory.Exists(draggedFilePath))
-                        {
-                            foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
-                            {
-                                AddAFile(file);
-                            }
-                        }
-                        else
-                        {
-                            AddAFile(draggedFilePath);
-                        }
-                        dataGridMassSpectraFiles.CommitEdit(DataGridEditingUnit.Row, true);
-                        dataGridMassSpectraFiles.Items.Refresh();
+                        AddAFile(draggedFilePath);
                     }
-                }
 
+                    dataGridMassSpectraFiles.CommitEdit(DataGridEditingUnit.Row, true);
+                    dataGridMassSpectraFiles.Items.Refresh();
+                }
             }
         }
 
@@ -89,7 +77,6 @@ namespace MetaMorpheusGUI
                 resultFilesObservableCollection.Clear();
             else
                 spectraFilesObservableCollection.Clear();
-
         }
 
         private void btnAddFiles_Click(object sender, RoutedEventArgs e)
@@ -103,12 +90,15 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
+            {
                 foreach (var rawDataFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(rawDataFromSelected);
                 }
+            }
             dataGridMassSpectraFiles.Items.Refresh();
         }
+
         private void btnAddResults_Click(object sender, RoutedEventArgs e)
         {
             btnReset.IsEnabled = true;
@@ -120,20 +110,17 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
+            {
                 foreach (var rawDataFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(rawDataFromSelected);
                 }
+            }
             dataGridResultFiles.Items.Refresh();
         }
 
         private void AddAFile(string draggedFilePath)
         {
-            // this line is NOT used because .xml.gz (extensions with two dots) mess up with Path.GetExtension
-            //var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
-
-            // we need to get the filename before parsing out the extension because if we assume that everything after the dot
-            // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
             var filename = Path.GetFileName(draggedFilePath);
             var theExtension = filename.Substring(filename.IndexOf(".")).ToLowerInvariant();
 
@@ -141,27 +128,30 @@ namespace MetaMorpheusGUI
             {
                 case ".raw":
                 case ".mzml":
-                    RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
-                    if (!SpectraFileExists(spectraFilesObservableCollection, zz)) { spectraFilesObservableCollection.Add(zz); }
+                    RawDataForDataGrid file = new RawDataForDataGrid(draggedFilePath);
+                    if (!SpectraFileExists(spectraFilesObservableCollection, file))
+                    {
+                        spectraFilesObservableCollection.Add(file);
+                    }
                     break;
-                case ".pep.XML":
                 case ".pep.xml":
                     break;
                 case ".psmtsv":
                 case ".tsv":
                     RawDataForDataGrid resultFileDataGrid = new RawDataForDataGrid(draggedFilePath);
-                    if (!SpectraFileExists(resultFilesObservableCollection, resultFileDataGrid)) { resultFilesObservableCollection.Add(resultFileDataGrid); }
+                    if (!SpectraFileExists(resultFilesObservableCollection, resultFileDataGrid))
+                    {
+                        resultFilesObservableCollection.Add(resultFileDataGrid);
+                    }
                     break;
                 default:
                     break;
             }
         }
 
-        private bool SpectraFileExists(ObservableCollection<RawDataForDataGrid> rDOC, RawDataForDataGrid zzz)
+        private bool SpectraFileExists(ObservableCollection<RawDataForDataGrid> data, RawDataForDataGrid file)
         {
-            foreach (RawDataForDataGrid rdoc in rDOC)
-                if (rdoc.FileName == zzz.FileName) { return true; }
-            return false;
+            return data.Select(p => p.FileName).Contains(file.FileName);
         }
 
         /*private void UpdateOutputFolderTextbox()
@@ -189,11 +179,11 @@ namespace MetaMorpheusGUI
 
             if (int.TryParse(txtScanNum.Text, out int scanNumber))
             {
-                UpdateModel(scanNumber);
+                DrawPsm(scanNumber);
             }
             else
             {
-                MessageBox.Show("The input scan number is not an integer.");
+                MessageBox.Show("The input scan number must be an integer.");
                 return;
             }
         }
@@ -204,99 +194,52 @@ namespace MetaMorpheusGUI
 
             if (!spectraFilesObservableCollection.Any())
             {
+                MessageBox.Show("Please add spectra files.");
                 return;
             }
 
-            LoadScans loadScans = new LoadScans(spectraFilesObservableCollection.Where(b => b.Use).First().FilePath, null);
+            if (!resultFilesObservableCollection.Any())
+            {
+                MessageBox.Show("Please add search result files.");
+                return;
+            }
 
-            MsDataFile = loadScans.Run();
+            MsDataFile = fileManager.LoadFile(spectraFilesObservableCollection.Where(b => b.Use).First().FilePath, null, null, false, false);
 
             btnReadResultFile.IsEnabled = true;
 
-            if (resultFilesObservableCollection.Count == 0)
-            {
-                MessageBox.Show("Please add result files.");
-                return;
-            }
             var resultFilePath = resultFilesObservableCollection.Where(b => b.Use).First().FilePath;
-            PSMs = TsvResultReader.ReadTsv(resultFilePath);
-            foreach (var item in PSMs)
+            peptideSpectralMatches = TsvResultReader.ReadTsv(resultFilePath);
+            foreach (var psm in peptideSpectralMatches)
             {
-                spectrumNumsObservableCollection.Add(new SpectrumForDataGrid(item.ScanNumber, item.FullSequence));
+                spectrumNumsObservableCollection.Add(psm);
             }
             dataGridScanNums.Items.Refresh();
 
+            // hide the "peptide" column because the PeptideWithSetModifications string is too large
+            dataGridScanNums.Columns[2].Visibility = Visibility.Hidden;
 
             btnReadResultFile.IsEnabled = false;
             btnDraw.IsEnabled = true;
         }
 
-        private void Row_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-
-            if (sender != null)
-            {
-                try
-                {
-                    var cellPar = VisualTreeHelper.GetParent(sender as DependencyObject);
-                    while ((cellPar as DataGridCellsPresenter) == null)
-                    {
-                        cellPar = VisualTreeHelper.GetParent(cellPar);
-                    }
-                    DataGridCell senderCell = (DataGridCell)(cellPar as DataGridCellsPresenter).ItemContainerGenerator.ContainerFromIndex(0);
-                    Regex regex = new Regex(@"\d+");
-                    int x = Convert.ToInt32(regex.Match(senderCell.ToString()).Value);
-                    UpdateModel(x);
-
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("Please check the data loaded.");
-                }
-            }
-        }
-
-        private void UpdateModel(int x)
+        private void DrawPsm(int oneBasedScanNumber, string fullSequence = null)
         {
             if (MsDataFile == null)
             {
-                MessageBox.Show("Please check the MS data loaded.");
+                MessageBox.Show("Please check that the mass spectral data is loaded.");
                 return;
             }
 
-            var msScanForDraw = MsDataFile.GetAllScansList().Where(p => p.OneBasedScanNumber == x).First();
+            MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(oneBasedScanNumber);
+            IEnumerable<MetaDrawPsm> scanPsms = peptideSpectralMatches.Where(p => p.ScanNum == oneBasedScanNumber);
 
-            PsmDraw psmDraw = PSMs.Where(p => p.ScanNumber == x).First();
-
-            var lp = new List<ProductType>();
-            if (DrawParameters.BIons)
+            if (fullSequence != null)
             {
-                lp.Add(ProductType.BnoB1ions);
-            }
-            if (DrawParameters.YIons)
-            {
-                lp.Add(ProductType.Y);
-            }
-            if (DrawParameters.CIons)
-            {
-                lp.Add(ProductType.C);
-            }
-            if (DrawParameters.ZdotIons)
-            {
-                lp.Add(ProductType.Zdot);
+                scanPsms = scanPsms.Where(p => p.Peptide.Sequence == fullSequence);
             }
 
-            var pmm = PsmDraw.XlCalculateTotalProductMassesForSingle(psmDraw, lp, false);
-
-            var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
-
-            double pmmScore = PsmCross.XlMatchIons(msScanForDraw, DrawParameters.ProductMassTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
-
-
-            psmDraw.MatchedIonInfo = matchedIonMassesListPositiveIsMatch;
-
-            mainViewModel.UpdateForSingle(msScanForDraw, psmDraw);
-
+            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, scanPsms.FirstOrDefault(), DrawParameters);
         }
 
         private void btnReset_Click(object sender, RoutedEventArgs e)
@@ -350,13 +293,16 @@ namespace MetaMorpheusGUI
 
         private void productMassToleranceTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (productMassToleranceComboBox.SelectedIndex == 0)
+            if (double.TryParse(productMassToleranceTextBox.Text, out double tol))
             {
-                DrawParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
-            }
-            else
-            {
-                DrawParameters.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+                if (productMassToleranceComboBox.SelectedIndex == 0)
+                {
+                    DrawParameters.ProductMassTolerance = new AbsoluteTolerance(tol);
+                }
+                else
+                {
+                    DrawParameters.ProductMassTolerance = new PpmTolerance(tol);
+                }
             }
         }
 
@@ -368,6 +314,13 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = DrawParameters.ZdotIons;
             productMassToleranceTextBox.Text = DrawParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = DrawParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+        }
+
+        private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        {
+            // draw the selected PSM
+            MetaDrawPsm row = (MetaDrawPsm)dataGridScanNums.SelectedItem;
+            DrawPsm(row.ScanNum, row.Peptide.Sequence);
         }
     }
 }

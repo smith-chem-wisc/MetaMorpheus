@@ -73,12 +73,7 @@
                             <Button x:Name="btnReadResultFile" Margin="2,5,2,5" Grid.Column="0" Content="Begin" IsEnabled="True" Click="btnReadResultFile_Click"/>
                             <Button x:Name="btnReset" Margin="2,5,2,5" Grid.Column="1" IsEnabled="False" Content="Reset" Click="btnReset_Click" />
                         </Grid>
-                        <DataGrid x:Name="dataGridScanNums" VerticalAlignment="Stretch" ItemsSource="{Binding}" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="1" Margin="0,0,0,0">
-                            <DataGrid.Resources>
-                                <Style TargetType="DataGridCell">
-                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick"/>
-                                </Style>
-                            </DataGrid.Resources>
+                        <DataGrid x:Name="dataGridScanNums" VerticalAlignment="Stretch" ItemsSource="{Binding}" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="1" Margin="0,0,0,0" SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" >
                         </DataGrid>
                         <Grid Grid.Row="2" HorizontalAlignment="Stretch">
                             <Grid.ColumnDefinitions>
