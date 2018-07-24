@@ -54,10 +54,10 @@ namespace EngineLayer.Calibration
             //index for scanNumber to scan placement and vice versa
             int[] ms1PlacementToScanNumber = ms1Scans.Select(x => x.OneBasedScanNumber).ToArray();
             int[] ms2PlacementToScanNumber = ms2Scans.Select(x => x.OneBasedScanNumber).ToArray();
-            Ms1ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms1PlacementToScanNumber.Length / FractionOfFileUsedForSmoothing) / 2);
-            Ms2ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms2PlacementToScanNumber.Length / FractionOfFileUsedForSmoothing) / 2);
+            Ms1ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms1PlacementToScanNumber.Length * FractionOfFileUsedForSmoothing) / 2);
+            Ms2ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms2PlacementToScanNumber.Length * FractionOfFileUsedForSmoothing) / 2);
 
-            int[] scanNumberToScanPlacement = new int[originalScans.Max(x => x.OneBasedScanNumber)];
+            int[] scanNumberToScanPlacement = new int[originalScans.Max(x => x.OneBasedScanNumber) + 1];
             for (int i = 0; i < ms1PlacementToScanNumber.Length; i++)
             {
                 scanNumberToScanPlacement[ms1PlacementToScanNumber[i]] = i;
@@ -77,21 +77,24 @@ namespace EngineLayer.Calibration
             int ms1Index = 0;
             int ms2Index = 0;
             MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
+            double mostRecentMS1SmoothedError = ms1SmoothedErrors.FirstOrDefault();
             for (int scanIndex = 0; scanIndex < originalScans.Count; scanIndex++)
             {
                 MsDataScan originalScan = originalScans[scanIndex];
                 if (originalScan.MsnOrder == 1)
                 {
-                    double smoothedRelativeError = ms1SmoothedErrors[ms1Index];
+                    mostRecentMS1SmoothedError = ms1SmoothedErrors[ms1Index];
                     ms1Index++;
-                    MsDataScan calibratedScan = CalibrateScan(originalScan, smoothedRelativeError);
+                    calibratedScans[scanIndex] = CalibrateScan(originalScan, mostRecentMS1SmoothedError);
                 }
                 else //if ms2
                 {
                     double smoothedRelativeError = ms2SmoothedErrors[ms2Index];
                     ms2Index++;
+                    calibratedScans[scanIndex] = CalibrateScan(originalScan, smoothedRelativeError, mostRecentMS1SmoothedError);
                 }
             }
+            CalibratedDataFile = new MsDataFile(calibratedScans, MyMsDataFile.SourceFile);
 
             return new MetaMorpheusEngineResults(this);
         }
@@ -142,7 +145,7 @@ namespace EngineLayer.Calibration
                 }
                 else
                 {
-                    smoothedCorrectionFactor += relativeErrors[rightIndex];
+                    smoothedCorrectionFactor += addedFactor;
                     rightValuesUsed++;
                 }
             }
@@ -157,6 +160,10 @@ namespace EngineLayer.Calibration
                     leftValuesUsed++;
                     rightValuesUsed--;
                 }
+                else
+                {
+                    emptyIndexesCount--;
+                }
                 //for left index, remove an error if applicable
                 while (leftValuesUsed > numberOfScansUsedForSmoothingOnEachSide)
                 {
@@ -168,7 +175,7 @@ namespace EngineLayer.Calibration
                     }
                     leftIndex++;
                 }
-                for (; rightIndex < (numberOfScansUsedForSmoothingOnEachSide + emptyIndexesCount) && rightIndex < relativeErrors.Length; rightIndex++)
+                for (; rightIndex < (i + numberOfScansUsedForSmoothingOnEachSide + emptyIndexesCount) && rightIndex < relativeErrors.Length; rightIndex++)
                 {
                     double addedFactor = relativeErrors[rightIndex];
                     if (addedFactor == 0)
@@ -177,7 +184,7 @@ namespace EngineLayer.Calibration
                     }
                     else
                     {
-                        smoothedCorrectionFactor += relativeErrors[rightIndex];
+                        smoothedCorrectionFactor += addedFactor;
                         rightValuesUsed++;
                     }
                 }
@@ -186,14 +193,35 @@ namespace EngineLayer.Calibration
             return smoothedErrors;
         }
 
-        private MsDataScan CalibrateScan(MsDataScan oldScan, double smoothedRelativeError)
+        private MsDataScan CalibrateScan(MsDataScan oldScan, double smoothedRelativeError, double? precursorSmoothedRelativeError = null)
         {
-            double correctionFactor = 1 - (smoothedRelativeError / 1000000); //convert from ppm
+            double correctionFactor = 1 - smoothedRelativeError; //wasn't in ppm before
             double[] originalMzs = oldScan.MassSpectrum.XArray;
             double[] calibratedMzs = new double[originalMzs.Length];
             for (int i = 0; i < originalMzs.Length; i++)
             {
-                calibratedMzs[i] = originalMzs[i] * smoothedRelativeError;
+                calibratedMzs[i] = originalMzs[i] * correctionFactor;
+            }
+
+            //update precursor values (if applicable)
+            double? selectedIonMz = null;
+            double? isolationMz = null;
+            double? selectedIonMonoisotopicGuessMz = null;
+            if (precursorSmoothedRelativeError != null)
+            {
+                correctionFactor = 1 - precursorSmoothedRelativeError.Value;
+                if (oldScan.SelectedIonMZ.HasValue)
+                {
+                    selectedIonMz = oldScan.SelectedIonMZ * correctionFactor;
+                }
+                if (oldScan.IsolationMz.HasValue)
+                {
+                    isolationMz = oldScan.IsolationMz * correctionFactor;
+                }
+                if (oldScan.SelectedIonMZ.HasValue)
+                {
+                    selectedIonMonoisotopicGuessMz = oldScan.SelectedIonMonoisotopicGuessMz * correctionFactor;
+                }
             }
             MzSpectrum calibratedSpectrum = new MzSpectrum(calibratedMzs, oldScan.MassSpectrum.YArray, false);
             var scan = new MsDataScan(
@@ -210,14 +238,14 @@ namespace EngineLayer.Calibration
                 oldScan.InjectionTime,
                 oldScan.NoiseData,
                 oldScan.NativeId,
-                oldScan.SelectedIonMZ,
+                selectedIonMz, //changed?
                 oldScan.SelectedIonChargeStateGuess,
                 oldScan.SelectedIonIntensity,
-                oldScan.IsolationMz,
+                isolationMz, //changed?
                 oldScan.IsolationWidth,
                 oldScan.DissociationType,
                 oldScan.OneBasedPrecursorScanNumber,
-                oldScan.SelectedIonMonoisotopicGuessMz
+                selectedIonMonoisotopicGuessMz //changed?
                 );
 
             return scan;

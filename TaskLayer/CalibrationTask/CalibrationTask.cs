@@ -179,6 +179,10 @@ namespace TaskLayer
                 double postCalibrationPrecursorErrorIqr = acquisitionResults.PsmPrecursorIqrPpmError;
                 double postCalibrationProductErrorIqr = acquisitionResults.PsmProductIqrPpmError;
 
+                // write the calibrated mzML file
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
+                myFileManager.DoneWithFile(originalUncalibratedFilePath);
+
                 // did the data improve? (not used for anything yet...)
                 bool improvement = ImprovGlobal(preCalibrationPrecursorErrorIqr, preCalibrationProductErrorIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorErrorIqr, postCalibrationProductErrorIqr);
 
@@ -193,24 +197,13 @@ namespace TaskLayer
                     fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
                 }
 
-                // don't write over ppm tolerances if they've been specified by the user already in the file-specific settings
-                // otherwise, suggest 4 * interquartile range as the ppm tolerance
-                if (fileSpecificParams.PrecursorMassTolerance == null)
-                {
-                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((4.0 * postCalibrationPrecursorErrorIqr) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
-                }
-                if (fileSpecificParams.ProductMassTolerance == null)
-                {
-                    fileSpecificParams.ProductMassTolerance = new PpmTolerance((4.0 * postCalibrationProductErrorIqr) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
-                }
+                //suggest 4 * interquartile range as the ppm tolerance
+                fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((4.0 * postCalibrationPrecursorErrorIqr) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
+                fileSpecificParams.ProductMassTolerance = new PpmTolerance((4.0 * postCalibrationProductErrorIqr) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
 
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
 
                 SucessfullyFinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-
-                // write the calibrated mzML file
-                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
-                myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // finished calibrating this file
                 SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
