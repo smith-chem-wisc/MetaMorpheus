@@ -1,6 +1,7 @@
 ﻿using MassSpectrometry;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer.Calibration
 {
@@ -9,31 +10,185 @@ namespace EngineLayer.Calibration
         private const double FractionOfFileUsedForSmoothing = 0.05;
         private readonly MsDataFile MyMsDataFile;
         private readonly DataPointAquisitionResults Datapoints;
-        private int ScansUsedForSmoothing;
+        private int Ms1ScansUsedForSmoothingOnEachSide;
+        private int Ms2ScansUsedForSmoothingOnEachSide;
+        public MsDataFile CalibratedDataFile { get; private set; }
 
         public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             MyMsDataFile = myMSDataFile;
             Datapoints = datapoints;
-            ScansUsedForSmoothing = (int)Math.Round(FractionOfFileUsedForSmoothing * MyMsDataFile.NumSpectra);
+            int numMs1Scans = MyMsDataFile.GetAllScansList().Where(x => x.MsnOrder == 1).Count();
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("Generating MS1 calibration function");
+            //Status("Generating MS1 calibration function");
             //var ms1Model = GetRandomForestModel(myMs1DataPoints, ms1fracForTraining);
             //var ms1Model = GetGradientBoostModel(myMs1DataPoints, ms1fracForTraining);
 
-            Status("Generating MS2 calibration function");
+            //Status("Generating MS2 calibration function");
             //var ms2Model = GetRandomForestModel(myMs2DataPoints, ms2fracForTraining);
             //var ms2Model = GetGradientBoostModel(myMs2DataPoints, ms2fracForTraining);
 
             Status("Calibrating spectra");
+            List<LabeledDataPoint> ms1Points = Datapoints.Ms1List;
+            List<LabeledDataPoint> ms2Points = Datapoints.Ms2List;
+            List<MsDataScan> originalScans = MyMsDataFile.GetAllScansList();
 
-            CalibrateSpectra(Datapoints.Ms1List, 1);
-            CalibrateSpectra(Datapoints.Ms1List, 2);
+            List<MsDataScan> ms1Scans = new List<MsDataScan>();
+            List<MsDataScan> ms2Scans = new List<MsDataScan>();
+            //separate scans by msnOrder
+            foreach (MsDataScan scan in originalScans)
+            {
+                if (scan.MsnOrder == 1)
+                {
+                    ms1Scans.Add(scan);
+                }
+                else
+                {
+                    ms2Scans.Add(scan);
+                }
+            }
+
+            //index for scanNumber to scan placement and vice versa
+            int[] ms1PlacementToScanNumber = ms1Scans.Select(x => x.OneBasedScanNumber).ToArray();
+            int[] ms2PlacementToScanNumber = ms2Scans.Select(x => x.OneBasedScanNumber).ToArray();
+            Ms1ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms1PlacementToScanNumber.Length / FractionOfFileUsedForSmoothing) / 2);
+            Ms2ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms2PlacementToScanNumber.Length / FractionOfFileUsedForSmoothing) / 2);
+
+            int[] scanNumberToScanPlacement = new int[originalScans.Max(x => x.OneBasedScanNumber)];
+            for (int i = 0; i < ms1PlacementToScanNumber.Length; i++)
+            {
+                scanNumberToScanPlacement[ms1PlacementToScanNumber[i]] = i;
+            }
+            for (int i = 0; i < ms2PlacementToScanNumber.Length; i++)
+            {
+                scanNumberToScanPlacement[ms2PlacementToScanNumber[i]] = i;
+            }
+
+            //Populate the average relative error for each scan, where index of returned array is the placement
+            double[] ms1RelativeErrors = PopulateErrors(ms1Points, scanNumberToScanPlacement, ms1PlacementToScanNumber.Length);
+            double[] ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2PlacementToScanNumber.Length);
+
+            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, Ms1ScansUsedForSmoothingOnEachSide);
+            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, Ms2ScansUsedForSmoothingOnEachSide);
+
+            int ms1Index = 0;
+            int ms2Index = 0;
+            MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
+            for (int scanIndex = 0; scanIndex < originalScans.Count; scanIndex++)
+            {
+                MsDataScan originalScan = originalScans[scanIndex];
+                if (scan.MsnOrder == 1)
+                {
+                    double smoothedRelativeError = ms1SmoothedErrors[ms1Index];
+                    ms1Index++;
+                    MsDataScan calibratedScan = CalibrateScan(originalScan, smoothedRelativeError);
+                }
+                else //if ms2
+                {
+                    double smoothedRelativeError = ms2SmoothedErrors[ms2Index];
+                    ms2Index++;
+                }
+            }
 
             return new MetaMorpheusEngineResults(this);
+        }
+
+        private double[] PopulateErrors(List<LabeledDataPoint> datapoints, int[] scanNumberToScanPlacement, int arrayLength)
+        {
+            double[] averageRelativeErrors = new double[arrayLength];
+            int currentScanNumber = datapoints.First().ScanNumber;
+            List<double> localRelativeErrors = new List<double>();
+            foreach (LabeledDataPoint datapoint in datapoints)
+            {
+                if (datapoint.ScanNumber == currentScanNumber)
+                {
+                    localRelativeErrors.Add(datapoint.RelativeMzError);
+                }
+                else
+                {
+                    //wrap up
+                    averageRelativeErrors[scanNumberToScanPlacement[currentScanNumber]] = localRelativeErrors.Average();
+                    //update
+                    currentScanNumber = datapoint.ScanNumber;
+                    localRelativeErrors = new List<double> { datapoint.RelativeMzError };
+                }
+            }
+            //finish loop
+            averageRelativeErrors[scanNumberToScanPlacement[currentScanNumber]] = localRelativeErrors.Average();
+            return averageRelativeErrors;
+        }
+
+        private double[] SmoothErrors(double[] relativeErrors, int numberOfScansUsedForSmoothingOnEachSide)
+        {
+            //get correction factor for each scan, where half of the smooth comes from both directions
+            double[] smoothedErrors = new double[relativeErrors.Length];
+            int leftIndex = 0;
+            int rightIndex = 1;
+            int emptyIndexesCount = 0;
+            double smoothedCorrectionFactor = 0;
+            int leftValuesUsed = 0;
+            int rightValuesUsed = 0;
+            //for scan #1 (index 0)
+            //no left scans, because we're at the beginning of the file
+            for (; rightIndex < (numberOfScansUsedForSmoothingOnEachSide + emptyIndexesCount) && rightIndex < relativeErrors.Length; rightIndex++)
+            {
+                double addedFactor = relativeErrors[rightIndex];
+                if (addedFactor == 0)
+                {
+                    emptyIndexesCount++;
+                }
+                else
+                {
+                    smoothedCorrectionFactor += relativeErrors[rightIndex];
+                    rightValuesUsed++;
+                }
+            }
+
+            //for all other scans
+            for (int i = 0; i < relativeErrors.Length; i++)
+            {
+                //make previous right value a left value. (the current value is classified as a left value)
+                double currentError = relativeErrors[i];
+                if (currentError != 0)
+                {
+                    leftValuesUsed++;
+                    rightValuesUsed--;
+                }
+                //for left index, remove an error if applicable
+                while (leftValuesUsed > numberOfScansUsedForSmoothingOnEachSide)
+                {
+                    double errorToRemove = relativeErrors[leftIndex];
+                    if (errorToRemove != 0)
+                    {
+                        smoothedCorrectionFactor -= errorToRemove;
+                        leftValuesUsed--;
+                    }
+                    leftIndex++;
+                }
+                for (; rightIndex < (numberOfScansUsedForSmoothingOnEachSide + emptyIndexesCount) && rightIndex < relativeErrors.Length; rightIndex++)
+                {
+                    double addedFactor = relativeErrors[rightIndex];
+                    if (addedFactor == 0)
+                    {
+                        emptyIndexesCount++;
+                    }
+                    else
+                    {
+                        smoothedCorrectionFactor += relativeErrors[rightIndex];
+                        rightValuesUsed++;
+                    }
+                }
+                smoothedErrors[i] = smoothedCorrectionFactor / (rightValuesUsed + leftValuesUsed);
+            }
+            return smoothedErrors;
+        }
+
+        private MsDataScan CalibrateScan(MsDataScan originalScan, double smoothedRelativeError)
+        {
+
         }
     }
 }

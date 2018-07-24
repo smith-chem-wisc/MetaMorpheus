@@ -3,7 +3,7 @@
     public class LabeledDataPoint
     {
         public readonly double ExperimentalMz;
-        public readonly double ScanNumber;
+        public readonly int ScanNumber;
         public readonly double LogTotalIonCurrent;
         public readonly double LogInjectionTime;
         public readonly double LogIntensity;
