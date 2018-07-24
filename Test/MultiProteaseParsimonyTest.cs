@@ -529,10 +529,10 @@ namespace Test
 
             var thisTaskOutputFolder = MySetUpClass.outputFolder;
                         
-            var psms = Path.Combine(thisTaskOutputFolder,  "PrunedDbSpectra_PSMs.psmtsv");
+            var psms = Path.Combine(thisTaskOutputFolder,  "AllPSMs.psmtsv");
 
             Assert.AreEqual(12, File.ReadLines(psms).Count());
-            var protGroups = Path.Combine(thisTaskOutputFolder, "PrunedDbSpectra_ProteinGroups.tsv");
+            var protGroups = Path.Combine(thisTaskOutputFolder, "AllProteinGroups.tsv");
 
             Assert.AreEqual(7, File.ReadLines(protGroups).Count());
 
