@@ -168,7 +168,7 @@ namespace TaskLayer
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                 CalibrationEngine engine = new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 engine.Run();
-
+                myMsDataFile = engine.CalibratedDataFile;
               
                 // do another search to evaluate calibration results
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });

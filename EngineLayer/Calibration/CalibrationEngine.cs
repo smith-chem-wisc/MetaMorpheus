@@ -80,7 +80,7 @@ namespace EngineLayer.Calibration
             for (int scanIndex = 0; scanIndex < originalScans.Count; scanIndex++)
             {
                 MsDataScan originalScan = originalScans[scanIndex];
-                if (scan.MsnOrder == 1)
+                if (originalScan.MsnOrder == 1)
                 {
                     double smoothedRelativeError = ms1SmoothedErrors[ms1Index];
                     ms1Index++;
@@ -186,9 +186,41 @@ namespace EngineLayer.Calibration
             return smoothedErrors;
         }
 
-        private MsDataScan CalibrateScan(MsDataScan originalScan, double smoothedRelativeError)
+        private MsDataScan CalibrateScan(MsDataScan oldScan, double smoothedRelativeError)
         {
+            double correctionFactor = 1 - (smoothedRelativeError / 1000000); //convert from ppm
+            double[] originalMzs = oldScan.MassSpectrum.XArray;
+            double[] calibratedMzs = new double[originalMzs.Length];
+            for (int i = 0; i < originalMzs.Length; i++)
+            {
+                calibratedMzs[i] = originalMzs[i] * smoothedRelativeError;
+            }
+            MzSpectrum calibratedSpectrum = new MzSpectrum(calibratedMzs, oldScan.MassSpectrum.YArray, false);
+            var scan = new MsDataScan(
+                calibratedSpectrum, //changed
+                oldScan.OneBasedScanNumber,
+                oldScan.MsnOrder,
+                oldScan.IsCentroid,
+                oldScan.Polarity,
+                oldScan.RetentionTime,
+                oldScan.ScanWindowRange,
+                oldScan.ScanFilter,
+                oldScan.MzAnalyzer,
+                oldScan.TotalIonCurrent,
+                oldScan.InjectionTime,
+                oldScan.NoiseData,
+                oldScan.NativeId,
+                oldScan.SelectedIonMZ,
+                oldScan.SelectedIonChargeStateGuess,
+                oldScan.SelectedIonIntensity,
+                oldScan.IsolationMz,
+                oldScan.IsolationWidth,
+                oldScan.DissociationType,
+                oldScan.OneBasedPrecursorScanNumber,
+                oldScan.SelectedIonMonoisotopicGuessMz
+                );
 
+            return scan;
         }
     }
 }
