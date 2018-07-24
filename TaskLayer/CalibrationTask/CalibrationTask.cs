@@ -123,18 +123,18 @@ namespace TaskLayer
 
                     if (i == 1) // failed round 1
                     {
-                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(20));
-                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(50));
+                        CommonParameters.PrecursorMassTolerance = new PpmTolerance(20);
+                        CommonParameters.ProductMassTolerance = new PpmTolerance(50);
                     }
                     else if (i == 2) // failed round 2
                     {
-                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(30));
-                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(100));
+                        CommonParameters.PrecursorMassTolerance = new PpmTolerance(30);
+                        CommonParameters.ProductMassTolerance = new PpmTolerance(100);
                     }
                     else if (i == 3) // failed round 3
                     {
-                        this.CommonParameters.SetPrecursorMassTolerance(new PpmTolerance(40));
-                        this.CommonParameters.SetProductMassTolerance(new PpmTolerance(150));
+                        CommonParameters.PrecursorMassTolerance = new PpmTolerance(40);
+                        CommonParameters.ProductMassTolerance = new PpmTolerance(150);
                     }
                     else // failed round 4
                     {
@@ -312,7 +312,7 @@ namespace TaskLayer
 
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productTypes, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
-            List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
+            List<PeptideSpectralMatch> allPsms = allPsmsArray.Where(p => p != null).ToList();
 
             var compactPeptideToProteinPeptideMatching = ((SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine
                 (allPsms, proteinList, fixedModifications, variableModifications, productTypes, new List<DigestionParams> { combinedParameters.DigestionParams },
@@ -320,13 +320,12 @@ namespace TaskLayer
 
             foreach (var huh in allPsms)
             {
-                if (huh != null)
-                {
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                }
+                huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
             }
 
-            allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            allPsms = allPsms.OrderByDescending(b => b.Score)
+                .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
