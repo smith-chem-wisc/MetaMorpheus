@@ -53,7 +53,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following calibration settings were used: ");

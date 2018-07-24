@@ -38,7 +38,7 @@ namespace TaskLayer
             List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)

@@ -306,7 +306,7 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes)
+        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
         {
             Status("Loading proteins...", new List<string> { taskId });
             int emptyProteinEntries = 0;
@@ -314,7 +314,7 @@ namespace TaskLayer
             foreach (var db in dbFilenameList)
             {
                 int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb, CommonParameters);
+                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb, commonParameters);
                 proteinList = proteinList.Concat(dbProteinList).ToList();
                 emptyProteinEntries += emptyProteinEntriesForThisDb;
             }

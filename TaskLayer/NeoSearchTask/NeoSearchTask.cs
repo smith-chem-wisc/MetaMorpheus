@@ -112,7 +112,7 @@ namespace TaskLayer
                     List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
                     // load proteins
-                    List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes);
+                    List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.None, localizeableModificationTypes, combinedParams);
 
                     //Read N and C files
                     string nPath = NeoParameters.NFilePath;

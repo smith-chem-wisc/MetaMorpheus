@@ -88,7 +88,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");

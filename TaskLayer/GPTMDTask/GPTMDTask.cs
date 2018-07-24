@@ -56,7 +56,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
 
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
 
