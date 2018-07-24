@@ -7,11 +7,9 @@ namespace EngineLayer.Calibration
 {
     public class CalibrationEngine : MetaMorpheusEngine
     {
-        private const double FractionOfFileUsedForSmoothing = 0.05;
+        private const int ScansUsedForSmoothingOnEachSide = 50;
         private readonly MsDataFile MyMsDataFile;
         private readonly DataPointAquisitionResults Datapoints;
-        private int Ms1ScansUsedForSmoothingOnEachSide;
-        private int Ms2ScansUsedForSmoothingOnEachSide;
         public MsDataFile CalibratedDataFile { get; private set; }
 
         public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
@@ -54,8 +52,8 @@ namespace EngineLayer.Calibration
             //index for scanNumber to scan placement and vice versa
             int[] ms1PlacementToScanNumber = ms1Scans.Select(x => x.OneBasedScanNumber).ToArray();
             int[] ms2PlacementToScanNumber = ms2Scans.Select(x => x.OneBasedScanNumber).ToArray();
-            Ms1ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms1PlacementToScanNumber.Length * FractionOfFileUsedForSmoothing) / 2);
-            Ms2ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms2PlacementToScanNumber.Length * FractionOfFileUsedForSmoothing) / 2);
+            //Ms1ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms1PlacementToScanNumber.Length * FractionOfFileUsedForSmoothing) / 2);
+            //Ms2ScansUsedForSmoothingOnEachSide = (int)Math.Round((ms2PlacementToScanNumber.Length * FractionOfFileUsedForSmoothing) / 2);
 
             int[] scanNumberToScanPlacement = new int[originalScans.Max(x => x.OneBasedScanNumber) + 1];
             for (int i = 0; i < ms1PlacementToScanNumber.Length; i++)
@@ -71,8 +69,8 @@ namespace EngineLayer.Calibration
             double[] ms1RelativeErrors = PopulateErrors(ms1Points, scanNumberToScanPlacement, ms1PlacementToScanNumber.Length);
             double[] ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2PlacementToScanNumber.Length);
 
-            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, Ms1ScansUsedForSmoothingOnEachSide);
-            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, Ms2ScansUsedForSmoothingOnEachSide);
+            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, ScansUsedForSmoothingOnEachSide);
+            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, ScansUsedForSmoothingOnEachSide);
 
             int ms1Index = 0;
             int ms2Index = 0;
