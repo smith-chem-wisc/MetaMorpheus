@@ -15,36 +15,37 @@
             </MenuItem>
             <MenuItem Header="Data">
                 <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
+                <MenuItem Header="MetaDraw: Spectrum Annotation" Click="MetaDrawMenu_Click"></MenuItem>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="Check For Updates" Click="MenuItem_Click_2" >
                     <MenuItem.Icon>
-                        <Image Source="update_20.bmp"/>
+                        <Image Source="Icons\update_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Open MetaMorpheus Wiki Page" Click="MenuItem_Click" >
                     <MenuItem.Icon>
-                        <Image Source="wiki_20.bmp"/>
+                        <Image Source="Icons\wiki_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Submit an Issue on Github" Click="MenuItem_Click_5" >
                     <MenuItem.Icon>
-                        <Image Source="git_20.bmp"/>
+                        <Image Source="Icons\git_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Email Support at mm__support@chem.wisc.edu" Click="MenuItem_Click_4" >
                     <MenuItem.Icon>
-                        <Image Source="mail_20.bmp"/>
+                        <Image Source="Icons\mail_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="MetaMorpheus YouTube Help Videos" Click="MenuItem_YouTube" >
                     <MenuItem.Icon>
-                        <Image Source="youtube_20.bmp"/>
+                        <Image Source="Icons\youtube_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="News in Proteomics Research" Click="MenuItem_ProteomicsNewsBlog" >
                     <MenuItem.Icon>
-                        <Image Source="Blogger_20.bmp"/>
+                        <Image Source="Icons\Blogger_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>

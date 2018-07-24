@@ -171,7 +171,7 @@ namespace TaskLayer
 
                     var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
-                    MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                    MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
                     new LocalizationEngine(Parameters.AllPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), Parameters.IonTypes,
                         myMsDataFile, combinedParams, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }).Run();
                     Parameters.MyFileManager.DoneWithFile(origDataFile);
