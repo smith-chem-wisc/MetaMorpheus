@@ -28,9 +28,7 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             ProteinParsimonyResults myAnalysisResults = new ProteinParsimonyResults(this);
-            Status("Running protein analysis engine!");
 
-            Status("Applying protein parsimony...");
             myAnalysisResults.ProteinGroups = ApplyProteinParsimony();
             return myAnalysisResults;
         }
@@ -159,8 +157,7 @@ namespace EngineLayer
                 {
                     kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
                 }
-            }
-
+            }            
             // makes dictionary with proteins as keys and list of associated peptides as the value (makes parsimony algo easier)
             foreach (var kvp in CompactPeptideToProteinPeptideMatching)
             {
@@ -330,7 +327,10 @@ namespace EngineLayer
             }
             foreach (var protein in indistinguishableProteins)
             {
-                parsimonyProteinList.Add(protein.Key, protein.Value);
+                if (!parsimonyProteinList.ContainsKey(protein.Key))
+                {
+                    parsimonyProteinList.Add(protein.Key, protein.Value);
+                }
             }
 
             // multiprotease parsimony:
@@ -353,8 +353,7 @@ namespace EngineLayer
             {
                 kvp.Value.RemoveWhere(p => !parsimonyProteinList.ContainsKey(p.Protein));
             }
-
-            Status("Finished Parsimony");
+            
             return ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(proteinsWithUniquePeptides.Values.SelectMany(p => p)), new HashSet<PeptideWithSetModifications>(CompactPeptideToProteinPeptideMatching.Values.SelectMany(p => p)));
         }
 
