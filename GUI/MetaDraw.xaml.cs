@@ -168,7 +168,7 @@ namespace MetaMorpheusGUI
             }
 
             // load the spectra file
-            MsDataFile = spectraFileManager.LoadFile(spectraFilePath, null, null, false, false);
+            MsDataFile = spectraFileManager.LoadFile(spectraFilePath, null, null, false, false, new CommonParameters());
 
             // load the PSMs
             LoadPsms(tsvResultsFilePath);
