@@ -427,7 +427,7 @@ namespace Test
             
             var thisTaskOutputFolder = MySetUpClass.outputFolder;
             string[] files = Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput"));
-            Assert.That(files.Length == 9);
+            Assert.That(files.Length == 11);
             Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "AllProteinGroups.tsv")));
             Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "AllPSMs.psmtsv")));
             Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput", "AllQuantifiedPeaks.tsv")));

@@ -446,60 +446,35 @@ namespace TaskLayer
         private void WritePSMResults()
         {
             Status("Writing results...", Parameters.SearchTaskId);
-            var peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-            if (Parameters.CurrentRawFileList.Count > 1)
-            {
-                Directory.CreateDirectory(Path.Combine(Parameters.OutputFolder, "Individual File Results"));
-                var writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-                WritePsmsToTsv(Parameters.AllPsms, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
-                SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
-
-                var writtenFileForPercolator = Path.Combine(Parameters.OutputFolder, "forPercolator.tsv");
-                WritePsmsForPercolator(Parameters.AllPsms, writtenFileForPercolator);
-                SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { Parameters.SearchTaskId });
-
-                writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
-                WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
-                SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
-            }
-            Parameters.SearchTaskResults.AddNiceText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue < .01 && !a.IsDecoy));
-            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
-
-            if (Parameters.SearchParameters.DoParsimony)
-            {
-                Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy) + Environment.NewLine);
-            }
-
             PsmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
+            var peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
 
-            // individual psm files (with global psm fdr, global parsimony)
-            foreach (var group in PsmsGroupedByFile) //just spectra
-            {
-                var psmsForThisFile = group.ToList();
-                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
-                Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
-            }
-            foreach (var group in PsmsGroupedByFile) //just fragmented precursors
-            {
-                var psmsForThisFile = group.ToList();
-                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
-                Parameters.SearchTaskResults.AddNiceText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
-            }
-            foreach (var group in PsmsGroupedByFile)
-            {
-                var psmsForThisFile = group.ToList();
-                var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
-                Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
+            var writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv"); //Can be aggregate or individual
+            WritePsmsToTsv(Parameters.AllPsms, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
-                var writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-                WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
-                SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
+            writtenFile = Path.Combine(Parameters.OutputFolder, "forPercolator.tsv"); //Can be aggregate or individual
+            WritePsmsForPercolator(Parameters.AllPsms, writtenFile);
+            SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
-                if (Parameters.CurrentRawFileList.Count > 1) //writing individual results
+            writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv"); //Can be aggregate or individual
+            WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+
+            if (Parameters.CurrentRawFileList.Count > 1) //writes all individual file results in subdirectory
+            {
+                Directory.CreateDirectory(Path.Combine(Parameters.OutputFolder, "Individual File Results")); //creates subdirectory
+                foreach (var group in PsmsGroupedByFile) 
                 {
-                    var writtenFileForPercolator = Path.Combine(Path.Combine(Parameters.OutputFolder.ToString(), "Individual File Results"), strippedFileName + "_forPercolator.tsv");
-                    WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator);
-                    SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
+                    var psmsForThisFile = group.ToList();
+                    var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
+                    Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
+                    Parameters.SearchTaskResults.AddNiceText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
+                    Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
+
+                    writtenFile = Path.Combine(Path.Combine(Parameters.OutputFolder.ToString(), "Individual File Results"), strippedFileName + "_forPercolator.tsv");
+                    WritePsmsForPercolator(psmsForThisFile, writtenFile);
+                    SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
 
                     var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                     writtenFile = Path.Combine(Path.Combine(Parameters.OutputFolder.ToString(), "Individual File Results"), strippedFileName + "_Peptides.psmtsv");
@@ -507,6 +482,12 @@ namespace TaskLayer
                     SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
                     Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
                 }
+            }
+            Parameters.SearchTaskResults.AddNiceText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue < .01 && !a.IsDecoy));
+            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
+            if (Parameters.SearchParameters.DoParsimony)
+            {
+                Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy) + Environment.NewLine);
             }
         }
 
