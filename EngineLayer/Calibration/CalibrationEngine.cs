@@ -59,31 +59,92 @@ namespace EngineLayer.Calibration
             double[] ms1RelativeErrors = PopulateErrors(ms1Points, scanNumberToScanPlacement, ms1PlacementToScanNumber.Length);
             double[] ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2PlacementToScanNumber.Length);
 
-            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, ScansUsedForSmoothingOnEachSide);
-            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, ScansUsedForSmoothingOnEachSide);
-
-            int ms1Index = 0;
-            int ms2Index = 0;
+            //current scans
             MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
-            double mostRecentMS1SmoothedError = ms1SmoothedErrors.FirstOrDefault();
-            for (int scanIndex = 0; scanIndex < originalScans.Count; scanIndex++)
+
+            //saved scans
+            MsDataScan[] ms1Saves = new MsDataScan[originalScans.Count];
+            MsDataScan[] ms2Saves = new MsDataScan[originalScans.Count];
+
+            //hard copy original scans
+            for (int i=0; i<originalScans.Count; i++)
             {
-                MsDataScan originalScan = originalScans[scanIndex];
-                if (originalScan.MsnOrder == 1)
+                MsDataScan originalScan = originalScans[i];
+                calibratedScans[i] = originalScans[i];
+                ms1Saves[i] = originalScan;
+                ms2Saves[i] = originalScan;
+            }
+
+            //record the best performance
+            double bestMS1Performance = ms1RelativeErrors.Average(x => Math.Abs(x));
+            double bestMS2Performance = ms2RelativeErrors.Average(x => Math.Abs(x));
+            int[] bestParams = new int[4];
+
+
+
+            for (int i = 0; i < 5; i++)
+            {
+                double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, ScansUsedForSmoothingOnEachSide);
+                double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, ScansUsedForSmoothingOnEachSide);
+                int previousScanNumber = ms1Points.FirstOrDefault().ScanNumber;
+                double previousSmoothedError = ms1SmoothedErrors[scanNumberToScanPlacement[previousScanNumber]];
+
+                int ms1Index = 0;
+                int ms2Index = 0;
+                double mostRecentMS1SmoothedError = ms1SmoothedErrors.FirstOrDefault();
+                for (int scanIndex = 0; scanIndex < calibratedScans.Length; scanIndex++)
                 {
-                    mostRecentMS1SmoothedError = ms1SmoothedErrors[ms1Index];
-                    ms1Index++;
-                    calibratedScans[scanIndex] = CalibrateScan(originalScan, mostRecentMS1SmoothedError);
+                    MsDataScan originalScan = calibratedScans[scanIndex];
+                    if (originalScan.MsnOrder == 1)
+                    {
+                        mostRecentMS1SmoothedError = ms1SmoothedErrors[ms1Index];
+                        ms1RelativeErrors[ms1Index] -= mostRecentMS1SmoothedError;
+                        ms1Index++;
+                        calibratedScans[scanIndex] = CalibrateScan(originalScan, mostRecentMS1SmoothedError);
+                    }
+                    else //if ms2
+                    {
+                        double smoothedRelativeError = ms2SmoothedErrors[ms2Index];
+                        ms2RelativeErrors[ms2Index] -= smoothedRelativeError;
+                        ms2Index++;
+                        calibratedScans[scanIndex] = CalibrateScan(originalScan, smoothedRelativeError, mostRecentMS1SmoothedError);
+                    }
+                }
+                double currentMS1Performance = ms1RelativeErrors.Average(x => Math.Abs(x));
+                double currentMS2Performance = ms2RelativeErrors.Average(x => Math.Abs(x));
+                if (currentMS1Performance < bestMS1Performance) //low is better!
+                {
+                    bestMS1Performance = currentMS1Performance;
+                    for (int k = 0; k < calibratedScans.Length; k++)
+                    {
+                        ms1Saves[k] = calibratedScans[k];
+                    }
+                }
+                if (currentMS2Performance < bestMS2Performance) //low is better!
+                {
+                    bestMS2Performance = currentMS2Performance;
+                    for (int k = 0; k < calibratedScans.Length; k++)
+                    {
+                        ms2Saves[k] = calibratedScans[k];
+                    }
+                }
+            }
+            
+
+            //get best of ms1 and ms2 saves
+            for (int scanIndex = 0; scanIndex < ms2Saves.Length; scanIndex++)
+            {
+                MsDataScan genericScan = ms2Saves[scanIndex];
+                if (genericScan.MsnOrder == 1)
+                {
+                    calibratedScans[scanIndex] = ms1Saves[scanIndex];
                 }
                 else //if ms2
                 {
-                    double smoothedRelativeError = ms2SmoothedErrors[ms2Index];
-                    ms2Index++;
-                    calibratedScans[scanIndex] = CalibrateScan(originalScan, smoothedRelativeError, mostRecentMS1SmoothedError);
+                    calibratedScans[scanIndex] = genericScan;
                 }
             }
             CalibratedDataFile = new MsDataFile(calibratedScans, MyMsDataFile.SourceFile);
-
             return new MetaMorpheusEngineResults(this);
         }
 

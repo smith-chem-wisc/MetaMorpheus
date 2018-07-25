@@ -25,8 +25,8 @@ namespace TaskLayer
                 productMassTolerance: new PpmTolerance(25),
                 precursorMassTolerance: new PpmTolerance(15),
                 trimMsMsPeaks: false,
-                doPrecursorDeconvolution: false,
-                scoreCutoff: 10);
+                doPrecursorDeconvolution: false
+                );
 
             CalibrationParameters = new CalibrationParameters();
         }
