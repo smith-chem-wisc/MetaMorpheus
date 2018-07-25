@@ -495,6 +495,14 @@ namespace MetaMorpheusGUI
             }
             if (massDiffAcceptOpen.IsChecked.HasValue && massDiffAcceptOpen.IsChecked.Value)
             {
+                if (TheTask.SearchParameters.SearchType == SearchType.Classic)
+                {
+                   var result = MessageBox.Show("We recommend using Modern Search mode when conducting open precursor mass searches to reduce search time.", "Would you like to search faster?", MessageBoxButton.OKCancel);
+                    if (result == MessageBoxResult.Cancel)
+                    {
+                        return;
+                    }
+                }
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Open;
             }
             if (massDiffAcceptCustom.IsChecked.HasValue && massDiffAcceptCustom.IsChecked.Value)
