@@ -382,6 +382,15 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
+            if (listOfModsVariable.Count > 1 || !listOfModsVariable.Contains(("Common Variable","Oxidation of M")))
+            {
+                var dialogResult = MessageBox.Show("More than \"Oxidation of M\" has been selected as variable modifications. Using the GPTMD task to discover modifications is recommended instead. \n\nContinue anyway?", "Multiple Variable Mods Detected", MessageBoxButton.OKCancel);
+                if (dialogResult == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+            }
+
             bool TrimMs1Peaks = trimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
