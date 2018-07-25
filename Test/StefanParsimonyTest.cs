@@ -6,12 +6,14 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
     [TestFixture]
     public static class StefanParsimonyTest
     {
+        
         [Test]
         public static void ParsimonyVariableTreatAsUnique()
         {
@@ -50,7 +52,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching[cp2].Add(pep2);
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new CommonParameters(), new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique,new CommonParameters(), new List<string>());
             pae.Run();
 
             // check to make sure both peptides are associated with both proteins
@@ -102,6 +104,7 @@ namespace Test
             // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new CommonParameters(), new List<string>());
             pae.Run();
+
 
             // check to make sure both peptides are associated with both proteins
             Assert.That(compactPeptideToProteinPeptideMatching.Count == 1);
@@ -247,9 +250,11 @@ namespace Test
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide3].Count);
         }
 
+        
         private static Tuple<List<PeptideSpectralMatch>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: 2, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain, maxModsForPeptides: 1), scoreCutoff: 1);
+
 
             // Alanine = Glycine + CH2
             Protein protein1 = new Protein("MA", "protein1");
@@ -317,7 +322,7 @@ namespace Test
 
             MassDiffAcceptor massDiffAcceptors = new SinglePpmAroundZeroSearchMode(5);
             SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 },
-                allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new CommonParameters(), new List<string>());
+                allKnownFixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;
@@ -332,6 +337,6 @@ namespace Test
             (
                 newPsms, compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );
-        }
+        }       
     }
 }
