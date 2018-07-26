@@ -58,9 +58,12 @@ namespace EngineLayer
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
-                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-            AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
-            AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
+                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile), false);
+            AddMods(UnimodDeserialized.OfType<ModificationWithLocation>(), false);
+
+            // it is important to load the UniProt PTM list last to avoid naming conflicts
+            // see TestUniprotNamingConflicts unit test
+            AddMods(UniprotDeseralized.OfType<ModificationWithLocation>(), true);
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
         }
@@ -78,16 +81,24 @@ namespace EngineLayer
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
 
-        public static void AddMods(IEnumerable<Modification> enumerable)
+        public static void AddMods(IEnumerable<Modification> enumerable, bool isFromUniprotPtmList)
         {
             foreach (var ye in enumerable)
             {
                 if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
                     throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
                 if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType) && !b.Equals(ye)))
-                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) + Environment.NewLine + Environment.NewLine);
+                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! " +
+                        "Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + 
+                        ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " 
+                        + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) 
+                        + Environment.NewLine + Environment.NewLine);
                 else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
                     continue;
+                else if (isFromUniprotPtmList && AllModsKnown.Any(b => b.id == ye.id))
+                {
+                    continue;
+                }
                 else
                 {
                     _AllModsKnown.Add(ye);

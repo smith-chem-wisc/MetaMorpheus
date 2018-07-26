@@ -63,7 +63,7 @@ namespace MetaMorpheusCommandLine
 
                     foreach (var db in p.Object.Databases)
                         if (!Path.GetExtension(db).Equals(".fasta"))
-                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
+                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>(), false);
 
                     List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 

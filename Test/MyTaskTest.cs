@@ -20,7 +20,7 @@ namespace Test
         public static void TestEverythingRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile), false);
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -102,7 +102,7 @@ namespace Test
         public static void TestMultipleFilesRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile), false);
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -272,7 +272,7 @@ namespace Test
 
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
+                GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) }, false);
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
@@ -350,7 +350,7 @@ namespace Test
             GlobalVariables.AddMods(new List<ModificationWithLocation>
             {
                 testUniqeMod
-            });
+            }, false);
 
             //create modification lists
 
@@ -407,6 +407,58 @@ namespace Test
                 }
             }
             Assert.IsTrue(foundD);
+        }
+
+        [Test]
+        /// <summary>
+        /// This tests for a bug in annotating mods in the search task. The situation is that if you search with a fasta database (no mods annotated),
+        /// and then do GPTMD, then search with the GPTMD database, the resulting PSM will have a UniProt mod annotated on it.
+        /// Also, if GPTMD has a mod with the same name as a UniProt mod, the annotated PSM will be ambiguous between
+        /// the UniProt and the MetaMorpheus modification.
+        /// </summary>
+        public static void TestUniprotNamingConflicts()
+        {
+            var outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUniprotNamingConflicts");
+            
+            string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
+            File.WriteAllLines(Path.Combine(@"Mods", @"hydroxyproline.txt"), new string[] { modToWrite });
+
+            // write the mzml
+            double[] mz = new double[] { 187.07133, 324.13025, 381.15171, 510.19430, 175.11895, 232.14042, 345.22448, 458.27216, 587.31475, 644.33622, 781.39513 };
+            double[] intensities = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+            var datafile = new TestDataFile(mz, intensities, 966.4522, 2);
+
+            string mzmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, @"mzml.mzML");
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, mzmlName, false);
+
+            // write the fasta db
+            var protein = new Protein(sequence: "ADHGEPIGR", accession: "");
+            PeptideWithSetModifications peptide = protein.Digest(new DigestionParams(), new List<ModificationWithMass>(),
+                new List<ModificationWithMass>()).First();
+            
+            string db = @"db.fasta";
+            ProteinDbWriter.WriteFastaDatabase(new List<Protein> { protein }, db, " ");
+
+            // gptmd/search
+            GptmdTask task2 = new GptmdTask
+            {
+                CommonParameters = new CommonParameters(),
+                GptmdParameters = new GptmdParameters()
+            };
+
+            task2.GptmdParameters.ListOfModsGptmd = new List<(string, string)> { ("Biological", "Hydroxyproline") };
+
+            
+            var gptmdTask = task2.RunTask(outputDir, new List<DbForTask> { new DbForTask(db, false) }, new List<string> { mzmlName }, "");
+
+            string gptmdDb = Directory.GetFiles(outputDir).Where(v => v.EndsWith(".xml")).First();
+            var searchTask = new SearchTask().RunTask(outputDir, new List<DbForTask> { new DbForTask(gptmdDb, false) }, new List<string> { mzmlName }, "");
+
+            var psmFile = Path.Combine(outputDir, "mzml_PSMs.psmtsv");
+            Assert.That(File.Exists(psmFile));
+            string psm = File.ReadAllLines(psmFile)[1];
+            string fullSeq = psm.Split(new char[] { '\t' })[15];
+            Assert.That(fullSeq == "ADHGEP[Biological:Hydroxyproline]IGR");
         }
     }
 }
