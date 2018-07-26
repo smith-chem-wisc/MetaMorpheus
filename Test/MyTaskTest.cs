@@ -424,12 +424,15 @@ namespace Test
             
             string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
             var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Mods", @"hydroxyproline.txt");
-            Console.WriteLine("Test mods path: " + filePath);
             File.WriteAllLines(filePath, new string[] { modToWrite });
 
-            if(GlobalVariables.AllModsKnown.Where(m => m.id == "Hydroxyproline").Count() == 0)
+            if(GlobalVariables.AllModsKnown.Any(v => v.id == "Hydroxyproline" && v.modificationType == "Biological"))
             {
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath), false);
+                Console.WriteLine("Found hydroxyproline in list");
+            }
+            else
+            {
+                Console.WriteLine("Hydroxyproline not in list");
             }
 
             // write the mzml
@@ -437,7 +440,7 @@ namespace Test
             double[] intensities = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
             var datafile = new TestDataFile(mz, intensities, 966.4522, 2);
 
-            string mzmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, @"mzml.mzML");
+            string mzmlName = Path.Combine(outputDir, @"uniProtNamingConflict.mzML");
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, mzmlName, false);
 
             // write the fasta db
@@ -447,6 +450,15 @@ namespace Test
             
             string db = @"db.fasta";
             ProteinDbWriter.WriteFastaDatabase(new List<Protein> { protein }, db, " ");
+
+            if(File.Exists(db) && File.Exists(mzmlName))
+            {
+                Console.WriteLine("fasta and mzml exist");
+            }
+            else
+            {
+                Console.WriteLine("fasta and mzml do not exist");
+            }
 
             // gptmd/search
             GptmdTask task2 = new GptmdTask
@@ -460,10 +472,30 @@ namespace Test
             var gptmdTask = task2.RunTask(outputDir, new List<DbForTask> { new DbForTask(db, false) }, new List<string> { mzmlName }, "");
 
             string gptmdDb = Directory.GetFiles(outputDir).Where(v => v.EndsWith(".xml")).First();
+
+            if (File.Exists(gptmdDb))
+            {
+                Console.WriteLine("gptmd db exists");
+            }
+            else
+            {
+                Console.WriteLine("gptmd db does not exist");
+            }
+
             var searchTask = new SearchTask().RunTask(outputDir, new List<DbForTask> { new DbForTask(gptmdDb, false) }, new List<string> { mzmlName }, "");
 
             // check search results
             var psmFile = Path.Combine(outputDir, "mzml_PSMs.psmtsv");
+
+            if (File.Exists(psmFile))
+            {
+                Console.WriteLine("psm file exists");
+            }
+            else
+            {
+                Console.WriteLine("psm file does not exist");
+            }
+            
             Assert.That(File.Exists(psmFile));
             string psm = File.ReadAllLines(psmFile)[1];
             string fullSeq = psm.Split(new char[] { '\t' })[15];
