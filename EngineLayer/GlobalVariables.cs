@@ -57,8 +57,11 @@ namespace EngineLayer
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
+            Console.WriteLine("Loading mods from path: " + Path.Combine(DataDir, @"Mods"));
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
+            {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile), false);
+            }
             AddMods(UnimodDeserialized.OfType<ModificationWithLocation>(), false);
 
             // it is important to load the UniProt PTM list last to avoid naming conflicts

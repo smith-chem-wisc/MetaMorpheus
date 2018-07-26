@@ -418,11 +418,13 @@ namespace Test
         /// </summary>
         public static void TestUniprotNamingConflicts()
         {
+            Console.WriteLine("Entering UniProt Naming Conflicts Test");
             // write the mod
             var outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUniprotNamingConflicts");
             
             string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
             var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Mods", @"hydroxyproline.txt");
+            Console.WriteLine("Test mods path: " + filePath);
             File.WriteAllLines(filePath, new string[] { modToWrite });
 
             // write the mzml
