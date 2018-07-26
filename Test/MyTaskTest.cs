@@ -418,10 +418,12 @@ namespace Test
         /// </summary>
         public static void TestUniprotNamingConflicts()
         {
+            // write the mod
             var outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUniprotNamingConflicts");
             
             string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
-            File.WriteAllLines(Path.Combine(@"Mods", @"hydroxyproline.txt"), new string[] { modToWrite });
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Mods", @"hydroxyproline.txt");
+            File.WriteAllLines(filePath, new string[] { modToWrite });
 
             // write the mzml
             double[] mz = new double[] { 187.07133, 324.13025, 381.15171, 510.19430, 175.11895, 232.14042, 345.22448, 458.27216, 587.31475, 644.33622, 781.39513 };
@@ -447,13 +449,13 @@ namespace Test
             };
 
             task2.GptmdParameters.ListOfModsGptmd = new List<(string, string)> { ("Biological", "Hydroxyproline") };
-
             
             var gptmdTask = task2.RunTask(outputDir, new List<DbForTask> { new DbForTask(db, false) }, new List<string> { mzmlName }, "");
 
             string gptmdDb = Directory.GetFiles(outputDir).Where(v => v.EndsWith(".xml")).First();
             var searchTask = new SearchTask().RunTask(outputDir, new List<DbForTask> { new DbForTask(gptmdDb, false) }, new List<string> { mzmlName }, "");
 
+            // check search results
             var psmFile = Path.Combine(outputDir, "mzml_PSMs.psmtsv");
             Assert.That(File.Exists(psmFile));
             string psm = File.ReadAllLines(psmFile)[1];
