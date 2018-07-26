@@ -81,28 +81,34 @@ namespace EngineLayer
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
 
-        public static void AddMods(IEnumerable<Modification> enumerable, bool isFromUniprotPtmList)
+        public static void AddMods(IEnumerable<Modification> modifications, bool isFromUniprotPtmList)
         {
-            foreach (var ye in enumerable)
+            foreach (var mod in modifications)
             {
-                if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
-                    throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
-                if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType) && !b.Equals(ye)))
+                if (string.IsNullOrEmpty(mod.modificationType) || string.IsNullOrEmpty(mod.id))
+                {
+                    throw new MetaMorpheusException(mod.ToString() + Environment.NewLine + " has null or empty modification type");
+                }
+                if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType) && !b.Equals(mod)))
+                {
                     throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! " +
-                        "Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + 
-                        ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " 
-                        + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) 
+                        "Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine +
+                        mod.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as "
+                        + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType))
                         + Environment.NewLine + Environment.NewLine);
-                else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
+                }
+                else if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType)))
+                {
                     continue;
-                else if (isFromUniprotPtmList && AllModsKnown.Any(b => b.id == ye.id))
+                }
+                else if (isFromUniprotPtmList && AllModsKnown.Any(b => b.id == mod.id))
                 {
                     continue;
                 }
                 else
                 {
-                    _AllModsKnown.Add(ye);
-                    _AllModTypesKnown.Add(ye.modificationType);
+                    _AllModsKnown.Add(mod);
+                    _AllModTypesKnown.Add(mod.modificationType);
                 }
             }
         }
