@@ -427,6 +427,11 @@ namespace Test
             Console.WriteLine("Test mods path: " + filePath);
             File.WriteAllLines(filePath, new string[] { modToWrite });
 
+            if(GlobalVariables.AllModsKnown.Where(m => m.id == "Hydroxyproline").Count() == 0)
+            {
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath), false);
+            }
+
             // write the mzml
             double[] mz = new double[] { 187.07133, 324.13025, 381.15171, 510.19430, 175.11895, 232.14042, 345.22448, 458.27216, 587.31475, 644.33622, 781.39513 };
             double[] intensities = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
@@ -462,6 +467,7 @@ namespace Test
             Assert.That(File.Exists(psmFile));
             string psm = File.ReadAllLines(psmFile)[1];
             string fullSeq = psm.Split(new char[] { '\t' })[15];
+            Console.WriteLine("Sequence: " + fullSeq);
             Assert.That(fullSeq == "ADHGEP[Biological:Hydroxyproline]IGR");
         }
     }

@@ -56,8 +56,7 @@ namespace EngineLayer
             PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
-
-            Console.WriteLine("Loading mods from path: " + Path.Combine(DataDir, @"Mods"));
+            
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile), false);
