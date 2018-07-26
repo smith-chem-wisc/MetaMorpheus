@@ -421,7 +421,9 @@ namespace Test
             Console.WriteLine("Entering UniProt Naming Conflicts Test");
             // write the mod
             var outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUniprotNamingConflicts");
-            
+            Directory.CreateDirectory(outputDir);
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Mods"));
+
             string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
             var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Mods", @"hydroxyproline.txt");
             File.WriteAllLines(filePath, new string[] { modToWrite });
@@ -432,6 +434,7 @@ namespace Test
             }
             else
             {
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath), false);
                 Console.WriteLine("Hydroxyproline not in list");
             }
 
@@ -485,7 +488,7 @@ namespace Test
             var searchTask = new SearchTask().RunTask(outputDir, new List<DbForTask> { new DbForTask(gptmdDb, false) }, new List<string> { mzmlName }, "");
 
             // check search results
-            var psmFile = Path.Combine(outputDir, "mzml_PSMs.psmtsv");
+            var psmFile = Path.Combine(outputDir, "uniProtNamingConflict_PSMs.psmtsv");
 
             if (File.Exists(psmFile))
             {
