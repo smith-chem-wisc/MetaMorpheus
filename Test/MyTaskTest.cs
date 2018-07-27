@@ -20,7 +20,7 @@ namespace Test
         public static void TestEverythingRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile), false);
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -102,7 +102,7 @@ namespace Test
         public static void TestMultipleFilesRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile), false);
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -272,7 +272,7 @@ namespace Test
 
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) }, false);
+                GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
@@ -350,7 +350,7 @@ namespace Test
             GlobalVariables.AddMods(new List<ModificationWithLocation>
             {
                 testUniqeMod
-            }, false);
+            });
 
             //create modification lists
 
@@ -418,92 +418,19 @@ namespace Test
         /// </summary>
         public static void TestUniprotNamingConflicts()
         {
-            Console.WriteLine("Entering UniProt Naming Conflicts Test");
             // write the mod
             var outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUniprotNamingConflicts");
             Directory.CreateDirectory(outputDir);
-            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Mods"));
-
             string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
-            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Mods", @"hydroxyproline.txt");
+            var filePath = Path.Combine(GlobalVariables.DataDir, @"Mods", @"hydroxyproline.txt");
             File.WriteAllLines(filePath, new string[] { modToWrite });
 
-            if(GlobalVariables.AllModsKnown.Any(v => v.id == "Hydroxyproline" && v.modificationType == "Biological"))
-            {
-                Console.WriteLine("Found hydroxyproline in list");
-            }
-            else
-            {
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath), false);
-                Console.WriteLine("Hydroxyproline not in list");
-            }
+            // read the mod
+            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath));
+            Assert.That(GlobalVariables.AllModsKnown.Where(v => v.id == "Hydroxyproline").Count() == 1);
 
-            // write the mzml
-            double[] mz = new double[] { 187.07133, 324.13025, 381.15171, 510.19430, 175.11895, 232.14042, 345.22448, 458.27216, 587.31475, 644.33622, 781.39513 };
-            double[] intensities = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
-            var datafile = new TestDataFile(mz, intensities, 966.4522, 2);
-
-            string mzmlName = Path.Combine(outputDir, @"uniProtNamingConflict.mzML");
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, mzmlName, false);
-
-            // write the fasta db
-            var protein = new Protein(sequence: "ADHGEPIGR", accession: "");
-            PeptideWithSetModifications peptide = protein.Digest(new DigestionParams(), new List<ModificationWithMass>(),
-                new List<ModificationWithMass>()).First();
-            
-            string db = @"db.fasta";
-            ProteinDbWriter.WriteFastaDatabase(new List<Protein> { protein }, db, " ");
-
-            if(File.Exists(db) && File.Exists(mzmlName))
-            {
-                Console.WriteLine("fasta and mzml exist");
-            }
-            else
-            {
-                Console.WriteLine("fasta and mzml do not exist");
-            }
-
-            // gptmd/search
-            GptmdTask task2 = new GptmdTask
-            {
-                CommonParameters = new CommonParameters(),
-                GptmdParameters = new GptmdParameters()
-            };
-
-            task2.GptmdParameters.ListOfModsGptmd = new List<(string, string)> { ("Biological", "Hydroxyproline") };
-            
-            var gptmdTask = task2.RunTask(outputDir, new List<DbForTask> { new DbForTask(db, false) }, new List<string> { mzmlName }, "");
-
-            string gptmdDb = Directory.GetFiles(outputDir).Where(v => v.EndsWith(".xml")).First();
-
-            if (File.Exists(gptmdDb))
-            {
-                Console.WriteLine("gptmd db exists");
-            }
-            else
-            {
-                Console.WriteLine("gptmd db does not exist");
-            }
-
-            var searchTask = new SearchTask().RunTask(outputDir, new List<DbForTask> { new DbForTask(gptmdDb, false) }, new List<string> { mzmlName }, "");
-
-            // check search results
-            var psmFile = Path.Combine(outputDir, "uniProtNamingConflict_PSMs.psmtsv");
-
-            if (File.Exists(psmFile))
-            {
-                Console.WriteLine("psm file exists");
-            }
-            else
-            {
-                Console.WriteLine("psm file does not exist");
-            }
-            
-            Assert.That(File.Exists(psmFile));
-            string psm = File.ReadAllLines(psmFile)[1];
-            string fullSeq = psm.Split(new char[] { '\t' })[15];
-            Console.WriteLine("Sequence: " + fullSeq);
-            Assert.That(fullSeq == "ADHGEP[Biological:Hydroxyproline]IGR");
+            // should have an error message...
+            Assert.That(GlobalVariables.ErrorsReadingMods.Where(v => v.Contains("Hydroxyproline")).Count() > 0);
         }
     }
 }

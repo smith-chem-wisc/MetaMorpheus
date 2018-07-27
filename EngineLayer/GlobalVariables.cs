@@ -59,17 +59,15 @@ namespace EngineLayer
             
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile), false);
+                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             }
-            AddMods(UnimodDeserialized.OfType<ModificationWithLocation>(), false);
-
-            // it is important to load the UniProt PTM list last to avoid naming conflicts
-            // see TestUniprotNamingConflicts unit test
-            AddMods(UniprotDeseralized.OfType<ModificationWithLocation>(), true);
+            AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
+            AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
         }
 
+        public static List<string> ErrorsReadingMods = new List<string>();
         // File locations
         public static string DataDir { get; }
         public static bool StopLoops { get; set; }
@@ -83,32 +81,39 @@ namespace EngineLayer
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
 
-        public static void AddMods(IEnumerable<Modification> modifications, bool isFromUniprotPtmList)
+        public static void AddMods(IEnumerable<Modification> modifications)
         {
             foreach (var mod in modifications)
             {
                 if (string.IsNullOrEmpty(mod.modificationType) || string.IsNullOrEmpty(mod.id))
                 {
-                    throw new MetaMorpheusException(mod.ToString() + Environment.NewLine + " has null or empty modification type");
+                    ErrorsReadingMods.Add(mod.ToString() + Environment.NewLine + " has null or empty modification type");
+                    continue;
                 }
                 if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType) && !b.Equals(mod)))
                 {
-                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! " +
-                        "Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine +
-                        mod.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as "
-                        + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType))
-                        + Environment.NewLine + Environment.NewLine);
+                    ErrorsReadingMods.Add("Modification id and type are equal, but some fields are not! " +
+                        "The following mod was not read in: " + Environment.NewLine + mod.ToString());
+                    continue;
                 }
                 else if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType)))
                 {
+                    // same ID, same mod type, and same mod properties; continue and don't output an error message
+                    // this could result from reading in an XML database with mods annotated at the top
+                    // that are already loaded in MetaMorpheus
                     continue;
                 }
-                else if (isFromUniprotPtmList && AllModsKnown.Any(b => b.id == mod.id))
+                else if(AllModsKnown.Any(m => m.id == mod.id))
                 {
+                    // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
+                    // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
+                    // so we don't know which mod to use, causing unnecessary ambiguity
+                    ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.modificationType + ":" + mod.id);
                     continue;
                 }
                 else
                 {
+                    // no errors! add the mod
                     _AllModsKnown.Add(mod);
                     _AllModTypesKnown.Add(mod.modificationType);
                 }
