@@ -184,10 +184,10 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
             ckbMzId.IsChecked = task.SearchParameters.OutMzId;
+
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = FixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -281,22 +281,27 @@ namespace MetaMorpheusGUI
                 }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    proteaseComboBox.Items.MoveCurrentToFirst();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                     if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
+                        for (int i = 0; i < proteaseComboBox.Items.Count; i++)
                         {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                            if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleN"))
+                            {
+                                proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
+                                break;
+                            }
                         }
                     }
                     else
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
+                        for (int i = 0; i < proteaseComboBox.Items.Count; i++)
                         {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                            if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleC"))
+                            {
+                                proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
+                                break;
+                            }
                         }
                     }
                 }
@@ -382,7 +387,11 @@ namespace MetaMorpheusGUI
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
             double MinRatio = double.Parse(MinRatioTextBox.Text);
 
-            CommonParameters CommonParamsToSave = new CommonParameters(
+            bool parseMaxThreadsPerFile = !maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0);
+        
+            CommonParameters commonParamsToSave = new CommonParameters(
+                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
+                maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 useDeltaScore: deltaScoreCheckBox.IsChecked.Value,
                 reportAllAmbiguity: allAmbiguity.IsChecked.Value,
                 deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
@@ -405,15 +414,6 @@ namespace MetaMorpheusGUI
                 topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value);
-
-            if (OutputFileNameTextBox.Text != "")
-            {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
-            }
-            else
-            {
-                CommonParamsToSave.TaskDescriptor = "SearchTask";
-            }
 
             if (classicSearchRadioButton.IsChecked.Value)
             {
@@ -455,10 +455,6 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             }
 
-            if (!maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0))
-            {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
             if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
@@ -496,7 +492,7 @@ namespace MetaMorpheusGUI
 
             SetModSelectionForPrunedDB();
 
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }
@@ -600,7 +596,7 @@ namespace MetaMorpheusGUI
                 try
                 {
                     System.Windows.Controls.TextBox textBox = (TextBox)sender;
-                    if (textBox.Name.Equals("txtMaxPeptideLength")) //if maxPeptideLength was modified
+                    if (textBox.Name.Equals("MaxPeptideLengthTextBox")) //if maxPeptideLength was modified
                     {
                         if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString())) //prevents infinite loops
                         {

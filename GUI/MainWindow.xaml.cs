@@ -1341,10 +1341,10 @@ namespace MetaMorpheusGUI
             Application.Current.Shutdown();
         }
 
-        private void MenuItemClickMetaDrawGUI_Click(object sender, RoutedEventArgs e)
+        private void MetaDrawMenu_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawGUI.MainWindow metaDrawGUI = new MetaDrawGUI.MainWindow();
-            metaDrawGUI.Show();
+            MetaDraw metaDrawGui = new MetaDraw();
+            metaDrawGui.Show();
         }
     }
 }

@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MetaDrawGUI
+namespace MetaMorpheusGUI
 {
-    class DrawParams
+    public class DrawParams
     {
         public DrawParams()
         {
@@ -20,16 +20,12 @@ namespace MetaDrawGUI
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
         }
+
         public bool BIons { get; set; }
-
         public bool YIons { get; set; }
-
         public bool ZdotIons { get; set; }
-
         public bool CIons { get; set; }
-
         public Tolerance ProductMassTolerance { get; set; }
-
         public int TopNpeaks { get; set; }
         public double MinRatio { get; set; }
         public bool TrimMs1Peaks { get; set; }
