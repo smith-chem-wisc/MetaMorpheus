@@ -66,7 +66,7 @@ namespace TaskLayer
                                             );
                 }
             }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+            FinishedWritingFile(writtenFile, nestedIds);
         }
 
         public void WriteAllToTsv(List<PsmCross> items, string outputFolder, string fileName, List<string> nestedIds)
@@ -150,7 +150,7 @@ namespace TaskLayer
                     }
                 }
             }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+            FinishedWritingFile(writtenFile, nestedIds);
         }
 
         public void WriteSingleToTsv(List<PsmCross> items, string outputFolder, string fileName, List<string> nestedIds)
@@ -196,7 +196,7 @@ namespace TaskLayer
                     );
                 }
             }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+            FinishedWritingFile(writtenFile, nestedIds);
         }
 
         public void WriteCrosslinkToTxtForPercolator(List<PsmCross> items, string outputFolder, string fileName, CrosslinkerTypeClass crosslinker, List<string> nestedIds)
@@ -237,7 +237,7 @@ namespace TaskLayer
                     }
                 }
             }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+            FinishedWritingFile(writtenFile, nestedIds);
         }
 
         public void WritePepXML_xl(List<PsmCross> items, List<Protein> proteinList, string databasePath, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
@@ -566,7 +566,7 @@ namespace TaskLayer
             TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.xml"));
             _indexedSerializer.Serialize(writer, _pepxml);
             writer.Close();
-            SucessfullyFinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.xml"), nestedIds);
+            FinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.xml"), nestedIds);
         }
     }
 }

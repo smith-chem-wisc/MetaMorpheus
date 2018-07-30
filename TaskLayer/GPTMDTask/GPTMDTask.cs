@@ -147,7 +147,7 @@ namespace TaskLayer
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
-            SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+            FinishedWritingFile(writtenFile, new List<string> { taskId });
 
             // get file-specific precursor mass tolerances for the GPTMD engine
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
@@ -183,7 +183,7 @@ namespace TaskLayer
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
-                SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+                FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
                 MyTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
@@ -205,7 +205,7 @@ namespace TaskLayer
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
-                SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
                 MyTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
