@@ -484,7 +484,7 @@ namespace MetaMorpheusGUI
             {
                 if (TheTask.SearchParameters.SearchType == SearchType.Classic)
                 {
-                    var result = MessageBox.Show("We recommend using Modern Search mode when conducting open precursor mass searches to reduce search time.", MessageBoxButton.OKCancel);
+                    var result = MessageBox.Show("We recommend using Modern Search mode when conducting open precursor mass searches to reduce search time.", "Modern search recommended", MessageBoxButton.OKCancel);
                     if (result == MessageBoxResult.Cancel)
                     {
                         return;
