@@ -73,10 +73,10 @@ namespace MetaMorpheusGUI
         /// <returns></returns>
         public static bool CheckIsNumber(string text)
         {
-           bool result = true;
-           foreach (var character in text)
+            bool result = true;
+            foreach (var character in text)
             {
-                if (!Char.IsDigit(character) && !(character=='.'))
+                if (!Char.IsDigit(character) && !(character == '.'))
                 {
                     result = false;
                 }
@@ -106,7 +106,7 @@ namespace MetaMorpheusGUI
         }
 
         public static bool CheckTopNPeaks(string text)
-        {            
+        {
             if (text.Length == 0)
             {
                 text = int.MaxValue.ToString();
@@ -132,7 +132,7 @@ namespace MetaMorpheusGUI
 
         public static bool CheckPrecursorMassTolerance(string text)
         {
-          
+
             if (!double.TryParse(text, out double precursorMassTolerance) || precursorMassTolerance <= 0)
             {
                 MessageBox.Show("The precursor mass tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
@@ -258,10 +258,24 @@ namespace MetaMorpheusGUI
         {
             if (!float.TryParse(text, out float binWidth) || binWidth < 0 || binWidth > 1)
             {
-                MessageBox.Show("The histogram bin width was not set to a number between zero and one. \n You entered " + '"' + text + '"' );
+                MessageBox.Show("The histogram bin width was not set to a number between zero and one. \n You entered " + '"' + text + '"');
                 return false;
             }
             return true;
+        }
+
+        public static bool VariableModCheck(List<(string, string)> listOfModsVariable)
+        {
+            bool result = true;
+            if (listOfModsVariable.Count > 1 || !listOfModsVariable.Contains(("Common Variable", "Oxidation of M")))
+            {
+                var dialogResult = MessageBox.Show("More than \"Oxidation of M\" has been selected as variable modifications. Using the GPTMD task to discover modifications is recommended instead. \n\nContinue anyway?", "Multiple Variable Mods Detected", MessageBoxButton.OKCancel);
+                if (dialogResult == MessageBoxResult.Cancel)
+                {
+                    return false;
+                }
+            }
+            return result;
         }
 
         #endregion
