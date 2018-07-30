@@ -17,7 +17,7 @@ namespace EngineLayer
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
-            int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null)
+            int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, Double qValueCutOff = 0.01)
         {
             BIons = bIons;
             YIons = yIons;
@@ -45,6 +45,7 @@ namespace EngineLayer
             DigestionParams = digestionParams ?? new DigestionParams();
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation of M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
+            QValueCutOff = qValueCutOff;
 
             if (maxThreadsToUsePerFile == -1)
             {
@@ -84,6 +85,7 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
+        public double QValueCutOff { get; set; }
 
         public CommonParameters Clone()
         {
@@ -112,7 +114,8 @@ namespace EngineLayer
                 maxThreadsToUsePerFile: this.MaxThreadsToUsePerFile,
                 digestionParams: this.DigestionParams,
                 listOfModsVariable: this.ListOfModsVariable,
-                listOfModsFixed: this.ListOfModsFixed
+                listOfModsFixed: this.ListOfModsFixed,
+                qValueCutOff: this.QValueCutOff
             );
         }
 

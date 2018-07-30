@@ -184,6 +184,8 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+            QValueTextBox.Text = task.CommonParameters.QValueCutOff.ToString(CultureInfo.InvariantCulture);
+
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
@@ -319,12 +321,15 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
 
+            if (!QValueCheckBox.IsChecked.Value)
+            {
+                QValueTextBox.Text = "1.79769313486231E+308";
+            }
 
-            
-           if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+            if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
-                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text))
+                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
             {
                 return;
             }
@@ -460,6 +465,10 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             }
 
+            if (!QValueCheckBox.IsChecked.Value)
+            {
+                CommonParamsToSave.QValueCutOff = double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture);
+            }
             if (!maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0))
             {
                 CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
