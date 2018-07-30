@@ -152,7 +152,7 @@ namespace MetaMorpheusGUI
                 }
             }
         }
-        
+
         private void loadFilesButton_Click(object sender, RoutedEventArgs e)
         {
             if (spectraFilePath == null)
@@ -166,9 +166,9 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("Please add a search result file.");
                 return;
             }
-
+            
             // load the spectra file
-            MsDataFile = spectraFileManager.LoadFile(spectraFilePath, null, null, false, false);
+            MsDataFile = spectraFileManager.LoadFile(spectraFilePath, null, null, false, false, new CommonParameters());
 
             // load the PSMs
             LoadPsms(tsvResultsFilePath);
