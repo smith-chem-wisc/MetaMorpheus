@@ -67,7 +67,7 @@ namespace MetaMorpheusCommandLine
                         {
                             GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
 
-                            // print any error messages reading the mods to the notifications area
+                            // print any error messages reading the mods to the console
                             foreach (var error in GlobalVariables.ErrorsReadingMods)
                             {
                                 Console.WriteLine(error);
