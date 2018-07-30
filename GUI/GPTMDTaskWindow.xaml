@@ -40,6 +40,40 @@
                         </TextBox.Style>
                     </TextBox>
                 </StackPanel>
+                <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
+                    <Expander x:Name="FileLoadExpander" >
+                        <StackPanel>
+                            <GroupBox Header="Deisotoping">
+                                <StackPanel>
+                                    <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <CheckBox.ToolTip>
+                                            <TextBlock>
+                                                Use the charge states and precursor masses determined by the instrument controller.
+                                            </TextBlock>
+                                        </CheckBox.ToolTip>
+                                    </CheckBox>
+                                    <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <CheckBox.ToolTip>
+                                            <TextBlock>
+                                                Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
+                                            </TextBlock>
+                                        </CheckBox.ToolTip>
+                                    </CheckBox>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Deconvolution Max Assumed Charge State" />
+                                        <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The maximum charge state that deconvolution should allow. Minimum is 1.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">
                         <StackPanel>

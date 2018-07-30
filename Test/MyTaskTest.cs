@@ -448,7 +448,28 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "sliced-raw_Peptides.psmtsv")));
             Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "sliced-raw_ProteinGroups.tsv")));
             Assert.That(File.Exists(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results", "sliced-raw_QuantifiedPeaks.tsv")));
+        }
+        /// <summary>
+        /// This tests for a bug in annotating mods in the search task. The situation is that if you search with a fasta database (no mods annotated),
+        /// and then do GPTMD, then search with the GPTMD database, the resulting PSM will have a UniProt mod annotated on it.
+        /// Also, if GPTMD has a mod with the same name as a UniProt mod, the annotated PSM will be ambiguous between
+        /// the UniProt and the MetaMorpheus modification.
+        /// </summary>
+        public static void TestUniprotNamingConflicts()
+        {
+            // write the mod
+            var outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUniprotNamingConflicts");
+            Directory.CreateDirectory(outputDir);
+            string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
+            var filePath = Path.Combine(GlobalVariables.DataDir, @"Mods", @"hydroxyproline.txt");
+            File.WriteAllLines(filePath, new string[] { modToWrite });
 
+            // read the mod
+            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath));
+            Assert.That(GlobalVariables.AllModsKnown.Where(v => v.id == "Hydroxyproline").Count() == 1);
+
+            // should have an error message...
+            Assert.That(GlobalVariables.ErrorsReadingMods.Where(v => v.Contains("Hydroxyproline")).Count() > 0);
         }
     }
 }
