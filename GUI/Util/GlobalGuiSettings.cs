@@ -266,16 +266,15 @@ namespace MetaMorpheusGUI
 
         public static bool VariableModCheck(List<(string, string)> listOfModsVariable)
         {
-            bool result = true;
-            if (listOfModsVariable.Count > 1 || !listOfModsVariable.Contains(("Common Variable", "Oxidation of M")))
+            if (listOfModsVariable.Count > 1)
             {
-                var dialogResult = MessageBox.Show("More than \"Oxidation of M\" has been selected as variable modifications. Using the GPTMD task to discover modifications is recommended instead. \n\nContinue anyway?", "Multiple Variable Mods Detected", MessageBoxButton.OKCancel);
+                var dialogResult = MessageBox.Show("More than 1 modification has been selected as variable. Using the GPTMD task to discover modifications is recommended instead. \n\nContinue anyway?", "Multiple Variable Mods Detected", MessageBoxButton.OKCancel);
                 if (dialogResult == MessageBoxResult.Cancel)
                 {
                     return false;
                 }
             }
-            return result;
+            return true;
         }
 
         #endregion
