@@ -491,7 +491,10 @@ namespace MetaMorpheusGUI
             if (TheTask.SearchParameters.SearchType == SearchType.Classic &&
                 (TheTask.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen || TheTask.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open))
             {
-                if (!DisplayOpenSearchWarning())
+                MessageBoxResult result = MessageBox.Show("We recommend using Modern Search mode when conducting open precursor mass searches to reduce search time.\n\n" +
+                    "Continue anyway?", "Modern search recommended", MessageBoxButton.OKCancel);
+
+                if (result == MessageBoxResult.Cancel)
                 {
                     return;
                 }
@@ -642,18 +645,6 @@ namespace MetaMorpheusGUI
         private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
-        }
-
-        private bool DisplayOpenSearchWarning()
-        {
-            var result = MessageBox.Show("We recommend using Modern Search mode when conducting open precursor mass searches to reduce search time.\n\nContinue anyway?", "Modern search recommended", MessageBoxButton.OKCancel);
-
-            if (result == MessageBoxResult.Cancel)
-            {
-                return false;
-            }
-
-            return true;
         }
     }
 
