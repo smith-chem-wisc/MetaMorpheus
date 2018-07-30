@@ -220,7 +220,7 @@ namespace TaskLayer
 
             var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
-            SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
+            FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
@@ -260,7 +260,7 @@ namespace TaskLayer
                     file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
                     file.Write(MyTaskResults.ToString());
                 }
-                SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
+                FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
             }
             catch (Exception e)
@@ -299,7 +299,7 @@ namespace TaskLayer
                     file.WriteLine("Databases:");
                     file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
                 }
-                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { displayName });
+                FinishedWritingFile(proseFilePath, new List<string> { displayName });
             }
 
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
@@ -374,7 +374,7 @@ namespace TaskLayer
 
         protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
 
-        protected void SucessfullyFinishedWritingFile(string path, List<string> nestedIDs)
+        protected void FinishedWritingFile(string path, List<string> nestedIDs)
         {
             FinishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path, nestedIDs));
         }

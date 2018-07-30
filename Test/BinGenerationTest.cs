@@ -68,7 +68,7 @@ namespace Test
                 new List<string> { mzmlFilePath },
                 null);
 
-            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.mytsv")).Count());
+            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count());
         }
 
         [Test]

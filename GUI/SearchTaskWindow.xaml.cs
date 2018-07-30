@@ -186,7 +186,7 @@ namespace MetaMorpheusGUI
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
-            ckbMzId.IsChecked = task.SearchParameters.OutMzId;
+            ckbMzId.IsChecked = task.SearchParameters.WriteMzId;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -438,7 +438,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(peakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
-            TheTask.SearchParameters.OutMzId = ckbMzId.IsChecked.Value;
+            TheTask.SearchParameters.WriteMzId = ckbMzId.IsChecked.Value;
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
             if (checkBoxDecoy.IsChecked.Value)
