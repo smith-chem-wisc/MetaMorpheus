@@ -107,46 +107,5 @@ namespace EngineLayer
                 return psmString;
             }
         }
-
-        public static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
-        {
-            Dictionary<string, Protease> dict = new Dictionary<string, Protease>();
-            using (StreamReader proteases = new StreamReader(proteasesLocation))
-            {
-                proteases.ReadLine();
-
-                while (proteases.Peek() != -1)
-                {
-                    string line = proteases.ReadLine();
-                    string[][] fields = line.Split('\t').Select(x => x.Split('|')).ToArray();
-                    string name = fields[0][0];
-                    string[] preventing;
-                    List<Tuple<string, TerminusType>> sequences_inducing_cleavage = new List<Tuple<string, TerminusType>>();
-                    List<Tuple<string, TerminusType>> sequences_preventing_cleavage = new List<Tuple<string, TerminusType>>();
-                    for (int i = 0; i < fields[1].Length; i++)
-                    {
-                        if (!fields[1][i].Equals(""))
-                        {
-                            sequences_inducing_cleavage.Add(new Tuple<string, TerminusType>(fields[1][i], ((TerminusType)Enum.Parse(typeof(TerminusType), fields[3][i], true))));
-                            if (!fields[2].Contains(""))
-                            {
-                                preventing = (fields[2][i].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-                                for (int j = 0; j < preventing.Length; j++)
-                                {
-                                    sequences_preventing_cleavage.Add(new Tuple<string, TerminusType>(preventing[j], (TerminusType)Enum.Parse(typeof(TerminusType), fields[3][i], true)));
-                                }
-                            }
-                        }
-                    }
-                    var cleavage_specificity = ((CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), fields[4][0], true));
-                    string psi_ms_accession_number = fields[5][0];
-                    string psi_ms_name = fields[6][0];
-                    string site_regexp = fields[7][0];
-                    var protease = new Protease(name, sequences_inducing_cleavage, sequences_preventing_cleavage, cleavage_specificity, psi_ms_accession_number, psi_ms_name, site_regexp);
-                    dict.Add(protease.Name, protease);
-                }
             }
-            return dict;
-        }
-    }
 }
