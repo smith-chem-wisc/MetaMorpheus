@@ -38,7 +38,7 @@ namespace TaskLayer
             List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -102,7 +102,7 @@ namespace TaskLayer
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -125,7 +125,7 @@ namespace TaskLayer
 
                 lock (psmLock)
                 {
-                    allPsms.AddRange(newPsms);
+                    allPsms.AddRange(newPsms.Where(p => p != null));
                 }
 
                 completedFiles++;
@@ -137,7 +137,7 @@ namespace TaskLayer
             Status("Crosslink analysis engine", taskId);
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, OutputFolder, crosslinker, terminusType, CommonParameters, new List<string> { taskId }).Run();
-            allPsms = allPsms.Where(p => p != null).ToList();
+            allPsms = allPsms.ToList();
             if (XlSearchParameters.XlOutAll)
             {
                 try

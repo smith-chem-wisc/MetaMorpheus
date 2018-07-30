@@ -164,7 +164,14 @@ namespace TaskLayer
                 maxMissedCleavages: maxMissedCleavages,
                 minPeptideLength: minPeptideLength,
                 maxPeptideLength: maxPeptideLength,
-                maxModsForPeptides: maxModsForPeptide);
+                maxModsForPeptides: maxModsForPeptide,
+
+                //NEED THESE OR THEY'LL BE OVERWRITTEN
+                maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
+                initiatorMethionineBehavior: commonParams.DigestionParams.InitiatorMethionineBehavior,
+                semiProteaseDigestion: commonParams.DigestionParams.SemiProteaseDigestion,
+                terminusTypeSemiProtease: commonParams.DigestionParams.TerminusTypeSemiProtease
+                );
 
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
@@ -181,7 +188,28 @@ namespace TaskLayer
                 zDotIons: zdotIons,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
-                digestionParams: fileSpecificDigestionParams);
+                digestionParams: fileSpecificDigestionParams,
+
+                //NEED THESE OR THEY'LL BE OVERWRITTEN
+                doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
+                useProvidedPrecursorInfo: commonParams.UseProvidedPrecursorInfo,
+                deconvolutionIntensityRatio: commonParams.DeconvolutionIntensityRatio,
+                deconvolutionMaxAssumedChargeState: commonParams.DeconvolutionMaxAssumedChargeState,
+                reportAllAmbiguity: commonParams.ReportAllAmbiguity,
+                addCompIons: commonParams.AddCompIons,
+                totalPartitions: commonParams.TotalPartitions,
+                scoreCutoff: commonParams.ScoreCutoff,
+                topNpeaks: commonParams.TopNpeaks,
+                minRatio: commonParams.MinRatio,
+                trimMs1Peaks: commonParams.TrimMs1Peaks,
+                trimMsMsPeaks: commonParams.TrimMsMsPeaks,
+                useDeltaScore: commonParams.UseDeltaScore,
+                calculateEValue: commonParams.CalculateEValue,
+                deconvolutionMassTolerance: commonParams.DeconvolutionMassTolerance,
+                maxThreadsToUsePerFile: commonParams.MaxThreadsToUsePerFile,
+                listOfModsVariable: commonParams.ListOfModsVariable,
+                listOfModsFixed: commonParams.ListOfModsFixed
+                );
 
             return returnParams;
         }
@@ -278,7 +306,7 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes)
+        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
         {
             Status("Loading proteins...", new List<string> { taskId });
             int emptyProteinEntries = 0;
@@ -286,7 +314,7 @@ namespace TaskLayer
             foreach (var db in dbFilenameList)
             {
                 int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb);
+                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb, commonParameters);
                 proteinList = proteinList.Concat(dbProteinList).ToList();
                 emptyProteinEntries += emptyProteinEntriesForThisDb;
             }
@@ -301,7 +329,8 @@ namespace TaskLayer
             return proteinList;
         }
 
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um, out int emptyEntriesCount)
+        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um,
+            out int emptyEntriesCount, CommonParameters commonParameters)
         {
             List<string> dbErrors = new List<string>();
             List<Protein> proteinList = new List<Protein>();
@@ -313,12 +342,13 @@ namespace TaskLayer
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
-                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, out dbErrors);
+                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, out dbErrors, commonParameters.MaxThreadsToUsePerFile);
             }
             else
             {
                 List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um);
+                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile);
             }
 
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
