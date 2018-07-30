@@ -68,7 +68,7 @@ namespace MetaMorpheusGUI
         internal SearchTask TheTask { get; private set; }
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        { 
+        {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
 
@@ -270,7 +270,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-
             if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
             {
                 if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
@@ -318,13 +317,11 @@ namespace MetaMorpheusGUI
                 if (!addCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
-
-
             
-           if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
-                maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
-                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text))
+            if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
+                 peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
+                 MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text))
             {
                 return;
             }
@@ -393,7 +390,7 @@ namespace MetaMorpheusGUI
             double MinRatio = double.Parse(MinRatioTextBox.Text);
 
             bool parseMaxThreadsPerFile = !maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0);
-        
+
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
@@ -482,20 +479,25 @@ namespace MetaMorpheusGUI
             }
             if (massDiffAcceptOpen.IsChecked.HasValue && massDiffAcceptOpen.IsChecked.Value)
             {
-                if (TheTask.SearchParameters.SearchType == SearchType.Classic)
-                {
-                    var result = MessageBox.Show("We recommend using Modern Search mode when conducting open precursor mass searches to reduce search time.", MessageBoxButton.OKCancel);
-                    if (result == MessageBoxResult.Cancel)
-                    {
-                        return;
-                    }
-                }
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Open;
             }
             if (massDiffAcceptCustom.IsChecked.HasValue && massDiffAcceptCustom.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
+            }
+
+            // displays warning if classic search is enabled with an open search mode
+            if (TheTask.SearchParameters.SearchType == SearchType.Classic &&
+                (TheTask.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen || TheTask.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open))
+            {
+                MessageBoxResult result = MessageBox.Show("We recommend using Modern Search mode when conducting open precursor mass searches to reduce search time.\n\n" +
+                    "Continue anyway?", "Modern search recommended", MessageBoxButton.OKCancel);
+
+                if (result == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
             }
 
             TheTask.SearchParameters.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
