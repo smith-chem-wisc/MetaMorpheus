@@ -7,7 +7,10 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -56,6 +59,55 @@ namespace Test
             psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, true);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+        }
+
+        [Test]
+        public static void TestPSMOutput()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                CommonParameters = new CommonParameters()
+                {
+                    QValueCutOff = 1
+                }
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engine.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"search\PrunedDbSpectra_PSMs.psmtsv");
+            var lines = File.ReadAllLines(psmFile);
+            // test output
+            Assert.That(lines.Length == 12);
+            StreamWriter.Close();
+
+            // do a second search with qvaluecutoff = 0
+            // test output
+
+            SearchTask searchTask2 = new SearchTask()
+            {
+                CommonParameters = new CommonParameters()
+                {
+                    QValueCutOff = 0
+                }
+            };
+
+            string outputFolder2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
+            string myFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+            var engine2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search2", searchTask2) }, new List<string> { myFile2 }, new List<DbForTask> { new DbForTask(myDatabase2, false) }, outputFolder);
+            engine2.Run();
+
+            string psmFile2 = Path.Combine(outputFolder, @"search\PrunedDbSpectra_PSMs.psmtsv");
+            var lines2 = File.ReadAllLines(psmFile);
+            // test output
+            Assert.That(lines.Length == 7);
+
         }
     }
 }

@@ -195,7 +195,7 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-            try
+            //try
             {
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
@@ -235,24 +235,24 @@ namespace TaskLayer
                 SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
             }
-            catch (Exception e)
-            {
-                MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
-                var resultsFileName = Path.Combine(output_folder, "results.txt");
-                e.Data.Add("folder", output_folder);
-                using (StreamWriter file = new StreamWriter(resultsFileName))
-                {
-                    file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
-                    file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
-                    file.Write("e: " + e);
-                    file.Write("e.Message: " + e.Message);
-                    file.Write("e.InnerException: " + e.InnerException);
-                    file.Write("e.Source: " + e.Source);
-                    file.Write("e.StackTrace: " + e.StackTrace);
-                    file.Write("e.TargetSite: " + e.TargetSite);
-                }
-                throw;
-            }
+            //catch (Exception e)
+            //{
+            //    MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+            //    var resultsFileName = Path.Combine(output_folder, "results.txt");
+            //    e.Data.Add("folder", output_folder);
+            //    using (StreamWriter file = new StreamWriter(resultsFileName))
+            //    {
+            //        file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
+            //        file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+            //        file.Write("e: " + e);
+            //        file.Write("e.Message: " + e.Message);
+            //        file.Write("e.InnerException: " + e.InnerException);
+            //        file.Write("e.Source: " + e.Source);
+            //        file.Write("e.StackTrace: " + e.StackTrace);
+            //        file.Write("e.TargetSite: " + e.TargetSite);
+            //    }
+            //    throw;
+            //}
 
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
@@ -325,14 +325,14 @@ namespace TaskLayer
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, double qValueCutOff)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var heh in items)
+                foreach (var heh in items.Where(p => p.FdrInfo.QValue < qValueCutOff))
                 {
-                    output.WriteLine(heh.ToString(ModstoWritePruned));
+                    output.WriteLine(heh.ToString(modstoWritePruned));
                 }
             }
         }
