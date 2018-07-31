@@ -150,7 +150,7 @@ namespace EngineLayer
                 _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1, matching[cpKey]);
             }
             var pepsWithMods = CompactPeptides.SelectMany(b => b.Value.Item2);
-            IsDecoy = CompactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
+            IsDecoy = CompactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
             FullSequence = Resolve(pepsWithMods.Select(b => b.Sequence)).Item2;
             BaseSequence = Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item2;
             PeptideLength = Resolve(pepsWithMods.Select(b => b.Length)).Item2;
