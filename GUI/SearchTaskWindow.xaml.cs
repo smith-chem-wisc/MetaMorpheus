@@ -323,7 +323,7 @@ namespace MetaMorpheusGUI
 
             if (!QValueCheckBox.IsChecked.Value)
             {
-                QValueTextBox.Text = "1.79769313486231E+308";
+                QValueTextBox.Text = double.PositiveInfinity.ToString();
             }
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
