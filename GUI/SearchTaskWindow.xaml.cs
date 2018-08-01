@@ -320,11 +320,6 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
 
-            if (!QValueCheckBox.IsChecked.Value)
-            {
-                QValueTextBox.Text = double.PositiveInfinity.ToString();
-            }
-
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
@@ -422,7 +417,8 @@ namespace MetaMorpheusGUI
                 trimMsMsPeaks: TrimMsMsPeaks,
                 topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
-                addCompIons: addCompIonCheckBox.IsChecked.Value);
+                addCompIons: addCompIonCheckBox.IsChecked.Value,
+                qValueCutOff: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : double.PositiveInfinity);
 
             if (classicSearchRadioButton.IsChecked.Value)
             {
@@ -464,14 +460,6 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             }
 
-            if (!QValueCheckBox.IsChecked.Value)
-            {
-                commonParamsToSave.QValueCutOff = double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture);
-            }
-            if (!maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0))
-            {
-                commonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
             if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
