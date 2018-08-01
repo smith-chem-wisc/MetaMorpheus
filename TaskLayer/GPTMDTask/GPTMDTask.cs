@@ -147,7 +147,7 @@ namespace TaskLayer
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>(), double.PositiveInfinity);
-            SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+            FinishedWritingFile(writtenFile, new List<string> { taskId });
 
             // get file-specific precursor mass tolerances for the GPTMD engine
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();

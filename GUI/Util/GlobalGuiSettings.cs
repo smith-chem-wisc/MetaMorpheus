@@ -268,10 +268,13 @@ namespace MetaMorpheusGUI
 
         public static bool CheckQValue(string text)
         {
-            if ((!double.TryParse(text, out double qValue)|| qValue <= 0) && !text.Equals(Double.MaxValue.ToString()))
+            if ((!double.TryParse(text, out double qValue) || qValue <= 0) && !text.Equals(Double.MaxValue.ToString()))
             {
                 MessageBox.Show("Please enter a valid QValue greater than zero.");
                 return false;
+            }
+            return true;
+        }
 
         public static bool VariableModCheck(List<(string, string)> listOfModsVariable)
         {

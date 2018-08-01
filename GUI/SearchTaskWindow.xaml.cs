@@ -466,11 +466,11 @@ namespace MetaMorpheusGUI
 
             if (!QValueCheckBox.IsChecked.Value)
             {
-                CommonParamsToSave.QValueCutOff = double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture);
+                commonParamsToSave.QValueCutOff = double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture);
             }
             if (!maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0))
             {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
+                commonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
             }
             if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
             {

@@ -90,7 +90,7 @@ namespace EngineLayer
         // 2) All setters should be private unless necessary
 
         public string TaskDescriptor { get; private set; }
-        public int MaxThreadsToUsePerFile { get; private set; }
+        public int MaxThreadsToUsePerFile { get; set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
         public bool DoPrecursorDeconvolution { get; private set; }
