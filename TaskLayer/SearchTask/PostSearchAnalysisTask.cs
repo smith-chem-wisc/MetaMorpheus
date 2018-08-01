@@ -376,11 +376,11 @@ namespace TaskLayer
             if (Parameters.CurrentRawFileList.Count > 1)
             {
                 var writtenFile = Path.Combine(Parameters.OutputFolder, "aggregatePSMs.psmtsv");
-                WritePsmsToTsv(Parameters.AllPsms, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                WritePsmsToTsv(Parameters.AllPsms, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueCutOff);
                 SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
                 var writtenFileForPercolator = Path.Combine(Parameters.OutputFolder, "forPercolator.tsv");
-                WritePsmsForPercolator(Parameters.AllPsms, writtenFileForPercolator);
+                WritePsmsForPercolator(Parameters.AllPsms, writtenFileForPercolator, Parameters.CommonParameters.QValueCutOff);
                 SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { Parameters.SearchTaskId });
             }
             Parameters.SearchTaskResults.AddNiceText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue < .01 && !a.IsDecoy));
@@ -389,7 +389,7 @@ namespace TaskLayer
             if (Parameters.CurrentRawFileList.Count > 1)
             {
                 var writtenFile = Path.Combine(Parameters.OutputFolder, "aggregatePeptides.psmtsv");
-                WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueCutOff);
                 SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
             }
             Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue < 0.01 && !a.IsDecoy));
@@ -421,12 +421,12 @@ namespace TaskLayer
                 var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
 
                 var writtenFile = Path.Combine(Parameters.OutputFolder, strippedFileName + "_PSMs.psmtsv");
-                WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueCutOff);
                 SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
                 Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
 
                 var writtenFileForPercolator = Path.Combine(Parameters.OutputFolder, strippedFileName + "_forPercolator.tsv");
-                WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator);
+                WritePsmsForPercolator(psmsForThisFile, writtenFileForPercolator, Parameters.CommonParameters.QValueCutOff);
                 SucessfullyFinishedWritingFile(writtenFileForPercolator, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
             }
             foreach (var group in PsmsGroupedByFile)
@@ -437,7 +437,7 @@ namespace TaskLayer
 
                 var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                 var writtenFile = Path.Combine(Parameters.OutputFolder, strippedFileName + "_Peptides.psmtsv");
-                WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueCutOff);
                 SucessfullyFinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", group.First().FullFilePath });
                 Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue < .01 && a.IsDecoy == false));
             }
@@ -477,7 +477,9 @@ namespace TaskLayer
                     {
                         Status("Writing mzid...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                         var mzidFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".mzid");
-                        MzIdentMLWriter.WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, new List<Protease> { Parameters.CommonParameters.DigestionParams.Protease }, 0.01, Parameters.CommonParameters.ProductMassTolerance, Parameters.CommonParameters.PrecursorMassTolerance, Parameters.CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
+                        MzIdentMLWriter.WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, 
+                            new List<Protease> { Parameters.CommonParameters.DigestionParams.Protease }, Parameters.CommonParameters.QValueCutOff, Parameters.CommonParameters.ProductMassTolerance, 
+                            Parameters.CommonParameters.PrecursorMassTolerance, Parameters.CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
                         SucessfullyFinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
                     if (Parameters.SearchParameters.OutPepXML)
@@ -729,7 +731,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
+        private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator, double qValueCutoff)
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
@@ -737,17 +739,22 @@ namespace TaskLayer
                 output.WriteLine("DefaultDirection\t-\t-\t1\t1\t\t");
                 for (int i = 0; i < psmList.Count; i++)
                 {
-                    var heh = psmList[i];
+                    var psm = psmList[i];
 
+                    if (psm.FdrInfo.QValue > qValueCutoff)
+                    {
+                        continue;
+                    }
+                    
                     output.Write(i.ToString());
-                    output.Write('\t' + (heh.IsDecoy ? -1 : 1).ToString());
-                    output.Write('\t' + heh.ScanNumber.ToString());
+                    output.Write('\t' + (psm.IsDecoy ? -1 : 1).ToString());
+                    output.Write('\t' + psm.ScanNumber.ToString());
 
                     // Features
-                    output.Write('\t' + string.Join("\t", heh.Features));
+                    output.Write('\t' + string.Join("\t", psm.Features));
 
                     // HACKY: Ignores all ambiguity
-                    var pwsm = heh.CompactPeptides.First().Value.Item2.First();
+                    var pwsm = psm.CompactPeptides.First().Value.Item2.First();
 
                     output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.Sequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());

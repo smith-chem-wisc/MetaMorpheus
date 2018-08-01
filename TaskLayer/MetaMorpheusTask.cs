@@ -325,14 +325,14 @@ namespace TaskLayer
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, double qValueCutOff)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var heh in items)
+                foreach (var heh in items.Where(p => p.FdrInfo.QValue <= qValueCutOff))
                 {
-                    output.WriteLine(heh.ToString(ModstoWritePruned));
+                    output.WriteLine(heh.ToString(modstoWritePruned));
                 }
             }
         }

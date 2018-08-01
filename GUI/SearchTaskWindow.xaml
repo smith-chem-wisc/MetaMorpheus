@@ -789,6 +789,10 @@
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbMzId" Content="Write .mzID" />
                             <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox x:Name="QValueCheckBox" Content="FilterQValue" IsChecked="True"/>
+                                <TextBox x:Name="QValueTextBox" Margin="10,0,0,0" PreviewTextInput="CheckIfNumber" IsEnabled="{Binding IsChecked, ElementName=QValueCheckBox}" Width="30" Height="20"/>
+                            </StackPanel>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

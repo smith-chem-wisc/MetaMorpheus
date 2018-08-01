@@ -12,6 +12,7 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool UseDeltaScore;
         private readonly bool CalculateEValue;
         private readonly double ScoreCutoff;
+        private readonly double QValueCutoff;
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -20,6 +21,7 @@ namespace EngineLayer.FdrAnalysis
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
             CalculateEValue = commonParameters.CalculateEValue;
+            QValueCutoff = commonParameters.QValueCutOff;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -87,7 +89,7 @@ namespace EngineLayer.FdrAnalysis
             //determine if Score or DeltaScore performs better
             if (UseDeltaScore)
             {
-                const double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR
+                double qValueCutoff = QValueCutoff; //optimize to get the most PSMs at a 1% FDR
 
                 List<PeptideSpectralMatch> scoreSorted = Psms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
                 int ScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
