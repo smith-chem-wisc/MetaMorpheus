@@ -513,7 +513,10 @@ namespace Test
         {
             SearchTask Task1 = new SearchTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParameters = new CommonParameters()
+                {
+                    QValueCutOff = 1
+                },
 
                 SearchParameters = new SearchParameters
                 {
