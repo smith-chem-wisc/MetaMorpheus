@@ -330,7 +330,7 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var heh in items.Where(p => p.FdrInfo.QValue < qValueCutOff))
+                foreach (var heh in items.Where(p => p.FdrInfo.QValue <= qValueCutOff))
                 {
                     output.WriteLine(heh.ToString(modstoWritePruned));
                 }
