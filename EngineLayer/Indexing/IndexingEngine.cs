@@ -133,7 +133,7 @@ namespace EngineLayer.Indexing
 
                 foreach (var theoreticalFragmentMass in validFragments)
                 {
-                    if (theoreticalFragmentMass < MaxFragmentSize)
+                    if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
                     {
                         int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
 

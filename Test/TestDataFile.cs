@@ -219,6 +219,18 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
+        public TestDataFile(double[] ms2Mz, double[] ms2Intensities, double precursorMass, int precursorZ, double rt = 1.0) : base(2, new SourceFile(null, null, null, null, null))
+        {
+            var ms1 = new MzSpectrum(new double[] { precursorMass.ToMz(precursorZ), (precursorMass + 1.003).ToMz(precursorZ) }, new double[] { 1, 1}, false);
+            var ms2 = new MzSpectrum(ms2Mz, ms2Intensities, false);
+
+            var ScansHere = new List<MsDataScan> {
+                new MsDataScan(ms1, 1, 1, true, Polarity.Positive, rt, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1"),
+                new MsDataScan(ms2, 1, 2, true, Polarity.Positive, rt + 0.01, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=2", precursorMass.ToMz(precursorZ), precursorZ, 1, precursorMass.ToMz(precursorZ), 1.0, DissociationType.HCD, 1, precursorMass.ToMz(precursorZ)) };
+            
+            Scans = ScansHere.ToArray();
+        }
+
         public string FilePath
         {
             get
