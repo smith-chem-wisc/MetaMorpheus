@@ -66,18 +66,19 @@ namespace Test
         {
             SearchTask searchTask = new SearchTask()
             {
-                CommonParameters = new CommonParameters()
-                {
-                    QValueCutOff = 1
-                }
+                CommonParameters = new CommonParameters
+                (
+                    qValueCutOff: 1
+                )
             };
+
 
             SearchTask searchTask2 = new SearchTask()
             {
-                CommonParameters = new CommonParameters()
-                {
-                    QValueCutOff = 0
-                }
+                CommonParameters = new CommonParameters
+                (
+                    qValueCutOff: 0
+                )
             };
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");

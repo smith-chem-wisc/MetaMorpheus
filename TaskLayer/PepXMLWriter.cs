@@ -46,6 +46,7 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + CommonParameters.BIons.ToString() + " Y " + CommonParameters.YIons.ToString() + " C " + CommonParameters.CIons.ToString() + " Z " + CommonParameters.ZdotIons.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "QValue", value = CommonParameters.QValueCutOff.ToString() });
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.id, value = item.monoisotopicMass.ToString() });
@@ -156,17 +157,19 @@ namespace TaskLayer
 
             for (int i = 0; i < items.Count; i++)
             {
-                _pepxml.msms_run_summary[0].spectrum_query[i] = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query()
+                if (items[i].FdrInfo.QValue <= CommonParameters.QValueCutOff)
                 {
-                    spectrum = fileNameNoExtension + "." + items[i].ScanNumber.ToString(),
-                    start_scan = Convert.ToUInt32(items[i].ScanNumber),
-                    end_scan = Convert.ToUInt32(items[i].ScanNumber),
-                    precursor_neutral_mass = (float)items[i].ScanPrecursorMass,
-                    assumed_charge = items[i].ScanPrecursorCharge.ToString(),
-                    index = Convert.ToUInt32(i + 1),
-                    retention_time_sec = (float)(items[i].ScanRetentionTime * 60),
-                    search_result = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result[1]
+                    _pepxml.msms_run_summary[0].spectrum_query[i] = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query()
                     {
+                        spectrum = fileNameNoExtension + "." + items[i].ScanNumber.ToString(),
+                        start_scan = Convert.ToUInt32(items[i].ScanNumber),
+                        end_scan = Convert.ToUInt32(items[i].ScanNumber),
+                        precursor_neutral_mass = (float)items[i].ScanPrecursorMass,
+                        assumed_charge = items[i].ScanPrecursorCharge.ToString(),
+                        index = Convert.ToUInt32(i + 1),
+                        retention_time_sec = (float)(items[i].ScanRetentionTime * 60),
+                        search_result = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result[1]
+                        {
                         new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result
                         {
                             search_hit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit[1]
@@ -174,8 +177,9 @@ namespace TaskLayer
                                 searchHits[i]
                             }
                         }
-                    }
-                };
+                        }
+                    };
+                }
             }
 
             TextWriter writer = new StreamWriter(Path.Combine(outputPath));

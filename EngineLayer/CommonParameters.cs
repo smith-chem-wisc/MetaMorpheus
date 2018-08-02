@@ -42,7 +42,7 @@ namespace EngineLayer
             DigestionParams digestionParams = null,
             IEnumerable<(string, string)> listOfModsVariable = null,
             IEnumerable<(string, string)> listOfModsFixed = null,
-			Double qValueCutOff = 0.01)
+			double qValueCutOff = 0.01)
         {
             TaskDescriptor = taskDescriptor;
             BIons = bIons;
@@ -72,15 +72,6 @@ namespace EngineLayer
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation of M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
             QValueCutOff = qValueCutOff;
-
-            if (maxThreadsToUsePerFile == -1)
-            {
-                MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;
-            }
-            else
-            {
-                MaxThreadsToUsePerFile = maxThreadsToUsePerFile;
-            }
         }
 
         // Notes:
@@ -90,7 +81,7 @@ namespace EngineLayer
         // 2) All setters should be private unless necessary
 
         public string TaskDescriptor { get; private set; }
-        public int MaxThreadsToUsePerFile { get; set; }
+        public int MaxThreadsToUsePerFile { get; private set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
         public bool DoPrecursorDeconvolution { get; private set; }
@@ -115,7 +106,7 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
-        public double QValueCutOff { get; set; }
+        public double QValueCutOff { get; private set; }
 
         public CommonParameters Clone()
         {

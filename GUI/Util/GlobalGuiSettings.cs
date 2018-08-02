@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
             string numberOfDatabaseSearches,
             string maxModsPerPeptide,
             string maxFragmentMass,
-            string QValue
+            string qValue
             )
         {
             maxMissedCleavages = MaxValueConversion(maxMissedCleavages);
@@ -59,7 +59,7 @@ namespace MetaMorpheusGUI
             results.Add((CheckNumberOfDatabasePartitions(numberOfDatabaseSearches)));
             results.Add((CheckMaxModsPerPeptide(maxModsPerPeptide)));
             results.Add((CheckMaxFragementMass(maxFragmentMass)));
-            results.Add((CheckQValue(QValue)));
+            results.Add((CheckQValue(qValue)));
 
             if (results.Contains(false))
             {

@@ -470,7 +470,7 @@ namespace TaskLayer
             {
                 // write protein groups to tsv
                 string writtenFile = Path.Combine(Parameters.OutputFolder, "AllProteinGroups.tsv");
-                WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId });
+                WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Parameters.CommonParameters.QValueCutOff);
 
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
@@ -498,7 +498,7 @@ namespace TaskLayer
                         if (Parameters.CurrentRawFileList.Count > 1)
                         {
                             writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
-                            WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+                            WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, Parameters.CommonParameters.QValueCutOff);
                         }
 
                         // write mzID
@@ -801,7 +801,7 @@ namespace TaskLayer
             }
         }
 
-        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds)
+        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValue)
         {
             if (proteinGroups != null && proteinGroups.Any())
             {
@@ -810,7 +810,10 @@ namespace TaskLayer
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
                     for (int i = 0; i < proteinGroups.Count; i++)
                     {
-                        output.WriteLine(proteinGroups[i]);
+                        if (proteinGroups[i].QValue <= qValue)
+                        {
+                            output.WriteLine(proteinGroups[i]);
+                        }
                     }
                 }
 
