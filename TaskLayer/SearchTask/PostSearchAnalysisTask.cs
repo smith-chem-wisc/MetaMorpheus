@@ -403,18 +403,18 @@ namespace TaskLayer
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(Parameters.AllPsms, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueCutOff);
+            WritePsmsToTsv(Parameters.AllPsms, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueOutputFilter);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
             writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs_FormattedForPercolator.tsv");
-            WritePsmsForPercolator(Parameters.AllPsms, writtenFile, Parameters.CommonParameters.QValueCutOff);
+            WritePsmsForPercolator(Parameters.AllPsms, writtenFile, Parameters.CommonParameters.QValueOutputFilter);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write best (highest-scoring) PSM per peptide
             writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
             List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-            WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueCutOff);
+            WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueOutputFilter);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
@@ -445,18 +445,18 @@ namespace TaskLayer
 
                     // write PSMs
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
-                    WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueCutOff);
+                    WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueOutputFilter);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
 
                     // write PSMs for percolator
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tsv");
-                    WritePsmsForPercolator(psmsForThisFile, writtenFile, Parameters.CommonParameters.QValueCutOff);
+                    WritePsmsForPercolator(psmsForThisFile, writtenFile, Parameters.CommonParameters.QValueOutputFilter);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
 
                     // write best (highest-scoring) PSM per peptide
                     var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
-                    WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueCutOff);
+                    WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueOutputFilter);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
 
                     Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
@@ -470,7 +470,7 @@ namespace TaskLayer
             {
                 // write protein groups to tsv
                 string writtenFile = Path.Combine(Parameters.OutputFolder, "AllProteinGroups.tsv");
-                WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Parameters.CommonParameters.QValueCutOff);
+                WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Parameters.CommonParameters.QValueOutputFilter);
 
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
@@ -498,7 +498,7 @@ namespace TaskLayer
                         if (Parameters.CurrentRawFileList.Count > 1)
                         {
                             writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
-                            WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, Parameters.CommonParameters.QValueCutOff);
+                            WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, Parameters.CommonParameters.QValueOutputFilter);
                         }
 
                         // write mzID

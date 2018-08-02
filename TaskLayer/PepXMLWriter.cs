@@ -46,7 +46,7 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + CommonParameters.BIons.ToString() + " Y " + CommonParameters.YIons.ToString() + " C " + CommonParameters.CIons.ToString() + " Z " + CommonParameters.ZdotIons.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "QValue", value = CommonParameters.QValueCutOff.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "QValue", value = CommonParameters.QValueOutputFilter.ToString() });
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.id, value = item.monoisotopicMass.ToString() });
@@ -157,7 +157,7 @@ namespace TaskLayer
 
             for (int i = 0; i < items.Count; i++)
             {
-                if (items[i].FdrInfo.QValue <= CommonParameters.QValueCutOff)
+                if (items[i].FdrInfo.QValue <= CommonParameters.QValueOutputFilter)
                 {
                     _pepxml.msms_run_summary[0].spectrum_query[i] = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query()
                     {

@@ -184,7 +184,7 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-            QValueTextBox.Text = task.CommonParameters.QValueCutOff.ToString(CultureInfo.InvariantCulture);
+            QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
@@ -418,7 +418,7 @@ namespace MetaMorpheusGUI
                 topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
-                qValueCutOff: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : double.PositiveInfinity);
+                qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : double.PositiveInfinity);
 
             if (classicSearchRadioButton.IsChecked.Value)
             {

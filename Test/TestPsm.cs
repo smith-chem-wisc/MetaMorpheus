@@ -68,7 +68,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    qValueCutOff: 1
+                    qValueOutputFilter: 1
                 )
             };
 
@@ -77,7 +77,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    qValueCutOff: 0
+                    qValueOutputFilter: 0
                 )
             };
 
