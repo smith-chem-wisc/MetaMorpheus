@@ -42,7 +42,7 @@ namespace EngineLayer
             DigestionParams digestionParams = null,
             IEnumerable<(string, string)> listOfModsVariable = null,
             IEnumerable<(string, string)> listOfModsFixed = null,
-			double qValueCutOff = 0.01)
+			double qValueOutputFilter = 0.01)
         {
             TaskDescriptor = taskDescriptor;
             BIons = bIons;
@@ -71,7 +71,7 @@ namespace EngineLayer
             DigestionParams = digestionParams ?? new DigestionParams();
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation of M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
-            QValueCutOff = qValueCutOff;
+            QValueOutputFilter = qValueOutputFilter;
         }
 
         // Notes:
@@ -106,7 +106,7 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
-        public double QValueCutOff { get; private set; }
+        public double QValueOutputFilter { get; private set; }
 
         public CommonParameters Clone()
         {
