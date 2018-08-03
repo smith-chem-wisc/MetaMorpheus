@@ -127,6 +127,8 @@ namespace MetaMorpheusGUI
             // hide the "InProgress" column
             dataGridProteinDatabases.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
             dataGridSpectraFiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
+
+            PrintErrorsReadingMods();
         }
 
         private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
@@ -467,6 +469,8 @@ namespace MetaMorpheusGUI
                             try
                             {
                                 GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                                
+                                PrintErrorsReadingMods();
                             }
                             catch (Exception ee)
                             {
@@ -1343,8 +1347,18 @@ namespace MetaMorpheusGUI
 
         private void MetaDrawMenu_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawGUI.MetaDraw metaDrawGUI = new MetaDrawGUI.MetaDraw();
-            metaDrawGUI.Show();
+            MetaDraw metaDrawGui = new MetaDraw();
+            metaDrawGui.Show();
+        }
+
+        private void PrintErrorsReadingMods()
+        {
+            // print any error messages reading the mods to the notifications area
+            foreach (var error in GlobalVariables.ErrorsReadingMods)
+            {
+                GuiWarnHandler(null, new StringEventArgs(error, null));
+            }
+            GlobalVariables.ErrorsReadingMods.Clear();
         }
     }
 }

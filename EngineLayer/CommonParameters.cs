@@ -73,9 +73,9 @@ namespace EngineLayer
         }
 
         // Notes:
-        // 1) Any new property must not be nullable (int?) or else if it is null,
+        // 1) Any new property must not be nullable (such as int?) or else if it is null,
         //    the null setting will not be written to a toml
-        //    and the default will override (so it's okay if the default is null)
+        //    and the default will override (so it's okay ONLY if the default is null)
         // 2) All setters should be private unless necessary
 
         public string TaskDescriptor { get; private set; }
