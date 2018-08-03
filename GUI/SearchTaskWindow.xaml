@@ -757,7 +757,7 @@
                                         Removes PSM and protein results from the written output below the input q-value.
                                     </ToolTipService.ToolTip>
                                 </CheckBox>
-                                <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" IsEnabled="{Binding IsChecked, ElementName=QValueCheckBox}" Width="45" Height="23"/>
+                                <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=QValueCheckBox}" Width="45" Height="23"/>
                             </StackPanel>
                         </StackPanel>
                     </Expander>
