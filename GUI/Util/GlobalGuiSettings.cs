@@ -36,7 +36,8 @@ namespace MetaMorpheusGUI
             string minRatio,
             string numberOfDatabaseSearches,
             string maxModsPerPeptide,
-            string maxFragmentMass
+            string maxFragmentMass,
+            string qValue
             )
         {
             maxMissedCleavages = MaxValueConversion(maxMissedCleavages);
@@ -58,6 +59,7 @@ namespace MetaMorpheusGUI
             results.Add((CheckNumberOfDatabasePartitions(numberOfDatabaseSearches)));
             results.Add((CheckMaxModsPerPeptide(maxModsPerPeptide)));
             results.Add((CheckMaxFragementMass(maxFragmentMass)));
+            results.Add((CheckQValue(qValue)));
 
             if (results.Contains(false))
             {
@@ -259,6 +261,16 @@ namespace MetaMorpheusGUI
             if (!float.TryParse(text, out float binWidth) || binWidth < 0 || binWidth > 1)
             {
                 MessageBox.Show("The histogram bin width was not set to a number between zero and one. \n You entered " + '"' + text + '"');
+                return false;
+            }
+            return true;
+        }
+
+        public static bool CheckQValue(string text)
+        {
+            if (!double.TryParse(text, out double qValue) || qValue < 0 || qValue > 1)
+            {
+                MessageBox.Show("The q-value cutoff must be a number between 0 and 1");
                 return false;
             }
             return true;
