@@ -506,8 +506,8 @@ namespace TaskLayer
                         {
                             Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                             var mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
-                            MzIdentMLWriter.WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications,
-                                new List<Protease> { Parameters.CommonParameters.DigestionParams.Protease }, 0.01, Parameters.CommonParameters.ProductMassTolerance,
+                            MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications,
+                                new List<Protease> { Parameters.CommonParameters.DigestionParams.Protease }, Parameters.CommonParameters.QValueOutputFilter, Parameters.CommonParameters.ProductMassTolerance,
                                 Parameters.CommonParameters.PrecursorMassTolerance, Parameters.CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
                             FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                         }
@@ -517,8 +517,8 @@ namespace TaskLayer
                         {
                             Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                             var pepXMLFilePath = Path.Combine(Parameters.OutputFolder, "Individual Spectra Files", strippedFileName + ".pep.XML");
-                            PepXMLWriter.WritePepXML(psmsForThisFile, Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
-                                Parameters.CommonParameters, pepXMLFilePath);
+                            PepXMLWriter.WritePepXml(psmsForThisFile, Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
+                                Parameters.CommonParameters, pepXMLFilePath, Parameters.CommonParameters.QValueOutputFilter);
                             FinishedWritingFile(pepXMLFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                         }
 
@@ -779,7 +779,7 @@ namespace TaskLayer
                 {
                     var psm = psmList[i];
 
-                    if (psm.FdrInfo.QValue > qValueCutoff)
+                    if (psm.FdrInfo.QValue > qValueCutoff || psm.FdrInfo.QValueNotch > qValueCutoff)
                     {
                         continue;
                     }

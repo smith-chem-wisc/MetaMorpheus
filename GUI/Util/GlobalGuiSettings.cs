@@ -268,9 +268,9 @@ namespace MetaMorpheusGUI
 
         public static bool CheckQValue(string text)
         {
-            if ((!double.TryParse(text, out double qValue) || qValue <= 0) && !text.Equals(Double.MaxValue.ToString()))
+            if (!double.TryParse(text, out double qValue) || qValue < 0 || qValue > 1)
             {
-                MessageBox.Show("Please enter a valid QValue greater than zero.");
+                MessageBox.Show("The q-value cutoff must be a number between 0 and 1");
                 return false;
             }
             return true;

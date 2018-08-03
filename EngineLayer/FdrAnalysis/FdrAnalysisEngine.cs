@@ -141,6 +141,15 @@ namespace EngineLayer.FdrAnalysis
                     eScore = -Math.Log(eValue, 10);
                 }
 
+                if (temp_q_value > 1)
+                {
+                    temp_q_value = 1;
+                }
+                if (temp_q_value_for_notch > 1)
+                {
+                    temp_q_value_for_notch = 1;
+                }
+
                 psm.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch, maximumLikelihood, eValue, eScore, CalculateEValue);
             }
 
