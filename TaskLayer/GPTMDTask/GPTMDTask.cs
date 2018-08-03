@@ -146,7 +146,7 @@ namespace TaskLayer
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, new List<string> { taskId }).Run();
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
-            WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
+            WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>(), double.PositiveInfinity);
             FinishedWritingFile(writtenFile, new List<string> { taskId });
 
             // get file-specific precursor mass tolerances for the GPTMD engine

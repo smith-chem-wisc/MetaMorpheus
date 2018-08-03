@@ -184,6 +184,8 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+            QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
+
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
             ckbMzId.IsChecked = task.SearchParameters.WriteMzId;
@@ -317,11 +319,11 @@ namespace MetaMorpheusGUI
                 if (!addCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
             }
-            
+
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
-                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                 peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
-                 MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text))
+                maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
+                peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
+                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
             {
                 return;
             }
@@ -415,7 +417,8 @@ namespace MetaMorpheusGUI
                 trimMsMsPeaks: TrimMsMsPeaks,
                 topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
-                addCompIons: addCompIonCheckBox.IsChecked.Value);
+                addCompIons: addCompIonCheckBox.IsChecked.Value,
+                qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : double.PositiveInfinity);
 
             if (classicSearchRadioButton.IsChecked.Value)
             {
