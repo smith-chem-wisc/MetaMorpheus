@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace EngineLayer
 {
@@ -50,6 +51,9 @@ namespace EngineLayer
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
 
+            string GlycanLocation = Path.Combine(DataDir, @"Data", @"pGlyco.gdb");
+            Glycans = LoadGlycanDatabase(GlycanLocation);
+
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
@@ -77,6 +81,7 @@ namespace EngineLayer
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
+        public static IEnumerable<Glycan> Glycans { get; }
 
         public static void AddMods(IEnumerable<Modification> enumerable)
         {
@@ -147,6 +152,50 @@ namespace EngineLayer
                 }
             }
             return dict;
+        }
+
+        public static IEnumerable<Glycan> LoadGlycanDatabase(string pGlycoLocation)
+        {
+            
+            using(StreamReader glycans = new StreamReader(pGlycoLocation))
+            {
+                List<string> theGlycanString = new List<string>();
+                
+                while (glycans.Peek() != -1)
+                {
+                    string line = glycans.ReadLine();
+                    theGlycanString.Add(line);
+                    if (line.StartsWith("End"))
+                    {
+                        yield return ReadGlycan(theGlycanString);
+                        theGlycanString = new List<string>();
+                    }
+
+                }
+            }
+        }
+
+        private static Glycan ReadGlycan(List<string> theGlycanString)
+        {
+            int _id = Convert.ToInt32(theGlycanString[1].Split('\t')[1]);
+            int _type = Convert.ToInt32(theGlycanString[1].Split('\t')[3]); ;
+            string _struc = theGlycanString[2].Split('\t')[1];
+            double _mass = Convert.ToDouble(theGlycanString[3].Split('\t')[1]);
+            int[] _kind = theGlycanString[4].Split('\t').Skip(1).Cast<int>().ToArray();
+            List<GlycanIon> glycanIons = new List<GlycanIon>();
+
+            for (int i = 0; i < theGlycanString.Count; i++)
+            {
+                if (theGlycanString[i].StartsWith("IonStruct"))
+                {
+                    double _ionMass = Convert.ToDouble(theGlycanString[i+1].Split('\t')[1]);
+                    int[] _ionKind = theGlycanString[i+2].Split('\t').Skip(1).Cast<int>().ToArray();
+                    GlycanIon glycanIon = new GlycanIon(0, _ionMass, _ionKind);
+                    glycanIons.Add(glycanIon);
+                }
+            }
+            Glycan glycan = new Glycan(_id, _type, _struc, _mass, _kind, glycanIons);
+            return glycan;
         }
     }
 }

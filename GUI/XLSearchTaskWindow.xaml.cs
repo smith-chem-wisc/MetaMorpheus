@@ -130,6 +130,7 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
             //Crosslink search para
+            CkbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
             //cbFragmentation.SelectedIndex = (int)task.XlSearchParameters.FragmentationType;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.CrosslinkSearchTop;
@@ -261,7 +262,7 @@ namespace MetaMorpheusGUI
             {
                 return;
             }
-
+            TheTask.XlSearchParameters.SearchGlyco = CkbSearchGlyco.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTop = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             //TheTask.XlSearchParameters.CrosslinkSearchWithAllBeta = ckbSearchWithXLAllBeta.IsChecked.Value;

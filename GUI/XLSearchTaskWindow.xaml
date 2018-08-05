@@ -57,12 +57,9 @@
                                     <RowDefinition Height="1*" />
                                     <RowDefinition Height="1*" />
                                 </Grid.RowDefinitions>
-                                <!--<CheckBox x:Name="ckbSearchWithXLAllBeta" Grid.Row="0" Grid.Column="0" Content="Search with Limited peptides" />-->
-                                <!--<StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
-                                    <Label x:Name="lblXLBetaMsTl" Content="Beta Peptide Precusor mass tolerance" />
-                                    <TextBox x:Name="txtXLBetaPrecusorMsTl" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}" />
-                                    <ComboBox x:Name="cbbXLBetaprecusorMsTl" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}" />
-                                </StackPanel>-->
+                                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="5">
+                                    <CheckBox x:Name="CkbSearchGlyco"  VerticalAlignment="Center" Content="Search Glycopeptides" />
+                                </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
                                     <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
@@ -81,10 +78,6 @@
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
                                     <ComboBox x:Name="cbCrosslinker" />
                                 </StackPanel>
-                                <!--<StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
-                                    <Label x:Name="lblFragmentation" Content="Fragmentation Type" />
-                                    <ComboBox x:Name="cbFragmentation" />
-                                </StackPanel>-->
                                 <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1" Margin="5">
                                     <Label x:Name="lblQuenchMethods" Content="Quench Methods" />
                                     <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" Margin="2" />

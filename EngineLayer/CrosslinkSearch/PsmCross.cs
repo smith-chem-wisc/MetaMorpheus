@@ -14,7 +14,6 @@ namespace EngineLayer.CrosslinkSearch
         public CompactPeptide compactPeptide;
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
@@ -24,10 +23,10 @@ namespace EngineLayer.CrosslinkSearch
             compactPeptide = theBestPeptide;
         }
 
-        public double XLBestScore { get; set; }
+        public double XLBestScore { get; set; } //For the current psmCross
         public MatchedIonInfo MatchedIonInfo { get; set; }
-        public double XLTotalScore { get; set; }
-        public double XLQvalueTotalScore { get; set; }
+        public double XLTotalScore { get; set; } //alpha + beta psmCross
+        public double XLQvalueTotalScore { get; set; } //Calc based on XLtotalScore for Qvalue
         public int XlPos { get; set; }
         public int XlPos2 { get; set; }
         public int XlProteinPos { get; set; }
@@ -39,9 +38,10 @@ namespace EngineLayer.CrosslinkSearch
         public PsmCross BetaPsmCross { get; set; }
         public PsmCrossType CrossType { get; set; }
         public double DScore { get; set; }
+        public Glycan Glycan {get; set;}
 
         //Calculate score based on Product Masses.
-        public static double XlMatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, string[] sorted_theoretical_product_name_for_this_peptide, MatchedIonInfo matchedIonMassesListPositiveIsMatch)
+        private static double XlMatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, string[] sorted_theoretical_product_name_for_this_peptide, MatchedIonInfo matchedIonMassesListPositiveIsMatch)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
             if (TotalProductsHere == 0)
@@ -166,7 +166,6 @@ namespace EngineLayer.CrosslinkSearch
         {
             int length = psmCross.compactPeptide.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-            ProductMassesMightHave pmmhTop = new ProductMassesMightHave();
 
             List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
 
@@ -483,7 +482,7 @@ namespace EngineLayer.CrosslinkSearch
             psmCross.XlPos2 = pmmhList[scoreList.IndexOf(scoreList.Max())].XlPos2 + 1;
         }
 
-        public static int[] GenerateIntensityRanks(double[] experimental_intensities)
+        private static int[] GenerateIntensityRanks(double[] experimental_intensities)
         {
             var y = experimental_intensities.ToArray();
             var x = Enumerable.Range(1, y.Length).OrderBy(p => p).ToArray();
@@ -493,7 +492,7 @@ namespace EngineLayer.CrosslinkSearch
             return experimental_intensities_rank;
         }
 
-        public ProductMassesMightHave ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
+        private ProductMassesMightHave ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
         {
             int massLen = 0;
             bool containsAdot = productTypes.Contains(ProductType.Adot);
@@ -572,6 +571,116 @@ namespace EngineLayer.CrosslinkSearch
                 }
             }
             return productMassMightHave;
+        }
+
+        //To do: Optimize motif
+        public List<int> GlyPosCal(CompactPeptide compactPeptide, string crosslinkerModSites)
+        {
+            Tolerance tolerance = new PpmTolerance(1);
+            List<int> xlpos = new List<int>();
+            foreach (char item in crosslinkerModSites)
+            {
+                if (tolerance.Within(compactPeptide.NTerminalMasses[0], Residue.GetResidue(item).MonoisotopicMass))
+                {
+                    xlpos.Add(0);
+                }
+                for (int i = 1; i < compactPeptide.NTerminalMasses.Length; i++)
+                {
+                    if (tolerance.Within(compactPeptide.NTerminalMasses[i] - compactPeptide.NTerminalMasses[i - 1], Residue.GetResidue(item).MonoisotopicMass))
+                    {
+                        xlpos.Add(i);
+                    }
+                }
+                if (tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue(item).MonoisotopicMass))
+                {
+                    xlpos.Add(compactPeptide.NTerminalMasses.Length);
+                }
+            }
+            xlpos.Sort();
+            return xlpos;
+        }
+
+        //Calculate All possible Products Masses
+        public List<ProductMassesMightHave> GlyCalculateTotalProductMasses(List<ProductType> lp, bool Charge_2_3, List<int> modPos)
+        {
+            var pmmh = ProductMassesMightHaveDuplicatesAndNaNs(lp);
+
+            List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
+            var modMass = Glycan.Ions.First().IonMass;
+
+            foreach (var ipos in modPos)
+            {
+                var pmmhCurr = new ProductMassesMightHave();
+                pmmhCurr.XlPos = ipos;
+                List<double> x = new List<double>();
+                List<string> y = new List<string>();
+                x.AddRange(pmmh.ProductMz);
+                y.AddRange(pmmh.ProductName);
+                for (int i = 0; i < pmmh.ProductMz.Length; i++)
+                {
+                    var cr = pmmh.ProductName[i][0];
+                    //get the position of amino acid
+                    var nm = Int32.Parse(System.Text.RegularExpressions.Regex.Match(pmmh.ProductName[i], @"\d+").Value);
+
+                    if (cr == 'b' && nm >= ipos + 1)
+                    {
+                        x.Add(pmmh.ProductMz[i] + modMass);
+                        y.Add("t1b" + nm.ToString());
+
+                    }
+
+                    if (cr == 'y' && (nm >= compactPeptide.NTerminalMasses.Length - ipos + 1))
+                    {
+                        x.Add(pmmh.ProductMz[i] + modMass);
+                        y.Add("t1y" + nm.ToString());
+
+                    }
+                }
+                for (int i = 0; i < Glycan.Ions.Count; i++)
+                {
+                    x.Add(Glycan.Ions[i].IonMass + compactPeptide.MonoisotopicMassIncludingFixedMods);
+                    y.Add("Y" + i.ToString());
+
+                }
+                {
+                    var x2 = x.Select(p => p / 2).ToArray();
+                    var y2 = y.Select(p => p + " /2+").ToArray();
+                    var x3 = x.Select(p => p / 2).ToArray();
+                    var y3 = y.Select(p => p + " /2+").ToArray();
+
+                    x.AddRange(x2);
+                    x.AddRange(x3);
+                    y.AddRange(y2);
+                    y.AddRange(y3);
+                }
+                pmmhCurr.ProductMz = x.ToArray();
+                pmmhCurr.ProductName = y.ToArray();
+                Array.Sort(pmmhCurr.ProductMz, pmmhCurr.ProductName);
+                pmmhList.Add(pmmhCurr);
+            }
+
+            return pmmhList;
+        }
+
+        public void GlyLocalization(Ms2ScanWithSpecificMass theScan, List<ProductType> lp, bool Charge_2_3, Tolerance fragmentTolerance)
+        {
+            var modPos = GlyPosCal(compactPeptide, "N");
+
+            var pmmhList = GlyCalculateTotalProductMasses(lp, Charge_2_3, modPos);
+
+            List<double> scoreList = new List<double>();
+            List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
+            foreach (var pmm in pmmhList)
+            {
+                var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
+                double pmmScore = PsmCross.XlMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+                miil.Add(matchedIonMassesListPositiveIsMatch);
+                scoreList.Add(pmmScore);
+            }
+
+            XLBestScore = scoreList.Max();
+            MatchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
+            XlPos = pmmhList[scoreList.IndexOf(scoreList.Max())].XlPos + 1;
         }
     }
 }

@@ -12,6 +12,7 @@ namespace EngineLayer.CrosslinkSearch
     public class TwoPassCrosslinkSearchEngine : MetaMorpheusEngine
     {
         protected const int FragmentBinsPerDalton = 1000;
+        protected double[] diognosticIons = new double[3] {138.0545, 204.0864, 366.14};
         protected readonly List<int>[] FragmentIndex;
         protected readonly PeptideSpectralMatch[] GlobalPsms;
         protected readonly List<PsmCross> GlobalPsmsCross;
@@ -24,6 +25,7 @@ namespace EngineLayer.CrosslinkSearch
         protected readonly List<DissociationType> DissociationTypes;
 
         //Crosslink parameters
+        private bool _searchGlycan;
         private readonly CrosslinkerTypeClass Crosslinker;
 
         private readonly bool CrosslinkSearchTop;
@@ -41,7 +43,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool Charge_2_3_PrimeFragment;
         private MassDiffAcceptor XLPrecusorSearchMode;
 
-        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, bool searchGlycan, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.GlobalPsmsCross = globalPsmsCross;
             this.ListOfSortedms2Scans = listOfSortedms2Scans;
@@ -51,14 +53,11 @@ namespace EngineLayer.CrosslinkSearch
             this.CurrentPartition = currentPartition + 1;
             this.AddComplementaryIons = addCompIons;
             //Here use LowTheoreticalDiffAcceptor in practice doesn't work in 12/2/2017
+            this._searchGlycan = searchGlycan;
             this.MassDiffAcceptor = new OpenSearchMode();
             this.DissociationTypes = DetermineDissociationType(lp);
             this.XLPrecusorMsTl = XLPrecusorMsTl;
             XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(XLPrecusorMsTl.Value);
-            //if (XLBetaPrecusorMsTl.ToString().Contains("Absolute"))
-            //{
-            //    XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLPrecusorMsTl.Value);
-            //}
             this.Crosslinker = crosslinker;
             this.CrosslinkSearchTop = CrosslinkSearchTop;
             this.CrosslinkSearchTopNum = CrosslinkSearchTopNum;
@@ -67,7 +66,13 @@ namespace EngineLayer.CrosslinkSearch
             this.QuenchTris = quench_Tris;
             this.Charge_2_3 = charge_2_3;
             this.Charge_2_3_PrimeFragment = charge_2_3_PrimeFragment;
+            if (_searchGlycan)
+            {
+                Glycans = GlobalVariables.Glycans.ToList();
+            }
         }
+
+        public List<Glycan> Glycans { get; set; }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -149,13 +154,24 @@ namespace EngineLayer.CrosslinkSearch
                             BestPeptideScoreNotch bestPeptideScoreNotch = new BestPeptideScoreNotch(peptide, scoringTable[id], notch);
                             bestPeptideScoreNotchList.Add(bestPeptideScoreNotch);
                         }
-
-                        var possiblePsmCross = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, i);
-                        if (possiblePsmCross != null)
+                        if (_searchGlycan)
                         {
-                            lock (GlobalPsmsCross)
-                                GlobalPsmsCross.Add(possiblePsmCross);
+                            var possiblePsmCross = FindGlycopeptide(scan, bestPeptideScoreNotchList, i);
+                            if (possiblePsmCross != null)
+                            {
+                                lock (GlobalPsmsCross)
+                                    GlobalPsmsCross.Add(possiblePsmCross);
+                            }
                         }
+                        else
+                        {
+                            var possiblePsmCross = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, i);
+                            if (possiblePsmCross != null)
+                            {
+                                lock (GlobalPsmsCross)
+                                    GlobalPsmsCross.Add(possiblePsmCross);
+                            }
+                        }                      
                     }
                     // report search progress
                     progress++;
@@ -474,5 +490,54 @@ namespace EngineLayer.CrosslinkSearch
             }
             return psmCross;
         }
+
+        //Glycan
+        private PsmCross FindGlycopeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int i)
+        {
+            List<PsmCross> bestPsmCrossList = new List<PsmCross>();
+            PsmCross bestPsmCross = null;
+            for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
+            {
+                if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
+                {
+                    var productMasses = theScanBestPeptide[ind].BestPeptide.ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
+                    Array.Sort(productMasses);
+                    double score = CalculatePeptideScoreOld(theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, theScan.PrecursorMass, DissociationTypes, AddComplementaryIons, 0);
+                    var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, i, theScan, commonParameters.DigestionParams);
+                    psmCrossSingle.XLTotalScore = psmCrossSingle.Score;
+                    bestPsmCrossList.Add(psmCrossSingle);
+                }
+                //To do: add if the scan contains diagnostic ions
+                else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 200))
+                {
+                    var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
+                    var y = theScan.PrecursorMass - x;
+                    //To do: binary search glycan based on mass
+                    //To do: indexing glycan
+                    foreach (var glycan in GlobalVariables.Glycans)
+                    {
+                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, x + glycan.Mass) >= 0)
+                        {
+                            var psmCross= new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
+                            psmCross.Glycan = glycan;
+                            psmCross.GlyLocalization(theScan, ProductTypes, Charge_2_3, commonParameters.ProductMassTolerance);
+                            bestPsmCrossList.Add(psmCross);
+                        }
+                    }
+                }
+            }
+
+            if (bestPsmCrossList.Count != 0)
+            {
+                bestPsmCross = bestPsmCrossList.OrderByDescending(p => p.XLBestScore).First();
+                if (bestPsmCrossList.Count > 1)
+                {
+                    bestPsmCross.DScore = Math.Abs(bestPsmCrossList.First().XLTotalScore - bestPsmCrossList[1].XLTotalScore);
+                }
+            }
+
+            return bestPsmCross;
+        }
+
     }
 }
