@@ -482,7 +482,7 @@ namespace EngineLayer.CrosslinkSearch
             psmCross.XlPos2 = pmmhList[scoreList.IndexOf(scoreList.Max())].XlPos2 + 1;
         }
 
-        private static int[] GenerateIntensityRanks(double[] experimental_intensities)
+        public static int[] GenerateIntensityRanks(double[] experimental_intensities)
         {
             var y = experimental_intensities.ToArray();
             var x = Enumerable.Range(1, y.Length).OrderBy(p => p).ToArray();
@@ -574,7 +574,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //To do: Optimize motif
-        public List<int> GlyPosCal(CompactPeptide compactPeptide, string crosslinkerModSites)
+        private List<int> GlyPosCal(CompactPeptide compactPeptide, string crosslinkerModSites)
         {
             Tolerance tolerance = new PpmTolerance(1);
             List<int> xlpos = new List<int>();
@@ -601,7 +601,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Calculate All possible Products Masses
-        public List<ProductMassesMightHave> GlyCalculateTotalProductMasses(List<ProductType> lp, bool Charge_2_3, List<int> modPos)
+        private List<ProductMassesMightHave> GlyCalculateTotalProductMasses(List<ProductType> lp, bool Charge_2_3, List<int> modPos)
         {
             var pmmh = ProductMassesMightHaveDuplicatesAndNaNs(lp);
 

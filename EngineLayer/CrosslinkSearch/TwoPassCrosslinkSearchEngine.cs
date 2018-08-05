@@ -68,11 +68,11 @@ namespace EngineLayer.CrosslinkSearch
             this.Charge_2_3_PrimeFragment = charge_2_3_PrimeFragment;
             if (_searchGlycan)
             {
-                Glycans = GlobalVariables.Glycans.ToList();
+                Glycans = GlobalVariables.Glycans.ToArray();
             }
         }
 
-        public List<Glycan> Glycans { get; set; }
+        public Glycan[] Glycans { get; set; }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -509,20 +509,24 @@ namespace EngineLayer.CrosslinkSearch
                 }
                 //To do: add if the scan contains diagnostic ions
                 else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 200))
-                {
-                    var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
-                    var y = theScan.PrecursorMass - x;
+                {                 
+                    var yL = theScan.PrecursorMass / (1 + XLPrecusorMsTl.Value / 1e6 ) - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
+                    var yR= theScan.PrecursorMass / (1 - XLPrecusorMsTl.Value / 1e6 ) - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
                     //To do: binary search glycan based on mass
                     //To do: indexing glycan
-                    foreach (var glycan in GlobalVariables.Glycans)
+                    var iL = Array.BinarySearch(Glycans.Select(p=>p.Mass).ToArray(), yL);
+                    if (iL < 0){ iL = ~iL;} else { while (iL > 0 && Glycans[iL - 1] == Glycans[iL]) { iL--; } }               
+                    var iR = Array.BinarySearch(Glycans.Select(p => p.Mass).ToArray(), yR);
+                    if (iR < 0){iR = ~iR-1;}
+                    else { while (iR < Glycans.Length && Glycans[iR + 1] == Glycans[iR]) { iR++; } }
+                    for (int inx = iL; inx <= iR; inx++)
                     {
-                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, x + glycan.Mass) >= 0)
-                        {
-                            var psmCross= new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
-                            psmCross.Glycan = glycan;
-                            psmCross.GlyLocalization(theScan, ProductTypes, Charge_2_3, commonParameters.ProductMassTolerance);
-                            bestPsmCrossList.Add(psmCross);
-                        }
+                        var glycan = Glycans[inx];
+
+                        var psmCross = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
+                        psmCross.Glycan = glycan;
+                        psmCross.GlyLocalization(theScan, ProductTypes, Charge_2_3, commonParameters.ProductMassTolerance);
+                        bestPsmCrossList.Add(psmCross);
                     }
                 }
             }

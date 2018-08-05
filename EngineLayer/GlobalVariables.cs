@@ -181,7 +181,9 @@ namespace EngineLayer
             int _type = Convert.ToInt32(theGlycanString[1].Split('\t')[3]); ;
             string _struc = theGlycanString[2].Split('\t')[1];
             double _mass = Convert.ToDouble(theGlycanString[3].Split('\t')[1]);
-            int[] _kind = theGlycanString[4].Split('\t').Skip(1).Cast<int>().ToArray();
+            var test = theGlycanString[4].Split('\t').Skip(1);
+            int id;
+            int[] _kind = theGlycanString[4].Split('\t').SelectMany(s=>int.TryParse(s, out id) ? new[] { id } : new int[0]).ToArray();
             List<GlycanIon> glycanIons = new List<GlycanIon>();
 
             for (int i = 0; i < theGlycanString.Count; i++)
@@ -189,7 +191,8 @@ namespace EngineLayer
                 if (theGlycanString[i].StartsWith("IonStruct"))
                 {
                     double _ionMass = Convert.ToDouble(theGlycanString[i+1].Split('\t')[1]);
-                    int[] _ionKind = theGlycanString[i+2].Split('\t').Skip(1).Cast<int>().ToArray();
+                    id = 0;
+                    int[] _ionKind = theGlycanString[i+2].Split('\t').SelectMany(s => int.TryParse(s, out id) ? new[] { id } : new int[0]).ToArray();
                     GlycanIon glycanIon = new GlycanIon(0, _ionMass, _ionKind);
                     glycanIons.Add(glycanIon);
                 }

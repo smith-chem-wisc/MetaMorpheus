@@ -91,7 +91,7 @@ namespace TaskLayer
             int deconvolutionMaxAssumedChargeState,
             Tolerance deconvolutionMassTolerance)
         {
-            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1).Where(p => p.DissociationType != DissociationType.HCD))
+            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1)) //.Where(p => p.DissociationType != DissociationType.HCD)
             {
                 if (GlobalVariables.StopLoops) { break; }
                 List<(double, int)> isolatedStuff = new List<(double, int)>();
