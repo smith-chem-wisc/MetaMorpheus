@@ -185,7 +185,7 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
-            if (task.CommonParameters.QValueOutputFilter <= 1)
+            if (task.CommonParameters.QValueOutputFilter < 1)
             {
                 QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
                 QValueCheckBox.IsChecked = true;

@@ -42,7 +42,7 @@ namespace EngineLayer
             DigestionParams digestionParams = null,
             IEnumerable<(string, string)> listOfModsVariable = null,
             IEnumerable<(string, string)> listOfModsFixed = null,
-            double qValueOutputFilter = double.PositiveInfinity)
+            double qValueOutputFilter = 1.0)
         {
             TaskDescriptor = taskDescriptor;
             BIons = bIons;
