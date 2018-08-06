@@ -193,6 +193,7 @@ namespace MetaMorpheusGUI
             else
             {
                 QValueTextBox.Text = "0.01";
+                QValueCheckBox.IsChecked = false;
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
