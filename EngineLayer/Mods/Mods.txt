@@ -369,13 +369,13 @@ NL   H0 or H24 C15
 MT   Mod
 CF   H24 C15
 //
-ID   Succinylation
+ID   Succinylation of K
 TG   K
 PP   Anywhere.
 MT   Mod
 CF   C4 H4 O3
 //
-ID   Succinylation
+ID   Succinylation of N-Term
 TG   X
 PP   N-terminal.
 MT   ProteinTermMod
