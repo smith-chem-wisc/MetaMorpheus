@@ -525,7 +525,7 @@ namespace EngineLayer.CrosslinkSearch
 
                         var psmCross = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
                         psmCross.Glycan = glycan;
-                        psmCross.GlyLocalization(theScan, ProductTypes, Charge_2_3, commonParameters.ProductMassTolerance);
+                        psmCross.GlyGetBestMatch(theScan, ProductTypes, Charge_2_3, commonParameters);
                         bestPsmCrossList.Add(psmCross);
                     }
                 }

@@ -16,7 +16,10 @@ using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using OxyPlot;
-using OxyPlot.Pdf;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+using OxyPlot.Annotations;
+using System.Text.RegularExpressions;
 
 namespace Test
 {
@@ -90,24 +93,82 @@ namespace Test
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, null, TerminusType.None, commonParameters, new List<string> { }).Run();
 
-
+            DrawPeptideSpectralMatch(myMsDataFile.GetAllScansList()[1], newPsms.First());
         }
 
-        [Test]
-        public static void GlyTest_BinarySearch()
+        private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
+        { { ProductType.B, OxyColors.Blue },
+          { ProductType.BnoB1ions, OxyColors.Blue },
+          { ProductType.Y, OxyColors.Purple },
+          { ProductType.C, OxyColors.Gold },
+          { ProductType.Zdot, OxyColors.Orange },
+         { ProductType.X, OxyColors.Red }};
+
+        public static void DrawPeptideSpectralMatch(MsDataScan msDataScan, PsmCross psmToDraw)
         {
-            double[] array = new double[] { 3.44, 3.45, 4.55, 4.55, 4.55, 4.55, 5.66, 5.66, 6.77, 6.77 };
-            double x = 3.55;
-            double y = 4.55;
-            double z = 5.44;
-            var xid = Array.BinarySearch(array, x);
-            if (xid<0){ xid = ~xid;}          
-            var yid = Array.BinarySearch(array, y);
-            if (yid < 0) { yid = ~yid; }
-            else{ while (yid < array.Length && array[yid+1]==array[yid]){yid++;} }
-            //else{ while (yid > 0 && array[yid - 1] == array[yid]) { yid--; } }
-            var zid = Array.BinarySearch(array, z);
-            if (zid < 0) { zid = ~zid -1; }
+            // x is m/z, y is intensity
+            var spectrumMzs = msDataScan.MassSpectrum.XArray;
+            var spectrumIntensities = msDataScan.MassSpectrum.YArray;
+
+            PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = psmToDraw.FullSequence + psmToDraw.Glycan.Struc };
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
+            model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
+
+            LineSeries[] allIons = new LineSeries[spectrumMzs.Length];
+
+            // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
+            if (psmToDraw != null)
+            {
+                foreach (var peak in psmToDraw.MatchedIons)
+                {
+                    OxyColor ionColor = productTypeDrawColors[peak.TheoreticalFragmentIon.ProductType];
+
+                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.Mz).Value;
+
+                    // peak line
+                    allIons[i] = new LineSeries();
+                    allIons[i].Color = ionColor;
+                    allIons[i].StrokeThickness = 1;
+                    allIons[i].Points.Add(new DataPoint(peak.Mz, 0));
+                    allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
+
+                    // peak annotation
+                    var peakAnnotation = new TextAnnotation();
+                    peakAnnotation.TextRotation = -60;
+                    peakAnnotation.Font = "Arial";
+                    peakAnnotation.FontSize = 4;
+                    peakAnnotation.FontWeight = 1.0;
+                    peakAnnotation.TextColor = ionColor;
+                    peakAnnotation.StrokeThickness = 0;
+                    //string gly = peak.TheoreticalFragmentIon.ProductType == ProductType.None ? "-Hex" : "";
+                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + "@+"+ peak.TheoreticalFragmentIon.Charge.ToString() + ") " + peak.TheoreticalFragmentIon.ProductType.ToString().ToLower().First() + "-" + peak.TheoreticalFragmentIon.IonNumber;
+                    peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
+                    peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
+                    model.Annotations.Add(peakAnnotation);
+
+                    model.Series.Add(allIons[i]);
+                }           
+            }
+
+            for (int i = 0; i < spectrumMzs.Length; i++)
+            {
+                allIons[i] = new LineSeries();
+                allIons[i].Color = OxyColors.DimGray;
+                allIons[i].StrokeThickness = 0.5;
+                allIons[i].Points.Add(new DataPoint(spectrumMzs[i], 0));
+                allIons[i].Points.Add(new DataPoint(spectrumMzs[i], spectrumIntensities[i]));
+                model.Series.Add(allIons[i]);
+            }
+
+            // Axes are created automatically if they are not defined
+
+            // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
+            using (var stream = File.Create(Path.Combine(TestContext.CurrentContext.TestDirectory, psmToDraw.ScanNumber + ".pdf")))
+            {
+                PdfExporter pdf = new PdfExporter { Width = 500, Height = 210 };
+                pdf.Export(model, stream);
+            }
         }
     }
 
@@ -165,6 +226,7 @@ namespace Test
                 while (glycans.Peek() != -1)
                 {
                     string line = glycans.ReadLine();
+                    //TO DO: Read .mgf file in a smarter way.
                     if (!line.StartsWith("B") && !line.StartsWith("T") && !line.StartsWith("R") && !line.StartsWith("P") && !line.StartsWith("T") && !line.StartsWith("C") && !line.StartsWith("E"))
                     {       
                         mzList.Add(Convert.ToDouble(line.Split(null)[0]));

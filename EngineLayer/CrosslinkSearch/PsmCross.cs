@@ -39,6 +39,7 @@ namespace EngineLayer.CrosslinkSearch
         public PsmCrossType CrossType { get; set; }
         public double DScore { get; set; }
         public Glycan Glycan {get; set;}
+        public List<MatchedFragmentIon> MatchedIons { get; set; }
 
         //Calculate score based on Product Masses.
         private static double XlMatchIons(MsDataScan thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, string[] sorted_theoretical_product_name_for_this_peptide, MatchedIonInfo matchedIonMassesListPositiveIsMatch)
@@ -324,12 +325,101 @@ namespace EngineLayer.CrosslinkSearch
             return pmmhList;
         }
 
+        public Dictionary<int, List<TheoreticalFragmentIon>> XlGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, List<int> modPos)
+        {
+            Dictionary<int, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<int, List<TheoreticalFragmentIon>>();
+
+            List<TheoreticalFragmentIon> baseTheoreticalFragmentIons = GetTheoreticalFragmentIons(productTypes);
+
+            double modMass = 0;
+            if (Glycan.Ions.Count != 0)
+            {
+                modMass = Glycan.Ions.First().IonMass;
+            }
+
+            foreach (var iPos in modPos)
+            {
+                List<TheoreticalFragmentIon> currentIons = new List<TheoreticalFragmentIon>();
+
+                foreach (var iIon in baseTheoreticalFragmentIons)
+                {
+                    var iType = iIon.ProductType;
+                    switch (iType)
+                    {
+                        case ProductType.BnoB1ions:
+                            if (iIon.IonNumber < iPos)
+                            {
+                                currentIons.Add(iIon);
+                            }
+                            else
+                            {
+                                currentIons.Add(iIon);
+                                if (Glycan.Ions.Count != 0)
+                                {
+                                    currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
+                                }
+                            }
+                            break;
+                        case ProductType.C:
+                            if (iIon.IonNumber < iPos)
+                            {
+                                currentIons.Add(iIon);
+                            }
+                            else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + Glycan.Mass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                            break;
+                        case ProductType.Y:
+                            if (iIon.IonNumber < iPos)
+                            {
+                                currentIons.Add(iIon);
+                            }
+                            else
+                            {
+                                currentIons.Add(iIon);
+                                if (Glycan.Ions.Count != 0)
+                                {
+                                    currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
+
+                                }
+                            }
+                            break;
+                        case ProductType.Zdot:
+                            if (iIon.IonNumber < iPos)
+                            {
+                                currentIons.Add(iIon);
+                            }
+                            else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + Glycan.Mass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                            break;
+                    }
+                }
+
+                for (int i = 0; i < Glycan.Ions.Count; i++)
+                {
+                    currentIons.Add(new TheoreticalFragmentIon(Glycan.Ions[i].IonMass + compactPeptide.MonoisotopicMassIncludingFixedMods, double.NaN, 1, ProductType.None, i));
+                }
+
+                if (Charge_2_3)
+                {
+                    var length = currentIons.Count;
+                    for (int i = 0; i < length; i++)
+                    {
+                        currentIons.Add(new TheoreticalFragmentIon(currentIons[i].Mass, double.NaN, 2, currentIons[i].ProductType, currentIons[i].IonNumber));
+                        currentIons.Add(new TheoreticalFragmentIon(currentIons[i].Mass, double.NaN, 3, currentIons[i].ProductType, currentIons[i].IonNumber));
+                    }
+                }
+
+                AllTheoreticalFragmentIonsLists.Add(iPos, currentIons);
+            }
+
+            return AllTheoreticalFragmentIonsLists;
+        }
+
+
         //Calculate score based on All possible Products Masses for inter- or intra- crosslinks and deadend.
         public static void XlLocalization(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, double modMass,
             CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance, bool Charge_2_3, bool Charge_2_3_PrimeFragment, List<int> linkPos)
         {
             var pmmhList = PsmCross.XlCalculateTotalProductMasses(psmCross, modMass, crosslinker, lp, Charge_2_3, Charge_2_3_PrimeFragment, linkPos);
-
+            
             List<double> scoreList = new List<double>();
             List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
             foreach (var pmm in pmmhList)
@@ -600,87 +690,136 @@ namespace EngineLayer.CrosslinkSearch
             return xlpos;
         }
 
-        //Calculate All possible Products Masses
-        private List<ProductMassesMightHave> GlyCalculateTotalProductMasses(List<ProductType> lp, bool Charge_2_3, List<int> modPos)
+        private List<TheoreticalFragmentIon> GetTheoreticalFragmentIons(List<ProductType> productTypes)
         {
-            var pmmh = ProductMassesMightHaveDuplicatesAndNaNs(lp);
-
-            List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
-            var modMass = Glycan.Ions.First().IonMass;
-
-            foreach (var ipos in modPos)
+            List<TheoreticalFragmentIon> theoreticalFragmentIons = new List<TheoreticalFragmentIon>();
+            foreach (var pt in productTypes)
             {
-                var pmmhCurr = new ProductMassesMightHave();
-                pmmhCurr.XlPos = ipos;
-                List<double> x = new List<double>();
-                List<string> y = new List<string>();
-                x.AddRange(pmmh.ProductMz);
-                y.AddRange(pmmh.ProductName);
-                for (int i = 0; i < pmmh.ProductMz.Length; i++)
+                int ionNumberAdd = 1;
+                if (pt == ProductType.BnoB1ions)
                 {
-                    var cr = pmmh.ProductName[i][0];
-                    //get the position of amino acid
-                    var nm = Int32.Parse(System.Text.RegularExpressions.Regex.Match(pmmh.ProductName[i], @"\d+").Value);
-
-                    if (cr == 'b' && nm >= ipos + 1)
-                    {
-                        x.Add(pmmh.ProductMz[i] + modMass);
-                        y.Add("t1b" + nm.ToString());
-
-                    }
-
-                    if (cr == 'y' && (nm >= compactPeptide.NTerminalMasses.Length - ipos + 1))
-                    {
-                        x.Add(pmmh.ProductMz[i] + modMass);
-                        y.Add("t1y" + nm.ToString());
-
-                    }
+                    // first generated b ion is b2, not b1, if we're skipping b1 ions
+                    ionNumberAdd++;
                 }
-                for (int i = 0; i < Glycan.Ions.Count; i++)
+                List<ProductType> temp = new List<ProductType> { pt };
+                var productMasses = compactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(temp);
+
+                for (int i = 0; i < productMasses.Length; i++)
                 {
-                    x.Add(Glycan.Ions[i].IonMass + compactPeptide.MonoisotopicMassIncludingFixedMods);
-                    y.Add("Y" + i.ToString());
-
+                    theoreticalFragmentIons.Add(new TheoreticalFragmentIon(productMasses[i], double.NaN, 1, pt, i + ionNumberAdd));
                 }
-                {
-                    var x2 = x.Select(p => p / 2).ToArray();
-                    var y2 = y.Select(p => p + " /2+").ToArray();
-                    var x3 = x.Select(p => p / 2).ToArray();
-                    var y3 = y.Select(p => p + " /2+").ToArray();
-
-                    x.AddRange(x2);
-                    x.AddRange(x3);
-                    y.AddRange(y2);
-                    y.AddRange(y3);
-                }
-                pmmhCurr.ProductMz = x.ToArray();
-                pmmhCurr.ProductName = y.ToArray();
-                Array.Sort(pmmhCurr.ProductMz, pmmhCurr.ProductName);
-                pmmhList.Add(pmmhCurr);
             }
 
-            return pmmhList;
+            
+            return theoreticalFragmentIons;
         }
 
-        public void GlyLocalization(Ms2ScanWithSpecificMass theScan, List<ProductType> lp, bool Charge_2_3, Tolerance fragmentTolerance)
+        private Dictionary<int, List<TheoreticalFragmentIon>> GlyGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, List<int> modPos)
+        {
+            Dictionary<int, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<int, List<TheoreticalFragmentIon>>();
+
+            List<TheoreticalFragmentIon> baseTheoreticalFragmentIons = GetTheoreticalFragmentIons(productTypes);
+
+            double modMass=0;
+            if (Glycan.Ions.Count != 0)
+            {
+                modMass = Glycan.Ions.First().IonMass;
+            }          
+
+            foreach (var iPos in modPos)
+            {
+                List<TheoreticalFragmentIon> currentIons = new List<TheoreticalFragmentIon>();
+
+                foreach (var iIon in baseTheoreticalFragmentIons)
+                {
+                    var iType = iIon.ProductType;
+                    switch (iType)
+                    {
+                        case ProductType.BnoB1ions:
+                            if (iIon.IonNumber < iPos)
+                            {
+                                currentIons.Add(iIon);
+                            }
+                            else
+                            {
+                                currentIons.Add(iIon);
+                                if (Glycan.Ions.Count != 0)
+                                {
+                                    currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
+                                }
+                            }
+                            break;
+                        case ProductType.C:
+                            if (iIon.IonNumber < iPos)
+                            {
+                                currentIons.Add(iIon);
+                            }
+                            else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + Glycan.Mass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                            break;
+                        case ProductType.Y:
+                            if (iIon.IonNumber < iPos)
+                            {
+                                currentIons.Add(iIon);
+                            }
+                            else
+                            {
+                                currentIons.Add(iIon);
+                                if (Glycan.Ions.Count != 0)
+                                {
+                                    currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
+
+                                }
+                            }
+                            break;
+                        case ProductType.Zdot:
+                            if (iIon.IonNumber < iPos)
+                            {
+                                currentIons.Add(iIon);
+                            }
+                            else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + Glycan.Mass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                            break;
+                    }
+                }
+
+                for (int i = 0; i < Glycan.Ions.Count; i++)
+                {
+                    currentIons.Add(new TheoreticalFragmentIon(Glycan.Ions[i].IonMass + compactPeptide.MonoisotopicMassIncludingFixedMods, double.NaN, 1, ProductType.X, i));
+                }
+
+                if (Charge_2_3)
+                {
+                    var length = currentIons.Count;
+                    for (int i = 0; i < length; i++)
+                    {
+                        currentIons.Add(new TheoreticalFragmentIon(currentIons[i].Mass, double.NaN, 2, currentIons[i].ProductType, currentIons[i].IonNumber));
+                        currentIons.Add(new TheoreticalFragmentIon(currentIons[i].Mass, double.NaN, 3, currentIons[i].ProductType, currentIons[i].IonNumber));
+                    }
+                }
+
+                AllTheoreticalFragmentIonsLists.Add(iPos, currentIons);
+            }
+
+            return AllTheoreticalFragmentIonsLists;
+        }
+
+        public void GlyGetBestMatch(Ms2ScanWithSpecificMass theScan, List<ProductType> productTypes, bool Charge_2_3, CommonParameters commonParameters)
         {
             var modPos = GlyPosCal(compactPeptide, "N");
 
-            var pmmhList = GlyCalculateTotalProductMasses(lp, Charge_2_3, modPos);
+            var pmmhList = GlyGetTheoreticalFramentIons(productTypes, Charge_2_3, modPos);
 
-            List<double> scoreList = new List<double>();
-            List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
-            foreach (var pmm in pmmhList)
+            XLBestScore = 0;
+            foreach (var pmmh in pmmhList)
             {
-                var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
-                double pmmScore = PsmCross.XlMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
-                miil.Add(matchedIonMassesListPositiveIsMatch);
-                scoreList.Add(pmmScore);
+                var matchedIons = MetaMorpheusEngine.MatchFragmentIons( theScan.TheScan.MassSpectrum, pmmh.Value, commonParameters);
+                var score = MetaMorpheusEngine.CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
+                if (score > XLBestScore)
+                {
+                    XLBestScore = score;
+                    MatchedIons = matchedIons;
+                    XlPos = pmmh.Key;
+                }
             }
-
-            XLBestScore = scoreList.Max();
-            MatchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
-            XlPos = pmmhList[scoreList.IndexOf(scoreList.Max())].XlPos + 1;
         }
     }
 }
