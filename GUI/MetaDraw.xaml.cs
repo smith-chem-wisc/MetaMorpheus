@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Collections.ObjectModel;
@@ -41,6 +41,7 @@ namespace MetaMorpheusGUI
 
             mainViewModel = new MainViewModel();
             plotView.DataContext = mainViewModel;
+            MessageBox.Show("1234".ToLower());
             peptideSpectralMatches = new ObservableCollection<MetaDrawPsm>(); //Already specified headers according to properties
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));

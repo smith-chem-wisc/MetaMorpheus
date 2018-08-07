@@ -1,4 +1,4 @@
-﻿using MassSpectrometry;
+using MassSpectrometry;
 using System.Collections.Generic;
 
 namespace MetaMorpheusGUI
