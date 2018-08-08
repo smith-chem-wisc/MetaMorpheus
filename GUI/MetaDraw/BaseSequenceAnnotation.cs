@@ -26,7 +26,7 @@ namespace MetaMorpheusGUI
             tb.Text = footnote;
             tb.FontSize = 10;
             Canvas.SetTop(tb, y - 10);
-            Canvas.SetLeft(tb, x - 2);
+            Canvas.SetLeft(tb, x + 10);
             Canvas.SetZIndex(tb, 2);
             cav.Children.Add(tb);
         }
@@ -49,8 +49,8 @@ namespace MetaMorpheusGUI
             tb.Foreground = new SolidColorBrush(clr);
             tb.Text = footnote;
             tb.FontSize = 10;
-            Canvas.SetTop(tb, y - 10);
-            Canvas.SetLeft(tb, x);
+            Canvas.SetTop(tb, y - 8);
+            Canvas.SetLeft(tb, x - 22);
             Canvas.SetZIndex(tb, 2);
             cav.Children.Add(tb);
         }
@@ -62,21 +62,21 @@ namespace MetaMorpheusGUI
         /// <param name="loc"> Provate the (x,y) coordinates for textblock</param>
         /// <param name="txt"> Message for textblock</param>
         /// <returns> the width of current addup</returns>
-        public static double txtDrawing(Canvas cav, Point loc, string txt, Brush clr)
+        public static void txtDrawing(Canvas cav, Point loc, string txt, Brush clr)
         {
             TextBlock tb = new TextBlock();
             tb.Foreground = clr;
             tb.Text = txt;
             tb.Height = 30;
             tb.FontSize = 25;
-            tb.FontFamily = new FontFamily("Courier New"); // monospaced font like Console
+            tb.FontWeight = FontWeights.Bold;
+            tb.FontFamily = new FontFamily("Courier New"); // monospaced font
 
             Canvas.SetTop(tb, loc.Y);
             Canvas.SetLeft(tb, loc.X);
             Panel.SetZIndex(tb, 2); //lower priority
             cav.Children.Add(tb);
             cav.UpdateLayout();
-            return tb.ActualWidth;
         }
 
         /// <summary>
@@ -92,11 +92,11 @@ namespace MetaMorpheusGUI
             Ellipse circle = new Ellipse()
             {
                 Width = 24,
-                Height = 26,
+                Height = 24,
                 Stroke = clr,
-                StrokeThickness = 2,
+                StrokeThickness = 1,
                 Fill = clr,
-                Opacity = 0.5
+                Opacity = 0.4
             };
             Canvas.SetLeft(circle, loc.X);
             Canvas.SetTop(circle, loc.Y);

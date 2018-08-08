@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -154,7 +154,7 @@
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MetaDraw\BaseDraw.cs" />
+    <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
     <Compile Include="MetaDraw\MetaDrawPsm.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
@@ -165,7 +165,6 @@
     </Compile>
     <Compile Include="Util\CollectionForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\ExperimentalDesignForDataGrid.cs" />
-    <Compile Include="MetaDraw\DrawParams.cs" />
     <Compile Include="Util\ForTreeView.cs" />
     <Compile Include="Util\GlobalGuiSettings.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
@@ -175,7 +174,7 @@
     <Compile Include="MetaUpdater.xaml.cs">
       <DependentUpon>MetaUpdater.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MetaDraw\MainViewModel.cs" />
+    <Compile Include="MetaDraw\PsmAnnotationViewModel.cs" />
     <Compile Include="Util\ModForTreeView.cs" />
     <Compile Include="Util\ModTypeForGrid.cs" />
     <Compile Include="Util\ModTypeForLoc.cs" />

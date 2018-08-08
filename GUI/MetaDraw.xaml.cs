@@ -24,25 +24,22 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDraw : Window
     {
-        private MainViewModel mainViewModel;
+        private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
         private MsDataFile MsDataFile;
         private readonly ObservableCollection<MetaDrawPsm> peptideSpectralMatches;
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
-        private DrawParams DrawParameters;
         private string spectraFilePath;
         private string tsvResultsFilePath;
-        
-        //private readonly BackgroundWorker psmBack = new BackgroundWorker();
+
         public MetaDraw()
         {
             InitializeComponent();
 
-            mainViewModel = new MainViewModel();
+            mainViewModel = new PsmAnnotationViewModel();
             plotView.DataContext = mainViewModel;
-            MessageBox.Show("1234".ToLower());
-            peptideSpectralMatches = new ObservableCollection<MetaDrawPsm>(); //Already specified headers according to properties
+            peptideSpectralMatches = new ObservableCollection<MetaDrawPsm>();
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
             propertyView.Columns.Add("Value", typeof(string));
@@ -50,11 +47,10 @@ namespace MetaMorpheusGUI
             dataGridScanNums.DataContext = peptideSpectralMatchesView;
             dataGridProperties.DataContext = propertyView.DefaultView;
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
-            DrawParameters = new DrawParams();
             spectraFileManager = new MyFileManager(true);
-            
+
         }
-        
+
         private void Window_Drop(object sender, DragEventArgs e)
         {
             string[] files = ((string[])e.Data.GetData(DataFormats.FileDrop)).OrderBy(p => p).ToArray();
@@ -96,20 +92,17 @@ namespace MetaMorpheusGUI
         {
             string fileNameWithExtension = Path.GetFileName(spectraFilePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(spectraFilePath);
-                        
-            var psms = TsvResultReader.ReadTsv(filename);
 
-            foreach (var psm in psms)
+            foreach (var psm in TsvResultReader.ReadTsv(filename))
+            {
+                if (psm.FileName == fileNameWithExtension || psm.FileName == fileNameWithoutExtension)
                 {
-                    
-                    if (psm.FileName == fileNameWithExtension || psm.FileName == fileNameWithoutExtension)
+                    Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            peptideSpectralMatches.Add(psm);
-                        }));
-                    }
+                        peptideSpectralMatches.Add(psm);
+                    }));
                 }
+            }
         }
 
         private void DrawPsm(int oneBasedScanNumber, string fullSequence = null)
@@ -122,7 +115,13 @@ namespace MetaMorpheusGUI
                 scanPsms = scanPsms.Where(p => p.FullSequence == fullSequence);
             }
 
-            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, scanPsms.FirstOrDefault(), DrawParameters);
+            MetaDrawPsm psmToDraw = scanPsms.FirstOrDefault();
+
+            // draw annotated spectrum
+            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
+
+            // draw annotated base sequence
+            DrawAnnotatedBaseSequence(psmToDraw);
         }
 
         /// <summary>
@@ -131,22 +130,21 @@ namespace MetaMorpheusGUI
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
             if (dataGridScanNums.SelectedItem == null)
+            {
                 return;
+            }
+
             // draw the selected PSM
             propertyView.Clear();
             MetaDrawPsm row = (MetaDrawPsm)dataGridScanNums.SelectedItem;
             System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();
-            
+
             for (int i = 4; i < temp.Length; i++)
             {
-                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row,null));
+                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
             }
             dataGridProperties.Items.Refresh();
             DrawPsm(row.ScanNum, row.FullSequence);
-
-            //BaseDraw.clearCanvas(cav);
-            drawBaseSeq();
-            
         }
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
@@ -187,6 +185,7 @@ namespace MetaMorpheusGUI
 
         private async void loadFilesButton_Click(object sender, RoutedEventArgs e)
         {
+            // check for validity
             propertyView.Clear();
             if (spectraFilePath == null)
             {
@@ -205,68 +204,98 @@ namespace MetaMorpheusGUI
             selectSpectraFileButton.IsEnabled = false;
             selectPsmFileButton.IsEnabled = false;
             prgsFeed.IsOpen = true;
-            prgsText.Content = "Loading Spectrum Files...";
+            prgsText.Content = "Loading spectra file...";
 
-            //initial Progress
-            var slowProcess = Task<MsDataFile>.Factory.StartNew(() =>spectraFileManager.LoadFile(spectraFilePath, null, null, false, false, new CommonParameters()) );
-            //start process
+            var slowProcess = Task<MsDataFile>.Factory.StartNew(() => spectraFileManager.LoadFile(spectraFilePath, null, null, false, false, new CommonParameters()));
             await slowProcess;
             MsDataFile = slowProcess.Result;
-            
-            //update Progress indicator
-            this.prgsText.Content = "Loading PSM...";
-            
+
             // load the PSMs
+            this.prgsText.Content = "Loading PSMs...";
             await Task.Run(() => LoadPsms(tsvResultsFilePath));
 
-           
-
-            //restore controls
+            // done loading - restore controls
             this.prgsFeed.IsOpen = false;
             (sender as Button).IsEnabled = true;
             selectSpectraFileButton.IsEnabled = true;
             selectPsmFileButton.IsEnabled = true;
         }
-        
+
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string txt = (sender as TextBox).Text;
             if (txt == "")
+            {
                 peptideSpectralMatchesView.Filter = null;
+            }
             else
             {
-                peptideSpectralMatchesView.Filter = obj => { MetaDrawPsm mdp = obj as MetaDrawPsm; return (("" + mdp.ScanNum).StartsWith(txt) || mdp.FullSequence.ToUpper().Contains(txt.ToUpper())); };
-            }            
-            //dataGridScanNums.Items.Refresh();
+                peptideSpectralMatchesView.Filter = obj =>
+                {
+                    MetaDrawPsm psm = obj as MetaDrawPsm;
+                    return ((psm.ScanNum.ToString()).StartsWith(txt) || psm.FullSequence.ToUpper().Contains(txt.ToUpper()));
+                };
+            }
         }
 
-        private void drawBaseSeq()
+        private void DrawAnnotatedBaseSequence(MetaDrawPsm psm)
         {
-            string peptide = "PEPTIDE";
-            double aaPos = 0;
-            double fragPos = 0;
-            double modPos = 0;
+            BaseDraw.clearCanvas(canvas);
 
-            for (int r = 0; r < peptide.Length; r++)
+            // draw base sequence
+            for (int r = 0; r < psm.BaseSequence.Length; r++)
             {
-                aaPos += 3;
-                aaPos += BaseDraw.txtDrawing(cav, new Point(aaPos, 10), peptide[r].ToString(), Brushes.Black);
+                BaseDraw.txtDrawing(canvas, new Point(r * 20 + 10, 10), psm.BaseSequence[r].ToString(), Brushes.Black);
+            }
 
-                if (r == 0)
+            // draw b ions
+            foreach (var bIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.B))
+            {
+                int residue = bIon.IonNumber;
+                BaseDraw.topSplittingDrawing(canvas, new Point(residue * 20 + 8, 0), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
+            }
+
+            // draw y ions
+            foreach (var yIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Y))
+            {
+                int residue = psm.BaseSequence.Length - yIon.IonNumber;
+                BaseDraw.botSplittingDrawing(canvas, new Point(residue * 20 + 8, 50), Colors.Purple, yIon.ProductType.ToString().ToLower() + yIon.IonNumber);
+            }
+
+            // draw c ions
+            foreach (var cIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.C))
+            {
+                int residue = psm.BaseSequence.Length - cIon.IonNumber;
+                BaseDraw.botSplittingDrawing(canvas, new Point(residue * 20 + 8, 50), Colors.Gold, cIon.ProductType.ToString().ToLower() + cIon.IonNumber);
+            }
+
+            // draw zdot ions
+            foreach (var zDotIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Zdot))
+            {
+                int residue = zDotIon.IonNumber;
+                BaseDraw.topSplittingDrawing(canvas, new Point(residue * 20 + 8, 50), Colors.Orange, zDotIon.ProductType.ToString().ToLower() + zDotIon.IonNumber);
+            }
+
+            // draw modifications
+            int aa = 0;
+            bool currentlyReadingMod = false;
+            for(int c = 0; c < psm.FullSequence.Length; c++)
+            {
+                switch (psm.FullSequence[c])
                 {
-                    fragPos = aaPos + 2;
-                    BaseDraw.topSplittingDrawing(cav, new Point(fragPos, 2), Colors.Blue, "y2");
-                }
-                if (r == 2)
-                {
-                    fragPos = aaPos + 2;
-                    BaseDraw.botSplittingDrawing(cav, new Point(fragPos, 50), Colors.Purple, "y1");
-                    BaseDraw.topSplittingDrawing(cav, new Point(fragPos, 2), Colors.Blue, "y2");
-                }
-                if (r == 4)
-                {
-                    modPos = aaPos - 2;
-                    BaseDraw.circledTxtDraw(cav, new Point(modPos, 11), Brushes.Blue);
+                    case '[':
+                        currentlyReadingMod = true;
+                        BaseDraw.circledTxtDraw(canvas, new Point(aa * 16 + 10, 11), Brushes.Blue);
+                        break;
+                    case ']':
+                        currentlyReadingMod = false;
+                        break;
+                    default:
+                        if (!currentlyReadingMod)
+                        {
+                            aa++;
+                        }
+                        break;
                 }
             }
         }
