@@ -91,7 +91,7 @@ namespace MetaMorpheusGUI
         {
             Ellipse circle = new Ellipse()
             {
-                Width = 24,
+                Width = 20,
                 Height = 24,
                 Stroke = clr,
                 StrokeThickness = 1,
