@@ -91,12 +91,12 @@ namespace MetaMorpheusGUI
         {
             Ellipse circle = new Ellipse()
             {
-                Width = 20,
+                Width = 24,
                 Height = 24,
                 Stroke = clr,
                 StrokeThickness = 1,
                 Fill = clr,
-                Opacity = 0.4
+                Opacity = 0.7
             };
             Canvas.SetLeft(circle, loc.X);
             Canvas.SetTop(circle, loc.Y);
