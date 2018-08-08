@@ -19,7 +19,6 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Annotations;
-using System.Text.RegularExpressions;
 
 namespace Test
 {
@@ -102,7 +101,8 @@ namespace Test
           { ProductType.Y, OxyColors.Purple },
           { ProductType.C, OxyColors.Gold },
           { ProductType.Zdot, OxyColors.Orange },
-         { ProductType.X, OxyColors.Red }};
+         { ProductType.X, OxyColors.DarkSeaGreen },
+        { ProductType.None, OxyColors.Orange }};
 
         public static void DrawPeptideSpectralMatch(MsDataScan msDataScan, PsmCross psmToDraw)
         {

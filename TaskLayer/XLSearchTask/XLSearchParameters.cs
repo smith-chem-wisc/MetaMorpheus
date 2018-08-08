@@ -9,7 +9,6 @@ namespace TaskLayer
         public XlSearchParameters()
         {
             SearchGlyco = false;
-            FragmentationType = FragmentaionType.MS2_HCD;
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSSO;
             CrosslinkSearchTop = false;
@@ -42,7 +41,6 @@ namespace TaskLayer
         }
 
         public bool SearchGlyco { get; set; }
-        public FragmentaionType FragmentationType { get; set; }
         public DecoyType DecoyType { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
 
