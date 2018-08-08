@@ -285,7 +285,7 @@ namespace MetaMorpheusGUI
                 {
                     case '[':
                         currentlyReadingMod = true;
-                        BaseDraw.circledTxtDraw(canvas, new Point(aa * 16 + 10, 11), Brushes.Blue);
+                        BaseDraw.circledTxtDraw(canvas, new Point(aa * 20 + 8, 11), Brushes.Blue);
                         break;
                     case ']':
                         currentlyReadingMod = false;
