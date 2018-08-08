@@ -253,16 +253,9 @@ namespace MetaMorpheusGUI
             foreach (var bIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.B))
             {
                 int residue = bIon.IonNumber;
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
+                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
             }
-
-            // draw y ions
-            foreach (var yIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Y))
-            {
-                int residue = psm.BaseSequence.Length - yIon.IonNumber;
-                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Purple, yIon.ProductType.ToString().ToLower() + yIon.IonNumber);
-            }
-
+            
             // draw c ions
             foreach (var cIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.C))
             {
@@ -270,11 +263,18 @@ namespace MetaMorpheusGUI
                 BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Gold, cIon.ProductType.ToString().ToLower() + cIon.IonNumber);
             }
 
+            // draw y ions
+            foreach (var yIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Y))
+            {
+                int residue = psm.BaseSequence.Length - yIon.IonNumber;
+                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Purple, yIon.ProductType.ToString().ToLower() + yIon.IonNumber);
+            }
+
             // draw zdot ions
             foreach (var zDotIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Zdot))
             {
                 int residue = zDotIon.IonNumber;
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Orange, zDotIon.ProductType.ToString().ToLower() + zDotIon.IonNumber);
+                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Orange, zDotIon.ProductType.ToString().ToLower() + zDotIon.IonNumber);
             }
 
             // draw modifications
@@ -286,7 +286,7 @@ namespace MetaMorpheusGUI
                 {
                     case '[':
                         currentlyReadingMod = true;
-                        BaseDraw.circledTxtDraw(canvas, new Point(aa * spacing - 18, 12), Brushes.Yellow);
+                        BaseDraw.circledTxtDraw(canvas, new Point(aa * spacing - 17, 12), Brushes.Yellow);
                         break;
                     case ']':
                         currentlyReadingMod = false;
