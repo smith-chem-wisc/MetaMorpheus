@@ -16,6 +16,8 @@ using System.Threading;
 using System.Data;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+
 
 namespace MetaMorpheusGUI
 {
@@ -118,10 +120,12 @@ namespace MetaMorpheusGUI
             MetaDrawPsm psmToDraw = scanPsms.FirstOrDefault();
 
             // draw annotated spectrum
-            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
-
+            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw,false);
             // draw annotated base sequence
             DrawAnnotatedBaseSequence(psmToDraw);
+            
+            
+            
         }
 
         /// <summary>
@@ -253,9 +257,16 @@ namespace MetaMorpheusGUI
             foreach (var bIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.B))
             {
                 int residue = bIon.IonNumber;
-                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
+                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
             }
-            
+
+            // draw y ions
+            foreach (var yIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Y))
+            {
+                int residue = psm.BaseSequence.Length - yIon.IonNumber;
+                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Purple, yIon.ProductType.ToString().ToLower() + yIon.IonNumber);
+            }
+
             // draw c ions
             foreach (var cIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.C))
             {
@@ -263,18 +274,11 @@ namespace MetaMorpheusGUI
                 BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Gold, cIon.ProductType.ToString().ToLower() + cIon.IonNumber);
             }
 
-            // draw y ions
-            foreach (var yIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Y))
-            {
-                int residue = psm.BaseSequence.Length - yIon.IonNumber;
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Purple, yIon.ProductType.ToString().ToLower() + yIon.IonNumber);
-            }
-
             // draw zdot ions
             foreach (var zDotIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Zdot))
             {
                 int residue = zDotIon.IonNumber;
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Orange, zDotIon.ProductType.ToString().ToLower() + zDotIon.IonNumber);
+                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Orange, zDotIon.ProductType.ToString().ToLower() + zDotIon.IonNumber);
             }
 
             // draw modifications
@@ -286,7 +290,7 @@ namespace MetaMorpheusGUI
                 {
                     case '[':
                         currentlyReadingMod = true;
-                        BaseDraw.circledTxtDraw(canvas, new Point(aa * spacing - 17, 12), Brushes.Yellow);
+                        BaseDraw.circledTxtDraw(canvas, new Point(aa * spacing - 18, 12), Brushes.Yellow);
                         break;
                     case ']':
                         currentlyReadingMod = false;
@@ -304,6 +308,64 @@ namespace MetaMorpheusGUI
         private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
             (sender as DataGrid).UnselectAll();
+        }
+        
+        private void PDFButton_Click(object sender, RoutedEventArgs e)
+        {
+            
+            if (this.dataGridScanNums.SelectedCells.Count == 0)
+                MessageBox.Show("Please select at least one scan from datagrid above.");
+            foreach (object slt in dataGridScanNums.SelectedItems)
+            {
+                MetaDrawPsm row = (MetaDrawPsm)slt;
+                selectedHelper(row);
+            }
+            this.dataGridScanNums.SelectedItem= this.dataGridScanNums.SelectedItem;
+        }
+        private void selectedHelper(MetaDrawPsm row)
+        {
+            System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();
+
+            for (int i = 4; i < temp.Length; i++)
+            {
+                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
+            }
+            dataGridProperties.Items.Refresh();
+            DrawPsm(row.ScanNum, row.FullSequence);
+            //dataGridProperties
+            double wid = 0;
+            dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            foreach (DataGridColumn col in dataGridProperties.Columns)
+            {
+                wid += col.ActualWidth;
+            }
+            PDFOutPut.Background = Brushes.White;
+            PDFOutPut.ColumnDefinitions[0].Width = new GridLength(wid + 10);
+            PDFOutPut.Measure(new Size(wid + gbPSM.ActualWidth + 10, 600));
+            PDFOutPut.Arrange(new Rect(new Size(wid + gbPSM.ActualWidth + 10, 600)));
+            dataGridProperties.Measure(new Size(wid + 22, 600));
+            dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+
+            dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+            var rtb = new RenderTargetBitmap((int)(wid + gbPSM.ActualWidth) + 11, 600, 96, 96, PixelFormats.Pbgra32);
+
+            rtb.Render(PDFOutPut);
+            BitmapFrame bf = BitmapFrame.Create(rtb);
+
+            var encoder = new BmpBitmapEncoder();
+            encoder.Frames.Add(bf);
+            using (var stream = new MemoryStream())
+            {
+                encoder.Save(stream);
+                var img = System.Drawing.Bitmap.FromStream(stream);
+                pdfHelper.saveToPDF(img, (int)(wid + gbPSM.ActualWidth) + 11, 600,row.ScanNum+".pdf");
+            }
+
+            dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
+            dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
+            PDFOutPut.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
+
         }
     }
 }
