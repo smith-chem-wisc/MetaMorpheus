@@ -184,7 +184,17 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-            QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
+
+            if (task.CommonParameters.QValueOutputFilter < 1)
+            {
+                QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
+                QValueCheckBox.IsChecked = true;
+            }
+            else
+            {
+                QValueTextBox.Text = "0.01";
+                QValueCheckBox.IsChecked = false;
+            }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
