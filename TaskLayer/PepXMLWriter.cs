@@ -11,11 +11,12 @@ namespace TaskLayer
 {
     public static class PepXMLWriter
     {
-        public static void WritePepXML(List<PeptideSpectralMatch> items, List<DbForTask> database, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, string outputPath)
+        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, string outputPath, double qValueFilter)
         {
             // TODO: needs a unit test
-            // TODO: filter output by q-value as an option
-            if (!items.Any())
+            psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch < qValueFilter).ToList();
+
+            if (!psms.Any())
             {
                 return;
             }
@@ -24,19 +25,19 @@ namespace TaskLayer
             var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
 
             _pepxml.date = DateTime.Now;
-            _pepxml.summary_xml = items[0].FullFilePath + ".pep.XML";
+            _pepxml.summary_xml = psms[0].FullFilePath + ".pep.XML";
 
             string proteaseNC = string.Join(string.Empty, CommonParameters.DigestionParams.Protease.SequencesPreventingCleavage);
             string proteaseC = string.Join(string.Empty, CommonParameters.DigestionParams.Protease.SequencesInducingCleavage);
 
-            string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].FullFilePath);
-            string filePathNoExtension = Path.ChangeExtension(items[0].FullFilePath, null);
+            string fileNameNoExtension = Path.GetFileNameWithoutExtension(psms[0].FullFilePath);
+            string filePathNoExtension = Path.ChangeExtension(psms[0].FullFilePath, null);
 
             var para = new List<pepXML.Generated.nameValueType>();
             {
                 para.Add(new pepXML.Generated.nameValueType { name = "threads", value = CommonParameters.MaxThreadsToUsePerFile.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "database", value = database.First().FilePath });
-                para.Add(new pepXML.Generated.nameValueType { name = "MS_data_file", value = items[0].FullFilePath });
+                para.Add(new pepXML.Generated.nameValueType { name = "MS_data_file", value = psms[0].FullFilePath });
 
                 para.Add(new pepXML.Generated.nameValueType { name = "MaxMissed Cleavages", value = CommonParameters.DigestionParams.MaxMissedCleavages.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Protease", value = CommonParameters.DigestionParams.Protease.Name });
@@ -46,6 +47,7 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + CommonParameters.BIons.ToString() + " Y " + CommonParameters.YIons.ToString() + " C " + CommonParameters.CIons.ToString() + " Z " + CommonParameters.ZdotIons.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueOutputFilter.ToString() });
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.id, value = item.monoisotopicMass.ToString() });
@@ -110,11 +112,11 @@ namespace TaskLayer
                  }
              };
 
-            _pepxml.msms_run_summary[0].spectrum_query = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query[items.Count];
+            _pepxml.msms_run_summary[0].spectrum_query = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query[psms.Count];
 
             var searchHits = new List<pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit>();
 
-            foreach (var psm in items)
+            foreach (var psm in psms)
             {
                 PeptideWithSetModifications peptide = psm.CompactPeptides.First().Value.Item2.First();
 
@@ -154,17 +156,17 @@ namespace TaskLayer
                 searchHits.Add(searchHit);
             }
 
-            for (int i = 0; i < items.Count; i++)
+            for (int i = 0; i < psms.Count; i++)
             {
                 _pepxml.msms_run_summary[0].spectrum_query[i] = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query()
                 {
-                    spectrum = fileNameNoExtension + "." + items[i].ScanNumber.ToString(),
-                    start_scan = Convert.ToUInt32(items[i].ScanNumber),
-                    end_scan = Convert.ToUInt32(items[i].ScanNumber),
-                    precursor_neutral_mass = (float)items[i].ScanPrecursorMass,
-                    assumed_charge = items[i].ScanPrecursorCharge.ToString(),
+                    spectrum = fileNameNoExtension + "." + psms[i].ScanNumber.ToString(),
+                    start_scan = Convert.ToUInt32(psms[i].ScanNumber),
+                    end_scan = Convert.ToUInt32(psms[i].ScanNumber),
+                    precursor_neutral_mass = (float)psms[i].ScanPrecursorMass,
+                    assumed_charge = psms[i].ScanPrecursorCharge.ToString(),
                     index = Convert.ToUInt32(i + 1),
-                    retention_time_sec = (float)(items[i].ScanRetentionTime * 60),
+                    retention_time_sec = (float)(psms[i].ScanRetentionTime * 60),
                     search_result = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result[1]
                     {
                         new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result

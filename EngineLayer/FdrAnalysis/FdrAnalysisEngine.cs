@@ -16,7 +16,7 @@ namespace EngineLayer.FdrAnalysis
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            Psms = psms.Where(p => p != null).ToList();
+            Psms = psms;
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
@@ -74,8 +74,8 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
+            int cumulativeTarget = 0;
+            int cumulativeDecoy = 0;
 
             //Calculate delta scores for the psms (regardless of if we are using them)
             foreach (PeptideSpectralMatch psm in Psms)
@@ -91,25 +91,25 @@ namespace EngineLayer.FdrAnalysis
             {
                 double qValueCutoff = QValueCutoff; //optimize to get the most PSMs at a 1% FDR
 
-                List<PeptideSpectralMatch> scoreSorted = Psms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                List<PeptideSpectralMatch> scoreSorted = Psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
                 int ScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
-                scoreSorted = Psms.Where(b => b != null).OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                scoreSorted = Psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
                 int DeltaScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
 
                 //sort by best method BUT DON'T GROUP BECAUSE WE NEED THAT FOR LOCALIZATION
                 Psms = (DeltaScorePSMs > ScorePSMs) ?
-                    Psms.Where(b => b != null).OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList() :
-                    Psms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
+                    Psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList() :
+                    Psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
                 myAnalysisResults.DeltaScoreImprovement = DeltaScorePSMs > ScorePSMs;
             }
             else //sort by score
             {
-                Psms = Psms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
+                Psms = Psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
             }
 
             //set up arrays for local FDRs
-            int[] cumulative_target_per_notch = new int[MassDiffAcceptorNumNotches + 1];
-            int[] cumulative_decoy_per_notch = new int[MassDiffAcceptorNumNotches + 1];
+            int[] cumulativeTargetPerNotch = new int[MassDiffAcceptorNumNotches + 1];
+            int[] cumulativeDecoyPerNotch = new int[MassDiffAcceptorNumNotches + 1];
 
             //Assign FDR values to PSMs
             for (int i = 0; i < Psms.Count; i++)
@@ -118,21 +118,20 @@ namespace EngineLayer.FdrAnalysis
                 if (GlobalVariables.StopLoops) { break; }
 
                 var psm = Psms[i];
-                var isDecoy = psm.IsDecoy;
                 int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
-                if (isDecoy)
+                if (psm.IsDecoy)
                 {
-                    cumulative_decoy++;
-                    cumulative_decoy_per_notch[notch]++;
+                    cumulativeDecoy++;
+                    cumulativeDecoyPerNotch[notch]++;
                 }
                 else
                 {
-                    cumulative_target++;
-                    cumulative_target_per_notch[notch]++;
+                    cumulativeTarget++;
+                    cumulativeTargetPerNotch[notch]++;
                 }
 
-                double temp_q_value = (double)cumulative_decoy / cumulative_target;
-                double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / cumulative_target_per_notch[notch];
+                double qValue = (double)cumulativeDecoy / cumulativeTarget;
+                double qValueNotch = (double)cumulativeDecoyPerNotch[notch] / cumulativeTargetPerNotch[notch];
 
                 double maximumLikelihood = 0;
                 double eValue = 0;
@@ -143,7 +142,16 @@ namespace EngineLayer.FdrAnalysis
                     eScore = -Math.Log(eValue, 10);
                 }
 
-                psm.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch, maximumLikelihood, eValue, eScore, CalculateEValue);
+                if (qValue > 1)
+                {
+                    qValue = 1;
+                }
+                if (qValueNotch > 1)
+                {
+                    qValueNotch = 1;
+                }
+
+                psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, maximumLikelihood, eValue, eScore, CalculateEValue);
             }
 
             //Populate min qValues
