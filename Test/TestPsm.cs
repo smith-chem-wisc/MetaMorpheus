@@ -66,20 +66,6 @@ namespace Test
         {
             SearchTask searchTask = new SearchTask()
             {
-<<<<<<< HEAD
-                CommonParameters = new CommonParameters()
-                {
-                    QValueCutOff = 1
-                }
-            };
-
-            SearchTask searchTask2 = new SearchTask()
-            {
-                CommonParameters = new CommonParameters()
-                {
-                    QValueCutOff = 0
-                }
-=======
                 CommonParameters = new CommonParameters
                 (
                     qValueOutputFilter: 1
@@ -93,7 +79,6 @@ namespace Test
                 (
                     qValueOutputFilter: 0
                 )
->>>>>>> 6fd1c9e7fd446067afff0f02172672f77b309411
             };
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
@@ -103,11 +88,8 @@ namespace Test
             var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engine.Run();
 
-<<<<<<< HEAD
-            string psmFile = Path.Combine(outputFolder, @"search\PrunedDbSpectra_PSMs.psmtsv");
-=======
+
             string psmFile = Path.Combine(outputFolder, @"search\AllPSMs.psmtsv");
->>>>>>> 6fd1c9e7fd446067afff0f02172672f77b309411
             var lines = File.ReadAllLines(psmFile);
             Assert.That(lines.Length == 12);
 

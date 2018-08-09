@@ -21,7 +21,7 @@ namespace EngineLayer.FdrAnalysis
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
             CalculateEValue = commonParameters.CalculateEValue;
-            QValueCutoff = commonParameters.QValueCutOff;
+            QValueCutoff = commonParameters.QValueOutputFilter;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
