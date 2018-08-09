@@ -39,6 +39,7 @@
       <ComponentGroupRef Id="Appsrc_NeoData_files" />
       <ComponentGroupRef Id="Appsrc_NeoTomlFiles_files" />
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
+      <ComponentRef Id="ExcelDefault"/>
       <ComponentRef Id="RemoveNeo"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
@@ -117,6 +118,8 @@
       <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MyMaintenanceTypeDlg">1</Publish>
       <Publish Dialog="MyMaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="1">1</Publish>
       <!--<Publish Dialog="MyMaintenanceTypeDlg" Control="Next" Event="NewDialog" Value="ExitDialog" Order="1">1</Publish>-->
+      
+      
 
       <Publish Dialog="ExitDialog"
         Control="Finish"
@@ -131,6 +134,12 @@
     <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
     <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
+    <Property Id="DatabaseBackedUp" Value="1"></Property>
+    <Property Id="EXCELDEFAULTPROPERTY" Value="1">
+      <DirectorySearch Id="CheckFileDir" Path="ProgramFiles64Folder" Depth="2">
+        <FileSearch Name="EXCEL.exe" />
+      </DirectorySearch>
+    </Property>
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
   </Product>
@@ -526,8 +535,29 @@
     </ComponentGroup>
   </Fragment>
 
-
-
+  <Fragment>
+    <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
+      <Condition> EXCELDEFAULTPROPERTY</Condition>
+      <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv"/>
+      <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
+        <RegistryValue Name="a" Value="EXCEL.EXE" Type="string"/>
+        <RegistryValue Name="MRUList" Value="a" Type="string"/>
+      </RegistryKey>
+      <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithProgids">
+        <RegistryValue Name="tsv_auto_file" Value="0000" Type="binary"/>        
+      </RegistryKey>
+      <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv"/>
+      <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv\OpenWithList">
+        <RegistryValue Name="a" Value="EXCEL.EXE" Type="string"/>
+        <RegistryValue Name="MRUList" Value="a" Type="string"/>
+      </RegistryKey>
+      <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv\OpenWithProgids">
+        <RegistryValue Name="tsv_auto_file" Value="0000" Type="binary"/>
+      </RegistryKey>
+    </Component>
+  </Fragment>
+  
+  
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
     <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="c68bc3b0-cc4f-48ed-9ea0-25dbd7492292">
