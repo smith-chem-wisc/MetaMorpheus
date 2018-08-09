@@ -109,8 +109,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         {
                                             //generate correct sequence
                                             Dictionary<int, ModificationWithMass> allModsOneIsNTerminus = pwsm.AllModsOneIsNterminus
-                                                .Where(b => b.Key > 1 && b.Key <= (1 + pwsm.OneBasedEndResidueInProtein + index - pwsm.OneBasedStartResidueInProtein)).ToDictionary(b => b.Key, b => b.Value);
-                                            PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm.Protein, pwsm.DigestionParams, pwsm.OneBasedStartResidueInProtein, pwsm.OneBasedEndResidueInProtein + index - 1, pwsm.PeptideDescription, pwsm.MissedCleavages, allModsOneIsNTerminus, pwsm.NumFixedMods);
+                                                .Where(b => b.Key > 1 && b.Key <= (1 + index)).ToDictionary(b => b.Key, b => b.Value);
+                                            PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm.Protein, pwsm.DigestionParams, pwsm.OneBasedStartResidueInProtein, pwsm.OneBasedStartResidueInProtein + index - 1, pwsm.PeptideDescription, pwsm.MissedCleavages, allModsOneIsNTerminus, pwsm.NumFixedMods);
                                             double modifiedMass = finalMass[0];
                                             CompactPeptideWithModifiedMass tempCPWM = new CompactPeptideWithModifiedMass(kvp.Key, modifiedMass);
                                             tempCPWM.SwapMonoisotopicMassWithModifiedMass();
@@ -226,7 +226,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         {
                                             //generate correct sequence
                                             Dictionary<int, ModificationWithMass> allModsOneIsNTerminus = pwsm.AllModsOneIsNterminus
-                                                .Where(b => b.Key > index && b.Key <= (2 + pwsm.OneBasedEndResidueInProtein - pwsm.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + 1 + index), b => b.Value);
+                                                .Where(b => b.Key > index && b.Key <= (2 + pwsm.OneBasedEndResidueInProtein - pwsm.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + index - 1), b => b.Value);
                                             PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm.Protein, pwsm.DigestionParams, pwsm.OneBasedStartResidueInProtein + index - 1, pwsm.OneBasedEndResidueInProtein, pwsm.PeptideDescription, pwsm.MissedCleavages, allModsOneIsNTerminus, pwsm.NumFixedMods);
                                             double modifiedMass = finalMass[0];
                                             CompactPeptideWithModifiedMass tempCPWM = new CompactPeptideWithModifiedMass(kvp.Key, modifiedMass);
