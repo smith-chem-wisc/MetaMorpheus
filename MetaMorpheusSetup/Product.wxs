@@ -44,6 +44,7 @@
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
       <ComponentRef Id="RemoveApp"/>
       <ComponentRef Id="DesktopShortcut"/>
+      <ComponentRef Id="ExcelDefault"/>
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -131,6 +132,11 @@
     <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
     <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
+    <Property Id="EXCELDEFAULTPROPERTY" Value="1">
+      <DirectorySearch Id="CheckFileDir" Path="ProgramFiles64Folder" Depth="2">
+        <FileSearch Name="EXCEL.exe" />
+      </DirectorySearch>
+    </Property>
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
   </Product>
@@ -526,7 +532,27 @@
     </ComponentGroup>
   </Fragment>
 
-
+  <Fragment>
+    <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
+      <Condition> EXCELDEFAULTPROPERTY</Condition>
+      <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv"/>
+      <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
+        <RegistryValue Name="a" Value="EXCEL.EXE" Type="string"/>
+        <RegistryValue Name="MRUList" Value="a" Type="string"/>
+      </RegistryKey>
+      <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithProgids">
+        <RegistryValue Name="tsv_auto_file" Value="0000" Type="binary"/>
+      </RegistryKey>
+      <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv"/>
+      <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv\OpenWithList">
+        <RegistryValue Name="a" Value="EXCEL.EXE" Type="string"/>
+        <RegistryValue Name="MRUList" Value="a" Type="string"/>
+      </RegistryKey>
+      <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv\OpenWithProgids">
+        <RegistryValue Name="tsv_auto_file" Value="0000" Type="binary"/>
+      </RegistryKey>
+    </Component>
+  </Fragment>
 
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
