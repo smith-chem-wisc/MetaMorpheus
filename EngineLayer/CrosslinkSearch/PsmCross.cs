@@ -6,6 +6,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -27,9 +28,17 @@ namespace EngineLayer.CrosslinkSearch
         public int ModPosition { get; set; }
         public PsmCross BetaPsmCross { get; set; }
         public double DScore { get; set; }
-        public CrosslinkInfo CrosslinkInfo { get; set; }
         public Glycan Glycan {get; set;}
         public List<MatchedFragmentIon> MatchedIons { get; set; }
+
+        public double XLTotalScore { get; set; } //alpha + beta psmCross
+        public double XLQvalueTotalScore { get; set; } //Calc based on XLtotalScore for Qvalue
+        public int XlProteinPos { get; set; }
+        public int[] XlRank { get; set; } //only contain 2 intger, consider change to Tuple
+        public string ParentIonExist { get; set; }
+        public int ParentIonExistNum { get; set; }
+        public List<int> ParentIonMaxIntensityRanks { get; set; }
+        public PsmCrossType CrossType { get; set; }
 
         private List<TheoreticalFragmentIon> GetTheoreticalFragmentIons(List<ProductType> productTypes)
         {
@@ -60,6 +69,8 @@ namespace EngineLayer.CrosslinkSearch
             Dictionary<int, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<int, List<TheoreticalFragmentIon>>();
 
             List<TheoreticalFragmentIon> baseTheoreticalFragmentIons = GetTheoreticalFragmentIons(productTypes);
+
+            //TO DO: Add Signature ions detection.
 
             foreach (var iPos in modPos)
             {
@@ -364,10 +375,8 @@ namespace EngineLayer.CrosslinkSearch
             return xlpos;
         }
 
-        public void GetBestMatch(Ms2ScanWithSpecificMass theScan, List<ProductType> productTypes, bool Charge_2_3, CommonParameters commonParameters, List<int> modPos)
+        public void GetBestMatch(Ms2ScanWithSpecificMass theScan, Dictionary<int, List<TheoreticalFragmentIon>> pmmhList, CommonParameters commonParameters)
         {
-            var pmmhList = GlyGetTheoreticalFramentIons(productTypes, Charge_2_3, modPos);
-
             BestScore = 0;
             foreach (var pmmh in pmmhList)
             {
@@ -380,6 +389,142 @@ namespace EngineLayer.CrosslinkSearch
                     ModPosition = pmmh.Key;
                 }
             }
+
+            double[] experimental_intensities = theScan.TheScan.MassSpectrum.YArray;
+            int[] experimental_intensities_rank = GenerateIntensityRanks(experimental_intensities);
+            foreach (var tIon in MatchedIons)
+            {
+                // get the closest peak in the spectrum to the theoretical peak
+                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(tIon.Mz).Value;
+                tIon.IntensityRank = experimental_intensities_rank[matchedPeakIndex];
+            }
+        }
+
+        public static string GetTabSepHeaderCross()
+        {
+            var sb = new StringBuilder();
+            sb.Append("File Name" + '\t');
+            sb.Append("Scan Numer" + '\t');
+            sb.Append("Precusor MZ" + '\t');
+            sb.Append("Precusor charge" + '\t');
+            sb.Append("Precusor mass" + '\t');
+            sb.Append("CrossType" + '\t');
+
+            sb.Append("Pep1" + '\t');
+            sb.Append("Pep1 Protein Access" + '\t');
+            sb.Append("Protein link site" + '\t');
+            sb.Append("Pep1 Base sequence(crosslink site)" + '\t');
+            sb.Append("Pep1 Full sequence" + '\t');
+            sb.Append("Pep1 mass" + '\t');
+            sb.Append("Pep1 BestScore" + '\t');
+            sb.Append("Pep1 Rank" + '\t');
+
+            sb.Append("Pep2" + '\t');
+            sb.Append("Pep2 Protein Access" + '\t');
+            sb.Append("Protein link site" + '\t');
+            sb.Append("Pep2 Base sequence(crosslink site)" + '\t');
+            sb.Append("Pep2 Full sequence" + '\t');
+            sb.Append("Pep2 mass" + '\t');
+            sb.Append("Pep2 BestScore" + '\t');
+            sb.Append("Pep2 Rank" + '\t');
+
+            sb.Append("Summary" + '\t');
+            sb.Append("QvalueTotalScore" + '\t');
+            sb.Append("Mass diff" + '\t');
+            sb.Append("ParentIons" + '\t');
+            sb.Append("ParentIonsNum" + '\t');
+            sb.Append("ParentIonMaxIntensityRank" + '\t');
+            sb.Append("Charge2Number" + '\t');
+            sb.Append("Target/Decoy" + '\t');
+            sb.Append("QValue" + '\t');
+            return sb.ToString();
+        }
+
+        public static string GetTabSepHeaderSingle()
+        {
+            var sb = new StringBuilder();
+            sb.Append("File Name" + '\t');
+            sb.Append("Scan Numer" + '\t');
+            sb.Append("Precusor MZ" + '\t');
+            sb.Append("Precusor charge" + '\t');
+            sb.Append("Precusor mass" + '\t');
+            sb.Append("CrossType" + '\t');
+
+            sb.Append("Pep1" + '\t');
+            sb.Append("Pep1 Protein Access" + '\t');
+            sb.Append("Protein link site" + '\t');
+            sb.Append("Pep1 Base sequence(crosslink site)" + '\t');
+            sb.Append("Pep1 Full sequence" + '\t');
+            sb.Append("Pep1 mass" + '\t');
+            sb.Append("Pep1 BestScore" + '\t');
+            sb.Append("Pep1 Rank" + '\t');
+
+            sb.Append("QValue" + '\t');
+            return sb.ToString();
+        }
+
+        public override string ToString() 
+        {
+            string position = "";
+            switch (CrossType)
+            {
+                case PsmCrossType.Singe:
+                    break;
+
+                case PsmCrossType.Loop:
+                    position = "(" + ModPosition.ToString() + "-" + ModPosition.ToString() + ")";
+                    break;
+
+                default:
+                    position = "(" + ModPosition.ToString() + ")";
+                    break;
+            }
+
+            var sb = new StringBuilder();
+            sb.Append(FullFilePath); sb.Append("\t");
+            sb.Append(ScanNumber); sb.Append("\t");
+            sb.Append(ScanPrecursorMonoisotopicPeakMz); sb.Append("\t");
+            sb.Append(ScanPrecursorCharge); sb.Append("\t");
+            sb.Append(ScanPrecursorMass); sb.Append("\t");
+            sb.Append(CrossType.ToString()); sb.Append("\t");
+
+            sb.Append(""); sb.Append("\t");
+            sb.Append(CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString()); sb.Append("\t");
+            sb.Append(XlProteinPos); sb.Append("\t");
+            sb.Append(BaseSequence); sb.Append("\t");
+            sb.Append(FullSequence + position); sb.Append("\t");
+            sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
+            sb.Append(BestScore); sb.Append("\t");
+            sb.Append(XlRank[0]); sb.Append("\t");
+
+            if (BetaPsmCross!= null)
+            {             
+                sb.Append(""); sb.Append("\t");
+                sb.Append(BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString()); sb.Append("\t");
+                sb.Append(BetaPsmCross.XlProteinPos); sb.Append("\t");
+                sb.Append(BetaPsmCross.BaseSequence); sb.Append("\t");
+                sb.Append(BetaPsmCross.FullSequence + "(" + ModPosition.ToString() + ")"); sb.Append("\t");
+                sb.Append((BetaPsmCross.PeptideMonisotopicMass.HasValue ? BetaPsmCross.PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
+                sb.Append(BetaPsmCross.BestScore); sb.Append("\t");
+                sb.Append(BetaPsmCross.XlRank[0]); sb.Append("\t");
+
+                sb.Append(""); sb.Append("\t");
+                sb.Append(XLQvalueTotalScore); sb.Append("\t");
+                sb.Append(((PeptideMonisotopicMass.HasValue && BetaPsmCross.PeptideMonisotopicMass.HasValue) ? (BetaPsmCross.ScanPrecursorMass - BetaPsmCross.PeptideMonisotopicMass.Value - PeptideMonisotopicMass.Value).ToString() : "---")); sb.Append("\t");
+                
+                sb.Append(ParentIonExist + "." + BetaPsmCross.ParentIonExist); sb.Append("\t");
+                sb.Append(ParentIonExistNum); sb.Append("\t");
+                sb.Append(((ParentIonMaxIntensityRanks != null) && (ParentIonMaxIntensityRanks.Any()) ? ParentIonMaxIntensityRanks.Min().ToString() : "-")); sb.Append("\t");
+                sb.Append((IsDecoy || BetaPsmCross.IsDecoy) ? -1 : 1);
+            }
+            sb.Append((FdrInfo != null ? FdrInfo.QValue.ToString() : "-")); sb.Append("\t");
+
+            if (Glycan!=null)
+            {
+
+            }
+
+            return sb.ToString();
         }
     }
 }
