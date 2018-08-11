@@ -1,6 +1,7 @@
 using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -407,6 +408,82 @@ namespace Test
                 }
             }
             Assert.IsTrue(foundD);
+        }
+
+        [Test]
+        public static void TestFileOutput()
+        {
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestFileOutput");
+
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
+            task.SearchParameters.DecoyType = DecoyType.None;
+
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
+            DbForTask db2 = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"DbForPrunedDb.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
+            string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"PrunedDbSpectra.mzml");
+            EverythingRunnerEngine singleMassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SingleMassSpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder);
+            EverythingRunnerEngine multipleMassSpectraFiles = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("MultipleMassSpectraFileOutput", task) }, new List<string> { raw, raw2 }, new List<DbForTask> { db, db2 }, thisTaskOutputFolder);
+
+            singleMassSpectraFile.Run();
+            multipleMassSpectraFiles.Run();
+
+            // test single file output
+            HashSet<string> expectedFiles = new HashSet<string> {
+                "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "AllQuantifiedPeaks.tsv",
+                "AllQuantifiedPeptides_BaseSequences.tsv", "AllQuantifiedPeptides_FullSequences.tsv", "prose.txt", "results.txt", "SearchTaskconfig.toml" };
+
+            HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
+            
+            // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
+            var missingFiles = expectedFiles.Except(files);
+            var extraFiles = files.Except(expectedFiles);
+
+            // test that output is what's expected
+            Assert.That(files.SetEquals(expectedFiles));
+
+            // test multi file output
+            files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
+            missingFiles = expectedFiles.Except(files);
+            extraFiles = files.Except(expectedFiles);
+
+            Assert.That(files.SetEquals(expectedFiles));
+
+            expectedFiles = new HashSet<string> {
+                "PrunedDbSpectra.mzID", "PrunedDbSpectra_PSMs.psmtsv", "PrunedDbSpectra_PSMsFormattedForPercolator.tsv", "PrunedDbSpectra_Peptides.psmtsv", "PrunedDbSpectra_ProteinGroups.tsv", "PrunedDbSpectra_QuantifiedPeaks.tsv",
+                "sliced-raw.mzID", "sliced-raw_PSMs.psmtsv", "sliced-raw_PSMsFormattedForPercolator.tsv", "sliced-raw_Peptides.psmtsv", "sliced-raw_ProteinGroups.tsv", "sliced-raw_QuantifiedPeaks.tsv" };
+
+            string individualFilePath = Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results");
+            Assert.That(Directory.Exists(individualFilePath));
+
+            files = new HashSet<string>(Directory.GetFiles(individualFilePath).Select(v => Path.GetFileName(v)));
+            missingFiles = expectedFiles.Except(files);
+            extraFiles = files.Except(expectedFiles);
+
+            Assert.That(files.SetEquals(expectedFiles));
+        }
+
+        /// <summary>
+        /// This tests for a bug in annotating mods in the search task. The situation is that if you search with a fasta database (no mods annotated),
+        /// and then do GPTMD, then search with the GPTMD database, the resulting PSM will have a UniProt mod annotated on it.
+        /// Also, if GPTMD has a mod with the same name as a UniProt mod, the annotated PSM will be ambiguous between
+        /// the UniProt and the MetaMorpheus modification.
+        /// </summary>
+        public static void TestUniprotNamingConflicts()
+        {
+            // write the mod
+            var outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUniprotNamingConflicts");
+            Directory.CreateDirectory(outputDir);
+            string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
+            var filePath = Path.Combine(GlobalVariables.DataDir, @"Mods", @"hydroxyproline.txt");
+            File.WriteAllLines(filePath, new string[] { modToWrite });
+
+            // read the mod
+            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath));
+            Assert.That(GlobalVariables.AllModsKnown.Where(v => v.id == "Hydroxyproline").Count() == 1);
+
+            // should have an error message...
+            Assert.That(GlobalVariables.ErrorsReadingMods.Where(v => v.Contains("Hydroxyproline")).Count() > 0);
         }
     }
 }

@@ -23,11 +23,10 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = 30000.0;
+            WriteMzId = true;
+            WritePepXml = false;
             ModsToWriteSelection = new Dictionary<string, int>
             {
-                {"ProteinTermMod", 3},
-                {"UniProt", 2},
-                
                 ////Key is modification type.
                 ////Select from: Common Fixed; Common Variable; Artifact; Biological; Crosslink; Detached; fallOffN; fallOffC; N-linked glycosylation;
                 ////O -linked glycosylation; Other glycosylation; missing; Deprecated_Mod; Deprecated_PeptideTermMod; Deprecated_Metal;
@@ -40,12 +39,13 @@ namespace TaskLayer
                 ////   2:   Write if in DB
                 ////   3:   Write if Observed
 
+                {"ProteinTermMod", 3},
+                {"UniProt", 2},
+                
                 //{"Biological", 3},
                 ////{"ProteinTermMod", 3},
                 //{"UniProt", 3},
             };
-            OutMzId = true;
-            OutPepXML = false;
         }
 
         public bool DisposeOfFileWhenDone { get; set; }
@@ -69,7 +69,7 @@ namespace TaskLayer
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
-        public bool OutMzId { get; set; }
-        public bool OutPepXML { get; set; }
+        public bool WriteMzId { get; set; }
+        public bool WritePepXml { get; set; }
     }
 }
