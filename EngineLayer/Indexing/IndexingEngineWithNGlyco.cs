@@ -8,11 +8,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
+using Chemistry;
+using EngineLayer.CrosslinkSearch;
 
 namespace EngineLayer.Indexing
 {
     public class IndexingEngineWithNGlyco : IndexingEngine
     {
+        protected static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
+        protected static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        protected static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+        protected static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+
         public IndexingEngineWithNGlyco(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> productTypes, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, productTypes, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
         {
 
@@ -129,7 +136,7 @@ namespace EngineLayer.Indexing
                 }
 
                 //TO DO: generate validFragmentsNGly
-                var validFragmentsNGly = peptidesSortedByMass[peptideId].ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes).Distinct().Where(p => !Double.IsNaN(p));
+                var validFragmentsNGly = GenerateBgYgFragments(peptidesSortedByMass[peptideId], ProductTypes).Distinct().Where(p => !Double.IsNaN(p));
                 foreach (var theoreticalFragmentMass in validFragmentsNGly)
                 {
                     if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
@@ -154,6 +161,46 @@ namespace EngineLayer.Indexing
             }
 
             return new IndexingResultsWithNGlyco(peptidesSortedByMass, fragmentIndex, fragmentIndexNGly, this);
+        }
+
+        private List<double> GenerateBgYgFragments(CompactPeptide compactPeptide, List<ProductType> productTypes)
+        {
+            var len = compactPeptide.CTerminalMasses.Length;
+            bool containsB = productTypes.Contains(ProductType.B);
+            bool containsBnoB1 = productTypes.Contains(ProductType.BnoB1ions);
+            bool containsY = productTypes.Contains(ProductType.Y);
+
+            var modPos = PsmCross.GlyPosCal(compactPeptide, "N");
+
+            List<double> massesToReturn = new List<double>();
+
+            foreach (var iPos in modPos)
+            {
+                if (compactPeptide.NTerminalMasses != null)
+                {
+                    for (int j = 0; j < compactPeptide.NTerminalMasses.Length; j++)
+                    {
+                        var hm = compactPeptide.NTerminalMasses[j];
+                        if ((containsB || (containsBnoB1 && j > 0)) && j >= iPos)
+                        {
+                            massesToReturn.Add( ClassExtensions.RoundedDouble(hm + 260).Value);
+                        }
+                    }
+                }
+                if (compactPeptide.CTerminalMasses != null)
+                {
+                    for (int j = 0; j < compactPeptide.CTerminalMasses.Length; j++)
+                    {
+                        var hm = compactPeptide.CTerminalMasses[j];
+                        if (containsY && j >= len - iPos + 2)
+                        {
+                            massesToReturn.Add(ClassExtensions.RoundedDouble(hm + waterMonoisotopicMass + 260).Value);
+                        }
+                    }
+                }
+            }
+
+            return massesToReturn;
         }
     }
 }

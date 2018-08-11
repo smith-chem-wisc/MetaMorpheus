@@ -121,7 +121,7 @@ namespace EngineLayer.CrosslinkSearch
                             }
                             break;
                         case ProductType.Zdot:
-                            if (iIon.IonNumber > compactPeptide.CTerminalMasses.Length - iPos + 2)
+                            if (iIon.IonNumber < compactPeptide.CTerminalMasses.Length - iPos + 2)
                                 currentIons.Add(iIon);
                             else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                             break;
@@ -349,7 +349,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //To do: Optimize motif
-        public List<int> GlyPosCal(CompactPeptide compactPeptide, string modSites)
+        public static List<int> GlyPosCal(CompactPeptide compactPeptide, string modSites)
         {
             Tolerance tolerance = new PpmTolerance(1);
             List<int> xlpos = new List<int>();
