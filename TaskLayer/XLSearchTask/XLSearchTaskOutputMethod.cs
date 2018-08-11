@@ -14,6 +14,9 @@ namespace TaskLayer
     {
         public void WritePsmCrossToTsv(List<PsmCross> items, string filePath, bool SinglePsm)
         {
+            if (items.Count == 0)
+                return;
+
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 if (SinglePsm)
@@ -29,6 +32,8 @@ namespace TaskLayer
 
         public void WriteCrosslinkToTxtForPercolator(List<PsmCross> items, string outputFolder, string fileName, CrosslinkerTypeClass crosslinker, List<string> nestedIds)
         {
+            if (items.Count == 0)
+                return;
             var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
@@ -70,6 +75,8 @@ namespace TaskLayer
 
         public void WritePepXML_xl(List<PsmCross> items, List<Protein> proteinList, string databasePath, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
         {
+            if (items.Count == 0)
+                return;
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
             var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
 

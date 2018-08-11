@@ -509,7 +509,7 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(BetaPsmCross.FullSequence + "(" + ModPositions[0].ToString() + ")"); sb.Append("\t");
                 sb.Append((BetaPsmCross.PeptideMonisotopicMass.HasValue ? BetaPsmCross.PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
                 sb.Append(BetaPsmCross.BestScore); sb.Append("\t");
-                sb.Append(BetaPsmCross.XlRank[0]); sb.Append("\t");
+                sb.Append(XlRank[1]); sb.Append("\t");
 
                 sb.Append(""); sb.Append("\t");
                 sb.Append(XLQvalueTotalScore); sb.Append("\t");
