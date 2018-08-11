@@ -19,6 +19,8 @@ namespace EngineLayer.Indexing
         protected static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         protected static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         protected static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        protected static readonly double hexNAcMass = 203.0793725330;
+        protected static readonly double hexNAcCrossRingMass = 85.0527638520;
 
         public IndexingEngineWithNGlyco(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> productTypes, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, productTypes, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
         {
@@ -183,7 +185,9 @@ namespace EngineLayer.Indexing
                         var hm = compactPeptide.NTerminalMasses[j];
                         if ((containsB || (containsBnoB1 && j > 0)) && j >= iPos)
                         {
-                            massesToReturn.Add( ClassExtensions.RoundedDouble(hm + 260).Value);
+                            //massesToReturn.Add( ClassExtensions.RoundedDouble(hm + 260).Value);
+                            massesToReturn.Add(hm + hexNAcMass);
+                            massesToReturn.Add(hm + hexNAcCrossRingMass);
                         }
                     }
                 }
@@ -194,7 +198,9 @@ namespace EngineLayer.Indexing
                         var hm = compactPeptide.CTerminalMasses[j];
                         if (containsY && j >= len - iPos + 2)
                         {
-                            massesToReturn.Add(ClassExtensions.RoundedDouble(hm + waterMonoisotopicMass + 260).Value);
+                            //massesToReturn.Add(ClassExtensions.RoundedDouble(hm + waterMonoisotopicMass + 260).Value);
+                            massesToReturn.Add(hm + waterMonoisotopicMass + hexNAcMass);
+                            massesToReturn.Add(hm + waterMonoisotopicMass + hexNAcCrossRingMass);
                         }
                     }
                 }
