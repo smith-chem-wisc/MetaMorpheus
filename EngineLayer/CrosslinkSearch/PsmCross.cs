@@ -453,16 +453,42 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Precusor mass" + '\t');
             sb.Append("CrossType" + '\t');
 
-            sb.Append("Pep1" + '\t');
-            sb.Append("Pep1 Protein Access" + '\t');
+            sb.Append("Pep" + '\t');
+            sb.Append("Pep Protein Access" + '\t');
             sb.Append("Protein link site" + '\t');
-            sb.Append("Pep1 Base sequence(crosslink site)" + '\t');
-            sb.Append("Pep1 Full sequence" + '\t');
-            sb.Append("Pep1 mass" + '\t');
-            sb.Append("Pep1 BestScore" + '\t');
-            sb.Append("Pep1 Rank" + '\t');
+            sb.Append("Pep Base sequence(crosslink site)" + '\t');
+            sb.Append("Pep Full sequence" + '\t');
+            sb.Append("Pep mass" + '\t');
+            sb.Append("Pep BestScore" + '\t');
+            sb.Append("Pep Rank" + '\t');
 
             sb.Append("QValue" + '\t');
+            return sb.ToString();
+        }
+
+        public static string GetTabSepHeaderGlyco()
+        {
+            var sb = new StringBuilder();
+            sb.Append("File Name" + '\t');
+            sb.Append("Scan Numer" + '\t');
+            sb.Append("Precusor MZ" + '\t');
+            sb.Append("Precusor charge" + '\t');
+            sb.Append("Precusor mass" + '\t');
+            sb.Append("CrossType" + '\t');
+
+            sb.Append("Pep" + '\t');
+            sb.Append("Pep Protein Access" + '\t');
+            sb.Append("Protein link site" + '\t');
+            sb.Append("Pep Base sequence(crosslink site)" + '\t');
+            sb.Append("Pep Full sequence" + '\t');
+            sb.Append("Pep mass" + '\t');
+            sb.Append("Pep BestScore" + '\t');
+            sb.Append("Pep Rank" + '\t');
+            sb.Append("QValue" + '\t');
+
+            sb.Append("GlyID" + '\t');
+            sb.Append("GlyMass" + '\t');
+            sb.Append("GlyStruct" + '\t');
             return sb.ToString();
         }
 
@@ -524,7 +550,9 @@ namespace EngineLayer.CrosslinkSearch
 
             if (Glycan!=null)
             {
-
+                sb.Append(Glycan.GlyId);
+                sb.Append(Glycan.Mass);
+                sb.Append(Glycan.Struc);
             }
 
             return sb.ToString();

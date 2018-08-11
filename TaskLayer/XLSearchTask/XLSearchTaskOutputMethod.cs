@@ -12,17 +12,29 @@ namespace TaskLayer
 {
     public partial class XLSearchTask : MetaMorpheusTask
     {
-        public void WritePsmCrossToTsv(List<PsmCross> items, string filePath, bool SinglePsm)
+        public void WritePsmCrossToTsv(List<PsmCross> items, string filePath, int writeType)
         {
             if (items.Count == 0)
                 return;
 
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                if (SinglePsm)
-                    output.WriteLine(PsmCross.GetTabSepHeaderSingle());
-                else
-                    output.WriteLine(PsmCross.GetTabSepHeaderCross());
+                string header="";
+                switch (writeType)
+                {
+                    case 1:
+                        header = PsmCross.GetTabSepHeaderSingle();
+                        break;
+                    case 2:
+                        header = PsmCross.GetTabSepHeaderCross();
+                        break;
+                    case 3:
+                        header = PsmCross.GetTabSepHeaderGlyco();
+                        break;
+                    default:
+                        break;
+                }
+                output.WriteLine(header);
                 foreach (var heh in items)
                 {
                     output.WriteLine(heh.ToString());

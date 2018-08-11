@@ -14,6 +14,7 @@ namespace EngineLayer.CrosslinkSearch
         protected const int FragmentBinsPerDalton = 1000;
         protected double[] diognosticIons = new double[3] {138.0545, 204.0864, 366.14};
         protected readonly List<int>[] FragmentIndex;
+        protected readonly List<int>[] FragmentIndexGly;
         protected readonly PeptideSpectralMatch[] GlobalPsms;
         protected readonly List<PsmCross> GlobalPsmsCross;
         protected readonly Ms2ScanWithSpecificMass[] ListOfSortedms2Scans;
@@ -78,6 +79,8 @@ namespace EngineLayer.CrosslinkSearch
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
+                byte[] scoringTableGly = new byte[PeptideIndex.Count];
+                List<int> idsOfPeptidesPossiblyObservedGly = new List<int>();
 
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
@@ -91,8 +94,10 @@ namespace EngineLayer.CrosslinkSearch
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
-                    var scan = ListOfSortedms2Scans[i];
+                    Array.Clear(scoringTableGly, 0, scoringTableGly.Length);
+                    idsOfPeptidesPossiblyObservedGly.Clear();
 
+                    var scan = ListOfSortedms2Scans[i];
                     // get fragment bins for this scan
                     List<int> allBinsToSearch = GetBinsToSearch(scan);
                     List<BestPeptideScoreNotch> bestPeptideScoreNotchList = new List<BestPeptideScoreNotch>();
@@ -120,24 +125,34 @@ namespace EngineLayer.CrosslinkSearch
                     }
 
                     // first-pass scoring
-                    IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor);
-
+                    //TO DO:Diagnostic ion trigger
+                    var theByteScoreCutoff = byteScoreCutoff;
+                    if (_searchGlycan)
+                    {
+                        theByteScoreCutoff = 2;
+                        IndexedScoring(allBinsToSearch, scoringTableGly, theByteScoreCutoff, idsOfPeptidesPossiblyObservedGly, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, FragmentIndexGly);
+                    }
+                    //TO DO: Optimize byteScoreCutoff: Using 2 first.
+                    IndexedScoring(allBinsToSearch, scoringTable, theByteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, FragmentIndex);
+                    
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        List<int> idsRankedByScore = new List<int>();
-                        foreach (var id in idsOfPeptidesPossiblyObserved)
+                        if (idsOfPeptidesPossiblyObservedGly.Any())
                         {
-                            idsRankedByScore.Add(id);
+                            foreach (var iG in idsOfPeptidesPossiblyObservedGly)
+                            {
+                                if (!idsOfPeptidesPossiblyObserved.Contains(iG))
+                                    idsOfPeptidesPossiblyObserved.Add(iG);
+                                scoringTable[iG] += scoringTableGly[iG];
+                            }
                         }
-
-                        idsRankedByScore = idsRankedByScore.OrderByDescending(p => scoringTable[p]).ToList();
-                        idsRankedByScore = idsRankedByScore.Take(CrosslinkSearchTopNum).ToList();
+                        List<int> idsRankedByScore = idsOfPeptidesPossiblyObserved.Where(p => scoringTable[p] > byteScoreCutoff).OrderByDescending(p => scoringTable[p]).ToList();                      
                         if (CrosslinkSearchTop)
                         {
-                            idsOfPeptidesPossiblyObserved = idsRankedByScore;
+                            idsRankedByScore = idsRankedByScore.Take(CrosslinkSearchTopNum).ToList();
                         }
-                        foreach (var id in idsOfPeptidesPossiblyObserved)
+                        foreach (var id in idsRankedByScore)
                         {
                             var peptide = PeptideIndex[id];
 
@@ -225,12 +240,12 @@ namespace EngineLayer.CrosslinkSearch
             return m;
         }
 
-        private void IndexedScoring(List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor, double highestMassPeptideToLookFor)
+        private void IndexedScoring(List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor, double highestMassPeptideToLookFor, List<int>[] theFragmentIndex)
         {
             // get all theoretical fragments this experimental fragment could be
             for (int i = 0; i < binsToSearch.Count; i++)
             {
-                List<int> peptideIdsInThisBin = FragmentIndex[binsToSearch[i]];
+                List<int> peptideIdsInThisBin = theFragmentIndex[binsToSearch[i]];
 
                 //get index for minimum monoisotopic allowed
                 int lowestPeptideMassIndex = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, lowestMassPeptideToLookFor);
