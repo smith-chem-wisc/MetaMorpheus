@@ -119,7 +119,7 @@ namespace TaskLayer
 
                     Status("Searching files...", taskId);
 
-                    new TwoPassCrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, false, XlSearchParameters.SearchGlyco, XlSearchParameters.XlPrecusorMsTl, crosslinker, XlSearchParameters.CrosslinkSearchTop, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, XlSearchParameters.XlCharge_2_3, XlSearchParameters.XlCharge_2_3_PrimeFragment, thisId).Run();
+                    new TwoPassCrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, false, XlSearchParameters.SearchGlyco, XlSearchParameters.XlPrecusorMsTl, crosslinker, XlSearchParameters.CrosslinkSearchTop, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, XlSearchParameters.XlCharge_2_3, thisId).Run();
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                 }
 
@@ -143,11 +143,11 @@ namespace TaskLayer
             {
                 if (item.OneBasedStartResidueInProtein.HasValue)
                 {
-                    item.XlProteinPos = item.OneBasedStartResidueInProtein.Value + item.ModPosition - 1;
+                    item.XlProteinPos = item.OneBasedStartResidueInProtein.Value + item.ModPositions.First() - 1;
                 }
                 if (item.BetaPsmCross.OneBasedStartResidueInProtein.HasValue)
                 {
-                    item.BetaPsmCross.XlProteinPos = item.BetaPsmCross.OneBasedStartResidueInProtein.Value + item.BetaPsmCross.ModPosition - 1;
+                    item.BetaPsmCross.XlProteinPos = item.BetaPsmCross.OneBasedStartResidueInProtein.Value + item.BetaPsmCross.ModPositions.First() - 1;
                 }
             }
 

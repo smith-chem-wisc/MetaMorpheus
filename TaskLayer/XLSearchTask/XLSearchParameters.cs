@@ -37,7 +37,6 @@ namespace TaskLayer
             XlOutPepXML = false;
 
             XlCharge_2_3 = true;
-            XlCharge_2_3_PrimeFragment = false;
         }
 
         public bool SearchGlyco { get; set; }
@@ -73,6 +72,5 @@ namespace TaskLayer
         public bool XlQuench_NH2 { get; set; }
 
         public bool XlCharge_2_3 { get; set; }
-        public bool XlCharge_2_3_PrimeFragment { get; set; }
     }
 }

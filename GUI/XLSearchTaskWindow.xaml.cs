@@ -160,8 +160,6 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
 
             ckbCharge_2_3.IsChecked = task.XlSearchParameters.XlCharge_2_3;
-            ckbCharge_2_3_PrimeFragments.IsChecked = task.XlSearchParameters.XlCharge_2_3_PrimeFragment;
-
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -277,7 +275,6 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.XlPrecusorMsTl = new PpmTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
             }
             TheTask.XlSearchParameters.XlCharge_2_3 = ckbCharge_2_3.IsChecked.Value;
-            TheTask.XlSearchParameters.XlCharge_2_3_PrimeFragment = ckbCharge_2_3_PrimeFragments.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_Tris = ckbQuenchTris.IsChecked.Value;

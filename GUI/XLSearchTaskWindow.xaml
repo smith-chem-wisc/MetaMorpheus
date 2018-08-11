@@ -72,7 +72,6 @@
                                 <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblXLMSMS" Content="Crosslink MS/MS Search Properties" />
                                     <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ fragments" />
-                                    <CheckBox x:Name="ckbCharge_2_3_PrimeFragments"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ prime fragments" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />

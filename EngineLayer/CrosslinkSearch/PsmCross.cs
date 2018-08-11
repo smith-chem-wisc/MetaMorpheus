@@ -25,7 +25,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         public double BestScore { get; set; } //For the current psmCross
-        public int ModPosition { get; set; }
+        public List<int> ModPositions { get; set; }
         public PsmCross BetaPsmCross { get; set; }
         public double DScore { get; set; }
         public Glycan Glycan {get; set;}
@@ -34,7 +34,7 @@ namespace EngineLayer.CrosslinkSearch
         public double XLTotalScore { get; set; } //alpha + beta psmCross
         public double XLQvalueTotalScore { get; set; } //Calc based on XLtotalScore for Qvalue
         public int XlProteinPos { get; set; }
-        public int[] XlRank { get; set; } //only contain 2 intger, consider change to Tuple
+        public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple
         public string ParentIonExist { get; set; }
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
@@ -64,17 +64,21 @@ namespace EngineLayer.CrosslinkSearch
             return theoreticalFragmentIons;
         }
 
-        public Dictionary<int, List<TheoreticalFragmentIon>> XlGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, CrosslinkerTypeClass crosslinker,List<int> modPos, double modMass)
+        public Dictionary<List<int>, List<TheoreticalFragmentIon>> XlGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, CrosslinkerTypeClass crosslinker,List<int> modPos, double modMass)
         {
-            Dictionary<int, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<int, List<TheoreticalFragmentIon>>();
+            Dictionary<List<int>, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<List<int>, List<TheoreticalFragmentIon>>();
 
             List<TheoreticalFragmentIon> baseTheoreticalFragmentIons = GetTheoreticalFragmentIons(productTypes);
-
-            //TO DO: Add Signature ions detection.
 
             foreach (var iPos in modPos)
             {
                 List<TheoreticalFragmentIon> currentIons = new List<TheoreticalFragmentIon>();
+
+                if (crosslinker.Cleavable)
+                {
+                    currentIons.Add(new TheoreticalFragmentIon(compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassShort, double.NaN, 1, ProductType.None, 0));
+                    currentIons.Add(new TheoreticalFragmentIon(compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.CleaveMassShort, double.NaN, 1, ProductType.None, 0));
+                }
 
                 foreach (var iIon in baseTheoreticalFragmentIons)
                 {
@@ -83,17 +87,16 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         case ProductType.BnoB1ions:
                             if (iIon.IonNumber < iPos)
-                            {
                                 currentIons.Add(iIon);
-                            }
                             else
                             {
-                                currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                 if (crosslinker.Cleavable)
                                 {
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + crosslinker.CleaveMassShort, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + crosslinker.CleaveMassLong, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                 }
+                                else
+                                    currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                             }
                             break;
                         case ProductType.C:
@@ -104,25 +107,22 @@ namespace EngineLayer.CrosslinkSearch
                             else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                             break;
                         case ProductType.Y:
-                            if (iIon.IonNumber < iPos)
-                            {
+                            if (iIon.IonNumber < compactPeptide.CTerminalMasses.Length - iPos + 2)
                                 currentIons.Add(iIon);
-                            }
                             else
-                            {
-                                currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
+                            {                    
                                 if (crosslinker.Cleavable)
                                 {
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + crosslinker.CleaveMassShort, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + crosslinker.CleaveMassLong, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                 }
+                                else
+                                    currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                             }
                             break;
                         case ProductType.Zdot:
-                            if (iIon.IonNumber < iPos)
-                            {
+                            if (iIon.IonNumber > compactPeptide.CTerminalMasses.Length - iPos + 2)
                                 currentIons.Add(iIon);
-                            }
                             else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                             break;
                     }
@@ -138,16 +138,16 @@ namespace EngineLayer.CrosslinkSearch
                     }
                 }
 
-                AllTheoreticalFragmentIonsLists.Add(iPos, currentIons);
+                AllTheoreticalFragmentIonsLists.Add(new List<int> { iPos }, currentIons);
             }
 
             return AllTheoreticalFragmentIonsLists;
         }
 
         //TO DO: the second ModPostion jPos is not recorded. 
-        public Dictionary<int, List<TheoreticalFragmentIon>> XlLoopGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, CrosslinkerTypeClass crosslinker, List<int> modPos, double modMass)
+        public Dictionary<List<int>, List<TheoreticalFragmentIon>> XlLoopGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, CrosslinkerTypeClass crosslinker, List<int> modPos, double modMass)
         {
-            Dictionary<int, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<int, List<TheoreticalFragmentIon>>();
+            Dictionary<List<int>, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<List<int>, List<TheoreticalFragmentIon>>();
 
             List<TheoreticalFragmentIon> baseTheoreticalFragmentIons = GetTheoreticalFragmentIons(productTypes);
 
@@ -165,38 +165,38 @@ namespace EngineLayer.CrosslinkSearch
                             switch (iType)
                             {
                                 case ProductType.BnoB1ions:
-                                    if (iIon.IonNumber < iPos)
+                                    if (iIon.IonNumber < modPos[iPos])
                                     {
                                         currentIons.Add(iIon);
                                     }
-                                    else if(iIon.IonNumber >= jPos)
+                                    else if(iIon.IonNumber >= modPos[jPos])
                                     {
                                         currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                     }
                                     break;
                                 case ProductType.C:
-                                    if (iIon.IonNumber < iPos)
+                                    if (iIon.IonNumber < modPos[iPos])
                                     {
                                         currentIons.Add(iIon);
                                     }
-                                    else if(iIon.IonNumber >= jPos) { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                                    else if(iIon.IonNumber >= modPos[jPos]) { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                                     break;
                                 case ProductType.Y:
-                                    if (iIon.IonNumber < iPos)
+                                    if (iIon.IonNumber < compactPeptide.CTerminalMasses.Length -modPos[jPos] + 2)
                                     {
                                         currentIons.Add(iIon);
                                     }
-                                    else if(iIon.IonNumber >= jPos)
+                                    else if(iIon.IonNumber >= compactPeptide.CTerminalMasses.Length - modPos[iPos] + 2)
                                     {
                                         currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));          
                                     }
                                     break;
                                 case ProductType.Zdot:
-                                    if (iIon.IonNumber < iPos)
+                                    if (iIon.IonNumber < compactPeptide.CTerminalMasses.Length - modPos[jPos] + 2)
                                     {
                                         currentIons.Add(iIon);
                                     }
-                                    else if (iIon.IonNumber >= jPos) { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                                    else if (iIon.IonNumber >= compactPeptide.CTerminalMasses.Length - modPos[iPos] + 2) { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                                     break;
                             }
                         }
@@ -210,7 +210,7 @@ namespace EngineLayer.CrosslinkSearch
                                 currentIons.Add(new TheoreticalFragmentIon(currentIons[i].Mass, double.NaN, 3, currentIons[i].ProductType, currentIons[i].IonNumber));
                             }
                         }
-                        AllTheoreticalFragmentIonsLists.Add(iPos, currentIons);
+                        AllTheoreticalFragmentIonsLists.Add(new List<int> { modPos[iPos], modPos[jPos] }, currentIons);
                     }
                 }
             }
@@ -236,13 +236,13 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (tolerance.Within(compactPeptide.NTerminalMasses[0], Residue.GetResidue(item).MonoisotopicMass))
                 {
-                    xlpos.Add(0);
+                    xlpos.Add(1);
                 }
                 for (int i = 1; i < compactPeptide.NTerminalMasses.Length; i++)
                 {
                     if (tolerance.Within(compactPeptide.NTerminalMasses[i] - compactPeptide.NTerminalMasses[i - 1], Residue.GetResidue(item).MonoisotopicMass))
                     {
-                        xlpos.Add(i);
+                        xlpos.Add(i+1);
                     }
                 }
                 if (tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue(item).MonoisotopicMass))
@@ -254,11 +254,11 @@ namespace EngineLayer.CrosslinkSearch
             return xlpos;
         }
 
-        public Dictionary<int, List<TheoreticalFragmentIon>> GlyGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, List<int> modPos)
+        public Dictionary<List<int>, List<TheoreticalFragmentIon>> GlyGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, List<int> modPos)
         {
             var diagnosticIons = Glycan.GetDiagnosticIons();
 
-            Dictionary<int, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<int, List<TheoreticalFragmentIon>>();
+            Dictionary<List<int>, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<List<int>, List<TheoreticalFragmentIon>>();
 
             List<TheoreticalFragmentIon> baseTheoreticalFragmentIons = GetTheoreticalFragmentIons(productTypes);
 
@@ -342,7 +342,7 @@ namespace EngineLayer.CrosslinkSearch
                     }
                 }
 
-                AllTheoreticalFragmentIonsLists.Add(iPos, currentIons);
+                AllTheoreticalFragmentIonsLists.Add(new List<int>{ iPos }, currentIons);
             }
 
             return AllTheoreticalFragmentIonsLists;
@@ -375,7 +375,7 @@ namespace EngineLayer.CrosslinkSearch
             return xlpos;
         }
 
-        public void GetBestMatch(Ms2ScanWithSpecificMass theScan, Dictionary<int, List<TheoreticalFragmentIon>> pmmhList, CommonParameters commonParameters)
+        public void GetBestMatch(Ms2ScanWithSpecificMass theScan, Dictionary<List<int>, List<TheoreticalFragmentIon>> pmmhList, CommonParameters commonParameters)
         {
             BestScore = 0;
             foreach (var pmmh in pmmhList)
@@ -386,17 +386,20 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     BestScore = score;
                     MatchedIons = matchedIons;
-                    ModPosition = pmmh.Key;
+                    ModPositions = pmmh.Key;          
                 }
             }
 
-            double[] experimental_intensities = theScan.TheScan.MassSpectrum.YArray;
-            int[] experimental_intensities_rank = GenerateIntensityRanks(experimental_intensities);
-            foreach (var tIon in MatchedIons)
+            if (MatchedIons != null)
             {
-                // get the closest peak in the spectrum to the theoretical peak
-                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(tIon.Mz).Value;
-                tIon.IntensityRank = experimental_intensities_rank[matchedPeakIndex];
+                double[] experimental_intensities = theScan.TheScan.MassSpectrum.YArray;
+                int[] experimental_intensities_rank = GenerateIntensityRanks(experimental_intensities);
+                foreach (var tIon in MatchedIons)
+                {
+                    // get the closest peak in the spectrum to the theoretical peak
+                    int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(tIon.Mz).Value;
+                    tIon.IntensityRank = experimental_intensities_rank[matchedPeakIndex];
+                }
             }
         }
 
@@ -472,11 +475,11 @@ namespace EngineLayer.CrosslinkSearch
                     break;
 
                 case PsmCrossType.Loop:
-                    position = "(" + ModPosition.ToString() + "-" + ModPosition.ToString() + ")";
+                    position = "(" + ModPositions[0].ToString() + "-" + ModPositions[1].ToString() + ")";
                     break;
 
                 default:
-                    position = "(" + ModPosition.ToString() + ")";
+                    position = "(" + ModPositions[0].ToString() + ")";
                     break;
             }
 
@@ -503,7 +506,7 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString()); sb.Append("\t");
                 sb.Append(BetaPsmCross.XlProteinPos); sb.Append("\t");
                 sb.Append(BetaPsmCross.BaseSequence); sb.Append("\t");
-                sb.Append(BetaPsmCross.FullSequence + "(" + ModPosition.ToString() + ")"); sb.Append("\t");
+                sb.Append(BetaPsmCross.FullSequence + "(" + ModPositions[0].ToString() + ")"); sb.Append("\t");
                 sb.Append((BetaPsmCross.PeptideMonisotopicMass.HasValue ? BetaPsmCross.PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
                 sb.Append(BetaPsmCross.BestScore); sb.Append("\t");
                 sb.Append(BetaPsmCross.XlRank[0]); sb.Append("\t");

@@ -29,7 +29,7 @@ namespace Test
         public static void GlyTest_FragmentIons()
         {
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
-            var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = false };
+            var xlSearchParameters = new XlSearchParameters { };
 
             //Create databases contain protein.
             var proteinList = new List<Protein> { new Protein("DANNTQFQFTSR", "25170") };
@@ -87,7 +87,7 @@ namespace Test
             
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, true, xlSearchParameters.XlPrecusorMsTl, null, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, true, xlSearchParameters.XlPrecusorMsTl, null, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
 
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, null, TerminusType.None, commonParameters, new List<string> { }).Run();

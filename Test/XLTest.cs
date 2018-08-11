@@ -81,7 +81,7 @@ namespace Test
             //Generate parameters
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
 
-            var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
+            var xlSearchParameters = new XlSearchParameters { };
 
             //Create databases contain two protein.
             var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
@@ -143,7 +143,7 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
 
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
@@ -163,12 +163,12 @@ namespace Test
             var writtenFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "singlePsms" + ".mytsv");
             task.WritePsmCrossToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Singe).ToList(), writtenFile, false);
 
-            //Test PsmCross.XlCalculateTotalProductMasses.
+            //Test PsmCross.XlGetTheoreticalFramentIons.
             var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
             var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
             var linkPos = psmCrossAlpha.XlPosCal(crosslinker.CrosslinkerModSites);
             var productMassesAlphaList = psmCrossAlpha.XlGetTheoreticalFramentIons(lp, true, crosslinker, linkPos, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass);
-            Assert.AreEqual(productMassesAlphaList.Count(), 99);
+            Assert.AreEqual(productMassesAlphaList.First().Value.Count, 123);
         }
 
         [Test]
@@ -260,7 +260,7 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, xlSearchParameters.XlCharge_2_3_PrimeFragment, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
             Assert.AreEqual(newPsms.Count(), 1);
         }
     }

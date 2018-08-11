@@ -34,10 +34,9 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool QuenchNH2;
         private readonly bool QuenchTris;
         private readonly bool Charge_2_3;
-        private readonly bool Charge_2_3_PrimeFragment;
         private MassDiffAcceptor XLPrecusorSearchMode;
 
-        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, bool searchGlycan, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, bool searchGlycan, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.GlobalPsmsCross = globalPsmsCross;
             this.ListOfSortedms2Scans = listOfSortedms2Scans;
@@ -59,7 +58,6 @@ namespace EngineLayer.CrosslinkSearch
             this.QuenchNH2 = quench_NH2;
             this.QuenchTris = quench_Tris;
             this.Charge_2_3 = charge_2_3;
-            this.Charge_2_3_PrimeFragment = charge_2_3_PrimeFragment;
             if (_searchGlycan)
             {
                 Glycans = GlobalVariables.Glycans.ToArray();
@@ -285,6 +283,7 @@ namespace EngineLayer.CrosslinkSearch
                     var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, i, theScan, commonParameters.DigestionParams);
                     psmCrossSingle.XLTotalScore = psmCrossSingle.Score;
                     psmCrossSingle.CrossType = PsmCrossType.Singe;
+                    psmCrossSingle.XlRank = new List<int> { ind };
 
                     bestPsmCrossList.Add(psmCrossSingle);
                 }
@@ -299,6 +298,7 @@ namespace EngineLayer.CrosslinkSearch
                         psmCrossEnd.GetBestMatch(theScan, pmmhList, commonParameters);
                         psmCrossEnd.XLTotalScore = psmCrossEnd.BestScore;
                         psmCrossEnd.CrossType = PsmCrossType.DeadEndTris;
+                        psmCrossEnd.XlRank = new List<int> { ind };
                         bestPsmCrossList.Add(psmCrossEnd);
                     }
                 }
@@ -312,6 +312,7 @@ namespace EngineLayer.CrosslinkSearch
                         psmCrossEnd.GetBestMatch(theScan, pmmhList, commonParameters);
                         psmCrossEnd.XLTotalScore = psmCrossEnd.BestScore;
                         psmCrossEnd.CrossType = PsmCrossType.DeadEndH2O;
+                        psmCrossEnd.XlRank = new List<int> { ind };
                         bestPsmCrossList.Add(psmCrossEnd);
                     }
                 }
@@ -324,6 +325,7 @@ namespace EngineLayer.CrosslinkSearch
                         var pmmhList = psmCrossEnd.XlGetTheoreticalFramentIons(ProductTypes, Charge_2_3, Crosslinker, xlPos, Crosslinker.DeadendMassNH2);
                         psmCrossEnd.GetBestMatch(theScan, pmmhList, commonParameters);
                         psmCrossEnd.CrossType = PsmCrossType.DeadEndNH2;
+                        psmCrossEnd.XlRank = new List<int> { ind };
                         bestPsmCrossList.Add(psmCrossEnd);
                     }
                 }
@@ -334,10 +336,11 @@ namespace EngineLayer.CrosslinkSearch
                     var xlPos = psmCrossLoop.XlPosCal(Crosslinker.CrosslinkerModSites);
                     if (xlPos.Count() >= 2)
                     {
-                        var pmmhList = psmCrossLoop.XlGetTheoreticalFramentIons(ProductTypes, Charge_2_3, Crosslinker, xlPos, Crosslinker.LoopMass);
+                        var pmmhList = psmCrossLoop.XlLoopGetTheoreticalFramentIons(ProductTypes, Charge_2_3, Crosslinker, xlPos, Crosslinker.LoopMass);
                         psmCrossLoop.GetBestMatch(theScan, pmmhList, commonParameters);
                         psmCrossLoop.XLTotalScore = psmCrossLoop.BestScore;
                         psmCrossLoop.CrossType = PsmCrossType.Loop;
+                        psmCrossLoop.XlRank = new List<int> { ind };
                         bestPsmCrossList.Add(psmCrossLoop);
                     }
                 }
@@ -404,7 +407,7 @@ namespace EngineLayer.CrosslinkSearch
                     psmCrossAlpha = psmCrossBeta;
                     psmCrossBeta = swap;
                 }
-                psmCrossAlpha.XlRank = new int[] { ind, inx };
+                psmCrossAlpha.XlRank = new List<int> { ind, inx };
                 psmCrossAlpha.XLTotalScore = psmCrossAlpha.BestScore + psmCrossBeta.BestScore;
                 psmCrossAlpha.XLQvalueTotalScore = Math.Sqrt(psmCrossAlpha.BestScore) * psmCrossBeta.BestScore;
                 psmCrossAlpha.BetaPsmCross = psmCrossBeta;
@@ -484,7 +487,7 @@ namespace EngineLayer.CrosslinkSearch
                     psmCrossAlpha = psmCrossBeta;
                     psmCrossBeta = swap;
                 }
-                psmCrossAlpha.XlRank = new int[] { ind, inx };
+                psmCrossAlpha.XlRank = new List<int> { ind, inx };
                 psmCrossAlpha.XLTotalScore = psmCrossAlpha.BestScore + psmCrossBeta.BestScore;
                 psmCrossAlpha.XLQvalueTotalScore = Math.Sqrt(psmCrossAlpha.BestScore) * psmCrossBeta.BestScore;
                 psmCrossAlpha.BetaPsmCross = psmCrossBeta;

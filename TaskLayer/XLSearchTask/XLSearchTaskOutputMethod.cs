@@ -56,7 +56,7 @@ namespace TaskLayer
                             + "\t" + item.BetaPsmCross.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
                             + "\t" + (item.BetaPsmCross.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
-                            + "\t" + "-." + item.BaseSequence + item.BetaPsmCross.ModPosition.ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPsmCross.BaseSequence + item.BetaPsmCross.ModPosition.ToString(CultureInfo.InvariantCulture) + ".-"
+                            + "\t" + "-." + item.BaseSequence + item.BetaPsmCross.ModPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPsmCross.BaseSequence + item.BetaPsmCross.ModPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
                             + "\t" + item.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                                    + "(" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
                             + "\t" + item.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
@@ -229,7 +229,7 @@ namespace TaskLayer
                             crosslinkerDeadEndMass = crosslinker.DeadendMassH2O;
                             break;
                     }
-                    var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass { mass = crosslinkerDeadEndMass, position = items[i].ModPosition.ToString() };
+                    var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass { mass = crosslinkerDeadEndMass, position = items[i].ModPositions.First().ToString() };
                     mods.Add(mod);
                     var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                     {
@@ -280,7 +280,7 @@ namespace TaskLayer
                         xlink_score = new pepXML.Generated.nameValueType[]
                                                 {
                                                     new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].BestScore.ToString() },
-                                                    new pepXML.Generated.nameValueType{name = "link", value = items[i].ModPosition.ToString() },
+                                                    new pepXML.Generated.nameValueType{name = "link", value = items[i].ModPositions.First().ToString() },
                                                 }
                     };
                     var beta = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
@@ -297,7 +297,7 @@ namespace TaskLayer
                         xlink_score = new pepXML.Generated.nameValueType[]
                                                 {
                                                     new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].BetaPsmCross.BestScore.ToString() },
-                                                    new pepXML.Generated.nameValueType{name = "link", value = items[i].BetaPsmCross.ModPosition.ToString() },
+                                                    new pepXML.Generated.nameValueType{name = "link", value = items[i].BetaPsmCross.ModPositions.First().ToString() },
                                                 }
                     };
                     var cross = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide[2] { alpha, beta };
@@ -333,8 +333,8 @@ namespace TaskLayer
                     {
                         xlink_score = new pepXML.Generated.nameValueType[]
                                                 {
-                                                    new pepXML.Generated.nameValueType{ name = "link", value = items[i].ModPosition.ToString() },
-                                                    new pepXML.Generated.nameValueType{ name = "link", value = items[i].BetaPsmCross.ModPosition.ToString() }
+                                                    new pepXML.Generated.nameValueType{ name = "link", value = items[i].ModPositions.First().ToString() },
+                                                    new pepXML.Generated.nameValueType{ name = "link", value = items[i].ModPositions[1].ToString() }
                                                 }
                     };
                     var cross = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide[1] { thePeptide };
