@@ -11,7 +11,6 @@ namespace TaskLayer
     {
         public MyTaskResults SearchTaskResults { get; set; }
         public string SearchTaskId { get; set; }
-        public CommonParameters CommonParameters { get; set; }
         public SearchParameters SearchParameters { get; set; }
         public List<Protein> ProteinList { get; set; }
         public List<ProductType> IonTypes { get; set; }
