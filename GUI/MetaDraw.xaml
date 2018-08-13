@@ -60,7 +60,6 @@
                             <RowDefinition Height="1*"/>
                             <RowDefinition Height="30"/>
                         </Grid.RowDefinitions>
-                        
                         <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
                                   IsReadOnly="True" ScrollViewer.CanContentScroll="True" Margin="0,0,0,0" 
                                   SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged">
