@@ -255,7 +255,7 @@ namespace MetaMorpheusGUI
                 int residue = bIon.IonNumber;
                 BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
             }
-            
+
             // draw c ions
             foreach (var cIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.C))
             {
@@ -280,7 +280,7 @@ namespace MetaMorpheusGUI
             // draw modifications
             int aa = 0;
             bool currentlyReadingMod = false;
-            for(int c = 0; c < psm.FullSequence.Length; c++)
+            for (int c = 0; c < psm.FullSequence.Length; c++)
             {
                 switch (psm.FullSequence[c])
                 {
@@ -305,32 +305,43 @@ namespace MetaMorpheusGUI
         {
             (sender as DataGrid).UnselectAll();
         }
-		
-		private void PDFButton_Click(object sender, RoutedEventArgs e)
+
+        private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
-            
-            if (this.dataGridScanNums.SelectedCells.Count == 0)
-                MessageBox.Show("Please select at least one scan from datagrid above.");
-            int num = dataGridScanNums.SelectedItems.Count;
-            foreach (object slt in dataGridScanNums.SelectedItems)
+            if (dataGridScanNums.SelectedCells.Count == 0)
             {
-                MetaDrawPsm row = (MetaDrawPsm)slt;
-                selectedHelper(row);
+                MessageBox.Show("Please select at least one scan to export");
             }
-            this.dataGridScanNums.SelectedItem= this.dataGridScanNums.SelectedItem;
-            MessageBox.Show(string.Format("{0} out of {0} pdfs exported to bin/DEBUG/PDF", num));
+
+            int num = dataGridScanNums.SelectedItems.Count;
+            string writeDirectory = Path.Combine(Directory.GetParent(tsvResultsFilePath).FullName, "PDF");
+
+            if (!Directory.Exists(writeDirectory))
+            {
+                Directory.CreateDirectory(writeDirectory);
+            }
+
+            foreach (object selectedItem in dataGridScanNums.SelectedItems)
+            {
+                MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
+                ExportToPdf(psm, Path.Combine(writeDirectory, psm.ScanNum + "_" + psm.FullSequence + ".pdf"));
+            }
+
+            dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
+            MessageBox.Show(string.Format("{0} PDFs exported to " + writeDirectory, num));
         }
-        private void selectedHelper(MetaDrawPsm row)
+
+        private void ExportToPdf(MetaDrawPsm psm, string path)
         {
-            System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();
+            System.Reflection.PropertyInfo[] temp = psm.GetType().GetProperties();
 
             for (int i = 4; i < temp.Length; i++)
             {
-                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
+                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
             }
             dataGridProperties.Items.Refresh();
-            DrawPsm(row.ScanNum, row.FullSequence);
-            //dataGridProperties
+            DrawPsm(psm.ScanNum, psm.FullSequence);
+            
             double wid = 0;
             dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
             dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
@@ -357,7 +368,7 @@ namespace MetaMorpheusGUI
             {
                 encoder.Save(stream);
                 var img = System.Drawing.Bitmap.FromStream(stream);
-                pdfHelper.saveToPDF(img, (int)(wid + gbPSM.ActualWidth) + 11, 600,row.ScanNum+".pdf");
+                PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
             }
 
             dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
