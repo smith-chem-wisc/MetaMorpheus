@@ -403,7 +403,7 @@ namespace TaskLayer
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(Parameters.AllPsms, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueOutputFilter);
+            WritePsmsToTsv(filterPSMList(Parameters.AllPsms), writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
@@ -414,7 +414,7 @@ namespace TaskLayer
             // write best (highest-scoring) PSM per peptide
             writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
             List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-            WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, Parameters.CommonParameters.QValueOutputFilter);
+            WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
@@ -839,6 +839,21 @@ namespace TaskLayer
             flashLFQResults.WriteResults(peaksPath, null, null, null);
 
             FinishedWritingFile(peaksPath, nestedIds);
+        }
+
+        private List<PeptideSpectralMatch> filterPSMList(PostSearchAnalysisParameters parameters)
+        {
+            List<PeptideSpectralMatch> list = parameters.AllPsms;
+            list = list.Where(p => p.FdrInfo.QValue <= parameters.CommonParameters.QValueOutputFilter && p.FdrInfo.QValueNotch <= parameters.CommonParameters.QValueOutputFilter).ToList();
+            if (parameters.SearchParameters.WriteDecoys)
+            {
+                list = list.Where(b => !b.IsDecoy).ToList();
+            }
+            if (parameters.SearchParameters.WriteContaminants)
+            {
+                list = list.Where(b => !b.IsContaminant).ToList();
+            }
+            return list;
         }
     }
 }

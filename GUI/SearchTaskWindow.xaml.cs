@@ -184,7 +184,7 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-            QValueTextBox.Text = task.CommonParameters.QValueCutOff.ToString(CultureInfo.InvariantCulture);
+            QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
 
 
             if (task.CommonParameters.QValueOutputFilter < 1)
@@ -201,6 +201,8 @@ namespace MetaMorpheusGUI
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
             ckbMzId.IsChecked = task.SearchParameters.WriteMzId;
+            writeDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
+            writeContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -454,6 +456,8 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(peakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.WriteMzId = ckbMzId.IsChecked.Value;
+            TheTask.SearchParameters.WriteDecoys = writeDecoyCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteContaminants = writeContaminantCheckBox.IsChecked.Value;
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
             if (checkBoxDecoy.IsChecked.Value)
