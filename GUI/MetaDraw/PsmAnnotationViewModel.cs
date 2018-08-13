@@ -57,7 +57,7 @@ namespace ViewModels
         }
 
         // single peptides (not crosslink)
-        public PlotModel DrawPeptideSpectralMatch(MsDataScan msDataScan, MetaDrawPsm psmToDraw, bool retVal=false)
+        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, MetaDrawPsm psmToDraw)
         {
             // x is m/z, y is intensity
             var spectrumMzs = msDataScan.MassSpectrum.XArray;
@@ -94,7 +94,7 @@ namespace ViewModels
                     peakAnnotation.FontWeight = 2.0;
                     peakAnnotation.TextColor = ionColor;
                     peakAnnotation.StrokeThickness = 0;
-                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + ") " + peak.ProductType.ToString().ToLower() + "-" + peak.IonNumber;
+                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + ") " + peak.ProductType.ToString().ToLower() + peak.IonNumber;
                     peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
                     peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
                     model.Annotations.Add(peakAnnotation);
@@ -123,9 +123,7 @@ namespace ViewModels
             // Axes are created automatically if they are not defined
 
             // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
-            if(!retVal)
-                this.Model = model;
-            return model;
+            this.Model = model;
         }
 
         // TODO: Crosslink annotation
@@ -243,9 +241,8 @@ namespace ViewModels
         }
 
         // TODO: Draw to pdf file
-        public void DrawPdf(PlotModel model,  string OutputFolder, string ScanNum)
+        public void XLDrawMSMatchToPdf(Ms2ScanWithSpecificMass MsScanForDraw, PsmCross psmParentsForDraw, int order, string OutputFolder)
         {
-            /*
             var x = MsScanForDraw.TheScan.MassSpectrum.XArray;
             var y = MsScanForDraw.TheScan.MassSpectrum.YArray;
 
@@ -349,11 +346,9 @@ namespace ViewModels
                     model.Annotations.Add(textAnno2);
                     model.Series.Add(s2[i]);
                 }
-            }*/
+            }
 
-            
-            string outPath = Path.Combine(OutputFolder, ScanNum + ".pdf");
-            using (var stream = File.Create(outPath))
+            using (var stream = File.Create(OutputFolder + "\\" + order.ToString() + "_Scan" + scanNum + ".pdf"))
             {
                 PdfExporter pdf = new PdfExporter { Width = 500, Height = 210 };
                 pdf.Export(model, stream);
