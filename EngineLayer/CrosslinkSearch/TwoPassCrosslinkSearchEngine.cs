@@ -27,6 +27,7 @@ namespace EngineLayer.CrosslinkSearch
 
         //Crosslink parameters
         private bool _searchGlycan;
+        private bool _searchGlycanBgYgIndex;
         private readonly CrosslinkerTypeClass Crosslinker;
         private readonly bool CrosslinkSearchTop;
         private readonly int CrosslinkSearchTopNum;
@@ -37,17 +38,18 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool Charge_2_3;
         private MassDiffAcceptor XLPrecusorSearchMode;
 
-        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, bool searchGlycan, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<int>[] fragmentIndexGly, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, bool searchGlycan, bool searchGlycanBgYgIndex, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.GlobalPsmsCross = globalPsmsCross;
             this.ListOfSortedms2Scans = listOfSortedms2Scans;
             this.PeptideIndex = peptideIndex;
             this.FragmentIndex = fragmentIndex;
+            this.FragmentIndexGly = fragmentIndexGly;
             this.ProductTypes = lp;
             this.CurrentPartition = currentPartition + 1;
             this.AddComplementaryIons = addCompIons;
-            //Here use LowTheoreticalDiffAcceptor in practice doesn't work in 12/2/2017
             this._searchGlycan = searchGlycan;
+            this._searchGlycanBgYgIndex = searchGlycanBgYgIndex;
             this.MassDiffAcceptor = new OpenSearchMode();
             this.DissociationTypes = DetermineDissociationType(lp);
             this.XLPrecusorMsTl = XLPrecusorMsTl;
@@ -127,7 +129,7 @@ namespace EngineLayer.CrosslinkSearch
                     // first-pass scoring
                     //TO DO:Diagnostic ion trigger
                     var theByteScoreCutoff = byteScoreCutoff;
-                    if (_searchGlycan)
+                    if (_searchGlycan && _searchGlycanBgYgIndex)
                     {
                         theByteScoreCutoff = 2;
                         IndexedScoring(allBinsToSearch, scoringTableGly, theByteScoreCutoff, idsOfPeptidesPossiblyObservedGly, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, FragmentIndexGly);
@@ -211,7 +213,7 @@ namespace EngineLayer.CrosslinkSearch
                 int obsFragmentCeilingMass = (int)Math.Ceiling((commonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);
                 obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
                 for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
-                    if (FragmentIndex[fragmentBin] != null)
+                    if (FragmentIndex[fragmentBin] != null || FragmentIndexGly[fragmentBin] != null)
                         binsToSearch.Add(fragmentBin);
             }
             return binsToSearch;
@@ -247,37 +249,40 @@ namespace EngineLayer.CrosslinkSearch
             {
                 List<int> peptideIdsInThisBin = theFragmentIndex[binsToSearch[i]];
 
-                //get index for minimum monoisotopic allowed
-                int lowestPeptideMassIndex = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, lowestMassPeptideToLookFor);
-
-                // get index for highest mass allowed
-                int highestPeptideMassIndex = peptideIdsInThisBin.Count - 1;
-
-                if (!Double.IsInfinity(highestMassPeptideToLookFor))
+                if (peptideIdsInThisBin!=null)
                 {
-                    highestPeptideMassIndex = BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, highestMassPeptideToLookFor);
+                    //get index for minimum monoisotopic allowed
+                    int lowestPeptideMassIndex = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, lowestMassPeptideToLookFor);
 
-                    for (int j = highestPeptideMassIndex; j < peptideIdsInThisBin.Count; j++)
+                    // get index for highest mass allowed
+                    int highestPeptideMassIndex = peptideIdsInThisBin.Count - 1;
+
+                    if (!Double.IsInfinity(highestMassPeptideToLookFor))
                     {
-                        int nextId = peptideIdsInThisBin[j];
-                        var nextPep = PeptideIndex[nextId];
-                        if (nextPep.MonoisotopicMassIncludingFixedMods < highestMassPeptideToLookFor)
-                            highestPeptideMassIndex = j;
-                        else
-                            break;
+                        highestPeptideMassIndex = BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, highestMassPeptideToLookFor);
+
+                        for (int j = highestPeptideMassIndex; j < peptideIdsInThisBin.Count; j++)
+                        {
+                            int nextId = peptideIdsInThisBin[j];
+                            var nextPep = PeptideIndex[nextId];
+                            if (nextPep.MonoisotopicMassIncludingFixedMods < highestMassPeptideToLookFor)
+                                highestPeptideMassIndex = j;
+                            else
+                                break;
+                        }
                     }
-                }
 
-                // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
-                for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
-                {
-                    int id = peptideIdsInThisBin[j];
-                    scoringTable[id]++;
+                    // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
+                    for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
+                    {
+                        int id = peptideIdsInThisBin[j];
+                        scoringTable[id]++;
 
-                    // add possible search results to the hashset of id's
-                    if (scoringTable[id] == byteScoreCutoff && MassDiffAcceptor.Accepts(scanPrecursorMass, PeptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
-                        idsOfPeptidesPossiblyObserved.Add(id);
-                }
+                        // add possible search results to the hashset of id's
+                        if (scoringTable[id] == byteScoreCutoff && MassDiffAcceptor.Accepts(scanPrecursorMass, PeptideIndex[id].MonoisotopicMassIncludingFixedMods) >= 0)
+                            idsOfPeptidesPossiblyObserved.Add(id);
+                    }
+                }   
             }
         }
 
@@ -552,7 +557,7 @@ namespace EngineLayer.CrosslinkSearch
 
                         var psmCross = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
                         psmCross.Glycan = glycan;
-                        var modPos = PsmCross.GlyPosCal(psmCross.compactPeptide, "N");
+                        var modPos = PsmCross.NGlyPosCal(psmCross.compactPeptide);
                         var pmmhList = psmCross.GlyGetTheoreticalFramentIons(ProductTypes, Charge_2_3, modPos);
                         psmCross.GetBestMatch(theScan, pmmhList, commonParameters);
                         bestPsmCrossList.Add(psmCross);

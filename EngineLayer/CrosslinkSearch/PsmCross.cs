@@ -348,31 +348,37 @@ namespace EngineLayer.CrosslinkSearch
             return AllTheoreticalFragmentIonsLists;
         }
 
-        //To do: Optimize motif
-        public static List<int> GlyPosCal(CompactPeptide compactPeptide, string modSites)
+        //TO DO: Residue 'C' or 'S', 'T' maybe modified, so that the NGlyPosCal is limited.
+        public static List<int> NGlyPosCal(CompactPeptide compactPeptide)
         {
             Tolerance tolerance = new PpmTolerance(1);
             List<int> xlpos = new List<int>();
-            foreach (char item in modSites)
+            List<int> NGlyPos = new List<int>();
+
+            if (tolerance.Within(compactPeptide.NTerminalMasses[0], Residue.GetResidue('N').MonoisotopicMass))
             {
-                if (tolerance.Within(compactPeptide.NTerminalMasses[0], Residue.GetResidue(item).MonoisotopicMass))
+                xlpos.Add(1);
+            }
+            for (int i = 1; i < compactPeptide.NTerminalMasses.Length - 1; i++)
+            {
+                if (tolerance.Within(compactPeptide.NTerminalMasses[i] - compactPeptide.NTerminalMasses[i - 1], Residue.GetResidue('N').MonoisotopicMass))
                 {
-                    xlpos.Add(0);
-                }
-                for (int i = 1; i < compactPeptide.NTerminalMasses.Length; i++)
-                {
-                    if (tolerance.Within(compactPeptide.NTerminalMasses[i] - compactPeptide.NTerminalMasses[i - 1], Residue.GetResidue(item).MonoisotopicMass))
-                    {
-                        xlpos.Add(i);
-                    }
-                }
-                if (tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue(item).MonoisotopicMass))
-                {
-                    xlpos.Add(compactPeptide.NTerminalMasses.Length);
+                    xlpos.Add(i);
                 }
             }
-            xlpos.Sort();
-            return xlpos;
+
+            foreach (var ipos in xlpos)
+            {
+                if (!tolerance.Within(compactPeptide.NTerminalMasses[ipos+1] - compactPeptide.NTerminalMasses[ipos], Residue.GetResidue('P').MonoisotopicMass)
+                    && (tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('S').MonoisotopicMass)
+                    || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('T').MonoisotopicMass)
+                    || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('C').MonoisotopicMass)
+                    || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('C').MonoisotopicMass + 57.02146372068994)))
+                {
+                    NGlyPos.Add(ipos+1);
+                }
+            }
+            return NGlyPos;
         }
 
         public void GetBestMatch(Ms2ScanWithSpecificMass theScan, Dictionary<List<int>, List<TheoreticalFragmentIon>> pmmhList, CommonParameters commonParameters)

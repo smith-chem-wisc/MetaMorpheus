@@ -105,12 +105,17 @@ namespace EngineLayer.Indexing
 
             // create fragment index
             List<int>[] fragmentIndex;
-            List<int>[] fragmentIndexNGly;
+            List<int>[] fragmentIndexNGly = new List<int>[1];
+            bool _searchGlyco = false;
 
             try
             {
                 fragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
-                fragmentIndexNGly = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                if (_searchGlyco)
+                {
+                    fragmentIndexNGly = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                }
+                
             }
             catch (OutOfMemoryException)
             {
@@ -138,19 +143,22 @@ namespace EngineLayer.Indexing
                 }
 
                 //TO DO: generate validFragmentsNGly
-                var validFragmentsNGly = GenerateBgYgFragments(peptidesSortedByMass[peptideId], ProductTypes).Distinct().Where(p => !Double.IsNaN(p));
-                foreach (var theoreticalFragmentMass in validFragmentsNGly)
+                if (_searchGlyco)
                 {
-                    if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
+                    var validFragmentsNGly = GenerateBgYgFragments(peptidesSortedByMass[peptideId], ProductTypes).Distinct().Where(p => !Double.IsNaN(p));
+                    foreach (var theoreticalFragmentMass in validFragmentsNGly)
                     {
-                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
+                        if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
+                        {
+                            int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
 
-                        if (fragmentIndexNGly[fragmentBin] == null)
-                            fragmentIndexNGly[fragmentBin] = new List<int> { peptideId };
-                        else
-                            fragmentIndexNGly[fragmentBin].Add(peptideId);
+                            if (fragmentIndexNGly[fragmentBin] == null)
+                                fragmentIndexNGly[fragmentBin] = new List<int> { peptideId };
+                            else
+                                fragmentIndexNGly[fragmentBin].Add(peptideId);
+                        }
                     }
-                }
+                }             
 
                 progress++;
                 var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
@@ -172,7 +180,7 @@ namespace EngineLayer.Indexing
             bool containsBnoB1 = productTypes.Contains(ProductType.BnoB1ions);
             bool containsY = productTypes.Contains(ProductType.Y);
 
-            var modPos = PsmCross.GlyPosCal(compactPeptide, "N");
+            var modPos = PsmCross.NGlyPosCal(compactPeptide);
 
             List<double> massesToReturn = new List<double>();
 

@@ -60,6 +60,9 @@
                                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="5">
                                     <CheckBox x:Name="CkbSearchGlyco"  VerticalAlignment="Center" Content="Search Glycopeptides" />
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5">
+                                    <CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />
+                                </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
                                     <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />

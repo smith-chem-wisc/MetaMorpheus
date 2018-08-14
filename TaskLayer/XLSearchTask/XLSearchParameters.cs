@@ -9,6 +9,7 @@ namespace TaskLayer
         public XlSearchParameters()
         {
             SearchGlyco = false;
+            SearchGlycoWithBgYgIndex = false;
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSSO;
             CrosslinkSearchTop = false;
@@ -40,6 +41,7 @@ namespace TaskLayer
         }
 
         public bool SearchGlyco { get; set; }
+        public bool SearchGlycoWithBgYgIndex { get ;set;}
         public DecoyType DecoyType { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
 
