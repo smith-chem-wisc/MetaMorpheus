@@ -322,80 +322,52 @@ namespace TaskLayer
 
                 proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
             }
-
+                       
+            //MultiProtease MBR capability code
             // pass PSM info to FlashLFQ
-            var flashLFQIdentifications = new List<Identification>();
-            foreach (var spectraFile in psmsGroupedByFile)
-            {
-                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
 
-                foreach (var psm in spectraFile)
+            Parameters.FlashLfqResults = null;
+
+            foreach (var proteasePsms in proteaseSortedPsms)
+            {
+                var flashLFQIdentifications = new List<Identification>();
+                var proteasePsmsGroupedByFile = proteasePsms.Value.GroupBy(p => p.FullFilePath);
+                foreach (var spectraFile in proteasePsmsGroupedByFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
+
+                    foreach (var psm in spectraFile)
+                    {
+                        flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+                            psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    }
+                }
+
+                // run FlashLFQ
+                var FlashLfqEngine = new FlashLFQEngine(
+                    allIdentifications: flashLFQIdentifications,
+                    normalize: Parameters.SearchParameters.Normalize,
+                    ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+                    matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+                    silent: true,
+                    optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
+
+                if (flashLFQIdentifications.Any())
+                {
+                    //make specific to protease
+                    var results = FlashLfqEngine.Run();
+
+                    if (Parameters.FlashLfqResults == null)
+                    {
+                        Parameters.FlashLfqResults = results;
+                    }
+                    else
+                    {
+                        Parameters.FlashLfqResults.MergeResultsWith(results);
+                    }
                 }
             }
-
-            // run FlashLFQ
-            var FlashLfqEngine = new FlashLFQEngine(
-                allIdentifications: flashLFQIdentifications,
-                normalize: Parameters.SearchParameters.Normalize,
-                ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
-                matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
-                silent: true,
-                optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
-
-            if (flashLFQIdentifications.Any())
-            {
-                Parameters.FlashLfqResults = FlashLfqEngine.Run();
-            }
-
-            //MultiProtease MBR capability code
-            //// pass PSM info to FlashLFQ
-
-            //Parameters.FlashLfqResults = null;
-
-            //foreach (var proteasePsms in proteaseSortedPsms)
-            //{
-            //    var flashLFQIdentifications = new List<Identification>();
-            //    var psmsGroupedByFile = proteasePsms.Value.GroupBy(p => p.FullFilePath);
-            //    foreach (var spectraFile in psmsGroupedByFile)
-            //    {
-            //        var rawfileinfo = spectraFileInfo.Where(p => p.fullFilePathWithExtension.Equals(spectraFile.Key)).First();
-
-            //        foreach (var psm in spectraFile)
-            //        {
-            //            flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-            //                psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
-            //        }
-            //    }
-
-            //    // run FlashLFQ
-            //    var FlashLfqEngine = new FlashLFQEngine(
-            //        allIdentifications: flashLFQIdentifications,
-            //        normalize: Parameters.SearchParameters.Normalize,
-            //        ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
-            //        matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
-            //        silent: true,
-            //        optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
-
-            //    if (flashLFQIdentifications.Any())
-            //    {
-            //        //make specific to protease
-            //        var results = FlashLfqEngine.Run();
-
-            //        if(Parameters.FlashLfqResults == null)
-            //        {
-            //            Parameters.FlashLfqResults = results;
-            //        }
-            //        else
-            //        {
-            //            Parameters.FlashLfqResults.MergeResultsWith(results);
-            //        }
-            //    }
-            //}
-
-
+            
             // get protein intensity back from FlashLFQ
             if (ProteinGroups != null && Parameters.FlashLfqResults != null)
             {
