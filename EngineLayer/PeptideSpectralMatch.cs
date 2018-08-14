@@ -158,7 +158,8 @@ namespace EngineLayer
             OneBasedEndResidueInProtein = Resolve(pepsWithMods.Select(b => b.OneBasedEndResidueInProtein)).Item2;
             ProteinLength = Resolve(pepsWithMods.Select(b => b.Protein.Length)).Item2;
             PeptideMonisotopicMass = Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).Item2;
-            ProteinAccesion = Resolve(pepsWithMods.Select(b => b.Protein.Accession)).Item2;
+            var pepsWithModsProteaseMatch = pepsWithMods.Where(b => b.DigestionParams.Protease == DigestionParams.Protease);
+            ProteinAccesion = Resolve(pepsWithModsProteaseMatch.Select(b => b.Protein.Accession)).Item2;// maybe item 1 so we have accession into for groups?
             Organism = Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item2;
             ModsIdentified = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).Item2;
             ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
@@ -330,7 +331,7 @@ namespace EngineLayer
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
-                return new Tuple<string, string>(returnString, null);
+                return new Tuple<string, string>(returnString, null); 
             }
         }
 

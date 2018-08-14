@@ -48,10 +48,14 @@ namespace EngineLayer
                     {
                         foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
                         {
-                            if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
-                                peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
-                            else
-                                psmsForThisPeptide.Add(psm);
+                            if (pepWithSetMods.DigestionParams.Protease == psm.DigestionParams.Protease)
+                            {
+                                if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
+                                    peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
+                                else
+                                    psmsForThisPeptide.Add(psm);
+                            }
+                            
                         }
                     }
                 }
@@ -75,11 +79,15 @@ namespace EngineLayer
 
             // score the group
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.Score();
+            }
+               
 
             if (MergeIndistinguishableProteinGroups)
             {
                 // merge protein groups that are indistinguishable after scoring
+                
                 var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
                 for (int i = 0; i < (pg.Count - 1); i++)
                 {
@@ -92,8 +100,10 @@ namespace EngineLayer
                         {
                             var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
                             var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
+                            var seqs3 = p.AllPsmsBelowOnePercentFDR;
+                            var seqs4 = pg[i].AllPsmsBelowOnePercentFDR;
 
-                            if (p != pg[i] && seqs1.SetEquals(seqs2))
+                            if (p != pg[i] && seqs1.SetEquals(seqs2) && seqs3.SetEquals(seqs4))
                             {
                                 pg[i].MergeProteinGroupWith(p);
                             }
