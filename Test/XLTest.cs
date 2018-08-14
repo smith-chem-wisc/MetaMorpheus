@@ -124,8 +124,8 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams>
-            { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse,  new List<DigestionParams>
+            { commonParameters.DigestionParams }, commonParameters, 30000, xlSearchParameters.SearchGlycoWithBgYgIndex, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -143,7 +143,7 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, lp, 0, commonParameters, false, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
 
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
@@ -247,7 +247,7 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, xlSearchParameters.SearchGlycoWithBgYgIndex, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -260,7 +260,7 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, lp, 0, commonParameters, false, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
             Assert.AreEqual(newPsms.Count(), 1);
         }
     }

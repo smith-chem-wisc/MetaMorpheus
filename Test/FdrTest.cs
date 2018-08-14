@@ -141,7 +141,7 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters, new List<string>()).Run();
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
-            { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+            { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, false, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             PeptideSpectralMatch[] allPsmsArrayModern = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -210,7 +210,7 @@ namespace Test
             CommonParameters = new CommonParameters(useDeltaScore: true, digestionParams: new DigestionParams(minPeptideLength: 5));
 
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
-            { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+            { ProductType.B, ProductType.Y }, 1, DecoyType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, false, new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             allPsmsArrayModern = new PeptideSpectralMatch[listOfSortedms2Scans.Length];

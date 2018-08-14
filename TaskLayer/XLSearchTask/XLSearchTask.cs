@@ -112,15 +112,15 @@ namespace TaskLayer
                     List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngineWithNGlyco(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, ListOfDigestionParams, combinedParams, 30000.0, new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, ListOfDigestionParams, combinedParams, 30000.0, XlSearchParameters.SearchGlycoWithBgYgIndex, new List<string> { taskId });
                     List<int>[] fragmentIndex = null;
                     List<int>[] fragmentIndexNGlyco = null;
                     lock (indexLock)
-                        GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref fragmentIndexNGlyco, taskId);
+                        GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
 
                     Status("Searching files...", taskId);
 
-                    new TwoPassCrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, fragmentIndexNGlyco, ionTypes, currentPartition, combinedParams, false, XlSearchParameters.SearchGlyco, XlSearchParameters.SearchGlycoWithBgYgIndex, XlSearchParameters.XlPrecusorMsTl, crosslinker, XlSearchParameters.CrosslinkSearchTop, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, XlSearchParameters.XlCharge_2_3, thisId).Run();
+                    new TwoPassCrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, false, XlSearchParameters.SearchGlyco, XlSearchParameters.SearchGlycoWithBgYgIndex, XlSearchParameters.XlPrecusorMsTl, crosslinker, XlSearchParameters.CrosslinkSearchTop, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, XlSearchParameters.XlCharge_2_3, thisId).Run();
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                 }
 
@@ -488,7 +488,7 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
         }
 
-        private void GenerateIndexes(IndexingEngineWithNGlyco indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] fragmentIndexWithNGlyco, string taskId)
+        private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
@@ -504,7 +504,7 @@ namespace TaskLayer
                 var indexResults = (IndexingResultsWithNGlyco)indexEngine.Run();
                 peptideIndex = indexResults.PeptideIndex;
                 fragmentIndex = indexResults.FragmentIndex;
-                fragmentIndexWithNGlyco = indexResults.FragmentIndexNgly;
+                //fragmentIndexWithNGlyco = indexResults.FragmentIndexNgly;
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
@@ -515,9 +515,9 @@ namespace TaskLayer
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
-                var fragmentIndexFileWithNGlyco = Path.Combine(output_folderForIndices, "fragmentIndexWithNGlyco.ind");
-                WriteFragmentIndexNetSerializer(fragmentIndexWithNGlyco, fragmentIndexFileWithNGlyco);
-                SucessfullyFinishedWritingFile(fragmentIndexFileWithNGlyco, new List<string> { taskId });
+                //var fragmentIndexFileWithNGlyco = Path.Combine(output_folderForIndices, "fragmentIndexWithNGlyco.ind");
+                //WriteFragmentIndexNetSerializer(fragmentIndexWithNGlyco, fragmentIndexFileWithNGlyco);
+                //SucessfullyFinishedWritingFile(fragmentIndexFileWithNGlyco, new List<string> { taskId });
             }
             else
             {
@@ -532,8 +532,8 @@ namespace TaskLayer
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndexWithNGlyco.ind")))
-                    fragmentIndexWithNGlyco = (List<int>[])ser.Deserialize(file);
+                //using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndexWithNGlyco.ind")))
+                //    fragmentIndexWithNGlyco = (List<int>[])ser.Deserialize(file);
             }
         }
     }

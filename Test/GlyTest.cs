@@ -88,7 +88,7 @@ namespace Test
         public static void GlyTest_FragmentIons()
         {
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
-            var xlSearchParameters = new XlSearchParameters { };
+            var xlSearchParameters = new XlSearchParameters { SearchGlycoWithBgYgIndex = false };
 
             //Create databases contain protein.
             var proteinList = new List<Protein> { new Protein("DANNTQFQFTSR", "25170") };
@@ -131,12 +131,11 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngineWithNGlyco(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams>
-            { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams>
+            { commonParameters.DigestionParams }, commonParameters, 30000, xlSearchParameters.SearchGlycoWithBgYgIndex, new List<string>());
 
-            var indexResults = (IndexingResultsWithNGlyco)indexEngine.Run();
+            var indexResults = (IndexingResults)indexEngine.Run();
 
-            var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
             var fragmentIndexAll = indexResults.FragmentIndex.Select((s, j) => new { j, s }).Where(p => p.s != null).Select(t => t.j).ToList();
             Assert.IsTrue(fragmentIndexAll.Count() > 0);
 
@@ -146,7 +145,7 @@ namespace Test
             
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, indexResults.FragmentIndexNgly, lp, 0, commonParameters, false, true, false, xlSearchParameters.XlPrecusorMsTl, null, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, true, false, xlSearchParameters.XlPrecusorMsTl, null, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
 
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, null, TerminusType.None, commonParameters, new List<string> { }).Run();
