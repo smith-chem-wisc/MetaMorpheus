@@ -53,7 +53,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following calibration settings were used: ");
@@ -104,7 +104,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
                 lock (lock1)
                 {
-                    myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks);
+                    myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
                 }
 
                 // get datapoints to fit calibration function to
@@ -204,14 +204,14 @@ namespace TaskLayer
 
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
 
-                SucessfullyFinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
                 // write the calibrated mzML file
                 MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
                 myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // finished calibrating this file
-                SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 MyTaskResults.NewSpectra.Add(calibratedFilePath);
                 MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });

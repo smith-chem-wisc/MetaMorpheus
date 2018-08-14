@@ -15,11 +15,13 @@ namespace TaskLayer
 {
     public static class MzIdentMLWriter
     {
-        public static void WriteMzidentml(IEnumerable<PeptideSpectralMatch> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
+        public static void WriteMzIdentMl(IEnumerable<PeptideSpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double qValueFilter, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
         {
-            List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
+            psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch <= qValueFilter);
+
+            List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
-            List<string> filenames = items.Select(i => i.FullFilePath).Distinct().ToList();
+            List<string> filenames = psms.Select(i => i.FullFilePath).Distinct().ToList();
             Dictionary<string, string> database_reference = new Dictionary<string, string>();
             List<string> databases = proteins.Select(p => p.DatabaseFilePath).Distinct().ToList();
 
@@ -172,7 +174,7 @@ namespace TaskLayer
                         new mzIdentML110.Generated.SpectrumIdentificationListType
                         {
                             id = "SIL",
-                            SpectrumIdentificationResult = new mzIdentML110.Generated.SpectrumIdentificationResultType[items.Count()]
+                            SpectrumIdentificationResult = new mzIdentML110.Generated.SpectrumIdentificationResultType[psms.Count()]
                         }
         }
                 },
@@ -300,7 +302,7 @@ namespace TaskLayer
             Dictionary<string, Tuple<int, HashSet<string>>> peptide_ids = new Dictionary<string, Tuple<int, HashSet<string>>>(); //key is peptide sequence, value is <peptide id for that peptide, peptide evidences>, list of spectra id's
             Dictionary<Tuple<string, int>, Tuple<int, int>> psm_per_scan = new Dictionary<Tuple<string, int>, Tuple<int, int>>(); //key is <filename, scan numer> value is <scan result id, scan item id #'s (could be more than one ID per scan)>
 
-            var unambiguousPsms = items.Where(psm => psm.FullSequence != null);
+            var unambiguousPsms = psms.Where(psm => psm.FullSequence != null);
 
             foreach (PeptideSpectralMatch psm in unambiguousPsms)
             {
@@ -395,7 +397,7 @@ namespace TaskLayer
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeakMz, 5),
-                    passThreshold = psm.FdrInfo.QValue <= threshold,
+                    passThreshold = psm.FdrInfo.QValue <= 0.01,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
                     peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.CompactPeptides.SelectMany(c => c.Value.Item2).Distinct().Count()],
@@ -531,7 +533,7 @@ namespace TaskLayer
                                     accession = "MS:1001448",
                                     name = "pep:FDR threshold",
                                     cvRef = "PSI-MS",
-                                    value = threshold.ToString()
+                                    value = "0.01"
                                 }
                             }
                         }
@@ -610,7 +612,7 @@ namespace TaskLayer
                             accession = "MS:1001447",
                             name = "prot:FDR threshold",
                             cvRef = "PSI-MS",
-                            value = threshold.ToString()
+                            value = "0.01"
                         }
                     }
                 }
@@ -640,7 +642,7 @@ namespace TaskLayer
                         {
                             id = "PDH_" + protein_id,
                             dBSequence_ref = "DBS_" + protein.Accession,
-                            passThreshold = proteinGroup.QValue <= threshold,
+                            passThreshold = proteinGroup.QValue <= 0.01, // hardcoded as 1% FDR but we could change this to the provided threshold
                             PeptideHypothesis = new mzIdentML110.Generated.PeptideHypothesisType[proteinGroup.AllPeptides.Count],
                             cvParam = new mzIdentML110.Generated.CVParamType[4]
                             {

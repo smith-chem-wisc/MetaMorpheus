@@ -38,7 +38,7 @@ namespace TaskLayer
             List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons)
@@ -102,7 +102,7 @@ namespace TaskLayer
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -454,7 +454,7 @@ namespace TaskLayer
 
             using (var file = File.Create(fragmentIndexFile))
                 ser.Serialize(file, fragmentIndex);
-            SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+            FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
         }
 
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
@@ -471,7 +471,7 @@ namespace TaskLayer
             {
                 output.Write(indexEngine);
             }
-            SucessfullyFinishedWritingFile(fileName, new List<string> { taskId });
+            FinishedWritingFile(fileName, new List<string> { taskId });
         }
 
         private string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
@@ -506,7 +506,7 @@ namespace TaskLayer
                 ser.Serialize(file, peptideIndex);
             }
 
-            SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+            FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
         }
 
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
@@ -519,7 +519,7 @@ namespace TaskLayer
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
                 WriteIndexEngineParams(indexEngine, paramsFile);
-                SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
+                FinishedWritingFile(paramsFile, new List<string> { taskId });
 
                 Status("Running Index Engine...", new List<string> { taskId });
                 var indexResults = (IndexingResults)indexEngine.Run();
@@ -529,12 +529,12 @@ namespace TaskLayer
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
                 WritePeptideIndex(peptideIndex, peptideIndexFile);
-                SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+                FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
-                SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+                FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
             }
             else
             {

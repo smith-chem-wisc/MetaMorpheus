@@ -482,7 +482,6 @@ namespace Test
             psms.ElementAt(4).SetFdrValues(0, 0, goodFdr, 0, 0, goodFdr, 0, 0, 0, false);
             psms.ElementAt(5).SetFdrValues(0, 0, goodFdr, 0, 0, goodFdr, 0, 0, 0, false);
             
-
             //this iscopy of code that filteres psms in PostSearch Analysis Task
             var fdrFilteredPsms = new List<PeptideSpectralMatch>();
             foreach (PeptideSpectralMatch psm in psms)
@@ -508,12 +507,16 @@ namespace Test
             Assert.AreEqual(false, test5);
             Assert.AreEqual(false, test6);
         }
+
         [Test]
         public static void FdrFilteredParsimonyTest()
         {
             SearchTask Task1 = new SearchTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParameters = new CommonParameters
+                (
+                    qValueOutputFilter: 1
+                ),
 
                 SearchParameters = new SearchParameters
                 {
@@ -529,13 +532,12 @@ namespace Test
 
             var thisTaskOutputFolder = MySetUpClass.outputFolder;
                         
-            var psms = Path.Combine(thisTaskOutputFolder,  "PrunedDbSpectra_PSMs.psmtsv");
-
+            var psms = Path.Combine(thisTaskOutputFolder,  "AllPSMs.psmtsv");
+            
             Assert.AreEqual(12, File.ReadLines(psms).Count());
-            var protGroups = Path.Combine(thisTaskOutputFolder, "PrunedDbSpectra_ProteinGroups.tsv");
+            var protGroups = Path.Combine(thisTaskOutputFolder, "AllProteinGroups.tsv");
 
             Assert.AreEqual(7, File.ReadLines(protGroups).Count());
-
         }
     }
 }
