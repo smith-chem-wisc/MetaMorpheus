@@ -140,8 +140,9 @@ namespace TaskLayer
 
             if (XlSearchParameters.SearchGlyco)
             {
-                var allPsmsGly = allPsms.Where(p => p.Glycan != null).OrderBy(p=>p.XLTotalScore).ToList();
-                foreach (var item in allPsmsGly)
+                //TO DO: there may have a bug. I have to filter the following loopPsms, deadendPsms with a BestScore higher than 2, Or some of the Psms will have everything be 0!
+                var allPsmsGly = allPsms.Where(p => p.Glycan != null && p.BestScore>2).OrderByDescending(p=>p.BestScore).ToList();
+                 foreach (var item in allPsmsGly)
                 {
                     if (item.OneBasedStartResidueInProtein.HasValue)
                     {

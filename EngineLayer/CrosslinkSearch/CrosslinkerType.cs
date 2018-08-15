@@ -53,7 +53,7 @@
                 CleaveMassLong = 103.9932;
                 CrosslinkerModSites = "K";
                 CrosslinkerModSites2 = "K";
-                LoopMass = 159.0012;
+                LoopMass = 158.0038;
                 DeadendMassH2O = 176.0143;
                 DeadendMassNH2 = 175.0303;
                 DeadendMassTris = 279.0777;
@@ -76,7 +76,7 @@
                 TotalMass = 138.06808;
                 CrosslinkerModSites = "K";
                 CrosslinkerModSites2 = "K";
-                LoopMass = 139.06548;
+                LoopMass = 138.06808;
                 DeadendMassH2O = 156.0786;
                 DeadendMassNH2 = 155.0946;
                 DeadendMassTris = 259.142;

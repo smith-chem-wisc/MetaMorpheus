@@ -369,14 +369,30 @@ namespace EngineLayer.CrosslinkSearch
 
             foreach (var ipos in xlpos)
             {
-                if (!tolerance.Within(compactPeptide.NTerminalMasses[ipos+1] - compactPeptide.NTerminalMasses[ipos], Residue.GetResidue('P').MonoisotopicMass)
-                    && (tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('S').MonoisotopicMass)
-                    || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('T').MonoisotopicMass)
-                    || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('C').MonoisotopicMass)
-                    || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('C').MonoisotopicMass + 57.02146372068994)))
+                if (ipos + 2 >= compactPeptide.NTerminalMasses.Length)
                 {
-                    NGlyPos.Add(ipos+1);
+                    if (!tolerance.Within(compactPeptide.NTerminalMasses[ipos + 1] - compactPeptide.NTerminalMasses[ipos], Residue.GetResidue('P').MonoisotopicMass)
+                        && (tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue('S').MonoisotopicMass)
+                        || tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue('T').MonoisotopicMass)
+                        || tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue('C').MonoisotopicMass)
+                        || tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue('C').MonoisotopicMass + 57.02146372068994)))
+                    {
+                        NGlyPos.Add(ipos + 1);
+                    }
                 }
+                else
+                {
+                    if (!tolerance.Within(compactPeptide.NTerminalMasses[ipos + 1] - compactPeptide.NTerminalMasses[ipos], Residue.GetResidue('P').MonoisotopicMass)
+                        && (tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('S').MonoisotopicMass)
+                        || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('T').MonoisotopicMass)
+                        || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('C').MonoisotopicMass)
+                        || tolerance.Within(compactPeptide.NTerminalMasses[ipos + 2] - compactPeptide.NTerminalMasses[ipos + 1], Residue.GetResidue('C').MonoisotopicMass + 57.02146372068994)))
+                    {
+                        NGlyPos.Add(ipos + 1);
+                    }
+                }
+
+
             }
             return NGlyPos;
         }
@@ -461,8 +477,8 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append("Pep" + '\t');
             sb.Append("Pep Protein Access" + '\t');
-            sb.Append("Protein link site" + '\t');
-            sb.Append("Pep Base sequence(crosslink site)" + '\t');
+            sb.Append("Protein site" + '\t');
+            sb.Append("Pep Base sequence" + '\t');
             sb.Append("Pep Full sequence" + '\t');
             sb.Append("Pep mass" + '\t');
             sb.Append("Pep BestScore" + '\t');
@@ -485,14 +501,15 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append("Pep" + '\t');
             sb.Append("Pep Protein Access" + '\t');
-            sb.Append("Protein link site" + '\t');
-            sb.Append("Pep Base sequence(crosslink site)" + '\t');
+            sb.Append("Protein mod site" + '\t');
+            sb.Append("Pep Base sequence" + '\t');
             sb.Append("Pep Full sequence" + '\t');
             sb.Append("Pep mass" + '\t');
             sb.Append("Pep BestScore" + '\t');
             sb.Append("Pep Rank" + '\t');
+            sb.Append("Charge2/3Number" + '\t');
+            sb.Append("Target/Decoy" + '\t');
             sb.Append("QValue" + '\t');
-
             sb.Append("GlyID" + '\t');
             sb.Append("GlyMass" + '\t');
             sb.Append("GlyStruct" + '\t');

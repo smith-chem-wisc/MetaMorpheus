@@ -31,7 +31,15 @@ namespace Test
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
 
             //Create databases contain protein.
-            var proteinList = new List<Protein> { new Protein("DANNTQFQFTSR", "25170"), new Protein("DANNSQFQFTSR", "25171"), new Protein("DANNCQFQFTSR", "25172"), new Protein("DANPTQFQFTSR", "25173"),new Protein("DANNCCFQFTSR", "25174")};
+            var proteinList = new List<Protein>
+            { new Protein("DANNTQFQFTSR", "25170"),
+                new Protein("DANNSQFQFTSR", "25171"),
+                new Protein("DANNCQFQFTSR", "25172"),
+                new Protein("DANPTQFQFTSR", "25173"),
+                new Protein("DANNCCFQFTSR", "25174"),
+                new Protein("DANNCCFQFNSS", "25174"),
+                new Protein("DANNCCFQFTNS", "25174")
+            };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
@@ -76,12 +84,26 @@ namespace Test
             var t4 = PsmCross.NGlyPosCal(digestedList[3].CompactPeptide(TerminusType.None));
             //TO DO: Residue 'C' or 'S', 'T' maybe modified, so that the NGlyPosCal is limited.
             var t5 = PsmCross.NGlyPosCal(digestedList[4].CompactPeptide(TerminusType.None));
+            var t6 = PsmCross.NGlyPosCal(digestedList[5].CompactPeptide(TerminusType.None));
+            var t7 = PsmCross.NGlyPosCal(digestedList[6].CompactPeptide(TerminusType.None));
 
             Assert.AreEqual(t1, new List<int>() { 3 });
             Assert.AreEqual(t2, new List<int>() { 3 });
             Assert.AreEqual(t3, new List<int>() { 3 });
             Assert.AreEqual(t4, new List<int>());
             Assert.AreEqual(t5, new List<int>() { 3, 4 });
+        }
+
+        [Test]
+        public static void GlyTest_OxoniumIons()
+        {
+            //Get MS2 scans.
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
+            var myMsDataFile = new GlyTestDataFile();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).ToArray();
+            //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
+            var oxoinumIonsExist = TwoPassCrosslinkSearchEngine.ScanOxoniumIonFilter(listOfSortedms2Scans[0]);          
+            Assert.AreEqual(true, oxoinumIonsExist);
         }
 
         [Test]

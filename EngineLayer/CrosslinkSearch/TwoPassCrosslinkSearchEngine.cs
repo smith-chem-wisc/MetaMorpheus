@@ -65,6 +65,18 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         public Glycan[] Glycans { get; set; }
+        private static Dictionary<int, double> oxoniumIons = new Dictionary<int, double>()
+        {
+            { 126, 126.055 },
+            { 138, 138.055 },
+            { 144, 144.065 },
+            { 168, 168.066 },
+            { 186, 186.076 },
+            { 204, 204.087 },
+            { 366, 366.140 },
+            { 274, 274.092 },
+            { 292, 292.103 }
+        };
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -97,6 +109,12 @@ namespace EngineLayer.CrosslinkSearch
                     idsOfPeptidesPossiblyObservedGly.Clear();
 
                     var scan = ListOfSortedms2Scans[i];
+
+                    if (_searchGlycan)
+                    {
+                        if (ScanOxoniumIonFilter(scan))
+                            continue;     
+                    }
                     // get fragment bins for this scan
                     List<int> allBinsToSearch = GetBinsToSearch(scan);
                     List<BestPeptideScoreNotch> bestPeptideScoreNotchList = new List<BestPeptideScoreNotch>();
@@ -559,6 +577,7 @@ namespace EngineLayer.CrosslinkSearch
                         var modPos = PsmCross.NGlyPosCal(psmCross.compactPeptide);
                         var pmmhList = psmCross.GlyGetTheoreticalFramentIons(ProductTypes, Charge_2_3, modPos);
                         psmCross.GetBestMatch(theScan, pmmhList, commonParameters);
+                        psmCross.XlRank = new List<int> { ind };
                         bestPsmCrossList.Add(psmCross);
                     }
                 }
@@ -576,5 +595,40 @@ namespace EngineLayer.CrosslinkSearch
             return bestPsmCross;
         }
 
+        public static bool ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan)
+        {
+            var massDiffAcceptor = new SinglePpmAroundZeroSearchMode(10);
+
+            int intensity204 = 101;
+            int intensity366 = 101;
+            int totalNum = 0;
+
+            double[] experimental_intensities = theScan.TheScan.MassSpectrum.YArray;
+            int[] experimental_intensities_rank = PsmCross.GenerateIntensityRanks(experimental_intensities);
+
+            foreach (var ioxo in oxoniumIons)
+            {
+                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(ioxo.Value).Value;
+                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], ioxo.Value)>=0)
+                {
+                    totalNum++;
+                    if (totalNum >1)
+                    {
+                        return true;
+                    }
+                    if (ioxo.Key==204)
+                        intensity204 = experimental_intensities_rank[matchedPeakIndex];
+                    if (ioxo.Key == 366)
+                        intensity366 = experimental_intensities_rank[matchedPeakIndex];
+                }
+            }
+
+            if (intensity204<101 || intensity366<101 || totalNum>1)
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 }
