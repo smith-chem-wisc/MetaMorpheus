@@ -15,12 +15,81 @@ using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+using OxyPlot.Annotations;
 
 namespace Test
 {
     [TestFixture]
     public static class XLTest
     {
+        static IndexingResults indexResults { get; set; }
+        static CommonParameters commonParameters { get; set; }
+        static XlSearchParameters xlSearchParameters { get; set; }
+        static List<Protein> proteinList { get; set; }
+        static List<ModificationWithMass> variableModifications { get; set; }
+        static List<ModificationWithMass> fixedModifications { get; set; }
+        static List<ProductType> lp { get; set; }
+        static CrosslinkerTypeClass crosslinker { get; set; }
+        static List<PeptideWithSetModifications> digestedList { get; set; }
+
+        private static void Generate()
+        {
+            //Generate parameters
+            commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
+            xlSearchParameters = new XlSearchParameters { };
+
+            //Create databases contain two protein.
+            proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
+
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
+            ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            ModificationWithMass mod2 = new ModificationWithMass("Carbamidomethyl of C", "Common Fixed", motif2, TerminusLocalization.Any, 57.02146372068994);
+            variableModifications = new List<ModificationWithMass>() { mod1 };
+            fixedModifications = new List<ModificationWithMass>() { mod2 };
+            var localizeableModifications = new List<ModificationWithMass>();
+
+            lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y, ProductType.C, ProductType.Zdot };
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int i = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+
+            //Generate digested peptide lists.
+            digestedList = new List<PeptideWithSetModifications>();
+            foreach (var item in proteinList)
+            {
+                var digested = item.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+                digestedList.AddRange(digested);
+            }
+            foreach (var fdfd in digestedList)
+            {
+                fdfd.CompactPeptide(TerminusType.None);
+            }
+
+            //Run index engine
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams>
+            { commonParameters.DigestionParams }, commonParameters, 30000, xlSearchParameters.SearchGlycoWithBgYgIndex, new List<string>());
+            indexResults = (IndexingResults)indexEngine.Run();
+
+            //Generate crosslinker, which is DSSO here.
+            crosslinker = new CrosslinkerTypeClass();
+            crosslinker.SelectCrosslinker(xlSearchParameters.CrosslinkerType);
+        }
+
         [Test]
         public static void XlTestXlPosCal()
         {
@@ -78,68 +147,10 @@ namespace Test
         [Test]
         public static void XlTest_BSA_DSSO()
         {
-            //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
-
-            var xlSearchParameters = new XlSearchParameters { };
-
-            //Create databases contain two protein.
-            var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
-
-            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
-            ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
-            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            ModificationWithMass mod2 = new ModificationWithMass("Carbamidomethyl of C", "Common Fixed", motif2, TerminusLocalization.Any, 57.02146372068994);
-            var variableModifications = new List<ModificationWithMass>() { mod1 };
-            var fixedModifications = new List<ModificationWithMass>() { mod2 };
-            var localizeableModifications = new List<ModificationWithMass>();
-
-            var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y, ProductType.C, ProductType.Zdot };
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            foreach (var mod in fixedModifications)
-                modsDictionary.Add(mod, 0);
-            int i = 1;
-            foreach (var mod in variableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)i);
-                i++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)i);
-                i++;
-            }
-
-            //Generate digested peptide lists.
-            List<PeptideWithSetModifications> digestedList = new List<PeptideWithSetModifications>();
-            foreach (var item in proteinList)
-            {
-                var digested = item.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
-                digestedList.AddRange(digested);
-            }
-
-            foreach (var fdfd in digestedList)
-            {
-                fdfd.CompactPeptide(TerminusType.None);
-            }
-
-            //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse,  new List<DigestionParams>
-            { commonParameters.DigestionParams }, commonParameters, 30000, xlSearchParameters.SearchGlycoWithBgYgIndex, new List<string>());
-
-            var indexResults = (IndexingResults)indexEngine.Run();
-
-            var fragmentIndexCount = indexResults.FragmentIndex.Count(p => p != null);
-            var fragmentIndexAll = indexResults.FragmentIndex.Select((s, j) => new { j, s }).Where(p => p.s != null).Select(t => t.j).ToList();
-            Assert.IsTrue(fragmentIndexAll.Count() > 0);
-
+            Generate();
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-            //Generate crosslinker, which is DSSO here.
-            CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass();
-            crosslinker.SelectCrosslinker(xlSearchParameters.CrosslinkerType);
 
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
@@ -155,7 +166,6 @@ namespace Test
 
             //Test newPsms
             Assert.AreEqual(newPsms.Count(), 3);
-
             //Test Output
             var task = new XLSearchTask();
             task.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", new List<string> { });
@@ -164,8 +174,8 @@ namespace Test
             task.WritePsmCrossToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Singe).ToList(), writtenFile, 1);
 
             //Test PsmCross.XlGetTheoreticalFramentIons.
-            var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
-            var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams);
+            var psmCrossAlpha = new PsmCross(digestedList[1].CompactPeptide(TerminusType.None), 0, 0, 0, listOfSortedms2Scans[0], commonParameters.DigestionParams);
+            var psmCrossBeta = new PsmCross(digestedList[2].CompactPeptide(TerminusType.None), 0, 0, 0, listOfSortedms2Scans[0], commonParameters.DigestionParams);
             var linkPos = psmCrossAlpha.XlPosCal(crosslinker.CrosslinkerModSites);
             var productMassesAlphaList = psmCrossAlpha.XlGetTheoreticalFramentIons(lp, true, crosslinker, linkPos, psmCrossBeta.compactPeptide.MonoisotopicMassIncludingFixedMods + crosslinker.TotalMass);
             Assert.AreEqual(productMassesAlphaList.First().Value.Count, 123);
@@ -262,6 +272,32 @@ namespace Test
             List<PsmCross> newPsms = new List<PsmCross>();
             new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
             Assert.AreEqual(newPsms.Count(), 1);
+        }
+
+        [Test]
+        public static void Xl_TestDataFilePSMControl()
+        {
+            Generate();
+
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA_DSSO_ETchD6010.mgf");
+            CommonParameters commonParameters = new CommonParameters(doPrecursorDeconvolution: false);
+            MyFileManager myFileManager = new MyFileManager(true);
+            var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+            //TwoPassCrosslinkSearchEngine.Run().
+            List<PsmCross> newPsms = new List<PsmCross>();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
+
+            var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+
+            new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, crosslinker, TerminusType.None, commonParameters, new List<string> { }).Run();
+            foreach (var item in newPsms)
+            {
+                item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            }
+
+            GlyTest.DrawPeptideSpectralMatch(msDataFile.GetAllScansList()[0], newPsms.First());
         }
     }
 
@@ -364,4 +400,5 @@ namespace Test
             Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
         }
     }
+
 }

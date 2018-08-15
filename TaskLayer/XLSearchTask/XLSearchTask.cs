@@ -114,7 +114,6 @@ namespace TaskLayer
                     Status("Getting fragment dictionary...", new List<string> { taskId });
                     var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, ListOfDigestionParams, combinedParams, 30000.0, XlSearchParameters.SearchGlycoWithBgYgIndex, new List<string> { taskId });
                     List<int>[] fragmentIndex = null;
-                    List<int>[] fragmentIndexNGlyco = null;
                     lock (indexLock)
                         GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, taskId);
 
@@ -179,14 +178,16 @@ namespace TaskLayer
                         p.BetaPsmCross.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First().Contains(p.CompactPeptides.First().Value.Item2.Select(b => b.Protein.Accession).First())).OrderByDescending(p => p.XLQvalueTotalScore).Select(p => { p.CrossType = PsmCrossType.Intra; return p; }).ToList();
                     var intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXL).ToList();
 
-                    var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.FullSequence != null && !p.FullSequence.Contains("Crosslink")).OrderByDescending(p => p.Score).ToList();
+                    //TO DO: there may have a bug. I have to filter the following loopPsms, deadendPsms with a XLTotalScore higher than 2, Or some of the Psms will have everything be 0!
+                    var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && !p.FullSequence.Contains("Crosslink")).OrderByDescending(p => p.Score).ToList();
                     var singlePsmsFDR = SingleFDRAnalysis(singlePsms).ToList();
 
-                    var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop).OrderByDescending(p => p.XLTotalScore).ToList();
+                    var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop && p.XLTotalScore >= 2).OrderByDescending(p => p.XLTotalScore).ToList();
                     var loopPsmsFDR = SingleFDRAnalysis(loopPsms).ToList();
 
-                    var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd || p.CrossType == PsmCrossType.DeadEndH2O || p.CrossType == PsmCrossType.DeadEndNH2 || p.CrossType == PsmCrossType.DeadEndTris).OrderByDescending(p => p.XLTotalScore).ToList();
-                    deadendPsms.AddRange(allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.FullSequence != null && p.FullSequence.Contains("Crosslink")).ToList());
+                    var deadendPsms = allPsms.Where(p => p.BestScore >2 && (p.CrossType == PsmCrossType.DeadEnd || p.CrossType == PsmCrossType.DeadEndH2O || p.CrossType == PsmCrossType.DeadEndNH2 || p.CrossType == PsmCrossType.DeadEndTris)).OrderByDescending(p => p.XLTotalScore).ToList();
+                    //If parameter.modification contains crosslinker.deadend as variable mod, then the deadend will be in the following form. 
+                    deadendPsms.AddRange(allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && p.FullSequence.Contains("Crosslink")).ToList());
                     var deadendPsmsFDR = SingleFDRAnalysis(deadendPsms).ToList();
 
                     if (XlSearchParameters.XlOutCrosslink)
@@ -224,7 +225,7 @@ namespace TaskLayer
                             allPsmsXLFDR = allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore).ToList();
                             var allPsmsXLFDRGroup = GroupCrosslinks(allPsmsXLFDR);
                             var writtenFileCrossGroup = Path.Combine(OutputFolder, "allPsmsXLFDRGroup" + ".mytsv");
-                            WritePsmCrossToTsv(interPsmsXLFDR, writtenFileCrossGroup, 2);
+                            WritePsmCrossToTsv(allPsmsXLFDR, writtenFileCrossGroup, 2);
                         }
                         catch (Exception)
                         {
@@ -232,7 +233,7 @@ namespace TaskLayer
                         }
 
                         var writtenFileSingle = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
-                        WritePsmCrossToTsv(intraPsmsXLFDR, writtenFileSingle, 1);
+                        WritePsmCrossToTsv(singlePsmsFDR, writtenFileSingle, 1);
                         //WriteSingleToTsv(singlePsmsFDR, OutputFolder, "single_fdr", new List<string> { taskId });
 
                         var writtenFileLoop = Path.Combine(OutputFolder, "loop_fdr" + ".mytsv");
@@ -467,7 +468,6 @@ namespace TaskLayer
                     if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
                         File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
                         File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
-                        File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndexWithNGlyco.ind")) &&
                         SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
                         return possibleFolder.FullName;
                 }
@@ -501,7 +501,7 @@ namespace TaskLayer
                 SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
 
                 Status("Running Index Engine...", new List<string> { taskId });
-                var indexResults = (IndexingResultsWithNGlyco)indexEngine.Run();
+                var indexResults = (IndexingResults)indexEngine.Run();
                 peptideIndex = indexResults.PeptideIndex;
                 fragmentIndex = indexResults.FragmentIndex;
                 //fragmentIndexWithNGlyco = indexResults.FragmentIndexNgly;

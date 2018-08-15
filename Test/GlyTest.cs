@@ -156,11 +156,11 @@ namespace Test
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
         { { ProductType.B, OxyColors.Blue },
           { ProductType.BnoB1ions, OxyColors.Blue },
-          { ProductType.Y, OxyColors.Purple },
-          { ProductType.C, OxyColors.Gold },
+          { ProductType.Y, OxyColors.Red },
+          { ProductType.C, OxyColors.ForestGreen },
           { ProductType.Zdot, OxyColors.Orange },
-         { ProductType.X, OxyColors.DarkSeaGreen },
-        { ProductType.None, OxyColors.Orange }};
+         { ProductType.X, OxyColors.Violet },
+        { ProductType.None, OxyColors.Purple }};
 
         public static void DrawPeptideSpectralMatch(MsDataScan msDataScan, PsmCross psmToDraw)
         {
@@ -168,7 +168,12 @@ namespace Test
             var spectrumMzs = msDataScan.MassSpectrum.XArray;
             var spectrumIntensities = msDataScan.MassSpectrum.YArray;
 
-            PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = psmToDraw.FullSequence + psmToDraw.Glycan.Struc };
+            string subTitle = psmToDraw.FullSequence;
+            if (psmToDraw.BetaPsmCross!= null)
+            {
+                subTitle += "-" + psmToDraw.BetaPsmCross.FullSequence;
+            }
+            PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subTitle };
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
             model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
@@ -178,6 +183,10 @@ namespace Test
             // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
             if (psmToDraw != null)
             {
+                if (psmToDraw.BetaPsmCross != null)
+                {
+                    psmToDraw.MatchedIons = psmToDraw.MatchedIons.Concat(psmToDraw.BetaPsmCross.MatchedIons).ToList();
+                }
                 foreach (var peak in psmToDraw.MatchedIons)
                 {
                     OxyColor ionColor = productTypeDrawColors[peak.TheoreticalFragmentIon.ProductType];

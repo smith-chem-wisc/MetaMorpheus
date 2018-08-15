@@ -291,11 +291,15 @@ namespace EngineLayer.CrosslinkSearch
                 //Single Peptide
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
                 {
-                    var productMasses = theScanBestPeptide[ind].BestPeptide.ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
-                    Array.Sort(productMasses);
-                    double score = CalculatePeptideScoreOld(theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, theScan.PrecursorMass, DissociationTypes, AddComplementaryIons, 0);
-                    var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, i, theScan, commonParameters.DigestionParams);
-                    psmCrossSingle.XLTotalScore = psmCrossSingle.Score;
+                    //var productMasses = theScanBestPeptide[ind].BestPeptide.ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
+                    //Array.Sort(productMasses);
+                    //double score = CalculatePeptideScoreOld(theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, theScan.PrecursorMass, DissociationTypes, AddComplementaryIons, 0);
+                    //var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, i, theScan, commonParameters.DigestionParams);
+                    var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
+                    var pmmh = psmCrossSingle.GetTheoreticalFragmentIons(ProductTypes);
+                    psmCrossSingle.MatchedIons = MatchFragmentIons(theScan.TheScan.MassSpectrum, pmmh, commonParameters);
+                    psmCrossSingle.BestScore = CalculatePeptideScore(theScan.TheScan, psmCrossSingle.MatchedIons, 0);               
+                    psmCrossSingle.XLTotalScore = psmCrossSingle.BestScore;
                     psmCrossSingle.CrossType = PsmCrossType.Singe;
                     psmCrossSingle.XlRank = new List<int> { ind };
 
@@ -412,7 +416,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 var pmmhListAlpha = psmCrossAlpha.XlGetTheoreticalFramentIons(ProductTypes, Charge_2_3, Crosslinker, xlPosAlpha, y);
                 psmCrossAlpha.GetBestMatch(theScan, pmmhListAlpha, commonParameters);
-                var pmmhListBeta = psmCrossBeta.XlGetTheoreticalFramentIons(ProductTypes, Charge_2_3, Crosslinker, xlPosAlpha, x);
+                var pmmhListBeta = psmCrossBeta.XlGetTheoreticalFramentIons(ProductTypes, Charge_2_3, Crosslinker, xlPosBeta, x);
                 psmCrossBeta.GetBestMatch(theScan, pmmhListBeta, commonParameters);
 
                 if (psmCrossAlpha.BestScore < psmCrossBeta.BestScore)
@@ -526,12 +530,13 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
                 {
-                    var productMasses = theScanBestPeptide[ind].BestPeptide.ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
-                    Array.Sort(productMasses);
-                    double score = CalculatePeptideScoreOld(theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, theScan.PrecursorMass, DissociationTypes, AddComplementaryIons, 0);
-                    var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, i, theScan, commonParameters.DigestionParams);
-                    psmCrossSingle.BestScore = psmCrossSingle.Score;
-                    bestPsmCrossList.Add(psmCrossSingle);
+                    var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
+                    var pmmh = psmCrossSingle.GetTheoreticalFragmentIons(ProductTypes);
+                    psmCrossSingle.MatchedIons = MatchFragmentIons(theScan.TheScan.MassSpectrum, pmmh, commonParameters);
+                    psmCrossSingle.BestScore = CalculatePeptideScore(theScan.TheScan, psmCrossSingle.MatchedIons, 0);
+                    psmCrossSingle.XLTotalScore = psmCrossSingle.BestScore;
+                    psmCrossSingle.CrossType = PsmCrossType.Singe;
+                    psmCrossSingle.XlRank = new List<int> { ind };
                 }
                 //TO DO: add if the scan contains diagnostic ions
                 else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 200))
