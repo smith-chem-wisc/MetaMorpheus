@@ -101,8 +101,8 @@ namespace EngineLayer
                             var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
                             var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
                             var seqs3 = p.AllPsmsBelowOnePercentFDR;
-                            var seqs4 = pg[i].AllPsmsBelowOnePercentFDR;
-
+                            var seqs4 = pg[i].AllPsmsBelowOnePercentFDR; //worked to fix origianl issue of have protein group with unique peptide instead of single protien but seems to cause another issue
+                           
                             if (p != pg[i] && seqs1.SetEquals(seqs2) && seqs3.SetEquals(seqs4))
                             {
                                 pg[i].MergeProteinGroupWith(p);
