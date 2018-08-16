@@ -5,13 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="XL Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+        Title="XL/Gly Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="73*"/>
+            <ColumnDefinition Width="669*"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                     <Label Content="Task Name" />
@@ -370,10 +374,10 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                
+
             </DockPanel>
         </ScrollViewer>
-        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="5">
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
         </StackPanel>
