@@ -59,6 +59,9 @@
     <Reference Include="FlashLFQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.331\lib\net471\FlashLFQ.dll</HintPath>
     </Reference>
+    <Reference Include="itextsharp, Version=5.5.13.0, Culture=neutral, PublicKeyToken=8354ae6d2174ddca, processorArchitecture=MSIL">
+      <HintPath>..\packages\iTextSharp.5.5.13\lib\itextsharp.dll</HintPath>
+    </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.331.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.331\lib\net471\ManagedThermoHelperLayer.dll</HintPath>
     </Reference>
@@ -130,6 +133,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xaml">
@@ -153,7 +158,9 @@
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
     <Compile Include="MetaDraw\MetaDrawPsm.cs" />
+    <Compile Include="MetaDraw\PdfWriter.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
@@ -163,7 +170,6 @@
     </Compile>
     <Compile Include="Util\CollectionForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\ExperimentalDesignForDataGrid.cs" />
-    <Compile Include="MetaDraw\DrawParams.cs" />
     <Compile Include="Util\ForTreeView.cs" />
     <Compile Include="Util\GlobalGuiSettings.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
@@ -173,7 +179,7 @@
     <Compile Include="MetaUpdater.xaml.cs">
       <DependentUpon>MetaUpdater.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MetaDraw\MainViewModel.cs" />
+    <Compile Include="MetaDraw\PsmAnnotationViewModel.cs" />
     <Compile Include="Util\ModForTreeView.cs" />
     <Compile Include="Util\ModTypeForGrid.cs" />
     <Compile Include="Util\ModTypeForLoc.cs" />

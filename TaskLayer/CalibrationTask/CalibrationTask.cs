@@ -205,10 +205,10 @@ namespace TaskLayer
 
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
 
-                SucessfullyFinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
                 // finished calibrating this file
-                SucessfullyFinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 MyTaskResults.NewSpectra.Add(calibratedFilePath);
                 MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });

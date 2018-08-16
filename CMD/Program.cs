@@ -62,8 +62,19 @@ namespace MetaMorpheusCommandLine
                     MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
                     foreach (var db in p.Object.Databases)
+                    {
                         if (!Path.GetExtension(db).Equals(".fasta"))
+                        {
                             GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
+
+                            // print any error messages reading the mods to the console
+                            foreach (var error in GlobalVariables.ErrorsReadingMods)
+                            {
+                                Console.WriteLine(error);
+                            }
+                            GlobalVariables.ErrorsReadingMods.Clear();
+                        }
+                    }
 
                     List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 

@@ -208,7 +208,8 @@ namespace TaskLayer
                 deconvolutionMassTolerance: commonParams.DeconvolutionMassTolerance,
                 maxThreadsToUsePerFile: commonParams.MaxThreadsToUsePerFile,
                 listOfModsVariable: commonParams.ListOfModsVariable,
-                listOfModsFixed: commonParams.ListOfModsFixed
+                listOfModsFixed: commonParams.ListOfModsFixed,
+                qValueOutputFilter: commonParams.QValueOutputFilter
                 );
 
             return returnParams;
@@ -220,7 +221,7 @@ namespace TaskLayer
 
             var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
-            SucessfullyFinishedWritingFile(tomlFileName, new List<string> { displayName });
+            FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
@@ -260,7 +261,7 @@ namespace TaskLayer
                     file.WriteLine("MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
                     file.Write(MyTaskResults.ToString());
                 }
-                SucessfullyFinishedWritingFile(resultsFileName, new List<string> { displayName });
+                FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
             }
             catch (Exception e)
@@ -299,7 +300,7 @@ namespace TaskLayer
                     file.WriteLine("Databases:");
                     file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
                 }
-                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { displayName });
+                FinishedWritingFile(proseFilePath, new List<string> { displayName });
             }
 
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
@@ -355,14 +356,14 @@ namespace TaskLayer
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, double qValueCutOff)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var heh in items)
+                foreach (var psm in psms.Where(p => p.FdrInfo.QValue <= qValueCutOff && p.FdrInfo.QValueNotch <= qValueCutOff))
                 {
-                    output.WriteLine(heh.ToString(ModstoWritePruned));
+                    output.WriteLine(psm.ToString(modstoWritePruned));
                 }
             }
         }
@@ -374,7 +375,7 @@ namespace TaskLayer
 
         protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
 
-        protected void SucessfullyFinishedWritingFile(string path, List<string> nestedIDs)
+        protected void FinishedWritingFile(string path, List<string> nestedIDs)
         {
             FinishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path, nestedIDs));
         }
