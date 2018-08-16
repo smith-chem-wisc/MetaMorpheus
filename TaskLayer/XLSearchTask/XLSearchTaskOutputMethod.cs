@@ -130,7 +130,6 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + CommonParameters.BIons.ToString() + " Y " + CommonParameters.YIons.ToString() + " C " + CommonParameters.CIons.ToString() + " Z " + CommonParameters.ZdotIons.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Allowed Beta Precusor Mass Difference", value = XlSearchParameters.XlBetaPrecusorMsTl.ToString() });
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.id, value = item.monoisotopicMass.ToString() });

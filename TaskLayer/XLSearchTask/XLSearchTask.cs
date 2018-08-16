@@ -394,17 +394,17 @@ namespace TaskLayer
         public static CrosslinkerTypeClass GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
         {
             var crosslinker = new CrosslinkerTypeClass(
-            xlSearchParameters.UdXLkerResidues,
-        xlSearchParameters.UdXLkerResidues2,
-        xlSearchParameters.UdXLkerName,
-        xlSearchParameters.UdXLkerCleavable,
-        (xlSearchParameters.UdXLkerTotalMass.HasValue ? (double)xlSearchParameters.UdXLkerTotalMass : 9999),
-        (xlSearchParameters.UdXLkerShortMass.HasValue ? (double)xlSearchParameters.UdXLkerShortMass : 9999),
-        (xlSearchParameters.UdXLkerLongMass.HasValue ? (double)xlSearchParameters.UdXLkerLongMass : 9999),
-        (xlSearchParameters.UdXLkerLoopMass.HasValue ? (double)xlSearchParameters.UdXLkerLoopMass : 9999),
-        (xlSearchParameters.UdXLkerDeadendMassH2O.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassH2O : 9999),
-        (xlSearchParameters.UdXLkerDeadendMassNH2.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassNH2 : 9999),
-        (xlSearchParameters.UdXLkerDeadendMassTris.HasValue ? (double)xlSearchParameters.UdXLkerDeadendMassTris : 9999)
+                xlSearchParameters.UdXLkerResidues,
+                xlSearchParameters.UdXLkerResidues2,
+                xlSearchParameters.UdXLkerName,
+                xlSearchParameters.UdXLkerCleavable,
+                (xlSearchParameters.UdXLkerTotalMass.HasValue ? (double)xlSearchParameters.UdXLkerTotalMass : 9999),
+                (xlSearchParameters.UdXLkerShortMass.HasValue ? (double)xlSearchParameters.UdXLkerShortMass : 9999),
+                (xlSearchParameters.UdXLkerLongMass.HasValue ? (double)xlSearchParameters.UdXLkerLongMass : 9999),
+                (xlSearchParameters.UdXLkerTotalMass.HasValue ? (double)xlSearchParameters.UdXLkerTotalMass : 9999),
+                (xlSearchParameters.UdXLkerTotalMass.HasValue ? (double)xlSearchParameters.UdXLkerTotalMass + 18.0105646 : 9999),
+                (xlSearchParameters.UdXLkerTotalMass.HasValue ? (double)xlSearchParameters.UdXLkerTotalMass + 17.026549 : 9999),
+                (xlSearchParameters.UdXLkerTotalMass.HasValue ? (double)xlSearchParameters.UdXLkerTotalMass + 121.0739: 9999)
             );
             return crosslinker;
         }
