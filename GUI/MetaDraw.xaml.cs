@@ -12,10 +12,10 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using System;
-using System.Threading;
 using System.Data;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace MetaMorpheusGUI
 {
@@ -255,7 +255,7 @@ namespace MetaMorpheusGUI
                 int residue = bIon.IonNumber;
                 BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
             }
-            
+
             // draw c ions
             foreach (var cIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.C))
             {
@@ -280,7 +280,7 @@ namespace MetaMorpheusGUI
             // draw modifications
             int aa = 0;
             bool currentlyReadingMod = false;
-            for(int c = 0; c < psm.FullSequence.Length; c++)
+            for (int c = 0; c < psm.FullSequence.Length; c++)
             {
                 switch (psm.FullSequence[c])
                 {
@@ -304,6 +304,76 @@ namespace MetaMorpheusGUI
         private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
             (sender as DataGrid).UnselectAll();
+        }
+
+        private void PDFButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (dataGridScanNums.SelectedCells.Count == 0)
+            {
+                MessageBox.Show("Please select at least one scan to export");
+            }
+
+            int num = dataGridScanNums.SelectedItems.Count;
+            string writeDirectory = Path.Combine(Directory.GetParent(tsvResultsFilePath).FullName, "PDF");
+
+            if (!Directory.Exists(writeDirectory))
+            {
+                Directory.CreateDirectory(writeDirectory);
+            }
+
+            foreach (object selectedItem in dataGridScanNums.SelectedItems)
+            {
+                MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
+                ExportToPdf(psm, Path.Combine(writeDirectory, psm.ScanNum + "_" + psm.FullSequence + ".pdf"));
+            }
+
+            dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
+            MessageBox.Show(string.Format("{0} PDFs exported to " + writeDirectory, num));
+        }
+
+        private void ExportToPdf(MetaDrawPsm psm, string path)
+        {
+            System.Reflection.PropertyInfo[] temp = psm.GetType().GetProperties();
+
+            for (int i = 4; i < temp.Length; i++)
+            {
+                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
+            }
+            dataGridProperties.Items.Refresh();
+            DrawPsm(psm.ScanNum, psm.FullSequence);
+            
+            double wid = 0;
+            dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            foreach (DataGridColumn col in dataGridProperties.Columns)
+            {
+                wid += col.ActualWidth;
+            }
+            PDFOutPut.Background = Brushes.White;
+            PDFOutPut.ColumnDefinitions[0].Width = new GridLength(wid + 10);
+            PDFOutPut.Measure(new Size(wid + gbPSM.ActualWidth + 10, 600));
+            PDFOutPut.Arrange(new Rect(new Size(wid + gbPSM.ActualWidth + 10, 600)));
+            dataGridProperties.Measure(new Size(wid + 22, 600));
+            dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+
+            dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+            var rtb = new RenderTargetBitmap((int)(wid + gbPSM.ActualWidth) + 11, 600, 96, 96, PixelFormats.Pbgra32);
+
+            rtb.Render(PDFOutPut);
+            BitmapFrame bf = BitmapFrame.Create(rtb);
+
+            var encoder = new BmpBitmapEncoder();
+            encoder.Frames.Add(bf);
+            using (var stream = new MemoryStream())
+            {
+                encoder.Save(stream);
+                var img = System.Drawing.Bitmap.FromStream(stream);
+                PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
+            }
+
+            dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
+            dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
+            PDFOutPut.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
         }
     }
 }
