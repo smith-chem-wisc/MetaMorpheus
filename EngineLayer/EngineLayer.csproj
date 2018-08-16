@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Contaminants\MetaMorpheusContaminants.xml">
+    <None Update="Contaminants\MetaMorpheusContaminants.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\combos.txt">
