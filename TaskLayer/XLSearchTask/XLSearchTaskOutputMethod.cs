@@ -82,7 +82,7 @@ namespace TaskLayer
                     }
                 }
             }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+            FinishedWritingFile(writtenFile, nestedIds);
         }
 
         public void WritePepXML_xl(List<PsmCross> items, List<Protein> proteinList, string databasePath, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
@@ -111,8 +111,6 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "threads", value = "" });
                 para.Add(new pepXML.Generated.nameValueType { name = "database", value = databasePath });
                 para.Add(new pepXML.Generated.nameValueType { name = "MS_data_file", value = items[0].FullFilePath });
-
-                para.Add(new pepXML.Generated.nameValueType { name = "Search with All Possible Beta Peptides", value = XlSearchParameters.CrosslinkSearchWithAllBeta.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-link Precusor Mass Tolence", value = XlSearchParameters.XlPrecusorMsTl.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker Type", value = crosslinker.CrosslinkerName });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker mass", value = crosslinker.TotalMass.ToString() });
@@ -412,7 +410,7 @@ namespace TaskLayer
             TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.xml"));
             _indexedSerializer.Serialize(writer, _pepxml);
             writer.Close();
-            SucessfullyFinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.xml"), nestedIds);
+            FinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.xml"), nestedIds);
         }
     }
 }

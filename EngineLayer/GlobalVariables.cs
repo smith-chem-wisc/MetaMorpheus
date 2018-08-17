@@ -69,6 +69,7 @@ namespace EngineLayer
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
         }
 
+        public static List<string> ErrorsReadingMods = new List<string>();
         // File locations
         public static string DataDir { get; }
         public static bool StopLoops { get; set; }

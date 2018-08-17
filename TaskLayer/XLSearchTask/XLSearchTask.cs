@@ -451,7 +451,7 @@ namespace TaskLayer
             {
                 output.Write(indexEngine);
             }
-            SucessfullyFinishedWritingFile(fileName, new List<string> { taskId });
+            FinishedWritingFile(fileName, new List<string> { taskId });
         }
 
         private string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
@@ -486,7 +486,7 @@ namespace TaskLayer
                 ser.Serialize(file, peptideIndex);
             }
 
-            SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+            FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
         }
 
         private void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<CompactPeptide> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
@@ -499,7 +499,7 @@ namespace TaskLayer
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
                 WriteIndexEngineParams(indexEngine, paramsFile);
-                SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
+                FinishedWritingFile(paramsFile, new List<string> { taskId });
 
                 Status("Running Index Engine...", new List<string> { taskId });
                 var indexResults = (IndexingResults)indexEngine.Run();
@@ -510,12 +510,12 @@ namespace TaskLayer
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
                 WritePeptideIndex(peptideIndex, peptideIndexFile);
-                SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+                FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
-                SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+                FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
                 //var fragmentIndexFileWithNGlyco = Path.Combine(output_folderForIndices, "fragmentIndexWithNGlyco.ind");
                 //WriteFragmentIndexNetSerializer(fragmentIndexWithNGlyco, fragmentIndexFileWithNGlyco);
                 //SucessfullyFinishedWritingFile(fragmentIndexFileWithNGlyco, new List<string> { taskId });
