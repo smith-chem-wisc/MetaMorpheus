@@ -1361,5 +1361,15 @@ namespace MetaMorpheusGUI
             }
             GlobalVariables.ErrorsReadingMods.Clear();
         }
+
+        private void AddContaminantXML_Click(object sender, RoutedEventArgs e)
+        {
+            string[] contaminantFiles = Directory.GetFiles(Path.Combine(GlobalVariables.DataDir, "Contaminants"));
+            foreach (string contaminantFile in contaminantFiles)
+            {
+                AddAFile(contaminantFile);
+            }
+            dataGridProteinDatabases.Items.Refresh();
+        }
     }
 }
