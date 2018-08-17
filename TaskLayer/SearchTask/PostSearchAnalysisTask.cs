@@ -322,10 +322,8 @@ namespace TaskLayer
 
                 proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
             }
-
-            //MultiProtease MBR capability code
+            
             // pass PSM info to FlashLFQ
-
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
             {
@@ -352,6 +350,7 @@ namespace TaskLayer
                 Parameters.FlashLfqResults = FlashLfqEngine.Run();
             }
 
+            //MultiProtease MBR capability code
             //Parameters.FlashLfqResults = null;
 
             //foreach (var proteasePsms in proteaseSortedPsms)
@@ -393,7 +392,7 @@ namespace TaskLayer
             //        }
             //    }
             //}
-            
+
             // get protein intensity back from FlashLFQ
             if (ProteinGroups != null && Parameters.FlashLfqResults != null)
             {

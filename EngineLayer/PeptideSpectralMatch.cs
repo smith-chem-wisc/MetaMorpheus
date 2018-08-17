@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-
 namespace EngineLayer
 {
     public class PeptideSpectralMatch
@@ -148,16 +147,8 @@ namespace EngineLayer
         {
             foreach (var cpKey in _CompactPeptides.Keys.ToList())
             {
-                var match = matching[cpKey].Where(p => p.DigestionParams.Protease == DigestionParams.Protease);
-                HashSet<PeptideWithSetModifications> matchingHash = new HashSet<PeptideWithSetModifications>();
-                foreach (var entry in match)
-                {
-                    matchingHash.Add(entry);
-                }
-               
-                    _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1, matchingHash);
-                
-                
+                _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1,
+                    new HashSet<PeptideWithSetModifications>(matching[cpKey].Where(p => p.DigestionParams.Protease == this.DigestionParams.Protease)));
             }
             var pepsWithMods = CompactPeptides.SelectMany(b => b.Value.Item2);
             IsDecoy = CompactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
@@ -340,7 +331,7 @@ namespace EngineLayer
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
-                return new Tuple<string, string>(returnString, null); 
+                return new Tuple<string, string>(returnString, null);
             }
         }
 
