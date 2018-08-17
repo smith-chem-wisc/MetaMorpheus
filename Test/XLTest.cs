@@ -197,7 +197,6 @@ namespace Test
             xlSearchParameters.UdXLkerResidues2 = "C";
             xlSearchParameters.UdXLkerTotalMass = -18.01056;
             var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
-            Assert.AreEqual(crosslinker.DeadendMassH2O, (double)9999);
         }
 
         [Test]
@@ -302,7 +301,7 @@ namespace Test
         //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match.
         public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
-            var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1005.498.ToMz(1), 1093.544.ToMz(1), 1043.561.ToMz(1) };
+            var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1004.495.ToMz(1), 1093.544.ToMz(1), 1043.561.ToMz(1) };
             var intensities1 = new double[] { 1, 1, 1, 1, 1 };
             var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1") };
@@ -324,9 +323,9 @@ namespace Test
             var mz4 = new double[] { 100, 201.1234, 244.1656, 391.2340 };
             var intensities4 = new double[] { 100, 1, 1, 1 };
             var MassSpectrum4 = new MzSpectrum(mz4, intensities4, false);
-            ScansHere.Add(new MsDataScan(MassSpectrum4, 1, 2, true, Polarity.Positive, 1.0,
-                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=4", 1005.498.ToMz(1),
-                1, 1, 1005.498.ToMz(1), 2, DissociationType.HCD, 1, 1005.498.ToMz(1)));
+            ScansHere.Add(new MsDataScan(MassSpectrum4, 4, 2, true, Polarity.Positive, 1.0,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=4", 1004.491.ToMz(1),
+                1, 1, 1004.491.ToMz(1), 2, DissociationType.HCD, 1, 1004.491.ToMz(1)));
 
             Scans = ScansHere.ToArray();
         }
