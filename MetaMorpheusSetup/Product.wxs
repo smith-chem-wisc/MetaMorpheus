@@ -38,7 +38,6 @@
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
       <ComponentGroupRef Id="ExcelDefaults"/>
-      <ComponentRef Id="RemoveNeo"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
       <ComponentRef Id="RemoveApp"/>
