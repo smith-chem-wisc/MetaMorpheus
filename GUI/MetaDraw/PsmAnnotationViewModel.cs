@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public class PsmAnnotationViewModel : INotifyPropertyChanged
     {
         private const double STROKE_THICKNESS_UNANNOTATED = 0.5;
         private const double STROKE_THICKNESS_ANNOTATED = 2.0;
@@ -50,14 +50,14 @@ namespace ViewModels
             }
         }
 
-        public MainViewModel()
+        public PsmAnnotationViewModel()
         {
             // Create and Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
             privateModel = new PlotModel { Title = "Spectrum Annotation", Subtitle = "using OxyPlot" };
         }
 
         // single peptides (not crosslink)
-        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, MetaDrawPsm psmToDraw, DrawParams drawParams)
+        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, MetaDrawPsm psmToDraw)
         {
             // x is m/z, y is intensity
             var spectrumMzs = msDataScan.MassSpectrum.XArray;
@@ -94,7 +94,7 @@ namespace ViewModels
                     peakAnnotation.FontWeight = 2.0;
                     peakAnnotation.TextColor = ionColor;
                     peakAnnotation.StrokeThickness = 0;
-                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + ") " + peak.ProductType.ToString().ToLower() + "-" + peak.IonNumber;
+                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + ") " + peak.ProductType.ToString().ToLower() + peak.IonNumber;
                     peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
                     peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
                     model.Annotations.Add(peakAnnotation);

@@ -7,7 +7,10 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -56,6 +59,44 @@ namespace Test
             psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, true);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+        }
+
+        [Test]
+        public static void TestPSMOutput()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                CommonParameters = new CommonParameters
+                (
+                    qValueOutputFilter: 1
+                )
+            };
+
+
+            SearchTask searchTask2 = new SearchTask()
+            {
+                CommonParameters = new CommonParameters
+                (
+                    qValueOutputFilter: 0
+                )
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engine.Run();
+            
+            string psmFile = Path.Combine(outputFolder, @"search\AllPSMs.psmtsv");
+            var lines = File.ReadAllLines(psmFile);
+            Assert.That(lines.Length == 12);
+
+            var engine2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engine2.Run();
+
+            var lines2 = File.ReadAllLines(psmFile);
+            Assert.That(lines2.Length == 7);
         }
     }
 }
