@@ -258,6 +258,8 @@ namespace TaskLayer
             foreach (var x in CommonParameters.DigestionParams.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
 
             CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass().SelectCrosslinker(XlSearchParameters.CrosslinkerType);
+            if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
+                crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
 
             uint proteinTot = Convert.ToUInt32(proteinList.Count);
 
