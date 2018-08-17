@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace EngineLayer
 {
@@ -50,17 +51,18 @@ namespace EngineLayer
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
 
+            string GlycanLocation = Path.Combine(DataDir, @"Data", @"pGlyco.gdb");
+            Glycans = LoadGlycanDatabase(GlycanLocation);
+
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
             PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
-            
+
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
-            {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-            }
             AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
             AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
 
@@ -80,42 +82,22 @@ namespace EngineLayer
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
+        public static IEnumerable<Glycan> Glycans { get; }
 
-        public static void AddMods(IEnumerable<Modification> modifications)
+        public static void AddMods(IEnumerable<Modification> enumerable)
         {
-            foreach (var mod in modifications)
+            foreach (var ye in enumerable)
             {
-                if (string.IsNullOrEmpty(mod.modificationType) || string.IsNullOrEmpty(mod.id))
-                {
-                    ErrorsReadingMods.Add(mod.ToString() + Environment.NewLine + " has null or empty modification type");
+                if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
+                    throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
+                if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType) && !b.Equals(ye)))
+                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) + Environment.NewLine + Environment.NewLine);
+                else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
                     continue;
-                }
-                if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType) && !b.Equals(mod)))
-                {
-                    ErrorsReadingMods.Add("Modification id and type are equal, but some fields are not! " +
-                        "The following mod was not read in: " + Environment.NewLine + mod.ToString());
-                    continue;
-                }
-                else if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType)))
-                {
-                    // same ID, same mod type, and same mod properties; continue and don't output an error message
-                    // this could result from reading in an XML database with mods annotated at the top
-                    // that are already loaded in MetaMorpheus
-                    continue;
-                }
-                else if(AllModsKnown.Any(m => m.id == mod.id))
-                {
-                    // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
-                    // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
-                    // so we don't know which mod to use, causing unnecessary ambiguity
-                    ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.modificationType + ":" + mod.id);
-                    continue;
-                }
                 else
                 {
-                    // no errors! add the mod
-                    _AllModsKnown.Add(mod);
-                    _AllModTypesKnown.Add(mod.modificationType);
+                    _AllModsKnown.Add(ye);
+                    _AllModTypesKnown.Add(ye.modificationType);
                 }
             }
         }
@@ -131,5 +113,93 @@ namespace EngineLayer
                 return psmString;
             }
         }
+
+        public static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
+        {
+            Dictionary<string, Protease> dict = new Dictionary<string, Protease>();
+            using (StreamReader proteases = new StreamReader(proteasesLocation))
+            {
+                proteases.ReadLine();
+
+                while (proteases.Peek() != -1)
+                {
+                    string line = proteases.ReadLine();
+                    string[][] fields = line.Split('\t').Select(x => x.Split('|')).ToArray();
+                    string name = fields[0][0];
+                    string[] preventing;
+                    List<Tuple<string, TerminusType>> sequences_inducing_cleavage = new List<Tuple<string, TerminusType>>();
+                    List<Tuple<string, TerminusType>> sequences_preventing_cleavage = new List<Tuple<string, TerminusType>>();
+                    for (int i = 0; i < fields[1].Length; i++)
+                    {
+                        if (!fields[1][i].Equals(""))
+                        {
+                            sequences_inducing_cleavage.Add(new Tuple<string, TerminusType>(fields[1][i], ((TerminusType)Enum.Parse(typeof(TerminusType), fields[3][i], true))));
+                            if (!fields[2].Contains(""))
+                            {
+                                preventing = (fields[2][i].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+                                for (int j = 0; j < preventing.Length; j++)
+                                {
+                                    sequences_preventing_cleavage.Add(new Tuple<string, TerminusType>(preventing[j], (TerminusType)Enum.Parse(typeof(TerminusType), fields[3][i], true)));
+                                }
+                            }
+                        }
+                    }
+                    var cleavage_specificity = ((CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), fields[4][0], true));
+                    string psi_ms_accession_number = fields[5][0];
+                    string psi_ms_name = fields[6][0];
+                    string site_regexp = fields[7][0];
+                    var protease = new Protease(name, sequences_inducing_cleavage, sequences_preventing_cleavage, cleavage_specificity, psi_ms_accession_number, psi_ms_name, site_regexp);
+                    dict.Add(protease.Name, protease);
+                }
             }
+            return dict;
+        }
+
+        public static IEnumerable<Glycan> LoadGlycanDatabase(string pGlycoLocation)
+        {
+            
+            using(StreamReader glycans = new StreamReader(pGlycoLocation))
+            {
+                List<string> theGlycanString = new List<string>();
+                
+                while (glycans.Peek() != -1)
+                {
+                    string line = glycans.ReadLine();
+                    theGlycanString.Add(line);
+                    if (line.StartsWith("End"))
+                    {
+                        yield return ReadGlycan(theGlycanString);
+                        theGlycanString = new List<string>();
+                    }
+
+                }
+            }
+        }
+
+        private static Glycan ReadGlycan(List<string> theGlycanString)
+        {
+            int _id = Convert.ToInt32(theGlycanString[1].Split('\t')[1]);
+            int _type = Convert.ToInt32(theGlycanString[1].Split('\t')[3]); ;
+            string _struc = theGlycanString[2].Split('\t')[1];
+            double _mass = Convert.ToDouble(theGlycanString[3].Split('\t')[1]);
+            var test = theGlycanString[4].Split('\t').Skip(1);
+            int id;
+            int[] _kind = theGlycanString[4].Split('\t').SelectMany(s=>int.TryParse(s, out id) ? new[] { id } : new int[0]).ToArray();
+            List<GlycanIon> glycanIons = new List<GlycanIon>();
+
+            for (int i = 0; i < theGlycanString.Count; i++)
+            {
+                if (theGlycanString[i].StartsWith("IonStruct"))
+                {
+                    double _ionMass = Convert.ToDouble(theGlycanString[i+1].Split('\t')[1]);
+                    id = 0;
+                    int[] _ionKind = theGlycanString[i+2].Split('\t').SelectMany(s => int.TryParse(s, out id) ? new[] { id } : new int[0]).ToArray();
+                    GlycanIon glycanIon = new GlycanIon(0, _ionMass, _ionKind);
+                    glycanIons.Add(glycanIon);
+                }
+            }
+            Glycan glycan = new Glycan(_id, _type, _struc, _mass, _kind, glycanIons);
+            return glycan;
+        }
+    }
 }
