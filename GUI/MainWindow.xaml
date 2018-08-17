@@ -171,9 +171,6 @@
                             <Button x:Name="addSearchTaskButton" Content="Search" Click="AddSearchTaskButton_Click" />
                             <Button x:Name="btnAddCrosslinkSearch" Content="XL Search" Click="BtnAddCrosslinkSearch_Click" />
                         </StackPanel>
-                        <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
-                            <Button x:Name="addNeoTaskButton" Content="New Neo Meta-Task" Click="AddNeoTaskButton_Click" />
-                        </StackPanel>-->
                         <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.Resources>
                                 <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
