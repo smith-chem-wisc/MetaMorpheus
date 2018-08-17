@@ -85,7 +85,7 @@ namespace Test
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
 
-            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("QValueTest", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engine.Run();
 
             string psmFile = Path.Combine(outputFolder, @"search\AllPSMs.psmtsv");
@@ -103,27 +103,17 @@ namespace Test
         public static void TestDecoyContaminantsFilter()
         {
 
-            DigestionParams digestionParams = new DigestionParams();
-            PeptideWithSetModifications pepWithSetMods = new Protein(
-                "MQQQQQQQ",
-                "accession1",
-                "org",
-                new List<Tuple<string, string>> { new Tuple<string, string>("geneNameType", "geneName") },
-                new Dictionary<int, List<Modification>> { { 2, new List<Modification> { new Modification("mod", "mod") } } },
-                name: "name",
-                full_name: "fullName",
-                sequenceVariations: new List<SequenceVariation> { new SequenceVariation(2, "P", "Q", "changed this sequence") })
-                    .Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
-            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
-            PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods.CompactPeptide(TerminusType.None), 1, 2, 3, scan, digestionParams);
-
             SearchTask searchTask = new SearchTask();
-            searchTask.SearchParameters.WriteDecoys = false;
-            searchTask.SearchParameters.WriteContaminants = false;
+            //searchTask.SearchParameters.WriteDecoys = false;
+            //searchTask.SearchParameters.WriteContaminants = false;
 
-            var engine = new engine
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("DecoyContaminantTest", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engine.Run();
+
 
         }
     }
