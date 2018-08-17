@@ -95,10 +95,11 @@ namespace Test
         [Test]
         public static void GlyTest_OxoniumIons()
         {
-            //Get MS2 scans.
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
-            var myMsDataFile = new GlyTestDataFile();
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).ToArray();
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/25170.mgf");
+            MyFileManager myFileManager = new MyFileManager(true);
+            var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).ToArray();
             //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
             var oxoinumIonsExist = TwoPassCrosslinkSearchEngine.ScanOxoniumIonFilter(listOfSortedms2Scans[0]);          
             Assert.AreEqual(true, oxoinumIonsExist);
@@ -175,8 +176,10 @@ namespace Test
             Assert.IsTrue(fragmentIndexAll.Count() > 0);
 
             //Get MS2 scans.
-            var myMsDataFile = new GlyTestDataFile();
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).ToArray();
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/25170.mgf");
+            MyFileManager myFileManager = new MyFileManager(true);
+            var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).ToArray();
             
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
@@ -185,7 +188,7 @@ namespace Test
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, null, TerminusType.None, commonParameters, new List<string> { }).Run();
 
-            DrawPeptideSpectralMatch(myMsDataFile.GetAllScansList()[1], newPsms.First());
+            DrawPeptideSpectralMatch(msDataFile.GetAllScansList()[0], newPsms.First());
         }
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
@@ -271,73 +274,6 @@ namespace Test
                 PdfExporter pdf = new PdfExporter { Width = 500, Height = 210 };
                 pdf.Export(model, stream);
             }
-        }
-    }
-
-    internal class GlyTestDataFile : MsDataFile
-    {
-        public GlyTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
-        {
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/25170.mgf");
-            double[] mz;
-            double[] intensity;
-            GetScan(raw, out mz, out intensity);
-
-            var mz1 = new double[] { 2644.06992.ToMz(2) };
-            var intensities1 = new double[] { 1 };
-            var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
-            var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Orbitrap, 1000, 1, null, "scan=1") };
-
-            var MassSpectrum2 = new MzSpectrum(mz, intensity, false);
-            ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 1.0,
-                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Orbitrap, intensity.Sum(), 1.0, null, "scan=2", 2644.06992.ToMz(2),
-                2, 1, 2644.06992.ToMz(2), 2, DissociationType.HCD, 1, 2644.06992.ToMz(2)));
-
-            Scans = ScansHere.ToArray();
-        }
-
-        public string FilePath
-        {
-            get
-            {
-                return "GlyTestDataFile";
-            }
-        }
-
-        public string Name
-        {
-            get
-            {
-                return "GlyTestDataFile";
-            }
-        }
-
-        public void ReplaceFirstScanArrays(double[] mz, double[] intensities)
-        {
-            MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
-            Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
-        }
-
-        private void GetScan(string filePath, out double[] mz, out double[]intensity)
-        {
-            List<double> mzList = new List<double>();
-            List<double> intensityList = new List<double>();
-            
-            using (StreamReader glycans = new StreamReader(filePath))
-            {            
-                while (glycans.Peek() != -1)
-                {
-                    string line = glycans.ReadLine();
-                    //TO DO: Read .mgf file in a smarter way.
-                    if (!line.StartsWith("B") && !line.StartsWith("T") && !line.StartsWith("R") && !line.StartsWith("P") && !line.StartsWith("T") && !line.StartsWith("C") && !line.StartsWith("E"))
-                    {       
-                        mzList.Add(Convert.ToDouble(line.Split(null)[0]));
-                        intensityList.Add(Convert.ToDouble(line.Split(null)[1]));
-                    }
-                }
-            }
-            mz = mzList.ToArray();
-            intensity = intensityList.ToArray();
         }
     }
 }
