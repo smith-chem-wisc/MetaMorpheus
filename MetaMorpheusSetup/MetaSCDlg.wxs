@@ -15,8 +15,9 @@
     <UI Id="newDlg">
       <Dialog Id="MetaSCDlg" Width="370" Height="270" Title="!(loc.SetupTypeDlg_Title)">
 
-        <Control Id="DesktopShortcutCheckBox" Type="CheckBox" X="20" Y="100" Width="290" Height="17" Property="INSTALLDESKTOPSHORTCUT" CheckBoxValue="1" Text="Create a shortcut for this program on the desktop." />
-        <Control Id="OverwriteAppDataCheckBox" Type="CheckBox" X="20" Y="160" Width="290" Height="17" Property="OVERWRITEAPPDATA" CheckBoxValue="1" Text="Overwrite modification databases and user settings with updated default versions" />
+        <Control Id="DesktopShortcutCheckBox" Type="CheckBox" X="20" Y="60" Width="290" Height="17" Property="INSTALLDESKTOPSHORTCUT" CheckBoxValue="1" Text="Create a shortcut for this program on the desktop." />
+        <Control Id="OverwriteAppDataCheckBox" Type="CheckBox" X="20" Y="120" Width="290" Height="17" Property="OVERWRITEAPPDATA" CheckBoxValue="1" Text="Overwrite modification databases and user settings with updated default versions" />
+        <Control Id="ExcelDefaultCheckBox" Type="CheckBox" X="20" Y="180" Width="290" Height="17" Property="EXCELDEFAULTPROPERTY" CheckBoxValue="1" Text="Make Excel Default File Reading Program for .tsv/.psmtsv files." />
         <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)" />
         <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Text="!(loc.WixUINext)" />
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
