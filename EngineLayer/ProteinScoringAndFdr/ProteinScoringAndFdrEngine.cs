@@ -47,14 +47,11 @@ namespace EngineLayer
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
                         foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
-                        {
-                            if (pepWithSetMods.DigestionParams.Protease == psm.DigestionParams.Protease)
-                            {
+                        {                           
                                 if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
                                     peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
                                 else
-                                    psmsForThisPeptide.Add(psm);
-                            }
+                                    psmsForThisPeptide.Add(psm);                            
                             
                         }
                     }
@@ -101,7 +98,7 @@ namespace EngineLayer
                             var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
                             var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
                             var seqs3 = p.AllPsmsBelowOnePercentFDR;
-                            var seqs4 = pg[i].AllPsmsBelowOnePercentFDR; //worked to fix origianl issue of have protein group with unique peptide instead of single protien but seems to cause another issue
+                            var seqs4 = pg[i].AllPsmsBelowOnePercentFDR; 
                            
                             if (p != pg[i] && seqs1.SetEquals(seqs2) && seqs3.SetEquals(seqs4))
                             {

@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+
 namespace EngineLayer
 {
     public class PeptideSpectralMatch
@@ -147,7 +148,16 @@ namespace EngineLayer
         {
             foreach (var cpKey in _CompactPeptides.Keys.ToList())
             {
-                _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1, matching[cpKey]);
+                var match = matching[cpKey].Where(p => p.DigestionParams.Protease == DigestionParams.Protease);
+                HashSet<PeptideWithSetModifications> matchingHash = new HashSet<PeptideWithSetModifications>();
+                foreach (var entry in match)
+                {
+                    matchingHash.Add(entry);
+                }
+               
+                    _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1, matchingHash);
+                
+                
             }
             var pepsWithMods = CompactPeptides.SelectMany(b => b.Value.Item2);
             IsDecoy = CompactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
@@ -158,8 +168,7 @@ namespace EngineLayer
             OneBasedEndResidueInProtein = Resolve(pepsWithMods.Select(b => b.OneBasedEndResidueInProtein)).Item2;
             ProteinLength = Resolve(pepsWithMods.Select(b => b.Protein.Length)).Item2;
             PeptideMonisotopicMass = Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).Item2;
-            var pepsWithModsProteaseMatch = pepsWithMods.Where(b => b.DigestionParams.Protease == DigestionParams.Protease);
-            ProteinAccesion = Resolve(pepsWithModsProteaseMatch.Select(b => b.Protein.Accession)).Item2;// maybe item 1 so we have accession into for groups?
+            ProteinAccesion = Resolve(pepsWithMods.Select(b => b.Protein.Accession)).Item2;
             Organism = Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item2;
             ModsIdentified = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).Item2;
             ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
