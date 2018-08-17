@@ -62,7 +62,8 @@ namespace EngineLayer.Indexing
                 sb.AppendLine("maxPeptideLength: " + digestionParams.MaxPeptideLength);
                 sb.AppendLine("maximumVariableModificationIsoforms: " + digestionParams.MaxModificationIsoforms);
             }
-            sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
+            sb.AppendLine("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
+            sb.Append("Add NGlyco fragments into index: " + _indexWithNGly.ToString());
             return sb.ToString();
         }
 

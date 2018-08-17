@@ -105,6 +105,21 @@ namespace Test
         }
 
         [Test]
+        public static void GlyTest_BinarySearch()
+        {
+            double[] array = new double[] { 3.44, 3.45, 4.55, 5.66 };
+            double x = 3.43;
+            double y = 4.44;
+            double z = 5.67;
+            var xid = Array.BinarySearch(array, x);
+            if (xid < 0) { xid = ~xid; }
+            var yid = Array.BinarySearch(array, y);
+            if (yid < 0) { yid = ~yid; }
+            var zid = Array.BinarySearch(array, z);
+            if (zid < 0) { zid = ~zid; }
+        }
+
+        [Test]
         public static void GlyTest_FragmentIons()
         {
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));

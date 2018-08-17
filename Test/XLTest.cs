@@ -87,7 +87,7 @@ namespace Test
         }
 
         [Test]
-        public static void XlTestXlPosCal()
+        public static void XlTest_XlPosCal()
         {
             var prot = new Protein("MNNNKQQQQ", null);
             Protease protease = new Protease("New Custom Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);

@@ -60,11 +60,11 @@ namespace EngineLayer.CrosslinkSearch
             this.Charge_2_3 = charge_2_3;
             if (_searchGlycan)
             {
-                Glycans = GlobalVariables.Glycans.ToArray();
+                groupedGlycans = GlobalVariables.Glycans.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
             }
         }
 
-        public Glycan[] Glycans { get; set; }
+        public Dictionary<double, List<Glycan>> groupedGlycans { get; set; }
         private static Dictionary<int, double> oxoniumIons = new Dictionary<int, double>()
         {
             { 126, 126.055 },
@@ -112,7 +112,7 @@ namespace EngineLayer.CrosslinkSearch
 
                     if (_searchGlycan)
                     {
-                        if (ScanOxoniumIonFilter(scan))
+                        if (!ScanOxoniumIonFilter(scan))
                             continue;     
                     }
                     // get fragment bins for this scan
@@ -559,36 +559,51 @@ namespace EngineLayer.CrosslinkSearch
                 //TO DO: add if the scan contains diagnostic ions
                 else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 200))
                 {                 
-                    var yL = theScan.PrecursorMass / (1 + XLPrecusorMsTl.Value / 1e6 ) - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
-                    var yR= theScan.PrecursorMass / (1 - XLPrecusorMsTl.Value / 1e6 ) - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
-                    //TO DO: binary search glycan based on mass
-                    //TO DO: indexing glycan
-                    var iL = Array.BinarySearch(Glycans.Select(p=>p.Mass).ToArray(), yL);
-                    if (iL < 0){ iL = ~iL;} else { while (iL > 0 && Glycans[iL - 1] == Glycans[iL]) { iL--; } }               
-                    var iR = Array.BinarySearch(Glycans.Select(p => p.Mass).ToArray(), yR);
-                    if (iR < 0){iR = ~iR-1;}
-                    else { while (iR < Glycans.Length && Glycans[iR + 1] == Glycans[iR]) { iR++; } }
-                    for (int inx = iL; inx <= iR; inx++)
+                    //Using glycanBoxes
+                    var possibleGlycanMass = theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
+                    var iD = Array.BinarySearch(groupedGlycans.Keys.ToArray(), possibleGlycanMass);
+                    if (iD < 0) { iD = ~iD; }
+                    if (iD < groupedGlycans.Count && iD > 0)
                     {
-                        var glycan = Glycans[inx];
-
-                        var psmCross = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
-                        psmCross.Glycan = glycan;
-                        var modPos = PsmCross.NGlyPosCal(psmCross.compactPeptide);
-                        var pmmhList = psmCross.GlyGetTheoreticalFramentIons(ProductTypes, Charge_2_3, modPos);
-                        psmCross.GetBestMatch(theScan, pmmhList, commonParameters);
-                        psmCross.XlRank = new List<int> { ind };
-                        bestPsmCrossList.Add(psmCross);
+                        if((groupedGlycans.Keys.ElementAt(iD) - possibleGlycanMass) > (possibleGlycanMass - groupedGlycans.Keys.ElementAt(iD-1))) { iD = iD-1; }
+                    }
+                    if (iD >= groupedGlycans.Count)
+                    {
+                        iD = iD - 1;
+                    }
+                    if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods + groupedGlycans.Keys.ElementAt(iD)) >=0)
+                    {
+                        foreach (var glycan in groupedGlycans.Values.ElementAt(iD))
+                        {
+                            var psmCross = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
+                            psmCross.Glycan = new List<Glycan> { glycan };
+                            var modPos = PsmCross.NGlyPosCal(psmCross.compactPeptide);
+                            var pmmhList = psmCross.GlyGetTheoreticalFramentIons(ProductTypes, Charge_2_3, modPos);
+                            psmCross.GetBestMatch(theScan, pmmhList, commonParameters);
+                            psmCross.XlRank = new List<int> { ind };
+                            bestPsmCrossList.Add(psmCross);
+                        }
                     }
                 }
             }
 
             if (bestPsmCrossList.Count != 0)
             {
-                bestPsmCross = bestPsmCrossList.OrderByDescending(p => p.BestScore).First();
+                bestPsmCrossList = bestPsmCrossList.OrderByDescending(p => p.BestScore).ToList();
+                bestPsmCross = bestPsmCrossList.First();
                 if (bestPsmCrossList.Count > 1)
                 {
                     bestPsmCross.DScore = Math.Abs(bestPsmCrossList.First().BestScore - bestPsmCrossList[1].BestScore);
+                    for (int iPsm = 1; iPsm < bestPsmCrossList.Count; iPsm++)
+                    {
+                        //TO DO: What if there are more than one peptide
+                        if (bestPsmCrossList[iPsm].BestScore == bestPsmCross.BestScore)
+                        {
+                            //if (bestPsmCrossList[iPsm].compactPeptide.CTerminalMasses == bestPsmCross.compactPeptide.CTerminalMasses)
+                                bestPsmCross.Glycan.Add(bestPsmCrossList[iPsm].Glycan.First());                            
+                        }
+
+                    }
                 }
             }
 

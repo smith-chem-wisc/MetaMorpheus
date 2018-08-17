@@ -12,9 +12,8 @@ namespace TaskLayer
             SearchGlycoWithBgYgIndex = false;
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSSO;
-            CrosslinkSearchTop = false;
+            CrosslinkSearchTop = true;
             CrosslinkSearchTopNum = 300;
-            CrosslinkSearchWithAllBeta = false;
             UdXLkerName = null;
             UdXLkerCleavable = false;
             UdXLkerShortMass = null;
@@ -38,12 +37,11 @@ namespace TaskLayer
         public bool SearchGlyco { get; set; }
         public bool SearchGlycoWithBgYgIndex { get ;set;}
         public DecoyType DecoyType { get; set; }
-        public bool DoLocalizationAnalysis { get; set; }
+        //public bool DoLocalizationAnalysis { get; set; }
 
         public CrosslinkerType CrosslinkerType { get; set; }
         public bool CrosslinkSearchTop { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
-        public bool CrosslinkSearchWithAllBeta { get; set; }
         public string UdXLkerName { get; set; }
         public bool UdXLkerCleavable { get; set; }
         public double? UdXLkerTotalMass { get; set; }

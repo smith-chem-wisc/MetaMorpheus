@@ -28,7 +28,7 @@ namespace EngineLayer.CrosslinkSearch
         public List<int> ModPositions { get; set; }
         public PsmCross BetaPsmCross { get; set; }
         public double DScore { get; set; }
-        public Glycan Glycan {get; set;}
+        public List<Glycan> Glycan {get; set;}
         public List<MatchedFragmentIon> MatchedIons { get; set; }
 
         public double XLTotalScore { get; set; } //alpha + beta psmCross
@@ -256,16 +256,16 @@ namespace EngineLayer.CrosslinkSearch
 
         public Dictionary<List<int>, List<TheoreticalFragmentIon>> GlyGetTheoreticalFramentIons(List<ProductType> productTypes, bool Charge_2_3, List<int> modPos)
         {
-            var diagnosticIons = Glycan.GetDiagnosticIons();
+            var diagnosticIons = Glycan.First().GetDiagnosticIons();
 
             Dictionary<List<int>, List<TheoreticalFragmentIon>> AllTheoreticalFragmentIonsLists = new Dictionary<List<int>, List<TheoreticalFragmentIon>>();
 
             List<TheoreticalFragmentIon> baseTheoreticalFragmentIons = GetTheoreticalFragmentIons(productTypes);
 
             double modMass = 0;
-            if (Glycan.Ions.Count != 0)
+            if (Glycan.First().Ions.Count != 0)
             {
-                modMass = Glycan.Ions.First().IonMass;
+                modMass = Glycan.First().Ions.First().IonMass;
             }
 
             foreach (var iPos in modPos)
@@ -289,7 +289,7 @@ namespace EngineLayer.CrosslinkSearch
                             else
                             {
                                 currentIons.Add(iIon);
-                                if (Glycan.Ions.Count != 0)
+                                if (Glycan.First().Ions.Count != 0)
                                 {
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                 }
@@ -300,7 +300,7 @@ namespace EngineLayer.CrosslinkSearch
                             {
                                 currentIons.Add(iIon);
                             }
-                            else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + Glycan.Mass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                            else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + Glycan.First().Mass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                             break;
                         case ProductType.Y:
                             if (iIon.IonNumber < iPos)
@@ -310,7 +310,7 @@ namespace EngineLayer.CrosslinkSearch
                             else
                             {
                                 currentIons.Add(iIon);
-                                if (Glycan.Ions.Count != 0)
+                                if (Glycan.First().Ions.Count != 0)
                                 {
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
 
@@ -322,14 +322,14 @@ namespace EngineLayer.CrosslinkSearch
                             {
                                 currentIons.Add(iIon);
                             }
-                            else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + Glycan.Mass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                            else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + Glycan.First().Mass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                             break;
                     }
                 }
 
-                for (int i = 0; i < Glycan.Ions.Count; i++)
+                for (int i = 0; i < Glycan.First().Ions.Count; i++)
                 {
-                    currentIons.Add(new TheoreticalFragmentIon(Glycan.Ions[i].IonMass + compactPeptide.MonoisotopicMassIncludingFixedMods, double.NaN, 1, ProductType.X, i));
+                    currentIons.Add(new TheoreticalFragmentIon(Glycan.First().Ions[i].IonMass + compactPeptide.MonoisotopicMassIncludingFixedMods, double.NaN, 1, ProductType.X, i));
                 }
 
                 if (Charge_2_3)
@@ -464,7 +464,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("QValue" + '\t');
             return sb.ToString();
         }
-
+        
         public static string GetTabSepHeaderSingle()
         {
             var sb = new StringBuilder();
@@ -512,7 +512,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("QValue" + '\t');
             sb.Append("GlyID" + '\t');
             sb.Append("GlyMass" + '\t');
-            sb.Append("GlyStruct" + '\t');
+            sb.Append("GlyStruct(H,N,A,G,F)" + '\t');
             return sb.ToString();
         }
 
@@ -578,9 +578,9 @@ namespace EngineLayer.CrosslinkSearch
 
             if (Glycan!=null)
             {
-                sb.Append(Glycan.GlyId); sb.Append("\t");
-                sb.Append(Glycan.Mass); sb.Append("\t");
-                sb.Append(Glycan.Struc); sb.Append("\t");
+                sb.Append(string.Join("|", Glycan.Select(p=>p.GlyId.ToString()).ToArray())); sb.Append("\t");
+                sb.Append(Glycan.First().Mass); sb.Append("\t");
+                sb.Append(string.Join("|", Glycan.First().Kind.Select(p=>p.ToString()).ToArray())); sb.Append("\t");
             }
 
             return sb.ToString();
