@@ -62,7 +62,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestPSMOutput()
+        public static void TestQValueFilter()
         {
             SearchTask searchTask = new SearchTask()
             {
@@ -97,6 +97,34 @@ namespace Test
 
             var lines2 = File.ReadAllLines(psmFile);
             Assert.That(lines2.Length == 7);
+        }
+
+        [Test]
+        public static void TestDecoyContaminantsFilter()
+        {
+
+            DigestionParams digestionParams = new DigestionParams();
+            PeptideWithSetModifications pepWithSetMods = new Protein(
+                "MQQQQQQQ",
+                "accession1",
+                "org",
+                new List<Tuple<string, string>> { new Tuple<string, string>("geneNameType", "geneName") },
+                new Dictionary<int, List<Modification>> { { 2, new List<Modification> { new Modification("mod", "mod") } } },
+                name: "name",
+                full_name: "fullName",
+                sequenceVariations: new List<SequenceVariation> { new SequenceVariation(2, "P", "Q", "changed this sequence") })
+                    .Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
+            MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods.CompactPeptide(TerminusType.None), 1, 2, 3, scan, digestionParams);
+
+            SearchTask searchTask = new SearchTask();
+            searchTask.SearchParameters.WriteDecoys = false;
+            searchTask.SearchParameters.WriteContaminants = false;
+
+            var engine = new engine
+
         }
     }
 }
