@@ -80,7 +80,7 @@ namespace MetaMorpheusGUI
             }
             catch (Exception e)
             {
-                GuiWarnHandler(null, new StringEventArgs("Could not get newest MM version from web: " + e.Message, null));
+                GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
         }
 
@@ -101,7 +101,8 @@ namespace MetaMorpheusGUI
                     JObject deserialized = JObject.Parse(json);
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
                     if (!assets.Contains("MetaMorpheusInstaller.msi"))
-                        throw new MetaMorpheusException("Necessary files do not exist!");
+                        throw new MetaMorpheusException("A new version of MetaMorpheus was detected, but the files haven't been" +
+                            " uploaded yet. Try again in a few minutes.");
                     NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
             }
