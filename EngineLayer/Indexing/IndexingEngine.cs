@@ -8,8 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
-using EngineLayer.CrosslinkSearch;
-using Chemistry;
 
 namespace EngineLayer.Indexing
 {
@@ -56,7 +54,7 @@ namespace EngineLayer.Indexing
                 sb.AppendLine("maxPeptideLength: " + digestionParams.MaxPeptideLength);
                 sb.AppendLine("maximumVariableModificationIsoforms: " + digestionParams.MaxModificationIsoforms);
             }
-            sb.AppendLine("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
+            sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
 

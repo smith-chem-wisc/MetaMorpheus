@@ -83,7 +83,7 @@ namespace Test
 
             //Run index engine
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams>
-            { commonParameters.DigestionParams }, commonParameters, 30000, xlSearchParameters.SearchGlycoWithBgYgIndex, new List<string>());
+            { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
 
             //Generate crosslinker, which is DSSO here.
@@ -257,7 +257,7 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, xlSearchParameters.SearchGlycoWithBgYgIndex, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, lp, 1, DecoyType.Reverse, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
