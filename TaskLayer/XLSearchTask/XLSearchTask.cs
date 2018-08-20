@@ -209,7 +209,7 @@ namespace TaskLayer
                             allPsmsXLFDR = allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore).ToList();
                             var allPsmsXLFDRGroup = GroupCrosslinks(allPsmsXLFDR);
                             var writtenFileCrossGroup = Path.Combine(OutputFolder, "allPsmsXLFDRGroup" + ".mytsv");
-                            WritePsmCrossToTsv(allPsmsXLFDR, writtenFileCrossGroup, 2);
+                            WritePsmCrossToTsv(allPsmsXLFDRGroup, writtenFileCrossGroup, 2);
                         }
                         catch (Exception)
                         {
@@ -218,15 +218,12 @@ namespace TaskLayer
 
                         var writtenFileSingle = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
                         WritePsmCrossToTsv(singlePsmsFDR, writtenFileSingle, 1);
-                        //WriteSingleToTsv(singlePsmsFDR, OutputFolder, "single_fdr", new List<string> { taskId });
 
                         var writtenFileLoop = Path.Combine(OutputFolder, "loop_fdr" + ".mytsv");
                         WritePsmCrossToTsv(loopPsmsFDR, writtenFileLoop, 1);
-                        //WriteSingleToTsv(loopPsmsFDR, OutputFolder, "loop_fdr", new List<string> { taskId });
 
                         var writtenFileDeadend = Path.Combine(OutputFolder, "deadend_fdr" + ".mytsv");
                         WritePsmCrossToTsv(deadendPsmsFDR, writtenFileDeadend, 1);
-                        //WriteSingleToTsv(deadendPsmsFDR, OutputFolder, "deadend_fdr", new List<string> { taskId });
                     }
 
                     if (XlSearchParameters.XlOutPepXML)
@@ -488,7 +485,6 @@ namespace TaskLayer
                 var indexResults = (IndexingResults)indexEngine.Run();
                 peptideIndex = indexResults.PeptideIndex;
                 fragmentIndex = indexResults.FragmentIndex;
-                //fragmentIndexWithNGlyco = indexResults.FragmentIndexNgly;
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
@@ -499,9 +495,6 @@ namespace TaskLayer
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
-                //var fragmentIndexFileWithNGlyco = Path.Combine(output_folderForIndices, "fragmentIndexWithNGlyco.ind");
-                //WriteFragmentIndexNetSerializer(fragmentIndexWithNGlyco, fragmentIndexFileWithNGlyco);
-                //SucessfullyFinishedWritingFile(fragmentIndexFileWithNGlyco, new List<string> { taskId });
             }
             else
             {
@@ -516,8 +509,6 @@ namespace TaskLayer
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
-                //using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndexWithNGlyco.ind")))
-                //    fragmentIndexWithNGlyco = (List<int>[])ser.Deserialize(file);
             }
         }
     }

@@ -12,7 +12,6 @@ namespace EngineLayer.CrosslinkSearch
     public class TwoPassCrosslinkSearchEngine : MetaMorpheusEngine
     {
         protected const int FragmentBinsPerDalton = 1000;
-        protected double[] diognosticIons = new double[3] {138.0545, 204.0864, 366.14};
         protected readonly List<int>[] FragmentIndex;
         protected readonly PeptideSpectralMatch[] GlobalPsms;
         protected readonly List<PsmCross> GlobalPsmsCross;
@@ -26,7 +25,6 @@ namespace EngineLayer.CrosslinkSearch
 
         //Crosslink parameters
         private bool _searchGlycan;
-        private bool _searchGlycanBgYgIndex;
         private readonly CrosslinkerTypeClass Crosslinker;
         private readonly bool CrosslinkSearchTop;
         private readonly int CrosslinkSearchTopNum;
@@ -119,13 +117,6 @@ namespace EngineLayer.CrosslinkSearch
                     }
 
                     // first-pass scoring
-                    ////TO DO:Diagnostic ion trigger
-                    //var theByteScoreCutoff = byteScoreCutoff;
-                    //if (_searchGlycan && _searchGlycanBgYgIndex)
-                    //{
-                    //    theByteScoreCutoff = 2;
-                    //    IndexedScoring(allBinsToSearch, scoringTableGly, theByteScoreCutoff, idsOfPeptidesPossiblyObservedGly, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, FragmentIndexGly);
-                    //}
                     IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, FragmentIndex);
                     
                     // done with indexed scoring; refine scores and create PSMs
@@ -136,7 +127,7 @@ namespace EngineLayer.CrosslinkSearch
                             foreach (var iG in idsOfPeptidesPossiblyObservedGly)
                             {
                                 if (!idsOfPeptidesPossiblyObserved.Contains(iG))
-                                    idsOfPeptidesPossiblyObserved.Add(iG);
+                                { idsOfPeptidesPossiblyObserved.Add(iG); }
                                 scoringTable[iG] += scoringTableGly[iG];
                             }
                         }
@@ -277,10 +268,6 @@ namespace EngineLayer.CrosslinkSearch
                 //Single Peptide
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
                 {
-                    //var productMasses = theScanBestPeptide[ind].BestPeptide.ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes);
-                    //Array.Sort(productMasses);
-                    //double score = CalculatePeptideScoreOld(theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, theScan.PrecursorMass, DissociationTypes, AddComplementaryIons, 0);
-                    //var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, i, theScan, commonParameters.DigestionParams);
                     var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
                     var pmmh = psmCrossSingle.GetTheoreticalFragmentIons(ProductTypes);
                     psmCrossSingle.MatchedIons = MatchFragmentIons(theScan.TheScan.MassSpectrum, pmmh, commonParameters);

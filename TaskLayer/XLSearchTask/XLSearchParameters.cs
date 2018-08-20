@@ -37,8 +37,6 @@ namespace TaskLayer
         public bool SearchGlyco { get; set; }
         public bool SearchGlycoWithBgYgIndex { get ;set;}
         public DecoyType DecoyType { get; set; }
-        //public bool DoLocalizationAnalysis { get; set; }
-
         public CrosslinkerType CrosslinkerType { get; set; }
         public bool CrosslinkSearchTop { get; set; }
         public int CrosslinkSearchTopNum { get; set; }

@@ -170,7 +170,6 @@ namespace Test
             //Test Output
             var task = new XLSearchTask();
             task.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", new List<string> { });
-            //task.WriteSingleToTsv(newPsms.Where(p => p.CrosslinkInfo.CrossType == PsmCrossType.Singe).ToList(), TestContext.CurrentContext.TestDirectory, "singlePsms", new List<string> { });
             var writtenFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "singlePsms" + ".mytsv");
             task.WritePsmCrossToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Singe).ToList(), writtenFile, 1);
 

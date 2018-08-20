@@ -95,7 +95,9 @@ namespace EngineLayer.CrosslinkSearch
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + crosslinker.CleaveMassLong, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                 }
                                 else
+                                {
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass + crosslinker.TotalMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
+                                }
                             }
                             break;
                         case ProductType.C:
@@ -107,9 +109,9 @@ namespace EngineLayer.CrosslinkSearch
                             break;
                         case ProductType.Y:
                             if (iIon.IonNumber < compactPeptide.CTerminalMasses.Length - iPos + 2)
-                                currentIons.Add(iIon);
+                            { currentIons.Add(iIon); }
                             else
-                            {                    
+                            {
                                 if (crosslinker.Cleavable)
                                 {
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + crosslinker.CleaveMassShort, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
@@ -123,6 +125,8 @@ namespace EngineLayer.CrosslinkSearch
                             if (iIon.IonNumber < compactPeptide.CTerminalMasses.Length - iPos + 2)
                                 currentIons.Add(iIon);
                             else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass + crosslinker.TotalMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                            break;
+                        default:
                             break;
                     }
                 }
