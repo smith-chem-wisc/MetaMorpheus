@@ -86,7 +86,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         case ProductType.BnoB1ions:
                             if (iIon.IonNumber < iPos)
-                                currentIons.Add(iIon);
+                            { currentIons.Add(iIon); }
                             else
                             {
                                 if (crosslinker.Cleavable)
@@ -118,12 +118,12 @@ namespace EngineLayer.CrosslinkSearch
                                     currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + crosslinker.CleaveMassLong, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
                                 }
                                 else
-                                    currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass + crosslinker.TotalMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber));
+                                { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass + crosslinker.TotalMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                             }
                             break;
                         case ProductType.Zdot:
                             if (iIon.IonNumber < compactPeptide.CTerminalMasses.Length - iPos + 2)
-                                currentIons.Add(iIon);
+                            { currentIons.Add(iIon); }
                             else { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass + crosslinker.TotalMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
                             break;
                         default:
@@ -200,6 +200,8 @@ namespace EngineLayer.CrosslinkSearch
                                         currentIons.Add(iIon);
                                     }
                                     else if (iIon.IonNumber >= compactPeptide.CTerminalMasses.Length - modPos[iPos] + 2) { currentIons.Add(new TheoreticalFragmentIon(iIon.Mass + modMass + crosslinker.LoopMass, double.NaN, 1, iIon.ProductType, iIon.IonNumber)); }
+                                    break;
+                                default:
                                     break;
                             }
                         }

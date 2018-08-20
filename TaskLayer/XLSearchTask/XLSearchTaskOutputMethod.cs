@@ -15,7 +15,7 @@ namespace TaskLayer
         public void WritePsmCrossToTsv(List<PsmCross> items, string filePath, int writeType)
         {
             if (items.Count == 0)
-                return;
+            { return; }
 
             using (StreamWriter output = new StreamWriter(filePath))
             {
