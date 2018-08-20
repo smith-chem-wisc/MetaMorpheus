@@ -46,14 +46,14 @@ namespace Test
                 scoreCutoff: 1,
                 addCompIons: false);
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, null, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters, new List<string>()).Run();
 
             CommonParameters CommonParameters2 = new CommonParameters(
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
                 scoreCutoff: 1,
                 addCompIons: true);
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters2, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray2, null, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, CommonParameters2, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
             double scoreF = allPsmsArray[0].Score;

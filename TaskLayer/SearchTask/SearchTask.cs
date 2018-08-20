@@ -148,7 +148,10 @@ namespace TaskLayer
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
-                var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                // Search target peptides (and decoy database if concatenated)
+                PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                PeptideSpectralMatch[][] fileSpecificDecoyPsms = new PeptideSpectralMatch[CommonParameters.NumDecoyDatabases][];
+
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
@@ -213,7 +216,7 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, massDiffAcceptor, combinedParams, thisId).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, fileSpecificDecoyPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, massDiffAcceptor, combinedParams, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }

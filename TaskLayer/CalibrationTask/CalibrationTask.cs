@@ -299,6 +299,7 @@ namespace TaskLayer
             var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters.DoPrecursorDeconvolution, combinedParameters.UseProvidedPrecursorInfo, combinedParameters.DeconvolutionIntensityRatio, combinedParameters.DeconvolutionMaxAssumedChargeState, combinedParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[][] allDecoyPsmsArray = new PeptideSpectralMatch[CommonParameters.NumDecoyDatabases][];
 
             List<ProductType> productTypes = new List<ProductType>();
             if (combinedParameters.BIons)
@@ -313,7 +314,7 @@ namespace TaskLayer
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productTypes, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new ClassicSearchEngine(allPsmsArray, allDecoyPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productTypes, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> allPsms = allPsmsArray.Where(p => p != null).ToList();
 

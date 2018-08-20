@@ -43,6 +43,14 @@ namespace EngineLayer
             MatchedFragmentIons = new List<MatchedFragmentIon>();
         }
 
+        public PeptideSpectralMatch(CompactPeptideBase peptide, PeptideWithSetModifications realPeptide, int notch, double score, int scanIndex, IScan scan, List<MatchedFragmentIon> matchedFragmentIons, DigestionParams digestionParams)
+            : this(peptide, notch, score, scanIndex, scan, digestionParams)
+        {
+            Peptide = realPeptide;
+            MatchedFragmentIons = matchedFragmentIons ?? new List<MatchedFragmentIon>();
+        }
+
+        public PeptideWithSetModifications Peptide { get; private set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
@@ -118,7 +126,34 @@ namespace EngineLayer
             {
                 _CompactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
             }
-            else if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
+            else if (Score - RunnerUpScore > ToleranceForScoreDifferentiation) // score beats runner up score
+            {
+                RunnerUpScore = score;
+            }
+        }
+
+        public void AddOrReplace(CompactPeptideBase compactPeptide, PeptideWithSetModifications peptide, double score, int notch, List<MatchedFragmentIon> matchedFragmentIons, bool reportAllAmbiguity)
+        {
+            MatchedFragmentIons = matchedFragmentIons ?? new List<MatchedFragmentIon>();
+            if (score - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
+            {
+                _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
+                {
+                    { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
+                };
+                if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
+                {
+                    RunnerUpScore = Score;
+                }
+                Score = score;
+                Peptide = peptide;
+            }
+            else if (score - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
+            {
+                _CompactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
+                Peptide = peptide;
+            }
+            else if (Score - RunnerUpScore > ToleranceForScoreDifferentiation) // score beats runner up score
             {
                 RunnerUpScore = score;
             }

@@ -1063,12 +1063,10 @@ namespace MetaMorpheusGUI
                 switch (preRunTask.metaMorpheusTask.TaskType)
                 {
                     case MyTask.Search:
-
                         var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
                         searchDialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + searchDialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
-
                         return;
 
                     case MyTask.Gptmd:

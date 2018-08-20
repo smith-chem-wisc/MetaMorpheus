@@ -263,7 +263,7 @@
                                                 </TextBlock>
                                             </CheckBox.ToolTip>
                                         </CheckBox>
-                                        <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="RadioButtonReverseDecoy_Checked">
                                             <RadioButton.ToolTip>
                                                 <TextBlock>
                                                     Generate decoy sequences by reversing the original sequences. 
@@ -272,7 +272,7 @@
                                                 </TextBlock>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
-                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="RadioButtonSlideDecoy_Checked">
                                             <RadioButton.ToolTip>
                                                 <TextBlock>
                                                     Generate decoy sequences via a non-random shuffle of the original sequences. 
@@ -281,6 +281,25 @@
                                                 </TextBlock>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
+                                        <RadioButton x:Name="RadioButtonShuffleDecoy" Content="Generate shuffled decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton.ToolTip>
+                                                <TextBlock>
+                                                    Generate decoy sequences via a random shuffle of the original sequences, while maintaining cleavage sites.
+                                                   <LineBreak/>
+                                                    Methionine is fixed at the N-terminus.
+                                                </TextBlock>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="NumDecoyDatabasesLabel" Content="Number of Decoy Databases" />
+                                            <TextBox x:Name="NumDecoyDatabasesTextBox" IsEnabled="{Binding IsChecked, ElementName=RadioButtonShuffleDecoy}" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <TextBox.ToolTip>
+                                                    <TextBlock>
+                                                    Number of shuffled decoy databases to generate for average target-decoy control method (aTDC).
+                                                    </TextBlock>
+                                                </TextBox.ToolTip>
+                                            </TextBox>
+                                        </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxMissedCleavagesLabel" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox"  PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">

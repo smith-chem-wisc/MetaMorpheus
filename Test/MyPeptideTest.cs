@@ -44,10 +44,10 @@ namespace Test
                     maxMissedCleavages: 0,
                     minPeptideLength: 1,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), CommonParameters, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, null, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), CommonParameters, new List<string>());
 
             cse.Run();
-            Assert.AreEqual(globalPsms[0].MatchedFragmentIons.Count, 3);
+            Assert.AreEqual(3, globalPsms[0].MatchedFragmentIons.Count);
         }
 
         [Test]
@@ -76,7 +76,7 @@ namespace Test
                     minPeptideLength: 1,
                     maxModificationIsoforms: int.MaxValue,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), CommonParameters, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, null, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), CommonParameters, new List<string>());
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -109,7 +109,7 @@ namespace Test
                     minPeptideLength: 1,
                     maxModificationIsoforms: int.MaxValue,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), CommonParameters, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, null, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), CommonParameters, new List<string>());
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -165,7 +165,7 @@ namespace Test
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
 
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), CommonParameters, new List<string>());
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, null, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), CommonParameters, new List<string>());
 
             cse.Run();
             Assert.IsNull(globalPsms[0]);
