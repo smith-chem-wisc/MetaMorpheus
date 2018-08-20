@@ -15,6 +15,11 @@ using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+using OxyPlot.Annotations;
+
 
 namespace Test
 {
@@ -292,7 +297,92 @@ namespace Test
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
 
-            GlyTest.DrawPeptideSpectralMatch(msDataFile.GetAllScansList()[0], newPsms.First());
+            DrawPeptideSpectralMatch(msDataFile.GetAllScansList()[0], newPsms.First());
+        }
+
+        private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
+        { { ProductType.B, OxyColors.Blue },
+          { ProductType.BnoB1ions, OxyColors.Blue },
+          { ProductType.Y, OxyColors.Red },
+          { ProductType.C, OxyColors.ForestGreen },
+          { ProductType.Zdot, OxyColors.Orange },
+         { ProductType.X, OxyColors.Violet },
+        { ProductType.None, OxyColors.Purple }};
+
+        public static void DrawPeptideSpectralMatch(MsDataScan msDataScan, PsmCross psmToDraw)
+        {
+            // x is m/z, y is intensity
+            var spectrumMzs = msDataScan.MassSpectrum.XArray;
+            var spectrumIntensities = msDataScan.MassSpectrum.YArray;
+
+            string subTitle = psmToDraw.FullSequence;
+            if (psmToDraw.BetaPsmCross != null)
+            {
+                subTitle += "-" + psmToDraw.BetaPsmCross.FullSequence;
+            }
+            PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subTitle };
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
+            model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
+
+            LineSeries[] allIons = new LineSeries[spectrumMzs.Length];
+
+            // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
+            if (psmToDraw != null)
+            {
+                if (psmToDraw.BetaPsmCross != null)
+                {
+                    psmToDraw.MatchedIons = psmToDraw.MatchedIons.Concat(psmToDraw.BetaPsmCross.MatchedIons).ToList();
+                }
+                foreach (var peak in psmToDraw.MatchedIons)
+                {
+                    OxyColor ionColor = productTypeDrawColors[peak.TheoreticalFragmentIon.ProductType];
+
+                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.Mz).Value;
+
+                    // peak line
+                    allIons[i] = new LineSeries();
+                    allIons[i].Color = ionColor;
+                    allIons[i].StrokeThickness = 1;
+                    allIons[i].Points.Add(new DataPoint(peak.Mz, 0));
+                    allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
+
+                    // peak annotation
+                    var peakAnnotation = new TextAnnotation();
+                    peakAnnotation.TextRotation = -60;
+                    peakAnnotation.Font = "Arial";
+                    peakAnnotation.FontSize = 4;
+                    peakAnnotation.FontWeight = 1.0;
+                    peakAnnotation.TextColor = ionColor;
+                    peakAnnotation.StrokeThickness = 0;
+                    //string gly = peak.TheoreticalFragmentIon.ProductType == ProductType.None ? "-Hex" : "";
+                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + "@+" + peak.TheoreticalFragmentIon.Charge.ToString() + ") " + peak.TheoreticalFragmentIon.ProductType.ToString().ToLower().First() + "-" + peak.TheoreticalFragmentIon.IonNumber;
+                    peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
+                    peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
+                    model.Annotations.Add(peakAnnotation);
+
+                    model.Series.Add(allIons[i]);
+                }
+            }
+
+            for (int i = 0; i < spectrumMzs.Length; i++)
+            {
+                allIons[i] = new LineSeries();
+                allIons[i].Color = OxyColors.DimGray;
+                allIons[i].StrokeThickness = 0.5;
+                allIons[i].Points.Add(new DataPoint(spectrumMzs[i], 0));
+                allIons[i].Points.Add(new DataPoint(spectrumMzs[i], spectrumIntensities[i]));
+                model.Series.Add(allIons[i]);
+            }
+
+            // Axes are created automatically if they are not defined
+
+            // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
+            using (var stream = File.Create(Path.Combine(TestContext.CurrentContext.TestDirectory, psmToDraw.ScanNumber + ".pdf")))
+            {
+                PdfExporter pdf = new PdfExporter { Width = 500, Height = 210 };
+                pdf.Export(model, stream);
+            }
         }
     }
 

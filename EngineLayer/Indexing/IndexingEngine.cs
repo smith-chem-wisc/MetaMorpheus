@@ -139,11 +139,7 @@ namespace EngineLayer.Indexing
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
                 var validFragments = peptidesSortedByMass[peptideId].ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes).Distinct().Where(p => !Double.IsNaN(p));
-                if (_indexWithNGly)
-                {
-                    var validFragmentsNGly = GenerateBgYgFragments(peptidesSortedByMass[peptideId], ProductTypes).Distinct().Where(p => !Double.IsNaN(p));
-                    validFragments = validFragments.Concat(validFragmentsNGly);
-                }
+
                 foreach (var theoreticalFragmentMass in validFragments)
                 {
                     if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
@@ -168,50 +164,6 @@ namespace EngineLayer.Indexing
             }
 
             return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
-        }
-
-        private List<double> GenerateBgYgFragments(CompactPeptide compactPeptide, List<ProductType> productTypes)
-        {
-            var len = compactPeptide.CTerminalMasses.Length;
-            bool containsB = productTypes.Contains(ProductType.B);
-            bool containsBnoB1 = productTypes.Contains(ProductType.BnoB1ions);
-            bool containsY = productTypes.Contains(ProductType.Y);
-
-            var modPos = PsmCross.NGlyPosCal(compactPeptide);
-
-            List<double> massesToReturn = new List<double>();
-
-            foreach (var iPos in modPos)
-            {
-                if (compactPeptide.NTerminalMasses != null)
-                {
-                    for (int j = 0; j < compactPeptide.NTerminalMasses.Length; j++)
-                    {
-                        var hm = compactPeptide.NTerminalMasses[j];
-                        if ((containsB || (containsBnoB1 && j > 0)) && j >= iPos)
-                        {
-                            //massesToReturn.Add( ClassExtensions.RoundedDouble(hm + 260).Value);
-                            massesToReturn.Add(hm + hexNAcMass);
-                            massesToReturn.Add(hm + hexNAcCrossRingMass);
-                        }
-                    }
-                }
-                if (compactPeptide.CTerminalMasses != null)
-                {
-                    for (int j = 0; j < compactPeptide.CTerminalMasses.Length; j++)
-                    {
-                        var hm = compactPeptide.CTerminalMasses[j];
-                        if (containsY && j >= len - iPos + 2)
-                        {
-                            //massesToReturn.Add(ClassExtensions.RoundedDouble(hm + waterMonoisotopicMass + 260).Value);
-                            massesToReturn.Add(hm + waterMonoisotopicMass + hexNAcMass);
-                            massesToReturn.Add(hm + waterMonoisotopicMass + hexNAcCrossRingMass);
-                        }
-                    }
-                }
-            }
-
-            return massesToReturn;
         }
     }
 }

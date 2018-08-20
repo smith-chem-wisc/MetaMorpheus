@@ -131,10 +131,9 @@ namespace MetaMorpheusGUI
         {
             //Crosslink search para
             RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
-            RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
-            CkbSearchGlycoWithBgYgIndex.IsChecked = task.XlSearchParameters.SearchGlycoWithBgYgIndex;
+            //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
+            //CkbSearchGlycoWithBgYgIndex.IsChecked = task.XlSearchParameters.SearchGlycoWithBgYgIndex;
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
-            //cbFragmentation.SelectedIndex = (int)task.XlSearchParameters.FragmentationType;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.CrosslinkSearchTop;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
@@ -256,8 +255,8 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
-            TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
+            //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
+            //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTop = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;

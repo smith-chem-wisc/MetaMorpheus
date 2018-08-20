@@ -138,23 +138,6 @@ namespace TaskLayer
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, OutputFolder, crosslinker, terminusType, CommonParameters, new List<string> { taskId }).Run();
 
-            if (XlSearchParameters.SearchGlyco)
-            {
-                //TO DO: there may have a bug. I have to filter the following loopPsms, deadendPsms with a BestScore higher than 2, Or some of the Psms will have everything be 0!
-                var allPsmsGly = allPsms.Where(p => p.Glycan != null && p.BestScore>2).OrderByDescending(p=>p.BestScore).ToList();
-                 foreach (var item in allPsmsGly)
-                {
-                    if (item.OneBasedStartResidueInProtein.HasValue)
-                    {
-                        item.XlProteinPos = item.OneBasedStartResidueInProtein.Value + item.ModPositions.First() - 1;
-                    }
-                }
-                var allPsmsGlyFDR = SingleFDRAnalysis(allPsmsGly).ToList();
-                var writtenFileInter = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
-                WritePsmCrossToTsv(allPsmsGlyFDR, writtenFileInter, 3);
-
-            }
-            else
             {
                 var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).Where(p => p.BestScore >= CommonParameters.ScoreCutoff && p.BetaPsmCross.BestScore >= CommonParameters.ScoreCutoff).ToList();
                 foreach (var item in allPsmsXL)
