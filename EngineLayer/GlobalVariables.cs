@@ -56,7 +56,7 @@ namespace EngineLayer
             PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
-            
+
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
@@ -103,7 +103,7 @@ namespace EngineLayer
                     // that are already loaded in MetaMorpheus
                     continue;
                 }
-                else if(AllModsKnown.Any(m => m.id == mod.id))
+                else if (AllModsKnown.Any(m => m.id == mod.id))
                 {
                     // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
                     // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
@@ -131,5 +131,5 @@ namespace EngineLayer
                 return psmString;
             }
         }
-            }
+    }
 }
