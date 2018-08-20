@@ -514,5 +514,35 @@ namespace Test
             string outputPepXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepXmlOutput\Individual File Results\PrunedDbSpectra.pep.XML");
             Assert.That(File.Exists(outputPepXmlPath));
         }
+
+        [Test]
+        public static void TestModernAndClassicSearch()
+        {
+            SearchTask classicSearch = new SearchTask();
+
+            SearchTask modernSearch = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    SearchType = SearchType.Modern
+                }
+            };
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("ModernSearch", modernSearch) };
+
+            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+            string fastaName = @"TestData\DbForPrunedDb.fasta";
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
+            engine.Run();
+
+            string classicPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ClassicSearch\AllPSMs.psmtsv");
+            var classicPsms = File.ReadAllLines(classicPath).ToList();
+
+            string modernPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ModernSearch\AllPSMs.psmtsv");
+            var modernPsms = File.ReadAllLines(modernPath).ToList();
+            
+            Assert.That(modernPsms.SequenceEqual(classicPsms));
+        }
     }
 }
