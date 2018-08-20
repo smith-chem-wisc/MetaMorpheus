@@ -15,10 +15,6 @@ namespace EngineLayer.Indexing
 {
     public class IndexingEngine : MetaMorpheusEngine
     {
-        protected static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        protected static readonly double hexNAcMass = 203.0793725330;
-        protected static readonly double hexNAcCrossRingMass = 85.0527638520;
-
         protected const int FragmentBinsPerDalton = 1000;
         protected readonly List<Protein> ProteinList;
 
@@ -29,9 +25,8 @@ namespace EngineLayer.Indexing
         protected readonly DecoyType DecoyType;
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         protected readonly double MaxFragmentSize;
-        protected readonly bool _indexWithNGly;
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> productTypes, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, bool indexWithNGly, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> productTypes, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
@@ -41,7 +36,6 @@ namespace EngineLayer.Indexing
             DecoyType = decoyType;
             CollectionOfDigestionParams = collectionOfDigestionParams;
             MaxFragmentSize = maxFragmentSize;
-            _indexWithNGly = indexWithNGly;
         }
 
         public override string ToString()
@@ -63,7 +57,6 @@ namespace EngineLayer.Indexing
                 sb.AppendLine("maximumVariableModificationIsoforms: " + digestionParams.MaxModificationIsoforms);
             }
             sb.AppendLine("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
-            sb.Append("Add NGlyco fragments into index: " + _indexWithNGly.ToString());
             return sb.ToString();
         }
 
