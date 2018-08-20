@@ -205,9 +205,6 @@
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Compile Include="Util\InRunTask.cs" />
     <Compile Include="Util\TheTemplateSelector.cs" />
-    <Compile Include="NeoSearchTaskWindow.xaml.cs">
-      <DependentUpon>NeoSearchTaskWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="MetaDraw\TsvResultReader.cs" />
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
@@ -253,10 +250,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="SearchTaskWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="NeoSearchTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
