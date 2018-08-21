@@ -88,11 +88,11 @@ namespace Test
             var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("QValueTest", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engine.Run();
             
-            string psmFile = Path.Combine(outputFolder, @"search\AllPSMs.psmtsv");
+            string psmFile = Path.Combine(outputFolder, @"QValueTest\AllPSMs.psmtsv");
             var lines = File.ReadAllLines(psmFile);
             Assert.That(lines.Length == 12);
 
-            var engine2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            var engine2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("QValueTest", searchTask2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engine2.Run();
 
             var lines2 = File.ReadAllLines(psmFile);
