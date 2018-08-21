@@ -21,6 +21,7 @@ namespace EngineLayer
             this.PpmMassError = ((experMz.ToMass(theoreticalFragmentIon.Charge) - theoreticalFragmentIon.Mass) / theoreticalFragmentIon.Mass) * 1e6;
         }
 
+        public int IntensityRank { get; set; }
         /// <summary>
         /// Summarizes a TheoreticalFragmentIon into a string for debug purposes
         /// TODO: Convert to a usable format for output

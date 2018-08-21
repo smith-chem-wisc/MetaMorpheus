@@ -78,7 +78,7 @@ namespace MetaMorpheusGUI
             bool result = true;
             foreach (var character in text)
             {
-                if (!Char.IsDigit(character) && !(character == '.'))
+                if (!Char.IsDigit(character) && !(character == '.') && !(character == '-'))
                 {
                     result = false;
                 }

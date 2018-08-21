@@ -148,7 +148,8 @@ namespace EngineLayer
         {
             foreach (var cpKey in _CompactPeptides.Keys.ToList())
             {
-                _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1, matching[cpKey]);
+                _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1,
+                    new HashSet<PeptideWithSetModifications>(matching[cpKey].Where(p => p.DigestionParams.Protease == this.DigestionParams.Protease)));
             }
             var pepsWithMods = CompactPeptides.SelectMany(b => b.Value.Item2);
             IsDecoy = CompactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
