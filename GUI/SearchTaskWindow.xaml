@@ -751,6 +751,8 @@
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbMzId" Content="Write .mzID" />
                             <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
+                            <CheckBox x:Name="writeDecoyCheckBox" Content="Write decoys"/>
+                            <CheckBox x:Name="writeContaminantCheckBox" Content="Write contaminants"/>
                             <StackPanel Orientation="Horizontal">
                                 <CheckBox x:Name="QValueCheckBox" Content="Filter results to q-value" IsChecked="False">
                                     <ToolTipService.ToolTip>
