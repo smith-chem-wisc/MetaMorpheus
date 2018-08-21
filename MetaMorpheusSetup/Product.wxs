@@ -37,7 +37,7 @@
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
-      <ComponentGroupRef Id="ExcelDefaults"/>
+      <!--<ComponentGroupRef Id="ExcelDefaults"/>-->
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
       <ComponentRef Id="RemoveApp"/>
@@ -119,11 +119,11 @@
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
     <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
     <Property Id="EXCELDEFAULTPROPERTY" Value="1"/>
-    <Property Id="EXCELSELECT" Value="1">
+    <!--<Property Id="EXCELSELECT" Value="1">
       <RegistrySearch Id="CheckFileDir" Root="HKCR" Key="Excel.Backup\shell\Open\command" Type="file">
         <FileSearch Name="EXCEL.exe"/>
       </RegistrySearch>
-    </Property>
+    </Property>-->
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
   </Product>
@@ -458,7 +458,7 @@
     </ComponentGroup>
   </Fragment>
 
-  <Fragment>
+  <!--<Fragment>
     <ComponentGroup Id="ExcelDefaults">
       <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
         <Condition> EXCELDEFAULTPROPERTY</Condition>
@@ -491,7 +491,7 @@
         </RegistryKey>
       </Component>
     </ComponentGroup>
-  </Fragment>
+  </Fragment>-->
   
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
