@@ -37,7 +37,8 @@
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
-      <ComponentGroupRef Id="ExcelDefaults"/>
+      <ComponentGroupRef Id="Appsrc_Contaminants_files"/>
+      <!--<ComponentGroupRef Id="ExcelDefaults"/>-->
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
       <ComponentRef Id="RemoveApp"/>
@@ -88,6 +89,7 @@
           <Directory Id="MetaAppDataFolder" Name="Data" />
           <Directory Id="MetaAppModsFolder" Name="Mods" />
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
+          <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
         </Directory>
       </Directory>
     </Directory>
@@ -119,11 +121,11 @@
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
     <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
     <Property Id="EXCELDEFAULTPROPERTY" Value="1"/>
-    <Property Id="EXCELSELECT" Value="1">
+    <!--<Property Id="EXCELSELECT" Value="1">
       <RegistrySearch Id="CheckFileDir" Root="HKCR" Key="Excel.Backup\shell\Open\command" Type="file">
         <FileSearch Name="EXCEL.exe"/>
       </RegistrySearch>
-    </Property>
+    </Property>-->
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
   </Product>
@@ -442,7 +444,23 @@
     </ComponentGroup>
   </Fragment>
 
+  <!--Builds the App Contaminants folder-->
   <Fragment>
+    <ComponentGroup Id="Appsrc_Contaminants_files" Directory="MetaAppContaminantsFolder">
+      <Component Id="RemoveContaminants">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppContaminantsFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      <Component Id="Appsrc_Contaminants_MPI_Contaminants.fasta" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Contaminants_MPI_Contaminants.fasta" Name="MPI_Contaminants.fasta" Source="$(var.GUI_TargetDir)Contaminants\MPI_Contaminants.fasta" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!--<Fragment>
     <ComponentGroup Id="ExcelDefaults">
       <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
         <Condition> EXCELDEFAULTPROPERTY</Condition>
@@ -476,6 +494,7 @@
       </Component>
     </ComponentGroup>
   </Fragment>
+
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
     <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="c68bc3b0-cc4f-48ed-9ea0-25dbd7492292">
