@@ -59,6 +59,9 @@
     <Reference Include="FlashLFQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.331\lib\net471\FlashLFQ.dll</HintPath>
     </Reference>
+    <Reference Include="itextsharp, Version=5.5.13.0, Culture=neutral, PublicKeyToken=8354ae6d2174ddca, processorArchitecture=MSIL">
+      <HintPath>..\packages\iTextSharp.5.5.13\lib\itextsharp.dll</HintPath>
+    </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.331.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.331\lib\net471\ManagedThermoHelperLayer.dll</HintPath>
     </Reference>
@@ -131,6 +134,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xaml">
@@ -156,6 +160,7 @@
     </Compile>
     <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
     <Compile Include="MetaDraw\MetaDrawPsm.cs" />
+    <Compile Include="MetaDraw\PdfWriter.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
@@ -200,9 +205,6 @@
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Compile Include="Util\InRunTask.cs" />
     <Compile Include="Util\TheTemplateSelector.cs" />
-    <Compile Include="NeoSearchTaskWindow.xaml.cs">
-      <DependentUpon>NeoSearchTaskWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="MetaDraw\TsvResultReader.cs" />
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
@@ -248,10 +250,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="SearchTaskWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="NeoSearchTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
