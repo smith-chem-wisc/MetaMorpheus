@@ -442,6 +442,22 @@
     </ComponentGroup>
   </Fragment>
 
+  <!--Builds the App Contaminants folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_Contaminants_files" Directory="MetaAppContaminantsFolder">
+      <Component Id="RemoveContaminants">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppContaminantsFolder" On="both"/>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      <Component Id="Appsrc_Contaminants_MPI_Contaminants.fasta" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Contaminants_MPI_Contaminants.fasta" Name="MPI_Contaminants.fasta" Source="$(var.GUI_TargetDir)Contaminants\MPI_Contaminants.fasta" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
   <Fragment>
     <ComponentGroup Id="ExcelDefaults">
       <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
