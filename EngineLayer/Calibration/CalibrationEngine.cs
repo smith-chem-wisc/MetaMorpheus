@@ -41,24 +41,20 @@ namespace EngineLayer.Calibration
                 }
             }
 
-            //index for scanNumber to scan placement and vice versa, where scan placement is the zero based index in the array
-            int[] ms1PlacementToScanNumber = ms1Scans.Select(x => x.OneBasedScanNumber).ToArray();
-            int[] ms2PlacementToScanNumber = ms2Scans.Select(x => x.OneBasedScanNumber).ToArray();
-
-            //create a way to go the other way from the scan to the order. These can be a single array, since there shouldn't be any overlap of scan numbers
+            //create a way to go from the scan number to the scan order. This can be a single array, since there shouldn't be any overlap of scan numbers between ms1 and ms2 scans
             int[] scanNumberToScanPlacement = new int[originalScans.Max(x => x.OneBasedScanNumber) + 1];
-            for (int i = 0; i < ms1PlacementToScanNumber.Length; i++)
+            for (int i = 0; i < ms1Scans.Count; i++)
             {
-                scanNumberToScanPlacement[ms1PlacementToScanNumber[i]] = i;
+                scanNumberToScanPlacement[ms1Scans[i].OneBasedScanNumber] = i;
             }
-            for (int i = 0; i < ms2PlacementToScanNumber.Length; i++)
+            for (int i = 0; i < ms2Scans.Count; i++)
             {
-                scanNumberToScanPlacement[ms2PlacementToScanNumber[i]] = i;
+                scanNumberToScanPlacement[ms2Scans[i].OneBasedScanNumber] = i;
             }
 
             //Populate the weighted average relative error for each scan, where index of returned array is the placement
-            double[] ms1RelativeErrors = PopulateErrors(ms1Points, scanNumberToScanPlacement, ms1PlacementToScanNumber.Length);
-            double[] ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2PlacementToScanNumber.Length);
+            double[] ms1RelativeErrors = PopulateErrors(ms1Points, scanNumberToScanPlacement, ms1Scans.Count);
+            double[] ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2Scans.Count);
 
             //generate new scans
             MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
@@ -72,44 +68,27 @@ namespace EngineLayer.Calibration
             //apply a smoothing function, so that outlier scans aren't wildly shifted
             double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, NumberOfScansUsedForSmoothingOnEachSide);
             double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, NumberOfScansUsedForSmoothingOnEachSide);
-            int previousScanNumber = ms1Points.FirstOrDefault().ScanNumber;
-            double previousSmoothedError = ms1SmoothedErrors[scanNumberToScanPlacement[previousScanNumber]];
 
+            //calibrate the data
             int ms1Index = 0;
             int ms2Index = 0;
-            double mostRecentMS1SmoothedError = ms1SmoothedErrors.FirstOrDefault();
-            for (int scanIndex = 0; scanIndex < calibratedScans.Length; scanIndex++)
+            double mostRecentMS1SmoothedError = ms1SmoothedErrors.FirstOrDefault(); //this is needed to update the precursor mass error of MS2 scans
+            for (int scanIndex = 0; scanIndex < calibratedScans.Length; scanIndex++) //foreach scan
             {
-                MsDataScan originalScan = calibratedScans[scanIndex];
-                if (originalScan.MsnOrder == 1)
+                MsDataScan originalScan = originalScans[scanIndex]; //get original scan
+                if (originalScan.MsnOrder == 1) //if ms1
                 {
-                    mostRecentMS1SmoothedError = ms1SmoothedErrors[ms1Index];
-                    ms1RelativeErrors[ms1Index] -= mostRecentMS1SmoothedError;
-                    ms1Index++;
+                    mostRecentMS1SmoothedError = ms1SmoothedErrors[ms1Index]; //update the mass error
                     calibratedScans[scanIndex] = CalibrateScan(originalScan, mostRecentMS1SmoothedError);
+                    ms1Index++;
                 }
                 else //if ms2
                 {
-                    double smoothedRelativeError = ms2SmoothedErrors[ms2Index];
-                    ms2RelativeErrors[ms2Index] -= smoothedRelativeError;
+                    calibratedScans[scanIndex] = CalibrateScan(originalScan, ms2SmoothedErrors[ms2Index], mostRecentMS1SmoothedError);
                     ms2Index++;
-                    calibratedScans[scanIndex] = CalibrateScan(originalScan, smoothedRelativeError, mostRecentMS1SmoothedError);
                 }
             }
 
-            //get best of ms1 and ms2 saves
-            for (int scanIndex = 0; scanIndex < ms2Saves.Length; scanIndex++)
-            {
-                MsDataScan genericScan = ms2Saves[scanIndex];
-                if (genericScan.MsnOrder == 1)
-                {
-                    calibratedScans[scanIndex] = ms1Saves[scanIndex];
-                }
-                else //if ms2
-                {
-                    calibratedScans[scanIndex] = genericScan;
-                }
-            }
             CalibratedDataFile = new MsDataFile(calibratedScans, MyMsDataFile.SourceFile);
             return new MetaMorpheusEngineResults(this);
         }
@@ -156,78 +135,64 @@ namespace EngineLayer.Calibration
 
         private double[] SmoothErrors(double[] relativeErrors, int numberOfScansUsedForSmoothingOnEachSide)
         {
+            //impute missing values
+            //not all scans are guarenteed to contain data points. We can infer these data point with nearby points.
+            for (int index = 0; index < relativeErrors.Length; index++)
+            {
+                if (relativeErrors[index] == 0) //if there were no points, then the value should be perfectly zero (the double default)
+                {
+                    int startingBlankIndex = index;
+                    for (; index < relativeErrors.Length && relativeErrors[index] == 0; index++) { };
+                    double nextError = index == relativeErrors.Length ? relativeErrors[startingBlankIndex - 1] : relativeErrors[index]; //can't go all the way through without any data points, the original function checks for enough data points (where enough is more than zero)
+                    double previousError = startingBlankIndex > 0 ? relativeErrors[startingBlankIndex - 1] : nextError;
+                    int numberOfConsecutiveScansWithoutDataPoints = index - startingBlankIndex;
+                    for (int tempIndex = 0; tempIndex < numberOfConsecutiveScansWithoutDataPoints; tempIndex++)
+                    {
+                        relativeErrors[startingBlankIndex + tempIndex] = ((tempIndex + 1) * nextError + (numberOfConsecutiveScansWithoutDataPoints - tempIndex - 1) * previousError) / numberOfConsecutiveScansWithoutDataPoints;
+                    }
+                }
+            }
+
             //get correction factor for each scan, where half of the smooth comes from both directions
             double[] smoothedErrors = new double[relativeErrors.Length];
             int leftIndex = 0; //starting scan index used for numbers less than the current scan
             int rightIndex = 1; //
-            int emptyIndexesCount = 0;
             double smoothedCorrectionFactor = 0;
-            int leftValuesUsed = 0;
-            int rightValuesUsed = 0;
             //for scan #1 (index 0)
-            //no left scans, because we're at the beginning of the file
-            for (; rightIndex < (numberOfScansUsedForSmoothingOnEachSide + emptyIndexesCount) && rightIndex < relativeErrors.Length; rightIndex++)
+            //no left scans, because we're at the beginning of the file. Just populate the first N number of scan errors
+            for (; rightIndex < numberOfScansUsedForSmoothingOnEachSide && rightIndex < relativeErrors.Length; rightIndex++)
             {
-                double addedFactor = relativeErrors[rightIndex];
-                if (addedFactor == 0)
-                {
-                    emptyIndexesCount++;
-                }
-                else
-                {
-                    smoothedCorrectionFactor += addedFactor;
-                    rightValuesUsed++;
-                }
+                smoothedCorrectionFactor += relativeErrors[rightIndex];
             }
 
-            //for all other scans
+            //for each scan
             for (int i = 0; i < relativeErrors.Length; i++)
             {
-                //make previous right value a left value. (the current value is classified as a left value)
-                double currentError = relativeErrors[i];
-                if (currentError != 0)
+                //for left index, remove an error if 
+
+                if (i > numberOfScansUsedForSmoothingOnEachSide)
                 {
-                    leftValuesUsed++;
-                    rightValuesUsed--;
-                }
-                else
-                {
-                    emptyIndexesCount--;
-                }
-                //for left index, remove an error if applicable
-                while (leftValuesUsed > numberOfScansUsedForSmoothingOnEachSide)
-                {
-                    double errorToRemove = relativeErrors[leftIndex];
-                    if (errorToRemove != 0)
-                    {
-                        smoothedCorrectionFactor -= errorToRemove;
-                        leftValuesUsed--;
-                    }
+                    smoothedCorrectionFactor -= relativeErrors[leftIndex];
                     leftIndex++;
                 }
-                for (; rightIndex < (i + numberOfScansUsedForSmoothingOnEachSide + emptyIndexesCount) && rightIndex < relativeErrors.Length; rightIndex++)
+
+                if (rightIndex < relativeErrors.Length) //need to check so we don't run off the end of the file
                 {
-                    double addedFactor = relativeErrors[rightIndex];
-                    if (addedFactor == 0)
-                    {
-                        emptyIndexesCount++;
-                    }
-                    else
-                    {
-                        smoothedCorrectionFactor += addedFactor;
-                        rightValuesUsed++;
-                    }
+                    smoothedCorrectionFactor += relativeErrors[rightIndex];
+                    rightIndex++;
                 }
-                smoothedErrors[i] = smoothedCorrectionFactor / (rightValuesUsed + leftValuesUsed);
+
+                smoothedErrors[i] = smoothedCorrectionFactor / (rightIndex-leftIndex);
             }
             return smoothedErrors;
         }
 
         private MsDataScan CalibrateScan(MsDataScan oldScan, double smoothedRelativeError, double? precursorSmoothedRelativeError = null)
         {
-            double correctionFactor = 1 - smoothedRelativeError; //wasn't in ppm before
+            double correctionFactor = 1 - smoothedRelativeError; //create the multiplier. Positive mass errors mean that the experimental mass was greater than the theoretical, so we want to shift the experimental DOWN
             double[] originalMzs = oldScan.MassSpectrum.XArray;
             double[] calibratedMzs = new double[originalMzs.Length];
+            //calibrate the mzs. Because peaks are in mz and we are making a mz shift, we don't need to deconvolute
             for (int i = 0; i < originalMzs.Length; i++)
             {
                 calibratedMzs[i] = originalMzs[i] * correctionFactor;
@@ -253,8 +218,10 @@ namespace EngineLayer.Calibration
                     selectedIonMonoisotopicGuessMz = oldScan.SelectedIonMonoisotopicGuessMz * correctionFactor;
                 }
             }
+
+            //create new calibrated spectrum
             MzSpectrum calibratedSpectrum = new MzSpectrum(calibratedMzs, oldScan.MassSpectrum.YArray, false);
-            var scan = new MsDataScan(
+            return new MsDataScan(
                 calibratedSpectrum, //changed
                 oldScan.OneBasedScanNumber,
                 oldScan.MsnOrder,
@@ -277,8 +244,6 @@ namespace EngineLayer.Calibration
                 oldScan.OneBasedPrecursorScanNumber,
                 selectedIonMonoisotopicGuessMz //changed?
                 );
-
-            return scan;
         }
     }
 }
