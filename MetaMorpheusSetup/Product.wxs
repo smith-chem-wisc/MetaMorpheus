@@ -467,45 +467,11 @@
         <Condition><![CDATA[EXCELSELECT<>"1"]]> </Condition>
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command"/>
         <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">
-          <RegistryValue Action="write" Value="[EXCELSELECT]" Type="string"/>
+          <RegistryValue Action="write" Value="&quot;[EXCELSELECT]&quot; &quot;%1&quot;" Type="string"/>
         </RegistryKey>
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\psmtsv_auto_file\shell\open\command"/>
         <RegistryKey Root="HKCU" Key="Software\Classes\psmtsv_auto_file\shell\open\command">
-          <RegistryValue Action="write" Value="[EXCELSELECT]" Type="string"/>
-        </RegistryKey>
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-  <Fragment>
-    <ComponentGroup Id="ExcelDefaults">
-      <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
-        <Condition> EXCELDEFAULTPROPERTY</Condition>
-        <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv"/>
-        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
-          <RegistryValue Name="a" Value="EXCEL.EXE" Type="string"/>
-          <RegistryValue Name="MRUList" Value="a" Type="string"/>
-        </RegistryKey>
-        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithProgids">
-          <RegistryValue Name="tsv_auto_file" Value="0000" Type="binary"/>
-        </RegistryKey>
-        <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv"/>
-        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv\OpenWithList">
-          <RegistryValue Name="a" Value="EXCEL.EXE" Type="string"/>
-          <RegistryValue Name="MRUList" Value="a" Type="string"/>
-        </RegistryKey>
-        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv\OpenWithProgids">
-          <RegistryValue Name="psmtsv_auto_file" Value="0000" Type="binary"/>
-        </RegistryKey>
-      </Component>
-      <Component Id ="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="*">
-        <Condition><![CDATA[EXCELSELECT<>"1"]]> </Condition>
-        <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command"/>
-        <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">
-          <RegistryValue Action="write" Value="[EXCELSELECT]" Type="string"/>
-        </RegistryKey>
-        <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\psmtsv_auto_file\shell\open\command"/>
-        <RegistryKey Root="HKCU" Key="Software\Classes\psmtsv_auto_file\shell\open\command">
-          <RegistryValue Action="write" Value="[EXCELSELECT]" Type="string"/>
+          <RegistryValue Action="write" Value="&quot;[EXCELSELECT]&quot; &quot;%1&quot;" Type="string"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
