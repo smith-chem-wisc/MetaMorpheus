@@ -80,7 +80,7 @@ namespace EngineLayer
                         foreach (var peptide in Proteins[i].Digest(digestionParam, FixedModifications, VariableModifications))
                         {
                             var compactPeptide = peptide.CompactPeptide(TerminusType);
-
+                            
                             if (compactPeptideToProteinPeptideMatching.TryGetValue(compactPeptide, out var peptidesWithSetMods))
                             {
                                 lock (peptidesWithSetMods)

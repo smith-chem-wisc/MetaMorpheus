@@ -105,11 +105,7 @@ namespace MetaMorpheusCommandLine
                                 var ye4 = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                                 taskList.Add(("Task" + (i + 1) + "XLSearchTask", ye4));
                                 break;
-
-                            case "Neo":
-                                Console.WriteLine("Neo tasks are meta-tasks that rely on several other tasks. Please use -m for meta instead of -t. Skipping.");
-                                break;
-
+                                
                             default:
                                 Console.WriteLine(uhum.Get<string>("TaskType") + " is not a known task type! Skipping.");
                                 break;
@@ -137,13 +133,7 @@ namespace MetaMorpheusCommandLine
                             case "XLSearch":
                                 Console.WriteLine("XLSearch tasks are individual tasks. Please use -t for task instead of -m. Skipping.");
                                 break;
-
-                            case "Neo":
-                                var ye5 = Toml.ReadFile<NeoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                                foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
-                                    taskList.Add(("Task" + (taskList.Count + 1) + ye5.TaskType, ye5));
-                                break;
-
+                                
                             default:
                                 Console.WriteLine(uhum.Get<string>("TaskType") + " is not a known task type! Skipping.");
                                 break;

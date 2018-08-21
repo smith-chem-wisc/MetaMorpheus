@@ -10,6 +10,7 @@
     <PackageReference Include="mzLib" Version="1.0.331" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="OxyPlot.Core" Version="1.0.0" />
     <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.9" />
     <PackageReference Include="SharpLearning.Containers" Version="0.26.9" />
     <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.9" />
@@ -63,8 +64,14 @@
     <None Update="TestData\okk.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="XlTestData\25170.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\BSA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\BSA_DSSO_ETchD6010.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\BSA_DSS_23747.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -81,8 +88,5 @@
     <None Update="testFileSpecfic.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="XlTestData\" />
   </ItemGroup>
 </Project>
