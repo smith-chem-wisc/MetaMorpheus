@@ -7,7 +7,7 @@ namespace EngineLayer.Calibration
 {
     public class CalibrationEngine : MetaMorpheusEngine
     {
-        private const int ScansUsedForSmoothingOnEachSide = 50;
+        private const int NumberOfScansUsedForSmoothingOnEachSide = 42;
         private readonly MsDataFile MyMsDataFile;
         private readonly DataPointAquisitionResults Datapoints;
         public MsDataFile CalibratedDataFile { get; private set; }
@@ -28,7 +28,7 @@ namespace EngineLayer.Calibration
 
             List<MsDataScan> ms1Scans = new List<MsDataScan>();
             List<MsDataScan> ms2Scans = new List<MsDataScan>();
-            //separate scans by msnOrder
+            //separate scans by msnOrder, because the mass accuracy varies between the two
             foreach (MsDataScan scan in originalScans)
             {
                 if (scan.MsnOrder == 1)
@@ -41,10 +41,11 @@ namespace EngineLayer.Calibration
                 }
             }
 
-            //index for scanNumber to scan placement and vice versa
+            //index for scanNumber to scan placement and vice versa, where scan placement is the zero based index in the array
             int[] ms1PlacementToScanNumber = ms1Scans.Select(x => x.OneBasedScanNumber).ToArray();
             int[] ms2PlacementToScanNumber = ms2Scans.Select(x => x.OneBasedScanNumber).ToArray();
 
+            //create a way to go the other way from the scan to the order. These can be a single array, since there shouldn't be any overlap of scan numbers
             int[] scanNumberToScanPlacement = new int[originalScans.Max(x => x.OneBasedScanNumber) + 1];
             for (int i = 0; i < ms1PlacementToScanNumber.Length; i++)
             {
@@ -55,28 +56,22 @@ namespace EngineLayer.Calibration
                 scanNumberToScanPlacement[ms2PlacementToScanNumber[i]] = i;
             }
 
-            //Populate the average relative error for each scan, where index of returned array is the placement
+            //Populate the weighted average relative error for each scan, where index of returned array is the placement
             double[] ms1RelativeErrors = PopulateErrors(ms1Points, scanNumberToScanPlacement, ms1PlacementToScanNumber.Length);
             double[] ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2PlacementToScanNumber.Length);
 
-            //current scans
+            //generate new scans
             MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
-
-            //saved scans
-            MsDataScan[] ms1Saves = new MsDataScan[originalScans.Count];
-            MsDataScan[] ms2Saves = new MsDataScan[originalScans.Count];
 
             //hard copy original scans
             for (int i = 0; i < originalScans.Count; i++)
             {
-                MsDataScan originalScan = originalScans[i];
                 calibratedScans[i] = originalScans[i];
-                ms1Saves[i] = originalScan;
-                ms2Saves[i] = originalScan;
             }
 
-            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, ScansUsedForSmoothingOnEachSide);
-            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, ScansUsedForSmoothingOnEachSide);
+            //apply a smoothing function, so that outlier scans aren't wildly shifted
+            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, NumberOfScansUsedForSmoothingOnEachSide);
+            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, NumberOfScansUsedForSmoothingOnEachSide);
             int previousScanNumber = ms1Points.FirstOrDefault().ScanNumber;
             double previousSmoothedError = ms1SmoothedErrors[scanNumberToScanPlacement[previousScanNumber]];
 
@@ -121,35 +116,50 @@ namespace EngineLayer.Calibration
 
         private double[] PopulateErrors(List<LabeledDataPoint> datapoints, int[] scanNumberToScanPlacement, int arrayLength)
         {
+            //return an array of weighted average relative errors for each scan
             double[] averageRelativeErrors = new double[arrayLength];
-            int currentScanNumber = datapoints.First().ScanNumber;
-            List<double> localRelativeErrors = new List<double>();
+
+            int currentScanNumber = datapoints.First().ScanNumber; //get the first scan number. This should be an ordered list
+            List<(double massError, double logIntensity)> localRelativeErrors = new List<(double massError, double logIntensity)>(); //create a list to store the mass error
+
             foreach (LabeledDataPoint datapoint in datapoints)
             {
                 if (datapoint.ScanNumber == currentScanNumber)
                 {
-                    localRelativeErrors.Add(datapoint.RelativeMzError);
+                    localRelativeErrors.Add((datapoint.RelativeMzError,datapoint.LogIntensity));
                 }
                 else
                 {
-                    //wrap up
-                    averageRelativeErrors[scanNumberToScanPlacement[currentScanNumber]] = localRelativeErrors.Average();
+                    //wrap up the old set
+                    averageRelativeErrors[scanNumberToScanPlacement[currentScanNumber]] = CalculateAverageRelativeErrors(localRelativeErrors);
+
                     //update
                     currentScanNumber = datapoint.ScanNumber;
-                    localRelativeErrors = new List<double> { datapoint.RelativeMzError };
+                    localRelativeErrors = new List<(double massError, double logIntensity)> { (datapoint.RelativeMzError, datapoint.LogIntensity) };
                 }
             }
             //finish loop
-            averageRelativeErrors[scanNumberToScanPlacement[currentScanNumber]] = localRelativeErrors.Average();
+            averageRelativeErrors[scanNumberToScanPlacement[currentScanNumber]] = CalculateAverageRelativeErrors(localRelativeErrors);
+
             return averageRelativeErrors;
+        }
+
+        private double CalculateAverageRelativeErrors(List<(double massError, double logIntensity)> localRelativeErrors)
+        {
+            double logIntensityToSubtract = localRelativeErrors.Min(x => x.logIntensity) - 1; // normalize each log intensity so that the minimum log intensity is 1. 
+            //This is to more heavily weight high log intensities, so that a difference like 20 and 22 is now 1 and 3. the "-1" prevents zero values
+            //The maximum possible difference in weight becomes ~1:10, such that low intensity points are still considered
+            double weightedSumOfErrors = localRelativeErrors.Sum(x => x.massError * (x.logIntensity - logIntensityToSubtract));
+            double sumOfIntensities = localRelativeErrors.Sum(x => x.logIntensity - logIntensityToSubtract);
+            return weightedSumOfErrors / sumOfIntensities;
         }
 
         private double[] SmoothErrors(double[] relativeErrors, int numberOfScansUsedForSmoothingOnEachSide)
         {
             //get correction factor for each scan, where half of the smooth comes from both directions
             double[] smoothedErrors = new double[relativeErrors.Length];
-            int leftIndex = 0;
-            int rightIndex = 1;
+            int leftIndex = 0; //starting scan index used for numbers less than the current scan
+            int rightIndex = 1; //
             int emptyIndexesCount = 0;
             double smoothedCorrectionFactor = 0;
             int leftValuesUsed = 0;
