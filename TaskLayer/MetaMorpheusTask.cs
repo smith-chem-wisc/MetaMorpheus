@@ -20,8 +20,7 @@ namespace TaskLayer
         Search,
         Gptmd,
         Calibrate,
-        XLSearch,
-        Neo
+        XLSearch
     }
 
     public abstract class MetaMorpheusTask
@@ -91,7 +90,7 @@ namespace TaskLayer
             int deconvolutionMaxAssumedChargeState,
             Tolerance deconvolutionMassTolerance)
         {
-            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1))
+            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1)) 
             {
                 if (GlobalVariables.StopLoops) { break; }
                 List<(double, int)> isolatedStuff = new List<(double, int)>();
@@ -287,12 +286,12 @@ namespace TaskLayer
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
-                    file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
+                    file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
                     file.Write(ProseCreatedWhileRunning.ToString());
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
                     file.WriteLine("The total time to perform the " + this.TaskType.ToString().ToLowerInvariant() + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
-                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
+                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMoprheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
 
                     file.WriteLine();
                     file.WriteLine("Spectra files: ");

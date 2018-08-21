@@ -11,9 +11,8 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2">
             <DockPanel>
-
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                     <Label Content="Task Name" />
                     <TextBox x:Name="OutputFileNameTextBox" Width="150">
@@ -41,6 +40,34 @@
                         </TextBox.Style>
                     </TextBox>
                 </StackPanel>
+                <StackPanel DockPanel.Dock="Top">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                        </Grid.RowDefinitions>
+                        <RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>
+                        <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
+                            <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
+                            <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                            <ComboBox x:Name="cbbXLprecusorMsTl" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
+                            <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
+                            <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
+                            <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ fragments" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
                 <GroupBox Header="Crosslink Search" DockPanel.Dock="Top">
                     <Expander x:Name="CrosslinkSearchExpander">
                         <StackPanel Orientation="Vertical">
@@ -51,48 +78,19 @@
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="1*" />
-                                    <RowDefinition Height="1*" />
-                                    <RowDefinition Height="1*" />
-                                    <RowDefinition Height="1*" />
-                                    <RowDefinition Height="1*" />
-                                    <RowDefinition Height="1*" />
                                 </Grid.RowDefinitions>
-                                <!--<CheckBox x:Name="ckbSearchWithXLAllBeta" Grid.Row="0" Grid.Column="0" Content="Search with Limited peptides" />-->
-                                <!--<StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
-                                    <Label x:Name="lblXLBetaMsTl" Content="Beta Peptide Precusor mass tolerance" />
-                                    <TextBox x:Name="txtXLBetaPrecusorMsTl" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}" />
-                                    <ComboBox x:Name="cbbXLBetaprecusorMsTl" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}" />
-                                </StackPanel>-->
-                                <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
-                                    <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
-                                    <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
-                                    <ComboBox x:Name="cbbXLprecusorMsTl" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
-                                    <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
-                                    <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
-                                </StackPanel>
-                                <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
-                                    <Label x:Name="lblXLMSMS" Content="Crosslink MS/MS Search Properties" />
-                                    <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ fragments" />
-                                    <CheckBox x:Name="ckbCharge_2_3_PrimeFragments"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ prime fragments" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Margin="5">
+                                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
                                     <ComboBox x:Name="cbCrosslinker" />
                                 </StackPanel>
-                                <!--<StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
-                                    <Label x:Name="lblFragmentation" Content="Fragmentation Type" />
-                                    <ComboBox x:Name="cbFragmentation" />
-                                </StackPanel>-->
-                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1" Margin="5">
+                                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5">
                                     <Label x:Name="lblQuenchMethods" Content="Quench Methods" />
                                     <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" Margin="2" />
                                     <CheckBox x:Name="ckbQuenchTris"  VerticalAlignment="Center" Content="Tris" Margin="2" />
                                     <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" Margin="2" />
                                 </StackPanel>
                             </Grid>
-                            <GroupBox>
+                            <GroupBox Header="User defined crosslinker">
                                 <Expander x:Name="UserDefineCrosslinker">
                                     <StackPanel>
                                         <Grid>
@@ -117,19 +115,15 @@
                                                 <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" />
                                                 <TextBox x:Name="txtUdXLkerTotalMs" PreviewTextInput="CheckIfNumber" Width="60"/>
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2">
-                                                <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass"  />
-                                                <TextBox x:Name="txtUdXLkerShortMass" PreviewTextInput="CheckIfNumber" Width="60"  />
-                                            </StackPanel>
                                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="3">
+                                                <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass"  />
+                                                <TextBox x:Name="txtUdXLkerShortMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
                                                 <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" />
-                                                <TextBox x:Name="txtUdXLkerLongMass" PreviewTextInput="CheckIfNumber" Width="60" />
+                                                <TextBox x:Name="txtUdXLkerLongMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="4">
-                                                <Label x:Name="lblUdXLkerLoopMass" Content="Crosslinker Loop Mass" />
-                                                <TextBox x:Name="txtUdXLkerLoopMass" PreviewTextInput="CheckIfNumber" Width="60" />
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1">
+                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2">
                                                 <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acids" />
                                                 <TextBox x:Name="txtUdXLkerAminoAcids" Width="60"  />
                                             </StackPanel>
@@ -137,25 +131,32 @@
                                                 <Label x:Name="lblUdXLkerAminoAcid2" Content="Crosslinker Amino Acids 2" />
                                                 <TextBox x:Name="txtUdXLkerAminoAcids2" Width="60"  />
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
-                                                <Label x:Name="lblUdXLkerDeadendH2O" Content="Crosslinker Deadend H2O"  />
-                                                <TextBox x:Name="txtUdXLkerDeadendH2O" Width="60"  />
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
-                                                <Label x:Name="lblUdXLkerDeadendNH2" Content="Crosslinker Deadend NH2" />
-                                                <TextBox x:Name="txtUdXLkerDeadendNH2" Width="60" />
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
-                                                <Label x:Name="lblUdXLkerDeadendTris" Content="Crosslinker Deadend Tris" />
-                                                <TextBox x:Name="txtUdXLkerDeadendTris" Width="60"  />
-                                            </StackPanel>
                                         </Grid>
+                                    </StackPanel>
+                                </Expander>
+                            </GroupBox>
+                            <GroupBox Header="Output Options" DockPanel.Dock="Top">
+                                <Expander x:Name="OutputExpander">
+                                    <StackPanel Orientation="Vertical">
+                                        <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
+                                        <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
+                                        <CheckBox x:Name="ckbCrosslink" Content="Write inter-crosslink and intra-crosslink" />
+                                        <CheckBox x:Name="ckbAllResults" Content="Write 'All', 'Single', 'Loop', 'Deadend' peptide types" />
                                     </StackPanel>
                                 </Expander>
                             </GroupBox>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
+                <!--<GroupBox Header="Glyco Search" DockPanel.Dock="Top">
+                    <Expander x:Name="GlycoSearchExpander">
+                        <StackPanel Orientation="Vertical">
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>-->
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">
                         <Expander.Style>
@@ -369,19 +370,10 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <GroupBox Header="Output Options" DockPanel.Dock="Top">
-                    <Expander x:Name="OutputExpander">
-                        <StackPanel Orientation="Vertical">
-                            <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
-                            <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
-                            <CheckBox x:Name="ckbCrosslink" Content="Write inter-crosslink and intra-crosslink" />
-                            <CheckBox x:Name="ckbAllResults" Content="Write 'All', 'Single', 'Loop', 'Deadend' peptide types" />
-                        </StackPanel>
-                    </Expander>
-                </GroupBox>
+
             </DockPanel>
         </ScrollViewer>
-        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="5">
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
         </StackPanel>

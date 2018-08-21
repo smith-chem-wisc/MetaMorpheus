@@ -233,7 +233,6 @@ namespace TaskLayer
             parameters.SearchTaskResults = MyTaskResults;
             parameters.SearchTaskId = taskId;
             parameters.SearchParameters = SearchParameters;
-            parameters.CommonParameters = CommonParameters;
             parameters.ProteinList = proteinList;
             parameters.IonTypes = ionTypes;
             parameters.AllPsms = allPsms;
@@ -251,7 +250,7 @@ namespace TaskLayer
             parameters.DatabaseFilenameList = dbFilenameList;
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask();
             postProcessing.Parameters = parameters;
-
+            postProcessing.CommonParameters = CommonParameters;
             return postProcessing.Run();
         }
 
