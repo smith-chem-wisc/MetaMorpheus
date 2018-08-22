@@ -75,8 +75,10 @@ namespace EngineLayer
 
             // score the group
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.Score();
-
+            }
+            
             if (MergeIndistinguishableProteinGroups)
             {
                 // merge protein groups that are indistinguishable after scoring
@@ -92,8 +94,10 @@ namespace EngineLayer
                         {
                             var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
                             var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
+                            var psms1 = p.AllPsmsBelowOnePercentFDR;
+                            var psms2 = pg[i].AllPsmsBelowOnePercentFDR;
 
-                            if (p != pg[i] && seqs1.SetEquals(seqs2))
+                            if (p != pg[i] && seqs1.SetEquals(seqs2) && psms1.SetEquals(psms2))
                             {
                                 pg[i].MergeProteinGroupWith(p);
                             }
