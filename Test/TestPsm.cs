@@ -87,7 +87,7 @@ namespace Test
 
             var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engine.Run();
-
+            
             string psmFile = Path.Combine(outputFolder, @"search\AllPSMs.psmtsv");
             var lines = File.ReadAllLines(psmFile);
             Assert.That(lines.Length == 12);
