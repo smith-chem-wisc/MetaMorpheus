@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -15,18 +14,12 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaUpdater : Window
     {
-        #region Public Constructors
-
         public MetaUpdater()
         {
             InitializeComponent();
             lbl.Text = "A newer version: " + MainWindow.NewestKnownVersion + " is available!";
             ReleaseHandler();
         }
-
-        #endregion Public Constructors
-
-        #region Public Methods
 
         public (int, int, int) GetVersionNumber(string VersionNode)
         {
@@ -41,10 +34,6 @@ namespace MetaMorpheusGUI
                 return (0, 0, 0);
             }
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private void InstallerClicked(object sender, RoutedEventArgs e)
         {
@@ -124,7 +113,5 @@ namespace MetaMorpheusGUI
         {
             DialogResult = false;
         }
-
-        #endregion Private Methods
     }
 }

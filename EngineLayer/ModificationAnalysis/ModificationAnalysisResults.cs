@@ -8,25 +8,15 @@ namespace EngineLayer.ModificationAnalysis
 {
     public class ModificationAnalysisResults : MetaMorpheusEngineResults
     {
-        #region Public Constructors
-
         public ModificationAnalysisResults(ModificationAnalysisEngine modificationAnalysisEngine) : base(modificationAnalysisEngine)
         {
         }
-
-        #endregion Public Constructors
-
-        #region Public Properties
 
         public Dictionary<string, int> AmbiguousButLocalizedModsSeen { get; internal set; }
         public Dictionary<string, int> ModsSeenAndLocalized { get; internal set; }
         public Dictionary<string, int> AllModsOnProteins { get; internal set; }
         public Dictionary<string, int> UnlocalizedMods { get; internal set; }
         public Dictionary<ChemicalFormula, int> UnlocalizedFormulas { get; internal set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public override string ToString()
         {
@@ -46,7 +36,5 @@ namespace EngineLayer.ModificationAnalysis
 
             return sb.ToString();
         }
-
-        #endregion Public Methods
     }
 }

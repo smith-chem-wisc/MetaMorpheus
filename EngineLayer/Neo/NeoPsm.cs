@@ -4,8 +4,6 @@ namespace EngineLayer.Neo
 {
     public class NeoPsm
     {
-        #region Public Constructors
-
         public NeoPsm(int scan, double expMass)
         {
             this.scanNumber = scan;
@@ -23,17 +21,11 @@ namespace EngineLayer.Neo
             this.candidates = new List<FusionCandidate>();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public int scanNumber { get; set; }
         public double expMass { get; set; }
         public InitialID nInfo { get; set; }
         public InitialID cInfo { get; set; }
         public List<FusionCandidate> candidates { get; set; }
         public FusionCandidate.FusionType fusionType { get; set; }
-
-        #endregion Public Properties
     }
 }

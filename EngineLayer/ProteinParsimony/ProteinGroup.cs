@@ -1,7 +1,8 @@
-﻿using Proteomics;
+﻿using FlashLFQ;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -9,14 +10,8 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
-        #region Public Fields
-
-        public readonly bool isDecoy;
-        public readonly bool isContaminant;
-
-        #endregion Public Fields
-
-        #region Public Constructors
+        public readonly bool IsDecoy;
+        public readonly bool IsContaminant;
 
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
@@ -32,8 +27,8 @@ namespace EngineLayer
             ProteinGroupScore = 0;
             BestPeptideScore = 0;
             QValue = 0;
-            isDecoy = false;
-            isContaminant = false;
+            IsDecoy = false;
+            IsContaminant = false;
             ModsInfo = new List<string>();
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
@@ -41,22 +36,18 @@ namespace EngineLayer
             {
                 if (protein.IsDecoy)
                 {
-                    isDecoy = true;
+                    IsDecoy = true;
                     break;
                 }
                 if (protein.IsContaminant)
                 {
-                    isContaminant = true;
+                    IsContaminant = true;
                     break;
                 }
             }
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
-        public static string[] FilesForQuantification { get; set; }
+        public List<SpectraFileInfo> FilesForQuantification { get; set; }
 
         public HashSet<Protein> Proteins { get; set; }
 
@@ -89,19 +80,12 @@ namespace EngineLayer
         public bool DisplayModsOnPeptides { get; set; }
 
         public List<string> ModsInfo { get; private set; }
-        public double[] IntensitiesByFile { get; set; }
 
-        #endregion Public Properties
-
-        #region Private Properties
+        public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
 
         private List<Protein> ListOfProteinsOrderedByAccession;
 
-        #endregion Private Properties
-
-        #region Public Methods
-
-        public static string GetTabSeparatedHeader(bool fileSpecificHeader)
+        public string GetTabSeparatedHeader()
         {
             var sb = new StringBuilder();
             sb.Append("Protein Accession" + '\t');
@@ -120,11 +104,10 @@ namespace EngineLayer
             sb.Append("Modification Info List" + "\t");
             if (FilesForQuantification != null)
             {
-                if (!fileSpecificHeader)
-                    for (int i = 0; i < FilesForQuantification.Length; i++)
-                        sb.Append("Intensity_" + Path.GetFileNameWithoutExtension(FilesForQuantification[i]) + '\t');
-                else
-                    sb.Append("Intensity" + '\t');
+                for (int i = 0; i < FilesForQuantification.Count; i++)
+                {
+                    sb.Append("Intensity_" + FilesForQuantification[i].FilenameWithoutExtension + '\t');
+                }
             }
             sb.Append("Number of PSMs" + '\t');
             sb.Append("Protein Decoy/Contaminant/Target" + '\t');
@@ -139,7 +122,7 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            
+
             // list of protein accession numbers
             sb.Append(ProteinGroupName);
             sb.Append("\t");
@@ -158,7 +141,18 @@ namespace EngineLayer
 
             // list of masses
             var sequences = ListOfProteinsOrderedByAccession.Select(p => p.BaseSequence).Distinct();
-            var masses = sequences.Select(p => new Proteomics.Peptide(p).MonoisotopicMass);
+            List<double> masses = new List<double>();
+            foreach (var sequence in sequences)
+            {
+                try
+                {
+                    masses.Add(new Proteomics.AminoAcidPolymer.Peptide(sequence).MonoisotopicMass);
+                }
+                catch (System.Exception)
+                {
+                    masses.Add(double.NaN);
+                }
+            }
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", masses)));
             sb.Append("\t");
 
@@ -214,12 +208,16 @@ namespace EngineLayer
             // MS1 intensity (retrieved from FlashLFQ in the SearchTask)
             if (IntensitiesByFile != null && FilesForQuantification != null)
             {
-                for (int i = 0; i < IntensitiesByFile.Length; i++)
+                foreach (var file in FilesForQuantification)
                 {
-                    if (IntensitiesByFile[i] > 0)
-                        sb.Append(IntensitiesByFile[i]);
+                    if (IntensitiesByFile[file] > 0)
+                    {
+                        sb.Append(IntensitiesByFile[file]);
+                    }
                     else
+                    {
                         sb.Append("");
+                    }
                     sb.Append("\t");
                 }
             }
@@ -227,11 +225,11 @@ namespace EngineLayer
             // number of PSMs for listed peptides
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
-            
+
             // isDecoy
-            if (isDecoy)
+            if (IsDecoy)
                 sb.Append("D");
-            else if (isContaminant)
+            else if (IsContaminant)
                 sb.Append("C");
             else
                 sb.Append("T");
@@ -273,7 +271,7 @@ namespace EngineLayer
             var proteinsWithUnambigSeqPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
             var proteinsWithPsmsWithLocalizedMods = new Dictionary<Protein, List<PeptideWithSetModifications>>();
 
-            foreach(var protein in Proteins)
+            foreach (var protein in Proteins)
             {
                 proteinsWithUnambigSeqPsms.Add(protein, new List<PeptideWithSetModifications>());
                 proteinsWithPsmsWithLocalizedMods.Add(protein, new List<PeptideWithSetModifications>());
@@ -288,7 +286,7 @@ namespace EngineLayer
                     foreach (var pepWithSetMods in PepsWithSetMods)
                     {
                         // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
-                        if(Proteins.Contains(pepWithSetMods.Protein))
+                        if (Proteins.Contains(pepWithSetMods.Protein))
                         {
                             proteinsWithUnambigSeqPsms[pepWithSetMods.Protein].Add(pepWithSetMods);
 
@@ -333,7 +331,7 @@ namespace EngineLayer
                     SequenceCoveragePercent.Add(seqCoveragePercent);
                 else
                     SequenceCoveragePercent.Add(double.NaN);
-                
+
                 // convert the observed amino acids to upper case if they are unambiguously observed
                 var coverageArray = sequenceCoverageDisplay.ToCharArray();
                 foreach (var obsResidueLocation in coveredOneBasedResidues)
@@ -341,7 +339,7 @@ namespace EngineLayer
                 sequenceCoverageDisplay = new string(coverageArray);
 
                 // check to see if there was an errored result; if not, add the coverage display
-                if(!errorResult)
+                if (!errorResult)
                     SequenceCoverageDisplayList.Add(sequenceCoverageDisplay);
                 else
                     SequenceCoverageDisplayList.Add("Error calculating sequence coverage");
@@ -353,7 +351,7 @@ namespace EngineLayer
                     var modsOnThisProtein = new HashSet<KeyValuePair<int, ModificationWithMass>>();
                     foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                     {
-                        foreach (var mod in pep.allModsOneIsNterminus)
+                        foreach (var mod in pep.AllModsOneIsNterminus)
                         {
                             if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
                                 modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
@@ -388,7 +386,7 @@ namespace EngineLayer
 
                         foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                         {
-                            foreach (var mod in pep.allModsOneIsNterminus)
+                            foreach (var mod in pep.AllModsOneIsNterminus)
                             {
                                 int tempPepNumTotal = 0; //For one mod, The total Pep Num
                                 if (!mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed") && !mod.Value.terminusLocalization.Equals(TerminusLocalization.PepC) && !mod.Value.terminusLocalization.Equals(TerminusLocalization.NPep))
@@ -465,12 +463,23 @@ namespace EngineLayer
                 DisplayModsOnPeptides = this.DisplayModsOnPeptides
             };
 
-            subsetPg.IntensitiesByFile = IntensitiesByFile != null ? new[] { IntensitiesByFile[System.Array.IndexOf(FilesForQuantification, fullFilePath)] } : new double[1];
+            SpectraFileInfo spectraFileInfo = null;
+            if (FilesForQuantification != null)
+            {
+                spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath).First();
+                subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
+            }
+
+            if (IntensitiesByFile == null)
+            {
+                subsetPg.IntensitiesByFile = null;
+            }
+            else
+            {
+                subsetPg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { spectraFileInfo, IntensitiesByFile[spectraFileInfo] } };
+            }
 
             return subsetPg;
         }
-
-        #endregion Public Methods
-
     }
 }

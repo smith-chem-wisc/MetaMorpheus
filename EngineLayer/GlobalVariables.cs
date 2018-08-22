@@ -1,5 +1,6 @@
 ﻿using Nett;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,19 +10,11 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
-        #region Private Fields
-
-        private static List<Modification> allModsKnown = new List<Modification>();
-        private static HashSet<string> allModTypesKnown = new HashSet<string>();
-
-        #endregion Private Fields
-
-        #region Public Constructors
+        private static List<Modification> _AllModsKnown = new List<Modification>();
+        private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
 
         static GlobalVariables()
         {
-            #region Determine MetaMorpheusVersion
-
             MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
 
             if (MetaMorpheusVersion.Equals("1.0.0.0"))
@@ -34,7 +27,7 @@ namespace EngineLayer
             }
             else
             {
-                // as of 0.0.277, AppVeyor appends the build number 
+                // as of 0.0.277, AppVeyor appends the build number
                 // this is intentional; it's to avoid conflicting AppVeyor build numbers
                 // trim the build number off the version number for displaying/checking versions, etc
                 var foundIndexes = new List<int>();
@@ -46,10 +39,6 @@ namespace EngineLayer
                 MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
             }
 
-            #endregion Determine MetaMorpheusVersion
-
-            #region Figure out DataDir
-
             {
                 var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
@@ -58,61 +47,75 @@ namespace EngineLayer
                     DataDir = AppDomain.CurrentDomain.BaseDirectory;
             }
 
-            #endregion Figure out DataDir
-
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
+
+            ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
             PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
-
+            
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
+            {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+            }
             AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
             AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
-
-            ProteaseDictionary = LoadProteaseDictionary(Path.Combine(DataDir, @"Data", "proteases.tsv"));
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
+        public static List<string> ErrorsReadingMods = new List<string>();
         // File locations
         public static string DataDir { get; }
-
+        public static bool StopLoops { get; set; }
         public static string ElementsLocation { get; }
         public static string MetaMorpheusVersion { get; }
         public static IGlobalSettings GlobalSettings { get; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
-        public static Dictionary<string, Protease> ProteaseDictionary;
-        public static IEnumerable<Modification> AllModsKnown { get { return allModsKnown.AsEnumerable(); } }
-        public static IEnumerable<string> AllModTypesKnown { get { return allModTypesKnown.AsEnumerable(); } }
+        public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
+        public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
+        public static string ExperimentalDesignFileName { get; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
-        public static void AddMods(IEnumerable<Modification> enumerable)
+        public static void AddMods(IEnumerable<Modification> modifications)
         {
-            foreach (var ye in enumerable)
+            foreach (var mod in modifications)
             {
-                if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
-                    throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
-                if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType) && !b.Equals(ye)))
-                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) + Environment.NewLine + Environment.NewLine);
-                else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
+                if (string.IsNullOrEmpty(mod.modificationType) || string.IsNullOrEmpty(mod.id))
+                {
+                    ErrorsReadingMods.Add(mod.ToString() + Environment.NewLine + " has null or empty modification type");
                     continue;
+                }
+                if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType) && !b.Equals(mod)))
+                {
+                    ErrorsReadingMods.Add("Modification id and type are equal, but some fields are not! " +
+                        "The following mod was not read in: " + Environment.NewLine + mod.ToString());
+                    continue;
+                }
+                else if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType)))
+                {
+                    // same ID, same mod type, and same mod properties; continue and don't output an error message
+                    // this could result from reading in an XML database with mods annotated at the top
+                    // that are already loaded in MetaMorpheus
+                    continue;
+                }
+                else if(AllModsKnown.Any(m => m.id == mod.id))
+                {
+                    // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
+                    // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
+                    // so we don't know which mod to use, causing unnecessary ambiguity
+                    ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.modificationType + ":" + mod.id);
+                    continue;
+                }
                 else
                 {
-                    allModsKnown.Add(ye);
-                    allModTypesKnown.Add(ye.modificationType);
+                    // no errors! add the mod
+                    _AllModsKnown.Add(mod);
+                    _AllModTypesKnown.Add(mod.modificationType);
                 }
             }
         }
@@ -120,42 +123,13 @@ namespace EngineLayer
         public static string CheckLengthOfOutput(string psmString)
         {
             if (psmString.Length > 32000 && GlobalSettings.WriteExcelCompatibleTSVs)
-                return "Output too long for Excel";
-            else
-                return psmString;
-        }
-
-        #endregion Public Methods
-
-        #region Private Methods
-
-        private static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
-        {
-            Dictionary<string, Protease> dict = new Dictionary<string, Protease>();
-            using (StreamReader proteases = new StreamReader(proteasesLocation))
             {
-                proteases.ReadLine();
-
-                while (proteases.Peek() != -1)
-                {
-                    string line = proteases.ReadLine();
-                    string[] fields = line.Split('\t');
-
-                    string name = fields[0];
-                    string[] sequences_inducing_cleavage = fields[1].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                    string[] sequences_preventing_cleavage = fields[2].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                    var cleavage_terminus = (TerminusType)Enum.Parse(typeof(TerminusType), fields[3], true);
-                    var cleavage_specificity = (CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), fields[4], true);
-                    string psi_ms_accession_number = fields[5];
-                    string psi_ms_name = fields[6];
-                    string site_regexp = fields[7];
-                    var protease = new Protease(name, sequences_inducing_cleavage, sequences_preventing_cleavage, cleavage_terminus, cleavage_specificity, psi_ms_accession_number, psi_ms_name, site_regexp);
-                    dict.Add(protease.Name, protease);
-                }
+                return "Output too long for Excel";
             }
-            return dict;
+            else
+            {
+                return psmString;
+            }
         }
-
-        #endregion Private Methods
-    }
+            }
 }

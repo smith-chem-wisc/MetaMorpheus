@@ -4,18 +4,19 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TaskLayer;
-using System;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
     [TestFixture]
     public static class TestPsm
     {
-        #region Public Methods
-
         [Test]
         public static void TestPsmHeader()
         {
@@ -30,8 +31,8 @@ namespace Test
                 full_name: "fullName",
                 sequenceVariations: new List<SequenceVariation> { new SequenceVariation(2, "P", "Q", "changed this sequence") })
                     .Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scann = myMsDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+            MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
             PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods.CompactPeptide(TerminusType.None), 1, 2, 3, scan, digestionParams);
 
@@ -51,7 +52,7 @@ namespace Test
             Tolerance fragmentTolerance = new PpmTolerance(10);
             List<ProductType> lp = new List<ProductType> { ProductType.B };
 
-            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false).Run();
+            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, lp, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance), new List<string>()).Run();
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
@@ -60,6 +61,42 @@ namespace Test
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
         }
 
-        #endregion Public Methods
+        [Test]
+        public static void TestPSMOutput()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                CommonParameters = new CommonParameters
+                (
+                    qValueOutputFilter: 1
+                )
+            };
+
+
+            SearchTask searchTask2 = new SearchTask()
+            {
+                CommonParameters = new CommonParameters
+                (
+                    qValueOutputFilter: 0
+                )
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engine.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"search\AllPSMs.psmtsv");
+            var lines = File.ReadAllLines(psmFile);
+            Assert.That(lines.Length == 12);
+
+            var engine2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engine2.Run();
+
+            var lines2 = File.ReadAllLines(psmFile);
+            Assert.That(lines2.Length == 7);
+        }
     }
 }

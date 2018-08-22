@@ -17,20 +17,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
+using Proteomics.ProteolyticDigestion;
 
 namespace TaskLayer
 {
     public class GptmdTask : MetaMorpheusTask
     {
-        #region Private Fields
-
         private const double tolForComboLoading = 1e-3;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public GptmdTask() : base(MyTask.Gptmd)
         {
@@ -38,15 +32,7 @@ namespace TaskLayer
             GptmdParameters = new GptmdParameters();
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public GptmdParameters GptmdParameters { get; set; }
-
-        #endregion Public Properties
-
-        #region Protected Methods
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -54,7 +40,7 @@ namespace TaskLayer
             Status("Loading modifications...", taskId);
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
-            List<string> localizeableModificationTypes = CommonParameters.LocalizeAll ? GlobalVariables.AllModTypesKnown.ToList() : CommonParameters.ListOfModTypesLocalize.ToList();
+            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
             List<ModificationWithMass> gptmdModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.modificationType, b.id))).ToList();
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
@@ -70,7 +56,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
 
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
 
@@ -101,7 +87,7 @@ namespace TaskLayer
             Status("Running G-PTM-D...", new List<string> { taskId });
             MyTaskResults = new MyTaskResults(this)
             {
-                newDatabases = new List<DbForTask>()
+                NewDatabases = new List<DbForTask>()
             };
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
             HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
@@ -110,10 +96,12 @@ namespace TaskLayer
 
             object lock1 = new object();
             object lock2 = new object();
-            ParallelOptions parallelOptions = CommonParameters.ParallelOptions();
 
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
+                // Stop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
                 var origDataFile = currentRawFileList[spectraFileIndex];
 
                 // mark the file as in-progress
@@ -125,39 +113,41 @@ namespace TaskLayer
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
                 PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, searchMode, false, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
-                lock (lock2)
-                {
-                    allPsms.AddRange(allPsmsArray);
-                }
+                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, searchMode, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+
+                allPsms.AddRange(allPsmsArray.Where(p => p != null));
+
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
-            });
+            }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             // Group and order psms
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { taskId });
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ionTypes, ListOfDigestionParams, CommonParameters.ReportAllAmbiguity, new List<string> { taskId });
-
-            var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
+            var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
             foreach (var huh in allPsms)
-                if (huh != null)
-                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatchingTest);
+            {
+                huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatchingTest);
+            }
 
-            allPsms = allPsms.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            allPsms = allPsms.OrderByDescending(b => b.Score)
+                .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass))
+                .Select(b => b.First()).ToList();
 
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, new List<string> { taskId }).Run();
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
-            WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
-            SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+            WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>(), double.PositiveInfinity);
+            FinishedWritingFile(writtenFile, new List<string> { taskId });
 
             // get file-specific precursor mass tolerances for the GPTMD engine
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
@@ -173,7 +163,10 @@ namespace TaskLayer
             }
 
             // run GPTMD engine
-            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, new List<string> { taskId }).Run();
+            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, new List<string> { taskId }).Run();
+
+            // Stop if canceled
+            if (GlobalVariables.StopLoops) { return MyTaskResults; }
 
             // write GPTMD databases
             if (dbFilenameList.Any(b => !b.IsContaminant))
@@ -190,9 +183,9 @@ namespace TaskLayer
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
-                SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+                FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
-                MyTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
                 MyTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddNiceText("Mods types and counts:");
                 MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
@@ -212,19 +205,15 @@ namespace TaskLayer
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
-                SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
-                MyTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
+                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
                 MyTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddNiceText("Mods types and counts:");
                 MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             return MyTaskResults;
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private static IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> modificationsThatCanBeCombined)
         {
@@ -266,7 +255,5 @@ namespace TaskLayer
                 }
             }
         }
-
-        #endregion Private Methods
     }
 }

@@ -1,8 +1,10 @@
 using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,23 +17,16 @@ namespace Test
     [TestFixture]
     public static class MyTaskTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestEverythingRunner()
         {
-            #region Setup tasks
-
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false,
-                    DigestionParams = new DigestionParams(MaxMissedCleavages: 0,MinPeptideLength: 1,InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)
-                },
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+
                 CalibrationParameters = new CalibrationParameters
                 {
                     WriteIntermediateFiles = true,
@@ -40,18 +35,13 @@ namespace Test
             };
             GptmdTask task2 = new GptmdTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters()
             };
 
             SearchTask task3 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -62,10 +52,8 @@ namespace Test
 
             SearchTask task4 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
@@ -76,8 +64,6 @@ namespace Test
                 ("task2", task2),
                 ("task3", task3),
                 ("task4", task4),};
-
-            #endregion Setup tasks
 
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
@@ -99,18 +85,14 @@ namespace Test
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
-
-            #region Write the files
 
             string mzmlName = @"ok.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string xmlName = "okk.xml";
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
-
-            #endregion Write the files
 
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
@@ -120,21 +102,18 @@ namespace Test
         [Test]
         public static void TestMultipleFilesRunner()
         {
-            #region Setup tasks
-
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask
             {
                 CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(MaxMissedCleavages:0,MinPeptideLength:1,InitiatorMethionineBehavior:InitiatorMethionineBehavior.Retain),
-                    ListOfModsVariable = new List<(string, string)> { ("Common Variable", "Oxidation of M") },
-                    ListOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModTypesLocalize = GlobalVariables.AllModTypesKnown.ToList(),
-                    ProductMassTolerance = new AbsoluteTolerance(0.01)
-                },
+                (
+                    digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
+                    listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    productMassTolerance: new AbsoluteTolerance(0.01)
+                ),
                 CalibrationParameters = new CalibrationParameters
                 {
                     NumFragmentsNeededForEveryIdentification = 6,
@@ -143,18 +122,16 @@ namespace Test
             GptmdTask task2 = new GptmdTask
             {
                 CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(),
-                    ProductMassTolerance = new AbsoluteTolerance(0.01)
-                },
+                (
+                    digestionParams: new DigestionParams(),
+                    productMassTolerance: new AbsoluteTolerance(0.01)
+                ),
             };
 
             SearchTask task3 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
@@ -164,10 +141,8 @@ namespace Test
             };
             SearchTask task4 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ConserveMemory = false
-                },
+                CommonParameters = new CommonParameters(),
+
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
@@ -178,8 +153,6 @@ namespace Test
                 ("task2", task2),
                 ("task3", task3),
                 ("task4", task4),};
-
-            #endregion Setup tasks
 
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
@@ -202,12 +175,12 @@ namespace Test
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             string mzmlName1 = @"ok1.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName1, false);
 
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             string mzmlName2 = @"ok2.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
@@ -229,13 +202,13 @@ namespace Test
             MetaMorpheusTask task = new SearchTask
             {
                 CommonParameters = new CommonParameters
-                {
-                    DigestionParams = new DigestionParams(MinPeptideLength:2),
-                    
-                    ScoreCutoff = 1,
-                    DeconvolutionIntensityRatio = 999,
-                    DeconvolutionMassTolerance = new PpmTolerance(50),
-                },
+                (
+                    digestionParams: new DigestionParams(minPeptideLength: 2),
+
+                    scoreCutoff: 1,
+                    deconvolutionIntensityRatio: 999,
+                    deconvolutionMassTolerance: new PpmTolerance(50)
+                ),
                 SearchParameters = new SearchParameters
                 {
                     DecoyType = DecoyType.None,
@@ -245,18 +218,12 @@ namespace Test
 
             string xmlName = "MakeSureFdrDoesntSkip.xml";
 
-            #region Generate protein and write to file
-
             {
                 Protein theProtein = new Protein("MG", "accession1");
                 ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
             }
 
-            #endregion Generate protein and write to file
-
             string mzmlName = @"MakeSureFdrDoesntSkip.mzML";
-
-            #region Generate and write the mzml
 
             {
                 var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
@@ -294,8 +261,6 @@ namespace Test
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
 
-            #endregion Generate and write the mzml
-
             // RUN!
             var theStringResult = task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1"));
@@ -306,22 +271,19 @@ namespace Test
         {
             MetaMorpheusTask task1;
 
-            #region Setup tasks
-
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
-                    {
-                        ConserveMemory = false,
-                        DigestionParams = new DigestionParams(InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                        ListOfModsVariable = new List<(string, string)>(),
-                        ListOfModsFixed = new List<(string, string)>(),
-                        ScoreCutoff = 1,
-                        PrecursorMassTolerance = new AbsoluteTolerance(1)
-                    },
+                    (
+                        digestionParams: new DigestionParams(initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        listOfModsVariable: new List<(string, string)>(),
+                        listOfModsFixed: new List<(string, string)>(),
+                        scoreCutoff: 1,
+                        precursorMassTolerance: new AbsoluteTolerance(1)
+                    ),
 
                     GptmdParameters = new GptmdParameters
                     {
@@ -330,22 +292,14 @@ namespace Test
                 };
             }
 
-            #endregion Setup tasks
-
             string xmlName = "sweetness.xml";
-
-            #region Generate protein and write to file
 
             {
                 Protein theProtein = new Protein("MPEPTIDEKANTHE", "accession1");
                 ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
             }
 
-            #endregion Generate protein and write to file
-
             string mzmlName = @"ok.mzML";
-
-            #region Generate and write the mzml
 
             {
                 var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
@@ -358,12 +312,10 @@ namespace Test
                 PeptideWithSetModifications targetGood = targetDigested[0];
 
                 PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
+                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
 
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
-
-            #endregion Generate and write the mzml
 
             // RUN!
             var theStringResult = task1.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
@@ -373,15 +325,13 @@ namespace Test
         [Test]
         public static void TestPeptideCount()
         {
-            #region setup
-
             SearchTask testPeptides = new SearchTask
             {
                 CommonParameters = new CommonParameters
-                {
-                    ListOfModTypesLocalize = new List<string> { ("ConnorModType") },
-                    DigestionParams = new DigestionParams(MinPeptideLength:5)
-                },
+                (
+
+                    digestionParams: new DigestionParams(minPeptideLength: 5)
+                ),
                 SearchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,
@@ -403,10 +353,6 @@ namespace Test
                 testUniqeMod
             });
 
-            #endregion setup
-
-            #region mod setup and protein creation
-
             //create modification lists
 
             List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
@@ -421,10 +367,6 @@ namespace Test
             //protein Creation (One with mod and one without)
             Protein TestProtein = new Protein("PEPTID", "accession1", "organism", new List<Tuple<string, string>>(), modDictionary);
 
-            #endregion mod setup and protein creation
-
-            #region XML setup
-
             //First Write XML Database
 
             string xmlName = "singleProteinWithTwoMods.xml";
@@ -438,23 +380,15 @@ namespace Test
             modList.Add("test", Hash);
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProtein }, xmlName);
 
-            #endregion XML setup
-
-            #region MZML setup
-
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
 
             //Finally Write MZML file
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-
-            #endregion MZML setup
-
-            #region run
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
@@ -467,17 +401,89 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("Target peptides within 1% FDR: 4"))
+                    if (line.Contains("All target peptides within 1% FDR: 4"))
                     {
                         foundD = true;
                     }
                 }
             }
             Assert.IsTrue(foundD);
-
-            #endregion run
         }
 
-        #endregion Public Methods
+        [Test]
+        public static void TestFileOutput()
+        {
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestFileOutput");
+
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
+            task.SearchParameters.DecoyType = DecoyType.None;
+
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
+            DbForTask db2 = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"DbForPrunedDb.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
+            string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"PrunedDbSpectra.mzml");
+            EverythingRunnerEngine singleMassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SingleMassSpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder);
+            EverythingRunnerEngine multipleMassSpectraFiles = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("MultipleMassSpectraFileOutput", task) }, new List<string> { raw, raw2 }, new List<DbForTask> { db, db2 }, thisTaskOutputFolder);
+
+            singleMassSpectraFile.Run();
+            multipleMassSpectraFiles.Run();
+
+            // test single file output
+            HashSet<string> expectedFiles = new HashSet<string> {
+                "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "AllQuantifiedPeaks.tsv",
+                "AllQuantifiedPeptides_BaseSequences.tsv", "AllQuantifiedPeptides_FullSequences.tsv", "prose.txt", "results.txt", "SearchTaskconfig.toml" };
+
+            HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
+            
+            // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
+            var missingFiles = expectedFiles.Except(files);
+            var extraFiles = files.Except(expectedFiles);
+
+            // test that output is what's expected
+            Assert.That(files.SetEquals(expectedFiles));
+
+            // test multi file output
+            files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
+            missingFiles = expectedFiles.Except(files);
+            extraFiles = files.Except(expectedFiles);
+
+            Assert.That(files.SetEquals(expectedFiles));
+
+            expectedFiles = new HashSet<string> {
+                "PrunedDbSpectra.mzID", "PrunedDbSpectra_PSMs.psmtsv", "PrunedDbSpectra_PSMsFormattedForPercolator.tsv", "PrunedDbSpectra_Peptides.psmtsv", "PrunedDbSpectra_ProteinGroups.tsv", "PrunedDbSpectra_QuantifiedPeaks.tsv",
+                "sliced-raw.mzID", "sliced-raw_PSMs.psmtsv", "sliced-raw_PSMsFormattedForPercolator.tsv", "sliced-raw_Peptides.psmtsv", "sliced-raw_ProteinGroups.tsv", "sliced-raw_QuantifiedPeaks.tsv" };
+
+            string individualFilePath = Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results");
+            Assert.That(Directory.Exists(individualFilePath));
+
+            files = new HashSet<string>(Directory.GetFiles(individualFilePath).Select(v => Path.GetFileName(v)));
+            missingFiles = expectedFiles.Except(files);
+            extraFiles = files.Except(expectedFiles);
+
+            Assert.That(files.SetEquals(expectedFiles));
+        }
+
+        /// <summary>
+        /// This tests for a bug in annotating mods in the search task. The situation is that if you search with a fasta database (no mods annotated),
+        /// and then do GPTMD, then search with the GPTMD database, the resulting PSM will have a UniProt mod annotated on it.
+        /// Also, if GPTMD has a mod with the same name as a UniProt mod, the annotated PSM will be ambiguous between
+        /// the UniProt and the MetaMorpheus modification.
+        /// </summary>
+        public static void TestUniprotNamingConflicts()
+        {
+            // write the mod
+            var outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUniprotNamingConflicts");
+            Directory.CreateDirectory(outputDir);
+            string modToWrite = "Custom List\nID   Hydroxyproline\nTG   P\nPP   Anywhere.\nMT   Biological\nCF   O1\n" + @"//";
+            var filePath = Path.Combine(GlobalVariables.DataDir, @"Mods", @"hydroxyproline.txt");
+            File.WriteAllLines(filePath, new string[] { modToWrite });
+
+            // read the mod
+            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath));
+            Assert.That(GlobalVariables.AllModsKnown.Where(v => v.id == "Hydroxyproline").Count() == 1);
+
+            // should have an error message...
+            Assert.That(GlobalVariables.ErrorsReadingMods.Where(v => v.Contains("Hydroxyproline")).Count() > 0);
+        }
     }
 }

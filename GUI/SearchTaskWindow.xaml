@@ -64,7 +64,7 @@
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Deconvolution Max Assumed Charge State" />
-                                        <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The maximum charge state that deconvolution should allow. Minimum is 1.
@@ -88,7 +88,7 @@
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="TopNPeaksTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Use the N most intense peaks from the spectrum and remove all other peaks" />
                                             </ToolTipService.ToolTip>
@@ -96,7 +96,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum intensity ratio" />
-                                        <TextBox x:Name="MinRatioTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MinRatioTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Peaks must be this intense compared to the base peak" />
                                             </ToolTipService.ToolTip>
@@ -112,7 +112,7 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Precursor Mass Tolerance" />
-                                <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <TextBox x:Name="precursorMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS1 peaks.
@@ -125,7 +125,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Product Mass Tolerance" />
-                                <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS2 peaks.
@@ -177,7 +177,7 @@
                                                 <StackPanel Grid.Column="1">
                                                     <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <RadioButton.ToolTip>
-                                                                  <TextBlock>
+                                                            <TextBlock>
                                                                   Indexed search designed for massive search spaces (wide/open precursor mass tolerance).
                                                                   <LineBreak/>
                                                                   This search generates an indexed database that is saved to the folder of the original database.
@@ -227,7 +227,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                                                     <Label x:Name="numerOfDatabaseSearchesLabel" Content="Number of Database Partitions" />
-                                                    <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
+                                                    <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
                                                         <TextBox.ToolTip>
                                                             <TextBlock>
                                                                 Splits indexed search modes (Modern, Semi-, Non-) into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
@@ -283,7 +283,7 @@
                                         </RadioButton>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxMissedCleavagesLabel" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox"  PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
+                                            <TextBox x:Name="missedCleavagesTextBox"  PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                     Maximum number of missed proteolytic cleavages allowed.
@@ -321,7 +321,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxModificationIsoformsLabel" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The maximum number of isoforms (sequences with modifications) allowed from a given unmodified "base-sequence". 
@@ -333,7 +333,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The minimum allowed peptide length. Must be a positive, non-zero integer.
@@ -341,7 +341,7 @@
                                                 </TextBox.ToolTip>
                                             </TextBox>
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
+                                            <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The maximum allowed peptide length. Leave empty for no limitation.
@@ -351,7 +351,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lbMaxModNum" Content="Max mods per peptide" />
-                                            <TextBox x:Name="txtMaxModNum" PreviewTextInput="PreviewIfInt" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox x:Name="MaxModNumTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         The maximum number of modifications allowed on a single isoform.
@@ -365,6 +365,7 @@
                             <GroupBox Header="Fragment Ion Search Parameters">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
@@ -382,7 +383,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da)" />
-                                            <TextBox x:Name="txtMaxFragmentSize" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox x:Name="MaxFragmentMassTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         Indexed Search Only: Limits the maximum MS2 fragment mass to avoid rare crashes.
@@ -408,6 +409,20 @@
                                         <StackPanel Orientation="Horizontal" Margin="87,5,5,5">
                                             <CheckBox x:Name="cCheckBox" Content="c ions" />
                                             <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label Content="Max Threads" />
+                                            <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <TextBox.ToolTip>
+                                                    <TextBlock>
+                                                        By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
+                                                        <LineBreak/>
+                                                        Enter a lower number to limit CPU usage.
+                                                    </TextBlock>
+                                                </TextBox.ToolTip>
+                                            </TextBox>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -496,7 +511,7 @@
                             </GroupBox>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
-                                <TextBox x:Name="minScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
                                         <TextBlock>
                                             The minimum MetaMorpheus score allowed for a PSM to be reportable.
@@ -647,16 +662,21 @@
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBox x:Name="quantPpmTolerance" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                                        <TextBox x:Name="peakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                             </ToolTipService.ToolTip>
                                         </TextBox>
-                                        <Label x:Name="quantPpmLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                        <Label x:Name="peakFindingLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
                                     </StackPanel>
                                     <CheckBox x:Name="checkBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <CheckBox x:Name="checkBoxNormalize" Content="Normalize quantification results" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                 </StackPanel>
@@ -670,7 +690,7 @@
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Histogram bin width (Da):" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
-                                        <TextBox x:Name="histogramBinWidthTextBox" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                        <TextBox x:Name="histogramBinWidthTextBox" PreviewTextInput="CheckIfNumber" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -726,6 +746,22 @@
                                     </DataGrid>
                                 </StackPanel>
                             </GroupBox>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
+                <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                    <Expander x:Name="OutputExpander">
+                        <StackPanel Orientation="Vertical">
+                            <CheckBox x:Name="ckbMzId" Content="Write .mzID" />
+                            <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox x:Name="QValueCheckBox" Content="Filter results to q-value" IsChecked="False">
+                                    <ToolTipService.ToolTip>
+                                        Removes PSM and protein results from the written output below the input q-value.
+                                    </ToolTipService.ToolTip>
+                                </CheckBox>
+                                <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=QValueCheckBox}" Width="45" Height="23"/>
+                            </StackPanel>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

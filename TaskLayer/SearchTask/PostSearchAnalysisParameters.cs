@@ -1,6 +1,8 @@
 ﻿using EngineLayer;
 using FlashLFQ;
+using MassSpectrometry;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 
 namespace TaskLayer
@@ -20,6 +22,7 @@ namespace TaskLayer
         public List<ModificationWithMass> FixedModifications { get; set; }
         public int NumNotches { get; set; }
         public string OutputFolder { get; set; }
+        public string IndividualResultsOutputFolder { get; set; }
         public FileSpecificParameters[] FileSettingsList { get; set; }
         public Dictionary<string, int[]> NumMs2SpectraPerFile { get; set; }
         public MyFileManager MyFileManager { get; set; }
