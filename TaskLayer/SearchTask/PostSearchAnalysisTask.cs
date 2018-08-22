@@ -322,7 +322,7 @@ namespace TaskLayer
 
                 proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
             }
-
+            
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
@@ -349,6 +349,49 @@ namespace TaskLayer
             {
                 Parameters.FlashLfqResults = FlashLfqEngine.Run();
             }
+
+            //MultiProtease MBR capability code
+            //Parameters.FlashLfqResults = null;
+
+            //foreach (var proteasePsms in proteaseSortedPsms)
+            //{
+            //    var flashLFQIdentifications = new List<Identification>();
+            //    var proteasePsmsGroupedByFile = proteasePsms.Value.GroupBy(p => p.FullFilePath);
+            //    foreach (var spectraFile in proteasePsmsGroupedByFile)
+            //    {
+            //        var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
+
+            //        foreach (var psm in spectraFile)
+            //        {
+            //            flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+            //                psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+            //        }
+            //    }
+
+            //    // run FlashLFQ
+            //    var FlashLfqEngine = new FlashLFQEngine(
+            //        allIdentifications: flashLFQIdentifications,
+            //        normalize: Parameters.SearchParameters.Normalize,
+            //        ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+            //        matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+            //        silent: true,
+            //        optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
+
+            //    if (flashLFQIdentifications.Any())
+            //    {
+            //        //make specific to protease
+            //        var results = FlashLfqEngine.Run();
+
+            //        if (Parameters.FlashLfqResults == null)
+            //        {
+            //            Parameters.FlashLfqResults = results;
+            //        }
+            //        else
+            //        {
+            //            Parameters.FlashLfqResults.MergeResultsWith(results);
+            //        }
+            //    }
+            //}
 
             // get protein intensity back from FlashLFQ
             if (ProteinGroups != null && Parameters.FlashLfqResults != null)
@@ -505,10 +548,12 @@ namespace TaskLayer
                         if (Parameters.SearchParameters.WriteMzId)
                         {
                             Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+
                             var mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
                             MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications,
                                 new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
                                 CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
+
                             FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                         }
 
@@ -516,9 +561,11 @@ namespace TaskLayer
                         if (Parameters.SearchParameters.WritePepXml)
                         {
                             Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-                            var pepXMLFilePath = Path.Combine(Parameters.OutputFolder, "Individual Spectra Files", strippedFileName + ".pep.XML");
+
+                            var pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
                             PepXMLWriter.WritePepXml(psmsForThisFile, Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
                                 CommonParameters, pepXMLFilePath, CommonParameters.QValueOutputFilter);
+
                             FinishedWritingFile(pepXMLFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                         }
 
