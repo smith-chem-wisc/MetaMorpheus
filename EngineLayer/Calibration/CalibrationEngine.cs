@@ -142,6 +142,7 @@ namespace EngineLayer.Calibration
                 if (relativeErrors[index] == 0) //if there were no points, then the value should be perfectly zero (the double default)
                 {
                     int startingBlankIndex = index;
+                    //increase the index until we find the next scan containing a data point
                     for (; index < relativeErrors.Length && relativeErrors[index] == 0; index++) { };
                     double nextError = index == relativeErrors.Length ? relativeErrors[startingBlankIndex - 1] : relativeErrors[index]; //can't go all the way through without any data points, the original function checks for enough data points (where enough is more than zero)
                     double previousError = startingBlankIndex > 0 ? relativeErrors[startingBlankIndex - 1] : nextError;
@@ -157,9 +158,9 @@ namespace EngineLayer.Calibration
             double[] smoothedErrors = new double[relativeErrors.Length];
             int leftIndex = 0; //starting scan index used for numbers less than the current scan
             int rightIndex = 1; //
-            double smoothedCorrectionFactor = 0;
+            double smoothedCorrectionFactor = 0; //this variable is the sum of all nearby errors, to be later divided by the number of summed errors for a smoothed average error
             //for scan #1 (index 0)
-            //no left scans, because we're at the beginning of the file. Just populate the first N number of scan errors
+            //no left scans, because we're at the beginning of the file. Just populate the first "numberOfScansUsedForSmoothingOnEachSide" scan errors on the right side
             for (; rightIndex < numberOfScansUsedForSmoothingOnEachSide && rightIndex < relativeErrors.Length; rightIndex++)
             {
                 smoothedCorrectionFactor += relativeErrors[rightIndex];
