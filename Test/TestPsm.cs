@@ -130,12 +130,18 @@ namespace Test
             var linesContaminant = File.ReadAllLines(psmFileContaminant);
             Assert.That(linesContaminant.Length == 12);
 
+            string proteinFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllProteinGroups.tsv");
+            var linesContaminantProtein = File.ReadAllLines(proteinFileContaminant);
+            Assert.That(linesContaminantProtein.Length == 7);
+
             var engineContaminant2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("ContaminantTest", searchTaskContaminant) }, new List<string> { myFile }, new List<DbForTask> {  new DbForTask(myDatabase, true) }, outputFolder);
             engineContaminant2.Run();
 
-            string psmFileContaminant2 = Path.Combine(outputFolder, @"ContaminantTest\AllPSMs.psmtsv");
             var linesContaminant2 = File.ReadAllLines(psmFileContaminant);
             Assert.That(linesContaminant2.Length == 1);
+
+            var linesContaminantProtein2 = File.ReadAllLines(proteinFileContaminant);
+            Assert.That(linesContaminantProtein2.Length == 1);
 
             //Filter contaminants and decoys
             SearchTask searchTaskDecoyContaminant = new SearchTask();
@@ -147,7 +153,7 @@ namespace Test
             var engineDecoyContaminant = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("DecoyContaminantTest", searchTaskDecoyContaminant) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, true) }, outputFolder);
             engineContaminant.Run();
 
-            string psmFileDecoyContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllPSMs.psmtsv");
+            string psmFileDecoyContaminant = Path.Combine(outputFolder, @"DecoyContaminantTest\AllPSMs.psmtsv");
             var linesDecoyContaminant = File.ReadAllLines(psmFileContaminant);
             Assert.That(linesContaminant.Length == 12);
 
