@@ -36,14 +36,14 @@
 
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
-      <ComponentGroupRef Id="Appsrc_NeoData_files" />
-      <ComponentGroupRef Id="Appsrc_NeoTomlFiles_files" />
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
-      <ComponentRef Id="RemoveNeo"/>
+      <ComponentGroupRef Id="Appsrc_Contaminants_files"/>
+      <!--<ComponentGroupRef Id="ExcelDefaults"/>-->
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
       <ComponentRef Id="RemoveApp"/>
       <ComponentRef Id="DesktopShortcut"/>
+      
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -63,10 +63,6 @@
           <Directory Id="DataFolder" Name="Data" />
           <Directory Id="ModsFolder" Name="Mods" />
           <Directory Id="ProteolyticDigestionFolder" Name="ProteolyticDigestion" />
-          <Directory Id="NeoFolder" Name="Neo">
-            <Directory Id="NeoDataFolder" Name="Data" />
-            <Directory Id="NeoTomlFilesFolder" Name="TomlFiles" />
-          </Directory>
         </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder">
@@ -93,14 +89,7 @@
           <Directory Id="MetaAppDataFolder" Name="Data" />
           <Directory Id="MetaAppModsFolder" Name="Mods" />
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
-          <Directory Id="NeoAppFolder" Name="Neo">
-            <Directory Id="MetaAppNeoDataFolder" Name="Data" />
-            <Directory Id="MetaAppNeoTomlFilesFolder" Name="TomlFiles" />
-            <Component Id="RemoveNeo" Guid="af5ff12f-ef0c-4945-be30-36c00ea734e9">
-              <RemoveFolder Id="NeoAppFolder" On="uninstall"/>
-              <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-            </Component>
-          </Directory>
+          <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
         </Directory>
       </Directory>
     </Directory>
@@ -131,6 +120,12 @@
     <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
     <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
+    <Property Id="EXCELDEFAULTPROPERTY" Value="1"/>
+    <!--<Property Id="EXCELSELECT" Value="1">
+      <RegistrySearch Id="CheckFileDir" Root="HKCR" Key="Excel.Backup\shell\Open\command" Type="file">
+        <FileSearch Name="EXCEL.exe"/>
+      </RegistrySearch>
+    </Property>-->
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
   </Product>
@@ -449,85 +444,57 @@
     </ComponentGroup>
   </Fragment>
 
-  <!--Builds the App Neo\Data folder-->
+  <!--Builds the App Contaminants folder-->
   <Fragment>
-    <ComponentGroup Id="Appsrc_NeoData_files" Directory="MetaAppNeoDataFolder">
-      <Component Id="RemoveNeoData" Guid="a453b2c1-f11d-4953-8a21-c1cdd20e9fea">
+    <ComponentGroup Id="Appsrc_Contaminants_files" Directory="MetaAppContaminantsFolder">
+      <Component Id="RemoveContaminants">
         <Condition>OVERWRITEAPPDATA</Condition>
-        <RemoveFolder Id="MetaAppNeoDataFolder" On="both"/>
+        <RemoveFolder Id="MetaAppContaminantsFolder" On="both"/>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
-      <Component Id="Appsrc_Neo_combos.txt" Guid="a2c2bec9-86f3-4969-a1fa-44290e98ea08">
+      <Component Id="Appsrc_Contaminants_MPI_Contaminants.fasta" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoData_amino_acids.tsv" Name="amino_acids.tsv" Source="$(var.GUI_TargetDir)Neo\Data\amino_acids.tsv" />
-      </Component>
-      <Component Id="Appsrc_NeoData_Dictionary1.txt" Guid="88a37ee8-b6b4-47c2-8e3f-d197a28cacc1">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoData_Dictionary1.txt" Name="Dictionary1.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary1.txt" />
-      </Component>
-      <Component Id="Appsrc_NeoData_Dictionary2.txt" Guid="cd4484ee-dc05-4d92-9dff-5a61c9086478">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoData_Dictionary2.txt" Name="Dictionary2.txt" Source="$(var.GUI_TargetDir)Neo\Data\Dictionary2.txt" />
+        <File ReadOnly="no" Id="Appsrc_Contaminants_MPI_Contaminants.fasta" Name="MPI_Contaminants.fasta" Source="$(var.GUI_TargetDir)Contaminants\MPI_Contaminants.fasta" />
       </Component>
     </ComponentGroup>
   </Fragment>
 
-  <!--Builds the App Neo\TomlFiles folder-->
-  <Fragment>
-    <ComponentGroup Id="Appsrc_NeoTomlFiles_files" Directory="MetaAppNeoTomlFilesFolder">
-      <Component Id="RemoveNeoTomlFiles" Guid="269e9408-f6ff-4bc8-991a-ba3abe65b212">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RemoveFolder Id="MetaAppNeoTomlFilesFolder" On="both"/>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+  <!--<Fragment>
+    <ComponentGroup Id="ExcelDefaults">
+      <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
+        <Condition> EXCELDEFAULTPROPERTY</Condition>
+        <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv"/>
+        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
+          <RegistryValue Name="a" Value="EXCEL.EXE" Type="string"/>
+          <RegistryValue Name="MRUList" Value="a" Type="string"/>
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithProgids">
+          <RegistryValue Name="tsv_auto_file" Value="0000" Type="binary"/>
+        </RegistryKey>
+        <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv"/>
+        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv\OpenWithList">
+          <RegistryValue Name="a" Value="EXCEL.EXE" Type="string"/>
+          <RegistryValue Name="MRUList" Value="a" Type="string"/>
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.psmtsv\OpenWithProgids">
+          <RegistryValue Name="psmtsv_auto_file" Value="0000" Type="binary"/>
+        </RegistryKey>
       </Component>
-      <Component Id="Appsrc_NeoTF_CalibrationTaskconfig.toml" Guid="70cdcf7f-14f6-460c-9b4f-89697864c390">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_CalibrationTaskconfig.toml" Name="CalibrationTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\CalibrationTaskconfig.toml" />
-      </Component>
-      <Component Id="Appsrc_NeoTF_GptmdTaskconfig.toml" Guid="6b845244-5c12-4e57-92fb-31b371e5d6e2">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_GptmdTaskconfig.toml" Name="GptmdTaskconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\GptmdTaskconfig.toml" />
-      </Component>
-      <Component Id="Appsrc_NeoTF_SearchTaskCconfig.toml" Guid="271ec25f-722f-4cda-a177-674551406703">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskCconfig.toml" Name="SearchTaskCconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskCconfig.toml" />
-      </Component>
-      <Component Id="Appsrc_NeoTF_SearchTaskNconfig.toml" Guid="3ae27d78-9759-4cc8-9efc-9efb932615c4">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskNconfig.toml" Name="SearchTaskNconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskNconfig.toml" />
-      </Component>
-      <Component Id="Appsrc_NeoTF_SearchTaskCisconfig.toml" Guid="068f3634-9287-470f-8050-b1273ae8402d">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskCisconfig.toml" Name="SearchTaskCisconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskCisconfig.toml" />
-      </Component>
-      <Component Id="Appsrc_NeoTF_SearchTaskDecoyconfig.toml" Guid="c039ffdd-3ac4-439d-ab8c-4917cb0e9dbd">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskDecoyconfig.toml" Name="SearchTaskDecoyconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskDecoyconfig.toml" />
-      </Component>
-      <Component Id="Appsrc_NeoTF_SearchTaskTargetconfig.toml" Guid="10bf577c-9bb7-4f4e-bf44-d3fb4eee7dc2">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTargetconfig.toml" Name="SearchTaskTargetconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTargetconfig.toml" />
-      </Component>
-      <Component Id="Appsrc_NeoTF_SearchTaskTransconfig" Guid="477a0f61-c449-41d4-baaf-039f568f10f6">
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NeoTF_SearchTaskTransconfig.toml" Name="SearchTaskTransconfig.toml" Source="$(var.GUI_TargetDir)Neo\TomlFiles\SearchTaskTransconfig.toml" />
+      <Component Id ="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="*">
+        <Condition><![CDATA[EXCELSELECT<>"1"]]> </Condition>
+        <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command"/>
+        <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">
+          <RegistryValue Action="write" Value="[EXCELSELECT]" Type="string"/>
+        </RegistryKey>
+        <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\psmtsv_auto_file\shell\open\command"/>
+        <RegistryKey Root="HKCU" Key="Software\Classes\psmtsv_auto_file\shell\open\command">
+          <RegistryValue Action="write" Value="[EXCELSELECT]" Type="string"/>
+        </RegistryKey>
       </Component>
     </ComponentGroup>
-  </Fragment>
-
-
-
+  </Fragment>-->
+  
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
     <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="c68bc3b0-cc4f-48ed-9ea0-25dbd7492292">
