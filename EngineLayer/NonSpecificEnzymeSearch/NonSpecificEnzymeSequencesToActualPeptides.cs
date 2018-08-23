@@ -89,9 +89,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 double initialMass = 0;
                                 if (pwsm.AllModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                                 {
-                                    foreach (double nl in pep_n_term_variable_mod.neutralLosses)
+                                    if (pep_n_term_variable_mod.neutralLosses.Count != 0)
                                     {
-                                        initialMass = pep_n_term_variable_mod.monoisotopicMass - nl;
+                                        initialMass = pep_n_term_variable_mod.monoisotopicMass - pep_n_term_variable_mod.neutralLosses.First();
                                     }
                                 }
                                 else
@@ -205,9 +205,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 double initialMass = 0;
                                 if (pwsm.AllModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                                 {
-                                    foreach (double nl in pep_n_term_variable_mod.neutralLosses)
+                                    if (pep_n_term_variable_mod.neutralLosses.Count != 0)
                                     {
-                                        initialMass = pep_n_term_variable_mod.monoisotopicMass - nl;
+                                        initialMass = pep_n_term_variable_mod.monoisotopicMass - pep_n_term_variable_mod.neutralLosses.First();
                                     }
                                 }
                                 else
