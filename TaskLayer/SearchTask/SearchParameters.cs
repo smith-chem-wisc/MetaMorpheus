@@ -46,6 +46,8 @@ namespace TaskLayer
                 ////{"ProteinTermMod", 3},
                 //{"UniProt", 3},
             };
+            WriteDecoys = true;
+            WriteContaminants = true;
         }
 
         public bool DisposeOfFileWhenDone { get; set; }
@@ -71,5 +73,7 @@ namespace TaskLayer
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool WriteMzId { get; set; }
         public bool WritePepXml { get; set; }
+        public bool WriteDecoys { get; set; }
+        public bool WriteContaminants { get; set; }
     }
 }
