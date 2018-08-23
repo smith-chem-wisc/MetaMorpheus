@@ -125,11 +125,10 @@ namespace EngineLayer.Calibration
 
         private double CalculateAverageRelativeErrors(List<(double massError, double logIntensity)> localRelativeErrors)
         {
-            double logIntensityToSubtract = localRelativeErrors.Min(x => x.logIntensity) - 1; // normalize each log intensity so that the minimum log intensity is 1. 
-            //This is to more heavily weight high log intensities, so that a difference like 20 and 22 is now 1 and 3. the "-1" prevents zero values
-            //The maximum possible difference in weight becomes ~1:10, such that low intensity points are still considered
-            double weightedSumOfErrors = localRelativeErrors.Sum(x => x.massError * (x.logIntensity - logIntensityToSubtract));
-            double sumOfIntensities = localRelativeErrors.Sum(x => x.logIntensity - logIntensityToSubtract);
+            //double logIntensityToSubtract = localRelativeErrors.Min(x => x.logIntensity) - 1; // normalize each log intensity so that the minimum log intensity is 1. 
+            //Convert from log to actual intensity to more heavily weight intensities.
+            double weightedSumOfErrors = localRelativeErrors.Sum(x => x.massError * Math.Pow(10,x.logIntensity));
+            double sumOfIntensities = localRelativeErrors.Sum(x => Math.Pow(10,x.logIntensity));
             return weightedSumOfErrors / sumOfIntensities;
         }
 
