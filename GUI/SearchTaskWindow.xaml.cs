@@ -184,6 +184,7 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+
             if (task.CommonParameters.QValueOutputFilter < 1)
             {
                 QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
@@ -328,7 +329,9 @@ namespace MetaMorpheusGUI
                     }
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
+                {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
+                }
             }
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
@@ -507,7 +510,7 @@ namespace MetaMorpheusGUI
             if (TheTask.SearchParameters.SearchType == SearchType.Classic &&
                 (TheTask.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen || TheTask.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open))
             {
-                MessageBoxResult result = MessageBox.Show("We recommend using Modern Search mode when conducting open precursor mass searches to reduce search time.\n\n" +
+                MessageBoxResult result = MessageBox.Show("Modern Search mode is recommended when conducting open precursor mass searches to reduce search time.\n\n" +
                     "Continue anyway?", "Modern search recommended", MessageBoxButton.OKCancel);
 
                 if (result == MessageBoxResult.Cancel)

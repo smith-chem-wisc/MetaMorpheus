@@ -322,7 +322,7 @@ namespace TaskLayer
 
                 proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
             }
-            
+
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
@@ -443,22 +443,33 @@ namespace TaskLayer
         private void WritePSMResults()
         {
             Status("Writing results...", Parameters.SearchTaskId);
-            List<PeptideSpectralMatch> FilteredPsmListForOutput = FilterPsmList();
+            List<PeptideSpectralMatch> filteredPsmListForOutput = Parameters.AllPsms
+                .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter 
+                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
+
+            if (!Parameters.SearchParameters.WriteDecoys)
+            {
+                filteredPsmListForOutput.RemoveAll(b => b.IsDecoy);
+            }
+            if (!Parameters.SearchParameters.WriteContaminants)
+            {
+                filteredPsmListForOutput.RemoveAll(b => b.IsContaminant);
+            }
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(FilteredPsmListForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsToTsv(filteredPsmListForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
             writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs_FormattedForPercolator.tsv");
-            WritePsmsForPercolator(FilteredPsmListForOutput, writtenFile, CommonParameters.QValueOutputFilter);
+            WritePsmsForPercolator(filteredPsmListForOutput, writtenFile, CommonParameters.QValueOutputFilter);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write best (highest-scoring) PSM per peptide
             writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
             List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-            WritePsmsToTsv(FilteredPsmListForOutput.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList(), writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsToTsv(filteredPsmListForOutput.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList(), writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
@@ -470,7 +481,7 @@ namespace TaskLayer
                     + Environment.NewLine);
             }
 
-            PsmsGroupedByFile = FilteredPsmListForOutput.GroupBy(p => p.FullFilePath);
+            PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
 
             // writes all individual spectra file search results to subdirectory
             if (Parameters.CurrentRawFileList.Count > 1)
@@ -518,7 +529,6 @@ namespace TaskLayer
 
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
-
                 if (Parameters.CurrentRawFileList.Count > 1 || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml)
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
@@ -892,21 +902,6 @@ namespace TaskLayer
             flashLFQResults.WriteResults(peaksPath, null, null, null);
 
             FinishedWritingFile(peaksPath, nestedIds);
-        }
-
-        private List<PeptideSpectralMatch> FilterPsmList()
-        {
-            List<PeptideSpectralMatch> list = Parameters.AllPsms;
-            list = list.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
-            if (!Parameters.SearchParameters.WriteDecoys)
-            {
-                list.RemoveAll(b => b.IsDecoy);
-            }
-            if (!Parameters.SearchParameters.WriteContaminants)
-            {
-                list.RemoveAll(b => b.IsContaminant);
-            }
-            return list;
         }
     }
 }
