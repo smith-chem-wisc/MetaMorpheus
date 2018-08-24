@@ -89,7 +89,7 @@ namespace EngineLayer.FdrAnalysis
             //determine if Score or DeltaScore performs better
             if (UseDeltaScore)
             {
-                double qValueCutoff = QValueCutoff; //optimize to get the most PSMs at a 1% FDR
+                double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR
 
                 List<PeptideSpectralMatch> scoreSorted = Psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
                 int ScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);

@@ -58,15 +58,8 @@ namespace Test
             result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom ppmAroundZero 5");
             Assert.That(result.FileNameAddition.Equals("5ppmAroundZero"));
 
-            try
-            {
-                result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom Test 5");
-            }
-            catch(MetaMorpheusException)
-            {
-                return;
-            }
-            Assert.Fail();
+            Assert.That(() => SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom Test 5"),
+                Throws.TypeOf<MetaMorpheusException>());
         }
 
         [Test]
@@ -78,7 +71,6 @@ namespace Test
                 {
                     SearchType = SearchType.NonSpecific
                 },
-                CommonParameters = new CommonParameters()
             };
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSameSettingsOutput");
@@ -86,8 +78,14 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             DbForTask db = new DbForTask(myDatabase, false);
 
-            searchTask.RunTask(outputFolder, new List<DbForTask> { db }, new List<string> { myFile }, "SettingsTest");
-        }          
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+            engine.Run();
+
+            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\AllPSMs.psmtsv");
+            var output = File.ReadAllLines(outputPath);
+            Assert.That(output.Length == 9);
+        }
     }
 }
- 
