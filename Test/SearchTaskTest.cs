@@ -1,13 +1,9 @@
 ﻿using EngineLayer;
 using NUnit.Framework;
-using TaskLayer;
-using EngineLayer.Indexing;
+using System;
 using System.Collections.Generic;
-using Proteomics;
-using MassSpectrometry;
-using UsefulProteomicsDatabases;
-using Proteomics.ProteolyticDigestion;
 using System.IO;
+using TaskLayer;
 
 namespace Test
 {
@@ -81,8 +77,16 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.NonSpecific
-                }
+                },
+                CommonParameters = new CommonParameters()
             };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSameSettingsOutput");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            searchTask.RunTask(outputFolder, new List<DbForTask> { db }, new List<string> { myFile }, "SettingsTest");
         }          
     }
 }
