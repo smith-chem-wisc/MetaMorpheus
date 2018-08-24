@@ -47,6 +47,9 @@ namespace Test
             var result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom dot 5 ppm 0,1.0029,2.0052");
             Assert.That(result.NumNotches == 3);
 
+            result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom dot 5 da 0,1.0029,2.0052");
+            Assert.That(result.NumNotches == 3);
+
             result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom interval [0;5],[0;5]");
             Assert.That(result.NumNotches == 1);
 
@@ -70,6 +73,17 @@ namespace Test
             Assert.Fail();
         }
 
+        [Test]
+        public static void SemiSpecificTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    SearchType = SearchType.NonSpecific
+                }
+            };
+        }          
     }
 }
  
