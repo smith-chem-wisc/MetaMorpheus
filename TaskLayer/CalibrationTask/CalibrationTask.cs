@@ -176,6 +176,14 @@ namespace TaskLayer
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });
                 acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
 
+                //generate calibration function and shift data points AGAIN because it's fast and contributes new data
+                Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
+                engine = new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                engine.Run();
+
+                //update file
+                myMsDataFile = engine.CalibratedDataFile;
+
                 // write the calibrated mzML file
                 MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
                 myFileManager.DoneWithFile(originalUncalibratedFilePath);

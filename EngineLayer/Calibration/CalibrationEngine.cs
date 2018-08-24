@@ -7,7 +7,7 @@ namespace EngineLayer.Calibration
 {
     public class CalibrationEngine : MetaMorpheusEngine
     {
-        private const int NumberOfScansUsedForSmoothingOnEachSide = 42;
+        private const int NumberOfScansUsedForSmoothingOnEachSide = 100;
         private readonly MsDataFile MyMsDataFile;
         private readonly DataPointAquisitionResults Datapoints;
         public MsDataFile CalibratedDataFile { get; private set; }
