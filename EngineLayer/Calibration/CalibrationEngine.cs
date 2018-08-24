@@ -66,8 +66,8 @@ namespace EngineLayer.Calibration
             }
 
             //apply a smoothing function, so that outlier scans aren't wildly shifted
-            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors, NumberOfScansUsedForSmoothingOnEachSide);
-            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors, NumberOfScansUsedForSmoothingOnEachSide);
+            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors);
+            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors);
 
             //calibrate the data
             int ms1Index = 0;
@@ -105,7 +105,7 @@ namespace EngineLayer.Calibration
             {
                 if (datapoint.ScanNumber == currentScanNumber)
                 {
-                    localRelativeErrors.Add((datapoint.RelativeMzError,datapoint.LogIntensity));
+                    localRelativeErrors.Add((datapoint.RelativeMzError, datapoint.LogIntensity));
                 }
                 else
                 {
@@ -127,12 +127,12 @@ namespace EngineLayer.Calibration
         {
             //double logIntensityToSubtract = localRelativeErrors.Min(x => x.logIntensity) - 1; // normalize each log intensity so that the minimum log intensity is 1. 
             //Convert from log to actual intensity to more heavily weight intensities.
-            double weightedSumOfErrors = localRelativeErrors.Sum(x => x.massError * Math.Pow(10,x.logIntensity));
-            double sumOfIntensities = localRelativeErrors.Sum(x => Math.Pow(10,x.logIntensity));
+            double weightedSumOfErrors = localRelativeErrors.Sum(x => x.massError * Math.Pow(10, x.logIntensity));
+            double sumOfIntensities = localRelativeErrors.Sum(x => Math.Pow(10, x.logIntensity));
             return weightedSumOfErrors / sumOfIntensities;
         }
 
-        private double[] SmoothErrors(double[] relativeErrors, int numberOfScansUsedForSmoothingOnEachSide)
+        private double[] SmoothErrors(double[] relativeErrors)
         {
             //impute missing values
             //not all scans are guarenteed to contain data points. We can infer these data point with nearby points.
@@ -142,7 +142,10 @@ namespace EngineLayer.Calibration
                 {
                     int startingBlankIndex = index;
                     //increase the index until we find the next scan containing a data point
-                    for (; index < relativeErrors.Length && relativeErrors[index] == 0; index++) { };
+                    while (index < relativeErrors.Length && relativeErrors[index] == 0)
+                    {
+                        index++;
+                    }
                     double nextError = index == relativeErrors.Length ? relativeErrors[startingBlankIndex - 1] : relativeErrors[index]; //can't go all the way through without any data points, the original function checks for enough data points (where enough is more than zero)
                     double previousError = startingBlankIndex > 0 ? relativeErrors[startingBlankIndex - 1] : nextError;
                     int numberOfConsecutiveScansWithoutDataPoints = index - startingBlankIndex;
@@ -160,17 +163,18 @@ namespace EngineLayer.Calibration
             double smoothedCorrectionFactor = 0; //this variable is the sum of all nearby errors, to be later divided by the number of summed errors for a smoothed average error
             //for scan #1 (index 0)
             //no left scans, because we're at the beginning of the file. Just populate the first "numberOfScansUsedForSmoothingOnEachSide" scan errors on the right side
-            for (; rightIndex < numberOfScansUsedForSmoothingOnEachSide && rightIndex < relativeErrors.Length; rightIndex++)
+
+            while (rightIndex < NumberOfScansUsedForSmoothingOnEachSide && rightIndex < relativeErrors.Length)
             {
                 smoothedCorrectionFactor += relativeErrors[rightIndex];
+                rightIndex++;
             }
 
             //for each scan
             for (int i = 0; i < relativeErrors.Length; i++)
             {
                 //for left index, remove an error if 
-
-                if (i > numberOfScansUsedForSmoothingOnEachSide)
+                if (i > NumberOfScansUsedForSmoothingOnEachSide)
                 {
                     smoothedCorrectionFactor -= relativeErrors[leftIndex];
                     leftIndex++;
@@ -182,7 +186,7 @@ namespace EngineLayer.Calibration
                     rightIndex++;
                 }
 
-                smoothedErrors[i] = smoothedCorrectionFactor / (rightIndex-leftIndex);
+                smoothedErrors[i] = smoothedCorrectionFactor / (rightIndex - leftIndex);
             }
             return smoothedErrors;
         }
