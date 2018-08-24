@@ -169,7 +169,7 @@
                             <Button x:Name="addCalibrateTaskButton" Content="Calibrate" Click="AddCalibrateTaskButton_Click" />
                             <Button x:Name="addGPTMDTaskButton" Content="Discover PTMs" Click="AddGPTMDTaskButton_Click" />
                             <Button x:Name="addSearchTaskButton" Content="Search" Click="AddSearchTaskButton_Click" />
-                            <Button x:Name="btnAddCrosslinkSearch" Content="XL/Gly Search" Click="BtnAddCrosslinkSearch_Click" />
+                            <Button x:Name="btnAddCrosslinkSearch" Content="XL Search" Click="BtnAddCrosslinkSearch_Click" />
                         </StackPanel>
                         <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.Resources>
