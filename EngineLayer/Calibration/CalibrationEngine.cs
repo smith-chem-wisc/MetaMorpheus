@@ -16,7 +16,6 @@ namespace EngineLayer.Calibration
         {
             MyMsDataFile = myMSDataFile;
             Datapoints = datapoints;
-            int numMs1Scans = MyMsDataFile.GetAllScansList().Where(x => x.MsnOrder == 1).Count();
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -93,7 +92,7 @@ namespace EngineLayer.Calibration
             return new MetaMorpheusEngineResults(this);
         }
 
-        private double[] PopulateErrors(List<LabeledDataPoint> datapoints, int[] scanNumberToScanPlacement, int arrayLength)
+        private static double[] PopulateErrors(List<LabeledDataPoint> datapoints, int[] scanNumberToScanPlacement, int arrayLength)
         {
             //return an array of weighted average relative errors for each scan
             double[] averageRelativeErrors = new double[arrayLength];
@@ -123,7 +122,7 @@ namespace EngineLayer.Calibration
             return averageRelativeErrors;
         }
 
-        private double CalculateAverageRelativeErrors(List<(double massError, double logIntensity)> localRelativeErrors)
+        private static double CalculateAverageRelativeErrors(List<(double massError, double logIntensity)> localRelativeErrors)
         {
             //double logIntensityToSubtract = localRelativeErrors.Min(x => x.logIntensity) - 1; // normalize each log intensity so that the minimum log intensity is 1. 
             //Convert from log to actual intensity to more heavily weight intensities.
@@ -132,7 +131,7 @@ namespace EngineLayer.Calibration
             return weightedSumOfErrors / sumOfIntensities;
         }
 
-        private double[] SmoothErrors(double[] relativeErrors)
+        private static double[] SmoothErrors(double[] relativeErrors)
         {
             //impute missing values
             //not all scans are guarenteed to contain data points. We can infer these data point with nearby points.
@@ -191,7 +190,7 @@ namespace EngineLayer.Calibration
             return smoothedErrors;
         }
 
-        private MsDataScan CalibrateScan(MsDataScan oldScan, double smoothedRelativeError, double? precursorSmoothedRelativeError = null)
+        private static MsDataScan CalibrateScan(MsDataScan oldScan, double smoothedRelativeError, double? precursorSmoothedRelativeError = null)
         {
             double correctionFactor = 1 - smoothedRelativeError; //create the multiplier. Positive mass errors mean that the experimental mass was greater than the theoretical, so we want to shift the experimental DOWN
             double[] originalMzs = oldScan.MassSpectrum.XArray;
