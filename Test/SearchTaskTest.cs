@@ -87,5 +87,36 @@ namespace Test
             var output = File.ReadAllLines(outputPath);
             Assert.That(output.Length == 9);
         }
+
+        [Test]
+        public static void NormalizeTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = true
+                },
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+            using (StreamWriter output = new StreamWriter(filePath))
+            {
+                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                output.WriteLine("PrunedDbSpectra" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+            }
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            File.Delete(filePath);
+
+            Assert.That(() => searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal"),
+               Throws.TypeOf<MetaMorpheusException>());
+
+        }
     }
 }
