@@ -89,7 +89,7 @@ namespace Test
         }
 
         [Test]
-        public static void NormalizeTest()
+        public static void PostSearchNormalizeTest()
         {
             SearchTask searchTask = new SearchTask()
             {
@@ -116,7 +116,51 @@ namespace Test
 
             Assert.That(() => searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal"),
                Throws.TypeOf<MetaMorpheusException>());
+        }
 
+        [Test]
+        public static void PostsearchProteinGroupTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = false
+                },
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+        }
+
+        [Test]
+        public static void PrunedDbPostSearchTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WritePrunedDatabase = true
+                },
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+
+            DbForTask db = new DbForTask(myDatabase, true);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbproteinPruned.xml")).Length == 115);
+            Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbPruned.xml")).Length == 275);
         }
     }
 }
