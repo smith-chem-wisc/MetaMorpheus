@@ -81,6 +81,7 @@ namespace EngineLayer
         public readonly DigestionParams DigestionParams;
         public List<double> AllScores { get; set; }
         public List<MatchedFragmentIon> MatchedFragmentIons { get; private set; }
+        public bool IsContaminant { get; private set; }
 
         public double[] Features
         {
@@ -152,6 +153,7 @@ namespace EngineLayer
             }
             var pepsWithMods = CompactPeptides.SelectMany(b => b.Value.Item2);
             IsDecoy = CompactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
+            IsContaminant = CompactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsContaminant));
             FullSequence = Resolve(pepsWithMods.Select(b => b.Sequence)).Item2;
             BaseSequence = Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item2;
             PeptideLength = Resolve(pepsWithMods.Select(b => b.Length)).Item2;
