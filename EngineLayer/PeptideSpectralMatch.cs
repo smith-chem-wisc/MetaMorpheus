@@ -384,7 +384,8 @@ namespace EngineLayer
             s["Sequence Variations"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations
                     .Where(d => peptide.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= peptide.OneBasedEndResidueInProtein)
-                    .Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence)))).Item1;
+                    .Select(d => SequenceVariantPrefix(b.Protein, d) + d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence)
+                    .Distinct()))).Item1;
             s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item1;
             s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1;
             s["Decoy"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1;
@@ -406,6 +407,20 @@ namespace EngineLayer
             s["All Scores"] = allScores;
             s["Theoreticals Searched"] = theoreticalsSearched;
             s["Decoy/Contaminant/Target"] = pepWithModsIsNull ? " " : peptide.IsDecoy ? "D" : pepsWithMods.Any(c => c.Protein.IsContaminant) ? "C" : "T";
+        }
+
+        /// <summary>
+        /// Gets prepended symbol denoting whether the variant is entered into the sequence (+) or not (-)
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="d"></param>
+        /// <returns></returns>
+        private static string SequenceVariantPrefix(Protein p, SequenceVariation d)
+        {
+            int lengthWithVariantSequence = d.OneBasedBeginPosition - 1 + d.VariantSequence.Length;
+            bool hasVariantSequence = lengthWithVariantSequence <= p.BaseSequence.Length
+                && p.BaseSequence.Substring(d.OneBasedBeginPosition - 1, d.VariantSequence.Length) == d.VariantSequence;
+            return hasVariantSequence ? "+" : "-";
         }
 
         private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch peptide)

@@ -77,7 +77,7 @@ namespace EngineLayer
 
                     foreach (var digestionParam in CollectionOfDigestionParams)
                     {
-                        foreach (var peptide in Proteins[i].Digest(digestionParam, FixedModifications, VariableModifications))
+                        foreach (var peptide in Proteins[i].GetVariantProteins().SelectMany(vp => vp.Digest(digestionParam, FixedModifications, VariableModifications)))
                         {
                             var compactPeptide = peptide.CompactPeptide(TerminusType);
                             
