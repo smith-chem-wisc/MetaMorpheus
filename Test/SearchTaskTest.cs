@@ -10,6 +10,9 @@ namespace Test
     [TestFixture]
     public static class SearchTaskTest
     {
+        /// <summary>
+        /// Tests each type of mass difference acceptor type to make sure values are assigned properly
+        /// </summary>
         [Test]
         public static void MassDiffAceptorTest()
         {
@@ -36,6 +39,9 @@ namespace Test
             Assert.That(result.FileNameAddition.Equals("5ppmAroundZero"));
         }
 
+        /// <summary>
+        /// Tests to make sure custom mass difference acceptor inputs are parsed properly
+        /// </summary>
         [Test]
         public static void ParseSearchModeTest()
         {
@@ -62,6 +68,9 @@ namespace Test
                 Throws.TypeOf<MetaMorpheusException>());
         }
 
+        /// <summary>
+        /// Ensures semispecific search runs and outputs properly
+        /// </summary>
         [Test]
         public static void SemiSpecificTest()
         {
@@ -86,6 +95,91 @@ namespace Test
             string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\AllPSMs.psmtsv");
             var output = File.ReadAllLines(outputPath);
             Assert.That(output.Length == 9);
+        }
+
+        /// <summary>
+        /// Tests that normalization in a search task works properly with an Experimental Design file read in,
+        /// and crashes when that file is absent
+        /// </summary>
+        [Test]
+        public static void PostSearchNormalizeTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = true
+                },
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+            using (StreamWriter output = new StreamWriter(filePath))
+            {
+                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                output.WriteLine("PrunedDbSpectra" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+            }
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            File.Delete(filePath);
+
+            Assert.That(() => searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal"),
+               Throws.TypeOf<MetaMorpheusException>());
+        }
+
+        /// <summary>
+        /// Test that we don't get a crash if protein groups are not constructed
+        /// </summary>
+        [Test]
+        public static void ProteinGroupsNoParsimonyTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = false
+                },
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestProteinGroupsNoParsimony");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+        }
+
+        /// <summary>
+        /// Test ensures pruned databases are written when contaminant DB is searched
+        /// </summary>
+        [Test]
+        public static void PrunedDbWithContaminantsTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WritePrunedDatabase = true
+                },
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+
+            // contaminant DB
+            DbForTask db = new DbForTask(myDatabase, true);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbproteinPruned.xml")).Length > 0);
+            Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbPruned.xml")).Length > 0);
         }
     }
 }
