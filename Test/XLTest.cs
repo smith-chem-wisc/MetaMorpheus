@@ -301,9 +301,9 @@ namespace Test
             DirectoryInfo[] directories = directory.GetDirectories();
             foreach (DirectoryInfo possibleFolder in directories)
             {
-                foreach (var file in possibleFolder.GetFiles())
+                if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")))
                 {
-                    File.Delete(file.FullName);
+                    File.Delete(possibleFolder.GetFiles().ElementAt(0).FullName);
                 }
             }
             xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
