@@ -273,6 +273,30 @@ namespace Test
             Assert.AreEqual(newPsms.Count(), 1);
         }
 
+        /// <summary>
+        /// Verifies that crosslinker is generated properly
+        /// </summary>
+        [Test]
+        public static void CrosslinkCreateTest()
+        {
+            Assert.That((XLSearchTask.GenerateUserDefinedCrosslinker(new XlSearchParameters())).GetType().Equals(typeof(CrosslinkerTypeClass)));
+        }
+
+        /// <summary>
+        /// Makes sure helper methods that generate indices function properly
+        /// </summary>
+        [Test]
+        public static void XLSearchWithGeneratedIndices()
+        {
+            XLSearchTask xlSearchTask = new XLSearchTask();
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+        }
+
         [Test]
         public static void Xl_TestDataFilePSMControl()
         {
@@ -484,5 +508,4 @@ namespace Test
             Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
         }
     }
-
 }
