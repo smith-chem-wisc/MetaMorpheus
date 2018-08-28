@@ -100,7 +100,7 @@ namespace EngineLayer.Indexing
             {
                 if (!Double.IsNaN(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods))
                 {
-                    maxFragmentMass = (int)Math.Ceiling(Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods, 1));
+                    maxFragmentMass = (int)Math.Min(MaxFragmentSize, (int)Math.Ceiling(Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods, 1)));
                     break;
                 }
             }
