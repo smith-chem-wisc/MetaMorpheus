@@ -132,7 +132,7 @@ namespace Test
         }
 
         /// <summary>
-        /// Makes sure that protein groups are still formed when parsimony is turned off
+        /// Test that we don't get a crash if protein groups are not constructed
         /// </summary>
         [Test]
         public static void ProteinGroupsNoParsimonyTest()
@@ -155,8 +155,7 @@ namespace Test
         }
 
         /// <summary>
-        /// Test ensures pruned databases are written when search tasks referencing contaminant
-        /// databases are executed
+        /// Test ensures pruned databases are written when contaminant DB is searched
         /// </summary>
         [Test]
         public static void PrunedDbWithContaminantsTest()
@@ -174,6 +173,7 @@ namespace Test
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
 
+            // contaminant DB
             DbForTask db = new DbForTask(myDatabase, true);
 
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
