@@ -115,6 +115,11 @@ namespace EngineLayer.Indexing
                 double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods, 1);
                 if (!Double.IsNaN(mz))
                 {
+                    if (mz < MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
+                    {
+                        break;
+                    }
+
                     int fragmentBin = (int)Math.Round(mz * FragmentBinsPerDalton);
 
                     if (fragmentIndex[fragmentBin] == null)
