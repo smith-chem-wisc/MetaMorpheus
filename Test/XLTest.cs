@@ -295,6 +295,18 @@ namespace Test
             DbForTask db = new DbForTask(myDatabase, false);
 
             xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            var baseDir = Path.GetDirectoryName(db.FilePath);
+            var directory = new DirectoryInfo(baseDir);
+            DirectoryInfo[] directories = directory.GetDirectories();
+            foreach (DirectoryInfo possibleFolder in directories)
+            {
+                foreach (var file in possibleFolder.GetFiles())
+                {
+                    File.Delete(file.FullName);
+                }
+            }
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
         }
 
         [Test]
