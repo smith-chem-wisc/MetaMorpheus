@@ -289,8 +289,8 @@ namespace Test
         public static void XLSearchWithGeneratedIndices()
         {
             XLSearchTask xlSearchTask = new XLSearchTask();
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
             DbForTask db = new DbForTask(myDatabase, false);
 
