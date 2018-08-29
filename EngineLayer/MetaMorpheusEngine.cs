@@ -361,28 +361,6 @@ namespace EngineLayer
 
         public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
         {
-            // scoring if some fragments get doubled for scoring purposes
-            if (maximumMassThatFragmentIonScoreIsDoubled > 0)
-            {
-                double score = 0;
-
-                foreach (var fragment in matchedFragmentIons)
-                {
-                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
-
-                    if (fragment.TheoreticalFragmentIon.Mass <= maximumMassThatFragmentIonScoreIsDoubled)
-                    {
-                        score += fragmentScore * 2;
-                    }
-                    else
-                    {
-                        score += fragmentScore;
-                    }
-                }
-
-                return score;
-            }
-
             // normal scoring
             return matchedFragmentIons.Count + (matchedFragmentIons.Sum(v => v.Intensity) / thisScan.TotalIonCurrent);
         }
