@@ -294,6 +294,9 @@ namespace Test
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
             DbForTask db = new DbForTask(myDatabase, false);
 
+            //creates .params files if they do not exist
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            //tests .params files
             xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
             var baseDir = Path.GetDirectoryName(db.FilePath);
@@ -306,6 +309,7 @@ namespace Test
                     File.Delete(possibleFolder.GetFiles().ElementAt(0).FullName);
                 }
             }
+            //tests without .params files
             xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
         }
 
