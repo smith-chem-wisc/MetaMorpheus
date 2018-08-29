@@ -62,7 +62,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestPSMOutput()
+        public static void TestQValueFilter()
         {
             SearchTask searchTask = new SearchTask()
             {
@@ -85,18 +85,94 @@ namespace Test
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
 
-            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("QValueTest", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engine.Run();
             
-            string psmFile = Path.Combine(outputFolder, @"search\AllPSMs.psmtsv");
+            string psmFile = Path.Combine(outputFolder, @"QValueTest\AllPSMs.psmtsv");
             var lines = File.ReadAllLines(psmFile);
             Assert.That(lines.Length == 12);
 
-            var engine2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            var engine2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("QValueTest", searchTask2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engine2.Run();
 
             var lines2 = File.ReadAllLines(psmFile);
             Assert.That(lines2.Length == 7);
+        }
+
+        [Test]
+        public static void TestDecoyContaminantsFilter()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+            //Filter decoys
+            SearchTask searchTaskDecoy = new SearchTask();
+
+            searchTaskDecoy.SearchParameters.WriteDecoys = false;
+
+            var engineDecoy = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("DecoyTest", searchTaskDecoy) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineDecoy.Run();
+
+            string psmFileDecoy = Path.Combine(outputFolder, @"DecoyTest\AllPSMs.psmtsv");
+            var linesDecoy = File.ReadAllLines(psmFileDecoy);
+            Assert.That(linesDecoy.Length == 9);
+
+            //Filter contaminants
+            SearchTask searchTaskContaminant = new SearchTask();
+
+            searchTaskContaminant.SearchParameters.WriteContaminants = false;
+
+            var engineContaminant = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("ContaminantTest", searchTaskContaminant) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineContaminant.Run();
+
+            string psmFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllPSMs.psmtsv");
+            var linesContaminant = File.ReadAllLines(psmFileContaminant);
+            Assert.That(linesContaminant.Length == 12);
+
+            string proteinFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllProteinGroups.tsv");
+            var linesContaminantProtein = File.ReadAllLines(proteinFileContaminant);
+            Assert.That(linesContaminantProtein.Length == 7);
+
+            var engineContaminant2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("ContaminantTest", searchTaskContaminant) }, new List<string> { myFile }, new List<DbForTask> {  new DbForTask(myDatabase, true) }, outputFolder);
+            engineContaminant2.Run();
+
+            var linesContaminant2 = File.ReadAllLines(psmFileContaminant);
+            Assert.That(linesContaminant2.Length == 1);
+
+            var linesContaminantProtein2 = File.ReadAllLines(proteinFileContaminant);
+            Assert.That(linesContaminantProtein2.Length == 1);
+
+            //Filter contaminants and decoys
+            SearchTask searchTaskDecoyContaminant = new SearchTask();
+            SearchTask searchTaskDecoyContaminant2 = new SearchTask();
+
+            searchTaskDecoyContaminant2.SearchParameters.WriteContaminants = false;
+            searchTaskDecoyContaminant2.SearchParameters.WriteDecoys = false;
+
+            var engineDecoyContaminant = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("DecoyContaminantTest", searchTaskDecoyContaminant) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, true) }, outputFolder);
+            engineContaminant.Run();
+
+            string psmFileDecoyContaminant = Path.Combine(outputFolder, @"DecoyContaminantTest\AllPSMs.psmtsv");
+            var linesDecoyContaminant = File.ReadAllLines(psmFileContaminant);
+            Assert.That(linesContaminant.Length == 12);
+
+            var engineDecoyContaminant2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("DecoyContaminantTest", searchTaskDecoyContaminant2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, true) }, outputFolder);
+            engineContaminant2.Run();
+
+            string psmFileDecoyContaminant2 = Path.Combine(outputFolder, @"DecoyContaminantTest\AllPSMs.psmtsv");
+            var linesDecoyContaminant2 = File.ReadAllLines(psmFileContaminant);
+            Assert.That(linesContaminant2.Length == 1);
+
+            //No filter
+            SearchTask searchTask = new SearchTask();
+
+            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoFilterTest", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, true) }, outputFolder);
+            engine.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"NoFilterTest\AllPSMs.psmtsv");
+            var lines = File.ReadAllLines(psmFile);
+            Assert.That(lines.Length == 12);
         }
     }
 }

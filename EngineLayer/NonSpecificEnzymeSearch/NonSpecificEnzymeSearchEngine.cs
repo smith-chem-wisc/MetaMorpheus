@@ -64,6 +64,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         int binShift;
                         switch (pt)
                         {
+                            //fall through to B
+                            case ProductType.BnoB1ions:
+
                             case ProductType.B:
                                 binShift = bBinShift;
                                 break;
