@@ -90,7 +90,7 @@ namespace TaskLayer
             int deconvolutionMaxAssumedChargeState,
             Tolerance deconvolutionMassTolerance)
         {
-            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1)) 
+            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1))
             {
                 if (GlobalVariables.StopLoops) { break; }
                 List<(double, int)> isolatedStuff = new List<(double, int)>();
@@ -355,12 +355,12 @@ namespace TaskLayer
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, double qValueCutOff)
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var psm in psms.Where(p => p.FdrInfo.QValue <= qValueCutOff && p.FdrInfo.QValueNotch <= qValueCutOff))
+                foreach (var psm in psms)
                 {
                     output.WriteLine(psm.ToString(modstoWritePruned));
                 }

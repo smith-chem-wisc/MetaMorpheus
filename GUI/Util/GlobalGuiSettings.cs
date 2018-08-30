@@ -5,22 +5,13 @@ using System.Windows;
 namespace MetaMorpheusGUI
 {
     /// <summary>
-    /// Provides Filters and error handling for GUI forms
+    /// Provides filters and error handling for GUI forms
     /// </summary>
     public class GlobalGuiSettings
     {
         /// <summary>
-        /// Conducts all checks for fields to all forms
+        /// Checks the validity of each setting passed from the GUI task windows
         /// </summary>
-        /// <param name="precursorMassTolerance"></param>
-        /// <param name="productMassTolerance"></param>
-        /// <param name="maxMissedCleavages"></param>
-        /// <param name="maxModificationIsoforms"></param>
-        /// <param name="minPeptideLength"></param>
-        /// <param name="maxPeptideLength"></param>
-        /// <param name="maxThreads"></param>
-        /// <param name="minScore"></param>
-        /// <returns></returns>
         public static bool CheckTaskSettingsValidity(string precursorMassTolerance,
             string productMassTolerance,
             string maxMissedCleavages,
@@ -37,7 +28,7 @@ namespace MetaMorpheusGUI
             string numberOfDatabaseSearches,
             string maxModsPerPeptide,
             string maxFragmentMass,
-            string qValue
+            string qValueFilter
             )
         {
             maxMissedCleavages = MaxValueConversion(maxMissedCleavages);
@@ -59,7 +50,7 @@ namespace MetaMorpheusGUI
             results.Add((CheckNumberOfDatabasePartitions(numberOfDatabaseSearches)));
             results.Add((CheckMaxModsPerPeptide(maxModsPerPeptide)));
             results.Add((CheckMaxFragementMass(maxFragmentMass)));
-            results.Add((CheckQValue(qValue)));
+            results.Add((CheckQValueFilter(qValueFilter)));
 
             if (results.Contains(false))
             {
@@ -69,10 +60,8 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Filters out illgal characters
+        /// Checks to see if the given text contains non-numerical characters (letters, etc.)
         /// </summary>
-        /// <param name="text"></param>
-        /// <returns></returns>
         public static bool CheckIsNumber(string text)
         {
             bool result = true;
@@ -126,7 +115,7 @@ namespace MetaMorpheusGUI
         {
             if (!double.TryParse(text, out double minRatio) || minRatio < 0 || minRatio > 1)
             {
-                MessageBox.Show("The minimum ratio was not set to a number between zero and one. \n You entered " + '"' + text + '"');
+                MessageBox.Show("The minimum intensity ratio must be between zero and one. \n You entered " + '"' + text + '"');
                 return false;
             }
             return true;
@@ -208,9 +197,9 @@ namespace MetaMorpheusGUI
 
         public static bool CheckMaxModsPerPeptide(string text)
         {
-            if (!int.TryParse(text, out int maxModsPerPeptide) || maxModsPerPeptide < 1)
+            if (!int.TryParse(text, out int maxModsPerPeptide) || maxModsPerPeptide < 0)
             {
-                MessageBox.Show("The mods per peptide allowed is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
+                MessageBox.Show("The max mods per peptide allowed is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a number greater than or equal to zero.");
                 return false;
             }
             return true;
@@ -220,7 +209,7 @@ namespace MetaMorpheusGUI
         {
             if (!int.TryParse(text, out int maxFragmentMass) || maxFragmentMass < 0)
             {
-                MessageBox.Show("The fragment mass is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
+                MessageBox.Show("The max fragment mass is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
                 return false;
             }
             return true;
@@ -260,13 +249,13 @@ namespace MetaMorpheusGUI
         {
             if (!float.TryParse(text, out float binWidth) || binWidth < 0 || binWidth > 1)
             {
-                MessageBox.Show("The histogram bin width was not set to a number between zero and one. \n You entered " + '"' + text + '"');
+                MessageBox.Show("The histogram bin width must be between zero and one Daltons. \n You entered " + '"' + text + '"');
                 return false;
             }
             return true;
         }
 
-        public static bool CheckQValue(string text)
+        public static bool CheckQValueFilter(string text)
         {
             if (!double.TryParse(text, out double qValue) || qValue < 0 || qValue > 1)
             {
