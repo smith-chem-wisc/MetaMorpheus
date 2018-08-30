@@ -49,7 +49,7 @@ namespace Test
 
             var results = File.ReadAllLines(Path.Combine(outputFolder, @"Search\AllPSMs.psmtsv"));
             var resultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv"));
-            Assert.That(results.Length == resultsToml.Length);
+            Assert.That(results.SequenceEqual(resultsToml));
 
             CalibrationTask calibrationTask = new CalibrationTask();
             Toml.WriteFile(calibrationTask, "CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
@@ -67,7 +67,7 @@ namespace Test
             var gptmdResults = File.ReadAllLines(Path.Combine(outputFolder, @"GPTMD\GPTMD_Candidates.psmtsv"));
             var gptmdResultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"GPTMDTOML\GPTMD_Candidates.psmtsv"));
 
-            Assert.That(gptmdResults.Length == gptmdResultsToml.Length);
+            Assert.That(gptmdResults.SequenceEqual(gptmdResultsToml));
 
             XLSearchTask xLSearchTask = new XLSearchTask();
             Toml.WriteFile(xLSearchTask, "XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
@@ -84,7 +84,7 @@ namespace Test
             var xlResults = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearch\xl_intra_fdr.mytsv"));
             var xlResultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearchTOML\xl_intra_fdr.mytsv"));
 
-            Assert.That(xlResults.Length == xlResultsToml.Length);
+            Assert.That(xlResults.SequenceEqual(xlResultsToml));
         }
 
         [Test]
