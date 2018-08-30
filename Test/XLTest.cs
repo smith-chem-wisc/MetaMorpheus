@@ -289,15 +289,16 @@ namespace Test
         public static void XLSearchWithGeneratedIndices()
         {
             XLSearchTask xlSearchTask = new XLSearchTask();
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
             DbForTask db = new DbForTask(myDatabase, false);
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestXLSearch", xlSearchTask) };
 
             //creates .params files if they do not exist
-            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(Path.Combine(folderPath, @"CreateParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
             //tests .params files
-            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(Path.Combine(folderPath, @"TestParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
             var baseDir = Path.GetDirectoryName(db.FilePath);
             var directory = new DirectoryInfo(baseDir);
@@ -310,7 +311,22 @@ namespace Test
                 }
             }
             //tests without .params files
-            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(Path.Combine(folderPath, @"TestNoParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\xl_intra_fdr.mytsv"));
+            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\xl_intra_fdr.mytsv"));
+            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\xl_intra_fdr.mytsv"));
+
+            var values = lines[1].Split("\t");
+            var values2 = lines2[1].Split("\t");
+            var values3 = lines3[1].Split("\t");
+
+            //Compare Precursor MZ
+            Assert.That(values[2].Equals(values2[2]) && values2[2].Equals(values3[2]));
+            //Compare QValueTotalScore
+            Assert.That(values[23].Equals(values2[23]) && values2[23].Equals(values3[23]));
+            //Compare Mass diff
+            Assert.That(values[24].Equals(values2[24]) && values2[24].Equals(values3[24]));
         }
 
         [Test]

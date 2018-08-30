@@ -181,12 +181,5 @@ namespace Test
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbproteinPruned.xml")).Length > 0);
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbPruned.xml")).Length > 0);
         }
-
-        [Test]
-        public static void TomlConsistencyTest()
-        {
-            SearchTask searchTask = new SearchTask();
-            
-        }
     }
 }
