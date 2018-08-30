@@ -317,16 +317,8 @@ namespace Test
             var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\xl_intra_fdr.mytsv"));
             var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\xl_intra_fdr.mytsv"));
 
-            var values = lines[1].Split("\t");
-            var values2 = lines2[1].Split("\t");
-            var values3 = lines3[1].Split("\t");
-
-            //Compare Precursor MZ
-            Assert.That(values[2].Equals(values2[2]) && values2[2].Equals(values3[2]));
-            //Compare QValueTotalScore
-            Assert.That(values[23].Equals(values2[23]) && values2[23].Equals(values3[23]));
-            //Compare Mass diff
-            Assert.That(values[24].Equals(values2[24]) && values2[24].Equals(values3[24]));
+            Assert.That(lines.SequenceEqual(lines2) && lines2.SequenceEqual(lines3));
+            
         }
 
         [Test]
