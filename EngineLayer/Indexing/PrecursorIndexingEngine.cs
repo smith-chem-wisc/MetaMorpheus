@@ -1,5 +1,6 @@
 ﻿using MassSpectrometry;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
@@ -13,7 +14,7 @@ namespace EngineLayer.Indexing
 {
     public class PrecursorIndexingEngine : IndexingEngine
     {
-        public PrecursorIndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, lp, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
+        public PrecursorIndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> CollectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(proteinList, variableModifications, fixedModifications, currentPartition, decoyType, CollectionOfDigestionParams, commonParams, maxFragmentSize, nestedIds)
         {
         }
 
@@ -44,10 +45,11 @@ namespace EngineLayer.Indexing
         {
             double progress = 0;
             int oldPercentProgress = 0;
-            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
+            
+
 
             // digest database
-            HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
+            HashSet<PeptideWithSetModifications> peptideToId = new HashSet<PeptideWithSetModifications>();
 
             Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
             {
@@ -64,17 +66,17 @@ namespace EngineLayer.Indexing
                     {
                         foreach (var pepWithSetMods in ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications))
                         {
-                            CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
+                            //CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(commonParameters.FragmentationTerminus, commonParameters.DissociationType);
 
-                            var observed = peptideToId.Contains(compactPeptide);
+                            var observed = peptideToId.Contains(pepWithSetMods);
                             if (observed)
                                 continue;
                             lock (peptideToId)
                             {
-                                observed = peptideToId.Contains(compactPeptide);
+                                observed = peptideToId.Contains(pepWithSetMods);
                                 if (observed)
                                     continue;
-                                peptideToId.Add(compactPeptide);
+                                peptideToId.Add(pepWithSetMods);
                             }
                         }
                     }
@@ -91,16 +93,16 @@ namespace EngineLayer.Indexing
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
+            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
             peptideToId = null;
 
             // create fragment index
             int maxFragmentMass = 0;
             for (int i = peptidesSortedByMass.Count - 1; i >= 0; i--)
             {
-                if (!Double.IsNaN(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods))
+                if (!Double.IsNaN(peptidesSortedByMass[i].MonoisotopicMass))
                 {
-                    maxFragmentMass = (int)Math.Ceiling(Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods, 1));
+                    maxFragmentMass = (int)Math.Ceiling(Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1));
                     break;
                 }
             }
@@ -112,7 +114,7 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int i = 0; i < peptidesSortedByMass.Count; i++)
             {
-                double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMassIncludingFixedMods, 1);
+                double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1);
                 if (!Double.IsNaN(mz))
                 {
                     int fragmentBin = (int)Math.Round(mz * FragmentBinsPerDalton);

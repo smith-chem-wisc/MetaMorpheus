@@ -1,5 +1,6 @@
 ﻿using Nett;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -59,8 +60,10 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-            AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
-            AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
+
+            // TODO: need to add motif to Unimod/UniProt ID
+            //AddMods(UnimodDeserialized.OfType<Modification>());
+            //AddMods(UniprotDeseralized.OfType<Modification>());
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
         }
@@ -82,16 +85,18 @@ namespace EngineLayer
         {
             foreach (var ye in enumerable)
             {
-                if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
+                if (string.IsNullOrEmpty(ye.ModificationType) || string.IsNullOrEmpty(ye.Id))
                     throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
-                if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType) && !b.Equals(ye)))
-                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) + Environment.NewLine + Environment.NewLine);
-                else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
+                if (AllModsKnown.Any(b => b.Id.Equals(ye.Id) && b.ModificationType.Equals(ye.ModificationType) && !b.Equals(ye)))
+                {
+                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.Id.Equals(ye.Id) && b.ModificationType.Equals(ye.ModificationType)) + Environment.NewLine + Environment.NewLine);
+                }
+                else if (AllModsKnown.Any(b => b.Id.Equals(ye.Id) && b.ModificationType.Equals(ye.ModificationType)))
                     continue;
                 else
                 {
                     _AllModsKnown.Add(ye);
-                    _AllModTypesKnown.Add(ye.modificationType);
+                    _AllModTypesKnown.Add(ye.ModificationType);
                 }
             }
         }
@@ -121,19 +126,19 @@ namespace EngineLayer
                     string[][] fields = line.Split('\t').Select(x => x.Split('|')).ToArray();
                     string name = fields[0][0];
                     string[] preventing;
-                    List<Tuple<string, TerminusType>> sequences_inducing_cleavage = new List<Tuple<string, TerminusType>>();
-                    List<Tuple<string, TerminusType>> sequences_preventing_cleavage = new List<Tuple<string, TerminusType>>();
+                    List<Tuple<string, FragmentationTerminus>> sequences_inducing_cleavage = new List<Tuple<string, FragmentationTerminus>>();
+                    List<Tuple<string, FragmentationTerminus>> sequences_preventing_cleavage = new List<Tuple<string, FragmentationTerminus>>();
                     for (int i = 0; i < fields[1].Length; i++)
                     {
                         if (!fields[1][i].Equals(""))
                         {
-                            sequences_inducing_cleavage.Add(new Tuple<string, TerminusType>(fields[1][i], ((TerminusType)Enum.Parse(typeof(TerminusType), fields[3][i], true))));
+                            sequences_inducing_cleavage.Add(new Tuple<string, FragmentationTerminus>(fields[1][i], ((FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), fields[3][i], true))));
                             if (!fields[2].Contains(""))
                             {
                                 preventing = (fields[2][i].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
                                 for (int j = 0; j < preventing.Length; j++)
                                 {
-                                    sequences_preventing_cleavage.Add(new Tuple<string, TerminusType>(preventing[j], (TerminusType)Enum.Parse(typeof(TerminusType), fields[3][i], true)));
+                                    sequences_preventing_cleavage.Add(new Tuple<string, FragmentationTerminus>(preventing[j], (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), fields[3][i], true)));
                                 }
                             }
                         }

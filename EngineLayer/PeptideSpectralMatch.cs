@@ -1,7 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
-using MassSpectrometry;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -16,11 +16,11 @@ namespace EngineLayer
     {
         private const double ToleranceForDoubleResolution = 1e-6;
 
-        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+        private List<(int Notch, PeptideWithSetModifications Pwsm)> _bestMatchingPeptideWithetMods = new List<(int, PeptideWithSetModifications)>(); //the int is the notch
 
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
-        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
+        public PeptideSpectralMatch(PeptideWithSetModifications pwsm, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons)
         {
             ScanIndex = scanIndex;
             FullFilePath = scan.FullFilePath;
@@ -32,18 +32,18 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch, true);
             AllScores = new List<double>();
             DigestionParams = digestionParams;
-            MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
-            MatchedIonMassToChargeRatioDict = new Dictionary<ProductType, double[]>();
-            MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
-            ProductMassErrorDa = new Dictionary<ProductType, double[]>();
-            ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-            MatchedFragmentIons = new List<MatchedFragmentIon>();
+            PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
+
+            AddOrReplace(pwsm, score, notch, true, matchedFragmentIons);
         }
 
+        // technically, many of these fields should contain a list of properties, one for each peptide (i.e., a list of lists of matched ions)
+        // but since our ambiguity cutoff is so small (1e-9) it's essentially guaranteed that the matched ions will be the same for all the peptides
+        // in this PeptideSpectralMatch. Some fields like FullSequence are null if more than one peptide could explain this PSM.
         public ChemicalFormula ModsChemicalFormula { get; private set; }
+
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
@@ -54,8 +54,18 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
-        public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return _CompactPeptides.AsEnumerable(); } }
-        public int NumDifferentCompactPeptides { get { return _CompactPeptides.Count; } }
+
+        public IEnumerable<(int Notch, PeptideWithSetModifications Pwsm)> BestMatchingPeptideWithSetMods
+        {
+            get
+            {
+                return _bestMatchingPeptideWithetMods.OrderBy(p => p.Item2.Sequence)
+                    .ThenBy(p => p.Item2.Protein.Accession)
+                    .ThenBy(p => p.Item2.OneBasedStartResidueInProtein);
+            }
+        }
+
+        public int NumDifferentMatchingPeptides { get { return _bestMatchingPeptideWithetMods.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
         public double DeltaScore { get; private set; }
@@ -70,18 +80,17 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public Dictionary<ProductType, int[]> MatchedIonSeriesDict { get; internal set; }
-        public Dictionary<ProductType, double[]> MatchedIonMassToChargeRatioDict { get; internal set; }
-        public Dictionary<ProductType, double[]> MatchedIonIntensitiesDict { get; internal set; }
-        public string ProteinAccesion { get; private set; }
+        public string ProteinAccession { get; private set; }
         public string Organism { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
-        public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
-        public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
         public readonly DigestionParams DigestionParams;
         public List<double> AllScores { get; set; }
-        public List<MatchedFragmentIon> MatchedFragmentIons { get; private set; }
+        public List<MatchedFragmentIon> MatchedFragmentIons { get; protected set; }
+        public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
 
+        /// <summary>
+        /// Used for Percolator output
+        /// </summary>
         public double[] Features
         {
             get
@@ -95,74 +104,40 @@ namespace EngineLayer
             return String.Join("\t", DataDictionary(null, null).Keys);
         }
 
-        public void SetMatchedFragments(List<MatchedFragmentIon> matchedFragmentIons)
+        public void AddOrReplace(PeptideWithSetModifications pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
         {
-            MatchedFragmentIons = matchedFragmentIons;
-        }
-
-        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
-        {
-            if (score - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
+            if (newScore - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
-                _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
-                {
-                    { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
-                };
+                _bestMatchingPeptideWithetMods.Clear();
+                _bestMatchingPeptideWithetMods.Add((notch, pwsm));
+
                 if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
                 {
                     RunnerUpScore = Score;
                 }
-                Score = score;
+
+                Score = newScore;
+
+                PeptidesToMatchingFragments.Clear();
+                PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
             }
-            else if (score - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
+            else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
-                _CompactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
+                _bestMatchingPeptideWithetMods.Add((notch, pwsm));
+
+                if (!PeptidesToMatchingFragments.ContainsKey(pwsm))
+                {
+                    PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
+                }
+                else
+                {
+                    throw new MetaMorpheusException("Cannot add duplicate peptides to the same PSM!");
+                }
             }
             else if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
-                RunnerUpScore = score;
+                RunnerUpScore = newScore;
             }
-        }
-
-        public void CompactCompactPeptides()
-        {
-            List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
-            foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in CompactPeptides)
-            {
-                //Change CPWM to reflect actual CP
-                Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
-                if (!cps.Contains(tempTuple))
-                {
-                    cps.Add(tempTuple);
-                }
-            }
-            _CompactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
-            foreach (Tuple<CompactPeptideBase, int> cp in cps)
-            {
-                _CompactPeptides[cp.Item1] = new Tuple<int, HashSet<PeptideWithSetModifications>>(cp.Item2, null);
-            }
-        }
-
-        public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
-        {
-            foreach (var cpKey in _CompactPeptides.Keys.ToList())
-            {
-                _CompactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(_CompactPeptides[cpKey].Item1, matching[cpKey]);
-            }
-            var pepsWithMods = CompactPeptides.SelectMany(b => b.Value.Item2);
-            IsDecoy = CompactPeptides.Any(b => b.Value.Item2.All(c => c.Protein.IsDecoy));
-            FullSequence = Resolve(pepsWithMods.Select(b => b.Sequence)).Item2;
-            BaseSequence = Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item2;
-            PeptideLength = Resolve(pepsWithMods.Select(b => b.Length)).Item2;
-            OneBasedStartResidueInProtein = Resolve(pepsWithMods.Select(b => b.OneBasedStartResidueInProtein)).Item2;
-            OneBasedEndResidueInProtein = Resolve(pepsWithMods.Select(b => b.OneBasedEndResidueInProtein)).Item2;
-            ProteinLength = Resolve(pepsWithMods.Select(b => b.Protein.Length)).Item2;
-            PeptideMonisotopicMass = Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).Item2;
-            ProteinAccesion = Resolve(pepsWithMods.Select(b => b.Protein.Accession)).Item2;
-            Organism = Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item2;
-            ModsIdentified = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).Item2;
-            ModsChemicalFormula = Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
-            Notch = Resolve(CompactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
         public override string ToString()
@@ -175,13 +150,13 @@ namespace EngineLayer
             return String.Join("\t", DataDictionary(this, ModstoWritePruned).Values);
         }
 
-        public static Dictionary<string, string> DataDictionary(PeptideSpectralMatch peptide, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        public static Dictionary<string, string> DataDictionary(PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
-            AddBasicMatchData(s, peptide);
-            AddPeptideSequenceData(s, peptide, ModsToWritePruned);
-            AddMatchedIonsData(s, peptide);
-            AddMatchScoreData(s, peptide);
+            AddBasicMatchData(s, psm);
+            AddPeptideSequenceData(s, psm, ModsToWritePruned);
+            AddMatchedIonsData(s, psm);
+            AddMatchScoreData(s, psm);
             return s;
         }
 
@@ -207,18 +182,70 @@ namespace EngineLayer
             };
         }
 
-        private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
+        /// <summary>
+        /// This method saves properties of this PSM for internal use. It is NOT used for any output.
+        /// These resolved fields are (usually) null if there is more than one option.
+        /// e.g., if this PSM can be explained by more than one base sequence, the BaseSequence property will be null
+        /// </summary>
+        public void ResolveAllAmbiguities()
+        {
+            IsDecoy = _bestMatchingPeptideWithetMods.Any(p => p.Pwsm.Protein.IsDecoy);
+            FullSequence = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.Sequence)).ResolvedValue;
+            BaseSequence = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.BaseSequence)).ResolvedValue;
+            PeptideLength = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.Length)).ResolvedValue;
+            OneBasedStartResidueInProtein = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.OneBasedStartResidueInProtein)).ResolvedValue;
+            OneBasedEndResidueInProtein = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.OneBasedEndResidueInProtein)).ResolvedValue;
+            ProteinLength = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.Protein.Length)).ResolvedValue;
+            PeptideMonisotopicMass = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.MonoisotopicMass)).ResolvedValue;
+            ProteinAccession = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.Protein.Accession)).ResolvedValue;
+            Organism = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.Protein.Organism)).ResolvedValue;
+            ModsIdentified = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.AllModsOneIsNterminus)).ResolvedValue;
+            ModsChemicalFormula = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
+            Notch = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Notch)).ResolvedValue;
+
+            //TODO: technically, different peptide options for this PSM can have different matched ions
+            // we can write a Resolve method for this if we want...
+            //if (_bestMatchingPeptideWithetMods.Count == 1)
+            {
+                MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
+            }
+        }
+
+        /// <summary>
+        /// This method is used by protein parsimony to remove PeptideWithSetModifications objects that have non-parsimonious protein associations
+        /// </summary>
+        public void TrimProteinMatches(HashSet<Protein> parsimoniousProteins)
+        {
+            _bestMatchingPeptideWithetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+        }
+
+        /// <summary>
+        /// This method is used by protein parsimony to add PeptideWithSetModifications objects for modification-agnostic parsimony
+        /// </summary>
+        public void AddProteinMatch((int, PeptideWithSetModifications) peptideWithNotch)
+        {
+            _bestMatchingPeptideWithetMods.Add(peptideWithNotch);
+        }
+
+        /// <summary>
+        /// Resolve Methods()
+        /// if all 'values' are the same this returns the one value otherwise you get a separated list of all values in their original order.
+        /// for example:
+        /// Notches 1,1,1,1 returns as 1
+        /// Notches 1,0,1,0 returns as 1|0|1|0
+        /// </summary>
+        private static (string ResolvedString, ChemicalFormula ResolvedValue) Resolve(IEnumerable<IEnumerable<Modification>> enumerable)
         {
             ChemicalFormula f = new ChemicalFormula();
             {
                 var firstEnum = enumerable.First();
                 foreach (var mod in firstEnum)
                 {
-                    if (mod == null)
+                    if (mod == null || mod.ChemicalFormula == null)
                     {
                         return ("unknown", null);
                     }
-                    f.Add(mod.chemicalFormula);
+                    f.Add(mod.ChemicalFormula);
                 }
             }
             bool equals = true;
@@ -232,7 +259,7 @@ namespace EngineLayer
                     {
                         return ("unknown", null);
                     }
-                    fhere.Add(mod.chemicalFormula);
+                    fhere.Add(mod.ChemicalFormula);
                 }
                 if (!f.Equals(fhere))
                 {
@@ -251,13 +278,13 @@ namespace EngineLayer
             }
         }
 
-        private static Tuple<string, Dictionary<string, int>> Resolve(IEnumerable<Dictionary<int, ModificationWithMass>> enumerable)
+        private static (string ResolvedString, Dictionary<string, int> ResolvedValue) Resolve(IEnumerable<Dictionary<int, Modification>> enumerable)
         {
-            Dictionary<string, int> ok = enumerable.First().Values.OrderBy(b => b.id).GroupBy(b => b.id).ToDictionary(b => b.Key, b => b.Count());
+            Dictionary<string, int> ok = enumerable.First().Values.OrderBy(b => b.Id).GroupBy(b => b.Id).ToDictionary(b => b.Key, b => b.Count());
             bool notEqual = false;
             foreach (var ha in enumerable)
             {
-                Dictionary<string, int> okTest = ha.Values.OrderBy(b => b.id).GroupBy(b => b.id).ToDictionary(b => b.Key, b => b.Count());
+                Dictionary<string, int> okTest = ha.Values.OrderBy(b => b.Id).GroupBy(b => b.Id).ToDictionary(b => b.Key, b => b.Count());
                 if (!ok.SequenceEqual(okTest))
                 {
                     notEqual = true;
@@ -266,233 +293,188 @@ namespace EngineLayer
             }
             if (notEqual)
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c)))));
-                return new Tuple<string, Dictionary<string, int>>(returnString, null);
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.Id).OrderBy(c => c)))));
+                return (returnString, null);
             }
             else
             {
-                return new Tuple<string, Dictionary<string, int>>(string.Join(" ", enumerable.First().Values.Select(c => c.id).OrderBy(c => c)), ok);
+                return (string.Join(" ", enumerable.First().Values.Select(c => c.Id).OrderBy(c => c)), ok);
             }
         }
 
-        private static Tuple<string, double?> ResolveF2(IEnumerable<double> enumerable)
+        private static (string ResolvedString, double? ResolvedValue) ResolveF2(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
             if (list.Max() - list.Min() < ToleranceForDoubleResolution)
             {
-                return new Tuple<string, double?>(list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
+                return (list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
             }
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
-                return new Tuple<string, double?>(returnString, null);
+                return (returnString, null);
             }
         }
 
-        private static Tuple<string, double?> Resolve(IEnumerable<double> enumerable)
+        private static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
             if (list.Max() - list.Min() < ToleranceForDoubleResolution)
             {
-                return new Tuple<string, double?>(list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
+                return (list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
             }
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
-                return new Tuple<string, double?>(returnString, null);
+                return (returnString, null);
             }
         }
 
-        private static Tuple<string, int?> Resolve(IEnumerable<int> enumerable)
+        private static (string ResolvedString, int? ResolvedValue) Resolve(IEnumerable<int> enumerable)
         {
             var list = enumerable.ToList();
             var first = list[0];
             if (list.All(b => first.Equals(b)))
             {
-                return new Tuple<string, int?>(first.ToString(CultureInfo.InvariantCulture), first);
+                return (first.ToString(CultureInfo.InvariantCulture), first);
             }
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString(CultureInfo.InvariantCulture))));
-                return new Tuple<string, int?>(returnString, null);
+                return (returnString, null);
             }
         }
 
-        private static Tuple<string, string> Resolve(IEnumerable<string> enumerable)
+        private static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable)
         {
             var list = enumerable.ToList();
-            var first = list.FirstOrDefault(b => b != null);
+            string first = list.FirstOrDefault(b => b != null);
             // Only first if list is either all null or all equal to the first
             if (list.All(b => b == null) || list.All(b => first.Equals(b)))
             {
-                return new Tuple<string, string>(first, first);
+                return (first, first);
             }
             else
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
-                return new Tuple<string, string>(returnString, null);
+                return (returnString, null);
             }
         }
 
-        private static void AddBasicMatchData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
+        private static void AddBasicMatchData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
-            s["File Name"] = peptide == null ? " " : Path.GetFileNameWithoutExtension(peptide.FullFilePath);
-            s["Scan Number"] = peptide == null ? " " : peptide.ScanNumber.ToString(CultureInfo.InvariantCulture);
-            s["Scan Retention Time"] = peptide == null ? " " : peptide.ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture);
-            s["Num Experimental Peaks"] = peptide == null ? " " : peptide.ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture);
-            s["Total Ion Current"] = peptide == null ? " " : peptide.TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture);
-            s["Precursor Scan Number"] = peptide == null ? " " : peptide.PrecursorScanNumber.HasValue ? peptide.PrecursorScanNumber.Value.ToString(CultureInfo.InvariantCulture) : "unknown";
-            s["Precursor Charge"] = peptide == null ? " " : peptide.ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture);
-            s["Precursor MZ"] = peptide == null ? " " : peptide.ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture);
-            s["Precursor Mass"] = peptide == null ? " " : peptide.ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture);
-            s["Score"] = peptide == null ? " " : peptide.Score.ToString("F3", CultureInfo.InvariantCulture);
-            s["Delta Score"] = peptide == null ? " " : peptide.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
-            s["Notch"] = peptide == null ? " " : Resolve(peptide.CompactPeptides.Select(b => b.Value.Item1)).Item1; // Notch
-            s["Different Peak Matches"] = peptide == null ? " " : peptide.NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture);
+            s["File Name"] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
+            s["Scan Number"] = psm == null ? " " : psm.ScanNumber.ToString(CultureInfo.InvariantCulture);
+            s["Scan Retention Time"] = psm == null ? " " : psm.ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture);
+            s["Num Experimental Peaks"] = psm == null ? " " : psm.ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture);
+            s["Total Ion Current"] = psm == null ? " " : psm.TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture);
+            s["Precursor Scan Number"] = psm == null ? " " : psm.PrecursorScanNumber.HasValue ? psm.PrecursorScanNumber.Value.ToString(CultureInfo.InvariantCulture) : "unknown";
+            s["Precursor Charge"] = psm == null ? " " : psm.ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture);
+            s["Precursor MZ"] = psm == null ? " " : psm.ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture);
+            s["Precursor Mass"] = psm == null ? " " : psm.ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture);
+            s["Score"] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
+            s["Delta Score"] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
+            s["Notch"] = psm == null ? " " : Resolve(psm.BestMatchingPeptideWithSetMods.Select(p => p.Notch)).ResolvedString;
+            s["Different Peak Matches"] = psm == null ? " " : psm.NumDifferentMatchingPeptides.ToString("F5", CultureInfo.InvariantCulture);
         }
 
-        private static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch peptide, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        private static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
         {
-            bool pepWithModsIsNull = peptide == null || peptide.CompactPeptides.First().Value.Item2 == null;
+            bool pepWithModsIsNull = psm == null || psm.BestMatchingPeptideWithSetMods == null || !psm.BestMatchingPeptideWithSetMods.Any();
 
-            var pepsWithMods = pepWithModsIsNull ? null : peptide.CompactPeptides.SelectMany(b => b.Value.Item2)
-                .OrderBy(p => p.Sequence)
-                .ThenBy(p => p.Protein.Accession)
-                .ThenBy(p => p.OneBasedStartResidueInProtein).ToList();
+            var pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).ToList();
 
-            s["Peptides Sharing Same Peaks"] = pepWithModsIsNull ? " " :
-                GlobalVariables.CheckLengthOfOutput(string.Join("|", peptide.CompactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
-            s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item1;
-            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Sequence)).Item1;
-            s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).Item1;
-            s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).Item1;
+            s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
+            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Sequence)).ResolvedString;
+            s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
+            s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
             s["Mods Chemical Formulas"] = pepWithModsIsNull ? " " :
-                Resolve(pepsWithMods.Select(b => string.Join("|", b.AllModsOneIsNterminus.OrderBy(c => c.Key)
-                    .Where(c => c.Value is ModificationWithMassAndCf).Select(c => (c.Value as ModificationWithMassAndCf).chemicalFormula.Formula)))).Item1;
-            s["Mods Combined Chemical Formula"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1;
+                Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;
+            s["Mods Combined Chemical Formula"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as Modification)))).ResolvedString;
             s["Num Variable Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).Item1;
-            s["Missed Cleavages"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).Item1;
-            s["Peptide Monoisotopic Mass"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).Item1;
-            s["Mass Diff (Da)"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => peptide.ScanPrecursorMass - b.MonoisotopicMass)).Item1;
-            s["Mass Diff (ppm)"] = pepWithModsIsNull ? " " : ResolveF2(pepsWithMods.Select(b => ((peptide.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1;
-            s["Protein Accession"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession)).Item1;
-            s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName)).Item1;
-            s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).Item1;
+            s["Missed Cleavages"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).ResolvedString;
+            s["Peptide Monoisotopic Mass"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
+            s["Mass Diff (Da)"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => psm.ScanPrecursorMass - b.MonoisotopicMass)).ResolvedString;
+            s["Mass Diff (ppm)"] = pepWithModsIsNull ? " " : ResolveF2(pepsWithMods.Select(b => ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
+            s["Protein Accession"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession)).ResolvedString;
+            s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName)).ResolvedString;
+            s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).ResolvedString;
             s["Sequence Variations"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations
-                    .Where(d => peptide.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= peptide.OneBasedEndResidueInProtein)
-                    .Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence)))).Item1;
-            s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item1;
-            s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1;
-            s["Decoy"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1;
-            s["Peptide Description"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).Item1;
+                    .Where(d => psm.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= psm.OneBasedEndResidueInProtein)
+                    .Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence)))).ResolvedString;
+            s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).ResolvedString;
+            s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).ResolvedString;
+            s["Decoy"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).ResolvedString;
+            s["Peptide Description"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).ResolvedString;
             s["Start and End Residues In Protein"] =
                 pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " +
-                    b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))).Item1;
-            s["Previous Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).Item1;
-            s["Next Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).Item1;
+                    b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))).ResolvedString;
+            s["Previous Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
+            s["Next Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
 
             string allScores = " ";
             string theoreticalsSearched = " ";
-            if (!pepWithModsIsNull && peptide.FdrInfo != null && peptide.FdrInfo.CalculateEValue)
+            if (!pepWithModsIsNull && psm.FdrInfo != null && psm.FdrInfo.CalculateEValue)
             {
-                allScores = string.Join(";", peptide.AllScores.Select(p => p.ToString("F2", CultureInfo.InvariantCulture)));
-                theoreticalsSearched = peptide.AllScores.Count.ToString();
+                allScores = string.Join(";", psm.AllScores.Select(p => p.ToString("F2", CultureInfo.InvariantCulture)));
+                theoreticalsSearched = psm.AllScores.Count.ToString();
             }
 
             s["All Scores"] = allScores;
             s["Theoreticals Searched"] = theoreticalsSearched;
-            s["Decoy/Contaminant/Target"] = pepWithModsIsNull ? " " : peptide.IsDecoy ? "D" : pepsWithMods.Any(c => c.Protein.IsContaminant) ? "C" : "T";
+            s["Decoy/Contaminant/Target"] = pepWithModsIsNull ? " " : psm.IsDecoy ? "D" : pepsWithMods.Any(c => c.Protein.IsContaminant) ? "C" : "T";
         }
 
-        private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
+        /// <summary>
+        ///
+        /// </summary>
+        private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
-            //sb for writing, format for double.ToString, header for input dictionary key
-            (StringBuilder sb, string format, string header)[] matchedIonInfo = new(StringBuilder, string, string)[]
+            bool nullPsm = (psm == null);
+
+            StringBuilder seriesStringBuilder = new StringBuilder();
+            StringBuilder mzStringBuilder = new StringBuilder();
+            StringBuilder fragmentDaErrorStringBuilder = new StringBuilder();
+            StringBuilder fragmentPpmErrorStringBuilder = new StringBuilder();
+            StringBuilder fragmentIntensityStringBuilder = new StringBuilder();
+
+            if (!nullPsm)
             {
-                (new StringBuilder(), "F5", "Matched Ion Mass-To-Charge Ratios"),
-                (new StringBuilder(), "F5", "Matched Ion Mass Diff (Da)"),
-                (new StringBuilder(), "F2", "Matched Ion Mass Diff (Ppm)"),
-                (new StringBuilder(), "F0", "Matched Ion Intensities")
-            };
+                // using ", " instead of "," improves human readability
+                const string delimiter = ", ";
 
-            const string blankEntry = " "; //the space prevents sorting issues in excel
-            string ionCounts = blankEntry;
-            string ionSeries = blankEntry;
+                //var f = psm.MatchedFragmentIons.GroupBy(p => p.NeutralTheoreticalProduct.ProductType).OrderBy(p=>p.Key);
 
-            if (peptide != null && peptide.MatchedIonMassToChargeRatioDict.Any())
-            {
-                StringBuilder seriesStringBuilder = new StringBuilder(); //this one is used for series, all others are done in the dictionary
+                var matchedIonsGroupedByProductType = psm.MatchedFragmentIons.GroupBy(i => i.NeutralTheoreticalProduct.ProductType).OrderBy(i => i.Key).ToList();
 
-                //Dictionary allows for easy iteration over the series, where the key is the interesting data and the value is a tuple of the string to build and the string used for double.ToString rounding
-                Dictionary<Dictionary<ProductType, double[]>, (StringBuilder sb, string format, string header)> peptideInfoToStringBuilderDict
-                    = new Dictionary<Dictionary<ProductType, double[]>, (StringBuilder sb, string format, string header)>
+                foreach (var productType in matchedIonsGroupedByProductType)
                 {
-                    { peptide.MatchedIonMassToChargeRatioDict,  matchedIonInfo[0]},
-                    { peptide.ProductMassErrorDa, matchedIonInfo[1] },
-                    { peptide.ProductMassErrorPpm, matchedIonInfo[2] },
-                    { peptide.MatchedIonIntensitiesDict, matchedIonInfo[3] }
-                };
+                    // write ion series (b1, b2, b3 ...)
+                    seriesStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.NeutralTheoreticalProduct.ProductType + i.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + i.Charge)) + "];");
 
-                const string delimiter = ", "; //using ", " instead of "," improves human readability
+                    // write m/z values
+                    mzStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.Mz.ToString("F5"))) + "];");
 
-                foreach (ProductType productType in peptide.MatchedIonSeriesDict.Keys)
-                {
-                    string ionType = productType.ToString()[0].ToString().ToLower(); //gets the first char of the type (ie b, y, c, z)
+                    // write fragment Da errors
+                    fragmentDaErrorStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => (i.Mz.ToMass(i.Charge) - i.NeutralTheoreticalProduct.NeutralMass).ToString("F5"))) + "];");
 
-                    //Ion series
-                    string[] seriesToWrite = peptide.MatchedIonSeriesDict[productType].Select(x => ionType + x.ToString() + "+1").ToArray(); //assumes charge of +1
-                    seriesStringBuilder.Append("[" + string.Join(delimiter, seriesToWrite) + "];");
+                    // write fragment ppm errors
+                    fragmentPpmErrorStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => ((i.Mz.ToMass(i.Charge) - i.NeutralTheoreticalProduct.NeutralMass) / i.NeutralTheoreticalProduct.NeutralMass * 1e6).ToString("F2"))) + "];");
 
-                    //All other data present in dictionary
-                    //add bracket to the beginning of each stringbuilder in the dictionary for this product type
-                    foreach (var kvp in peptideInfoToStringBuilderDict)
-                    {
-                        kvp.Value.sb.Append("[");
-                    }
-
-                    //add all the data to the stringbuilder
-                    for (int i = 0; i < seriesToWrite.Length - 1; i++) //-1 so no delimiter for the last entry
-                    {
-                        string currentSeriesToWrite = seriesToWrite[i];
-                        foreach (var kvp in peptideInfoToStringBuilderDict)
-                        {
-                            kvp.Value.sb.Append(currentSeriesToWrite + ":" + kvp.Key[productType][i].ToString(kvp.Value.format, CultureInfo.InvariantCulture) + delimiter);
-                        }
-                    }
-                    //add the last data from each array without the delimiter
-                    if (seriesToWrite.Length != 0)//check it's not empty
-                    {
-                        string currentSeriesToWrite = seriesToWrite.Last();
-                        foreach (var kvp in peptideInfoToStringBuilderDict)
-                        {
-                            kvp.Value.sb.Append(currentSeriesToWrite + ":" + kvp.Key[productType].Last().ToString(kvp.Value.format, CultureInfo.InvariantCulture)); //no delimiter here!
-                        }
-                    }
-
-                    foreach (var kvp in peptideInfoToStringBuilderDict) //add bracket to the end of each stringbuilder in the dictionary
-                    {
-                        kvp.Value.sb.Append("];");
-                    }
-                }
-                ionCounts = string.Join(";", peptide.MatchedIonMassToChargeRatioDict.Select(b => b.Value.Count(c => c > 0)));
-                ionSeries = "[" + GlobalVariables.CheckLengthOfOutput(seriesStringBuilder.ToString()) + "]";
-            }
-            else
-            {
-                foreach (var info in matchedIonInfo)
-                {
-                    info.sb.Append(blankEntry);
+                    // write fragment intensities
+                    fragmentIntensityStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.Intensity.ToString("F0"))) + "];");
                 }
             }
 
-            //write into input dictionary
-            s["Matched Ion Counts"] = ionCounts;
-            s["Matched Ion Series"] = ionSeries;
-            foreach (var info in matchedIonInfo)
-            {
-                s[info.header] = info.sb.ToString();
-            }
+            // save ion series strings to output dictionary
+            s["Matched Ion Mass-To-Charge Ratios"] = nullPsm ? " " : seriesStringBuilder.ToString().TrimEnd(';');
+            s["Matched Ion Mass Diff (Da)"] = nullPsm ? " " : fragmentDaErrorStringBuilder.ToString().TrimEnd(';');
+            s["Matched Ion Mass Diff (Ppm)"] = nullPsm ? " " : fragmentPpmErrorStringBuilder.ToString().TrimEnd(';');
+            s["Matched Ion Intensities"] = nullPsm ? " " : fragmentIntensityStringBuilder.ToString().TrimEnd(';');
+
+            // number of matched ions
+            s["Matched Ion Counts"] = nullPsm ? " " : psm.MatchedFragmentIons.Count.ToString();
         }
 
         private static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)

@@ -404,6 +404,21 @@
                                             </TextBox>
                                         </StackPanel>
                                     </StackPanel>
+
+
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="dissassociationTypeLabel" Content="Dissassociation Type" />
+                                        <ComboBox x:Name="dissassociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ComboBox.ToolTip>
+                                                <TextBlock>
+                                                        
+                                                </TextBlock>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
+                                    </StackPanel>
+
+
+
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ionsToSearchLabel" Content="Ions to search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">

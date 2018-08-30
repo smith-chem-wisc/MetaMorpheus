@@ -11,10 +11,10 @@ namespace EngineLayer.Gptmd
     {
         private readonly List<PeptideSpectralMatch> AllIdentifications;
         private readonly IEnumerable<Tuple<double, double>> Combos;
-        private readonly List<ModificationWithMass> GptmdModifications;
+        private readonly List<Modification> GptmdModifications;
         private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
 
-        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<Modification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
             GptmdModifications = gptmdModifications;
@@ -22,9 +22,9 @@ namespace EngineLayer.Gptmd
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
         }
 
-        public static bool ModFits(ModificationWithMass attemptToLocalize, Protein protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
+        public static bool ModFits(Modification attemptToLocalize, Protein protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
         {
-            var motif = attemptToLocalize.motif;
+            var motif = attemptToLocalize.Target;
             // First find the capital letter...
             var hehe = motif.ToString().IndexOf(motif.ToString().First(b => char.IsUpper(b)));
 
@@ -37,13 +37,13 @@ namespace EngineLayer.Gptmd
                     return false;
                 indexUp++;
             }
-            if (attemptToLocalize.terminusLocalization == TerminusLocalization.NProt && (proteinOneBasedIndex > 2))
+            if (attemptToLocalize.LocationRestriction == "N-terminal." && (proteinOneBasedIndex > 2))
                 return false;
-            if (attemptToLocalize.terminusLocalization == TerminusLocalization.NPep && peptideOneBasedIndex > 1)
+            if (attemptToLocalize.LocationRestriction == "Peptide N-terminal." && peptideOneBasedIndex > 1)
                 return false;
-            if (attemptToLocalize.terminusLocalization == TerminusLocalization.PepC && peptideOneBasedIndex < peptideLength)
+            if (attemptToLocalize.LocationRestriction == "Peptide C-terminal." && peptideOneBasedIndex < peptideLength)
                 return false;
-            if (attemptToLocalize.terminusLocalization == TerminusLocalization.ProtC && proteinOneBasedIndex < protein.Length)
+            if (attemptToLocalize.LocationRestriction == "C-terminal." && proteinOneBasedIndex < protein.Length)
                 return false;
             return true;
         }
@@ -61,9 +61,9 @@ namespace EngineLayer.Gptmd
                 Tolerance precursorMassTolerance = FilePathToPrecursorMassTolerance[psm.FullFilePath];
 
                 // get mods to annotate database with
-                foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
+                foreach (var pepWithSetMods in psm.BestMatchingPeptideWithSetMods.Select(v => v.Pwsm))
                 {
-                    foreach (ModificationWithMass mod in GetPossibleMods(psm.ScanPrecursorMass, GptmdModifications, Combos, precursorMassTolerance, pepWithSetMods))
+                    foreach (Modification mod in GetPossibleMods(psm.ScanPrecursorMass, GptmdModifications, Combos, precursorMassTolerance, pepWithSetMods))
                     {
                         var proteinAccession = pepWithSetMods.Protein.Accession;
 
@@ -94,16 +94,16 @@ namespace EngineLayer.Gptmd
             return new GptmdResults(this, Mods, modsAdded);
         }
 
-        private static IEnumerable<ModificationWithMass> GetPossibleMods(double totalMassToGetTo, IEnumerable<ModificationWithMass> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
+        private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
         {
-            foreach (var Mod in allMods)
+            foreach (var Mod in allMods.Where(b => b.ValidModification == true))
             {
-                if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass))
+                if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + (double)Mod.MonoisotopicMass))
                     yield return Mod;
-                foreach (var modOnPsm in peptideWithSetModifications.AllModsOneIsNterminus.Values)
-                    if (modOnPsm.motif.Equals(Mod.motif))
+                foreach (var modOnPsm in peptideWithSetModifications.AllModsOneIsNterminus.Values.Where(b => b.ValidModification == true))
+                    if (modOnPsm.Target.Equals(Mod.Target))
                     {
-                        if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
+                        if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + (double)Mod.MonoisotopicMass - (double)modOnPsm.MonoisotopicMass))
                             yield return Mod;
                     }
             }

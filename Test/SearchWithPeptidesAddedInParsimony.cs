@@ -41,9 +41,9 @@ namespace Test
                     maxModsForPeptides: 1));
 
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
-            ModificationWithMass alanineMod = new ModificationWithMass("111", "mt", motifA, TerminusLocalization.Any, 111);
+            Modification alanineMod = new Modification(_id: "111", _modificationType: "mt", _target: motifA, _locationRestriction: "Anywhere.", _monoisotopicMass: 111);
 
-            var variableModifications = new List<ModificationWithMass>();
+            var variableModifications = new List<Modification>();
             IDictionary<int, List<Modification>> oneBasedModifications1 = new Dictionary<int, List<Modification>>
                 {
                     {2, new List<Modification>{ alanineMod } }
@@ -53,7 +53,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("G", out ModificationMotif motif1);
 
-            ModificationWithMass glycineMod = new ModificationWithMass("CH2 on Glycine", "mt", motif1, TerminusLocalization.Any, Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass);
+            Modification glycineMod = new Modification(_id: "CH2 on Glycine", _modificationType: "mt", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass);
 
             IDictionary<int, List<Modification>> oneBasedModifications2 = new Dictionary<int, List<Modification>>
                 {
@@ -61,10 +61,10 @@ namespace Test
                 };
             Protein protein2 = new Protein("MG", "protein3", oneBasedModifications: oneBasedModifications2);
 
-            PeptideWithSetModifications pepMA = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
-            PeptideWithSetModifications pepMA111 = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).Last();
+            PeptideWithSetModifications pepMA = protein1.Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).First();
+            PeptideWithSetModifications pepMA111 = protein1.Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).Last();
 
-            var pepMG = protein2.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
+            var pepMG = protein2.Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).First();
 
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
 

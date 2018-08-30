@@ -5,7 +5,25 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
+        
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
+
         Title="GPTMD Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <ObjectDataProvider x:Key="DissociationEnum" MethodName="GetValues"
+                        ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="mzl:DissociationType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </Window.Resources>
+
+
+
+
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -118,7 +136,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                        <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                         <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -163,21 +181,22 @@
                                             </TextBox.ToolTip>
                                         </TextBox>
                                     </StackPanel>
+
+
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="ionsToSearchLabel" Content="Ions to search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <Label.ToolTip>
                                                 <TextBlock>
-                                                        The expected product ions produced by fragmentation.
+                                                        The type of fragmentation.
                                                 </TextBlock>
                                             </Label.ToolTip>
                                         </Label>
-                                        <CheckBox x:Name="bCheckBox" Content="b ions" />
-                                        <CheckBox x:Name="yCheckBox" Content="y ions" />
+                                        <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="150" SelectedIndex="5" ItemsSource="{Binding Source={StaticResource DissociationEnum}}" />
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
-                                        <CheckBox x:Name="cCheckBox" Content="c ions" />
-                                        <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
-                                    </StackPanel>
+
+
+
+
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Max Threads" />
                                         <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">

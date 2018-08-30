@@ -5,6 +5,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace Test
 
             DigestionParams digestionParams = new DigestionParams(protease: p.Name, maxMissedCleavages: 8, minPeptideLength: 1, maxPeptideLength: 9, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
 
-            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Count());
+            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).Count());
         }
 
         [Test]
@@ -31,39 +32,49 @@ namespace Test
             Protein parentProteinForMatch = new Protein("MEK", null);
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
-            List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) };
+            List<Modification> variableModifications = new List<Modification> { new Modification(_id: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
 
-            List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+            List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
             Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
-            List<ProductType> lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
+            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.GetAllScansList().Last(), pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1, null);
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps.CompactPeptide(TerminusType.None), 0, 0, 2, scan, digestionParams);
 
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
-            {
-                {ps.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ ps} }
-            };
-
-            newPsm.MatchToProteinLinkedPeptides(matching);
+            var theoreticalProducts = ps.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan.MassSpectrum, theoreticalProducts, new CommonParameters());
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, digestionParams, matchedIons);
+            newPsm.ResolveAllAmbiguities();
 
             CommonParameters commonParameters = new CommonParameters(productMassTolerance: fragmentTolerance);
+
+            ////DEBUG CODE
+            //List<PeptideSpectralMatch> l = new List<PeptideSpectralMatch>() { newPsm };
+            //PeptideSpectralMatch[] a = l.ToArray();
+
+            //List<Ms2ScanWithSpecificMass> m = new List<Ms2ScanWithSpecificMass> { scan };
+            //Ms2ScanWithSpecificMass[] marray = m.ToArray();
+
+            //EngineLayer.ClassicSearch.ClassicSearchEngine c = new EngineLayer.ClassicSearch.ClassicSearchEngine(a, marray, null, null, new List<Protein> { parentProteinForMatch }, lp, null, commonParameters, new List<string>());
+            //c.Run();
+
+            //int j = newPsm.MatchedFragmentIons.Count();
+
+            ////END DEBUG CODE
+
             LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, commonParameters, new List<string>());
             f.Run();
 
-            // Was single peak!!!
-            Assert.AreEqual(0, newPsm.MatchedIonMassToChargeRatioDict[ProductType.BnoB1ions].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.MatchedIonMassToChargeRatioDict[ProductType.Y].Count(b => b > 0));
-            Assert.AreEqual(0, newPsm.MatchedIonIntensitiesDict[ProductType.BnoB1ions].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.MatchedIonIntensitiesDict[ProductType.Y].Count(b => b > 0));
-            // If localizing, three match!!!
+            // single peak matches
+            Assert.AreEqual(0, newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.B).Count());
+            Assert.AreEqual(1, newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.Y).Count());
+
+            // when localizing, three peaks match
             Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
         }
 

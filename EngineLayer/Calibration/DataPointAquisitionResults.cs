@@ -39,7 +39,7 @@ namespace EngineLayer.Calibration
             PsmPrecursorIqrPpmError = Statistics.InterquartileRange(precursorErrors);
             PsmPrecursorMedianPpmError = Statistics.Median(precursorErrors);
 
-            var productErrors = psms.SelectMany(p => p.MatchedFragmentIons.Select(v => v.PpmMassError)).ToList();
+            var productErrors = new List<double> { };//we'll have to fix this.
             PsmProductIqrPpmError = Statistics.InterquartileRange(productErrors);
             PsmProductMedianPpmError = Statistics.Median(productErrors);
         }

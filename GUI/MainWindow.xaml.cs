@@ -466,7 +466,7 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>());
                             }
                             catch (Exception ee)
                             {
@@ -514,12 +514,6 @@ namespace MetaMorpheusGUI
                                 case "XLSearch":
                                     var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                                     AddTaskToCollection(ye4);
-                                    break;
-
-                                case "Neo":
-                                    var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                                    foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
-                                        AddTaskToCollection(task);
                                     break;
                             }
                         }
@@ -779,19 +773,7 @@ namespace MetaMorpheusGUI
                 UpdateTaskGuiStuff();
             }
         }
-
-        private void AddNeoTaskButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new NeoSearchTaskWindow();
-            if (dialog.ShowDialog() == true)
-            {
-                var ye5 = dialog.TheTask;
-                foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
-                    AddTaskToCollection(task);
-                UpdateTaskGuiStuff();
-            }
-        }
-
+        
         // deletes the selected task
         private void DeleteSelectedTask(object sender, RoutedEventArgs e)
         {
@@ -1105,13 +1087,6 @@ namespace MetaMorpheusGUI
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
-                        tasksTreeView.Items.Refresh();
-                        return;
-
-                    case MyTask.Neo:
-                        var Neodialog = new NeoSearchTaskWindow(preRunTask.metaMorpheusTask as NeoSearchTask);
-                        Neodialog.ShowDialog();
-                        preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + Neodialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
                 }

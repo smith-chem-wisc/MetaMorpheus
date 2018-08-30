@@ -63,7 +63,7 @@ namespace MetaMorpheusCommandLine
 
                     foreach (var db in p.Object.Databases)
                         if (!Path.GetExtension(db).Equals(".fasta"))
-                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
+                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<Modification>());
 
                     List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 
@@ -126,13 +126,7 @@ namespace MetaMorpheusCommandLine
                             case "XLSearch":
                                 Console.WriteLine("XLSearch tasks are individual tasks. Please use -t for task instead of -m. Skipping.");
                                 break;
-
-                            case "Neo":
-                                var ye5 = Toml.ReadFile<NeoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                                foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
-                                    taskList.Add(("Task" + (taskList.Count + 1) + ye5.TaskType, ye5));
-                                break;
-
+                                
                             default:
                                 Console.WriteLine(uhum.Get<string>("TaskType") + " is not a known task type! Skipping.");
                                 break;
