@@ -19,7 +19,7 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Annotations;
-
+using MzLibUtil;
 
 namespace Test
 {
@@ -134,6 +134,37 @@ namespace Test
             CrosslinkerTypeClass crosslinker2 = new CrosslinkerTypeClass("ST", "C", "crosslinkerSTC", false, -18.01056, 0, 0, 0, 0, 0, 0);
             string crosslinkerModSitesAll = new string((crosslinker2.CrosslinkerModSites + crosslinker2.CrosslinkerModSites2).ToCharArray().Distinct().ToArray());
             Assert.AreEqual(crosslinkerModSitesAll, "STC");
+        }
+
+        [Test]
+        public static void DeadendPeptideTest()
+        {
+            string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
+            string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch\DeadendPeptide");
+
+            XLSearchTask xLSearchTask = new XLSearchTask()
+            {
+                XlSearchParameters = new XlSearchParameters()
+                {
+                    XlPrecusorMsTl = new PpmTolerance(51000),
+                    
+                }
+            };
+
+            XLSearchTask xLSearchTask2 = new XLSearchTask()
+            {
+                XlSearchParameters = new XlSearchParameters()
+                {
+                    XlPrecusorMsTl = new PpmTolerance(112000),
+                    XlQuench_Tris = false,
+                    XlQuench_H2O = false,
+                    XlQuench_NH2 = true
+                }
+            };
+
+            xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
+            xLSearchTask2.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
         }
 
         [Test]
@@ -271,6 +302,54 @@ namespace Test
             List<PsmCross> newPsms = new List<PsmCross>();
             new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, false, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
             Assert.AreEqual(newPsms.Count(), 1);
+        }
+
+        /// <summary>
+        /// Verifies that crosslinker is generated properly
+        /// </summary>
+        [Test]
+        public static void CrosslinkCreateTest()
+        {
+            Assert.That((XLSearchTask.GenerateUserDefinedCrosslinker(new XlSearchParameters())).GetType().Equals(typeof(CrosslinkerTypeClass)));
+        }
+
+        /// <summary>
+        /// Makes sure helper methods that generate indices function properly
+        /// </summary>
+        [Test]
+        public static void XLSearchWithGeneratedIndices()
+        {
+            XLSearchTask xlSearchTask = new XLSearchTask();
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
+            DbForTask db = new DbForTask(myDatabase, false);
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestXLSearch", xlSearchTask) };
+
+            //creates .params files if they do not exist
+            xlSearchTask.RunTask(Path.Combine(folderPath, @"CreateParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            //tests .params files
+            xlSearchTask.RunTask(Path.Combine(folderPath, @"TestParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            var baseDir = Path.GetDirectoryName(db.FilePath);
+            var directory = new DirectoryInfo(baseDir);
+            DirectoryInfo[] directories = directory.GetDirectories();
+            foreach (DirectoryInfo possibleFolder in directories)
+            {
+                if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")))
+                {
+                    File.Delete(possibleFolder.GetFiles().ElementAt(0).FullName);
+                }
+            }
+            //tests without .params files
+            xlSearchTask.RunTask(Path.Combine(folderPath, @"TestNoParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\xl_intra_fdr.mytsv"));
+            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\xl_intra_fdr.mytsv"));
+            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\xl_intra_fdr.mytsv"));
+
+            Assert.That(lines.SequenceEqual(lines2) && lines2.SequenceEqual(lines3));
+            
         }
 
         [Test]
@@ -484,5 +563,4 @@ namespace Test
             Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
         }
     }
-
 }

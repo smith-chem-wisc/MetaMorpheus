@@ -163,7 +163,7 @@ namespace TaskLayer
                     var intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXL).ToList();
 
                     //TO DO: there may have a bug. I have to filter the following loopPsms, deadendPsms with a XLTotalScore higher than 2, Or some of the Psms will have everything be 0!
-                    var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && !p.FullSequence.Contains("Crosslink")).OrderByDescending(p => p.Score).ToList();
+                    var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && (string.IsNullOrEmpty(p.FullSequence) ? true : !p.FullSequence.Contains("Crosslink"))).OrderByDescending(p => p.Score).ToList();
                     var singlePsmsFDR = SingleFDRAnalysis(singlePsms).ToList();
 
                     var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop && p.XLTotalScore >= 2).OrderByDescending(p => p.XLTotalScore).ToList();
@@ -171,7 +171,7 @@ namespace TaskLayer
 
                     var deadendPsms = allPsms.Where(p => p.BestScore >2 && (p.CrossType == PsmCrossType.DeadEnd || p.CrossType == PsmCrossType.DeadEndH2O || p.CrossType == PsmCrossType.DeadEndNH2 || p.CrossType == PsmCrossType.DeadEndTris)).OrderByDescending(p => p.XLTotalScore).ToList();
                     //If parameter.modification contains crosslinker.deadend as variable mod, then the deadend will be in the following form. 
-                    deadendPsms.AddRange(allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && p.FullSequence.Contains("Crosslink")).ToList());
+                    deadendPsms.AddRange(allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && (string.IsNullOrEmpty(p.FullSequence) ? true : p.FullSequence.Contains("Crosslink"))).ToList());
                     var deadendPsmsFDR = SingleFDRAnalysis(deadendPsms).ToList();
 
                     if (XlSearchParameters.XlOutCrosslink)
@@ -389,17 +389,6 @@ namespace TaskLayer
             return crosslinker;
         }
 
-        private static void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(peptideIndexFile))
-            {
-                ser.Serialize(file, peptideIndex);
-            }
-        }
-
         private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
@@ -407,14 +396,6 @@ namespace TaskLayer
 
             using (var file = File.Create(fragmentIndexFile))
                 ser.Serialize(file, fragmentIndex);
-        }
-
-        private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
-        {
-            using (StreamWriter output = new StreamWriter(fileName))
-            {
-                output.Write(indexEngine);
-            }
         }
 
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
@@ -478,8 +459,7 @@ namespace TaskLayer
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
-                WriteIndexEngineParams(indexEngine, paramsFile);
-                FinishedWritingFile(paramsFile, new List<string> { taskId });
+                WriteIndexEngineParams(indexEngine, paramsFile, taskId);
 
                 Status("Running Index Engine...", new List<string> { taskId });
                 var indexResults = (IndexingResults)indexEngine.Run();
@@ -488,8 +468,7 @@ namespace TaskLayer
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
-                WritePeptideIndex(peptideIndex, peptideIndexFile);
-                FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+                WritePeptideIndex(peptideIndex, peptideIndexFile, taskId);
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
