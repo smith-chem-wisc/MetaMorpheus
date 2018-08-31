@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-
   <!--Shorthand way of getting the install directory-->
   <?define GUI_TargetDir=$(var.GUI.TargetDir)?>
 
   <!--Product compiles into an msi file. Only one can be present.-->
   <!--Version needs to be replaced automatically-->
   <Product Id="*" Name="MetaMorpheus" Language="1033" Version="!(bind.FileVersion.MetaMorpheusGUI.exe)" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5">
-
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
     <Package Id="*" InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
@@ -20,30 +18,25 @@
     <Condition Message="This application requires 64-bit windows">
       <![CDATA[Installed OR VersionNT64]]>
     </Condition>
-
     <MediaTemplate EmbedCab="yes"/>
-
-
 
     <!--A feature for the Feature table. Features are the smallest installable unit.-->
     <Feature Id="ProductFeature" Level="1">
-
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
+      
       <!--App Data Section-->
-
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files"/>
-      <!--<ComponentGroupRef Id="ExcelDefaults"/>-->
+      <ComponentGroupRef Id="ExcelDefaults"/>
       <ComponentRef Id="MetaAppsettings.toml"/>
       <ComponentRef Id="MetaAppGUIsettings.toml"/>
       <ComponentRef Id="RemoveApp"/>
       <ComponentRef Id="DesktopShortcut"/>
-      
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -57,7 +50,7 @@
           <Shortcut Id="AppDeskTopSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
         </Component>
       </Directory>
-
+      
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="DataFolder" Name="Data" />
@@ -66,9 +59,7 @@
         </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder">
-        <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus">
-
-        </Directory>
+        <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus" />
       </Directory>
       <Directory Id="LocalAppDataFolder">
         <Directory Id="MetaMorpheusAppFolder" Name="MetaMorpheus">
@@ -101,19 +92,15 @@
       <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
       <Publish Dialog="MetaSCDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="1">1</Publish>
       <Publish Dialog="MetaSCDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1">1</Publish>
-
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
       <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MyMaintenanceTypeDlg">1</Publish>
       <Publish Dialog="MyMaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="1">1</Publish>
       <!--<Publish Dialog="MyMaintenanceTypeDlg" Control="Next" Event="NewDialog" Value="ExitDialog" Order="1">1</Publish>-->
-
       <Publish Dialog="ExitDialog"
         Control="Finish"
         Event="DoAction"
         Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
-
     </UI>
-
 
     <CustomAction Id='LaunchFile' FileKey='MetaMorpheusGUI.exe' ExeCommand='' Return="asyncNoWait" />
     <Property Id="OVERWRITEAPPDATA" Value="1" />
@@ -121,13 +108,12 @@
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
     <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
     <Property Id="EXCELDEFAULTPROPERTY" Value="1"/>
-    <!--<Property Id="EXCELSELECT" Value="1">
+    <Property Id="EXCELSELECT" Value="1">
       <RegistrySearch Id="CheckFileDir" Root="HKCR" Key="Excel.Backup\shell\Open\command" Type="file">
         <FileSearch Name="EXCEL.exe"/>
       </RegistrySearch>
-    </Property>-->
+    </Property>
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
-
   </Product>
 
   <!--Executables and libraries-->
@@ -460,7 +446,7 @@
     </ComponentGroup>
   </Fragment>
 
-  <!--<Fragment>
+  <Fragment>
     <ComponentGroup Id="ExcelDefaults">
       <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
         <Condition> EXCELDEFAULTPROPERTY</Condition>
@@ -485,16 +471,16 @@
         <Condition><![CDATA[EXCELSELECT<>"1"]]> </Condition>
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command"/>
         <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">
-          <RegistryValue Action="write" Value="[EXCELSELECT]" Type="string"/>
+          <RegistryValue Action="write" Value="&quot;[EXCELSELECT]&quot; &quot;%1&quot;" Type="string"/>
         </RegistryKey>
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\psmtsv_auto_file\shell\open\command"/>
         <RegistryKey Root="HKCU" Key="Software\Classes\psmtsv_auto_file\shell\open\command">
-          <RegistryValue Action="write" Value="[EXCELSELECT]" Type="string"/>
+          <RegistryValue Action="write" Value="&quot;[EXCELSELECT]&quot; &quot;%1&quot;" Type="string"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
-  </Fragment>-->
-  
+  </Fragment>
+
   <!--MetaMorpheus Program Menu Folder and Registry Key-->
   <Fragment>
     <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="c68bc3b0-cc4f-48ed-9ea0-25dbd7492292">
@@ -512,5 +498,4 @@
       <RemoveFolder Id="MetaMorpheusProgramMenuFolder" On="both"/>
     </Component>
   </Fragment>
-
 </Wix>
