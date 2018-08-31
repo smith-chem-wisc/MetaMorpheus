@@ -130,8 +130,9 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
             //Crosslink search para
-            RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
-            RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
+            RbSearchCrosslink.IsChecked = (!task.XlSearchParameters.SearchGlyco && !task.XlSearchParameters.SearchOGlyco);
+            RbSearchNGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
+            RbSearchOGlyco.IsChecked = task.XlSearchParameters.SearchOGlyco;
             CkbSearchGlycoWithBgYgIndex.IsChecked = task.XlSearchParameters.SearchGlycoWithBgYgIndex;
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
             //cbFragmentation.SelectedIndex = (int)task.XlSearchParameters.FragmentationType;
@@ -256,7 +257,8 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
+            TheTask.XlSearchParameters.SearchGlyco = RbSearchNGlyco.IsChecked.Value;
+            TheTask.XlSearchParameters.SearchOGlyco = RbSearchOGlyco.IsChecked.Value;
             TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTop = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);

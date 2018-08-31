@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -27,6 +28,7 @@ namespace EngineLayer.CrosslinkSearch
         //Crosslink parameters
         private bool _searchGlycan;
         private bool _searchGlycanBgYgIndex;
+        private bool _searchOGly = true;
         private readonly CrosslinkerTypeClass Crosslinker;
         private readonly bool CrosslinkSearchTop;
         private readonly int CrosslinkSearchTopNum;
@@ -37,7 +39,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool Charge_2_3;
         private MassDiffAcceptor XLPrecusorSearchMode;
 
-        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, bool searchGlycan, bool searchGlycanBgYgIndex, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public TwoPassCrosslinkSearchEngine(List<PsmCross> globalPsmsCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, bool searchGlycan, bool searchOGlycan,bool searchGlycanBgYgIndex, Tolerance XLPrecusorMsTl, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             this.GlobalPsmsCross = globalPsmsCross;
             this.ListOfSortedms2Scans = listOfSortedms2Scans;
@@ -47,6 +49,7 @@ namespace EngineLayer.CrosslinkSearch
             this.CurrentPartition = currentPartition + 1;
             this.AddComplementaryIons = addCompIons;
             this._searchGlycan = searchGlycan;
+            this._searchOGly = searchOGlycan;
             this.MassDiffAcceptor = new OpenSearchMode();
             this.DissociationTypes = DetermineDissociationType(lp);
             this.XLPrecusorMsTl = XLPrecusorMsTl;
@@ -59,8 +62,14 @@ namespace EngineLayer.CrosslinkSearch
             this.QuenchTris = quench_Tris;
             this.Charge_2_3 = charge_2_3;
             if (_searchGlycan)
-            {
+            {                
                 groupedGlycans = GlobalVariables.Glycans.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
+            }
+            if (_searchOGly) 
+            {
+                string DataDir = AppDomain.CurrentDomain.BaseDirectory;
+                string GlycanLocation = Path.Combine(DataDir, @"Data", @"OGlyCore.txt");
+                groupedGlycans = Glycan.LoadGlycan(GlycanLocation).GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
             }
         }
 
@@ -177,9 +186,9 @@ namespace EngineLayer.CrosslinkSearch
                             BestPeptideScoreNotch bestPeptideScoreNotch = new BestPeptideScoreNotch(peptide, scoringTable[id], notch);
                             bestPeptideScoreNotchList.Add(bestPeptideScoreNotch);
                         }
-                        if (_searchGlycan)
+                        if (_searchGlycan || _searchOGly)
                         {
-                            var possiblePsmCross = FindGlycopeptide(scan, bestPeptideScoreNotchList, i);
+                            var possiblePsmCross = FindGlycopeptide(scan, bestPeptideScoreNotchList, i, _searchOGly);
                             if (possiblePsmCross != null)
                             {
                                 lock (GlobalPsmsCross)
@@ -540,7 +549,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Glycan
-        private PsmCross FindGlycopeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int i)
+        private PsmCross FindGlycopeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int i, bool searchOGly)
         {
             List<PsmCross> bestPsmCrossList = new List<PsmCross>();
             PsmCross bestPsmCross = null;
@@ -577,7 +586,15 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             var psmCross = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams);
                             psmCross.Glycan = new List<Glycan> { glycan };
-                            var modPos = PsmCross.NGlyPosCal(psmCross.compactPeptide);
+                            List<int> modPos = new List<int>();
+                            if (searchOGly)
+                            {
+                                modPos = PsmCross.OGlyPosCal(psmCross.compactPeptide);
+                            }
+                            else
+                            {
+                                modPos = PsmCross.NGlyPosCal(psmCross.compactPeptide);
+                            }                          
                             var pmmhList = psmCross.GlyGetTheoreticalFramentIons(ProductTypes, Charge_2_3, modPos);
                             psmCross.GetBestMatch(theScan, pmmhList, commonParameters);
                             psmCross.XlRank = new List<int> { ind };

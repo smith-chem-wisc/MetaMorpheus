@@ -93,6 +93,57 @@ namespace Test
         }
 
         [Test]
+        public static void ClyTest_OGlycoSite()
+        {
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
+
+            //Create databases contain protein.
+            var proteinList = new List<Protein>
+            { new Protein("DANNTQFQFTSR", "25170"),
+            };
+
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
+            ModificationWithMass mod1 = new ModificationWithMass("Oxidation of M", "Common Variable", motif1, TerminusLocalization.Any, 15.99491461957);
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            ModificationWithMass mod2 = new ModificationWithMass("Carbamidomethyl of C", "Common Fixed", motif2, TerminusLocalization.Any, 57.02146372068994);
+            var variableModifications = new List<ModificationWithMass>() { mod1 };
+            var fixedModifications = new List<ModificationWithMass>() { mod2 };
+            var localizeableModifications = new List<ModificationWithMass>();
+
+            var lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int i = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+
+            //Generate digested peptide lists.
+            List<PeptideWithSetModifications> digestedList = new List<PeptideWithSetModifications>();
+            foreach (var item in proteinList)
+            {
+                var digested = item.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+                digestedList.AddRange(digested);
+            }
+
+            foreach (var fdfd in digestedList)
+            {
+                fdfd.CompactPeptide(TerminusType.None);
+            }
+
+            var t1 = PsmCross.OGlyPosCal(digestedList[0].CompactPeptide(TerminusType.None));
+            Assert.AreEqual(t1, new List<int>() { 11, 5, 10 });
+        }
+
+        [Test]
         public static void GlyTest_OxoniumIons()
         {
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, cIons: true, zDotIons: true, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
@@ -183,7 +234,7 @@ namespace Test
             
             //TwoPassCrosslinkSearchEngine.Run().
             List<PsmCross> newPsms = new List<PsmCross>();
-            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, true, false, xlSearchParameters.XlPrecusorMsTl, null, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(newPsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, lp, 0, commonParameters, false, true, false, false, xlSearchParameters.XlPrecusorMsTl, null, xlSearchParameters.CrosslinkSearchTop, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, new List<string> { }).Run();
 
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             new CrosslinkAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, lp, null, null, TerminusType.None, commonParameters, new List<string> { }).Run();

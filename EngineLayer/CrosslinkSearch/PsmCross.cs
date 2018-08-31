@@ -397,6 +397,31 @@ namespace EngineLayer.CrosslinkSearch
             return NGlyPos;
         }
 
+        public static List<int> OGlyPosCal(CompactPeptide compactPeptide)
+        {
+            Tolerance tolerance = new PpmTolerance(1);
+            List<int> xlpos = new List<int>();
+            foreach (var aChar in "ST")
+            {
+                if (tolerance.Within(compactPeptide.NTerminalMasses[0], Residue.GetResidue(aChar).MonoisotopicMass))
+                {
+                    xlpos.Add(1);
+                }
+                for (int i = 1; i < compactPeptide.NTerminalMasses.Length; i++)
+                {
+                    if (tolerance.Within(compactPeptide.NTerminalMasses[i] - compactPeptide.NTerminalMasses[i - 1], Residue.GetResidue(aChar).MonoisotopicMass))
+                    {
+                        xlpos.Add(i + 1);
+                    }
+                }
+                if (tolerance.Within(compactPeptide.CTerminalMasses[0], Residue.GetResidue(aChar).MonoisotopicMass))
+                {
+                    xlpos.Add(compactPeptide.NTerminalMasses.Length);
+                }
+            }
+            return xlpos;
+        }
+
         public void GetBestMatch(Ms2ScanWithSpecificMass theScan, Dictionary<List<int>, List<TheoreticalFragmentIon>> pmmhList, CommonParameters commonParameters)
         {
             BestScore = 0;

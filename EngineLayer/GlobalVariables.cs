@@ -198,7 +198,9 @@ namespace EngineLayer
                     glycanIons.Add(glycanIon);
                 }
             }
-            Glycan glycan = new Glycan(_id, _type, _struc, _mass, _kind, glycanIons);
+            Glycan glycan = new Glycan( _struc, _mass, _kind, glycanIons);
+            glycan.GlyId = _id;
+            glycan.GlyType = _type;
             return glycan;
         }
     }
