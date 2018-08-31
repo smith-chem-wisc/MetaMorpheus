@@ -60,11 +60,5 @@ namespace Test
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
         }
-
-        [Test]
-        public static void MyFakeTest()
-        {
-            // here's a comment
-        }
     }
 }
