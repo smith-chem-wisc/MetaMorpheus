@@ -163,7 +163,7 @@ namespace TaskLayer
                     var intraPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXL).ToList();
 
                     //TO DO: there may have a bug. I have to filter the following loopPsms, deadendPsms with a XLTotalScore higher than 2, Or some of the Psms will have everything be 0!
-                    var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && !p.FullSequence.Contains("Crosslink")).OrderByDescending(p => p.Score).ToList();
+                    var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && (string.IsNullOrEmpty(p.FullSequence) ? true : !p.FullSequence.Contains("Crosslink"))).OrderByDescending(p => p.Score).ToList();
                     var singlePsmsFDR = SingleFDRAnalysis(singlePsms).ToList();
 
                     var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop && p.XLTotalScore >= 2).OrderByDescending(p => p.XLTotalScore).ToList();
@@ -171,7 +171,7 @@ namespace TaskLayer
 
                     var deadendPsms = allPsms.Where(p => p.BestScore >2 && (p.CrossType == PsmCrossType.DeadEnd || p.CrossType == PsmCrossType.DeadEndH2O || p.CrossType == PsmCrossType.DeadEndNH2 || p.CrossType == PsmCrossType.DeadEndTris)).OrderByDescending(p => p.XLTotalScore).ToList();
                     //If parameter.modification contains crosslinker.deadend as variable mod, then the deadend will be in the following form. 
-                    deadendPsms.AddRange(allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && p.FullSequence.Contains("Crosslink")).ToList());
+                    deadendPsms.AddRange(allPsms.Where(p => p.CrossType == PsmCrossType.Singe && p.XLTotalScore >= 2 && (string.IsNullOrEmpty(p.FullSequence) ? true : p.FullSequence.Contains("Crosslink"))).ToList());
                     var deadendPsmsFDR = SingleFDRAnalysis(deadendPsms).ToList();
 
                     if (XlSearchParameters.XlOutCrosslink)

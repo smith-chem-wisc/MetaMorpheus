@@ -14,11 +14,6 @@ namespace EngineLayer.CrosslinkSearch
     {
         public CompactPeptide compactPeptide;
 
-        private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
-        private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
-
         public PsmCross(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams) : base(theBestPeptide, notch, score, scanIndex, scan, digestionParams)
         {
             compactPeptide = theBestPeptide;
@@ -351,32 +346,6 @@ namespace EngineLayer.CrosslinkSearch
             return sb.ToString();
         }
 
-        public static string GetTabSepHeaderGlyco()
-        {
-            var sb = new StringBuilder();
-            sb.Append("File Name" + '\t');
-            sb.Append("Scan Numer" + '\t');
-            sb.Append("Precusor MZ" + '\t');
-            sb.Append("Precusor charge" + '\t');
-            sb.Append("Precusor mass" + '\t');
-            sb.Append("CrossType" + '\t');
-
-            sb.Append("Pep" + '\t');
-            sb.Append("Pep Protein Access" + '\t');
-            sb.Append("Protein mod site" + '\t');
-            sb.Append("Pep Base sequence" + '\t');
-            sb.Append("Pep Full sequence" + '\t');
-            sb.Append("Pep mass" + '\t');
-            sb.Append("Pep BestScore" + '\t');
-            sb.Append("Pep Rank" + '\t');
-            sb.Append("Charge2/3Number" + '\t');
-            sb.Append("Target/Decoy" + '\t');
-            sb.Append("QValue" + '\t');
-            sb.Append("GlyID" + '\t');
-            sb.Append("GlyMass" + '\t');
-            sb.Append("GlyStruct(H,N,A,G,F)" + '\t');
-            return sb.ToString();
-        }
 
         public override string ToString() 
         {
@@ -406,8 +375,8 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(""); sb.Append("\t");
             sb.Append(CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString()); sb.Append("\t");
             sb.Append(XlProteinPos); sb.Append("\t");
-            sb.Append(BaseSequence); sb.Append("\t");
-            sb.Append(FullSequence + position); sb.Append("\t");
+            sb.Append(BaseSequence ?? "---"); sb.Append("\t");
+            sb.Append((FullSequence ?? "---") + position); sb.Append("\t");
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
             sb.Append(BestScore); sb.Append("\t");
             sb.Append(XlRank[0]); sb.Append("\t");
@@ -417,8 +386,8 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(""); sb.Append("\t");
                 sb.Append(BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString()); sb.Append("\t");
                 sb.Append(BetaPsmCross.XlProteinPos); sb.Append("\t");
-                sb.Append(BetaPsmCross.BaseSequence); sb.Append("\t");
-                sb.Append(BetaPsmCross.FullSequence + "(" + ModPositions[0].ToString() + ")"); sb.Append("\t");
+                sb.Append(BetaPsmCross.BaseSequence ?? "---"); sb.Append("\t");
+                sb.Append((BetaPsmCross.FullSequence ?? "---") + "(" + BetaPsmCross.ModPositions[0].ToString() + ")"); sb.Append("\t");
                 sb.Append((BetaPsmCross.PeptideMonisotopicMass.HasValue ? BetaPsmCross.PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
                 sb.Append(BetaPsmCross.BestScore); sb.Append("\t");
                 sb.Append(XlRank[1]); sb.Append("\t");
