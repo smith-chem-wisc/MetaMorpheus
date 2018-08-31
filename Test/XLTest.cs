@@ -19,7 +19,7 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Annotations;
-
+using MzLibUtil;
 
 namespace Test
 {
@@ -134,6 +134,37 @@ namespace Test
             CrosslinkerTypeClass crosslinker2 = new CrosslinkerTypeClass("ST", "C", "crosslinkerSTC", false, -18.01056, 0, 0, 0, 0, 0, 0);
             string crosslinkerModSitesAll = new string((crosslinker2.CrosslinkerModSites + crosslinker2.CrosslinkerModSites2).ToCharArray().Distinct().ToArray());
             Assert.AreEqual(crosslinkerModSitesAll, "STC");
+        }
+
+        [Test]
+        public static void DeadendPeptideTest()
+        {
+            string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
+            string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch\DeadendPeptide");
+
+            XLSearchTask xLSearchTask = new XLSearchTask()
+            {
+                XlSearchParameters = new XlSearchParameters()
+                {
+                    XlPrecusorMsTl = new PpmTolerance(51000),
+                    
+                }
+            };
+
+            XLSearchTask xLSearchTask2 = new XLSearchTask()
+            {
+                XlSearchParameters = new XlSearchParameters()
+                {
+                    XlPrecusorMsTl = new PpmTolerance(112000),
+                    XlQuench_Tris = false,
+                    XlQuench_H2O = false,
+                    XlQuench_NH2 = true
+                }
+            };
+
+            xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
+            xLSearchTask2.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
         }
 
         [Test]
