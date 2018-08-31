@@ -9,6 +9,7 @@ namespace Test
 {
     class CalibrationTests
     {
+        [Test]
         public static void RunCalibrationTest()
         {
             CalibrationTask calibrationTask = new CalibrationTask();
