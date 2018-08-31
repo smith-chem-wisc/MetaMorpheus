@@ -1344,5 +1344,16 @@ namespace MetaMorpheusGUI
             }
             dataGridProteinDatabases.Items.Refresh();
         }
+
+        // add wiki and youtube links to notifications box
+        private void WikiHyperlink(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+        }
+
+        private void YoutubeHyperlink(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+        }
     }
 }
