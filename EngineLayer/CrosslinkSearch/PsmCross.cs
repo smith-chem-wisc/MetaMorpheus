@@ -406,8 +406,8 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(""); sb.Append("\t");
             sb.Append(CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString()); sb.Append("\t");
             sb.Append(XlProteinPos); sb.Append("\t");
-            sb.Append(BaseSequence); sb.Append("\t");
-            sb.Append(FullSequence + position); sb.Append("\t");
+            sb.Append(BaseSequence ?? "---"); sb.Append("\t");
+            sb.Append((FullSequence ?? "---") + position); sb.Append("\t");
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
             sb.Append(BestScore); sb.Append("\t");
             sb.Append(XlRank[0]); sb.Append("\t");
@@ -417,8 +417,8 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(""); sb.Append("\t");
                 sb.Append(BetaPsmCross.CompactPeptides.First().Value.Item2.Select(p => p.Protein.Accession).First().ToString()); sb.Append("\t");
                 sb.Append(BetaPsmCross.XlProteinPos); sb.Append("\t");
-                sb.Append(BetaPsmCross.BaseSequence); sb.Append("\t");
-                sb.Append(BetaPsmCross.FullSequence + "(" + ModPositions[0].ToString() + ")"); sb.Append("\t");
+                sb.Append(BetaPsmCross.BaseSequence ?? "---"); sb.Append("\t");
+                sb.Append((BetaPsmCross.FullSequence ?? "---") + "(" + BetaPsmCross.ModPositions[0].ToString() + ")"); sb.Append("\t");
                 sb.Append((BetaPsmCross.PeptideMonisotopicMass.HasValue ? BetaPsmCross.PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
                 sb.Append(BetaPsmCross.BestScore); sb.Append("\t");
                 sb.Append(XlRank[1]); sb.Append("\t");
