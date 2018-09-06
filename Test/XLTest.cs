@@ -19,7 +19,7 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Annotations;
-
+using MzLibUtil;
 
 namespace Test
 {
@@ -137,6 +137,37 @@ namespace Test
         }
 
         [Test]
+        public static void DeadendPeptideTest()
+        {
+            string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
+            string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch\DeadendPeptide");
+
+            XLSearchTask xLSearchTask = new XLSearchTask()
+            {
+                XlSearchParameters = new XlSearchParameters()
+                {
+                    XlPrecusorMsTl = new PpmTolerance(51000),
+                    
+                }
+            };
+
+            XLSearchTask xLSearchTask2 = new XLSearchTask()
+            {
+                XlSearchParameters = new XlSearchParameters()
+                {
+                    XlPrecusorMsTl = new PpmTolerance(112000),
+                    XlQuench_Tris = false,
+                    XlQuench_H2O = false,
+                    XlQuench_NH2 = true
+                }
+            };
+
+            xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
+            xLSearchTask2.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
+        }
+
+        [Test]
         public static void XlTestGenerateIntensityRanks()
         {
             double[] intensity = new double[] { 1.1, 1.1, 0.5, 3.2, 0.5, 6.0 };
@@ -170,7 +201,7 @@ namespace Test
             //Test Output
             var task = new XLSearchTask();
             task.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", new List<string> { });
-            var writtenFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "singlePsms" + ".mytsv");
+            var writtenFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "singlePsms" + ".tsv");
             task.WritePsmCrossToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Singe).ToList(), writtenFile, 1);
 
             //Test PsmCross.XlGetTheoreticalFramentIons.
@@ -313,9 +344,9 @@ namespace Test
             //tests without .params files
             xlSearchTask.RunTask(Path.Combine(folderPath, @"TestNoParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\xl_intra_fdr.mytsv"));
-            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\xl_intra_fdr.mytsv"));
-            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\xl_intra_fdr.mytsv"));
+            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\xl_intra_fdr.tsv"));
+            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\xl_intra_fdr.tsv"));
+            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\xl_intra_fdr.tsv"));
 
             Assert.That(lines.SequenceEqual(lines2) && lines2.SequenceEqual(lines3));
             

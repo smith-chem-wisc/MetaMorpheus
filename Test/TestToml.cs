@@ -81,8 +81,8 @@ namespace Test
             var xlEngineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("XLSearchTOML", xLSearchTaskLoaded) }, new List<string> { myFileXl }, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, outputFolder);
             xlEngineToml.Run();
 
-            var xlResults = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearch\xl_intra_fdr.mytsv"));
-            var xlResultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearchTOML\xl_intra_fdr.mytsv"));
+            var xlResults = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearch\xl_intra_fdr.tsv"));
+            var xlResultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearchTOML\xl_intra_fdr.tsv"));
 
             Assert.That(xlResults.SequenceEqual(xlResultsToml));
         }
