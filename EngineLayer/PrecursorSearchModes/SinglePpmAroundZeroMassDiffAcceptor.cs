@@ -15,7 +15,7 @@ namespace EngineLayer
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            return Math.Abs((scanPrecursorMass - peptideMass) / (peptideMass) * 1e6) < PpmTolerance ? 0 : -1;
+            return Math.Abs(((scanPrecursorMass - peptideMass) / (peptideMass)) * 1e6) < PpmTolerance ? 0 : -1;
         }
 
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)

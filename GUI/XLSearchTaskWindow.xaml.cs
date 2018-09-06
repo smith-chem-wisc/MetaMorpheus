@@ -380,5 +380,17 @@ namespace MetaMorpheusGUI
             //if (!TheTask.WritePrunedDatabase)
             //    modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
         }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SaveButton_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CancelButton_Click(sender, e);
+            }
+        }
     }
 }
