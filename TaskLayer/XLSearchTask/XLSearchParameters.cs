@@ -26,10 +26,10 @@ namespace TaskLayer
             XlQuench_NH2 = false;
             XlQuench_Tris = true;
 
-            XlOutAll = false;
+            XlOutAll = true;
             XlOutCrosslink = true;
             XlOutPercolator = false;
-            XlOutPepXML = false;
+            XlOutPepXML = true;
 
             XlCharge_2_3 = true;
         }

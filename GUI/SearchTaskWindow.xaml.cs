@@ -688,6 +688,18 @@ namespace MetaMorpheusGUI
         {
             NumDecoyDatabasesTextBox.Text = 1.ToString(CultureInfo.InvariantCulture);
         }
+        
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SaveButton_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CancelButton_Click(sender, e);
+            }
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

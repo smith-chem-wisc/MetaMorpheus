@@ -28,9 +28,6 @@ namespace TaskLayer
                     case 2:
                         header = PsmCross.GetTabSepHeaderCross();
                         break;
-                    case 3:
-                        header = PsmCross.GetTabSepHeaderGlyco();
-                        break;
                     default:
                         break;
                 }

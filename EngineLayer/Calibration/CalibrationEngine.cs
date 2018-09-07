@@ -1,332 +1,252 @@
 ﻿using MassSpectrometry;
-using SharpLearning.Common.Interfaces;
-using SharpLearning.Containers.Matrices;
-using SharpLearning.CrossValidation.TrainingTestSplitters;
-using SharpLearning.GradientBoost.Learners;
-using SharpLearning.GradientBoost.Models;
-using SharpLearning.Metrics.Regression;
-using SharpLearning.Optimization;
-using SharpLearning.RandomForest.Learners;
-using SharpLearning.RandomForest.Models;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace EngineLayer.Calibration
 {
     public class CalibrationEngine : MetaMorpheusEngine
     {
-        private const double MaximumFracForTraining = 0.70;
-        private const double MaximumDatapointsToTrainWith = 20000;
-        private const int TrainingIterations = 30;
-        private readonly int RandomSeed;
-
+        private const int NumberOfScansUsedForSmoothingOnEachSide = 100;
         private readonly MsDataFile MyMsDataFile;
         private readonly DataPointAquisitionResults Datapoints;
+        public MsDataFile CalibratedDataFile { get; private set; }
 
         public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             MyMsDataFile = myMSDataFile;
             Datapoints = datapoints;
-
-            // set the random seed based on raw file properties
-            if (MyMsDataFile.SourceFile != null && !string.IsNullOrEmpty(MyMsDataFile.SourceFile.CheckSum))
-            {
-                RandomSeed = MyMsDataFile.SourceFile.CheckSum.GetHashCode();
-            }
-            else
-            {
-                RandomSeed = MyMsDataFile.NumSpectra;
-            }
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            double ms1fracForTraining = MaximumFracForTraining;
-            double ms2fracForTraining = MaximumFracForTraining;
-
-            var myMs1DataPoints = new List<(double[] xValues, double yValue)>();
-            var myMs2DataPoints = new List<(double[] xValues, double yValue)>();
-
-            // generate MS1 calibration datapoints
-            for (int i = 0; i < Datapoints.Ms1List.Count; i++)
-            {
-                // x values
-                var explanatoryVariables = new double[5];
-                explanatoryVariables[0] = Datapoints.Ms1List[i].ExperimentalMz;
-                explanatoryVariables[1] = Datapoints.Ms1List[i].RetentionTime;
-                explanatoryVariables[2] = Datapoints.Ms1List[i].LogTotalIonCurrent;
-                explanatoryVariables[3] = Datapoints.Ms1List[i].LogInjectionTime;
-                explanatoryVariables[4] = Datapoints.Ms1List[i].LogIntensity;
-
-                // y value
-                double mzError = Datapoints.Ms1List[i].AbsoluteMzError;
-
-                myMs1DataPoints.Add((explanatoryVariables, mzError));
-            }
-
-            // generate MS2 calibration datapoints
-            for (int i = 0; i < Datapoints.Ms2List.Count; i++)
-            {
-                // x values
-                var explanatoryVariables = new double[5];
-                explanatoryVariables[0] = Datapoints.Ms2List[i].ExperimentalMz;
-                explanatoryVariables[1] = Datapoints.Ms2List[i].RetentionTime;
-                explanatoryVariables[2] = Datapoints.Ms2List[i].LogTotalIonCurrent;
-                explanatoryVariables[3] = Datapoints.Ms2List[i].LogInjectionTime;
-                explanatoryVariables[4] = Datapoints.Ms2List[i].LogIntensity;
-
-                // y value
-                double mzError = Datapoints.Ms2List[i].AbsoluteMzError;
-
-                myMs2DataPoints.Add((explanatoryVariables, mzError));
-            }
-
-            if (myMs1DataPoints.Count * MaximumFracForTraining > MaximumDatapointsToTrainWith)
-            {
-                ms1fracForTraining = MaximumDatapointsToTrainWith / myMs1DataPoints.Count;
-            }
-
-            if (myMs2DataPoints.Count * MaximumFracForTraining > MaximumDatapointsToTrainWith)
-            {
-                ms2fracForTraining = MaximumDatapointsToTrainWith / myMs2DataPoints.Count;
-            }
-
-            Status("Generating MS1 calibration function");
-            var ms1Model = GetRandomForestModel(myMs1DataPoints, ms1fracForTraining);
-            //var ms1Model = GetGradientBoostModel(myMs1DataPoints, ms1fracForTraining);
-
-            Status("Generating MS2 calibration function");
-            var ms2Model = GetRandomForestModel(myMs2DataPoints, ms2fracForTraining);
-            //var ms2Model = GetGradientBoostModel(myMs2DataPoints, ms2fracForTraining);
-
             Status("Calibrating spectra");
+            List<LabeledDataPoint> ms1Points = Datapoints.Ms1List;
+            List<LabeledDataPoint> ms2Points = Datapoints.Ms2List;
+            List<MsDataScan> originalScans = MyMsDataFile.GetAllScansList();
 
-            CalibrateSpectra(ms1Model, ms2Model);
+            List<MsDataScan> ms1Scans = new List<MsDataScan>();
+            List<MsDataScan> ms2Scans = new List<MsDataScan>();
+            //separate scans by msnOrder, because the mass accuracy varies between the two
+            foreach (MsDataScan scan in originalScans)
+            {
+                if (scan.MsnOrder == 1)
+                {
+                    ms1Scans.Add(scan);
+                }
+                else
+                {
+                    ms2Scans.Add(scan);
+                }
+            }
 
+            //create a way to go from the scan number to the scan order. This can be a single array, since there shouldn't be any overlap of scan numbers between ms1 and ms2 scans
+            int[] scanNumberToScanPlacement = new int[originalScans.Max(x => x.OneBasedScanNumber) + 1];
+            for (int i = 0; i < ms1Scans.Count; i++)
+            {
+                scanNumberToScanPlacement[ms1Scans[i].OneBasedScanNumber] = i;
+            }
+            for (int i = 0; i < ms2Scans.Count; i++)
+            {
+                scanNumberToScanPlacement[ms2Scans[i].OneBasedScanNumber] = i;
+            }
+
+            //Populate the weighted average relative error for each scan, where index of returned array is the placement
+            double[] ms1RelativeErrors = PopulateErrors(ms1Points, scanNumberToScanPlacement, ms1Scans.Count);
+            double[] ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2Scans.Count);
+
+            //generate new scans
+            MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
+
+            //hard copy original scans
+            for (int i = 0; i < originalScans.Count; i++)
+            {
+                calibratedScans[i] = originalScans[i];
+            }
+
+            //apply a smoothing function, so that outlier scans aren't wildly shifted
+            double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors);
+            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors);
+
+            //calibrate the data
+            int ms1Index = 0;
+            int ms2Index = 0;
+            double mostRecentMS1SmoothedError = ms1SmoothedErrors.FirstOrDefault(); //this is needed to update the precursor mass error of MS2 scans
+            for (int scanIndex = 0; scanIndex < calibratedScans.Length; scanIndex++) //foreach scan
+            {
+                MsDataScan originalScan = originalScans[scanIndex]; //get original scan
+                if (originalScan.MsnOrder == 1) //if ms1
+                {
+                    mostRecentMS1SmoothedError = ms1SmoothedErrors[ms1Index]; //update the mass error
+                    calibratedScans[scanIndex] = CalibrateScan(originalScan, mostRecentMS1SmoothedError);
+                    ms1Index++;
+                }
+                else //if ms2
+                {
+                    calibratedScans[scanIndex] = CalibrateScan(originalScan, ms2SmoothedErrors[ms2Index], mostRecentMS1SmoothedError);
+                    ms2Index++;
+                }
+            }
+
+            CalibratedDataFile = new MsDataFile(calibratedScans, MyMsDataFile.SourceFile);
             return new MetaMorpheusEngineResults(this);
         }
 
-        private void CalibrateSpectra(IPredictorModel<double> ms1predictor, IPredictorModel<double> ms2predictor)
+        private static double[] PopulateErrors(List<LabeledDataPoint> datapoints, int[] scanNumberToScanPlacement, int arrayLength)
         {
-            Parallel.ForEach(Partitioner.Create(1, MyMsDataFile.NumSpectra + 1), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
-              {
-                  for (int i = fff.Item1; i < fff.Item2; i++)
-                  {
-                      // Stop loop if canceled
-                      if (GlobalVariables.StopLoops)
-                      {
-                          loopState.Stop();
-                          return;
-                      }
+            //return an array of weighted average relative errors for each scan
+            double[] averageRelativeErrors = new double[arrayLength];
 
-                      var scan = MyMsDataFile.GetOneBasedScan(i);
+            int currentScanNumber = datapoints.First().ScanNumber; //get the first scan number. This should be an ordered list
+            List<(double massError, double logIntensity)> localRelativeErrors = new List<(double massError, double logIntensity)>(); //create a list to store the mass error
 
-                      if (scan.MsnOrder == 2)
-                      {
-                          var precursorScan = MyMsDataFile.GetOneBasedScan(scan.OneBasedPrecursorScanNumber.Value);
+            foreach (LabeledDataPoint datapoint in datapoints)
+            {
+                if (datapoint.ScanNumber == currentScanNumber)
+                {
+                    localRelativeErrors.Add((datapoint.RelativeMzError, datapoint.LogIntensity));
+                }
+                else
+                {
+                    //wrap up the old set
+                    averageRelativeErrors[scanNumberToScanPlacement[currentScanNumber]] = CalculateAverageRelativeErrors(localRelativeErrors);
 
-                          if (!scan.SelectedIonMonoisotopicGuessIntensity.HasValue && scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                          {
-                              scan.ComputeMonoisotopicPeakIntensity(precursorScan.MassSpectrum);
-                          }
+                    //update
+                    currentScanNumber = datapoint.ScanNumber;
+                    localRelativeErrors = new List<(double massError, double logIntensity)> { (datapoint.RelativeMzError, datapoint.LogIntensity) };
+                }
+            }
+            //finish loop
+            averageRelativeErrors[scanNumberToScanPlacement[currentScanNumber]] = CalculateAverageRelativeErrors(localRelativeErrors);
 
-                          double theFunc(MzPeak x) => x.Mz - ms2predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
-
-                          double theFuncForPrecursor(MzPeak x) => x.Mz - ms1predictor.Predict(new double[] { x.Mz, precursorScan.RetentionTime, Math.Log(precursorScan.TotalIonCurrent), precursorScan.InjectionTime.HasValue ? Math.Log(precursorScan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
-
-                          scan.TransformMzs(theFunc, theFuncForPrecursor);
-                      }
-                      else
-                      {
-                          Func<MzPeak, double> theFunc = x => x.Mz - ms1predictor.Predict(new double[] { x.Mz, scan.RetentionTime, Math.Log(scan.TotalIonCurrent), scan.InjectionTime.HasValue ? Math.Log(scan.InjectionTime.Value) : double.NaN, Math.Log(x.Intensity) });
-                          scan.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
-                      }
-                  }
-              }
-              );
+            return averageRelativeErrors;
         }
 
-        private RegressionForestModel GetRandomForestModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining)
+        private static double CalculateAverageRelativeErrors(List<(double massError, double logIntensity)> localRelativeErrors)
         {
-            // create a machine learner
-            var learner = new RegressionRandomForestLearner();
-            var metric = new MeanAbsolutErrorRegressionMetric();
+            //double logIntensityToSubtract = localRelativeErrors.Min(x => x.logIntensity) - 1; // normalize each log intensity so that the minimum log intensity is 1. 
+            //Convert from log to actual intensity to more heavily weight intensities.
+            double weightedSumOfErrors = localRelativeErrors.Sum(x => x.massError * Math.Pow(10, x.logIntensity));
+            double sumOfIntensities = localRelativeErrors.Sum(x => Math.Pow(10, x.logIntensity));
+            return weightedSumOfErrors / sumOfIntensities;
+        }
 
-            var splitter = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: RandomSeed);
-
-            // put x values into a matrix and y values into a 1D array
-            var myXValueMatrix = new F64Matrix(myInputs.Count, myInputs.First().xValues.Length);
-            for (int i = 0; i < myInputs.Count; i++)
+        private static double[] SmoothErrors(double[] relativeErrors)
+        {
+            //impute missing values
+            //not all scans are guarenteed to contain data points. We can infer these data point with nearby points.
+            for (int index = 0; index < relativeErrors.Length; index++)
             {
-                for (int j = 0; j < myInputs.First().xValues.Length; j++)
+                if (relativeErrors[index] == 0) //if there were no points, then the value should be perfectly zero (the double default)
                 {
-                    myXValueMatrix[i, j] = myInputs[i].xValues[j];
+                    int startingBlankIndex = index;
+                    //increase the index until we find the next scan containing a data point
+                    while (index < relativeErrors.Length && relativeErrors[index] == 0)
+                    {
+                        index++;
+                    }
+                    double nextError = index == relativeErrors.Length ? relativeErrors[startingBlankIndex - 1] : relativeErrors[index]; //can't go all the way through without any data points, the original function checks for enough data points (where enough is more than zero)
+                    double previousError = startingBlankIndex > 0 ? relativeErrors[startingBlankIndex - 1] : nextError;
+                    int numberOfConsecutiveScansWithoutDataPoints = index - startingBlankIndex;
+                    for (int tempIndex = 0; tempIndex < numberOfConsecutiveScansWithoutDataPoints; tempIndex++)
+                    {
+                        relativeErrors[startingBlankIndex + tempIndex] = ((tempIndex + 1) * nextError + (numberOfConsecutiveScansWithoutDataPoints - tempIndex - 1) * previousError) / numberOfConsecutiveScansWithoutDataPoints;
+                    }
                 }
             }
 
-            var myYValues = myInputs.Select(p => p.yValue).ToArray();
+            //get correction factor for each scan, where half of the smooth comes from both directions
+            double[] smoothedErrors = new double[relativeErrors.Length];
+            int leftIndex = 0; //starting scan index used for numbers less than the current scan
+            int rightIndex = 1; //
+            double smoothedCorrectionFactor = 0; //this variable is the sum of all nearby errors, to be later divided by the number of summed errors for a smoothed average error
+            //for scan #1 (index 0)
+            //no left scans, because we're at the beginning of the file. Just populate the first "numberOfScansUsedForSmoothingOnEachSide" scan errors on the right side
 
-            // split data into training set and test set
-            var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
-            var trainingSetX = splitData.TrainingSet.Observations;
-            var trainingSetY = splitData.TrainingSet.Targets;
-
-            // parameter ranges for the optimizer
-            var parameters = new ParameterBounds[]
+            while (rightIndex < NumberOfScansUsedForSmoothingOnEachSide && rightIndex < relativeErrors.Length)
             {
-                new ParameterBounds(min: 100, max: 200, transform: Transform.Linear),           // trees
-                new ParameterBounds(min: 1, max: 5, transform: Transform.Linear),               // min split size
-                new ParameterBounds(min: 2000, max: 4000, transform: Transform.Linear),          // max tree depth
-                new ParameterBounds(min: 0, max: 2, transform: Transform.Linear),               // featuresPrSplit
-                new ParameterBounds(min: 1e-06, max: 1e-05, transform: Transform.Logarithmic),  // min info gain
-                new ParameterBounds(min: 0.7, max: 1.5, transform: Transform.Linear)            // subsample ratio
-            };
+                smoothedCorrectionFactor += relativeErrors[rightIndex];
+                rightIndex++;
+            }
 
-            var validationSplit = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: RandomSeed)
-                .SplitSet(myXValueMatrix, myYValues);
-
-            // define minimization metric
-            Func<double[], OptimizerResult> minimize = p =>
+            //for each scan
+            for (int i = 0; i < relativeErrors.Length; i++)
             {
-                // create the candidate learner using the current optimization parameters
-                var candidateLearner = new RegressionRandomForestLearner(
-                    trees: (int)p[0],
-                    minimumSplitSize: (int)p[1],
-                    maximumTreeDepth: (int)p[2],
-                    featuresPrSplit: (int)p[3],
-                    minimumInformationGain: p[4],
-                    subSampleRatio: p[5],
-                    seed: RandomSeed,
-                    runParallel: false);
+                //for left index, remove an error if 
+                if (i > NumberOfScansUsedForSmoothingOnEachSide)
+                {
+                    smoothedCorrectionFactor -= relativeErrors[leftIndex];
+                    leftIndex++;
+                }
 
-                var candidateModel = candidateLearner.Learn(validationSplit.TrainingSet.Observations,
-                validationSplit.TrainingSet.Targets);
+                if (rightIndex < relativeErrors.Length) //need to check so we don't run off the end of the file
+                {
+                    smoothedCorrectionFactor += relativeErrors[rightIndex];
+                    rightIndex++;
+                }
 
-                var validationPredictions = candidateModel.Predict(validationSplit.TestSet.Observations);
-                var candidateError = metric.Error(validationSplit.TestSet.Targets, validationPredictions);
-
-                return new OptimizerResult(p, candidateError);
-            };
-
-            // create optimizer
-            var optimizer = new RandomSearchOptimizer(parameters, seed: RandomSeed, iterations: TrainingIterations, runParallel: true);
-
-            // find best parameters
-            var result = optimizer.OptimizeBest(minimize);
-            var best = result.ParameterSet;
-
-            // create the final learner using the best parameters
-            // (parameters that resulted in the model with the least error)
-            learner = new RegressionRandomForestLearner(
-                    trees: (int)best[0],
-                    minimumSplitSize: (int)best[1],
-                    maximumTreeDepth: (int)best[2],
-                    featuresPrSplit: (int)best[3],
-                    minimumInformationGain: best[4],
-                    subSampleRatio: best[5],
-                    seed: RandomSeed,
-                    runParallel: true);
-
-            // learn final model with optimized parameters
-            var myModel = learner.Learn(trainingSetX, trainingSetY);
-
-            // all done
-            return myModel;
+                smoothedErrors[i] = smoothedCorrectionFactor / (rightIndex - leftIndex);
+            }
+            return smoothedErrors;
         }
 
-        private RegressionGradientBoostModel GetGradientBoostModel(List<(double[] xValues, double yValue)> myInputs, double fracForTraining)
+        private static MsDataScan CalibrateScan(MsDataScan oldScan, double smoothedRelativeError, double? precursorSmoothedRelativeError = null)
         {
-            // create a machine learner
-            var learner = new RegressionAbsoluteLossGradientBoostLearner();
-            var metric = new MeanAbsolutErrorRegressionMetric();
-
-            var splitter = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: RandomSeed);
-
-            // put x values into a matrix and y values into a 1D array
-            var myXValueMatrix = new F64Matrix(myInputs.Count, myInputs.First().xValues.Length);
-            for (int i = 0; i < myInputs.Count; i++)
+            double correctionFactor = 1 - smoothedRelativeError; //create the multiplier. Positive mass errors mean that the experimental mass was greater than the theoretical, so we want to shift the experimental DOWN
+            double[] originalMzs = oldScan.MassSpectrum.XArray;
+            double[] calibratedMzs = new double[originalMzs.Length];
+            //calibrate the mzs. Because peaks are in mz and we are making a mz shift, we don't need to deconvolute
+            for (int i = 0; i < originalMzs.Length; i++)
             {
-                for (int j = 0; j < myInputs.First().xValues.Length; j++)
+                calibratedMzs[i] = originalMzs[i] * correctionFactor;
+            }
+
+            //update precursor values (if applicable)
+            double? selectedIonMz = null;
+            double? isolationMz = null;
+            double? selectedIonMonoisotopicGuessMz = null;
+            if (precursorSmoothedRelativeError != null)
+            {
+                correctionFactor = 1 - precursorSmoothedRelativeError.Value;
+                if (oldScan.SelectedIonMZ.HasValue)
                 {
-                    myXValueMatrix[i, j] = myInputs[i].xValues[j];
+                    selectedIonMz = oldScan.SelectedIonMZ * correctionFactor;
+                }
+                if (oldScan.IsolationMz.HasValue)
+                {
+                    isolationMz = oldScan.IsolationMz * correctionFactor;
+                }
+                if (oldScan.SelectedIonMZ.HasValue)
+                {
+                    selectedIonMonoisotopicGuessMz = oldScan.SelectedIonMonoisotopicGuessMz * correctionFactor;
                 }
             }
 
-            var myYValues = myInputs.Select(p => p.yValue).ToArray();
-
-            // split data into training set and test set
-            var splitData = splitter.SplitSet(myXValueMatrix, myYValues);
-            var trainingSetX = splitData.TrainingSet.Observations;
-            var trainingSetY = splitData.TrainingSet.Targets;
-
-            // learn an initial model
-            var myModel = learner.Learn(trainingSetX, trainingSetY);
-
-            // parameter ranges for the optimizer
-            var parameters = new ParameterBounds[]
-            {
-                new ParameterBounds(min: 100, max: 300, transform: Transform.Linear),           // iterations
-                new ParameterBounds(min: 0.05, max: 0.15, transform: Transform.Linear),         // learningrate
-                new ParameterBounds(min: 3, max: 10, transform: Transform.Linear),              // max tree depth
-                new ParameterBounds(min: 1, max: 3, transform: Transform.Linear),               // min split size
-                new ParameterBounds(min: 1e-06, max: 1e-05, transform: Transform.Logarithmic),  // min info gain
-                new ParameterBounds(min: 0.8, max: 1.0, transform: Transform.Linear),           // subsample ratio
-                new ParameterBounds(min: 0, max: 1, transform: Transform.Linear)                // features per split
-            };
-
-            var validationSplit = new RandomTrainingTestIndexSplitter<double>(trainingPercentage: fracForTraining, seed: RandomSeed)
-                .SplitSet(myXValueMatrix, myYValues);
-
-            // define minimization metric
-            Func<double[], OptimizerResult> minimize = p =>
-            {
-                // create the candidate learner using the current optimization parameters
-                var candidateLearner = new RegressionAbsoluteLossGradientBoostLearner(
-                    iterations: (int)p[0],
-                    learningRate: p[1],
-                    maximumTreeDepth: (int)p[2],
-                    minimumSplitSize: (int)p[3],
-                    minimumInformationGain: p[4],
-                    subSampleRatio: p[5],
-                    featuresPrSplit: (int)p[6],
-                    runParallel: false);
-
-                var candidateModel = candidateLearner.Learn(validationSplit.TrainingSet.Observations,
-                validationSplit.TrainingSet.Targets);
-
-                var validationPredictions = candidateModel.Predict(validationSplit.TestSet.Observations);
-                var candidateError = metric.Error(validationSplit.TestSet.Targets, validationPredictions);
-
-                return new OptimizerResult(p, candidateError);
-            };
-
-            // create optimizer
-            var optimizer = new RandomSearchOptimizer(parameters, seed: RandomSeed, iterations: TrainingIterations, runParallel: true);
-
-            // find best parameters
-            var result = optimizer.OptimizeBest(minimize);
-            var best = result.ParameterSet;
-
-            // create the final learner using the best parameters
-            // (parameters that resulted in the model with the least error)
-            learner = new RegressionAbsoluteLossGradientBoostLearner(
-                    iterations: (int)best[0],
-                    learningRate: best[1],
-                    maximumTreeDepth: (int)best[2],
-                    minimumSplitSize: (int)best[3],
-                    minimumInformationGain: best[4],
-                    subSampleRatio: best[5],
-                    featuresPrSplit: (int)best[6],
-                    runParallel: true);
-
-            // learn final model with optimized parameters
-            myModel = learner.Learn(trainingSetX, trainingSetY);
-
-            // all done
-            return myModel;
+            //create new calibrated spectrum
+            MzSpectrum calibratedSpectrum = new MzSpectrum(calibratedMzs, oldScan.MassSpectrum.YArray, false);
+            return new MsDataScan(
+                calibratedSpectrum, //changed
+                oldScan.OneBasedScanNumber,
+                oldScan.MsnOrder,
+                oldScan.IsCentroid,
+                oldScan.Polarity,
+                oldScan.RetentionTime,
+                oldScan.ScanWindowRange,
+                oldScan.ScanFilter,
+                oldScan.MzAnalyzer,
+                oldScan.TotalIonCurrent,
+                oldScan.InjectionTime,
+                oldScan.NoiseData,
+                oldScan.NativeId,
+                selectedIonMz, //changed?
+                oldScan.SelectedIonChargeStateGuess,
+                oldScan.SelectedIonIntensity,
+                isolationMz, //changed?
+                oldScan.IsolationWidth,
+                oldScan.DissociationType,
+                oldScan.OneBasedPrecursorScanNumber,
+                selectedIonMonoisotopicGuessMz //changed?
+                );
         }
     }
 }
