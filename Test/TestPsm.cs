@@ -26,13 +26,17 @@ namespace Test
                 new List<Tuple<string, string>> { new Tuple<string, string>("geneNameType", "geneName") },
                 new Dictionary<int, List<Modification>> { { 2, new List<Modification> { new Modification("mod", "mod") } } },
                 name: "name",
-                full_name: "fullName",
+                fullName: "fullName",
                 sequenceVariations: new List<SequenceVariation> { new SequenceVariation(2, "P", "Q", "changed this sequence") })
                     .Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
             MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
             MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
-            PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods, 1, 2, 3, scan, digestionParams, new List<MatchedFragmentIon>());
+
+            var theoreticalIons = pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan.MassSpectrum, theoreticalIons, new CommonParameters());
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods, 1, 2, 3, scan, digestionParams, matchedIons);
+            psm.ResolveAllAmbiguities();
 
             var t = psm.ToString();
             var tabsepheader = PeptideSpectralMatch.GetTabSeparatedHeader();
@@ -41,7 +45,7 @@ namespace Test
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
-            List<ProductType> lp = new List<ProductType> { ProductType.B };
+            List<ProductType> lp = new List<ProductType> { ProductType.b };
 
             new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, lp, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance), new List<string>()).Run();
 

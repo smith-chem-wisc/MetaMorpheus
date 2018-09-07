@@ -63,7 +63,7 @@ namespace EngineLayer.ModificationAnalysis
                 foreach (var modInProtein in singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein))
 
                     foreach (var huh in modInProtein.Value)
-                        modsOnProteins.Add((singlePeptide.Protein.Accession, huh.Id, modInProtein.Key));
+                        modsOnProteins.Add((singlePeptide.Protein.Accession, huh.IdWithMotif, modInProtein.Key));
             }
 
             // We do not want to double-count modifications. Hence the HashSet!!!
@@ -80,7 +80,7 @@ namespace EngineLayer.ModificationAnalysis
                         locInProtein = singlePeptide.OneBasedEndResidueInProtein;
                     else
                         locInProtein = singlePeptide.OneBasedStartResidueInProtein + nice.Key - 2;
-                    modsSeenAndLocalized.Add((singlePeptide.Protein.Accession, nice.Value.Id, locInProtein));
+                    modsSeenAndLocalized.Add((singlePeptide.Protein.Accession, nice.Value.IdWithMotif, locInProtein));
                 }
             }
 

@@ -1,9 +1,9 @@
-﻿using MzLibUtil;
+﻿using MassSpectrometry;
+using MzLibUtil;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using MassSpectrometry;
 
 namespace EngineLayer
 {
@@ -58,13 +58,14 @@ namespace EngineLayer
         //    }
         //}
 
-        public CommonParameters(DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
+        public CommonParameters(DissociationType dissociationType = DissociationType.HCD, FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null)
         {
             DissociationType = dissociationType;
+            FragmentationTerminus = fragmentationTerminus;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
             UseProvidedPrecursorInfo = useProvidedPrecursorInfo;
             DeconvolutionIntensityRatio = deconvolutionIntensityRatio;
@@ -88,8 +89,6 @@ namespace EngineLayer
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
 
-            FragmentationTerminus = SetFragmentationTerminus();
-
             if (maxThreadsToUsePerFile == -1)
             {
                 MaxThreadsToUsePerFile = Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1;
@@ -99,8 +98,6 @@ namespace EngineLayer
                 MaxThreadsToUsePerFile = maxThreadsToUsePerFile;
             }
         }
-
-
 
         //Any new property must not be nullable (int?) or else if it is null, the null setting will not be written to a toml and the default will override (so it's okay if the default is null)
         public string TaskDescriptor { get; set; }
@@ -188,23 +185,23 @@ namespace EngineLayer
             );
         }
 
-        private FragmentationTerminus SetFragmentationTerminus()
-        {
-            switch (this.DigestionParams.Protease.Name)
-            {
-                case ("SingleN"):
-                    return FragmentationTerminus.N;
-                case ("SingleC"):
-                    return FragmentationTerminus.C;
+        //private FragmentationTerminus SetFragmentationTerminus()
+        //{
+        //    switch (this.DigestionParams.Protease.Name)
+        //    {
+        //        case ("SingleN"):
+        //            return FragmentationTerminus.N;
+        //        case ("SingleC"):
+        //            return FragmentationTerminus.C;
 
-                case ("top-down"):
-                    return FragmentationTerminus.None;
+        //        case ("top-down"):
+        //            return FragmentationTerminus.None;
 
-                default:
-                    return FragmentationTerminus.Both;
+        //        default:
+        //            return FragmentationTerminus.Both;
 
-            }
-        }
+        //    }
+        //}
 
         public void SetProductMassTolerance(Tolerance ProductMassTolerance)
         {

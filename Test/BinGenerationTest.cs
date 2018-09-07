@@ -97,7 +97,7 @@ namespace Test
             string mzmlFilePath2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles2.mzML");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            Modification mod = new Modification(_id: "mod1 on D", _modificationType: "mt", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            Modification mod = new Modification(_originalId: "mod1 on D", _modificationType: "mt", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
             IDictionary<int, List<Modification>> oneBasedModification = new Dictionary<int, List<Modification>>
             {

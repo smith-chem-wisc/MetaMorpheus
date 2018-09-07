@@ -20,10 +20,10 @@ namespace Test
             IScan scan = new ThisTestScan();
 
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
-            Modification mod1 = new Modification(_id: "mod1", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            Modification mod1 = new Modification(_originalId: "mod1", _modificationType: "myModType", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
             ModificationMotif.TryGetMotif("L", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_id: "mod2", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            Modification mod2 = new Modification(_originalId: "mod2", _modificationType: "myModType", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
             IDictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>
             {
@@ -88,11 +88,11 @@ namespace Test
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(2, res.CountOfEachModSeenOnProteins.Count());
-            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.Id]);
-            Assert.AreEqual(1, res.CountOfEachModSeenOnProteins[mod2.Id]);
+            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.IdWithMotif]);
+            Assert.AreEqual(1, res.CountOfEachModSeenOnProteins[mod2.IdWithMotif]);
 
             Assert.AreEqual(1, res.CountOfModsSeenAndLocalized.Count());
-            Assert.AreEqual(2, res.CountOfModsSeenAndLocalized[mod1.Id]);
+            Assert.AreEqual(2, res.CountOfModsSeenAndLocalized[mod1.IdWithMotif]);
 
             Assert.AreEqual(0, res.CountOfAmbiguousButLocalizedModsSeen.Count());
 
@@ -107,7 +107,7 @@ namespace Test
             IScan scan = new ThisTestScan();
 
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
-            Modification mod1 = new Modification(_id: "mod1", _modificationType: "mt", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 10, _neutralLosses: new Dictionary<DissociationType, List<double>> { { MassSpectrometry.DissociationType.AnyActivationType, new List<double> { 10 } } });
+            Modification mod1 = new Modification(_originalId: "mod1", _modificationType: "mt", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 10, _neutralLosses: new Dictionary<DissociationType, List<double>> { { MassSpectrometry.DissociationType.AnyActivationType, new List<double> { 10 } } });
 
             IDictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>
             {
@@ -144,10 +144,10 @@ namespace Test
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(1, res.CountOfEachModSeenOnProteins.Count());
-            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.Id]);
+            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.IdWithMotif]);
             Assert.AreEqual(0, res.CountOfModsSeenAndLocalized.Count());
             Assert.AreEqual(0, res.CountOfAmbiguousButLocalizedModsSeen.Count);
-            Assert.AreEqual(1, res.CountOfUnlocalizedMods[mod1.Id]); // Saw it, but not sure where!
+            Assert.AreEqual(1, res.CountOfUnlocalizedMods[mod1.IdWithMotif]); // Saw it, but not sure where!
             Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
         }
     }

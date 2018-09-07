@@ -29,7 +29,7 @@ namespace EngineLayer
         {
             TreatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
 
-            // TODO: consider scenario in which no PSMs are observed (to prevent crashes)
+            // TODO: consider scenario in which no PSMs are observed (to prevent downstream crashes)
             if (!allPsms.Any())
             {
                 FdrFilteredPsms = new List<PeptideSpectralMatch>();
@@ -47,10 +47,37 @@ namespace EngineLayer
                 FdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
 
+            // if PSM is a decoy, add only decoy sequences; same for contaminants
             // peptides to use in parsimony = peptides observed in high-confidence PSMs
-            FdrFilteredPeptides = new HashSet<PeptideWithSetModifications>(FdrFilteredPsms.SelectMany(p => p.BestMatchingPeptideWithSetMods.Select(v => v.Pwsm)));
+            FdrFilteredPeptides = new HashSet<PeptideWithSetModifications>();
 
-            // we're storing all PSMs here because we will remove some protein associations from low-confidence PSMs if they can be explained by a parsimonious protein
+            foreach (var psm in FdrFilteredPsms)
+            {
+                if (psm.IsDecoy)
+                {
+                    foreach (var peptide in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).Where(p => p.Protein.IsDecoy))
+                    {
+                        FdrFilteredPeptides.Add(peptide);
+                    }
+                }
+                else if (psm.IsContaminant)
+                {
+                    foreach (var peptide in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).Where(p => p.Protein.IsContaminant))
+                    {
+                        FdrFilteredPeptides.Add(peptide);
+                    }
+                }
+                else // PSM is target
+                {
+                    foreach (var peptide in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).Where(p => !p.Protein.IsDecoy && !p.Protein.IsContaminant))
+                    {
+                        FdrFilteredPeptides.Add(peptide);
+                    }
+                }
+            }
+
+            // we're storing all PSMs (not just FDR-filtered ones) here because we will remove some protein associations 
+            // from low-confidence PSMs if they can be explained by a parsimonious protein
             AllPsms = allPsms;
         }
 
@@ -84,7 +111,7 @@ namespace EngineLayer
             // Parsimony stage 0: create peptide-protein associations if needed because the user wants a modification-agnostic parsimony
             if (!TreatModPeptidesAsDifferentPeptides)
             {
-                foreach (var protease in AllPsms.GroupBy(p => p.DigestionParams.Protease))
+                foreach (var protease in FdrFilteredPsms.GroupBy(p => p.DigestionParams.Protease))
                 {
                     Dictionary<string, List<PeptideSpectralMatch>> sequenceWithPsms = new Dictionary<string, List<PeptideSpectralMatch>>();
 
@@ -134,7 +161,7 @@ namespace EngineLayer
                     }
                 }
             }
-
+            
             // Parsimony stage 1: add proteins with unique peptides (for each protease)
             var peptidesGroupedByProtease = FdrFilteredPeptides.GroupBy(p => p.DigestionParams.Protease);
             foreach (var peptidesForThisProtease in peptidesGroupedByProtease)
@@ -147,25 +174,26 @@ namespace EngineLayer
                     string sequence = peptide.BaseSequence;
                     if (TreatModPeptidesAsDifferentPeptides)
                     {
-                        sequence = peptide.Sequence;
+                        //these and next set to full sequence but might be base sequence. treat modified as unique makes sense to use full
+                        sequence = peptide.FullSequence;
                     }
 
-                    if (peptideSequenceToProteinsForThisProtease.TryGetValue(peptide.Sequence, out List<Protein> proteinsForThisPeptideSequence))
+                    if (peptideSequenceToProteinsForThisProtease.TryGetValue(sequence, out List<Protein> proteinsForThisPeptideSequence))
                     {
                         proteinsForThisPeptideSequence.Add(peptide.Protein);
                     }
                     else
                     {
-                        peptideSequenceToProteinsForThisProtease.Add(peptide.Sequence, new List<Protein> { peptide.Protein });
+                        peptideSequenceToProteinsForThisProtease.Add(sequence, new List<Protein> { peptide.Protein });
                     }
 
-                    if (sequenceToPwsm.TryGetValue(peptide.Sequence, out List<PeptideWithSetModifications> peptidesForThisSequence))
+                    if (sequenceToPwsm.TryGetValue(sequence, out List<PeptideWithSetModifications> peptidesForThisSequence))
                     {
                         peptidesForThisSequence.Add(peptide);
                     }
                     else
                     {
-                        sequenceToPwsm.Add(peptide.Sequence, new List<PeptideWithSetModifications> { peptide });
+                        sequenceToPwsm.Add(sequence, new List<PeptideWithSetModifications> { peptide });
                     }
                 }
 
@@ -194,16 +222,17 @@ namespace EngineLayer
                 string sequence = peptide.BaseSequence;
                 if (TreatModPeptidesAsDifferentPeptides)
                 {
-                    sequence = peptide.Sequence;
+                    //using full sequence for next three instances. might be base sequence.
+                    sequence = peptide.FullSequence;
                 }
 
-                if (peptideSequenceToProteins.TryGetValue(peptide.Sequence, out List<Protein> proteinsForThisPeptideSequence))
+                if (peptideSequenceToProteins.TryGetValue(sequence, out List<Protein> proteinsForThisPeptideSequence))
                 {
                     proteinsForThisPeptideSequence.Add(peptide.Protein);
                 }
                 else
                 {
-                    peptideSequenceToProteins.Add(peptide.Sequence, new List<Protein> { peptide.Protein });
+                    peptideSequenceToProteins.Add(sequence, new List<Protein> { peptide.Protein });
                 }
 
                 if (proteinToPepSeqMatch.TryGetValue(peptide.Protein, out var peptideSequences))

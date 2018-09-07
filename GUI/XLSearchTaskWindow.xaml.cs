@@ -111,7 +111,7 @@ namespace MetaMorpheusGUI
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.Id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
             }
             fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
@@ -119,7 +119,7 @@ namespace MetaMorpheusGUI
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.Id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
             }
             variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 

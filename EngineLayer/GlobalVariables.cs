@@ -85,13 +85,13 @@ namespace EngineLayer
         {
             foreach (var ye in enumerable)
             {
-                if (string.IsNullOrEmpty(ye.ModificationType) || string.IsNullOrEmpty(ye.Id))
+                if (string.IsNullOrEmpty(ye.ModificationType) || string.IsNullOrEmpty(ye.IdWithMotif))
                     throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
-                if (AllModsKnown.Any(b => b.Id.Equals(ye.Id) && b.ModificationType.Equals(ye.ModificationType) && !b.Equals(ye)))
+                if (AllModsKnown.Any(b => b.IdWithMotif.Equals(ye.IdWithMotif) && b.ModificationType.Equals(ye.ModificationType) && !b.Equals(ye)))
                 {
-                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.Id.Equals(ye.Id) && b.ModificationType.Equals(ye.ModificationType)) + Environment.NewLine + Environment.NewLine);
+                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.IdWithMotif.Equals(ye.IdWithMotif) && b.ModificationType.Equals(ye.ModificationType)) + Environment.NewLine + Environment.NewLine);
                 }
-                else if (AllModsKnown.Any(b => b.Id.Equals(ye.Id) && b.ModificationType.Equals(ye.ModificationType)))
+                else if (AllModsKnown.Any(b => b.IdWithMotif.Equals(ye.IdWithMotif) && b.ModificationType.Equals(ye.ModificationType)))
                     continue;
                 else
                 {

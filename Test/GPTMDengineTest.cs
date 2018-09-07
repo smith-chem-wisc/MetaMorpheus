@@ -21,7 +21,7 @@ namespace Test
         {
             List<PeptideSpectralMatch> allResultingIdentifications = null;
             ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
-            var gptmdModifications = new List<Modification> { new Modification(_id: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
+            var gptmdModifications = new List<Modification> { new Modification(_originalId: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
@@ -42,7 +42,7 @@ namespace Test
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
 
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            List<ProductType> lp = new List<ProductType> { ProductType.b, ProductType.y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
@@ -60,8 +60,8 @@ namespace Test
             List<PeptideSpectralMatch> allIdentifications = null;
             ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
             ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
-            var gptmdModifications = new List<Modification> { new Modification(_id: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943),
-                                                                      new Modification(_id: "16",  _modificationType: "mt", _target: motifP, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
+            var gptmdModifications = new List<Modification> { new Modification(_originalId: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943),
+                                                                      new Modification(_originalId: "16",  _modificationType: "mt", _target: motifP, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
@@ -77,7 +77,7 @@ namespace Test
             PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
 
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            List<ProductType> lp = new List<ProductType> { ProductType.b, ProductType.y };
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
@@ -88,8 +88,8 @@ namespace Test
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(6, res.Mods["accession"].Count);
-            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.Id.Equals("21")).Count());
-            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.Id.Equals("16")).Count());
+            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("21")).Count());
+            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("16")).Count());
         }
     }
 }

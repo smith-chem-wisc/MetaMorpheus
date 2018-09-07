@@ -114,7 +114,7 @@ namespace EngineLayer
                 int j = spectrum.Size - i - 1;
 
                 double mz = spectrum.XArray[i];
-                double compFragmentMass = (precursorMass + protonMassShift) - mz.ToMass(1);
+                double compFragmentMass = (precursorMass + protonMassShift) - mz.ToMass(1); //FIXME, not valid for all fragmentation (b+y+H = precursor, but c+zdot+2H = precursor)
 
                 newMzSpectrum[j] = compFragmentMass.ToMz(1);
                 intensity[j] = spectrum.YArray[i];
@@ -144,12 +144,12 @@ namespace EngineLayer
         {
             List<DissociationType> dissociationTypes = new List<DissociationType>();
 
-            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
+            if (lp.Contains(ProductType.b) || lp.Contains(ProductType.y))
             {
                 dissociationTypes.Add(DissociationType.HCD);
             }
 
-            if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
+            if (lp.Contains(ProductType.c) || lp.Contains(ProductType.zPlusOne))
             {
                 dissociationTypes.Add(DissociationType.ETD);
             }

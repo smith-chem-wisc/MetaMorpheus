@@ -59,7 +59,7 @@ namespace EngineLayer
         {
             get
             {
-                return _bestMatchingPeptideWithetMods.OrderBy(p => p.Item2.Sequence)
+                return _bestMatchingPeptideWithetMods.OrderBy(p => p.Item2.BaseSequence)// this might be full sequence
                     .ThenBy(p => p.Item2.Protein.Accession)
                     .ThenBy(p => p.Item2.OneBasedStartResidueInProtein);
             }
@@ -71,6 +71,7 @@ namespace EngineLayer
         public double DeltaScore { get; private set; }
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
+        public bool IsContaminant { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
@@ -131,6 +132,7 @@ namespace EngineLayer
                 }
                 else
                 {
+                    //TODO: Do we need to do anything????????????????? if the thing is already there?
                     throw new MetaMorpheusException("Cannot add duplicate peptides to the same PSM!");
                 }
             }
@@ -190,7 +192,9 @@ namespace EngineLayer
         public void ResolveAllAmbiguities()
         {
             IsDecoy = _bestMatchingPeptideWithetMods.Any(p => p.Pwsm.Protein.IsDecoy);
-            FullSequence = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.Sequence)).ResolvedValue;
+            IsContaminant = _bestMatchingPeptideWithetMods.Any(p => p.Pwsm.Protein.IsContaminant);
+
+            FullSequence = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.FullSequence)).ResolvedValue;
             BaseSequence = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.BaseSequence)).ResolvedValue;
             PeptideLength = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.Length)).ResolvedValue;
             OneBasedStartResidueInProtein = Resolve(_bestMatchingPeptideWithetMods.Select(b => b.Pwsm.OneBasedStartResidueInProtein)).ResolvedValue;
@@ -217,6 +221,7 @@ namespace EngineLayer
         public void TrimProteinMatches(HashSet<Protein> parsimoniousProteins)
         {
             _bestMatchingPeptideWithetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+            ResolveAllAmbiguities();
         }
 
         /// <summary>
@@ -225,6 +230,7 @@ namespace EngineLayer
         public void AddProteinMatch((int, PeptideWithSetModifications) peptideWithNotch)
         {
             _bestMatchingPeptideWithetMods.Add(peptideWithNotch);
+            ResolveAllAmbiguities();
         }
 
         /// <summary>
@@ -255,7 +261,7 @@ namespace EngineLayer
                 ChemicalFormula fhere = new ChemicalFormula();
                 foreach (var mod in anEnum)
                 {
-                    if (mod == null)
+                    if (mod == null || mod.ChemicalFormula == null)
                     {
                         return ("unknown", null);
                     }
@@ -280,11 +286,11 @@ namespace EngineLayer
 
         private static (string ResolvedString, Dictionary<string, int> ResolvedValue) Resolve(IEnumerable<Dictionary<int, Modification>> enumerable)
         {
-            Dictionary<string, int> ok = enumerable.First().Values.OrderBy(b => b.Id).GroupBy(b => b.Id).ToDictionary(b => b.Key, b => b.Count());
+            Dictionary<string, int> ok = enumerable.First().Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
             bool notEqual = false;
             foreach (var ha in enumerable)
             {
-                Dictionary<string, int> okTest = ha.Values.OrderBy(b => b.Id).GroupBy(b => b.Id).ToDictionary(b => b.Key, b => b.Count());
+                Dictionary<string, int> okTest = ha.Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
                 if (!ok.SequenceEqual(okTest))
                 {
                     notEqual = true;
@@ -293,12 +299,12 @@ namespace EngineLayer
             }
             if (notEqual)
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.Id).OrderBy(c => c)))));
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.IdWithMotif).OrderBy(c => c)))));
                 return (returnString, null);
             }
             else
             {
-                return (string.Join(" ", enumerable.First().Values.Select(c => c.Id).OrderBy(c => c)), ok);
+                return (string.Join(" ", enumerable.First().Values.Select(c => c.IdWithMotif).OrderBy(c => c)), ok);
             }
         }
 
@@ -385,7 +391,7 @@ namespace EngineLayer
             var pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).ToList();
 
             s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
-            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Sequence)).ResolvedString;
+            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
             s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
             s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
             s["Mods Chemical Formulas"] = pepWithModsIsNull ? " " :
@@ -439,7 +445,8 @@ namespace EngineLayer
             StringBuilder fragmentPpmErrorStringBuilder = new StringBuilder();
             StringBuilder fragmentIntensityStringBuilder = new StringBuilder();
 
-            if (!nullPsm)
+            //not sure what to do if matched fragment ions is null. added the second condition
+            if (!nullPsm && psm.MatchedFragmentIons != null)
             {
                 // using ", " instead of "," improves human readability
                 const string delimiter = ", ";
@@ -451,7 +458,7 @@ namespace EngineLayer
                 foreach (var productType in matchedIonsGroupedByProductType)
                 {
                     // write ion series (b1, b2, b3 ...)
-                    seriesStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.NeutralTheoreticalProduct.ProductType + i.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + i.Charge)) + "];");
+                    seriesStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.NeutralTheoreticalProduct.ProductType + "" + i.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + i.Charge)) + "];");
 
                     // write m/z values
                     mzStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.Mz.ToString("F5"))) + "];");

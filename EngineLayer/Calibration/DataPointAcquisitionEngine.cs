@@ -88,8 +88,9 @@ namespace EngineLayer.Calibration
 
                     // Get the peptide, don't forget to add the modifications!!!!
                     var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
-                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.AllModsOneIsNterminus.Any(b => b.Value.NeutralLosses[commonParameters.DissociationType].Count != 1 || b.Value.NeutralLosses[commonParameters.DissociationType].First() != 0))
+                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.AllModsOneIsNterminus.Any(b => b.Value.NeutralLosses != null))
                         continue;
+
                     Proteomics.AminoAcidPolymer.Peptide coolPeptide = new Proteomics.AminoAcidPolymer.Peptide(SequenceWithChemicalFormulas);
 
                     var ms2tuple = SearchMS2Spectrum(MyMsDataFile.GetOneBasedScan(ms2scanNumber), identification);

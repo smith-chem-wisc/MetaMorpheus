@@ -33,7 +33,7 @@ namespace EngineLayer.CrosslinkSearch
                     //TODO: use dissociation type and not ProductType to figure out product masses because UVPD could generate C ions and fragment the cleavable crosslinker, etc
                     switch (productType)
                     {
-                        case ProductType.B:
+                        case ProductType.b:
                             if (product.TerminusFragment.AminoAcidPosition < crosslinkerPosition)
                             {
                                 currentProducts.Add(product);
@@ -53,7 +53,7 @@ namespace EngineLayer.CrosslinkSearch
                                 }
                             }
                             break;
-                        case ProductType.C:
+                        case ProductType.c:
                             if (product.TerminusFragment.AminoAcidPosition < crosslinkerPosition)
                             {
                                 currentProducts.Add(product);
@@ -63,7 +63,7 @@ namespace EngineLayer.CrosslinkSearch
                                 currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + modMass + crosslinker.TotalMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
                             }
                             break;
-                        case ProductType.Y:
+                        case ProductType.y:
                             if (product.TerminusFragment.AminoAcidPosition < crosslinkerPosition)
                             {
                                 currentProducts.Add(product);
@@ -81,7 +81,7 @@ namespace EngineLayer.CrosslinkSearch
                                 }
                             }
                             break;
-                        case ProductType.Zdot:
+                        case ProductType.zPlusOne:
                             if (product.TerminusFragment.AminoAcidPosition < crosslinkerPosition)
                             {
                                 currentProducts.Add(product);
@@ -122,7 +122,7 @@ namespace EngineLayer.CrosslinkSearch
                             var iType = product.ProductType;
                             switch (iType)
                             {
-                                case ProductType.B:
+                                case ProductType.b:
                                     if (product.TerminusFragment.FragmentNumber < modPos[iPos])
                                     {
                                         currentProducts.Add(product);
@@ -132,7 +132,7 @@ namespace EngineLayer.CrosslinkSearch
                                         currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
                                     }
                                     break;
-                                case ProductType.C:
+                                case ProductType.c:
                                     if (product.TerminusFragment.FragmentNumber < modPos[iPos])
                                     {
                                         currentProducts.Add(product);
@@ -142,7 +142,7 @@ namespace EngineLayer.CrosslinkSearch
                                         currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
                                     }
                                     break;
-                                case ProductType.Y:
+                                case ProductType.y:
                                     if (product.TerminusFragment.FragmentNumber < peptide.Length - modPos[jPos] + 1)
                                     {
                                         currentProducts.Add(product);
@@ -152,14 +152,14 @@ namespace EngineLayer.CrosslinkSearch
                                         currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
                                     }
                                     break;
-                                case ProductType.Zdot:
+                                case ProductType.zPlusOne:
                                     if (product.TerminusFragment.FragmentNumber < peptide.Length - modPos[jPos] + 1)
                                     {
                                         currentProducts.Add(product);
                                     }
                                     else if (product.TerminusFragment.FragmentNumber >= peptide.Length - modPos[iPos] + 1)
                                     {
-                                        currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
+                                        currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));                                        
                                     }
                                     break;
                                 default:

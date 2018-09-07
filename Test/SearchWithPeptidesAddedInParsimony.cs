@@ -41,7 +41,7 @@ namespace Test
                     maxModsForPeptides: 1));
 
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
-            Modification alanineMod = new Modification(_id: "111", _modificationType: "mt", _target: motifA, _locationRestriction: "Anywhere.", _monoisotopicMass: 111);
+            Modification alanineMod = new Modification(_originalId: "111", _modificationType: "mt", _target: motifA, _locationRestriction: "Anywhere.", _monoisotopicMass: 111);
 
             var variableModifications = new List<Modification>();
             IDictionary<int, List<Modification>> oneBasedModifications1 = new Dictionary<int, List<Modification>>
@@ -53,7 +53,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("G", out ModificationMotif motif1);
 
-            Modification glycineMod = new Modification(_id: "CH2 on Glycine", _modificationType: "mt", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass);
+            Modification glycineMod = new Modification(_originalId: "CH2 on Glycine", _modificationType: "mt", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass);
 
             IDictionary<int, List<Modification>> oneBasedModifications2 = new Dictionary<int, List<Modification>>
                 {

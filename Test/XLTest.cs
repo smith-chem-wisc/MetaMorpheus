@@ -42,9 +42,9 @@ namespace Test
             var c = pep.Fragment(DissociationType.HCD, FragmentationTerminus.C);
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
-            Assert.AreEqual(c.First().NeutralMass, 128.09496301518999, 1e-6);
+            Assert.AreEqual(c.First().NeutralMass, 146.10552769899999, 1e-6);
             var x = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites, pep).ToArray();
-            Assert.AreEqual(x[0], 4);
+            Assert.AreEqual(x[0], 5);
 
             var pep2 = ye[2];
             Assert.AreEqual("MNNNKQQQQ", pep2.BaseSequence);
@@ -52,9 +52,8 @@ namespace Test
             var c2 = pep2.Fragment(DissociationType.HCD, FragmentationTerminus.C);
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
-            Assert.AreEqual(n.Select(m => m.NeutralMass).ElementAt(4) - n.Select(m => m.NeutralMass).ElementAt(3), 128.09496301518999, 1e-6);
             var x2 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites, pep2).ToArray();
-            Assert.AreEqual(x2[0], 4);
+            Assert.AreEqual(x2[0], 5);
 
             //Test crosslinker with multiple types of mod
             var protSTC = new Protein("GASTACK", null);
@@ -79,7 +78,7 @@ namespace Test
         public static void XlTest_BSA_DSSO()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.ETD, scoreCutoff: 2, digestionParams: new DigestionParams(minPeptideLength: 5));
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.EThcD, scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5));
 
             var xlSearchParameters = new XlSearchParameters { XlCharge_2_3_PrimeFragment = true };
 
@@ -87,14 +86,14 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
-            Modification mod1 = new Modification(_id: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
+            Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_id: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             var variableModifications = new List<Modification>() { mod1 };
             var fixedModifications = new List<Modification>() { mod2 };
             var localizeableModifications = new List<Modification>();
 
-            var lp = new List<ProductType> { ProductType.B, ProductType.Y, ProductType.C, ProductType.Zdot };
+            var lp = new List<ProductType> { ProductType.b, ProductType.y, ProductType.c, ProductType.zPlusOne };
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
             foreach (var mod in fixedModifications)
                 modsDictionary.Add(mod, 0);
@@ -158,8 +157,8 @@ namespace Test
             var psmCrossAlpha = new CrosslinkSpectralMatch(digestedList[1], 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams, new List<MatchedFragmentIon>());
             var psmCrossBeta = new CrosslinkSpectralMatch(digestedList[2], 0, 0, i, listOfSortedms2Scans[0], commonParameters.DigestionParams, new List<MatchedFragmentIon>());
             var linkPos = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites, digestedList[1]);
-            var productMassesAlphaList = CrosslinkedPeptide.XlGetTheoreticalFragmentIons(DissociationType.HCD, false, crosslinker, linkPos, 0, digestedList[2]);// psmCrossAlpha, digestedList[2].MonoisotopicMass + crosslinker.TotalMass, crosslinker, lp, true, false, linkPos);
-            Assert.AreEqual(productMassesAlphaList.First().Value.Count, 99);
+            var productMassesAlphaList = CrosslinkedPeptide.XlGetTheoreticalFragmentIons(DissociationType.EThcD, false, crosslinker, linkPos, digestedList[2].MonoisotopicMass, digestedList[1]);
+            Assert.AreEqual(productMassesAlphaList.First().Value.Count, 50); //TO DO: The number here should be manually verified.
         }
 
         [Test]
@@ -204,12 +203,12 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("VLTAR", "Fake01"), new Protein("LCQK", "Fake02") };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
-            Modification mod1 = new Modification(_id: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
+            Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
             var variableModifications = new List<Modification>() { mod1 };
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
 
-            var lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            var lp = new List<ProductType> { ProductType.b, ProductType.y };
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
 
             int i = 1;

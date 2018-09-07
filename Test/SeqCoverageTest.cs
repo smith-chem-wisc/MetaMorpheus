@@ -18,12 +18,12 @@ namespace Test
             var prot1 = new Protein("MMKMMK", "prot1");
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
-            Modification mod1 = new Modification(_id: "mod1", _modificationType: "mt", _target: motifM, _locationRestriction: "N-terminal.", _monoisotopicMass: 10);
-            Modification mod2 = new Modification(_id: "mod2", _modificationType: "mt", _target: motifM, _locationRestriction: "Peptide N-terminal.", _monoisotopicMass: 10);
-            Modification mod3 = new Modification(_id: "mod3", _modificationType: "mt", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            Modification mod1 = new Modification(_originalId: "mod1", _modificationType: "mt", _target: motifM, _locationRestriction: "N-terminal.", _monoisotopicMass: 10);
+            Modification mod2 = new Modification(_originalId: "mod2", _modificationType: "mt", _target: motifM, _locationRestriction: "Peptide N-terminal.", _monoisotopicMass: 10);
+            Modification mod3 = new Modification(_originalId: "mod3", _modificationType: "mt", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
             ModificationMotif.TryGetMotif("K", out ModificationMotif motifK);
-            Modification mod4 = new Modification(_id: "mod4", _modificationType: "mt", _target: motifK, _locationRestriction: "Peptide C-terminal.", _monoisotopicMass: 10);
-            Modification mod5 = new Modification(_id: "mod5", _modificationType: "mt", _target: motifK, _locationRestriction: "C-terminal.", _monoisotopicMass: 10);
+            Modification mod4 = new Modification(_originalId: "mod4", _modificationType: "mt", _target: motifK, _locationRestriction: "Peptide C-terminal.", _monoisotopicMass: 10);
+            Modification mod5 = new Modification(_originalId: "mod5", _modificationType: "mt", _target: motifK, _locationRestriction: "C-terminal.", _monoisotopicMass: 10);
 
             Dictionary<int, Modification> modsFor1 = new Dictionary<int, Modification>
             {
@@ -73,6 +73,8 @@ namespace Test
                 psm3,
             };
 
+            newPsms.ForEach(p => p.ResolveAllAmbiguities());
+
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
@@ -85,21 +87,15 @@ namespace Test
             var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().SequenceCoverageDisplayList.First();
             Assert.AreEqual("MMKMMK", firstSequenceCoverageDisplayList);
             var firstSequenceCoverageDisplayListWithMods = fjkd.ProteinGroups.First().SequenceCoverageDisplayListWithMods.First();
-            Assert.AreEqual("[mod1]-MM[mod3]KM[mod3]MK-[mod5]", firstSequenceCoverageDisplayListWithMods);
+            Assert.AreEqual("[mod1 on M]-MM[mod3 on M]KM[mod3 on M]MK-[mod5 on K]", firstSequenceCoverageDisplayListWithMods);
 
             var firstModInfo = fjkd.ProteinGroups.First().ModsInfo.First();
-            Assert.IsTrue(firstModInfo.Contains(@"#aa1[mod1,info:occupancy=1.00(2/2)]"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa2[mod3,info:occupancy=0.50(1/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa1[mod1 on M,info:occupancy=1.00(2/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa2[mod3 on M,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa3"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa4[mod3,info:occupancy=0.50(1/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa4[mod3 on M,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa5"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5,info:occupancy=1.00(2/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5 on K,info:occupancy=1.00(2/2)]"));
         }
-
-        //[Test] MOVED TO MZLIB
-        //public static void MultipleProteaseSelectionTest()
-        //public static void MultipleProteaseSelectionTestMissedCleavage()
-        //public static void MultipleProteaseSelectionTestPreventCleavage()
-        //public static void ReadCustomFile()
     }
 }

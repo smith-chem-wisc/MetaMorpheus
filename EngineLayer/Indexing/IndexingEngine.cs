@@ -44,7 +44,7 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
-            sb.AppendLine("lp: " + string.Join(",", ProductTypes));
+            //sb.AppendLine("lp: " + string.Join(",", ProductTypes));
             foreach (var digestionParams in CollectionOfDigestionParams)
             {
                 sb.AppendLine("protease: " + digestionParams.Protease);
@@ -128,9 +128,10 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
-                var validFragments = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType,FragmentationTerminus.Both).Select(m=>m.NeutralMass).ToList();
+                var fragments = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
+                var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
-                foreach (var theoreticalFragmentMass in validFragments)
+                foreach (var theoreticalFragmentMass in fragmentMasses)
                 {
                     if (theoreticalFragmentMass < MaxFragmentSize)
                     {

@@ -133,9 +133,6 @@
       <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="18bed74c-eedb-4efa-a6e3-1592ac7022e3">
         <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_targetDir)UnmanagedThermoHelperLayer.dll" />
       </Component>
-      <Component Id="Chromatography.dll">
-        <File Id="src_Chromatography.dll" Name="Chromatography.dll" Source="$(var.GUI_targetDir)Chromatography.dll" />
-      </Component>
       <Component Id="src_Thermo.dll">
         <File Id="src_Thermo.dll" Name="Thermo.dll" Source="$(var.GUI_targetDir)Thermo.dll" />
       </Component>

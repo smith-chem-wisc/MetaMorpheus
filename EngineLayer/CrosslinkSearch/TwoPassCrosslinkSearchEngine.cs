@@ -123,7 +123,7 @@ namespace EngineLayer.CrosslinkSearch
                     }
 
                     // first-pass scoring
-                    ModernSearchEngine.IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, FragmentIndex, PeptideIndex, XLPrecusorSearchMode, 0);
+                    ModernSearchEngine.IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, FragmentIndex, PeptideIndex, MassDiffAcceptor, 0);
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
@@ -184,7 +184,7 @@ namespace EngineLayer.CrosslinkSearch
             PeptideWithSetModifications peptide = theScanBestPeptide.First().BestPeptide;
             var products = peptide.Fragment(DissociationType, FragmentationTerminus.Both).ToList();
             var matchedFragmentIons = MatchFragmentIons(theScan.TheScan.MassSpectrum, products, commonParameters);
-            
+
             List<CrosslinkSpectralMatch> bestPsmCrossList = new List<CrosslinkSpectralMatch>();
             CrosslinkSpectralMatch bestPsmCross = null;
             string crosslinkerModSitesAll = new string((Crosslinker.CrosslinkerModSites + Crosslinker.CrosslinkerModSites2).ToCharArray().Distinct().ToArray());
@@ -207,7 +207,7 @@ namespace EngineLayer.CrosslinkSearch
                 else if (QuenchTris && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass + Crosslinker.DeadendMassTris) >= 0)
                 {
                     var psmCrossEnd = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams, matchedFragmentIons);
-                    
+
                     if (xlPos.Count() >= 1)
                     {
                         var pmmhList = CrosslinkedPeptide.XlGetTheoreticalFragmentIons(DissociationType, Charge_2_3, Crosslinker, xlPos, Crosslinker.DeadendMassTris, theScanBestPeptide[ind].BestPeptide);
@@ -249,7 +249,7 @@ namespace EngineLayer.CrosslinkSearch
                     var psmCrossLoop = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan, commonParameters.DigestionParams, matchedFragmentIons);
                     if (xlPos.Count() >= 2)
                     {
-                        var pmmhList = CrosslinkedPeptide.XlGetTheoreticalFragmentIons(DissociationType, Charge_2_3, Crosslinker, xlPos, Crosslinker.LoopMass, theScanBestPeptide[ind].BestPeptide);
+                        var pmmhList = CrosslinkedPeptide.XlLoopGetTheoreticalFragmentIons(DissociationType, Charge_2_3, Crosslinker, xlPos, Crosslinker.LoopMass, theScanBestPeptide[ind].BestPeptide);
                         psmCrossLoop.GetBestMatch(theScan, pmmhList, commonParameters);
                         psmCrossLoop.XLTotalScore = psmCrossLoop.BestScore;
                         psmCrossLoop.CrossType = PsmCrossType.Loop;
@@ -261,7 +261,7 @@ namespace EngineLayer.CrosslinkSearch
                 else if (theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass >= 200)
                 {
                     double alphaPeptideMass = theScanBestPeptide[ind].BestPeptide.MonoisotopicMass;
-                    
+
                     for (int inx = ind; inx < theScanBestPeptide.Count; inx++)
                     {
                         var y = theScanBestPeptide[inx].BestPeptide.MonoisotopicMass;
@@ -303,9 +303,15 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     bestPsmCross.DScore = Math.Abs(bestPsmCrossList.First().XLTotalScore - bestPsmCrossList[1].XLTotalScore);
                 }
+                //TO DO: ResolveAllAmbiguities for crosslink Double check!
+                bestPsmCross.ResolveAllAmbiguities();
+                if (bestPsmCross.BetaPeptide != null)
+                {
+                    bestPsmCross.BetaPeptide.ResolveAllAmbiguities();
+                }
             }
 
-            bestPsmCross.ResolveAllAmbiguities();
+
             return bestPsmCross;
         }
 
@@ -361,7 +367,7 @@ namespace EngineLayer.CrosslinkSearch
             Crosslinker crosslinker, int ind, int inx, double x, double y)
         {
             CrosslinkSpectralMatch psmCross = null;
-            
+
             var xlPosAlpha1 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites, psmCrossAlpha.BestMatchingPeptideWithSetMods.First().Pwsm);
             var xlPosBeta1 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites, psmCrossBeta.BestMatchingPeptideWithSetMods.First().Pwsm);
             var xlPosAlpha2 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites2, psmCrossAlpha.BestMatchingPeptideWithSetMods.First().Pwsm);
@@ -391,7 +397,7 @@ namespace EngineLayer.CrosslinkSearch
                     var psmCrossAlpha2 = psmCrossAlpha;
                     var psmCrossBeta1 = psmCrossBeta;
                     var psmCrossBeta2 = psmCrossBeta;
-                    
+
                     var pmmhListAlpha1 = CrosslinkedPeptide.XlGetTheoreticalFragmentIons(DissociationType, Charge_2_3, Crosslinker, xlPosAlpha1, y, psmCrossAlpha.BestMatchingPeptideWithSetMods.First().Pwsm);
                     psmCrossAlpha1.GetBestMatch(theScan, pmmhListAlpha1, commonParameters);
                     var pmmhListBeta1 = CrosslinkedPeptide.XlGetTheoreticalFragmentIons(DissociationType, Charge_2_3, Crosslinker, xlPosBeta1, x, psmCrossAlpha.BestMatchingPeptideWithSetMods.First().Pwsm);

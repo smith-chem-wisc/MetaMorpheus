@@ -307,7 +307,7 @@ namespace TaskLayer
                 foreach (PeptideWithSetModifications peptide in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).Distinct())
                 {
                     //if first peptide on list hasn't been added, add peptide and peptide evidence
-                    if (!peptide_ids.TryGetValue(peptide.Sequence, out Tuple<int, HashSet<string>> peptide_id))
+                    if (!peptide_ids.TryGetValue(peptide.FullSequence, out Tuple<int, HashSet<string>> peptide_id))
                     {
                         peptide_id = new Tuple<int, HashSet<string>>(p_index, new HashSet<string>());
                         p_index++;
@@ -334,7 +334,7 @@ namespace TaskLayer
                             };
                             mod_id++;
                         }
-                        peptide_ids.Add(peptide.Sequence, peptide_id);
+                        peptide_ids.Add(peptide.FullSequence, peptide_id);
                     }
 
                     if (!peptide_evidence_ids.ContainsKey(peptide))
@@ -387,7 +387,7 @@ namespace TaskLayer
                 }
                 foreach (PeptideWithSetModifications p in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).Distinct())
                 {
-                    peptide_ids[p.Sequence].Item2.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
+                    peptide_ids[p.FullSequence].Item2.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
                 }
                 _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2] = new mzIdentML110.Generated.SpectrumIdentificationItemType()
                 {
@@ -684,11 +684,11 @@ namespace TaskLayer
                                     _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id] = new mzIdentML110.Generated.PeptideHypothesisType()
                                     {
                                         peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
-                                        SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.Sequence].Item2.Count],
+                                        SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.FullSequence].Item2.Count],
                                     };
 
                                     int i = 0;
-                                    foreach (string sii in peptide_ids[peptide.Sequence].Item2)
+                                    foreach (string sii in peptide_ids[peptide.FullSequence].Item2)
                                     {
                                         _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id].SpectrumIdentificationItemRef[i] = new mzIdentML110.Generated.SpectrumIdentificationItemRefType()
                                         {
@@ -718,7 +718,7 @@ namespace TaskLayer
                 return new mzIdentML110.Generated.CVParamType()
                 {
                     accession = "UNIMOD:" + mod.DatabaseReference["Unimod"].First(),
-                    name = mod.Id,
+                    name = mod.IdWithMotif,
                     cvRef = "PSI-MS",
                 };
             }
@@ -729,7 +729,7 @@ namespace TaskLayer
                     accession = "MS:1001460",
                     name = "unknown modification",
                     cvRef = "UNIMOD",
-                    value = mod.Id,
+                    value = mod.IdWithMotif,
                 };
             }
         }

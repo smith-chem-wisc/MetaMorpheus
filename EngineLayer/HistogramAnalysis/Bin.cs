@@ -120,7 +120,7 @@ namespace EngineLayer.HistogramAnalysis
             {
                 if (mod.MonoisotopicMass.HasValue && Math.Abs(mod.MonoisotopicMass.Value - MassShift) <= v)
                 {
-                    modIdOptions.Add(mod.Id);
+                    modIdOptions.Add(mod.IdWithMotif);
                 }
             }
             UniprotID = string.Join("|", modIdOptions);
@@ -162,7 +162,7 @@ namespace EngineLayer.HistogramAnalysis
                 var theMod = hm as Modification;
                 if (Math.Abs(theMod.MonoisotopicMass.Value - MassShift) <= v)
                 {
-                    ok.Add(hm.Id);
+                    ok.Add(hm.IdWithMotif);
                     okformula.Add(theMod.ChemicalFormula.Formula);
                     okDiff.Add(theMod.MonoisotopicMass.Value - MassShift);
                 }

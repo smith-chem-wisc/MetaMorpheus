@@ -123,11 +123,11 @@ namespace Test
 
             // without complementary ions
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // with complementary ions
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, withCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
@@ -152,7 +152,7 @@ namespace Test
             double precursorMass = 300;
             //The below theoretical does not accurately represent B-Y ions
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.ProtonMass) - 275.1350, precursorMass + (2 * Constants.ProtonMass) - 258.127, precursorMass + (2 * Constants.ProtonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.ProtonMass) - 147.0764, precursorMass + (2 * Constants.ProtonMass) - 70, precursorMass + (2 * Constants.ProtonMass) - 60, precursorMass + (2 * Constants.ProtonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            List<ProductType> lp = new List<ProductType> { ProductType.b, ProductType.y };
             //double scoreT = MetaMorpheusEngine.CalculatePeptideScore(t.GetOneBasedScan(2), productMassTolerance, DissociationType.HCD, sorted_theoretical_product_masses_for_this_peptide, precursorMass, true, 0);
             //double scoreF = MetaMorpheusEngine.CalculatePeptideScore(t.GetOneBasedScan(2), productMassTolerance, DissociationType.HCD, sorted_theoretical_product_masses_for_this_peptide, precursorMass, false, 0);
             //Assert.IsTrue(scoreT == scoreF * 2 && scoreT > scoreF + 1);

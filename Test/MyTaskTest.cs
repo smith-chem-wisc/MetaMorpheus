@@ -64,8 +64,8 @@ namespace Test
                 ("task3", task3),
                 ("task4", task4),};
 
-            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.Id))).ToList();
-            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.Id))).ToList();
+            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
@@ -80,7 +80,7 @@ namespace Test
 
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
-            dictHere.Add(3, new List<Modification> { new Modification(_id: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
+            dictHere.Add(3, new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
@@ -109,8 +109,8 @@ namespace Test
                 CommonParameters = new CommonParameters
                 (
                     digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
-                    listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation on M") },
+                    listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C") },
                     productMassTolerance: new AbsoluteTolerance(0.01)
                 ),
                 CalibrationParameters = new CalibrationParameters
@@ -153,8 +153,8 @@ namespace Test
                 ("task3", task3),
                 ("task4", task4),};
 
-            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.Id))).ToList();
-            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.Id))).ToList();
+            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
@@ -169,7 +169,7 @@ namespace Test
 
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
-            dictHere.Add(3, new List<Modification> { new Modification(_id: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
+            dictHere.Add(3, new List<Modification> { new Modification(_originalId: "21", _modificationType: "myModType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
@@ -272,7 +272,9 @@ namespace Test
 
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                GlobalVariables.AddMods(new List<Modification> { new Modification(_id: "ok", _modificationType: "okType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 229) });
+                Modification myNewMod = new Modification(_originalId: "ok", _modificationType: "okType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 229);
+
+                GlobalVariables.AddMods(new List<Modification> { myNewMod });
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
@@ -286,7 +288,7 @@ namespace Test
 
                     GptmdParameters = new GptmdParameters
                     {
-                        ListOfModsGptmd = new List<(string, string)> { ("okType", "ok") },
+                        ListOfModsGptmd = new List<(string, string)> { ("okType", "ok on T") },
                     }
                 };
             }
@@ -305,7 +307,7 @@ namespace Test
 
                 List<Modification> fixedModifications = new List<Modification>();
 
-                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => b.Id.Equals("ok")).ToList()).ToList();
+                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => b.OriginalId.Equals("ok")).ToList()).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 PeptideWithSetModifications targetGood = targetDigested[0];
@@ -346,7 +348,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
-            var testUniqeMod = new Modification(_id: "testPeptideMod", _modificationType: "mt", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            var testUniqeMod = new Modification(_originalId: "testPeptideMod", _modificationType: "mt", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
             GlobalVariables.AddMods(new List<Modification>
             {
                 testUniqeMod
@@ -355,7 +357,7 @@ namespace Test
             //create modification lists
 
             List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where
-                (b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.Id))).ToList();
+                (b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();

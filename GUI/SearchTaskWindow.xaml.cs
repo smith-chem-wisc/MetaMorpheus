@@ -120,7 +120,7 @@ namespace MetaMorpheusGUI
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.Id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
@@ -131,7 +131,7 @@ namespace MetaMorpheusGUI
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.Id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
@@ -397,6 +397,10 @@ namespace MetaMorpheusGUI
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
             double MinRatio = double.Parse(MinRatioTextBox.Text);
 
+
+            //TODO redo
+            DissociationType t = DissociationType.CID;
+
             CommonParameters CommonParamsToSave = new CommonParameters(
                 useDeltaScore: deltaScoreCheckBox.IsChecked.Value,
                 reportAllAmbiguity: allAmbiguity.IsChecked.Value,
@@ -408,7 +412,7 @@ namespace MetaMorpheusGUI
                 calculateEValue: eValueCheckBox.IsChecked.Value,
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
-                dissociationType: (DissociationType)dissassociationTypeComboBox.SelectedItem,
+                dissociationType: t,
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,

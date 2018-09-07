@@ -164,7 +164,7 @@ namespace EngineLayer
             if (!DisplayModsOnPeptides)
                 sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.BaseSequence).Distinct())));
             else
-                sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.Sequence).Distinct())));
+                sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.FullSequence).Distinct())));
             sb.Append("\t");
 
             // list of shared peptides
@@ -172,21 +172,21 @@ namespace EngineLayer
             if (!DisplayModsOnPeptides)
                 sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => p.BaseSequence).Distinct())));
             else
-                sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => p.Sequence).Distinct())));
+                sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => p.FullSequence).Distinct())));
             sb.Append("\t");
 
             // number of peptides
             if (!DisplayModsOnPeptides)
                 sb.Append("" + AllPeptides.Select(p => p.BaseSequence).Distinct().Count());
             else
-                sb.Append("" + AllPeptides.Select(p => p.Sequence).Distinct().Count());
+                sb.Append("" + AllPeptides.Select(p => p.FullSequence).Distinct().Count());
             sb.Append("\t");
 
             // number of unique peptides
             if (!DisplayModsOnPeptides)
                 sb.Append("" + UniquePeptides.Select(p => p.BaseSequence).Distinct().Count());
             else
-                sb.Append("" + UniquePeptides.Select(p => p.Sequence).Distinct().Count());
+                sb.Append("" + UniquePeptides.Select(p => p.FullSequence).Distinct().Count());
             sb.Append("\t");
 
             // sequence coverage percent
@@ -362,15 +362,15 @@ namespace EngineLayer
 
                     foreach (var mod in temp1)
                     {
-                        if (mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.NProt))
-                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(0, "[" + mod.Value.Id + "]-");
-                        else if (mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.Any))
+                        if (mod.Value.LocationRestriction.Equals("N-terminal."))
+                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(0, "[" + mod.Value.IdWithMotif + "]-");
+                        else if (mod.Value.LocationRestriction.Equals("Anywhere."))
                         {
                             int modStringIndex = sequenceCoverageDisplay.Length - (protein.Length - mod.Key);
-                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(modStringIndex, "[" + mod.Value.Id + "]");
+                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(modStringIndex, "[" + mod.Value.IdWithMotif + "]");
                         }
-                        else if (mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.ProtC))
-                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(sequenceCoverageDisplay.Length, "-[" + mod.Value.Id + "]");
+                        else if (mod.Value.LocationRestriction.Equals("C-terminal."))
+                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(sequenceCoverageDisplay.Length, "-[" + mod.Value.IdWithMotif + "]");
                     }
 
                     SequenceCoverageDisplayListWithMods.Add(sequenceCoverageDisplay);
@@ -392,19 +392,20 @@ namespace EngineLayer
                                 if (!mod.Value.ModificationType.Contains("Common Variable") && !mod.Value.ModificationType.Contains("Common Fixed") && !mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.PepC) && !mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.NPep))
                                 {
                                     int tempIndexInProtein;
-                                    if (mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.NProt))
+                                    if (mod.Value.LocationRestriction.Equals("N-terminal."))
                                         tempIndexInProtein = 1;
-                                    else if (mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.Any))
+                                    else if (mod.Value.LocationRestriction.Equals("Anywhere."))
                                     {
                                         tempIndexInProtein = pep.OneBasedStartResidueInProtein + mod.Key - 2;
                                     }
-                                    else if (mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.ProtC))
+                                    else if (mod.Value.LocationRestriction.Equals("C-terminal."))
                                         tempIndexInProtein = protein.Length;
                                     else
-                                        // In case it's a peptide mod, skip!
+                                        // In case it's a peptide terminal mod, skip!
+                                        // we don't want this annotated in the protein's modifications
                                         continue;
 
-                                    if (tempModIndex.Contains(tempIndexInProtein) && tempPepModValues[tempModIndex.IndexOf(tempIndexInProtein)] == mod.Value.Id)
+                                    if (tempModIndex.Contains(tempIndexInProtein) && tempPepModValues[tempModIndex.IndexOf(tempIndexInProtein)] == mod.Value.IdWithMotif)
                                     {
                                         tempPepModTotals[tempModIndex.IndexOf(tempIndexInProtein)] += 1;
                                     }
@@ -419,7 +420,7 @@ namespace EngineLayer
                                             }
                                         }
                                         tempPepTotals.Add(tempPepNumTotal);
-                                        tempPepModValues.Add(mod.Value.Id);
+                                        tempPepModValues.Add(mod.Value.IdWithMotif);
                                         tempPepModTotals.Add(1);
                                     }
                                 }

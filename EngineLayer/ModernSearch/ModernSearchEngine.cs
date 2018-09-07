@@ -23,13 +23,13 @@ namespace EngineLayer.ModernSearch
         protected readonly DissociationType DissociationType;
         protected readonly double MaxMassThatFragmentIonScoreIsDoubled;
 
-        public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ListOfSortedms2Scans = listOfSortedms2Scans;
             PeptideIndex = peptideIndex;
             this.FragmentIndex = fragmentIndex;
-            ProductTypes = lp;
+            ProductTypes = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.FragmentationTerminus]).ToList();
             CurrentPartition = currentPartition + 1;
             MassDiffAcceptor = massDiffAcceptor;
             DissociationType = commonParameters.DissociationType;

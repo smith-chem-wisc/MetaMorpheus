@@ -49,11 +49,11 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + String.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType])});
                 foreach (var item in fixedModifications)
                 {
-                    para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.Id, value = item.MonoisotopicMass.ToString() });
+                    para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
                 }
                 foreach (var item in variableModifications)
                 {
-                    para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + item.Id, value = item.MonoisotopicMass.ToString() });
+                    para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
                 }
 
                 para.Add(new pepXML.Generated.nameValueType { name = "Localize All Modifications", value = "true" });

@@ -213,10 +213,10 @@ namespace TaskLayer
 
             // get PSMs to pass to FlashLFQ
             var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                p.FdrInfo.QValue < 0.01
-                && p.FdrInfo.QValueNotch < 0.01
+                p.FdrInfo.QValue <= 0.01
+                && p.FdrInfo.QValueNotch <= 0.01
                 && !p.IsDecoy
-                && p.FullSequence != null);
+                && p.FullSequence != null).ToList();
 
             var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
@@ -232,7 +232,7 @@ namespace TaskLayer
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
+                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
                     {
                         if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                         {
@@ -320,13 +320,24 @@ namespace TaskLayer
 
                     foreach (var spectraFile in proteinGroup.FilesForQuantification)
                     {
-                        if (Parameters.FlashLfqResults.proteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
+                        if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
                         {
                             proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
                         }
                         else
                         {
-                            throw new MetaMorpheusException("Could not get intensity back from FlashLFQ! " + proteinGroup.ProteinGroupName);
+                            if (proteinGroup.AllPsmsBelowOnePercentFDR.Count(v => v.FullSequence != null) > 0)
+                            {
+                                //TODO This if clase didn't exist before.
+                                if (!proteinGroup.IsDecoy)
+                                    throw new MetaMorpheusException("Could not get intensity back from FlashLFQ! " + proteinGroup.ProteinGroupName);
+                            }
+                            else
+                            {
+                                // this is pretty rare... PSMs below 1% FDR were observed for this protein in this file, but they were all ambiguous PSMs
+                                // in this case, set the protein quantity to 0 for this file (FlashLFQ didn't quantify it because there were no valid PSMs)
+                                proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
+                            }
                         }
                     }
                 }
@@ -476,7 +487,7 @@ namespace TaskLayer
         {
             if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
-                foreach (var file in Parameters.FlashLfqResults.peaks)
+                foreach (var file in Parameters.FlashLfqResults.Peaks)
                 {
                     WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
                 }
@@ -729,7 +740,7 @@ namespace TaskLayer
                     // HACKY: Ignores all ambiguity
                     var pwsm = psm.BestMatchingPeptideWithSetMods.First().Pwsm;
 
-                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.Sequence + "." + pwsm.NextAminoAcid).ToString());
+                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());
                     output.WriteLine();
                 }
@@ -755,7 +766,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePeptideQuantificationResultsToTsv(FlashLFQResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var baseSeqPath = Path.Combine(outputFolder, fileName + "BaseSequences.tsv");
             var fullSeqPath = Path.Combine(outputFolder, fileName + "FullSequences.tsv");
@@ -766,7 +777,7 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(fullSeqPath, nestedIds);
         }
 
-        private void WritePeakQuantificationResultsToTsv(FlashLFQResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePeakQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
 

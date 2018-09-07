@@ -243,6 +243,10 @@ namespace TaskLayer
 
         public void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<Protein> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
         {
+            if (items.Count==0)
+            {
+                return;
+            }
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
             var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
 
@@ -287,11 +291,11 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Allowed Beta Precusor Mass Difference", value = XlSearchParameters.XlBetaPrecusorMsTl.ToString() });
                 foreach (var item in fixedModifications)
                 {
-                    para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.Id, value = item.MonoisotopicMass.ToString() });
+                    para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
                 }
                 foreach (var item in variableModifications)
                 {
-                    para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + item.Id, value = item.MonoisotopicMass.ToString() });
+                    para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
                 }
 
                 para.Add(new pepXML.Generated.nameValueType { name = "Localize All Modifications", value = "true" });

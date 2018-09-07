@@ -24,7 +24,7 @@ namespace Test
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
-            mods.Add(1, new List<Modification> { new Modification(_id: "Hehe", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 18.010565) });
+            mods.Add(1, new List<Modification> { new Modification(_originalId: "Hehe", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 18.010565) });
             var prot = new Protein("MMMM", null, null, null, mods);
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
             var ye = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
@@ -139,7 +139,7 @@ namespace Test
 
             var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<Modification>(), new List<Modification>(), 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
-            var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, new OpenSearchMode(), 0, new List<string>());
+            var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, new OpenSearchMode(), 0, new List<string>());
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);

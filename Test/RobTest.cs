@@ -81,7 +81,7 @@ namespace Test
             }
 
             // create PSMs for the peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            Dictionary<string, PeptideSpectralMatch> temp = new Dictionary<string, PeptideSpectralMatch>();
 
             MsDataScan fakeScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
@@ -91,22 +91,21 @@ namespace Test
 
             foreach (var peptide in peptides)
             {
-                switch (peptide.BaseSequence)
+                if (temp.TryGetValue(peptide.BaseSequence, out var psm))
                 {
-                    case "A": psms.Add(new PeptideSpectralMatch(peptide, 0, 10, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
-                    case "B": psms.Add(new PeptideSpectralMatch(peptide, 0, 9, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
-                    case "C": psms.Add(new PeptideSpectralMatch(peptide, 0, 8, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
-                    case "D": psms.Add(new PeptideSpectralMatch(peptide, 0, 7, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
-                    case "E": psms.Add(new PeptideSpectralMatch(peptide, 0, 6, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
-                    case "F": psms.Add(new PeptideSpectralMatch(peptide, 0, 5, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
-                    case "G": psms.Add(new PeptideSpectralMatch(peptide, 0, 4, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
-                    case "H": psms.Add(new PeptideSpectralMatch(peptide, 0, 3, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
-                    case "I": psms.Add(new PeptideSpectralMatch(peptide, 0, 2, 0, scan, digestionParams, new List<MatchedFragmentIon>())); break;
+                    psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>());
+                }
+                else
+                {
+                    temp.Add(peptide.BaseSequence, new PeptideSpectralMatch(peptide, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>()));
                 }
             }
-            
+
+            List<PeptideSpectralMatch> psms = temp.Values.ToList();
+
             foreach (var psm in psms)
             {
+                psm.ResolveAllAmbiguities();
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             }
 
@@ -114,14 +113,14 @@ namespace Test
             ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(psms, false, new CommonParameters(), new List<string>());
             var parsimonyResults = (ProteinParsimonyResults)parsimonyEngine.Run();
             var proteinGroups = parsimonyResults.ProteinGroups;
-            
+
             ProteinScoringAndFdrEngine proteinScoringAndFdrEngine = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new CommonParameters(), new List<string>());
             var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)proteinScoringAndFdrEngine.Run();
             proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
             // select the PSMs' proteins
             List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingPeptideWithSetMods.Select(v => v.Pwsm.Protein)).Select(v => v.BaseSequence).Distinct().ToList();
-            
+
             // check that correct proteins are in parsimony list
             Assert.Contains("AB--------", parsimonyProteinSequences);
             Assert.Contains("--C-------", parsimonyProteinSequences);
@@ -146,87 +145,10 @@ namespace Test
             Assert.AreEqual(4, proteinGroups.Count);
             Assert.AreEqual(1, proteinGroups.First().Proteins.Count);
             Assert.AreEqual("AB--------", proteinGroups.First().Proteins.First().BaseSequence);
-            Assert.AreEqual(4, proteinGroups.First().AllPsmsBelowOnePercentFDR.Count);
-            Assert.AreEqual(19, proteinGroups.First().ProteinGroupScore);
+            Assert.AreEqual(2, proteinGroups.First().AllPsmsBelowOnePercentFDR.Count);
+            Assert.AreEqual(2, proteinGroups.First().ProteinGroupScore);
         }
-
-        [Test]
-        public static void TestFragments()
-        {
-            // creates some test proteins, digest, and fragment
-            string[] sequences = { "GLSDGEWQQVLNVWGK" }; // just one peptide
-
-            var peptides = new HashSet<PeptideWithSetModifications>();
-
-            var p = new List<Protein>();
-            for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString()));
-
-            DigestionParams digestionParams = new DigestionParams();
-            foreach (var protein in p)
-            {
-                foreach (var peptide in protein.Digest(digestionParams, new List<Modification>(), new List<Modification>()))
-                    peptides.Add(peptide);
-            }
-
-            Dictionary<DissociationType, List<double[]>> testDictionary = new Dictionary<DissociationType, List<double[]>>();
-
-            foreach (var peptide in peptides)
-            {
-                CompactPeptide cp = new CompactPeptide(peptide, FragmentationTerminus.Both);
-                foreach (DissociationType dt in Enum.GetValues(typeof(DissociationType)))
-                {
-                    if (testDictionary.ContainsKey(dt))
-                    {
-                        testDictionary[dt].Add(peptide.Fragment(dt, FragmentationTerminus.Both).Select(m => m.NeutralMass).ToArray());
-                    }
-                    else
-                    {
-                        testDictionary.Add(dt, new List<double[]> { peptide.Fragment(dt, FragmentationTerminus.Both).Select(m => m.NeutralMass).ToArray() });
-                    }
-                }
-            }
-
-            foreach (DissociationType dt in Enum.GetValues(typeof(DissociationType)))
-            {
-                switch (dt)
-                {
-                    case DissociationType.AnyActivationType:
-                    case DissociationType.CID:
-                    case DissociationType.Custom:
-                    case DissociationType.ECD:
-                    case DissociationType.ETD:
-                    case DissociationType.EThCD:
-                    case DissociationType.HCD:
-                    case DissociationType.ISCID:
-                    case DissociationType.MPD:
-                    case DissociationType.PQD:
-                    case DissociationType.Unknown:
-                        Assert.IsTrue(true);
-                        throw new Exception();
-                    default:
-                        break;
-                }
-
-            }
-
-        }
-
-        [Test]
-        public static void TestNeutralLossFragments()
-        {
-            Protein p = new Protein("SR", "ac");
-
-            ModificationMotif.TryGetMotif("S", out ModificationMotif motif);
-            Modification phosphorylation = new Modification(_id: "phospho", _modificationType: "CommonBiological", _target: motif, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H1O3P1"), _neutralLosses: new Dictionary<DissociationType, List<double>> { { MassSpectrometry.DissociationType.HCD, new List<double> { 0, ChemicalFormula.ParseFormula("H3O4P1").MonoisotopicMass } } });
-            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 2);
-
-            var cool = p.Digest(digestionParams, new List<Modification> { phosphorylation }, new List<Modification>()).First();
-            var nice = cool.CompactPeptide(FragmentationTerminus.Both);
-            Assert.AreEqual(2, nice.TerminalMasses.Where(t => t.Terminus == FragmentationTerminus.N).Count());
-            Assert.AreEqual(1, nice.TerminalMasses.Where(t => t.Terminus == FragmentationTerminus.C).Count());
-        }
-
+        
         [Test]
         public static void TestPTMOutput()
         {
@@ -234,7 +156,7 @@ namespace Test
             List<Modification> fixedModifications = new List<Modification>();
 
             ModificationMotif.TryGetMotif("S", out ModificationMotif motif);
-            variableModifications.Add(new Modification(_id: "resMod", _modificationType: "HaHa", _target: motif, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H")));
+            variableModifications.Add(new Modification(_originalId: "resMod", _modificationType: "HaHa", _target: motif, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H")));
 
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
             var protease = new Protease("CustomProtease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
@@ -250,24 +172,24 @@ namespace Test
             var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep };
             PeptideWithSetModifications compactPeptide1 = value.First();
-            Assert.AreEqual("QQQ", value.First().Sequence);
+            Assert.AreEqual("QQQ", value.First().FullSequence);//this might be base
 
             var firstProtDigest = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).ToList();
             HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { firstProtDigest[0] };
             PeptideWithSetModifications compactPeptide2 = value2.First();
-            Assert.AreEqual("MNNNSK", value2.First().Sequence);
+            Assert.AreEqual("MNNNSK", value2.First().FullSequence);//this might be base
 
             HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { firstProtDigest[1] };
             PeptideWithSetModifications compactPeptide2mod = value2mod.Last();
-            Assert.AreEqual("MNNNS[HaHa:resMod]K", value2mod.Last().Sequence);
+            Assert.AreEqual("MNNNS[HaHa:resMod on S]K", value2mod.Last().FullSequence);//this might be base
 
             HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { firstProtDigest[2] };
             PeptideWithSetModifications compactPeptide3 = value3.First();
-            Assert.AreEqual("NNNSK", value3.First().Sequence);
+            Assert.AreEqual("NNNSK", value3.First().FullSequence);//this might be base
             HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { firstProtDigest[3] };
 
             PeptideWithSetModifications compactPeptide3mod = value3mod.Last();
-            Assert.AreEqual("NNNS[HaHa:resMod]K", value3mod.Last().Sequence);
+            Assert.AreEqual("NNNS[HaHa:resMod on S]K", value3mod.Last().FullSequence);//this might be base
 
             var peptideList = new HashSet<PeptideWithSetModifications>();
             foreach (var protein in proteinList)
@@ -277,11 +199,11 @@ namespace Test
                     peptideList.Add(peptide);
                 }
             }
-            
+
             MsDataScan jdfk = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, 2, 0, "File");
 
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            List<ProductType> lp = new List<ProductType> { ProductType.b, ProductType.y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             var match1 = new PeptideSpectralMatch(peptideList.ElementAt(0), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
@@ -304,6 +226,8 @@ namespace Test
                 match3
             };
 
+            psms.ForEach(p => p.ResolveAllAmbiguities());
+
             ProteinParsimonyEngine engine = new ProteinParsimonyEngine(psms, true, new CommonParameters(), new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
@@ -311,7 +235,7 @@ namespace Test
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new CommonParameters(), new List<string>());
             f.Run();
 
-            Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
+            Assert.AreEqual("#aa5[resMod on S,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
         }
 
         [Test]

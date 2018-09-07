@@ -15,7 +15,7 @@ namespace EngineLayer
                 //b.ModificationType.Equals("Biological") ||
                 b.ModificationType.Equals("PeptideTermMod") ||
                 b.ModificationType.Equals("Metal") ||
-                b.ModificationType.Equals("ProteinTermMod")).Select(b => (b.ModificationType, b.Id)).ToList();
+                b.ModificationType.Equals("ProteinTermMod")).Select(b => (b.ModificationType, b.IdWithMotif)).ToList();
         }
 
         public List<(string, string)> ListOfModsGptmd { get; set; }

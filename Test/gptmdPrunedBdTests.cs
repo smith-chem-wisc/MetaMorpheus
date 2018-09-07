@@ -88,7 +88,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
-            var connorMod = new Modification(_id: "ConnorMod on P", _modificationType: "ConnorModType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            var connorMod = new Modification(_originalId: "ConnorMod on P", _modificationType: "ConnorModType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
             GlobalVariables.AddMods(new List<Modification>
             {
@@ -97,7 +97,7 @@ namespace Test
 
             //create modification lists
             List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where
-                (b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.Id))).ToList();
+                (b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -124,6 +124,25 @@ namespace Test
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true,
                 DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+
+            //Dictionary 'ok' contains unknown modifications. There are no unknown modifications in this test.
+            Assert.AreEqual(0, ok.Count);
+            //One protein is read from the .xml database and one decoy is created. Therefore, the list of proteins contains 2 entries.
+            Assert.AreEqual(2, protein.Count);
+            //The original database had two localized mods on the protein. Therefore. both protein and decoy should have two mods.
+            Assert.AreEqual(2, protein[0].OneBasedPossibleLocalizedModifications.Count);
+            List<int> foundResidueIndicies = protein[0].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            List<int> expectedResidueIndices = new List<int>() { 1, 3 };
+            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+            Assert.AreEqual(2, protein[1].OneBasedPossibleLocalizedModifications.Count);
+            foundResidueIndicies = protein[1].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            expectedResidueIndices = new List<int>() { 4, 6 }; //originally modified residues are now at the end in the decoy
+            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+
+
+            var thisOk = ok;//for debugging
+            var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging
+
             var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification> { },
                 variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
@@ -132,7 +151,7 @@ namespace Test
             PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
 
             //Finally Write MZML file
-            Assert.AreEqual("PEP[ConnorModType:ConnorMod on P]TID", pepWithSetMods1.Sequence);
+            Assert.AreEqual("PEP[ConnorModType:ConnorMod on P]TID", pepWithSetMods1.FullSequence);//this might be base sequence
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -152,7 +171,7 @@ namespace Test
             List<Modification> listOfMods = proteins[0].OneBasedPossibleLocalizedModifications[3];
             //check Type, count, ID
             Assert.AreEqual(listOfMods[0].ModificationType, "ConnorModType");
-            Assert.AreEqual(listOfMods[0].Id, "ConnorMod on P");
+            Assert.AreEqual(listOfMods[0].IdWithMotif, "ConnorMod on P");
             Assert.AreEqual(listOfMods.Count, 1);
         }
 
@@ -182,10 +201,10 @@ namespace Test
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif2);
 
-            var connorMod = new Modification(_id: "ModToNotAppear", _modificationType: "Mod", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
-            var connorMod2 = new Modification(_id: "Default(Mod in DB and Observed)", _modificationType: "Common Fixed", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
-            var connorMod3 = new Modification(_id: "ModToAlwaysAppear", _modificationType: "Glycan", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
-            var connorMod4 = new Modification(_id: "ModObservedNotinDB", _modificationType: "missing", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 5);
+            var connorMod = new Modification(_originalId: "ModToNotAppear", _modificationType: "Mod", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            var connorMod2 = new Modification(_originalId: "Default(Mod in DB and Observed)", _modificationType: "Common Fixed", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            var connorMod3 = new Modification(_originalId: "ModToAlwaysAppear", _modificationType: "Glycan", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            var connorMod4 = new Modification(_originalId: "ModObservedNotinDB", _modificationType: "missing", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 5);
 
             GlobalVariables.AddMods(new List<Modification>
             {
@@ -197,9 +216,9 @@ namespace Test
 
             //create modification lists
             List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains
-            ((b.ModificationType, b.Id))).ToList();
+            ((b.ModificationType, b.IdWithMotif))).ToList();
             List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task5.CommonParameters.ListOfModsFixed.Contains
-            ((b.ModificationType, b.Id))).ToList();
+            ((b.ModificationType, b.IdWithMotif))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -210,7 +229,7 @@ namespace Test
 
             //add Fixed modifcation so can test if mod that is observed and not in DB
             fixedModifications.Add(connorMod4);
-            listOfModsFixed.Add((connorMod4.ModificationType, connorMod4.Id));
+            listOfModsFixed.Add((connorMod4.ModificationType, connorMod4.IdWithMotif));
 
             dictHere.Add(1, new List<Modification> { modToAdd });
             dictHere.Add(2, new List<Modification> { modToAdd2 }); //default
@@ -284,10 +303,10 @@ namespace Test
             Assert.AreEqual(listOfLocalMods[2].ModificationType, "missing");
             Assert.IsFalse(listOfLocalMods.Contains(connorMod)); //make sure that mod set not to show up is not in mod list
 
-            Assert.AreEqual(listOfLocalMods[0].Id, "Default(Mod in DB and Observed)");
-            Assert.AreEqual(listOfLocalMods[1].Id, "ModToAlwaysAppear");
+            Assert.AreEqual(listOfLocalMods[0].IdWithMotif, "Default(Mod in DB and Observed) on P");
+            Assert.AreEqual(listOfLocalMods[1].IdWithMotif, "ModToAlwaysAppear on P");
             //Makes sure Mod that was not in the DB but was observed is in pruned DB
-            Assert.AreEqual(listOfLocalMods[2].Id, "ModObservedNotinDB");
+            Assert.AreEqual(listOfLocalMods[2].IdWithMotif, "ModObservedNotinDB on E");
             Assert.AreEqual(listOfLocalMods.Count, 3);
         }
     }

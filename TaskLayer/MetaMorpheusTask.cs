@@ -481,7 +481,7 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (pathToFolderWithIndices == null)
@@ -515,6 +515,37 @@ namespace TaskLayer
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
                 {
                     peptideIndex = (List<PeptideWithSetModifications>)ser.Deserialize(file);
+                }
+
+                // populate dictionaries of known mods/proteins for deserialization
+                Dictionary<string, Modification> modsDictionary = new Dictionary<string, Modification>();
+                Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
+
+                foreach (Modification mod in allKnownModifications)
+                {
+                    if (!modsDictionary.ContainsKey(mod.IdWithMotif))
+                    {
+                        modsDictionary.Add(mod.IdWithMotif, mod);
+                    }
+                    // no error thrown if multiple mods with this ID are present - just pick one
+                }
+
+                foreach (Protein protein in allKnownProteins)
+                {
+                    if (!proteinDictionary.ContainsKey(protein.Accession))
+                    {
+                        proteinDictionary.Add(protein.Accession, protein);
+                    }
+                    else
+                    {
+                        throw new MetaMorpheusException("The protein database contained multiple proteins with the same accession! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
+                    }
+                }
+
+                // get non-serialized information for the peptides (proteins, mod info)
+                foreach (var peptide in peptideIndex)
+                {
+                    peptide.SetNonSerializedPeptideInfo(modsDictionary, proteinDictionary);
                 }
 
                 Status("Reading fragment index...", new List<string> { taskId });
