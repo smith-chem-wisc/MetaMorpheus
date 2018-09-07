@@ -69,7 +69,16 @@ namespace MetaMorpheusGUI
             FileSpecificParameters.ValidateFileSpecificVariableNames();
 
             // LOAD GUI SETTINGS
-            GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+
+            try
+            {
+                GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+                notificationsTextBox.Document.Blocks.Clear();
+            } catch (FileNotFoundException)
+            {
+                // first time running
+                Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+            }
 
             if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
                 GuiGlobalParams.AskAboutUpdating = false;
@@ -86,7 +95,7 @@ namespace MetaMorpheusGUI
 
         public static string NewestKnownVersion { get; private set; }
 
-        internal GuiGlobalParams GuiGlobalParams { get; }
+        internal GuiGlobalParams GuiGlobalParams = new GuiGlobalParams();
 
         private static void GetVersionNumbersFromWeb()
         {
