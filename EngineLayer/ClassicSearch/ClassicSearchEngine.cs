@@ -38,7 +38,6 @@ namespace EngineLayer.ClassicSearch
 
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
-            FragmentationTerminus fragmentationTerminus = commonParameters.FragmentationTerminus;
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
             var myLocks = new object[PeptideSpectralMatches.Length];
@@ -51,7 +50,6 @@ namespace EngineLayer.ClassicSearch
 
             if (Proteins.Any())
             {
-
                 Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (partitionRange, loopState) =>
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
@@ -64,10 +62,7 @@ namespace EngineLayer.ClassicSearch
                         }
 
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
-
-                        List<PeptideWithSetModifications> myPwsms = Proteins[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications).ToList();
-
-                        foreach (PeptideWithSetModifications peptide in myPwsms)
+                        foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
                         {
                             List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
 
@@ -153,18 +148,21 @@ namespace EngineLayer.ClassicSearch
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
             {
                 DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
-                int ScanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);
-                if (ScanIndex < ArrayOfSortedMS2Scans.Length)
+                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);
+                if (scanIndex < ArrayOfSortedMS2Scans.Length)
                 {
-                    var scanMass = MyScanPrecursorMasses[ScanIndex];
+                    var scanMass = MyScanPrecursorMasses[scanIndex];
                     while (scanMass <= allowedInterval.Maximum)
                     {
-                        var TheScan = ArrayOfSortedMS2Scans[ScanIndex];
-                        yield return new ScanWithIndexAndNotchInfo(TheScan, allowedIntervalWithNotch.Notch, ScanIndex);
-                        ScanIndex++;
-                        if (ScanIndex == ArrayOfSortedMS2Scans.Length)
+                        var scan = ArrayOfSortedMS2Scans[scanIndex];
+                        yield return new ScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
+                        scanIndex++;
+                        if (scanIndex == ArrayOfSortedMS2Scans.Length)
+                        {
                             break;
-                        scanMass = MyScanPrecursorMasses[ScanIndex];
+                        }
+
+                        scanMass = MyScanPrecursorMasses[scanIndex];
                     }
                 }
             }
@@ -174,7 +172,9 @@ namespace EngineLayer.ClassicSearch
         {
             int index = Array.BinarySearch(MyScanPrecursorMasses, minimum);
             if (index < 0)
+            {
                 index = ~index;
+            }
 
             // index of the first element that is larger than value
             return index;
