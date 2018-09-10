@@ -93,16 +93,17 @@ namespace MetaMorpheusGUI
                 GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
         }
-
+        
         private FlowDocument YoutubeWikiNotification()
         {
-            FlowDocument doc = new FlowDocument();
+
+            FlowDocument doc = notificationsTextBox.Document;
             Paragraph p = new Paragraph();
             Run run1 = new Run("Visit our ");
             Run run2 = new Run("Wiki");
             Run run3 = new Run(" or ");
             Run run4 = new Run("Youtube");
-            Run run5 = new Run(" for more information.");
+            Run run5 = new Run(" for more information." + System.Environment.NewLine);
 
             Hyperlink wikiLink = new Hyperlink(run2);
             wikiLink.NavigateUri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
