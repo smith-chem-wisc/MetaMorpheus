@@ -799,7 +799,7 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
             var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<PeptideSpectralMatch> { allPsmsArray[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, digestParams, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>()).Run();
-            var hah2 = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<PeptideSpectralMatch> { allPsmsArray2[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, digestParams2, CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string>()).Run();
+            var hah2 = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<PeptideSpectralMatch> { allPsmsArray2[0] }, proteinList, fixedModifications, variableModifications, new List<ProductType> { ProductType.B, ProductType.Y }, digestParams2, CommonParameters2.ReportAllAmbiguity, CommonParameters2, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray)
             {

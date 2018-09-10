@@ -176,11 +176,13 @@ namespace TaskLayer
 
                     if (XlSearchParameters.XlOutCrosslink)
                     {
-                        var writtenFileInter = Path.Combine(OutputFolder, "xl_inter_fdr" + ".mytsv");
+                        var writtenFileInter = Path.Combine(OutputFolder, "xl_inter_fdr" + ".tsv");
                         WritePsmCrossToTsv(interPsmsXLFDR, writtenFileInter, 2);
+                        FinishedWritingFile(writtenFileInter, new List<string> { taskId });
 
-                        var writtenFileIntra = Path.Combine(OutputFolder, "xl_intra_fdr" + ".mytsv");
+                        var writtenFileIntra = Path.Combine(OutputFolder, "xl_intra_fdr" + ".tsv");
                         WritePsmCrossToTsv(intraPsmsXLFDR, writtenFileIntra, 2);
+                        FinishedWritingFile(writtenFileIntra, new List<string> { taskId });
                     }
 
                     if (XlSearchParameters.XlOutPercolator)
@@ -208,22 +210,26 @@ namespace TaskLayer
                         {
                             allPsmsXLFDR = allPsmsXLFDR.OrderByDescending(p => p.XLQvalueTotalScore).ToList();
                             var allPsmsXLFDRGroup = GroupCrosslinks(allPsmsXLFDR);
-                            var writtenFileCrossGroup = Path.Combine(OutputFolder, "allPsmsXLFDRGroup" + ".mytsv");
+                            var writtenFileCrossGroup = Path.Combine(OutputFolder, "allPsmsXLFDRGroup" + ".tsv");
                             WritePsmCrossToTsv(allPsmsXLFDRGroup, writtenFileCrossGroup, 2);
+                            FinishedWritingFile(writtenFileCrossGroup, new List<string> { taskId });
                         }
                         catch (Exception)
                         {
                             throw;
                         }
 
-                        var writtenFileSingle = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
+                        var writtenFileSingle = Path.Combine(OutputFolder, "single_fdr" + ".tsv");
                         WritePsmCrossToTsv(singlePsmsFDR, writtenFileSingle, 1);
+                        FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
 
-                        var writtenFileLoop = Path.Combine(OutputFolder, "loop_fdr" + ".mytsv");
+                        var writtenFileLoop = Path.Combine(OutputFolder, "loop_fdr" + ".tsv");
                         WritePsmCrossToTsv(loopPsmsFDR, writtenFileLoop, 1);
+                        FinishedWritingFile(writtenFileLoop, new List<string> { taskId });
 
-                        var writtenFileDeadend = Path.Combine(OutputFolder, "deadend_fdr" + ".mytsv");
+                        var writtenFileDeadend = Path.Combine(OutputFolder, "deadend_fdr" + ".tsv");
                         WritePsmCrossToTsv(deadendPsmsFDR, writtenFileDeadend, 1);
+                        FinishedWritingFile(writtenFileDeadend, new List<string> { taskId });
                     }
 
                     if (XlSearchParameters.XlOutPepXML)
