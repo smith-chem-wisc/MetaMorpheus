@@ -71,7 +71,7 @@ namespace MetaMorpheusGUI
 
             // LOAD GUI SETTINGS
 
-            if (File.Exists(@"GUIsettings.toml"))
+            if (File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml")))
             {
                 GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             }
