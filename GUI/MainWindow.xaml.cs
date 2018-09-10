@@ -102,8 +102,8 @@ namespace MetaMorpheusGUI
             Run run1 = new Run("Visit our ");
             Run run2 = new Run("Wiki");
             Run run3 = new Run(" or ");
-            Run run4 = new Run("Youtube");
-            Run run5 = new Run(" for more information." + System.Environment.NewLine);
+            Run run4 = new Run("Youtube channel");
+            Run run5 = new Run(" to check out what MetaMorpheus can do!" + System.Environment.NewLine);
 
             Hyperlink wikiLink = new Hyperlink(run2);
             wikiLink.NavigateUri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
