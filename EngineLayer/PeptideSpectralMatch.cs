@@ -130,11 +130,6 @@ namespace EngineLayer
                 {
                     PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
                 }
-                else
-                {
-                    //TODO: Do we need to do anything????????????????? if the thing is already there?
-                    throw new MetaMorpheusException("Cannot add duplicate peptides to the same PSM!");
-                }
             }
             else if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
