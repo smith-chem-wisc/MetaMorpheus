@@ -225,17 +225,6 @@
                         Height="5" />
                 <GroupBox Header="Notifications" Grid.Row="2">
                     <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True" IsDocumentEnabled="True" >
-                        <FlowDocument>
-                            <Paragraph>
-                                Visit our 
-                                <Hyperlink NavigateUri="https:" RequestNavigate="WikiHyperlink">Wiki page</Hyperlink>
-                                or
-                                <Hyperlink NavigateUri="https:" RequestNavigate="YoutubeHyperlink">Youtube</Hyperlink>
-                                for more information.
-                                <LineBreak/>
-                                <LineBreak/>
-                            </Paragraph>
-                        </FlowDocument>
                         <RichTextBox.Resources>
                             <Style TargetType="{x:Type Paragraph}">
                                 <Setter Property="Margin" Value="0" />
